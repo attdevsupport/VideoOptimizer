@@ -43,9 +43,9 @@ This Open Source Code Package contains all of the code needed to build both of t
 
 
 **Video Optimizer Web Resources:**  
-Video Optimizer: https://developer.att.com/video-optimizer 
-Video Optimizer Support: https://developer.att.com/video-optimizer/support
-Contact Us: http://developer.att.com/developer/contact_us.jsp
+Video Optimizer: https://developer.att.com/video-optimizer<br/>
+Video Optimizer Support: https://developer.att.com/video-optimizer/support<br/>
+Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
