@@ -31,7 +31,7 @@ The VPN collector in Video Optimizer 1.0 can collect data from peripherals.
 ### What are the known issues in Release 1.0?
 
 #### •	Security Best Practices
-+	In our testing, only Android devices with Kitkat OS detected a week cipher.
++	In our testing, only Android devices with Kitkat OS detected a weak cipher.
 +	Private data transmission: There is a false positive scenario that Analyzer reports a sixteen digit number as a credit card number.
 
 #### •	Video Best Practices
