@@ -17,6 +17,8 @@ package com.att.aro.ui.view.menu.tools;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Label;
@@ -27,60 +29,54 @@ import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.att.aro.core.ILogger;
 import com.att.aro.core.model.InjectLogger;
-import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
+import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs.DUPLICATE_HANDLING;
 import com.att.aro.mvc.IAROView;
+import com.att.aro.ui.utils.NumericInputVerifier;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
 
 public class VideoAnalysisDialog extends JDialog {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
+	private static int MAXBUFFER = 5000;
+	private static int MAXSTARTUPDELAY = 50;
+	private static int MAXSTALLTRIGGERTIME = 10;
 	
 	@InjectLogger
 	private static ILogger log;
 
+			
 	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 	
 	private JPanel jDialogPanel;
-	private PacketAnalyzerResult currentTraceResult;
-	
 	private IAROView parent;
 	private JPanel ctrlPanel;
 	private JPanel buttonGrid;
 	private JButton okButton;
 	private JButton cancelButton;
-	
-
 	private VideoUsagePrefs videoUsagePrefs;
-
 	private JTextField startupDelayEdit;
-
 	private JTextField arrivalToPlayEdit;
-
 	private ObjectMapper mapper;
-
 	private PreferenceHandlerImpl prefs;
-
 	private JTextField stallTriggerTimeEdit;
-
 	private JTextField maxBufferEdit;
 
-	private JTextField duplicateHandlingEdit;
+	private JComboBox<DUPLICATE_HANDLING> duplicateHandlingEditCombo;
+
+	private NumericInputVerifier verifier;
 	
 	/**
 	 * Load VideoUsage Preferences
@@ -112,14 +108,6 @@ public class VideoAnalysisDialog extends JDialog {
 		private_data_dialog_button_cancel
 	}
 	
-	public PacketAnalyzerResult getCurrentPktAnalyzerResult() {
-		return currentTraceResult;
-	}
-
-	public void setCurrentPktAnalyzerResult(PacketAnalyzerResult currentTraceResult) {
-		this.currentTraceResult = currentTraceResult;
-	}
-
 	public VideoAnalysisDialog(IAROView parent) {
 		this.parent = parent;
 		((MainFrame) parent).setVideoAnalysisDialog(this);
@@ -150,17 +138,25 @@ public class VideoAnalysisDialog extends JDialog {
 	private Component getPrefencesPanel() {
 
 		Label startupDelayLabel      = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.startupDelay"));
-		Label arrivalToPlayLabel     = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.arrivalToPlay"));
+//		Label arrivalToPlayLabel     = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.arrivalToPlay"));
 		Label stallTriggerTimeLabel  = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallTriggerTime"));
 		Label maxBufferLabel         = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.maxBuffer"));
 		Label duplicateHandlingLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.duplicateHandling"));
 
-		startupDelayEdit      = new JTextField(String.format("%8.2f", videoUsagePrefs.getStartupDelay())     );
-		arrivalToPlayEdit     = new JTextField(String.format("%8.2f", videoUsagePrefs.getArrivalToPlay())    );
-		stallTriggerTimeEdit  = new JTextField(String.format("%8.2f", videoUsagePrefs.getStallTriggerTime()) );
-		maxBufferEdit         = new JTextField(String.format("%8.2f", videoUsagePrefs.getMaxBuffer())        );
-		duplicateHandlingEdit = new JTextField(videoUsagePrefs.getDuplicateHandling().toString()             );
-
+		startupDelayEdit      = new JTextField(String.format("%.3f", videoUsagePrefs.getStartupDelay())     ,5); 
+		arrivalToPlayEdit     = new JTextField(String.format("%.2f", videoUsagePrefs.getArrivalToPlay())    ,5); 
+		stallTriggerTimeEdit  = new JTextField(String.format("%.3f", videoUsagePrefs.getStallTriggerTime()) ,5); 
+		maxBufferEdit         = new JTextField(String.format("%.2f", videoUsagePrefs.getMaxBuffer())        ,5); 
+		
+		startupDelayEdit	.setInputVerifier(new NumericInputVerifier(MAXSTARTUPDELAY, 0, 3));
+		stallTriggerTimeEdit.setInputVerifier(new NumericInputVerifier(MAXSTALLTRIGGERTIME, 0.01, 3));
+		maxBufferEdit		.setInputVerifier(new NumericInputVerifier(MAXBUFFER, 0, 2));
+		
+		duplicateHandlingEditCombo = new JComboBox<>();
+		for (DUPLICATE_HANDLING item : DUPLICATE_HANDLING.values()) {
+			duplicateHandlingEditCombo.addItem(item);
+		}
+		duplicateHandlingEditCombo.setSelectedItem(videoUsagePrefs.getDuplicateHandling());
 		int idx = 0;
 		JPanel panel = new JPanel(new GridBagLayout());
 
@@ -168,18 +164,28 @@ public class VideoAnalysisDialog extends JDialog {
 //		idx = addLine(arrivalToPlayLabel   , arrivalToPlayEdit   , idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		idx = addLine(stallTriggerTimeLabel, stallTriggerTimeEdit, idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		idx = addLine(maxBufferLabel       , maxBufferEdit       , idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.mbytes")));
+		idx = addLineComboBox(duplicateHandlingLabel       , duplicateHandlingEditCombo       , idx, panel);
 
 		return panel;
 		
 	}
 
 	private int addLine(Label label, JTextField edit, int idx, JPanel panel, Label units) {
+		edit.setHorizontalAlignment(SwingConstants.RIGHT);
+//		verifier = new MyInputVerifier(500,.001);
+//		edit.setInputVerifier(verifier);
 		panel.add(label, new GridBagConstraints(0, idx, 1, 1, 1.0, 0.2, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0, 10, 0, 0), 0, 0));
 		panel.add(edit,  new GridBagConstraints(2, idx, 1, 1, 1.0, 0.2, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,  0, 0, 0), 0, 0));
 		panel.add(units, new GridBagConstraints(3, idx, 1, 1, 1.0, 0.2, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,  0, 0, 0), 0, 0));
 		return ++idx;
 	}
 	
+	private int addLineComboBox(Label label, JComboBox<DUPLICATE_HANDLING> editable, int idx, JPanel panel){
+		panel.add(label, new GridBagConstraints(0, idx, 1, 1, 1.0, 0.2, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0, 10, 0, 0), 0, 0));
+		panel.add(editable,  new GridBagConstraints(2, idx, 1, 1, 1.0, 0.2, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,  0, 0, 0), 0, 0));
+		return ++idx;
+	}
+
 	/**
 	 * ctrl panel contains button grid, which contains + button, ok button and cancel button
 	 * @return
@@ -222,7 +228,10 @@ public class VideoAnalysisDialog extends JDialog {
 				
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					executeOkButton();
+					if (preSaveCheck(startupDelayEdit, maxBufferEdit, stallTriggerTimeEdit)) {
+						executeOkButton();
+						verifier = null;
+					}
 				}
 			});
 		}
@@ -243,11 +252,13 @@ public class VideoAnalysisDialog extends JDialog {
 	 * save preference
 	 */
 	private boolean savePreference() {
+
 		videoUsagePrefs.setStartupDelay(Double.valueOf(startupDelayEdit.getText()));
 		videoUsagePrefs.setArrivalToPlay(Double.valueOf(arrivalToPlayEdit.getText()));
 		videoUsagePrefs.setMaxBuffer(Double.valueOf(maxBufferEdit.getText()));
 		videoUsagePrefs.setStallTriggerTime(Double.valueOf(stallTriggerTimeEdit.getText()));
-		
+		videoUsagePrefs.setDuplicateHandling((DUPLICATE_HANDLING) duplicateHandlingEditCombo.getSelectedItem());
+
 		String temp;
 		try {
 			temp = mapper.writeValueAsString(videoUsagePrefs);
@@ -255,6 +266,23 @@ public class VideoAnalysisDialog extends JDialog {
 			return false;
 		}
 		prefs.setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
+		return true;
+
+	}
+
+	/**
+	 * Gather results of all validations. Return true only if all are true
+	 * 
+	 * @param editField
+	 * @return
+	 */
+	private boolean preSaveCheck(JTextField ... editField) {
+		
+		for ( JTextField text: editField) {
+			if (!((NumericInputVerifier)text.getInputVerifier()).getResult()){
+				return false;
+			}
+		}
 		return true;
 	}
 	
@@ -271,6 +299,7 @@ public class VideoAnalysisDialog extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					executeCancelButton();
+					verifier = null;
 				}
 			});
 		}

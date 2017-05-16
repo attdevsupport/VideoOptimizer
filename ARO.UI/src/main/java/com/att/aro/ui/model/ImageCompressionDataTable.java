@@ -119,30 +119,36 @@ public class ImageCompressionDataTable<T> extends JTable {
 		}
 
 		try {
-
 			String tracePath = PreferenceHandlerImpl.getInstance().getPref("TRACE_PATH")
 					+ System.getProperty("file.separator");
 			// String imagePath = tracePath + "image" +
 			// System.getProperty("file.separator");
 			String quality = "";
+			String title = "Original Image";
 			int pos = iVal.lastIndexOf("/") + 1;
 			imgName = iVal.substring(pos);
+			StringBuffer imageFile = new StringBuffer();
+			imageFile.append(tracePath + "Image" + System.getProperty("file.separator"));
 			if (column != 1 && column != 2) {
 
 				if (column == 4) {
 					quality = "70.0";
+					title = "70% Compressed Image";
 				} else if (column == 3) {
 					quality = "85.0";
+					title = "85% Compressed Image";
 				}
 
 				// imageName = iVal.substring(iVal.lastIndexOf("/")+1);
 				String imageName = imgName.substring(0, imgName.lastIndexOf(".")) + "_compressed_" + quality + "."
 						+ imgName.substring(imgName.lastIndexOf(".") + 1, imgName.length());
 				imgName = imageName;
-			}
+				imageFile.append("Compressed" +System.getProperty("file.separator"));
 
-			ContentViewer.getInstance().viewImage(tracePath + "Image" + System.getProperty("file.separator") + imgName,
-					imgName);
+			}
+			imageFile.append(imgName);
+			ContentViewer.getInstance().viewImage(imageFile.toString(), imgName, title);
+
 		} catch (Exception imageException) {
 			// log.error(imageException.toString());
 		}

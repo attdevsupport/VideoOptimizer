@@ -113,21 +113,17 @@ public class ScriptsImpl implements IBestPractice {
 			type = reqhelper.getContentString(hrri, session);
 			if (type != null) {
 				htmlDoc = Jsoup.parse(type);
+				Elements allSrcElements = new Elements(htmlDoc.select("script"));
+				if (allSrcElements.size() >= MIN_NUM_OF_SCRIPTS_IN_HTML_DOC) {
+					result = is3rdPartyScript(hrri, allSrcElements, result);
+				}
 			}
 		} catch (Exception e) {
 			log.error("Failed to get content from HttpRequestResponseInfo", e);
-
 			if (hrri != null && session != null) {
 				log.error("jsoup error: contenttype: " + hrri.getContentType());
 				log.error("jsoup error:  start time: " + session.getSessionStartTime());
 			}
-			return result;
-		}
-
-		Elements allSrcElements = new Elements(htmlDoc.select("script"));
-
-		if (allSrcElements.size() >= MIN_NUM_OF_SCRIPTS_IN_HTML_DOC) {
-			result = is3rdPartyScript(hrri, allSrcElements, result);
 		}
 		return result;
 	}

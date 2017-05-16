@@ -74,6 +74,11 @@ public class RrcStateRangeFactoryImpl implements IRrcStateRangeFactory {
 		ArrayList<RrcStateRange> result = new ArrayList<RrcStateRange>();
 
 		// Iterate through packets in trace
+		if(packetlist == null) {
+			result.add(new RrcStateRange(0.0, traceDuration,
+				RRCState.LTE_IDLE));
+			return result;
+		}
 		Iterator<PacketInfo> iter = packetlist.iterator();
 		PacketInfo packet;
 		if (iter.hasNext()) {

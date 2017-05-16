@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.math3.util.MathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -67,7 +68,7 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
     	/*if(getFilteredSegments() != null){
     		filteredSegmentByLastArrival=getFilteredSegments();
     	}else{*/
-    		filteredSegmentByLastArrival = getChunksBySegmentNumber(); //filterVideoSegment(videoUsage); //
+    		filteredSegmentByLastArrival = getFilteredSegments();//getChunksBySegmentNumber();
     	//}
     		filteredSegmentByStartTS=filterVideoSegment(videoUsage); 
     	TreeMap<Double, AROManifest> videoEventList = videoUsage.getAroManifestMap(); // getVideoEventList(); //getAroManifestMap();
@@ -87,7 +88,7 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
     		chunkPlay.add(vEvent);
     	}
     	Collections.sort(chunkPlay, new VideoEventComparator(SortSelection.SEGMENT));
-   
+        Collections.sort(filteredSegmentByLastArrival, new VideoEventComparator(SortSelection.SEGMENT));
     	veManifestList = getVideoEventManifestMap();
 		
     	runInit(veManifestList,filteredSegmentByLastArrival);
@@ -123,7 +124,7 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 				seriesDataSets.put(key, chunk.getEndTS() + "," + buffer);
 				key++;
 
-				if (chunk.getEndTS() == chunkPlayStartTime) {  //here start to end
+				if (MathUtils.equals(chunk.getEndTS(), chunkPlayStartTime)) {
 					// drain
 					buffer = buffer + (chunk.getTotalBytes());
 
@@ -141,8 +142,8 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 
 					buffer = buffer + (chunk.getTotalBytes());
 					seriesDataSets.put(key, chunk.getEndTS() + "," + buffer);
-					key++;
-				
+					key++; 
+				    
 					completedDownloads.add(chunk);
 					chunkDownload.remove(chunk);
 				}
@@ -231,21 +232,36 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 
 		chunkPlaying = filteredChunk.get(currentVideoSegmentIndex);
 		int chunkIndex = -1;
-		for (int index = 0; index < filteredSegmentByStartTS.size(); index++) {
+		boolean nonStalled =false;
+		/*for (int index = 0; index < filteredSegmentByStartTS.size(); index++) {
 			if (filteredSegmentByStartTS.get(index).getSegment() == chunkPlaying.getSegment()) {
 				chunkIndex = index;
 				break;
 			}
-		}
-		if (chunkIndex != -1 && videoChunkPlotterRef.getChunkPlayStartTimeList() != null && !videoChunkPlotterRef.getChunkPlayStartTimeList().isEmpty()) {
-			// FIXME - this fix prevents out of bounds - this methods logic needs more clarity
-			if (chunkIndex < videoChunkPlotterRef.getChunkPlayStartTimeList().size()) {
-				chunkPlayStartTime = videoChunkPlotterRef.getChunkPlayStartTimeList().get(chunkIndex); // currentVideoSegmentIndex);
+		}*/
+		
+		
+		if(PlotHelperAbstract.chunkPlayTimeList != null && !PlotHelperAbstract.chunkPlayTimeList.isEmpty()){
+			if(PlotHelperAbstract.chunkPlayTimeList.keySet().contains(chunkPlaying)){
+				chunkPlayStartTime = PlotHelperAbstract.chunkPlayTimeList.get(chunkPlaying);
+			}else{
+				nonStalled = true;
 			}
-
-		} else {
-			chunkPlayStartTime = chunkPlayEndTime;
+		}else{
+			nonStalled=true;
 		}
+        if(nonStalled){
+			if (chunkIndex != -1 && videoChunkPlotterRef.getChunkPlayStartTimeList() != null && !videoChunkPlotterRef.getChunkPlayStartTimeList().isEmpty()) {
+				// FIXME - this fix prevents out of bounds - this methods logic needs more clarity
+				if (chunkIndex < videoChunkPlotterRef.getChunkPlayStartTimeList().size()) {
+					chunkPlayStartTime = videoChunkPlotterRef.getChunkPlayStartTimeList().get(chunkIndex); // currentVideoSegmentIndex);
+				}
+
+			} else {
+				chunkPlayStartTime = chunkPlayEndTime;
+			}
+		}
+		
 		chunkPlayTimeDuration = getChunkPlayTimeDuration(chunkPlaying);// , videoUsage);
 		chunkPlayEndTime = chunkPlayStartTime + chunkPlayTimeDuration;
 		chunkByteRange = (chunkPlaying.getTotalBytes());

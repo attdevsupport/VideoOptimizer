@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice.AroDeviceState;
+import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.model.DataTable;
@@ -190,11 +191,11 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 	 * @param aroDevice
 	 */
 	public void setSelectedDevice(IAroDevice aroDevice) {
-		if (aroDevice.getPlatform().equals("Android") 
-				&& !aroDevice.getState().equals(AroDeviceState.Available)){
-			//TODO need error message
-//			return;
-		}
+//		if (Platform.Android == aroDevice.getPlatform() 
+//				&& !aroDevice.getState().equals(AroDeviceState.Available)) {
+//			//TODO need error message
+////			return;
+//		}
 		if (checkForCollector(aroDevice)) {
 			contentTable.selectItem(aroDevice);
 			selectedIAroDevice = aroDevice;

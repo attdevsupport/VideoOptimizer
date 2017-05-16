@@ -32,11 +32,8 @@ import javax.swing.JPanel;
 
 import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
-import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
-import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.ContextAware;
-import com.att.aro.ui.utils.CommonHelper;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BpTestStatisticsPanel extends AbstractBpPanel {
@@ -73,7 +70,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 		
 	    summaryHeaderLabel             = new JLabel();
         statisticsHeaderLabel          = new JLabel();
-
+        
         durationLabel                  = new JLabel();
         energyConsumedLabel            = new JLabel();
         httpsDataNotAnalyzedLabel      = new JLabel();
@@ -183,5 +180,6 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 		energyConsumedLabel.setText(MessageFormat.format(
 				ResourceBundleHelper.getMessageString("bestPractices.energyConsumedValue"),
 				decFormat.format(analyzerResults.getEnergyModel().getTotalEnergyConsumed())));		
+		
 	}
 }

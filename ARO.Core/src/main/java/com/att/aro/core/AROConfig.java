@@ -94,8 +94,10 @@ import com.att.aro.core.peripheral.IAppInfoReader;
 import com.att.aro.core.peripheral.IBatteryInfoReader;
 import com.att.aro.core.peripheral.IBluetoothInfoReader;
 import com.att.aro.core.peripheral.ICameraInfoReader;
+import com.att.aro.core.peripheral.ICollectOptionsReader;
 import com.att.aro.core.peripheral.ICpuActivityParser;
 import com.att.aro.core.peripheral.ICpuActivityReader;
+import com.att.aro.core.peripheral.ICpuTemperatureReader;
 import com.att.aro.core.peripheral.IDeviceDetailReader;
 import com.att.aro.core.peripheral.IDeviceInfoReader;
 import com.att.aro.core.peripheral.IGpsInfoReader;
@@ -108,6 +110,7 @@ import com.att.aro.core.peripheral.IUserEventReader;
 import com.att.aro.core.peripheral.IVideoTimeReader;
 import com.att.aro.core.peripheral.IWakelockInfoReader;
 import com.att.aro.core.peripheral.IWifiInfoReader;
+import com.att.aro.core.peripheral.LocationReader;
 import com.att.aro.core.peripheral.impl.AlarmAnalysisInfoParserImpl;
 import com.att.aro.core.peripheral.impl.AlarmDumpsysTimestampReaderImpl;
 import com.att.aro.core.peripheral.impl.AlarmInfoReaderImpl;
@@ -115,11 +118,14 @@ import com.att.aro.core.peripheral.impl.AppInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.BatteryInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.BluetoothInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.CameraInfoReaderImpl;
+import com.att.aro.core.peripheral.impl.CollectOptionsReaderImpl;
 import com.att.aro.core.peripheral.impl.CpuActivityParserImpl;
 import com.att.aro.core.peripheral.impl.CpuActivityReaderImpl;
+import com.att.aro.core.peripheral.impl.CpuTemperatureReaderImpl;
 import com.att.aro.core.peripheral.impl.DeviceDetailReaderImpl;
 import com.att.aro.core.peripheral.impl.DeviceInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.GpsInfoReaderImpl;
+import com.att.aro.core.peripheral.impl.LocationReaderImpl;
 import com.att.aro.core.peripheral.impl.NetworkTypeReaderImpl;
 import com.att.aro.core.peripheral.impl.PrivateDataReaderImpl;
 import com.att.aro.core.peripheral.impl.RadioInfoReaderImpl;
@@ -150,32 +156,44 @@ import com.att.aro.core.securedpacketreader.impl.CryptoImpl;
 import com.att.aro.core.securedpacketreader.impl.SSLKeyServiceImpl;
 import com.att.aro.core.securedpacketreader.impl.TLSHandshakeImpl;
 import com.att.aro.core.securedpacketreader.impl.TLSSessionInfoImpl;
-import com.att.aro.core.settings.IAROSettings;
-import com.att.aro.core.settings.impl.AROSettingsImpl;
+import com.att.aro.core.settings.Settings;
+import com.att.aro.core.settings.impl.SettingsImpl;
+import com.att.aro.core.util.IStringParse;
+import com.att.aro.core.util.StringParse;
 import com.att.aro.core.video.IScreenRecorder;
 import com.att.aro.core.video.IVideoCapture;
 import com.att.aro.core.video.IVideoWriter;
 import com.att.aro.core.video.impl.ScreenRecorderImpl;
 import com.att.aro.core.video.impl.VideoCaptureImpl;
 import com.att.aro.core.video.impl.VideoWriterImpl;
+import com.att.aro.core.videoanalysis.IVideoAnalysisConfigHelper;
+import com.att.aro.core.videoanalysis.IVideoEventDataHelper;
+import com.att.aro.core.videoanalysis.IVideoTabHelper;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.impl.BufferInSecondsCalculatorImpl;
 import com.att.aro.core.videoanalysis.impl.BufferOccupancyCalculatorImpl;
+import com.att.aro.core.videoanalysis.impl.FFmpegConfirmationImpl;
+import com.att.aro.core.videoanalysis.impl.VideoAnalysisConfigHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
+import com.att.aro.core.videoanalysis.impl.VideoEventDataHelperImpl;
+import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
 
 /**
  * Spring configuration for ARO.Core<br>
- * Included are all the components to collect, open, analyze and generate reports.
+ * Included are all the components to collect, open, analyze and generate
+ * reports.
  *
  */
 @Configuration
 @Lazy
 @ComponentScan("com.att.aro")
 @Import(AROBestPracticeConfig.class)
-@PropertySource({"classpath:bestpractices.properties", "classpath:analytics.properties", "classpath:build.properties"})
-@ImportResource({ "classpath*:plugins-analytics.xml", "classpath*:plugins.xml", "classpath*:plugin-manager.xml" ,"classpath*:plugins-noroot.xml"})
+@PropertySource({ "classpath:bestpractices.properties", "classpath:analytics.properties",
+		"classpath:build.properties" })
+@ImportResource({ "classpath*:plugins-analytics.xml", "classpath*:plugins.xml", "classpath*:plugin-manager.xml",
+		"classpath*:plugins-noroot.xml" })
 public class AROConfig {
 
 	@Bean
@@ -183,501 +201,272 @@ public class AROConfig {
 		return new PropertySourcesPlaceholderConfigurer();
 	}
 
-	/**
-	 * Provides access to ARO.Core functionality for analyzing and generating
-	 * reports.
-	 * 
-	 * @return new AROServiceImpl()
-	 */
 	@Bean
 	public IAROService getAROService() {
 		return new AROServiceImpl();
 	}
 
 	@Bean
-	public AnalyticsEvents getAnalyticsEvets(){
+	public AnalyticsEvents getAnalyticsEvets() {
 		return new AnalyticsEvents();
 	}
-	
-	/**
-	 * A model of version info about ARO.Core.
-	 * 
-	 * @return new VersionInfo()
-	 */
+
 	@Bean
 	public VersionInfo getInfo() {
 		return new VersionInfo();
 	}
 
-	/**
-	 * Use to Runnable tasks
-	 * 
-	 * @return new ThreadExecutorImpl()
-	 */
 	@Bean
 	public IThreadExecutor threadExecutor() {
 		return new ThreadExecutorImpl();
 	}
 
-	/**
-	 * Logger functions
-	 * 
-	 * @return new LoggerImpl("")
-	 */
-	@Bean
+	@Bean(name = "logger")
 	public ILogger getLog() {
 		return new LoggerImpl("");
 	}
 
-	/**
-	 * Reads/Imports trace data into ARO.Core for MacOS and Linux
-	 * 
-	 * @return new PacketReaderImpl()
-	 */
 	@Bean(name = "packetReader")
 	public IPacketReader getPacketReader() {
 		return new PacketReaderImpl();
 	}
 
-	/**
-	 * Reads/Imports trace data into ARO.Core for Windows
-	 * 
-	 * @return new NetmonPacketReaderImpl()
-	 */
 	@Bean(name = "netmonPacketReader")
 	public IPacketReader getNetmonPacketReader() {
 		return new NetmonPacketReaderImpl();
 	}
 
-	/**
-	 * Handles the creation of a Packet from Pcap/Netmon bytebuffers during the
-	 * reading of a trace.
-	 * 
-	 * @return new PacketServiceImpl()
-	 */
 	@Bean
 	public IPacketService getPacketService() {
 		return new PacketServiceImpl();
 	}
 
-	/**
-	 * Handles interpretation of pcapfiles that may have been captured under
-	 * MacOS for iOS
-	 * 
-	 * @return new PcapngHelperImpl()
-	 */
 	@Bean
 	public IPcapngHelper getPcapngHelper() {
 		return new PcapngHelperImpl();
 	}
 
-	/**
-	 * Parses Domain Name from a packet
-	 * 
-	 * @return new DomainNameParserImpl()
-	 */
 	@Bean
 	public IDomainNameParser getDomainNameParser() {
 		return new DomainNameParserImpl();
 	}
 
-	/**
-	 * Utility for handling files and directories
-	 * 
-	 * @return new FileManagerImpl()
-	 */
 	@Bean
 	public IFileManager getReadFile() {
 		return new FileManagerImpl();
 	}
 
-	/**
-	 * Parse Cpu activity from a String
-	 * 
-	 * @return new CpuActivityParserImpl()
-	 */
 	@Bean
 	public ICpuActivityParser getCpuActivityParser() {
 		return new CpuActivityParserImpl();
 	}
 
-	/**
-	 * Loads Cpu Activity from trace file cpu
-	 * 
-	 * @return new CpuActivityReaderImpl()
-	 */
 	@Bean
 	public ICpuActivityReader getCpuActivityReader() {
 		return new CpuActivityReaderImpl();
 	}
 
-	/**
-	 * Creates List of HttpRequestResponseInfo from a Session
-	 * 
-	 * @return new RequestResponseBuilderImpl()
-	 */
 	@Bean
 	public IRequestResponseBuilder getRequestResponseBuilder() {
 		return new RequestResponseBuilderImpl();
 	}
 
-	/**
-	 * Assembles and ReAssembles Sessions
-	 * 
-	 * @return new SessionManagerImpl()
-	 */
 	@Bean
 	public ISessionManager getSessionManager() {
 		return new SessionManagerImpl();
 	}
 
-	@Bean 
+	@Bean
 	@Scope("prototype")
-	public ITLSSessionInfo getTLSSessionInfo(){
+	public ITLSSessionInfo getTLSSessionInfo() {
 		return new TLSSessionInfoImpl();
 	}
-	
+
 	@Bean
-	public ISSLKeyService getSSLKeyService(){
+	public ISSLKeyService getSSLKeyService() {
 		return new SSLKeyServiceImpl();
 	}
-	
+
 	@Bean
-	public ICipherDataService getCipherDataService(){
+	public ICipherDataService getCipherDataService() {
 		return new CipherDataServiceImpl();
 	}
-	
+
 	@Bean
-	public ITLSHandshake getITLSHandshake(){
+	public ITLSHandshake getITLSHandshake() {
 		return new TLSHandshakeImpl();
 	}
-	
-	/**
-	 * Reads Trace (traffic.cap) file or Trace Directory
-	 * 
-	 * @return new TraceDataReaderImpl()
-	 */
+
 	@Bean
 	public ITraceDataReader getTraceDataReader() {
 		return new TraceDataReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - gps_events
-	 * 
-	 * @return new GpsInfoReaderImpl()
-	 */
 	@Bean
 	public IGpsInfoReader getGpsInfoReader() {
 		return new GpsInfoReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - bluetooth_events
-	 * 
-	 * @return new BluetoothInfoReaderImpl()
-	 */
 	@Bean
 	public IBluetoothInfoReader getBluetoothInfoReader() {
 		return new BluetoothInfoReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - wifi_events
-	 * 
-	 * @return new WifiInfoReaderImpl()
-	 */
 	@Bean
 	public IWifiInfoReader getWifiInfoReader() {
 		return new WifiInfoReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - camera_events
-	 * 
-	 * @return new CameraInfoReaderImpl()
-	 */
 	@Bean
 	public ICameraInfoReader getCameraInfoReader() {
 		return new CameraInfoReaderImpl();
 	}
 
-	/**
-	 * Reads the trace files - alarm_info_end or alarm_info_start, depending on
-	 * what the device collector supplies
-	 * 
-	 * @return new AlarmAnalysisInfoParserImpl()
-	 */
 	@Bean
 	public IAlarmAnalysisInfoParser getAlarmAnalysisInfoParser() {
 		return new AlarmAnalysisInfoParserImpl();
 	}
 
-	/**
-	 * Reads the trace file - radio_events
-	 * 
-	 * @return new RadioInfoReaderImpl()
-	 */
 	@Bean
 	public IRadioInfoReader getRadioInfoReader() {
 		return new RadioInfoReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - batteryinfo_dump
-	 * 
-	 * @return new WakelockInfoReaderImpl()
-	 */
 	@Bean
 	public IWakelockInfoReader getWakelockInfoReader() {
 		return new WakelockInfoReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - screen_events
-	 * 
-	 * @return new ScreenStateInfoReaderImpl()
-	 */
 	@Bean
 	public IScreenStateInfoReader getScreenStateInfoReader() {
 		return new ScreenStateInfoReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - appname
-	 * 
-	 * @return new AppInfoReaderImpl()
-	 */
 	@Bean
 	public IAppInfoReader getAppInfoReader() {
 		return new AppInfoReaderImpl();
 	}
 
-	/**
-	 * Reads the trace files - alarm_info_end or alarm_info_start, depending on
-	 * what the device collector supplies
-	 * 
-	 * @return new AlarmDumpsysTimestampReaderImpl(
-	 */
 	@Bean
 	public IAlarmDumpsysTimestampReader getAlarmDumpsysTimestampReader() {
 		return new AlarmDumpsysTimestampReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - processed_events
-	 * 
-	 * @return new UserEventReaderImpl()
-	 */
 	@Bean
 	public IUserEventReader getUserEventReader() {
 		return new UserEventReaderImpl();
 	}
-	
-	/**
-	 * reads the trace file - private_data
-	 * 
-	 * @return new PrivateDataReaderImpl()
-	 */
+
+	@Bean
+	public ICpuTemperatureReader getTemperatureDataReader() {
+		return new CpuTemperatureReaderImpl();
+	}
+
+	@Bean
+	public LocationReader getLocationDataReader() {
+		return new LocationReaderImpl();
+	}
+
 	@Bean
 	public IPrivateDataReader getPrivateDataReader() {
 		return new PrivateDataReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - screen_rotations
-	 * 
-	 * @return new ScreenRotationReaderImpl()
-	 */
-	@Bean
+	@Bean(name="screenRotationReaderImpl")
 	public IScreenRotationReader getScreenRotationReader() {
 		return new ScreenRotationReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - dmesg
-	 * 
-	 * @return new AlarmInfoReaderImpl()
-	 */
 	@Bean
 	public IAlarmInfoReader getAlarmInfoReader() {
 		return new AlarmInfoReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - battery_events
-	 * 
-	 * @return new BatteryInfoReaderImpl()
-	 */
 	@Bean
 	public IBatteryInfoReader getBatteryInfoReader() {
 		return new BatteryInfoReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - device_details
-	 * 
-	 * @return new DeviceDetailReaderImpl()
-	 */
 	@Bean
 	public IDeviceDetailReader getDeviceDetailReader() {
 		return new DeviceDetailReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - network_details
-	 * 
-	 * @return new NetworkTypeReaderImpl()
-	 */
 	@Bean
 	public INetworkTypeReader getNetworkTypeReader() {
 		return new NetworkTypeReaderImpl();
 	}
 
-	/**
-	 * Reads the trace file - video_time or exVideo_time depending on type of
-	 * movie collection
-	 * 
-	 * @return new VideoTimeReaderImpl()
-	 */
 	@Bean
 	public IVideoTimeReader getVideoTimeReader() {
 		return new VideoTimeReaderImpl();
 	}
-
-//	/**
-//	 * Reads the trace file - keys.ssl
-//	 * 
-//	 * @return new VideoTimeReaderImpl()
-//	 */
-//	@Bean
-//	public ISslReader getSslReader() {
-//		return new SslReaderImpl();
-//	}
 
 	@Bean
 	public ICrypto getCrypto() {
 		return new CryptoImpl();
 	}
 
-	/**
-	 * Reads the trace file - device_info
-	 * 
-	 * @return new DeviceInfoReaderImpl()
-	 */
 	@Bean
 	public IDeviceInfoReader getDeviceInfoReader() {
 		return new DeviceInfoReaderImpl();
 	}
 	
-	/**
-	 * Creates a list of throughput calculations for the specified time range,
-	 * sampling window, and list of packets.
-	 * 
-	 * @return new ThroughputCalculatorImpl()
-	 */
+	@Bean(name="collectOptionsReaderImpl")
+	public ICollectOptionsReader getCollectOptionReader() {
+		return new CollectOptionsReaderImpl();
+	}
+
 	@Bean
 	public IThroughputCalculator getThroughputCalculator() {
 		return new ThroughputCalculatorImpl();
 	}
 
-	/**
-	 * creates RrcStateRange based on profile type
-	 * 
-	 * @return new RrcStateRangeFactoryImpl()
-	 */
 	@Bean
 	public IRrcStateRangeFactory getRrcStateRangeFactory() {
 		return new RrcStateRangeFactoryImpl();
 	}
 
-	/**
-	 * creates an AbstractRrcStateMachine to model RrcStateMachine data
-	 * 
-	 * @return new RrcStateMachineFactoryImpl()
-	 */
 	@Bean
 	public IRrcStateMachineFactory getRrcStateMachineFactory() {
 		return new RrcStateMachineFactoryImpl();
 	}
 
-	/**
-	 * creates assorted phone profiles dealing with 3G,LTE and WIFI
-	 * 
-	 * @return new ProfileFactoryImpl()
-	 */
 	@Bean
 	public IProfileFactory getProfileFactory() {
 		return new ProfileFactoryImpl();
 	}
 
-	/**
-	 * Generates EnergyModel
-	 * 
-	 * @return new EnergyModelFactoryImpl()
-	 */
 	@Bean
 	public IEnergyModelFactory getEnergyModelFactory() {
 		return new EnergyModelFactoryImpl();
 	}
 
-	/**
-	 * Analyzes trace to create BurstCollectionAnalysisData - A model of burst
-	 * collection analysis results
-	 * 
-	 * @return new BurstCollectionAnalysisImpl()
-	 */
 	@Bean
 	public IBurstCollectionAnalysis getBurstCollectionAnalysis() {
 		return new BurstCollectionAnalysisImpl();
 	}
 
-	/**
-	 * Analyzes Trace (traffic.cap) file or Trace Directory
-	 * 
-	 * @return new PacketAnalyzerImpl()
-	 */
 	@Bean
 	public IPacketAnalyzer getPacketAnalyzer() {
 		return new PacketAnalyzerImpl();
 	}
 
-	/**
-	 * Helper class for interpreting HttpRequestResponseInfo objects
-	 * 
-	 * @return new HttpRequestResponseHelperImpl()
-	 */
-	@Bean
+	@Bean(name="httpRequestResponseHelper")
 	public IHttpRequestResponseHelper getHttpRequestResponseHelper() {
 		return new HttpRequestResponseHelperImpl();
 	}
 
-	/**
-	 * Analyzes all sessions to create the model CacheAnalysis
-	 * 
-	 * @return new CacheAnalysisImpl()
-	 */
 	@Bean
 	public ICacheAnalysis getCacheAnalysis() {
 		return new CacheAnalysisImpl();
 	}
 
-	/**
-	 * Parses header line into HttpRequestResponseInfo object
-	 * 
-	 * @return new ParseHeaderLineImpl()
-	 */
 	@Bean
 	public IParseHeaderLine getParseHeaderLineImpl() {
 		return new ParseHeaderLineImpl();
 	}
 
-	/**
-	 * Provides access to a VideoOutputStream to create a movie file, with each
-	 * image written as a video frame(s).
-	 * 
-	 * @return new VideoWriterImpl()
-	 */
 	@Bean
 	@Scope(value = "prototype")
 	// => always create a new instance
@@ -685,91 +474,51 @@ public class AROConfig {
 		return new VideoWriterImpl();
 	}
 
-	/**
-	 * Class to encapsulate a byte[] for the retrieval of Strings
-	 * @return new ByteArrayLineReaderImpl()
-	 */
 	@Bean
 	public IByteArrayLineReader getByteArrayLineReader() {
 		return new ByteArrayLineReaderImpl();
 	}
 
-	/**
-	 * Used to launch and control Runnable classes to read files
-	 * @return new ExternalProcessReaderImpl()
-	 */
 	@Bean
 	public IExternalProcessReader getExternalProcessReaderImpl() {
 		return new ExternalProcessReaderImpl();
 	}
 
-	/**
-	 * Used to launch and control Runnable classes to execute shell processes
-	 * @return new ExternalProcessRunnerImpl()
-	 */
-	@Bean
+	@Bean(name = "externalProcessRunnerImpl")
 	public IExternalProcessRunner getExternalProcessRunnerImpl() {
 		return new ExternalProcessRunnerImpl();
 	}
 
-	/**
-	 * Creates JSON reports
-	 * @return new JSonReportImpl()
-	 */
 	@Bean(name = "jsongenerate")
 	public IReport getJSonGanarate() {
 		return new JSonReportImpl();
 	}
 
-	/**
-	 * Creates HTML reports
-	 * @return new HtmlReportImpl()
-	 */
 	@Bean(name = "htmlgenerate")
 	public IReport getHtmlGenerate() {
 		return new HtmlReportImpl();
 	}
 
-	/**
-	 * Read/Write access to config.properties
-	 * @return new SettingsImpl()
-	 */
 	@Bean
-	public IAROSettings getAROConfigFile() {
-		return new AROSettingsImpl();
+	public Settings getAROConfigFile() {
+		return SettingsImpl.getInstance();
 	}
 
-	/**
-	 * Controls AndroidDebugBridge ddmlib
-	 * @return new AdbServiceImpl()
-	 */
 	@Bean
 	public IAdbService getAdbService() {
 		return new AdbServiceImpl();
 	}
 
-	/**
-	 * Checks if Android device is rooted or not
-	 * @return new AndroidDeviceImpl()
-	 */
 	@Bean
 	public IAndroidDevice getAndroidDevice() {
 		return new AndroidDeviceImpl();
 	}
 
-	/**
-	 * Extracts selected files embedded in the ARO.Core jar file. ie tcpdump
-	 * @return new ReadWriteFileExtractorImpl()
-	 */
 	@Bean
 	public IReadWriteFileExtractor getReadWriteFileExtractorImpl() {
 		return new ReadWriteFileExtractorImpl();
 	}
 
-	/**
-	 * Captures images to create a video.mov file
-	 * @return new VideoCaptureImpl()
-	 */
 	@Bean
 	@Scope(value = "prototype")
 	// => always create a new instance
@@ -782,90 +531,89 @@ public class AROConfig {
 		return new ScreenRecorderImpl();
 	}
 
-	/**
-	 * Helper class to control Android device or emulator
-	 * @return new AndroidImpl()
-	 */
 	@Bean
 	IAndroid getAndroid() {
 		return new AndroidImpl();
 	}
 
-	/**
-	 * AroDevices
-	 * @return new AroDevices()
-	 */
 	@Bean
 	IAroDevices getAroDevices() {
 		return new AroDevices();
 	}
 
-	/**
-	 * Executes shell commands and returns the Runtime
-	 * @return new ProcessFactoryImpl()
-	 */
 	@Bean
 	public IProcessFactory getProcessFactory() {
 		return new ProcessFactoryImpl();
 	}
-	
-	/**
-	 * helper class for packetAnalyzer for corp time range 
-	 * @return
-	 */
+
 	@Bean
 	public IPktAnazlyzerTimeRangeUtil getPktAnalyzerTimeRange() {
 		return new PktAnazlyzerTimeRangeImpl();
 	}
-	
-	/**
-	 * searching handler for content/keyword search
-	 * @return
-	 */
+
 	@Bean(name = "keywordSearchingHandler")
 	public ISearchingHandler getKeywordSearchingHandler() {
 		return new KeywordSearchingHandler();
 	}
-	
-	/**
-	 * searching handler for regex pattern search
-	 * @return
-	 */
+
 	@Bean(name = "patternSearchingHandler")
 	public ISearchingHandler getPatternSearchingHandler() {
 		return new PatternSearchingHandler();
 	}
-	
-	/**
-	 * trie searching strategy for keyword search
-	 * @return
-	 */
+
 	@Bean(name = "trieSearchingStrategy")
 	public ISearchingStrategy getTrieSearchingStrategy() {
 		return new TrieSearchingStrategy();
 	}
-	
+
 	@Bean(name = "videoUsage")
 	public IVideoUsageAnalysis getVideoUsage() {
 		return new VideoUsageAnalysisImpl();
 	}
 
-	@Bean(name="bufferOccupancyCalculatorImpl")
+	@Bean(name = "bufferOccupancyCalculatorImpl")
 	public PlotHelperAbstract getBufferOccupancyCalculatorImpl() {
 		return new BufferOccupancyCalculatorImpl();
 	}
-	
-	@Bean(name="videoChunkPlotterImpl")
+
+	@Bean(name = "videoChunkPlotterImpl")
 	public PlotHelperAbstract getVideoChunkPlotterImpl() {
 		return new VideoChunkPlotterImpl();
 	}
-	@Bean(name="bufferInSecondsCalculatorImpl")
-	public PlotHelperAbstract getBufferInSecondsCalculatorImpl(){
+
+	@Bean(name = "bufferInSecondsCalculatorImpl")
+	public PlotHelperAbstract getBufferInSecondsCalculatorImpl() {
 		return new BufferInSecondsCalculatorImpl();
+	}
+
+	@Bean
+	public IVideoUsagePrefsManager getVideoUsagePrefsManagerImpl() {
+		return new VideoUsagePrefsManagerImpl();
+	}
+
+	@Bean(name = "ffmpegConfirmationImpl")
+	public FFmpegConfirmationImpl getFfmpegConfirmationImpl() {
+		return new FFmpegConfirmationImpl();
+	}
+	
+	@Bean(name="videoTabHelperImpl")
+	public IVideoTabHelper getVideoTabHelperImpl(){
+		return new VideoTabHelperImpl();
+	}
+
+	@Bean
+	public IVideoAnalysisConfigHelper getVideoAnalysisConfigHelper(){
+		return new VideoAnalysisConfigHelperImpl();
 	}
 	
 	@Bean
-	public IVideoUsagePrefsManager getVideoUsagePrefsManagerImpl(){
-		return new VideoUsagePrefsManagerImpl();
+	public IVideoEventDataHelper getVideoEventDataHelper(){
+		return new VideoEventDataHelperImpl();
 	}
+	
+	@Bean
+	public IStringParse getStringParse(){
+		return new StringParse();
+	}
+	
 }

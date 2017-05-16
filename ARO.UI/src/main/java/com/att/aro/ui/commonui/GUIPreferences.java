@@ -34,6 +34,10 @@ public class GUIPreferences {
 	private static final String CHART_PLOT_OPTIONS = "CHART_PLOT_OPTIONS";
 
 	private IPreferenceHandler prefHandler;
+	
+	static {
+		instance = new GUIPreferences();
+	}
 
 	/**
 	 * Gets a static instance of the UIPreferences class.
@@ -41,14 +45,6 @@ public class GUIPreferences {
 	 * @return A static UIPreferences object.
 	 */
 	public static GUIPreferences getInstance() {
-
-		if (instance == null) {
-			synchronized (GUIPreferences.class) {		
-				if (instance == null) {
-					instance = new GUIPreferences();
-				}
-			}
-		}	
 		return instance;
 	}
 

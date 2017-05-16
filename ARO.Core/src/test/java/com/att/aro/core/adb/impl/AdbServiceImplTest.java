@@ -43,8 +43,8 @@ import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
-import com.att.aro.core.settings.IAROSettings;
-import com.att.aro.core.settings.impl.AROSettingsImpl;
+import com.att.aro.core.settings.Settings;
+import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
 
 @RunWith(PowerMockRunner.class)
@@ -70,7 +70,7 @@ public class AdbServiceImplTest extends BaseTest {
 	IDevice device;
 
 	@Mock
-	IAROSettings configFile;
+	Settings configFile;
 
 	// @Mock
 	AndroidDebugBridge androidDebugBridge;
@@ -87,7 +87,7 @@ public class AdbServiceImplTest extends BaseTest {
 		adbService.setFileExtactor(extractor);
 		adbService.setAndroid(android);
 
-		configFile = Mockito.mock(AROSettingsImpl.class);
+		configFile = Mockito.mock(Settings.class);
 		adbService.setAROConfigFile(configFile);
 
 		adbService.setLogger(new LoggerImpl("AdbServiceImpl"));
@@ -100,7 +100,7 @@ public class AdbServiceImplTest extends BaseTest {
 	}
 
 	private String getADBAttribute() {
-		return configFile.getAttribute(AROSettingsImpl.AROConfigFileAttributes.adb.name());
+		return configFile.getAttribute(SettingsImpl.ConfigFileAttributes.adb.name());
 	}
 
 	// @Test

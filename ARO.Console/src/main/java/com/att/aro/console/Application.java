@@ -40,6 +40,7 @@ import com.att.aro.console.printstreamutils.OutSave;
 import com.att.aro.console.util.UtilOut;
 import com.att.aro.core.AROConfig;
 import com.att.aro.core.IAROService;
+import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.configuration.pojo.Profile;
 import com.att.aro.core.datacollector.IDataCollector;
@@ -81,7 +82,7 @@ public final class Application implements IAROView {
 	
 	private Application(String[] args) {
 		
-		ApplicationContext context = new AnnotationConfigApplicationContext(AROConfig.class);
+		ApplicationContext context = SpringContextUtil.getInstance().getContext();
 
 		aroController = new AROController(this);
 
@@ -536,13 +537,6 @@ public final class Application implements IAROView {
 			try {			
 				Hashtable<String,Object> extras = new Hashtable<String,Object>();
 				extras.put("video_option", getVideoOption());
-				extras.put("delayTimeUL", getDelayTimeUplink());
-				extras.put("delayTimeDL", getDelayTimeDownlink());
-				if (getSecureOption()) {
-					extras.put("secure", getSecureOption());
-					extras.put("installCert", getCertInstallOption());
-				}
-
 				if (cmds.getDeviceid() != null) {
 					result = collector.startCollector(true, cmds.getOutput(), getVideoOption(), false, cmds.getDeviceid(), extras, password);
 				} else {
@@ -587,7 +581,7 @@ public final class Application implements IAROView {
 			System.exit(1);
 		}
 	}
-
+	
 	/**
 	 * Provides for user input
 	 * 
@@ -684,7 +678,7 @@ public final class Application implements IAROView {
 				.append(".")
 				.append(buildBundle.getString("build.timestamp"))
 		
-				.append("\nUsage: aro [commands] [arguments]")
+				.append("\nUsage: vo [commands] [arguments]")
 				.append("\n  --analyze [trace location]: analyze a trace folder or file.")
 				.append("\n  --startcollector [rooted_android|vpn_android|ios]: run a collector.")
 				.append("\n  --ask [auto|rooted_android|vpn_android|ios]: asks for a device then runs the collector.")
@@ -810,6 +804,10 @@ public final class Application implements IAROView {
 	@Override
 	public void stopCollector() {
 	}
+	
+	@Override
+	public void cancelCollector() {
+	}
 
 	@Override
 	public void haltCollector() {
@@ -842,6 +840,14 @@ public final class Application implements IAROView {
 
 	@Override
 	public void liveVideoDisplay(IDataCollector collector) {
+	}
+	
+	@Override
+	public void hideAllCharts(){
+	}
+	
+	@Override
+	public void showAllCharts(){
 	}
 
 }

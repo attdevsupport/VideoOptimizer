@@ -61,6 +61,7 @@ public class VideoCaptureImpl implements IVideoCapture {
 	private int iExceptionCount = 0;
 
 	private boolean videoCaptureActive;
+	private boolean isUSBConnected;
 
 	@Override
 	public boolean isVideoCaptureActive() {
@@ -113,23 +114,32 @@ public class VideoCaptureImpl implements IVideoCapture {
 	 * Process to capture the image of emulator and pass the raw image to create
 	 * a video.
 	 * 
+	 * NOTE: If USB got disconnected, the Video capture thread will continue running.
+	 *	 	 When the "isUSBConnected" was set to false ,we won't get any screen shot.
+	 * 		 The failure count in the catch blocks will be temporarily stopped until 
+	 * 		 "isUSBConnected" become true.
 	 */
 	public void run() {
 
 		if (device != null) {
 
-			RawImage rawImage;
+			RawImage rawImage = null;
 			BufferedImage image = null;
 			iExceptionCount = 0;
 
 			allDone = false;
 			Date lastFrameTime = this.videoStartTime = new Date();
 			hasExited = false;
+			isUSBConnected = true;
 			while (!allDone) {
 				try {
 					// Screen shot is captured from the emulator.
 					synchronized (device) {
-						rawImage = device.getScreenshot();
+						if (isUSBConnected) {
+							rawImage = device.getScreenshot();
+						} else {
+							rawImage = null;
+						}
 					}
 					if (rawImage != null) {
 						Date timestamp = new Date();
@@ -163,14 +173,20 @@ public class VideoCaptureImpl implements IVideoCapture {
 					}
 
 				} catch (IOException ioExp) {
-					iExceptionCount++;
-					logger.error("IOException ", ioExp);
+					if (isUSBConnected) {
+						iExceptionCount++;
+						logger.error("IOException ", ioExp);
+					}
 				} catch (TimeoutException timeOutExp) {
-					iExceptionCount++;
-					logger.error("Time out exception ", timeOutExp);
+					if (isUSBConnected) {
+						iExceptionCount++;
+						logger.error("Time out exception ", timeOutExp);
+					}
 				} catch (AdbCommandRejectedException adbExp) {
-					logger.error("Device Offline!", adbExp);
-					iExceptionCount++;
+					if (isUSBConnected) {
+						logger.error("Device Offline!", adbExp);
+						iExceptionCount++;
+					}
 				}
 				if (iExceptionCount > MAX_FETCH_EXCEPTIONS) {
 					allDone = true;
@@ -253,4 +269,7 @@ public class VideoCaptureImpl implements IVideoCapture {
 		return videoStartTime;
 	}
 
+	public void setUsbConnected(boolean isConnected) {
+		this.isUSBConnected = isConnected;
+	}
 }

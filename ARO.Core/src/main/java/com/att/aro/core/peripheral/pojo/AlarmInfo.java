@@ -42,6 +42,10 @@ public class AlarmInfo implements Comparable<AlarmInfo> {
 		UNKNOWN
 	}
 
+	public AlarmInfo() {
+
+	}
+
 	/**
 	 * Initializes an instance of the AlarmInfo class using the specified
 	 * timestamp, alarm type.

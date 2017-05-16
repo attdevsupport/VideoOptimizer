@@ -3,3 +3,4 @@
 /bin/
 /.classpath
 /.settings/
+/hs_err_pid*.log

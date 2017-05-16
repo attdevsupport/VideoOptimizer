@@ -86,6 +86,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 	private JCheckBox jVideoBufferOccupancyCheckBox;
 	private JCheckBox jVideoVideoChunksCheckBox;
 	private JCheckBox jVideoBufferTimeOccupancyCheckBox;
+	private JCheckBox jTemperatureStateCheckBox;
 
 	private List<ChartPlotOptions> currentCheckedOptionList;
 	private List<ChartPlotOptions> selectedOptions;
@@ -98,8 +99,15 @@ public class ChartPlotOptionsDialog extends JDialog {
 	private final JMenuItem callerMenuItem;
 
 	private enum DialogItem {
-		chart_options_dialog_defaults, chart_options_dialog_title, chart_options_dialog_button_ok, chart_options_dialog_button_cancel, chart_options_dialog_legend, chart_options_dialog_wakelock, chart_options_dialog_alarm, chart_options_dialog_buffer_occupancy, chart_options_dialog_video_chunks, chart_options_dialog_cpu, chart_options_dialog_gps, chart_options_dialog_wifi, chart_options_dialog_network, chart_options_dialog_ulpackets, chart_options_dialog_dlpackets, chart_options_dialog_bursts, chart_options_dialog_userinput, chart_options_dialog_rrc, chart_options_dialog_radio, chart_options_dialog_bluetooth, chart_options_dialog_camera, chart_options_dialog_battery, chart_options_dialog_screen, chart_options_dialog_throughput, chart_options_dialog_bufferTime_occupancy,
-		chart_options_dialog_video
+		chart_options_dialog_defaults, chart_options_dialog_title, chart_options_dialog_button_ok, 
+		chart_options_dialog_button_cancel, chart_options_dialog_legend, chart_options_dialog_wakelock, 
+		chart_options_dialog_alarm, chart_options_dialog_buffer_occupancy, chart_options_dialog_video_chunks, 
+		chart_options_dialog_cpu, chart_options_dialog_gps, chart_options_dialog_wifi, chart_options_dialog_network, 
+		chart_options_dialog_ulpackets, chart_options_dialog_dlpackets, chart_options_dialog_bursts, 
+		chart_options_dialog_userinput, chart_options_dialog_rrc, chart_options_dialog_radio, chart_options_dialog_bluetooth, 
+		chart_options_dialog_camera, chart_options_dialog_battery, chart_options_dialog_screen, 
+		chart_options_dialog_throughput, chart_options_dialog_bufferTime_occupancy, chart_options_dialog_video, 
+		chart_options_dialog_temperature
 	}
 
 	/**
@@ -135,6 +143,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 		jCameraStateCheckBox.setEnabled(enabled);
 		jScreenStateCheckBox.setEnabled(enabled);
 		jBatteryStateCheckBox.setEnabled(enabled);
+		jTemperatureStateCheckBox.setEnabled(enabled);
 		jWakelockStateCheckBox.setEnabled(enabled);
 		jWifiStateCheckBox.setEnabled(enabled);
 		jNetworkTypeCheckBox.setEnabled(enabled);
@@ -346,6 +355,8 @@ public class ChartPlotOptionsDialog extends JDialog {
 			jAdvancedOptionsPanel.add(jCPUStateCheckBox = getJCheckBox(jCPUStateCheckBox, DialogItem.chart_options_dialog_cpu, ChartPlotOptions.CPU), getGridBagConstraints(15));
 			jAdvancedOptionsPanel.add(jAlarmTriggeredCheckBox = getJCheckBox(jAlarmTriggeredCheckBox, DialogItem.chart_options_dialog_alarm, ChartPlotOptions.ALARM),
 					getGridBagConstraints(16));
+			jAdvancedOptionsPanel.add(jTemperatureStateCheckBox = getJCheckBox(jTemperatureStateCheckBox, DialogItem.chart_options_dialog_temperature, ChartPlotOptions.TEMPERATURE),
+					getGridBagConstraints(20));
 
 		}
 		return jAdvancedOptionsPanel;

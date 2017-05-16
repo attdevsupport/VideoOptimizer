@@ -399,6 +399,22 @@ public class Session implements Serializable, Comparable<Session> {
 	}
 
 	/**
+	 * Returns all of the  TCP & UDP packets in the session.
+	 * 
+	 * @return A List of PacketInfo objects containing the packet data.
+	 */
+	public List<PacketInfo> getAllPackets() {
+		ArrayList<PacketInfo> allPackets = new ArrayList<>();
+		if(packets != null && !packets.isEmpty()) {
+			allPackets.addAll(packets);
+		}
+		if(udpPackets != null && !udpPackets.isEmpty()) {
+			allPackets.addAll(udpPackets);
+		}
+		return allPackets;
+	}
+
+	/**
 	 * Returns all of the packets in the TCP session.
 	 * 
 	 * @return A List of PacketInfo objects containing the packet data.

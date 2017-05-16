@@ -52,6 +52,8 @@ import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.peripheral.pojo.CpuActivity;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
+
+@SuppressWarnings("unchecked")
 public class PacketAnalyzerImplTest extends BaseTest {
 	
 	@InjectMocks

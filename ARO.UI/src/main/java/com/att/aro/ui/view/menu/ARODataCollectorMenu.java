@@ -120,11 +120,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			if (event instanceof JMenuItem){
 
 				List<IDataCollector> collectors = parent.getAvailableCollectors();
-
-				log.info("collector count:"+collectors.size());
-				for (IDataCollector collector:collectors){
-					log.info(collector.getName());
-				}
 				
 				if (collectors == null || collectors.isEmpty()){
 					MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame()
@@ -132,6 +127,11 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 							, ResourceBundleHelper.getMessageString("menu.error.title")
 							, JOptionPane.ERROR_MESSAGE);
 							return;
+				}
+				
+				log.info("collector count:" + collectors.size());
+				for (IDataCollector collector : collectors) {
+					log.info(collector.getName());
 				}
 				
 				IAroDevices aroDevices = parent.getAroDevices();
@@ -169,6 +169,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
 		IAroDevice device = null;
 
+		
 		String traceFolderName = "";
 		DataCollectorSelectNStartDialog dialog = new DataCollectorSelectNStartDialog(((MainFrame) parent).getJFrame(), deviceList, traceFolderName, collectors, true);
 
@@ -207,8 +208,9 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 				}
 			}
 
-			Hashtable<String,Object> extras = new Hashtable<String,Object>();
+ 			Hashtable<String,Object> extras = new Hashtable<String,Object>();
 			extras.put("video_option", dialog.getRecordVideoOption());
+			extras.put("videoOrientation", dialog.getVideoOrientation());
 
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			
@@ -334,7 +336,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 	@Override
 	public void menuSelected(MenuEvent e) {
 		CollectorStatus collectorStatus = parent.getCollectorStatus();
-		setStartMenuItem(collectorStatus == null || collectorStatus.equals(CollectorStatus.STOPPED));
+		setStartMenuItem(collectorStatus == null || collectorStatus.equals(CollectorStatus.STOPPED) || collectorStatus.equals(CollectorStatus.CANCELLED));
 	}
 
 	@Override

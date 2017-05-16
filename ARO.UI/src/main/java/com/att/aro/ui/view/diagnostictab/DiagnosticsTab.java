@@ -40,6 +40,10 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.TableRowSorter;
 
 import com.att.aro.core.ILogger;
+import com.att.aro.core.bestpractice.pojo.ForwardSecrecyEntry;
+import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
+import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionEntry;
+import com.att.aro.core.bestpractice.pojo.WeakCipherEntry;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfoWithSession;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
@@ -419,6 +423,20 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	public void setChartOptions(List<ChartPlotOptions> optionsSelected) {
 		 getGraphPanel().setChartOptions(optionsSelected);
 	}
+	
+	/**
+	 * Hide the Charts Panel on the Diagnostic tab
+	 */
+	public void hideChartOptions() {
+		 getGraphPanel().hideChartOptions();
+	}
+	
+	/**
+	 * Show the Charts Panel on the Diagnostic tab
+	 */
+	public void showChartOptions() {
+		 getGraphPanel().showChartOptions();
+	}
 
 	//get update info from tcp/udp flow table
 	@Override
@@ -500,7 +518,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	}
 
 	private void setHighlightedPacket(Session session) {
-		requestResponseWithSession.contains(session);
+//		requestResponseWithSession.contains(session);
 		for (HttpRequestResponseInfoWithSession reqResSession : requestResponseWithSession) {
 			if (reqResSession.getSession().equals(session)) {
 				getJPacketViewTable().selectItem(reqResSession.getInfo().getFirstDataPacket());
@@ -642,6 +660,45 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		else {
 			logger.warn("No timestamp for Diagnostic Tab routing");
 		}
+	}
+	
+	// only for security best practice table route
+	public void setHighlightedTCP(Object routeInfo) {
+		double timestamp = -1;
+		String destIP = null;
+		if (routeInfo instanceof TransmissionPrivateDataEntry) {
+			TransmissionPrivateDataEntry entry = (TransmissionPrivateDataEntry) routeInfo;
+			timestamp = entry.getSessionStartTime();
+			destIP = entry.getDestIP();
+		} else if (routeInfo instanceof UnsecureSSLVersionEntry) {
+			UnsecureSSLVersionEntry entry = (UnsecureSSLVersionEntry) routeInfo;
+			timestamp = entry.getSessionStartTime();
+			destIP = entry.getDestIP();
+		} else if (routeInfo instanceof WeakCipherEntry) {
+			WeakCipherEntry entry = (WeakCipherEntry) routeInfo;
+			timestamp = entry.getSessionStartTime();
+			destIP = entry.getDestIP();
+		} else if (routeInfo instanceof ForwardSecrecyEntry) {
+			ForwardSecrecyEntry entry = (ForwardSecrecyEntry) routeInfo;
+			timestamp = entry.getSessionStartTime();
+			destIP = entry.getDestIP();
+		}
+		
+		if (timestamp == -1 || destIP == null) {
+			logger.warn("invalid route information");
+			return;
+		}
+		
+		for(Session session : sessionsSortedByTimestamp) {
+			if (session != null && session.getRemoteIP() != null) {
+				if (session.getSessionStartTime() == timestamp && destIP.equals(session.getRemoteIP().getHostAddress())) {
+					setHighlightedTCP(session);
+					return;
+				}
+			}
+		}
+		logger.warn("No session found to route to Diagnostic Tab for timestamp " +
+				timestamp);
 	}
 
 	@Override

@@ -56,7 +56,7 @@ public class AROVideoUtil {
 	 */
 	public String getMediaUrl(File traceDirectory) throws IOException {
 		String result = null;
-		if (((traceDirectory != null) && (traceDirectory.isDirectory())) || isPcaPFile(traceDirectory)) {
+		if ((traceDirectory != null) && (traceDirectory.isDirectory() || isPcaPFile(traceDirectory))) {
 			if (isPcaPFile(traceDirectory)) {
 				traceDirectory = traceDirectory.getParentFile();
 			}
@@ -137,10 +137,14 @@ public class AROVideoUtil {
 		if ((traceDirectory != null) && (traceDirectory.isDirectory())) {
 			File[] files = traceDirectory.listFiles();
 
+			if(files == null) {
+				return totalVideoFile;
+			}
+			
 			for (File file : files) {
 				if (!file.isDirectory()) {
 					String fileExtension = getExtension(file.getName());
-					if (fileExtension != null) {
+					if (fileExtension != null && file.getName().startsWith("._")) {
 						try {
 							if (fileExtension.equals("3gp")) {
 								fileExtension = "_3GP";
@@ -362,7 +366,7 @@ public class AROVideoUtil {
 				return name.toLowerCase().equals("exvideo.mov");
 			}
 		});
-		if (exVideoFileMatch.length > 0) {
+		if (exVideoFileMatch != null && exVideoFileMatch.length > 0) {
 			return exVideoFileMatch[0];
 		} else {
 			return null;

@@ -22,8 +22,8 @@ import javax.swing.JTable;
 
 import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.ui.model.ImageMetaDataTable;
-import com.att.aro.ui.model.bestpractice.ImageMDataTableModel;
+import com.att.aro.ui.model.ImageBPTable;
+import com.att.aro.ui.model.bestpractice.ImageBPTableModel;
 
 
 public class BpFileImageMDataTablePanel extends AbstractImageBpDetailTablePanel {
@@ -39,7 +39,7 @@ public class BpFileImageMDataTablePanel extends AbstractImageBpDetailTablePanel 
 	
 	@Override
 	void initTableModel() {
-		tableModel = new ImageMDataTableModel();
+		tableModel = new ImageBPTableModel();
 	}
 	
 	/**
@@ -53,7 +53,7 @@ public class BpFileImageMDataTablePanel extends AbstractImageBpDetailTablePanel 
 		setVisible(!data.isEmpty());
 
 		setScrollSize(MINIMUM_ROWS);
-		((ImageMDataTableModel)tableModel).setData(data);
+		((ImageBPTableModel)tableModel).setData(data);
 		autoSetZoomBtn();
 	}
 
@@ -61,9 +61,9 @@ public class BpFileImageMDataTablePanel extends AbstractImageBpDetailTablePanel 
 	 * Initializes and returns the RequestResponseTable.
 	 */
 	@SuppressWarnings("unchecked")
-	public ImageMetaDataTable<ImageMdataEntry> getContentTable() {
+	public ImageBPTable<ImageMdataEntry> getContentTable() {
 		if (contentTable == null) {
-			contentTable = new ImageMetaDataTable<ImageMdataEntry>(tableModel);
+			contentTable = new ImageBPTable<ImageMdataEntry>(tableModel);
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

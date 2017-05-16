@@ -18,6 +18,7 @@ package com.att.aro.ui.commonui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
@@ -53,6 +54,7 @@ import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.menu.datacollector.DeviceDialogOptions;
@@ -65,6 +67,11 @@ import com.att.aro.ui.view.menu.datacollector.HelpDialog;
  * Collector on the device emulator when the Start button is clicked.
  */
 public class DataCollectorSelectNStartDialog extends JDialog implements KeyListener{
+	private static final Dimension PREFERRED_SIZE_LARGE = new Dimension(650, 520);
+	private static final Dimension PREFERRED_SIZE_MEDIUM = new Dimension(650, 440);
+	private static final Dimension PREFERRED_SIZE_SMALL = new Dimension(650, 400);
+	private static final Dimension PREFERRED_SIZE_EXTRASMALL = new Dimension(650, 340);
+
 	private static final long serialVersionUID = 1L;
 	
 	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
@@ -158,6 +165,8 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		getJTraceFolderTextField().setText(traceFolderName);
 		getJTraceFolderTextField().selectAll();
 //		getJRecordVideoCheckBox().setSelected(recordVideo);
+		
+		deviceOptionPanel.showVideoOrientation(false);
 	}
 
 	/**
@@ -169,11 +178,27 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		if (jContentPane == null) {
 			jContentPane = new JPanel(new BorderLayout());
 			jContentPane.setBorder(new EmptyBorder(10,10,10,10));
-			jContentPane.add(getDeviceSelectionPanel(), BorderLayout.NORTH);
-			jContentPane.add(getButtonPanel(), BorderLayout.SOUTH);
-			jContentPane.add(getTraceOptionsPanel());//, BorderLayout.CENTER);
+			jContentPane.add(getDeviceSelectionPanel(), BorderLayout.PAGE_START);
+			jContentPane.add(getTraceOptionsPanel(),BorderLayout.CENTER);
+			jContentPane.add(getButtonPanel(), BorderLayout.PAGE_END);
+			jContentPane.setPreferredSize(PREFERRED_SIZE_EXTRASMALL);
 		}
 		return jContentPane;
+	}
+	
+	public void resizeLarge() {
+		jContentPane.setPreferredSize(PREFERRED_SIZE_LARGE);
+		this.pack();
+	}
+	
+	public void resizeMedium() {
+		jContentPane.setPreferredSize(PREFERRED_SIZE_MEDIUM);
+		this.pack();
+	}
+	
+	public void resizeSmall() {
+		jContentPane.setPreferredSize(PREFERRED_SIZE_SMALL);
+		this.pack();
 	}
 	
 	/**
@@ -189,10 +214,13 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		deviceTablePanel.setSubscriber(deviceOptionPanel);
 		deviceTablePanel.autoSelect();
 
+		deviceOptionPanel.showVideoOrientation(true);
+		
 		Insets insets = new Insets(0, 0, 0, 0);
 		deviceSelectionPanel.add(getHeaderPanel(),new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		deviceSelectionPanel.add(deviceTablePanel,new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		deviceSelectionPanel.add(deviceOptionPanel,new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		
 		return deviceSelectionPanel;
 	}
 
@@ -202,7 +230,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	
 	public DeviceDialogOptions getDeviceOptionPanel() {
 		if (deviceOptionPanel == null) {
-			deviceOptionPanel = new DeviceDialogOptions(collectors);
+			deviceOptionPanel = new DeviceDialogOptions(this, collectors);
 			deviceOptionPanel.setVisible(true);
 		}
 		return deviceOptionPanel;
@@ -448,6 +476,11 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	public VideoOption getRecordVideoOption() {
 		return deviceOptionPanel.getVideoOption();
 	}
+
+	public Orientation getVideoOrientation() {
+		return deviceOptionPanel.getVideoOrientation();
+	}
+	
 	/**
 	 * @return traceFolderName - name of the trace folder
 	 */

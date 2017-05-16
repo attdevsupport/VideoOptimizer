@@ -15,23 +15,15 @@
 */
 package com.att.aro.core.preferences;
 
-// Suppressing, otherwise PMD needs the class to be made "final".
-@SuppressWarnings("PMD")
-public class UserPreferencesFactory {
+public final class UserPreferencesFactory {
 
-	private static UserPreferencesFactory instance;
+	private static UserPreferencesFactory instance = new UserPreferencesFactory();
 	
-	private UserPreferencesFactory() {}
+	private UserPreferencesFactory() {
+		super();
+	}
 	
 	public static UserPreferencesFactory getInstance() {
-		
-		if (instance == null) {
-			synchronized (UserPreferencesFactory.class) {		
-				if (instance == null) {
-					instance = new UserPreferencesFactory();
-				}
-			}
-		}	
 		return instance;
 	}
 	

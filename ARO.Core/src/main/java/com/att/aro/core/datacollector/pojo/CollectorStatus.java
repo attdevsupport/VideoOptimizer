@@ -42,5 +42,9 @@ public enum CollectorStatus {
 	/**
 	 * The Data Collector is pulling trace data from the sdcard of the device/emulator.
 	 */
-	PULLING
+	PULLING,
+	/**
+	 * The Data Collector trace is cancelled.
+	 */
+	CANCELLED
 }

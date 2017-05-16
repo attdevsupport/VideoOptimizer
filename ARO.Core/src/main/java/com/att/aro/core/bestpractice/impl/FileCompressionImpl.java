@@ -213,29 +213,23 @@ public class FileCompressionImpl implements IBestPractice {
 		GZIPOutputStream gzip;
 		try(ByteArrayOutputStream out = new ByteArrayOutputStream(content.length)) {
 			gzip = new GZIPOutputStream(out);
-
 			gzip.write(content);
 			gzip.close();
 	
 			compressedBytes = out.toByteArray(); 
+			int originalSize = req.getContentLength();
+			int savingBytes = originalSize - compressedBytes.length;
+			
+			if(savingBytes < 0){
+				return 0;
+			}
+			
+			float savingPercentage = ((float)savingBytes * 100/(float)originalSize);
+			return Math.round(savingPercentage);
 		} catch (IOException IOexp) {
 			logger.error("Failed to get text content on Gzip savings calculation : "+ IOexp.getMessage());
-		}
-		
-		int originalSize = req.getContentLength();
-		int savingBytes = originalSize - compressedBytes.length;
-		
-		if(savingBytes < 0){
 			return 0;
 		}
-		
-		float savingPercentage = ((float)savingBytes * 100/(float)originalSize);
-/*		if(savingPercentage > MIN_SAVING_PERCENTAGE){
-			MinificationEntry entry = new MinificationEntry(req, lastRequestObj, session.getDomainName(), 
-					Math.round(savingPercentage), savingBytes);
-*/		
-		return Math.round(savingPercentage);
-		
 	}
 	
 	

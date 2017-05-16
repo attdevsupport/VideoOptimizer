@@ -22,15 +22,22 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.text.MessageFormat;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JMenu;
 import javax.swing.JOptionPane;
 
+import com.android.ddmlib.IDevice;
 import com.att.aro.core.ILogger;
+import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.AROMenuAdder;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
@@ -39,33 +46,36 @@ import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.menu.tools.ExportReport;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
+import com.att.aro.ui.view.menu.tools.RegexWizard;
 import com.att.aro.ui.view.menu.tools.TimeRangeAnalysisDialog;
 import com.att.aro.ui.view.menu.tools.VideoAnalysisDialog;
 
 /**
- *
- *
+ * This class adds the menu items under the Tools menu
+ * 
  */
 public class AROToolMenu implements ActionListener{
+	private static final String FILE_NAME = "Logcat_%s_%d.log";
+	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private IAdbService adbservice = ContextAware.getAROConfigContext().getBean(IAdbService.class);
+
 
 	private final AROMenuAdder menuAdder = new AROMenuAdder(this);
-
 	private JMenu toolMenu;
 	SharedAttributesProcesses parent;
 
-	@InjectLogger
-	private ILogger log;
-
-
 	private enum MenuItem {
-		menu_tools,
-		menu_tools_wireshark,
-		menu_tools_timerangeanalysis,
-		menu_tools_dataDump,
-		menu_tools_htmlExport,
-		menu_tools_jsonExport,
-		menu_tools_privateData,
-		menu_tools_videoAnalysis
+		menu_tools, 
+		menu_tools_wireshark, 
+		menu_tools_timerangeanalysis, 
+		menu_tools_dataDump, 
+		menu_tools_htmlExport, 
+		menu_tools_jsonExport, 
+		menu_tools_privateData, 
+		menu_tools_videoAnalysis, 
+		menu_tools_getErrorMsg, 
+		menu_tools_clearErrorMsg, 
+		menu_tools_videoParserWizard
 	}
 
 	public AROToolMenu(SharedAttributesProcesses parent){
@@ -80,21 +90,21 @@ public class AROToolMenu implements ActionListener{
 		if(toolMenu == null){
 			toolMenu = new JMenu(ResourceBundleHelper.getMessageString(MenuItem.menu_tools));
 			toolMenu.setMnemonic(KeyEvent.VK_UNDEFINED);
-			
 			if (Desktop.isDesktopSupported()) {
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_wireshark));
 			}
-
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_timerangeanalysis));
-//			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_dataDump));
-
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_htmlExport));
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_jsonExport));
-
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_privateData));
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_videoAnalysis));
+			if(isDevDevice()) {
+				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_getErrorMsg));
+				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_clearErrorMsg));
+			}
+			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_videoParserWizard));
+
 		}
-		
 		return toolMenu;
 	}
 
@@ -113,7 +123,14 @@ public class AROToolMenu implements ActionListener{
 			openPrivateDataDialog();
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_videoAnalysis, aEvent)) {
 			openVideoAnalysisDialog();
+		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_getErrorMsg, aEvent)) {
+			collectErrorMessage();
+		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_clearErrorMsg, aEvent)) {
+			clearErrorMessage();
+		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_videoParserWizard, aEvent)){
+			openRegexWizard();
 		}
+		
 	}
 	
 	
@@ -128,16 +145,12 @@ public class AROToolMenu implements ActionListener{
 		exportJson.execute();
 	}
 	
-	/**
-	 * Initiates the Pcap File Analysis for the trace data on selecting the Pcap
-	 * File Analysis Menu Item.
-	 */
 	private void openPcapAnalysis() {
-		// Make sure trace is loaded
 		AROTraceData traceData = ((MainFrame)parent).getController().getTheModel();
 		if (traceData == null) {
-			MessageDialogFactory.showMessageDialog(((MainFrame)parent).getJFrame(), ResourceBundleHelper.getMessageString("Error.notrace"), ResourceBundleHelper.getMessageString("error.title"),
-					JOptionPane.ERROR_MESSAGE);
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
+					ResourceBundleHelper.getMessageString("Error.notrace"),
+					ResourceBundleHelper.getMessageString("error.title"), JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
@@ -157,7 +170,7 @@ public class AROToolMenu implements ActionListener{
 			if (fileManager.isFile(dir.getAbsolutePath())){
 				trafficFiles = new File[] {new File(dir.getAbsolutePath()) };
 			} else {
-				trafficFiles = getTrafficTextFiles(dir);//(new File(dir)).listFiles(filter);
+				trafficFiles = getTrafficTextFiles(dir);
 				
 			}
 			if (trafficFiles!=null && trafficFiles.length>0) {
@@ -230,7 +243,79 @@ public class AROToolMenu implements ActionListener{
 		}
 		
 	}
-	
 
+	private void openRegexWizard(){
+		RegexWizard regexWizard = ((MainFrame) parent).getRegexWizard();
+		if(regexWizard == null){
+			regexWizard = new RegexWizard(parent);
+		}
+		if (regexWizard != null) {
+			regexWizard.setVisible(true);
+			regexWizard.setAlwaysOnTop(true);
+		}
+	}
+
+
+	private void clearErrorMessage() {
+		try {
+			log.debug("clearing logcat");
+			getDevice();
+			String adbPath = adbservice.getAdbPath();
+			String[] command = new String[] { adbPath, "logcat", "-c" };
+			new ProcessBuilder(command).start();
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(), "Logcat clear Successful");
+		} catch (IOException e) {
+			log.error("Logcat clear failed", e);
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(), e.getMessage(),
+					getMsg("logcat.clear.failed"), JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void collectErrorMessage() {
+		try {
+			log.debug("collecting logcat");
+			String fileName = String.format(FILE_NAME, LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE),
+					LocalTime.now().toSecondOfDay());
+			File outFile = new File(getDevFolder(), fileName);
+			IDevice device = getDevice();
+			String adbPath = adbservice.getAdbPath();
+			String[] command = new String[] { adbPath, "logcat", "-d", "2", "-t", "5000", "com.att.arocollector:I" };
+			ProcessBuilder procBuilder = new ProcessBuilder(command);
+			Process process = procBuilder.redirectOutput(outFile).start();
+			process.waitFor(6, TimeUnit.SECONDS);
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
+					MessageFormat.format(getMsg("logcat.collection.success"), fileName) + ":\n" + device.getName(),
+					"Collection Successful", JOptionPane.INFORMATION_MESSAGE);
+		} catch (IOException | InterruptedException e) {
+			log.error("Logcat collection failed", e);
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(), e.getMessage(),
+					getMsg("logcat.collection.failed"), JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private IDevice getDevice() throws IOException {
+		IDevice[] devices = adbservice.getConnectedDevices();
+		if (devices.length == 0) {
+			throw new IOException(getMsg("logcat.no.device"));
+		} else if (devices.length > 1) {
+			throw new IOException(getMsg("logcat.multiple.devices"));
+		}
+		IDevice device = devices[0];
+		return device;
+	}
+	
+	private String getMsg(String token) {
+		return ResourceBundleHelper.getMessageString(token);		
+	}
+
+	private boolean isDevDevice() {
+		return getDevFolder().exists();
+	}
+
+	private File getDevFolder() {
+		String androidTrDir = Util.getAROTraceDirAndroid();
+		File file = new File(androidTrDir, "dev");
+		return file;
+	}
 
 }

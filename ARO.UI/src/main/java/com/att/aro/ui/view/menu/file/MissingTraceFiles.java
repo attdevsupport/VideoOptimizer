@@ -179,6 +179,8 @@ public class MissingTraceFiles {
 		addMissingFileMaybe(TraceDataConst.FileName.KERNEL_LOG_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.BATTERY_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.BATTERYINFO_FILE, missingFiles);
+		addMissingFileMaybe(TraceDataConst.FileName.TEMPERATURE_FILE, missingFiles);
+		addMissingFileMaybe(TraceDataConst.FileName.LOCATION_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.RADIO_EVENTS_FILE, missingFiles);
 		if (isFilePresent(ResourceBundleHelper.getMessageString("video.videoDisplayFile")) ||
 				isFilePresent(ResourceBundleHelper.getMessageString(

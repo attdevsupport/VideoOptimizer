@@ -215,16 +215,15 @@ public class TimeRangeAnalysisDialog extends JDialog {
 									msg = resourceBundle.getString("timerangeanalysis.wifi");
 								}
 								timeRangeAnalysisResultsTextArea.setText(MessageFormat.format(
-										msg, DECIMAL_FORMAT.format(startTime),
+										(msg == null? "" : msg), 
+										DECIMAL_FORMAT.format(startTime),
 										DECIMAL_FORMAT.format(endTime),
 										timeRangeAnalysis.getPayloadLen(),
 										timeRangeAnalysis.getTotalBytes(),
-										DECIMAL_FORMAT.format(timeRangeAnalysis
-												.getEnergy()), DECIMAL_FORMAT
-												.format(timeRangeAnalysis
-														.getActiveTime()),
-										DECIMAL_FORMAT.format(timeRangeAnalysis
-												.getKbps())));
+										DECIMAL_FORMAT.format(timeRangeAnalysis.getEnergy()), 
+										DECIMAL_FORMAT.format(timeRangeAnalysis.getActiveTime()),
+										DECIMAL_FORMAT.format(timeRangeAnalysis.getKbps())
+								));
 
 								timeRangeStartTime = startTime;
 								timeRangeEndTime = endTime;

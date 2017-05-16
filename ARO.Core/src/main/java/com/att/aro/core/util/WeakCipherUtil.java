@@ -68,14 +68,12 @@ public class WeakCipherUtil {
 	static {
 		init();
 	}
-	
+
 	public static void init() {
-		if (hexToIdentifier == null) {
-			hexToIdentifier = new ConcurrentHashMap<String, WeakCipherBlackList>();
-			WeakCipherBlackList[] list = WeakCipherBlackList.class.getEnumConstants();
-			for(WeakCipherBlackList weakCipher : list) {
-				hexToIdentifier.put(weakCipher.toString(), weakCipher);
-			}
+		hexToIdentifier = new ConcurrentHashMap<String, WeakCipherBlackList>();
+		WeakCipherBlackList[] list = WeakCipherBlackList.class.getEnumConstants();
+		for(WeakCipherBlackList weakCipher : list) {
+			hexToIdentifier.put(weakCipher.toString(), weakCipher);
 		}
 	}
 	

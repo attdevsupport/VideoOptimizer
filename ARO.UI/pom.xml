@@ -21,41 +21,65 @@
 			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
 			<url>http://repository.springsource.com/maven/bundles/external</url>
 		</repository>
-		 
+<!-- 		<repository>
+			<id>jboss-eap</id>
+			<name>ARO third party</name>
+			<url>http://mavencentral.it.att.com:8084/nexus/service/local/repositories/JBossEAP</url>
+		</repository> -->
+		<repository>
+			<id>apache.snapshots</id>
+			<name>Apache Development Snapshot Repository</name>
+			<url>https://repository.apache.org/content/repositories/snapshots/</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>sonatype</id>
+			<name>Sonatype</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</repository>
+		<repository>
+			<id>sonatype-flex</id>
+			<name>Sonatype Flex</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</repository>
 	</repositories>
 
 	<!-- pluginRepositories -->
 	<pluginRepositories>
 		<pluginRepository>
 			<id>central</id>
-			<name>MavenCentral Repository</name>
 			<url>http://repo1.maven.org/maven2</url>
-</pluginRepository>
+		</pluginRepository>
 	</pluginRepositories>
 
 	<!-- dependencies -->
 	<dependencies>
-		<dependency>
-			<groupId>com.att.aro</groupId>
-			<artifactId>aro-core</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
-		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.11</version>
 			<scope>test</scope>
 		</dependency>
-		 
-		<dependency> 
-			<groupId>log4j</groupId> 
-			<artifactId>log4j</artifactId> 
-			<version>1.2.14</version> 
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.14</version>
 		</dependency>
 		<dependency>
-			<groupId>jfree</groupId>
+			<groupId>org.jfree</groupId>
 			<artifactId>jfreechart</artifactId>
-			<version>1.0.13</version>
+			<version>1.0.19</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>findbugs-maven-plugin</artifactId>
+			<version>3.0.4</version>
 		</dependency>
 
 		<dependency>
@@ -68,7 +92,7 @@
 			<artifactId>ios-collector</artifactId>
 			<version>6.0.0-SNAPSHOT</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.att.aro.analytics</groupId>
 			<artifactId>aro-analytics</artifactId>
@@ -79,10 +103,14 @@
 			<artifactId>jmf</artifactId>
 			<version>2.1.1e</version>
 		</dependency>
+		<dependency>
+			<groupId>uk.co.caprica</groupId>
+			<artifactId>vlcj</artifactId>
+			<version>3.10.1</version>
+		</dependency>
 
 	</dependencies>
 
- 
 	<!-- build -->
 	<build>
 		<plugins>
@@ -103,6 +131,29 @@
 				</configuration>
 			</plugin>
 
+<!-- 			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>3.0.4</version>
+				<configuration>
+					<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
+					<effort>Max</effort>
+					<threshold>Max</threshold>
+					<maxRank>15</maxRank>
+					<xmlOutput>true</xmlOutput>
+					<findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<id>analyze-compile</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+ -->
 			<!-- shade -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -139,14 +190,14 @@
 				</configuration>
 			</plugin>
 
-			<!-- compile to 1.7 -->
+			<!-- compile to 1.8 -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 
@@ -181,7 +232,8 @@
 		</plugins>
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>
@@ -214,3 +266,4 @@
 		</pluginManagement>
 	</build>
 </project>
+ 

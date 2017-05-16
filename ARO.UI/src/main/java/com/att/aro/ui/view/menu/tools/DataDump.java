@@ -135,15 +135,29 @@ public class DataDump {
 		}
 		
 		//create a list of one for single trace folder, list of contained trace folders if not
-		final List<File> traceFolders = singleTrace ? Arrays
-				.asList(traceDir) : Arrays.asList(traceDir
-				.listFiles(new java.io.FileFilter() {
-					@Override
-					public boolean accept(File arg0) {
-						return arg0.isDirectory();
-					}
-				}));
-
+		List<File> temp = null;
+		if(singleTrace) {
+			temp = Arrays.asList(traceDir);
+		} else {
+			File[] folders = traceDir.listFiles(new java.io.FileFilter() {
+				@Override
+				public boolean accept(File arg0) {
+					return arg0.isDirectory();
+				}
+			});
+			
+			if(folders == null) {
+				temp = new ArrayList<File>();
+			} else {
+				temp = Arrays.asList(folders);
+			}
+		}
+		
+		final List<File> traceFolders = new ArrayList<File>();
+		for(File file : temp) {
+			traceFolders.add(file);
+		}
+		
 		if (traceFolders.size() == 0) {
 			new MessageDialogFactory().showErrorDialog(MSG_WINDOW,
 					ResourceBundleHelper.getMessageString(
@@ -336,12 +350,23 @@ public class DataDump {
 			}
 
 			// Check if it has sub-folders or not
-			List<File> allFolders = Arrays.asList(traceDirectory.listFiles(new java.io.FileFilter() {
-				@Override
-				public boolean accept(File arg0) {
-					return arg0.isDirectory();
+			List<File> allFolders = null;
+			if(traceDirectory == null) {
+				allFolders = new ArrayList<File>();
+			} else {
+				File[] folders = traceDirectory.listFiles(new java.io.FileFilter() {
+					@Override
+					public boolean accept(File arg0) {
+						return arg0.isDirectory();
+					}
+				});
+				if(folders == null) {
+					allFolders = new ArrayList<File>();
+				} else {
+					allFolders = Arrays.asList(folders);
 				}
-			}));
+			}
+
 			if (subfolderAccess && allFolders.size() > 0) {
 				if (!userConfirmation
 						&& new MessageDialogFactory().showConfirmDialog(MSG_WINDOW,

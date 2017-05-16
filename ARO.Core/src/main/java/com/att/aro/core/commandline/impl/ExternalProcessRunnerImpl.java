@@ -85,7 +85,7 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 				if (line == null) {
 					break;
 				}
-				log.info("read a line:" + line);
+				log.debug("read a line:" + line);
 				builder.append(line);
 				builder.append(System.getProperty("line.separator"));
 			}

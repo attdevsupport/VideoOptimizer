@@ -82,7 +82,7 @@ public class DLPacketPlot implements IPlot{
 	private void addSeries(Session session,LinkedHashMap<Color, PacketSeries> dlDatasets,AnalysisFilter filter ){
 		Session thisSession = session;
 		
-		for(PacketInfo packet : session.getPackets()){
+		for(PacketInfo packet : session.getAllPackets()){
 			if (packet.getDir() == null) {
 				continue;
 			}			

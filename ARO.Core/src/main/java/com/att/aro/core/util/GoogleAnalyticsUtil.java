@@ -19,10 +19,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import com.att.aro.core.AROConfig;
+import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.analytics.AnalyticsEvents;
 import com.att.aro.core.analytics.IAnalyticsManager;
 import com.att.aro.core.analytics.IGoogleAnalytics;
-import com.att.aro.core.settings.IAROSettings;
+import com.att.aro.core.settings.Settings;
 
 /**
  * 
@@ -32,13 +33,13 @@ public class GoogleAnalyticsUtil {
 
 	private static GoogleAnalyticsUtil gauInstance = null;
 	
-    ApplicationContext configContext = new AnnotationConfigApplicationContext(AROConfig.class);
+    ApplicationContext configContext = SpringContextUtil.getInstance().getContext();
 	
     private static IGoogleAnalytics sendAnalytics;
 	
     private static AnalyticsEvents  allEvents;
     
-    private static IAROSettings aroConfigSetting;
+    private static Settings aroConfigSetting;
 		
 	private GoogleAnalyticsUtil(){
 		sendAnalytics = getAvailableAnalyticsImplementor();
@@ -68,12 +69,12 @@ public class GoogleAnalyticsUtil {
 		return allEvents;
 	}
 	
-	public static IAROSettings getConfigSetting(){
+	public static Settings getConfigSetting(){
 		if(aroConfigSetting == null){
 			if(gauInstance == null){
 				gauInstance = new GoogleAnalyticsUtil();
 			}
-			aroConfigSetting = gauInstance.configContext.getBean(IAROSettings.class);
+			aroConfigSetting = gauInstance.configContext.getBean(Settings.class);
 		}
 		return aroConfigSetting;
 	}

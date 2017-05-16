@@ -172,32 +172,19 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 			}
 			break;
 			case IMAGE_SIZE: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof ImageSizeResult) {
-	//					diagnosticsTab.setHighlightedTCP(((ImageSizeResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+	
 			}
 			break;
 			case IMAGE_MDATA: {
-				/*for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-					if (result instanceof ImageMdtaResult) {
-						diagnosticsTab.setHighlightedTCP(
-								((ImageMdtaResult) result).getTimeStamp());
-						break;
-					}
-				}*/
+				
 			}
 						break;
 			case IMAGE_CMPRS: {
-				/*for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-					if (result instanceof ImageMdtaResult) {
-						diagnosticsTab.setHighlightedTCP(
-								((ImageMdtaResult) result).getTimeStamp());
+				
+			}
 						break;
-					}
-				}*/
+			case IMAGE_FORMAT: {
+				
 			}
 						break;
 			case MINIFICATION: {
@@ -367,6 +354,12 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		jtabbedPane.setSelectedIndex(DIAGNOSTIC_INDEX);
 		DiagnosticsTab diagnosticsTab = (DiagnosticsTab) jtabbedPane.getSelectedComponent();
 
+		if(routeInfo == null) {
+			jtabbedPane.setSelectedIndex(oldPanelIndex);
+			log.error("Diagnostics Tab needs a type for updating");
+			return;
+		}
+		
 		log.debug("Type used to route to Diagnostics Tab: " +
 				routeInfo.getClass().getSimpleName());
 
@@ -400,28 +393,16 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 			UnnecessaryConnectionEntry unConnectionEntry = (UnnecessaryConnectionEntry) routeInfo;
 			diagnosticsTab.setHighlightedTCP((Double) unConnectionEntry.getLowTime());
 		}
-		else if (routeInfo instanceof TransmissionPrivateDataEntry) {
-			TransmissionPrivateDataEntry privateDataEntry = (TransmissionPrivateDataEntry) routeInfo;
-			diagnosticsTab.setHighlightedTCP(privateDataEntry.getSessionStartTime());
-		}
-		else if (routeInfo instanceof UnsecureSSLVersionEntry) {
-			UnsecureSSLVersionEntry unsecureSSLVersionEntry = (UnsecureSSLVersionEntry) routeInfo;
-			diagnosticsTab.setHighlightedTCP(unsecureSSLVersionEntry.getSessionStartTime());
-		}
-		else if (routeInfo instanceof WeakCipherEntry) {
-			WeakCipherEntry weakCipherEntry = (WeakCipherEntry) routeInfo;
-			diagnosticsTab.setHighlightedTCP(weakCipherEntry.getSessionStartTime());
-		}
-		else if (routeInfo instanceof ForwardSecrecyEntry) {
-			ForwardSecrecyEntry forwardSecrecyEntry = (ForwardSecrecyEntry) routeInfo;
-			diagnosticsTab.setHighlightedTCP(forwardSecrecyEntry.getSessionStartTime());
+		else if (routeInfo instanceof TransmissionPrivateDataEntry 
+					|| routeInfo instanceof UnsecureSSLVersionEntry
+					|| routeInfo instanceof WeakCipherEntry 
+					|| routeInfo instanceof ForwardSecrecyEntry) {
+			diagnosticsTab.setHighlightedTCP(routeInfo);
 		}
 		else {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
-			log.error(routeInfo != null ?
-				"Diagnostics Tab cannot handle a type of " +
-					routeInfo.getClass().getSimpleName() +
-						" for updating" : "Diagnostics Tab needs a type for updating");
+			log.error("Diagnostics Tab cannot handle a type of " +
+					routeInfo.getClass().getSimpleName() + " for updating");
 		}
 		
 	}
@@ -430,6 +411,12 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		int oldPanelIndex = jtabbedPane.getSelectedIndex();
 		jtabbedPane.setSelectedIndex(OVERVIEW_INDEX);
 		OverviewTab overviewTab = (OverviewTab) jtabbedPane.getSelectedComponent();
+		
+		if(routeInfo == null) {
+			jtabbedPane.setSelectedIndex(oldPanelIndex);
+			log.error("Overview Tab needs a type for updating");
+			return;
+		}
 
 		log.debug("Type used to route to Overview Tab: " + routeInfo.getClass().getSimpleName());
 
@@ -438,10 +425,8 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		}
 		else {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
-			log.error(routeInfo != null ?
-				"Overview Tab cannot handle a type of " +
-					routeInfo.getClass().getSimpleName() +
-						" for updating" : "Overview Tab needs a type for updating");
+			log.error("Overview Tab cannot handle a type of " +
+					routeInfo.getClass().getSimpleName() + " for updating");
 		}
 
 	}

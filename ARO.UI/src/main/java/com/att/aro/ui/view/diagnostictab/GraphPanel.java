@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,6 +73,7 @@ import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
+import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.mvc.IAROView;
@@ -92,6 +94,7 @@ import com.att.aro.ui.view.diagnostictab.plot.NetworkTypePlot;
 import com.att.aro.ui.view.diagnostictab.plot.RadioPlot;
 import com.att.aro.ui.view.diagnostictab.plot.RrcPlot;
 import com.att.aro.ui.view.diagnostictab.plot.ScreenStatePlot;
+import com.att.aro.ui.view.diagnostictab.plot.TemperaturePlot;
 import com.att.aro.ui.view.diagnostictab.plot.ThroughputPlot;
 import com.att.aro.ui.view.diagnostictab.plot.UserEventPlot;
 import com.att.aro.ui.view.diagnostictab.plot.VideoChunksPlot;
@@ -139,6 +142,9 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 	private static final int MIN_BATTERY = 0;
 	private static final int MAX_BATTERY = 110;
+	
+	private static final int MIN_TEMPERATURE = 0;
+	private static final int MAX_TEMPERATURE = 100;
 
 	private final int UPPER_PANEL_HEIGHT = 280;// 222
 
@@ -165,6 +171,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private BurstPlot burstPlot;
 	private RrcPlot rrcPlot;
 	private UserEventPlot eventPlot;
+	private TemperaturePlot tPlot;
 	private DLPacketPlot dlPlot;
 	private DLPacketPlot upPlot;
 	private AlarmPlot alarmPlot;
@@ -328,6 +335,9 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		subplotMap.put(ChartPlotOptions.BATTERY,
 				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.battery"),
 						getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.red, MIN_BATTERY, MAX_BATTERY), 2));
+		subplotMap.put(ChartPlotOptions.TEMPERATURE,
+				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.temperature"),
+						getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.green, MIN_TEMPERATURE, MAX_TEMPERATURE), 2));
 		subplotMap.put(ChartPlotOptions.WAKELOCK,
 				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.wakelock"),
 						getBarPlot().drawXYBarPlot(Color.yellow, false), 1));
@@ -347,6 +357,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 				ResourceBundleHelper.getMessageString("chart.dl"), getBarPlot().drawYIntervalPlot(), 1));
 		subplotMap.put(ChartPlotOptions.BUFFER_TIME_OCCUPANCY, new GraphPanelPlotLabels(
 				ResourceBundleHelper.getMessageString("chart.bufferTime.occupancy"), getBarPlot().drawXYItemPlot(), 1));
+				
 		setLayout(new BorderLayout());
 		// setPreferredSize(new Dimension(200, 280));
 		setMinimumSize(new Dimension(300, 280));
@@ -509,14 +520,23 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		getSaveGraphButton().setEnabled(aroTraceData != null);
 		setGraphView(0, true);// 103
 		setTraceData(aroTraceData);
-		setAllPackets(aroTraceData.getAnalyzerResult().getTraceresult().getAllpackets());
-		setTraceDuration(aroTraceData.getAnalyzerResult().getTraceresult().getTraceDuration());
-		setAllTcpSessions(aroTraceData.getAnalyzerResult().getSessionlist().size());// list
-																					// length
+		if(aroTraceData != null) {
+			setAllPackets(aroTraceData.getAnalyzerResult().getTraceresult().getAllpackets());
+			setTraceDuration(aroTraceData.getAnalyzerResult().getTraceresult().getTraceDuration());
+			setAllTcpSessions(aroTraceData.getAnalyzerResult().getSessionlist().size());// list
+																						// length
+		} else {
+			setAllPackets(new LinkedList<PacketInfo>());
+			setTraceDuration(0);
+			setAllTcpSessions(0);
+		}
+		
 
 		if (aroTraceData != null && aroTraceData.getAnalyzerResult().getFilter() != null
 				&& aroTraceData.getAnalyzerResult().getFilter().getTimeRange() != null) {
-			if (aroTraceData.getAnalyzerResult().getSessionlist().size() > 0) {
+			if (aroTraceData.getAnalyzerResult().getSessionlist().size() > 0
+					&& aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime() < aroTraceData
+							.getAnalyzerResult().getFilter().getTimeRange().getEndTime()) {
 				getAxis().setRange(new Range(aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime(),
 						aroTraceData != null ? aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getEndTime()
 								: DEFAULT_TIMELINE));
@@ -535,7 +555,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 						? aroTraceData.getAnalyzerResult().getTraceresult().getTraceDuration() : DEFAULT_TIMELINE));
 			}
 		}
-		if (aroTraceData.getAnalyzerResult().getSessionlist().size() > 0) {
+		if (aroTraceData != null && aroTraceData.getAnalyzerResult().getSessionlist().size() > 0) {
 			for (Map.Entry<ChartPlotOptions, GraphPanelPlotLabels> entry : getSubplotMap().entrySet()) {
 				switch (entry.getKey()) {
 				case THROUGHPUT:
@@ -582,10 +602,12 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					alarmPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
 				case GPS:
-					if (gpsPlot == null) {
-						gpsPlot = new GpsPlot();
+					if (aroTraceData.getAnalyzerResult().getTraceresult() instanceof TraceDirectoryResult) {
+						if (gpsPlot == null) {
+							gpsPlot = new GpsPlot();
+						}
+						gpsPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					}
-					gpsPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
 				case RADIO:
 					if (radioPlot == null) {
@@ -610,6 +632,12 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 						bPlot = new BatteryPlot();
 					}
 					bPlot.populate(entry.getValue().getPlot(), aroTraceData);
+					break;
+				case TEMPERATURE:
+					if (tPlot == null) {
+						tPlot = new TemperaturePlot();
+					}
+					tPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
 				case BLUETOOTH:
 					if (bluetoothPlot == null) {
@@ -641,6 +669,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					}
 					wlPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
+
 				case VIDEO_CHUNKS:
 					if (vcPlot == null) {
 						vcPlot = new VideoChunksPlot();
@@ -653,6 +682,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					vcPlot.setBufferTimePlot(bufferTimePlot);
 					// vcPlot.setFirstChunkPlayTime(0);
 					vcPlot.populate(entry.getValue().getPlot(), aroTraceData);
+			    	SliderDialogBox.segmentListChosen = new ArrayList<>();
+
 					break;
 				/*
 				 * case BUFFER_OCCUPANCY: if(boPlot==null){ boPlot = new
@@ -669,11 +700,21 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		getZoomOutButton().setEnabled(aroTraceData != null);
 		getSaveGraphButton().setEnabled(aroTraceData != null);
 		getRefreshButton().setEnabled(false); // Greg Story
-		parent.getDeviceNetworkProfilePanel().refresh(aroTraceData); // Greg
-																		// Story
+		if(aroTraceData != null) {
+			parent.getDeviceNetworkProfilePanel().refresh(aroTraceData); // Greg
+																		 // Story
+		}
 	}
 
 	// need add more
+	public void hideChartOptions() {
+		advancedGraphPanel.setVisible(false);
+	}
+	
+	public void showChartOptions() {
+		advancedGraphPanel.setVisible(true);
+	}
+	
 	public void setChartOptions(List<ChartPlotOptions> optionsSelected) {
 
 		if (optionsSelected == null || optionsSelected.contains(ChartPlotOptions.DEFAULT_VIEW)) {
@@ -727,7 +768,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		plotWeightedDivs = plotWeightedDivs == 0 ? 1 : plotWeightedDivs;
 
 		// determine the size of the divisions for each XYPlot
-		int division = Math.round(height / plotWeightedDivs);
+		int division = Math.round(((float) height) / ((float) plotWeightedDivs));
 
 		// working from top to bottom, set the y-coord. for the first XYPlot
 		int currentY = getLabelsPanel().getBounds().y + getChartPanel().getBounds().y; // getLabelsPanel().getBounds().y
@@ -1261,16 +1302,17 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private void launchSliderDialog(int indexKey) {
 		IVideoPlayer player = parent.getVideoPlayer();
 		double maxDuration = player.getDuration();
+		if (maxDuration != -1) {
+			JDialog dialog = new SliderDialogBox(this, maxDuration, chunkInfo, indexKey, vcPlot.getAllChunks());
 
-		JDialog dialog = new SliderDialogBox(this, maxDuration, chunkInfo, indexKey);
-
-		// revalidate();
-		// repaint();
-		dialog.pack();
-		dialog.setSize(dialog.getPreferredSize());
-		dialog.validate();
-		dialog.setModalityType(ModalityType.APPLICATION_MODAL);
-		dialog.setVisible(true);
+			// revalidate();
+			// repaint();
+			dialog.pack();
+			dialog.setSize(dialog.getPreferredSize());
+			dialog.validate();
+			dialog.setModalityType(ModalityType.APPLICATION_MODAL);
+			dialog.setVisible(true);
+		}
 	}
 
 	public DiagnosticsTab getGraphPanelParent() {

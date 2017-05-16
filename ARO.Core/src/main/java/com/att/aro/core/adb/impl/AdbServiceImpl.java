@@ -36,8 +36,8 @@ import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
-import com.att.aro.core.settings.IAROSettings;
-import com.att.aro.core.settings.impl.AROSettingsImpl;
+import com.att.aro.core.settings.Settings;
+import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
 
 /** 
@@ -60,7 +60,7 @@ public class AdbServiceImpl implements IAdbService {
 	private ILogger logger;
 	private IExternalProcessRunner extrunner;
 	private IFileManager fileManager;
-	private IAROSettings configFile;
+	private Settings configFile;
 	String adbPath = null;
 	
 
@@ -87,12 +87,12 @@ public class AdbServiceImpl implements IAdbService {
 	}
 
 	@Autowired
-	public void setAROConfigFile(IAROSettings configFile) {
+	public void setAROConfigFile(Settings configFile) {
 		this.configFile = configFile;
 	}
 
 	private String getADBAttributeName() {
-		return AROSettingsImpl.AROConfigFileAttributes.adb.name();
+		return SettingsImpl.ConfigFileAttributes.adb.name();
 	}
 	private String getAROConfigFileLocation() {
 		return configFile.getAttribute(getADBAttributeName());
@@ -282,11 +282,11 @@ public class AdbServiceImpl implements IAdbService {
 	 * @throws Exception if AndroidDebugBridge is invalid or fails to connect
 	 */
 	@Override
-	public IDevice[] getConnectedDevices() throws Exception {
+	public IDevice[] getConnectedDevices() throws IOException{
 		AndroidDebugBridge adb = ensureADBServiceStarted();
 		if (adb == null) {
 			logger.debug("failed to connect to existing bridge, now trying running adb from environment");
-			throw new Exception("AndroidDebugBridge failed to start");
+			throw new IOException("AndroidDebugBridge failed to start");
 		}
 
 		int waitcount = 1;

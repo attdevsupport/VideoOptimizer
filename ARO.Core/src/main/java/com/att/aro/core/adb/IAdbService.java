@@ -15,13 +15,15 @@
  */
 package com.att.aro.core.adb;
 
+import java.io.IOException;
+
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.SyncService;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
-import com.att.aro.core.settings.IAROSettings;
+import com.att.aro.core.settings.Settings;
 
 /** 
  * Provides access to AndroidDebugBridge (ADB)
@@ -33,7 +35,7 @@ public interface IAdbService {
 
 	void setFileManager(IFileManager fileManager);
 
-	void setAROConfigFile(IAROSettings configFile);
+	void setAROConfigFile(Settings configFile);
 
 	/**
 	 * check if ADB location was set.
@@ -76,7 +78,7 @@ public interface IAdbService {
 	 * @return array of IDevice
 	 * @throws Exception if AndroidDebugBridge is invalid or fails to connect
 	 */
-	IDevice[] getConnectedDevices() throws Exception;
+	IDevice[] getConnectedDevices() throws IOException;
 
 	/**
 	 * traverse Android filesystem to locate file/folder

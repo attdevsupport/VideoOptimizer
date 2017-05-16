@@ -30,13 +30,14 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
 import com.android.ddmlib.IDevice;
-import com.att.aro.core.AROConfig;
 import com.att.aro.core.IAROService;
 import com.att.aro.core.ILogger;
+import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.configuration.pojo.Profile;
@@ -64,7 +65,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 
 	private IAROView theView;
 	private AROTraceData theModel;
-	private ApplicationContext context = new AnnotationConfigApplicationContext(AROConfig.class);
+	private ApplicationContext context = SpringContextUtil.getInstance().getContext();
 
 	@Autowired
 	private IAROService serv;
@@ -166,14 +167,24 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			profile = theModel.getAnalyzerResult().getProfile();
 			filter = theModel.getAnalyzerResult().getFilter();
 		}
-		if (event.getPropertyName().equals("tracePath")) {
-			updateModel((String) event.getNewValue(), profile, null);
-		} else if (event.getPropertyName().equals("profile")) {
-			if (theModel.isSuccess()) {
-				updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceDirectory(), (Profile) event.getNewValue(), filter);
+		try {
+			theView.hideAllCharts();
+			if (event.getPropertyName().equals("tracePath")) {
+				updateModel((String) event.getNewValue(), profile, null);
+			} else if (event.getPropertyName().equals("profile")) {
+				if (theModel.isSuccess()) {
+					updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceDirectory(),
+							(Profile) event.getNewValue(), filter);
+				}
+			} else if (event.getPropertyName().equals("filter")) {
+				if(theModel.getAnalyzerResult().getTraceresult().getTraceFile() != null && !theModel.getAnalyzerResult().getTraceresult().getTraceFile().equals("")){
+					updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceFile(), profile, (AnalysisFilter) event.getNewValue());
+				} else {
+					updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceDirectory(), profile, (AnalysisFilter) event.getNewValue());
+				}
 			}
-		} else if (event.getPropertyName().equals("filter")) {
-			updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceDirectory(), profile, (AnalysisFilter) event.getNewValue());
+		} finally {
+			theView.showAllCharts();
 		}
 	}
 
@@ -190,10 +201,13 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		if ("startCollector".equals(actionCommand) || "startCollectorIos".equals(actionCommand)) {
 			startCollector(event, actionCommand);
 		} else if ("stopCollector".equals(actionCommand)) {
-			stopCollector();
+			stopCollector(CollectorStatus.STOPPED);
 			this.theView.updateCollectorStatus(CollectorStatus.STOPPED, null);
 
 			log.info("stopCollector() performed");
+		} else if ("cancelCollector".equals(actionCommand)) {
+			stopCollector(CollectorStatus.CANCELLED);
+			log.info("stopCollector() cancel performed");
 		} else if ("haltCollectorInDevice".equals(actionCommand)) {
 			haltCollectorInDevice();
 			this.theView.updateCollectorStatus(CollectorStatus.STOPPED, null);
@@ -245,12 +259,18 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 * @param filter The filters to use - can be empty for no filtering specified
 	 */
 	public void updateModel(String path, Profile profile, AnalysisFilter filter) {
-		if (path != null) {
-			theModel = runAnalyzer(path, profile, filter);
-			if (filter == null && theModel.isSuccess()) { //when the first loading traces, set the filter				
-				initializeFilter();
+		
+		try{
+			if (path != null) {
+				theModel = runAnalyzer(path, profile, filter);
+				if (filter == null && theModel.isSuccess()) { //when the first loading traces, set the filter				
+					initializeFilter();
+				}
+				theView.refresh();
 			}
-			theView.refresh();
+		} catch(Exception ex){
+			log.info("Error Log:" + ex.getMessage());
+			log.error("Exception : ",ex);
 		}
 	}
 
@@ -382,14 +402,16 @@ public class AROController implements PropertyChangeListener, ActionListener {
 				
 				log.info("---------- Android " + result.toString());
 				if (!result.isSuccess()) { // report failure
-					this.theView.updateCollectorStatus(null, result);
+
 					if (result.getError().getCode() == 206) {
-						collector = null; // prevent closing the running trace
 						try {
 							(new File(traceFolderPath)).delete();
 						} catch (Exception e) {
 							log.warn("failed to delete trace folder :" + traceFolderPath);
 						}
+						this.theView.updateCollectorStatus(CollectorStatus.CANCELLED, result);
+					}else{
+						this.theView.updateCollectorStatus(null, result);
 					}
 				} else { // apk has launched and been activated
 					if (!getVideoOption().equals(VideoOption.NONE) && "startCollector".equals(actionCommand)) {
@@ -506,7 +528,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	/**
 	 * Stop the current collection process in a clean manner.
 	 */
-	public void stopCollector() {
+	public void stopCollector(CollectorStatus collectorstatus) {
 		if (collector == null) {
 			return;
 		}
@@ -517,7 +539,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			if (result.isSuccess()) {
 				Date traceStopTime = new Date();
 				traceDuration = traceStopTime.getTime() - traceStartTime.getTime();
-				this.theView.updateCollectorStatus(CollectorStatus.STOPPED, result);
+				this.theView.updateCollectorStatus(collectorstatus, result);
 			} else {
 				traceDuration = 0;
 				this.theView.updateCollectorStatus(null, result);
@@ -544,6 +566,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		req.add(BestPracticeType.IMAGE_SIZE);
 		req.add(BestPracticeType.IMAGE_MDATA);
 		req.add(BestPracticeType.IMAGE_CMPRS);
+		req.add(BestPracticeType.IMAGE_FORMAT);
 		req.add(BestPracticeType.MINIFICATION);
 		req.add(BestPracticeType.SPRITEIMAGE);
 		req.add(BestPracticeType.CONNECTION_OPENING);

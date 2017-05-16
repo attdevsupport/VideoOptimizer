@@ -18,28 +18,33 @@ package com.att.aro.core.bestpractice.pojo;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 
 public class ImageMdataEntry {
-	private String imageSize;
+	private long imageSize;
 	private double timeStamp;
 	private String httpObjName = "";
 	private String hostName = "";
 	private int httpCode;
 	private HttpRequestResponseInfo httpReqResp;
-	private String mdataSize;
+	private long formattedSize;
 	private String percentSavings;
 
-	public ImageMdataEntry(HttpRequestResponseInfo reqRespInfo, String domainName, String imagefile, String iSize,
-			String mSize, String savings) {
+	public ImageMdataEntry(HttpRequestResponseInfo reqRespInfo, String domainName, String imagefile, long iSize,
+			long fSize, String savings) {
 
 		this.httpReqResp = reqRespInfo;
 		this.httpObjName = imagefile;
 
 		this.imageSize = iSize;
-		this.mdataSize = mSize;
+		this.formattedSize = fSize;
 
 		this.timeStamp = reqRespInfo.getTimeStamp();
 		this.httpCode = reqRespInfo.getStatusCode();
 		this.percentSavings = savings;
 
+		assignHostAndHttpInfo(reqRespInfo,domainName);
+
+	}
+
+	private void assignHostAndHttpInfo(HttpRequestResponseInfo reqRespInfo, String domainName) {
 		HttpRequestResponseInfo respons = reqRespInfo.getAssocReqResp();
 		if (respons != null) {
 			if (respons.getHostName() == null || respons.getHostName().isEmpty()) {
@@ -58,24 +63,23 @@ public class ImageMdataEntry {
 			} else {
 				this.hostName = reqRespInfo.getHostName();
 			}
-
 		}
 	}
 
-	public String getImageSize() {
+	public long getImageSize() {
 		return imageSize;
 	}
 
-	public void setImageSize(String imageSize) {
+	public void setImageSize(long imageSize) {
 		this.imageSize = imageSize;
 	}
 
-	public String getMdataSize() {
-		return mdataSize;
+	public long getFormattedSize() {
+		return formattedSize;
 	}
 
-	public void setMdataSize(String mdataSize) {
-		this.mdataSize = mdataSize;
+	public void setFormattedSize(long formattedSize) {
+		this.formattedSize = formattedSize;
 	}
 
 	public String getPercentSavings() {

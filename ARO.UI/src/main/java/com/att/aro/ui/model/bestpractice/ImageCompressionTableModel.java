@@ -141,11 +141,11 @@ public class ImageCompressionTableModel extends DataTableModel<ImageCompressionE
 		case COL_2:
 			return String.class;
 		case COL_3:
-			return String.class;
+			return Double.class;
 		case COL_4:
-			return String.class;
+			return Double.class;
 		case COL_5:
-			return String.class;
+			return Double.class;
 		default:
 			return super.getColumnClass(columnIndex);
 		}
@@ -171,7 +171,7 @@ public class ImageCompressionTableModel extends DataTableModel<ImageCompressionE
 		case COL_2:
 			return item.getHttpObjectName();
 		case COL_3:
-			return item.getImageSize();
+			return item.getOrgImageSize();
 		case COL_4:
 			return item.getSizeE();
 		case COL_5:

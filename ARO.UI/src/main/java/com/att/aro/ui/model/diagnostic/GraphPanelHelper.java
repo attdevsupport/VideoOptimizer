@@ -95,7 +95,7 @@ public class GraphPanelHelper{
 		plotOrder.add(ChartPlotOptions.WAKELOCK);
 		plotOrder.add(ChartPlotOptions.WIFI);
 		plotOrder.add(ChartPlotOptions.ALARM);
-		plotOrder.add(ChartPlotOptions.NETWORK_TYPE);
+		plotOrder.add(ChartPlotOptions.NETWORK_TYPE);		
 		plotOrder.add(ChartPlotOptions.THROUGHPUT);
 		plotOrder.add(ChartPlotOptions.UL_PACKETS);
 		plotOrder.add(ChartPlotOptions.DL_PACKETS);
@@ -106,7 +106,7 @@ public class GraphPanelHelper{
 		plotOrder.add(ChartPlotOptions.BUFFER_TIME_OCCUPANCY);
 		plotOrder.add(ChartPlotOptions.BUFFER_OCCUPANCY);
 		plotOrder.add(ChartPlotOptions.VIDEO_CHUNKS);
-		
+		plotOrder.add(ChartPlotOptions.TEMPERATURE);
 		
 		tickUnits.add(new NumberTickUnit(FIVE00000, FORMAT, MINOR_TICK_COUNT_5));
 		tickUnits.add(new NumberTickUnit(TVENTYFIVE0000, FORMAT, MINOR_TICK_COUNT_5));

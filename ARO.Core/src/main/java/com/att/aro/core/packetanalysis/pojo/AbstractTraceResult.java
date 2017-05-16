@@ -30,7 +30,9 @@ import com.att.aro.core.peripheral.pojo.BluetoothInfo;
 import com.att.aro.core.peripheral.pojo.CameraInfo;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
 import com.att.aro.core.peripheral.pojo.GpsInfo;
+import com.att.aro.core.peripheral.pojo.LocationEvent;
 import com.att.aro.core.peripheral.pojo.ScreenStateInfo;
+import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
@@ -62,6 +64,12 @@ public abstract class AbstractTraceResult {
 	 */
 	protected String traceDirectory;
 	
+	/**
+	 * path of the trace file
+	 */
+	protected String traceFile;
+	
+
 	/**
 	 * the pcap startTime timestamp 
 	 */
@@ -128,6 +136,16 @@ public abstract class AbstractTraceResult {
 	private List<UserEvent> userEvents = null;
 	
 	/**
+	 * List of User Event Info
+	 */
+	private List<TemperatureEvent> temperatureEvents = null;
+	
+	/**
+	 * List of Location Event Info
+	 */
+	private List<LocationEvent> locationEvents = null;
+	
+	/**
 	 * keyword private data info from device
 	 * <br>from trace directory - private_data
 	 */
@@ -181,6 +199,8 @@ public abstract class AbstractTraceResult {
 		cameraInfos = new ArrayList<CameraInfo>();
 		screenStateInfos = new ArrayList<ScreenStateInfo>();
 		userEvents = new ArrayList<UserEvent>();
+		temperatureEvents = new ArrayList<TemperatureEvent>();
+		locationEvents = new ArrayList<LocationEvent>();
 
 		exVideoTimeFileNotFound = false;
 		exVideoFound = false;
@@ -322,6 +342,21 @@ public abstract class AbstractTraceResult {
 		this.traceDirectory = traceDirectory;
 	}
 
+	/**
+	 * @return the trace file
+	 */
+	public String getTraceFile() {
+		return traceFile;
+	}
+
+	/**
+	 * Set the trace directory
+	 * @param traceFile - path of the trace file
+	 */
+	public void setTraceFile(String traceFile) {
+		this.traceFile = traceFile;
+	}
+	
 	/**
 	 * @return the pcap startTime timestamp
 	 */
@@ -507,6 +542,20 @@ public abstract class AbstractTraceResult {
 	 */
 	public List<UserEvent> getUserEvents() {
 		return userEvents;
+	}
+	
+	/**
+	 * @return List of temperature events
+	 */
+	public List<TemperatureEvent> getTemperatureEvents() {
+		return temperatureEvents;
+	}
+	
+	/**
+	 * @return List of location events
+	 */
+	public List<LocationEvent> getLocationEvents() {
+		return locationEvents;
 	}
 
 	public void setVideoEvents(List<VideoEvent> videoEvents) {

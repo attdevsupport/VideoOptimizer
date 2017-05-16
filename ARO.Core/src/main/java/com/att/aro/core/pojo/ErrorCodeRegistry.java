@@ -15,6 +15,8 @@
 */
 package com.att.aro.core.pojo;
 
+import com.att.aro.core.ApplicationConfig;
+
 /**
  * Standardized ErrorCodes for ARO.Core<br>
  * 
@@ -40,7 +42,7 @@ public final class ErrorCodeRegistry {
 		ErrorCode err = new ErrorCode();
 		err.setCode(100);
 		err.setName("Trace Directory not found.");
-		err.setDescription("ARO cannot find or access trace directory user specified. Please check if the directory exist.");
+		err.setDescription(ApplicationConfig.getInstance().getAppName() + " cannot find or access the trace directory user specified. Please check if the directory exists.");
 		return err;
 	}
 
@@ -53,7 +55,7 @@ public final class ErrorCodeRegistry {
 		ErrorCode err = new ErrorCode();
 		err.setCode(101);
 		err.setName("Trace file not found.");
-		err.setDescription("ARO cannot find or access trace file user specified. Please check if the file exist.");
+		err.setDescription(ApplicationConfig.getInstance().getAppName() + " cannot find or access trace file user specified. Please check if the file exist.");
 		return err;
 	}
 
@@ -66,7 +68,7 @@ public final class ErrorCodeRegistry {
 		ErrorCode err = new ErrorCode();
 		err.setCode(102);
 		err.setName("Trace folder not found.");
-		err.setDescription("ARO cannot find or access trace folder.");
+		err.setDescription(ApplicationConfig.getInstance().getAppName() + " cannot find or access trace folder.");
 		return err;
 	}
 
@@ -91,7 +93,7 @@ public final class ErrorCodeRegistry {
 		ErrorCode err = new ErrorCode();
 		err.setCode(105);
 		err.setName("Unrecognized Packets");
-		err.setDescription("This trace has all unrecognized packets and their data will not be displayed");
+		err.setDescription("This trace has no packets or has unrecognized packets and their data will not be displayed");
 		return err;
 
 	}
@@ -103,12 +105,20 @@ public final class ErrorCodeRegistry {
 		err.setDescription("Result from executing all pcap packets: unknown file format");
 		return err;
 	}
-
+	
+	public static ErrorCode getTrafficFileNotFound(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(107);
+		err.setName("Traffic file not found");
+		err.setDescription("This trace doesn't seem to have a traffic file.");
+		return err;
+	}
+	
 	public static ErrorCode getTraceDirExist() {
 		ErrorCode err = new ErrorCode();
 		err.setCode(202);
 		err.setName("Found existing trace directory that is not empty");
-		err.setDescription("ARO found an existing directory that contains files and did not want to override it. Some files may be hidden.");
+		err.setDescription(ApplicationConfig.getInstance().getAppName() + " found an existing directory that contains files and did not want to override it. Some files may be hidden.");
 		return err;
 	}
 
@@ -116,7 +126,7 @@ public final class ErrorCodeRegistry {
 		ErrorCode err = new ErrorCode();
 		err.setCode(215);
 		err.setName("Problem accessing device");
-		err.setDescription("ARO failed to access device :"+message);
+		err.setDescription(ApplicationConfig.getInstance().getAppName() + " failed to access device :"+message);
 		return err;
 
 	}

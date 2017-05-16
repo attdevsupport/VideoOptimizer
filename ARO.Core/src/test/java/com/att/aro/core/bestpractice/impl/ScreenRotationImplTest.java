@@ -1,6 +1,5 @@
 package com.att.aro.core.bestpractice.impl;
 
-
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -13,24 +12,22 @@ import org.mockito.Mockito;
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
-import com.att.aro.core.bestpractice.pojo.ScreenRotationResult;
 import com.att.aro.core.packetanalysis.pojo.Burst;
 import com.att.aro.core.packetanalysis.pojo.BurstCategory;
 import com.att.aro.core.packetanalysis.pojo.BurstCollectionAnalysisData;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
-import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetreader.pojo.Packet;
 
-public class ScreenRotationImplTest extends BaseTest{
-	
+public class ScreenRotationImplTest extends BaseTest {
+
 	ScreenRotationImpl screenRotationImpl;
 	Packet packet;
 	Burst burst01;
 	PacketAnalyzerResult tracedata;
 	BurstCollectionAnalysisData burstCollectionAnalysisData;
 
-	@Test   
-	public void runTest_resIsNoErr_Fail(){	
+	@Test
+	public void runTest_resIsNoErr_Fail() {
 		tracedata = Mockito.mock(PacketAnalyzerResult.class);
 		burstCollectionAnalysisData = Mockito.mock(BurstCollectionAnalysisData.class);
 		burst01 = mock(Burst.class);
@@ -40,12 +37,13 @@ public class ScreenRotationImplTest extends BaseTest{
 		burstCollection.add(burst01);
 		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
-		screenRotationImpl = (ScreenRotationImpl)context.getBean("screenRotation");
+		screenRotationImpl = (ScreenRotationImpl) context.getBean("screenRotation");
 		AbstractBestPracticeResult result = screenRotationImpl.runTest(tracedata);
-		assertEquals(BPResultType.FAIL,result.getResultType());
+		assertEquals(BPResultType.FAIL, result.getResultType());
 	}
-	@Test   
-	public void runTest_resIsNoErr_Pass(){	
+
+	@Test
+	public void runTest_resIsNoErr_Pass() {
 		tracedata = Mockito.mock(PacketAnalyzerResult.class);
 		burstCollectionAnalysisData = Mockito.mock(BurstCollectionAnalysisData.class);
 		burst01 = mock(Burst.class);
@@ -55,11 +53,10 @@ public class ScreenRotationImplTest extends BaseTest{
 		burstCollection.add(burst01);
 		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
-		screenRotationImpl = (ScreenRotationImpl)context.getBean("screenRotation");
+		screenRotationImpl = (ScreenRotationImpl) context.getBean("screenRotation");
 		AbstractBestPracticeResult result = screenRotationImpl.runTest(tracedata);
-		assertEquals(BPResultType.PASS,result.getResultType());
+		assertEquals(BPResultType.PASS, result.getResultType());
 
 	}
-
 
 }

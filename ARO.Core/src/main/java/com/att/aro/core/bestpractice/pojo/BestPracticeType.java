@@ -62,6 +62,10 @@ public enum BestPracticeType {
 	 * FILE DOWNLOAD SECTION, Image Compression
 	 */
 	IMAGE_CMPRS,
+	/**
+	 * FILE DOWNLOAD SECTION, Image Format
+	 */
+	IMAGE_FORMAT,
 	
 	/**
 	 * FILE DOWNLOAD SECTION, Examine by comparing re-compressed html, javascript, css, and json 

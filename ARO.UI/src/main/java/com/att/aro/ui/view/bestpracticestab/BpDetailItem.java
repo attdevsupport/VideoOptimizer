@@ -22,6 +22,8 @@ import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseWheelListener;
 import java.awt.print.PageFormat;
 import java.awt.print.PrinterException;
@@ -33,6 +35,7 @@ import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -64,6 +67,7 @@ import com.att.aro.core.bestpractice.pojo.HttpCode3xxEntry;
 import com.att.aro.core.bestpractice.pojo.HttpsUsageResult;
 import com.att.aro.core.bestpractice.pojo.ImageCompressionEntry;
 import com.att.aro.core.bestpractice.pojo.ImageCompressionResult;
+import com.att.aro.core.bestpractice.pojo.ImageFormatResult;
 import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.bestpractice.pojo.ImageMdtaResult;
 import com.att.aro.core.bestpractice.pojo.ImageSizeEntry;
@@ -86,6 +90,8 @@ import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.IAROExpandable;
 import com.att.aro.ui.commonui.UIComponent;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
+import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
 
 public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 
@@ -95,6 +101,7 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 	JLabel nameLabel = null;
 //	JTextPane nameTextLabel = null;
 	JLabel nameTextLabel = null;
+	JButton buttonPrivateData = null;
 	JLabel aboutLabel = null;
 	JTextPane aboutTextLabel = null;
 	JLabel resultsLabel = null;
@@ -102,7 +109,9 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 	private AbstractBpDetailTablePanel resultsTablePanel;
 	private AbstractImageBpDetailTablePanel imgMdataResultsTablePanel;
 	private AbstractBpImageCompressionTablePanel imageCompressionResultsTablePanel;
+	private AbstractBpImageFormatTablePanel imageFormatResultsTablePanel;
 	private IARODiagnosticsOverviewRoute diagnosticsOverviewRoute;
+	private MainFrame aroView;
 	
 	Insets imageInsets = new Insets(25, 10, 10, 10);
 	Insets startInsets = new Insets(25, 5, 2, 5);
@@ -121,6 +130,24 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 		this.bpType = bpType;
 		imageLabel = new JLabel(loadImageIcon(null));
 		nameLabel = new JLabel();
+		aboutLabel = new JLabel();
+		resultsLabel = new JLabel();
+		nameTextLabel = new JLabel();
+		
+		this.resultsTablePanel = resultsTablePanel;
+		
+		add(layoutPanel(name), BorderLayout.CENTER);
+	}
+	
+	public BpDetailItem(String name, BestPracticeType bpType, AbstractBpDetailTablePanel resultsTablePanel
+			, MainFrame aroView) {
+		super();
+		
+		this.aroView = aroView;
+		this.bpType = bpType;
+		imageLabel = new JLabel(loadImageIcon(null));
+		nameLabel = new JLabel();
+		buttonPrivateData = new JButton();
 		aboutLabel = new JLabel();
 		resultsLabel = new JLabel();
 		nameTextLabel = new JLabel();
@@ -183,8 +210,27 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 	
 	}
 	
+	public BpDetailItem(String name, BestPracticeType imageFormat,
+			BpFileImageFormatTablePanel imageFormatResultsTablePanel) {
+
+		super();
+		
+		this.bpType = imageFormat;
+		imageLabel = new JLabel(loadImageIcon(null));
+		nameLabel = new JLabel();
+		aboutLabel = new JLabel();
+		resultsLabel = new JLabel();
+		nameTextLabel = new JLabel();
+		
+		this.imageFormatResultsTablePanel = imageFormatResultsTablePanel;
+		
+		add(layoutPanel(name), BorderLayout.CENTER);
+	
+	}
 	
 	
+	
+
 	
 
 	public void addTablePanelRoute(IARODiagnosticsOverviewRoute DiagnosticsOverviewRoute) {
@@ -195,7 +241,9 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			imgMdataResultsTablePanel.addTablePanelRoute(DiagnosticsOverviewRoute);;
 		} else if (imageCompressionResultsTablePanel != null) {
 			imageCompressionResultsTablePanel.addTablePanelRoute(DiagnosticsOverviewRoute);;
-		}  
+		}  else if (imageFormatResultsTablePanel != null) {
+			imageFormatResultsTablePanel.addTablePanelRoute(DiagnosticsOverviewRoute);;
+		} 
 		
 	}
 	
@@ -280,6 +328,20 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			removeMouseWheelListeners(scroll);
 			dataPanel.add(scroll, new GridBagConstraints(2, idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
 			
+			// PrivateData Button
+			if (name.equalsIgnoreCase("security.transmissionPrivateData")) {
+				buttonPrivateData.setText("Add Private Data Tracking");
+				buttonPrivateData.addActionListener(new ActionListener() {
+				  public void actionPerformed(ActionEvent e) {
+					  openPrivateDataDialog();
+				  }
+				});
+				scroll = new JScrollPane(buttonPrivateData);
+				scroll.setBorder(BorderFactory.createEmptyBorder());
+				removeMouseWheelListeners(scroll);
+				dataPanel.add(scroll, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NORTHWEST, insets, 0, 0));
+			}
+			
 			// Table
 			if (resultsTablePanel != null) {
 				dataPanel.add(resultsTablePanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
@@ -289,9 +351,23 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			} else if(imageCompressionResultsTablePanel !=null) {
 				dataPanel.add(imageCompressionResultsTablePanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
 					
+			} else if(imageFormatResultsTablePanel !=null) {
+				dataPanel.add(imageFormatResultsTablePanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
+					
 			}
 		}
 		return dataPanel;
+	}
+	
+	private void openPrivateDataDialog() {
+		PrivateDataDialog privateDataDialog = aroView.getPrivateDataDialog();
+		if (privateDataDialog == null) {
+			privateDataDialog = new PrivateDataDialog(aroView);
+		}
+		if (privateDataDialog != null) {
+			privateDataDialog.setVisible(true);
+			privateDataDialog.setAlwaysOnTop(true);
+		}
 	}
 	
 	void performAction(HyperlinkEvent e){
@@ -362,6 +438,8 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			case IMAGE_MDATA: learnMoreURI = ResourceBundleHelper.getMessageString("imageMetadata.url");
 			break;
 			case IMAGE_CMPRS: learnMoreURI = ResourceBundleHelper.getMessageString("imageCompression.url");
+			break;
+			case IMAGE_FORMAT: learnMoreURI = ResourceBundleHelper.getMessageString("imageFormat.url");
 			break;
 			case MINIFICATION: learnMoreURI = ResourceBundleHelper.getMessageString("minification.url") ;
 			break;
@@ -519,6 +597,9 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 				case IMAGE_CMPRS:
 					((BpFileImageCompressionTablePanel)imageCompressionResultsTablePanel).setData((Collection<ImageCompressionEntry>) ((ImageCompressionResult) bpr).getResults());
 					return;
+				case IMAGE_FORMAT:
+					((BpFileImageFormatTablePanel)imageFormatResultsTablePanel).setData((Collection<ImageMdataEntry>) ((ImageFormatResult) bpr).getResults());
+					return;
 				case MINIFICATION:
 					((BpFileMinificationTablePanel)resultsTablePanel).setData((Collection<MinificationEntry>) ((MinificationResult) bpr).getMinificationEntryList());
 					return;
@@ -594,6 +675,8 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			imgMdataResultsTablePanel.expand();
 		} else if (imageCompressionResultsTablePanel!=null) {
 			imageCompressionResultsTablePanel.expand();
+		}else if (imageFormatResultsTablePanel!=null) {
+			imageFormatResultsTablePanel.expand();
 		}
 	}
 

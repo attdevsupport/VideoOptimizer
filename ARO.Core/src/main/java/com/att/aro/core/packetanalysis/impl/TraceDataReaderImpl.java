@@ -56,10 +56,13 @@ import com.att.aro.core.peripheral.IAppInfoReader;
 import com.att.aro.core.peripheral.IBatteryInfoReader;
 import com.att.aro.core.peripheral.IBluetoothInfoReader;
 import com.att.aro.core.peripheral.ICameraInfoReader;
+import com.att.aro.core.peripheral.ICollectOptionsReader;
 import com.att.aro.core.peripheral.ICpuActivityReader;
+import com.att.aro.core.peripheral.ICpuTemperatureReader;
 import com.att.aro.core.peripheral.IDeviceDetailReader;
 import com.att.aro.core.peripheral.IDeviceInfoReader;
 import com.att.aro.core.peripheral.IGpsInfoReader;
+import com.att.aro.core.peripheral.LocationReader;
 import com.att.aro.core.peripheral.INetworkTypeReader;
 import com.att.aro.core.peripheral.IPrivateDataReader;
 import com.att.aro.core.peripheral.IRadioInfoReader;
@@ -77,13 +80,16 @@ import com.att.aro.core.peripheral.pojo.AppInfo;
 import com.att.aro.core.peripheral.pojo.BatteryInfo;
 import com.att.aro.core.peripheral.pojo.BluetoothInfo;
 import com.att.aro.core.peripheral.pojo.CameraInfo;
+import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
 import com.att.aro.core.peripheral.pojo.DeviceDetail;
 import com.att.aro.core.peripheral.pojo.GpsInfo;
+import com.att.aro.core.peripheral.pojo.LocationEvent;
 import com.att.aro.core.peripheral.pojo.NetworkTypeObject;
 import com.att.aro.core.peripheral.pojo.PrivateDataInfo;
 import com.att.aro.core.peripheral.pojo.RadioInfo;
 import com.att.aro.core.peripheral.pojo.ScreenStateInfo;
+import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.peripheral.pojo.VideoTime;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
@@ -138,6 +144,12 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	private IUserEventReader usereventreader;
 	
 	@Autowired
+    private ICpuTemperatureReader cputemperaturereader;
+	
+	@Autowired
+    private LocationReader locationreader;
+	
+	@Autowired
 	private IScreenRotationReader screenrotationreader;
 	
 	@Autowired
@@ -152,6 +164,9 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	@Autowired
 	private IPrivateDataReader privateDataReader;
 	
+	@Autowired
+	private ICollectOptionsReader collectOptionsReader;
+		
 	private ICrypto crypto;
 		
 	@Autowired
@@ -161,7 +176,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	private IDeviceDetailReader devicedetailreader;
 	
 	@Autowired
-	private IDeviceInfoReader deviceinforeader;
+	private IDeviceInfoReader deviceinforeader;		
 	
 	private Set<InetAddress> localIPAddresses = null;
 	private List<PacketInfo> allPackets = null;
@@ -271,6 +286,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if(traceDirectory == null){
 			traceDirectory = "";
 		}
+		result.setTraceFile(traceFilePath);
 		result.setTraceDirectory(traceDirectory);
 		this.init();
 		this.ipCountMap = result.getIpCountMap();
@@ -369,8 +385,8 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	 */
 	private TraceDirectoryResult readTimeAndPcap(TraceDirectoryResult dresult) throws IOException {
 		TraceDirectoryResult result = dresult;
-		String filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TIME_FILE;
-		
+		String filepath= result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TIME_FILE;
+	
 		Double startTime = null;
 		Double duration = null;
 		if (filereader.fileExist(filepath)) {
@@ -390,7 +406,12 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		List<Integer> appIds = readAppIDs(result);
 		result.setAppIds(appIds);
 		result.setTotalNoPackets(appIds.size());
-		filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TRAFFIC + TraceDataConst.FileName.CAP_EXT;
+		
+		if(dresult.getTraceFile() != null && !dresult.getTraceFile().equals("")){
+			filepath = result.getTraceFile();
+		} else {
+			filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TRAFFIC + TraceDataConst.FileName.CAP_EXT;
+		}
 		
 		this.init();
 		this.ipCountMap = result.getIpCountMap();
@@ -553,7 +574,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		
 		result.setDeviceKeywordInfos(deviceKeywordInfos);
 	}
-	
+		
 	/**
 	 * Method to read times from the video time trace file and store video time
 	 * variables.
@@ -834,7 +855,10 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if(obj != null){
 			result.setNetworkTypeInfos(obj.getNetworkTypeInfos());
 			result.setNetworkTypesList(obj.getNetworkTypesList());
-		}	
+		}
+		
+		CollectOptions collectOptions = collectOptionsReader.readData(result.getTraceDirectory());
+		result.setCollectOptions(collectOptions);
 
 		List<UserEvent> userEvents = usereventreader.readData(result.getTraceDirectory(), result.getEventTime0(), result.getPcapTime0());
 		result.setUserEvents(userEvents);
@@ -842,7 +866,13 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		List<UserEvent> list = this.screenrotationreader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setScreenRotationCounter(list.size());
 		result.getUserEvents().addAll(list);
+		
+		List<TemperatureEvent> temperatureEvents = cputemperaturereader.readData(result.getTraceDirectory(), result.getPcapTime0());
+		result.setTemperatureInfos(temperatureEvents);
  
+		List<LocationEvent> locationEvents = locationreader.readData(result.getTraceDirectory(), result.getPcapTime0());
+		result.setLocationEventInfos(locationEvents);
+		
 		CpuActivityList cpuActivityList = cpureader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setCpuActivityList(cpuActivityList);
  

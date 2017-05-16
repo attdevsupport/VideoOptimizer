@@ -144,6 +144,8 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				result.setRadioInfos(tempResult.getRadioInfos());
 				result.setScreenStateInfos(tempResult.getScreenStateInfos());
 				result.setUserEvents(tempResult.getUserEvents());
+				result.setTemperatureInfos(tempResult.getTemperatureInfos());
+				result.setLocationEventInfos(tempResult.getLocationEventInfos());
 				result.setWifiInfos(tempResult.getWifiInfos());
 				result.getCpuActivityList().updateTimeRange(
 						tempTimeRange.getBeginTime(), tempTimeRange.getEndTime());
@@ -170,12 +172,13 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		
 		TimeRange timeRange = null;
 		
- 		if(filter == null && result!=null){
-			filteredPackets = result.getAllpackets(); //initial, analyze  trace all packets
-		}else{// do the filter 		
-			filteredPackets = new ArrayList<PacketInfo>();	// create new packets according to the filter setting
-			timeRange = filter.getTimeRange();		
-			
+		filteredPackets = new ArrayList<PacketInfo>();
+		if (filter == null) {
+			if (result != null) {
+				filteredPackets = result.getAllpackets();
+			}
+		} else {// do the filter
+			timeRange = filter.getTimeRange();
 			if (result!=null) {
 				filteredPackets = filterPackets(filter, result.getAllpackets());
 			}
@@ -184,7 +187,9 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
  		// Set the Abstract Trace Data with the filtered packets - All packets are not necessary.
 		// Fix for Sev 2 Issue correcting the throughput graph - DE187846
 		// Fix for Sev 2 Time Range Analysis Issue - DE187848
- 		result.setAllpackets(filteredPackets);
+		if(result != null) {
+			result.setAllpackets(filteredPackets);
+		}
  		
 		List<Session> sessionlist = sessionmanager.assembleSession(filteredPackets);
 		List<PacketInfo> filteredPacketsNoDNSUDP = new ArrayList<PacketInfo>();

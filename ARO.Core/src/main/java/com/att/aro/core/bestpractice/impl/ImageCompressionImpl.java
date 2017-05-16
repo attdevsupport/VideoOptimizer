@@ -105,21 +105,26 @@ public class ImageCompressionImpl implements IBestPractice {
 
 	long orginalImagesSize = 0L;
 	long midQualImgsSize = 0L;
+	String imageFolderPath = "";
+	PacketAnalyzerResult packetResult = new PacketAnalyzerResult();
+	String imageCompressionFolderPath = "";
 
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 		ImageCompressionResult result = new ImageCompressionResult();
-		String tracePath = tracedata.getTraceresult().getTraceDirectory() + System.getProperty("file.separator");
-		String imagePath = tracePath + "Image" + System.getProperty("file.separator");
+		packetResult = tracedata;
+		String tracePath = packetResult.getTraceresult().getTraceDirectory() + System.getProperty("file.separator");
+		imageFolderPath = tracePath + "Image" + System.getProperty("file.separator");
+		imageCompressionFolderPath = imageFolderPath + "Compressed"+ System.getProperty("file.separator");
 		orginalImagesSize = 0L;
 		midQualImgsSize = 0L;
 
-		boolean isImagesCompressed = isImagesCompressed(imagePath);
+		boolean isImagesCompressed = isImagesCompressed();
 
 		if (!isImagesCompressed) {
-			compressImages(tracedata, imagePath);
+			compressImages();
 		}
-		List<ImageCompressionEntry> entrylist = getEntryList(imagePath, tracedata);
+		List<ImageCompressionEntry> entrylist = getEntryList();
 
 		result.setResults(entrylist);
 		String text = "";
@@ -141,15 +146,15 @@ public class ImageCompressionImpl implements IBestPractice {
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
 		return result;
 	}
 
-	private boolean isImagesCompressed(String imagePath) {
-		if (filemanager.directoryExist(imagePath)) {
-			File folder = new File(imagePath);
+	private boolean isImagesCompressed() {
+
+		if (filemanager.directoryExist(imageCompressionFolderPath)) {
+			File folder = new File(imageFolderPath);
 			File[] listOfFiles = folder.listFiles();
 			if (listOfFiles != null && listOfFiles.length != 0) {
 				for (int i = 0; i < listOfFiles.length; i++) {
@@ -158,11 +163,13 @@ public class ImageCompressionImpl implements IBestPractice {
 					}
 				}
 			}
+		} else {
+			filemanager.mkDir(imageCompressionFolderPath);
 		}
 		return false;
 	}
 
-	private List<ImageCompressionEntry> getEntryList(String imageFolderPath, PacketAnalyzerResult tracedta) {
+	private List<ImageCompressionEntry> getEntryList() {
 		String originalImage = "";
 		String midCompressedImagePath = "";
 		String logCompressedImagepath = "";
@@ -171,12 +178,11 @@ public class ImageCompressionImpl implements IBestPractice {
 		long midQualityImgSize = 0L;
 		long orgImageSize = 0L;
 		String imgExtn = "";
-		String units = " KB";
-		String orgImgSize = "";
-		String midQualityImageSize = "";
-		String lowQualityImageSize = "";
+		long orgImgSize;
+		long midQualityImageSize;
+		long lowQualityImageSize;
 		List<ImageCompressionEntry> entryList = new ArrayList<ImageCompressionEntry>();
-		for (Session session : tracedta.getSessionlist()) {
+		for (Session session : packetResult.getSessionlist()) {
 			for (HttpRequestResponseInfo reqResp : session.getRequestResponseInfo()) {
 
 				if (reqResp.getDirection() == HttpDirection.RESPONSE && reqResp.getContentType() != null
@@ -187,11 +193,11 @@ public class ImageCompressionImpl implements IBestPractice {
 					imgExtn = originalImage.substring(pos + 1, originalImage.length());
 					if (imgExtn.equalsIgnoreCase("jpeg") || imgExtn.equalsIgnoreCase("jpg")) {
 
-						midCompressedImagePath = imageFolderPath
+						midCompressedImagePath = imageCompressionFolderPath 
 								+ originalImage.substring(0, originalImage.lastIndexOf(".")) + Quality.MID.getFileDesc()
 								+ originalImage.substring(originalImage.lastIndexOf("."), originalImage.length());
 
-						logCompressedImagepath = imageFolderPath
+						logCompressedImagepath = imageCompressionFolderPath 
 								+ originalImage.substring(0, originalImage.lastIndexOf(".")) + Quality.LOW.getFileDesc()
 								+ originalImage.substring(originalImage.lastIndexOf("."), originalImage.length());
 						orgImageSize = new File(imageFolderPath + originalImage).length();
@@ -203,21 +209,10 @@ public class ImageCompressionImpl implements IBestPractice {
 							orginalImagesSize = orginalImagesSize + orgImageSize;
 							midQualImgsSize = midQualImgsSize + midQualityImgSize;
 
-							if (orgImageSize > 1024) {
-								orgImgSize = Long.toString(orgImageSize / 1024) + units;
-							} else {
-								orgImgSize = Long.toString(orgImageSize) + " B";
-							}
-							if (midQualityImgSize > 1024) {
-								midQualityImageSize = Long.toString(midQualityImgSize / 1024) + units;
-							} else {
-								midQualityImageSize = Long.toString(midQualityImgSize) + " B";
-							}
-							if (lowQualityImgSize > 1024) {
-								lowQualityImageSize = Long.toString(lowQualityImgSize / 1024) + units;
-							} else {
-								lowQualityImageSize = Long.toString(lowQualityImgSize) + " B";
-							}
+							orgImgSize = orgImageSize / 1024;
+							midQualityImageSize = midQualityImgSize / 1024;
+							lowQualityImageSize = lowQualityImgSize / 1024;
+						
 
 							entryList.add(new ImageCompressionEntry(reqResp, session.getDomainName(),
 									imageFolderPath + originalImage, orgImgSize, midQualityImageSize,
@@ -231,15 +226,15 @@ public class ImageCompressionImpl implements IBestPractice {
 		return entryList;
 	}
 
-	private void compressImages(PacketAnalyzerResult tracedata, final String imagePath) {
+	private void compressImages() {
 		ExecutorService exec = Executors.newFixedThreadPool(5);
-		for (final Session session : tracedata.getSessionlist()) {
+		for (final Session session : packetResult.getSessionlist()) {
 			for (final HttpRequestResponseInfo req : session.getRequestResponseInfo()) {
 				if (req.getDirection() == HttpDirection.RESPONSE && req.getContentType() != null
 						&& req.getContentType().contains("image/")) {
 					final String extractedImage = extractFullNameFromRRInfo(req);
 
-					File imgFile = new File(imagePath + extractedImage);
+					File imgFile = new File(imageFolderPath + extractedImage);
 					if (imgFile.exists() && !imgFile.isDirectory()) {
 						int posExtn = extractedImage.lastIndexOf(".");
 						String imgExtn = extractedImage.substring(posExtn + 1, extractedImage.length());
@@ -247,7 +242,7 @@ public class ImageCompressionImpl implements IBestPractice {
 							exec.submit(new Runnable() {
 								@Override
 								public void run() {
-									compressImage(imagePath, extractedImage);
+									compressImage(imageFolderPath, extractedImage);
 								}
 							});
 						}
@@ -270,8 +265,9 @@ public class ImageCompressionImpl implements IBestPractice {
 		try (InputStream inputStrm = new FileInputStream(orgImgFile)) {
 			BufferedImage buffImage = ImageIO.read(inputStrm);
 			for (Quality qual : Quality.values()) {
-				compressedImageName = imgPath + imgfile.substring(0, imgfile.lastIndexOf(".")) + qual.getFileDesc()
-						+ "." + imgfile.substring(imgfile.lastIndexOf(".") + 1, imgfile.length());
+				compressedImageName = imageCompressionFolderPath
+						+ imgfile.substring(0, imgfile.lastIndexOf(".")) + qual.getFileDesc() + "."
+						+ imgfile.substring(imgfile.lastIndexOf(".") + 1, imgfile.length());
 				File compressedFile = new File(compressedImageName);
 				ImageWriter writer = null;
 				try (OutputStream outputStr = new FileOutputStream(compressedFile);

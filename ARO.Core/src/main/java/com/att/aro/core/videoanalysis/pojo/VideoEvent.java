@@ -36,8 +36,7 @@ import com.att.aro.core.util.ImageHelper;
  *
  *
  */
-public class VideoEvent /*implements Serializable*/ {
-//	private static final long serialVersionUID = 1L;
+public class VideoEvent {
 	
 	private byte[] defaultImage = new byte[] {
     		73,73,42,0,120,0,0,0,-128,57,31,-128,16,3,-4,6,22,0,66,92,1,7,-16,0,6,-17,10,-127,-33,-32,7,80,76,0,-3,2,59,64,-79,112,35,-92,36,121,62,-125,93,111,-16,64,37,-28,-10,86,-99,-46,-60,-9,64,16,16,-77,35,59,-116,-83,18,-70,17,-60,22,117,18,-108,15,18,-53,52,-122,-103,1,-71,20,12,50,10,-107,8,103,9,45,-47,-114,-107,-128,68,30,69,102,-119,
@@ -66,6 +65,8 @@ public class VideoEvent /*implements Serializable*/ {
 	private double endTS;
 	private double duration;
 	private double segmentStartTime;
+
+//	private byte[] content;
 	
 	/**
 	 * The VideoEvent.VideoEventType Enumeration specifies constant values that describe 
@@ -73,7 +74,7 @@ public class VideoEvent /*implements Serializable*/ {
 	 * class.
 	 */
 	public enum VideoType {
-		DASH, HLS, UNKNOWN
+		DASH, HLS, SSM, UNKNOWN
 	}
 
 	@Override
@@ -82,19 +83,20 @@ public class VideoEvent /*implements Serializable*/ {
 		strblr.append("VideoType :"); 
 		strblr.append(eventType.toString());
 //		strblr.append(", URI:"); strblr.append(response.getAssocReqResp().getObjUri());
+		strblr.append(", file:"); strblr.append(response.getAssocReqResp().getFileName());
 		strblr.append(", Segment:"); strblr.append(segment);
+		strblr.append(", SegmentStartTime:"); strblr.append(String.format("%.0f", segmentStartTime));
 		strblr.append(", Quality:"); strblr.append(quality);
 		strblr.append(", Byte Range:"); strblr.append(rangeList);
 		strblr.append(", bitrate:"); strblr.append(bitrate);
 		strblr.append(", mdatSize:"); strblr.append(mdatSize);
-		strblr.append(", duration:"); strblr.append(duration);
+		strblr.append(", duration:"); strblr.append(String.format("%.6f", duration*1e0));
 		strblr.append(", dlSize:"); strblr.append(response.getContentLength());
-		strblr.append(", dlTime:"); strblr.append(String.format("%.6f", getDLTime()*1e0));
+		strblr.append(", endTS:"); strblr.append(String.format("%.6f", endTS*1e0));
 		return strblr.toString();
 	}
 	
 	public BufferedImage getThumbnail() {
-//		System.out.println("thumbnail  h/w :" + thumbnail.getHeight() + "/" + thumbnail.getWidth());
 		return thumbnail;
 	}
 
@@ -119,9 +121,6 @@ public class VideoEvent /*implements Serializable*/ {
 		 int width = image.getWidth();
 		 imageOriginal = image;
 
-		 // int ratio = height / width;
-//		 int targetWidth = maxH;
-//		 int targetHeight = maxH * height / width;
 		 int targetHeight = maxW;
 		 int targetWidth = maxW * width / height;
 		 
@@ -134,15 +133,15 @@ public class VideoEvent /*implements Serializable*/ {
 	 * Initializes an instance of the VideoEvent class, using the specified event type, 
 	 * press time, and release time.
 	 * 
-	 * @param eventType The event type. One of the values of the VideoEventType enumeration.
 	 * @param imageArray a thumbnail image from first "frame" of chunk
-	 * @param segment 
-	 * @param quality 
-	 * @param beginByte
-	 * @param endByte
+	 * @param eventType The event type. One of the values of the VideoEventType enumeration.
+	 * @param segment
+	 * @param quality
+	 * @param rangeList
 	 * @param bitrate
+	 * @param duration
+	 * @param segmentStartTime
 	 * @param mdatSize
-	 * @param double1 
 	 * @param response
 	 */
 	public VideoEvent(byte[] imageArray
@@ -155,6 +154,7 @@ public class VideoEvent /*implements Serializable*/ {
 					, double segmentStartTime
 					, double mdatSize
 					, HttpRequestResponseInfo response
+//					, byte[] content
 					) {
 		this.eventType = eventType;
 		this.rangeList = rangeList;
@@ -165,6 +165,7 @@ public class VideoEvent /*implements Serializable*/ {
 		this.duration = duration;
 		this.segmentStartTime = segmentStartTime;
 		this.response = response;
+//		this.content=content;
 
 		if (response.getContentOffsetLength() == null) {
 			this.setPacketCount(0);
@@ -186,6 +187,11 @@ public class VideoEvent /*implements Serializable*/ {
 		setThumbnail(imageArray);
 
 	}	
+//
+//	
+//	public byte[] getContent() {
+//		return content;
+//	}
 
 	public Session getSession() {
 		return response.getDirection() == HttpDirection.REQUEST ? response.getSession() : response.getAssocReqResp().getSession();
@@ -197,7 +203,6 @@ public class VideoEvent /*implements Serializable*/ {
 	 * @return
 	 */
 	public double getDLTime() {
-//		return response.getLastDataPacket().getTimeStamp()-response.getTimeStamp();
 		return endTS - startTS;
 	}
 	
@@ -207,7 +212,6 @@ public class VideoEvent /*implements Serializable*/ {
 	 * @return
 	 */
 	public double getDLTimeStamp() {
-//		return response.getTimeStamp();
 		return startTS;
 	}
 	
@@ -217,7 +221,6 @@ public class VideoEvent /*implements Serializable*/ {
 	 * @return
 	 */
 	public double getDLLastTimestamp(){
-//		return response.getLastDataPacket().getTimeStamp();
 		return endTS;
 	}
 	
@@ -257,10 +260,19 @@ public class VideoEvent /*implements Serializable*/ {
 		return duration;
 	}
 
+	
+	public void setDuration(double duration) {
+		this.duration = duration;
+	}
+
 	public double getSegmentStartTime() {
 		return segmentStartTime;
 	}
 
+	/**
+	 * Returns a quality reference. Warning not always a number
+	 * @return
+	 */
 	public String getQuality() {
 		return quality;
 	}

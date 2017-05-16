@@ -51,6 +51,8 @@ public class ContentViewer {
 	
 	private static String contentViewerDirectory;
 	
+	private ContentViewFrame imageMetaFrame;
+	
 	private IHttpRequestResponseHelper httpHelper = ContextAware.getAROConfigContext().getBean(IHttpRequestResponseHelper.class);
 	private static final Logger LOGGER = Logger.getLogger(ContentViewer.class.getName());
 
@@ -105,7 +107,7 @@ public class ContentViewer {
 		}
 	}
 
-	public void viewImage(String imageFile, String orginalImage)
+	public void viewImage(String imageFile, String orginalImage, String title)
 			throws IOException,Exception {
 	
 			try {
@@ -123,11 +125,9 @@ public class ContentViewer {
 						}
 
 					});
-				} else {
-					
-				}
+				} 
 				
-				
+				frame.setTitle(title);
 					
 				frame.setState(Frame.NORMAL);
 				frame.setVisible(true);
@@ -140,18 +140,20 @@ public class ContentViewer {
 	
 	public void viewImageMetadataContent(StringBuffer imageFile)
 			throws IOException, Exception {
-
 		try {
-			ContentViewFrame frame = new ContentViewFrame(imageFile);
-
-			frame.setState(Frame.NORMAL);
-			frame.setVisible(true);
+			if(imageMetaFrame != null) {
+				imageMetaFrame.setVisible(false);
+				imageMetaFrame.dispose();
+			}
+			imageMetaFrame = new ContentViewFrame(imageFile);
+			imageMetaFrame.setState(Frame.NORMAL);
+			imageMetaFrame.setVisible(true);
 		} catch (ContentException e) {
 			new MessageDialogFactory().showErrorDialog(null,
 					ResourceBundleHelper.getMessageString("viewer.contentUnavailable"));
 		}
-
 	}
+
 	/**
 	 * Saves the specified content in a file at the location selected in the
 	 * FileChooser dialog.
@@ -264,7 +266,6 @@ public class ContentViewer {
 					fileType = ResourceBundleHelper.getMessageString("fileChooser.contentType.css");
 					iMatchedFileTypes++;
 				} else if (contentType.contains("text/javascript")
-						|| contentType.contains("application/x-javascript")
 						|| contentType.contains("application/x-javascript")
 						|| strUriLowerCase.contains("json")) {
 					tempfileTypes[iMatchedFileTypes] = ResourceBundleHelper.getMessageString("fileChooser.contentType.js");

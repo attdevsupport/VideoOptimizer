@@ -100,13 +100,14 @@ public class WifiInfoReaderImpl extends PeripheralBase implements IWifiInfoReade
 						prevWifiState = WifiState.WIFI_UNKNOWN;
 					}
 
-					if (!prevWifiState.equals(lastWifiState)) {
-						if (lastWifiState == WifiState.WIFI_CONNECTED || lastWifiState == WifiState.WIFI_CONNECTING || lastWifiState == WifiState.WIFI_DISCONNECTING) {
-							dActiveDuration += (beginTime - dLastTimeStamp);
-						}
-						lastWifiState = prevWifiState;
-						dLastTimeStamp = beginTime;
-					}
+					//FIXME Flawed logic lastWifiState is always null
+//					if (!prevWifiState.equals(lastWifiState)) {
+//						if (lastWifiState == WifiState.WIFI_CONNECTED || lastWifiState == WifiState.WIFI_CONNECTING || lastWifiState == WifiState.WIFI_DISCONNECTING) {
+//							dActiveDuration += (beginTime - dLastTimeStamp);
+//						}
+					lastWifiState = prevWifiState;
+					dLastTimeStamp = beginTime;
+//					}
 				} else {
 					logger.warn("Invalid WiFi trace entry: " + firstLine);
 				}

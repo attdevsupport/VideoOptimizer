@@ -46,8 +46,6 @@ public class DataTablePopupMenu extends JPopupMenu {
 	private static final long serialVersionUID = 1L;
 
 	private DataTable<?> table;
-	private ImageCompressionDataTable<?> imgCompressionTable;
-	private ImageMetaDataTable<?> imgMdatatable;
 	
 	
 	private JMenuItem exportMenuItem;
@@ -64,15 +62,6 @@ public class DataTablePopupMenu extends JPopupMenu {
 		initialize();
 	}
 	
-/*	public DataTablePopupMenu(ImageCompressionDataTable<?> table) {
-		this.imgCompressionTable = table;
-		initialize();
-	}
-	
-	public DataTablePopupMenu(ImageMetaDataTable<?> table) {
-		this.imgMdatatable = table;
-		initialize();
-	}*/
 
 	/**
 	 * Method to put the Export menu item in table.

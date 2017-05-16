@@ -70,7 +70,7 @@ public class PacketDataItem extends YIntervalDataItem{
 
 		// Session info for tooltip
 		if (session != null) {
-			List<PacketInfo> packets = session.getPackets();
+			List<PacketInfo> packets = session.getAllPackets();
 			double beginTime = packets.get(0).getTimeStamp();
 			double endTime = packets.get(packets.size() - 1).getTimeStamp();
 

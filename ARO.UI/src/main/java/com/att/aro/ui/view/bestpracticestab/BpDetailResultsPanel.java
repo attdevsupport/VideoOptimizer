@@ -36,6 +36,7 @@ import com.att.aro.ui.commonui.IUITabPanelLayoutUpdate;
 import com.att.aro.ui.commonui.TabPanelSupport;
 import com.att.aro.ui.exception.AROUIPanelException;
 import com.att.aro.ui.view.AROModelObserver;
+import com.att.aro.ui.view.MainFrame;
 
 /**
  * 
@@ -54,7 +55,7 @@ public class BpDetailResultsPanel extends JPanel implements Observer, IUITabPane
 
 	private JPanel sectionPanel = null;
 
-	public BpDetailResultsPanel(IARODiagnosticsOverviewRoute diagnosticsOverviewRoute) {
+	public BpDetailResultsPanel(MainFrame aroView, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute) {
 		
 		tabPanelSupport = new TabPanelSupport(this);
 
@@ -70,7 +71,7 @@ public class BpDetailResultsPanel extends JPanel implements Observer, IUITabPane
 		addBpSection(row++, new BpDetailDownloadPanel(    "bestPractices.header.fileDownload"      , diagnosticsOverviewRoute));
 		addBpSection(row++, new BpDetailConnectionsPanel( "bestPractices.header.connections"       , diagnosticsOverviewRoute));
 		addBpSection(row++, new BpDetailHtmlPanel(        "bestPractices.header.html"              , diagnosticsOverviewRoute));
-		addBpSection(row++, new BpDetailSecurityPanel(    "bestPractices.header.security"          , diagnosticsOverviewRoute));  // ARO 6.0 release
+		addBpSection(row++, new BpDetailSecurityPanel(    "bestPractices.header.security"          , aroView, diagnosticsOverviewRoute));  // ARO 6.0 release
 		addBpSection(row++, new BpVideoPanel(             "bestPractices.header.videoBestPractice" , diagnosticsOverviewRoute));  // ARO 6.0 release
 		addBpSection(row++, new BpDetailOtherPanel(       "bestPractices.header.others"            , diagnosticsOverviewRoute));	
 

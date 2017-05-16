@@ -47,12 +47,6 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 
 	private JLabel networkTypeValueLabel;
 	private JLabel profileValueLabel;
-	
-	private JLabel downlinkLabel;
-	private JLabel uplinkLabel;
-	
-	private JLabel downlinkValueLabel;
-	private JLabel uplinkValueLabel;
 
 	private static final Font LABEL_FONT = new Font("TEXT_FONT", Font.BOLD, 12);
 	private static final Font TEXT_FONT = new Font("TEXT_FONT", Font.PLAIN, 12);
@@ -75,9 +69,6 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 	 */
 	private JPanel getDataPanel() {
 
-		final int gridX = 7;
-		final double wightX = 0.5;
-
 		JPanel dataPanel  = new JPanel(new GridBagLayout());
 		
 		dateValueLabel = new JLabel();
@@ -99,14 +90,6 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 		profileValueLabel = new JLabel();
 		profileValueLabel.setFont(TEXT_FONT);
 		profileValueLabel.setHorizontalTextPosition(JLabel. TRAILING);
-
-		downlinkValueLabel = new JLabel();
-		downlinkValueLabel.setHorizontalTextPosition(JLabel. TRAILING);
-        downlinkValueLabel.setFont(TEXT_FONT);
-
-        uplinkValueLabel = new JLabel();
-        uplinkValueLabel.setHorizontalTextPosition(JLabel. TRAILING);        
-        uplinkValueLabel.setFont(TEXT_FONT);
 
 		Insets insets = new Insets(1, 1, 1, 1);
 		JLabel dateLabel = new JLabel(

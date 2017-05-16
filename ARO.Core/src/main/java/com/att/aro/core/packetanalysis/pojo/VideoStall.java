@@ -27,6 +27,11 @@ public class VideoStall {
 	
 	//private double stallTriggerTime;
 	
+	@Override
+	public String toString() {
+		return new String("start:"+stallStartTimeStamp+", end: "+stallEndTimeStamp);
+	}
+	
 	public VideoStall(double stallStartTimeStamp){
 		this.stallStartTimeStamp = stallStartTimeStamp;
 	//	this.stallEndTimeStamp = duration + stallStartTimeStamp;

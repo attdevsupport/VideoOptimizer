@@ -29,7 +29,6 @@ import com.android.ddmlib.MultiLineReceiver;
 public class ShellCommandCheckSDCardOutputReceiver extends MultiLineReceiver{
 	// name confused...
 	private boolean sdCardAttached;
-	private Long sdCardMemoryAvailable;
 	private String[] resultOutput = new String[0];
 	private List<String> list;
 	public ShellCommandCheckSDCardOutputReceiver(){
@@ -59,11 +58,5 @@ public class ShellCommandCheckSDCardOutputReceiver extends MultiLineReceiver{
 	public boolean isSDCardAttached() {
 		return sdCardAttached;
 	}
-
-	public boolean isSDCardEnoughSpace(long kbs) {
-		return isSDCardAttached()
-				&& (sdCardMemoryAvailable == null || sdCardMemoryAvailable > kbs);//questions
-	}
-
 
 }

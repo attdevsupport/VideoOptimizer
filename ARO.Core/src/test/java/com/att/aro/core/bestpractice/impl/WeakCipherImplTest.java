@@ -1,6 +1,6 @@
 package com.att.aro.core.bestpractice.impl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -16,7 +16,6 @@ import org.junit.Test;
 
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.bestpractice.IBestPractice;
-import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionResult;
 import com.att.aro.core.bestpractice.pojo.WeakCipherResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
@@ -28,7 +27,7 @@ public class WeakCipherImplTest extends BaseTest {
 	private IBestPractice bestPractice;
 	private PacketAnalyzerResult packetAnalyzerResult;
 	private WeakCipherResult result;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		bestPractice = (WeakCipherImpl) context.getBean("weakCipher");
@@ -42,7 +41,7 @@ public class WeakCipherImplTest extends BaseTest {
 		result = (WeakCipherResult) ((WeakCipherImpl) bestPractice).runTest(packetAnalyzerResult);
 		assertEquals(0, result.getResults().size());
 	}
-	
+
 	@Test
 	public void testNonEmptyWeakCipherSuites() {
 		Set<String> weakCipherSuites = new HashSet<>();
@@ -58,7 +57,7 @@ public class WeakCipherImplTest extends BaseTest {
 		PacketInfo info = mock(PacketInfo.class);
 		TCPPacket tcpPacket = mock(TCPPacket.class);
 		InetAddress address = mock(InetAddress.class);
-		
+
 		String ipAddress = "127.0.0.1";
 		int port = 8080;
 		List<Session> sessions = new ArrayList<>();
@@ -70,11 +69,11 @@ public class WeakCipherImplTest extends BaseTest {
 		when(session.getPackets()).thenReturn(packetInfos);
 		when(info.getPacket()).thenReturn(tcpPacket);
 		when(tcpPacket.getWeakCipherSuites()).thenReturn(weakCipherSuites);
-		
+
 		when(address.getHostAddress()).thenReturn(ipAddress);
 		when(session.getRemoteIP()).thenReturn(address);
 		when(session.getRemotePort()).thenReturn(port);
-		
+
 		return packetAnalyzerResult;
 	}
 }

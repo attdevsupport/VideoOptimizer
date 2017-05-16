@@ -36,11 +36,13 @@ import com.att.aro.core.packetreader.IPacketReader;
 import com.att.aro.core.packetreader.pojo.IPPacket;
 import com.att.aro.core.peripheral.IAlarmAnalysisInfoParser;
 import com.att.aro.core.peripheral.IAppInfoReader;
+import com.att.aro.core.peripheral.ICollectOptionsReader;
 import com.att.aro.core.peripheral.IDeviceDetailReader;
 import com.att.aro.core.peripheral.INetworkTypeReader;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisInfo;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisResult;
 import com.att.aro.core.peripheral.pojo.AppInfo;
+import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.peripheral.pojo.DeviceDetail;
 import com.att.aro.core.peripheral.pojo.NetworkTypeObject;
 import com.att.aro.core.securedpacketreader.ICrypto;
@@ -65,6 +67,8 @@ public class TraceDataReaderImplTest extends BaseTest {
 	INetworkTypeReader networktypereader;
 	@Mock
 	IAlarmAnalysisInfoParser alarmanalysisinfoparser;
+	@Mock
+	ICollectOptionsReader collectOptionsReader;
 	
 	@Before
 	public void setUp(){
@@ -203,6 +207,8 @@ public class TraceDataReaderImplTest extends BaseTest {
 		device.setTotalLines(8);
 		device.setScreenSize("720*1280");
 		when(devicedetailreader.readData(any(String.class))).thenReturn(device);
+		CollectOptions cOptions = new CollectOptions();
+		when(collectOptionsReader.readData(any(String.class))).thenReturn(cOptions);
 		NetworkTypeObject obj = new NetworkTypeObject();
 		when(networktypereader
 				.readData(any(String.class),any(double.class),any(double.class))).thenReturn(obj);

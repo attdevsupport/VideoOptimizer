@@ -23,7 +23,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "MPD", namespace = "urn:mpeg:dash:schema:mpd:2011")
-public class MPDAmz {
+public class MPDAmz implements Amz{
 
 	List<PeriodAmz> period = new ArrayList<>();
 	String majorVersion;
@@ -52,17 +52,10 @@ public class MPDAmz {
 		return period;
 	}
 
-	public void setPeriod(List<PeriodAmz> url) {
-		this.period = url;
-	}
-
+	@Override
 	@XmlAttribute
 	public String getMajorVersion() {
 		return majorVersion;
-	}
-
-	public void setMajorVersion(String majorVersion) {
-		this.majorVersion = majorVersion;
 	}
 
 	@XmlAttribute
@@ -70,17 +63,9 @@ public class MPDAmz {
 		return mediaPresentationDuration;
 	}
 
-	public void setMediaPresentationDuration(String mediaPresentationDuration) {
-		this.mediaPresentationDuration = mediaPresentationDuration;
-	}
-
 	@XmlAttribute
 	public String getMinBufferTime() {
 		return minBufferTime;
-	}
-
-	public void setMinBufferTime(String minBufferTime) {
-		this.minBufferTime = minBufferTime;
 	}
 
 	@XmlAttribute
@@ -88,17 +73,9 @@ public class MPDAmz {
 		return minorVersion;
 	}
 
-	public void setMinorVersion(String minorVersion) {
-		this.minorVersion = minorVersion;
-	}
-
 	@XmlAttribute
 	public String getProfiles() {
 		return profiles;
-	}
-
-	public void setProfiles(String profiles) {
-		this.profiles = profiles;
 	}
 
 	@XmlAttribute
@@ -106,8 +83,34 @@ public class MPDAmz {
 		return revision;
 	}
 
+	// all setters
+	public void setPeriod(List<PeriodAmz> period) {
+		this.period = period;
+	}
+
+	public void setMajorVersion(String majorVersion) {
+		this.majorVersion = majorVersion;
+	}
+
+	public void setMediaPresentationDuration(String mediaPresentationDuration) {
+		this.mediaPresentationDuration = mediaPresentationDuration;
+	}
+
+	public void setMinBufferTime(String minBufferTime) {
+		this.minBufferTime = minBufferTime;
+	}
+
+	public void setMinorVersion(String minorVersion) {
+		this.minorVersion = minorVersion;
+	}
+
+	public void setProfiles(String profiles) {
+		this.profiles = profiles;
+	}
+
 	public void setRevision(String revision) {
 		this.revision = revision;
 	}
+
 
 }

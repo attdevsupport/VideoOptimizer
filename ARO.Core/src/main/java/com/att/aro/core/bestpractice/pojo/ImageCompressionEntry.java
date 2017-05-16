@@ -18,17 +18,17 @@ package com.att.aro.core.bestpractice.pojo;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 
 public class ImageCompressionEntry {
-	private String orgImageSize;
+	private long orgImageSize;
 	private double imgTimeStamp;
 	private String httpObjtName = "";
 	private String serverHostName = "";
 	private int imgHttpCode;
 	private HttpRequestResponseInfo httpReqRes;
-	private String sizeE;
-	private String sizeS;
+	private long sizeE;
+	private long sizeS;
 
-	public ImageCompressionEntry(HttpRequestResponseInfo reqResInf, String domainName, String imagefile, String iSize,
-			String sizeE, String sizeS) {
+	public ImageCompressionEntry(HttpRequestResponseInfo reqResInf, String domainName, String imagefile, long iSize,
+			long sizeE, long sizeS) {
 
 		this.httpReqRes = reqResInf;
 		this.httpObjtName = imagefile;
@@ -40,6 +40,11 @@ public class ImageCompressionEntry {
 		this.imgHttpCode = reqResInf.getStatusCode();
 		this.sizeS = sizeS;
 
+		assignHostAndHttpObjInfo(reqResInf,domainName);
+	}
+
+
+	private void assignHostAndHttpObjInfo(HttpRequestResponseInfo reqResInf, String domainName) {
 		HttpRequestResponseInfo reqResponseInfo = reqResInf.getAssocReqResp();
 		if (reqResponseInfo != null) {
 			if (reqResponseInfo.getHostName() == null || reqResponseInfo.getHostName().isEmpty()) {
@@ -61,31 +66,31 @@ public class ImageCompressionEntry {
 
 		}
 	}
-
 	
-	public String getSizeE() {
-		return sizeE;
-	}
 
-
-	public void setSizeE(String sizeE) {
-		this.sizeE = sizeE;
-	}
-
-
-	public String getImageSize() {
+	public long getOrgImageSize() {
 		return orgImageSize;
 	}
 
-	public void setImageSize(String imageSize) {
-		this.orgImageSize = imageSize;
+	public void setOrgImageSize(long orgImageSize) {
+		this.orgImageSize = orgImageSize;
+	
 	}
 
-	public String getSizeS() {
+	public long getSizeE() {
+		return sizeE;
+	}
+
+	public void setSizeE(long sizeE) {
+		this.sizeE = sizeE;
+	}
+
+	public long getSizeS() {
 		return sizeS;
 	}
 
-	public void setSizeS(String sizeS) {
+
+	public void setSizeS(long sizeS) {
 		this.sizeS = sizeS;
 	}
 

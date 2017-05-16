@@ -45,7 +45,8 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 	private IBestPractice startUpDelayBPReference;
 	private IBestPractice stallBPReference;
 	private IBestPractice bufferOccupancyBPReference;
-
+	private Map<Long,Double> segmentStartTimeList = new TreeMap<>();
+	
 	@Autowired
 	@Qualifier("startupDelay")
 	public void setVideoStartupDelayImpl(IBestPractice startupdelay) {
@@ -98,7 +99,11 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 
 	private void getChunkCollectionDataSet() {
 		int count = 0;
-		for (VideoEvent ve : getFilteredSegments()) {//filteredChunks
+		List<VideoEvent> allSegments2 = getAllSegments();
+		if(allSegments2 == null ) {
+			return;
+		}
+		for (VideoEvent ve : allSegments2){//getFilteredSegments()) {//filteredChunks
 
 			BufferedImage img = ve.getThumbnail();
 
@@ -125,6 +130,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 
 	public void updateChunkPlayStartTimes() {
 		this.chunkPlayStartTimes.clear();
+		this.segmentStartTimeList.clear();
 		boolean filterAgain = false;
 		double playtime = chunkPlayTimeList.get(chunkPlayTimeList.keySet().toArray()[0]); // Apply the first startup delay set to the First segment to be played
 		double possibleStartTime;
@@ -156,6 +162,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 				if (veSegment.getSegment() == ve.getSegment()) {
 					double playStartTime = (double) playStartTimeBySegment.keySet().toArray()[index];
 					chunkPlayStartTimes.add(playStartTime);
+					segmentStartTimeList.put((new Double(veSegment.getSegment())).longValue(), playStartTime);
 					break;
 				}
 			}
@@ -199,7 +206,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 				else if(ve.getEndTS() > removedChunk.getEndTS() && removedChunk.getSegment() == ve.getSegment()){
 					//swap the closest		
 					minIndex = removeChunks.indexOf(removedChunk);
-					swapedTheMinimum=true;	
+					swapedTheMinimum=true;
 				}
 			}
 			if(swapedTheMinimum && minIndex !=-1)
@@ -219,4 +226,25 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 		return chunkPlayStartTimes;
 	}
 
+	public double getSegmentPlayStartTime(VideoEvent currentChunk) {
+
+		Double temp = segmentStartTimeList.get((new Double(currentChunk.getSegment())).longValue());
+		return temp != null ? temp : -1;
+
+	}
+
+	public Map<Long, Double> getSegmentStartTimeList() {
+		return segmentStartTimeList;
+	}
+	
+	public Map<VideoEvent, Double> getChunkPlayTimeList() {
+		return chunkPlayTimeList;
+	}
+
+	
+	
+
+	
+	
+	
 }

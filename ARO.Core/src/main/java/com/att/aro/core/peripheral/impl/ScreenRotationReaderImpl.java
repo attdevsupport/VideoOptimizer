@@ -38,6 +38,8 @@ public class ScreenRotationReaderImpl extends PeripheralBase implements IScreenR
 
 	@InjectLogger
 	private static ILogger logger;
+	
+	UserEventType eventType = null;
 
 	@Override
 	public List<UserEvent> readData(String directory, double startTime) {
@@ -58,10 +60,9 @@ public class ScreenRotationReaderImpl extends PeripheralBase implements IScreenR
 				// Get timestamp
 				double dTimeStamp = Util.normalizeTime(Double.parseDouble(strFields[0]), startTime);
 	
-				UserEventType eventType = null;
-	
 				if (strFields[1].contains(TraceDataConst.UserEvent.KEY_LANDSCAPE)) {
 					eventType = UserEventType.SCREEN_LANDSCAPE;
+					
 				} else if (strFields[1].contains(TraceDataConst.UserEvent.KEY_PORTRAIT)) {
 					eventType = UserEventType.SCREEN_PORTRAIT;
 				}
@@ -73,5 +74,11 @@ public class ScreenRotationReaderImpl extends PeripheralBase implements IScreenR
 		}
 		return userEvents;
 	}
+
+	public UserEventType getEventType() {
+		return eventType;
+	}
+	
+	
 
 }

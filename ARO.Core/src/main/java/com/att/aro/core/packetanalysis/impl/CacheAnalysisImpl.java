@@ -233,7 +233,9 @@ public class CacheAnalysisImpl implements ICacheAnalysis{
 			}
 
 			cacheExpirationResponses.get(expStatus).add(newCacheEntry);
-			newCacheEntry.setCacheHit(cacheEntry);
+			if(newCacheEntry != null) {
+				newCacheEntry.setCacheHit(cacheEntry);
+			}
 			//addToCache(newCacheEntry);
 			
 		} // END: Iterate through responses looking for duplicates

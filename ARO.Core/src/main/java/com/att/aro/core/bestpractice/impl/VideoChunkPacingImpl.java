@@ -18,6 +18,7 @@ package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
 
+import org.apache.commons.math3.util.MathUtils;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
@@ -82,7 +83,7 @@ public class VideoChunkPacingImpl implements IBestPractice{
 				
 		double lastDl = 0;
 		double averageDelay = 0;
-		double count = 0;
+		int count = 0;
 		if (videoUsage != null && videoUsage.getAroManifestMap() != null) {
 
 			for (AROManifest aroManifest : videoUsage.getAroManifestMap().values()) {
@@ -116,17 +117,11 @@ public class VideoChunkPacingImpl implements IBestPractice{
 													ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
 		result.setResultType(BPResultType.SELF_TEST); // this VideoBestPractice is to be reported as a selftest until further notice
-		result.setResultText(MessageFormat.format(textResults, 
-				count == 1? "was" : "were", 
-				count, 
-				count == 1? "" : "different", 
-				count == 1? "" : "s", 
-				count == 1? "was" : "were", 
-				chunkPacing, 
-				chunkPacing == 1? "" : "s"
-					));
+		result.setResultText(MessageFormat.format(textResults, count == 1 ? "was" : "were", count,
+				count == 1 ? "" : "different", count == 1 ? "" : "s", count == 1 ? "was" : "were", chunkPacing,
+				MathUtils.equals(chunkPacing, 1.0) ? "" : "s"));
 		
 		return result;
 	}
 	
-}//end class
+}

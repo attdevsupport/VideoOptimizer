@@ -39,6 +39,7 @@ import com.att.aro.core.bestpractice.impl.Http3xxCodeImpl;
 import com.att.aro.core.bestpractice.impl.Http4xx5xxImpl;
 import com.att.aro.core.bestpractice.impl.HttpsUsageImpl;
 import com.att.aro.core.bestpractice.impl.ImageCompressionImpl;
+import com.att.aro.core.bestpractice.impl.ImageFormatImpl;
 import com.att.aro.core.bestpractice.impl.ImageMetaDataImpl;
 //import com.att.aro.core.bestpractice.impl.HttpsUsageImpl;
 import com.att.aro.core.bestpractice.impl.ImageSizeImpl;
@@ -203,6 +204,11 @@ public class AROBestPracticeConfig {
 	IBestPractice getImageMdata() {
 		return new ImageMetaDataImpl();
 	}
+	@Bean(name = "imageFormat")
+	IBestPractice getImageFormat() {
+		return new ImageFormatImpl();
+	}
+	
 
 	@Bean(name = "minify")
 	IBestPractice getMinify() {

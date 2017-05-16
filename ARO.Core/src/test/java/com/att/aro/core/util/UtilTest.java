@@ -56,13 +56,13 @@ public class UtilTest {
 	@Test
 	public void getAROTraceDirIOS(){
 		String dirname = Util.getAROTraceDirIOS();
-		boolean hasname = dirname.contains("AROTraceIOS");
+		boolean hasname = dirname.contains("VideoOptimizerTraceIOS");
 		assertTrue(hasname);
 	}
 	@Test
 	public void getAROTraceDirAndroid(){
 		String dirname = Util.getAROTraceDirAndroid();
-		boolean hasname = dirname.contains("AROTraceAndroid");
+		boolean hasname = dirname.contains("VideoOptimizerAndroid");
 		assertTrue(hasname);
 	}
 	@Test

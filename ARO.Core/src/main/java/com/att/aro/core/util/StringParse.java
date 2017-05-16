@@ -16,8 +16,10 @@
 package com.att.aro.core.util;
 
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public final class StringParse {
+public final class StringParse implements IStringParse{
 
 	public static Double findLabeledDoubleFromString(String fieldSearch, byte[] data) {
 		return findLabeledDoubleFromString(fieldSearch, new String(data));
@@ -98,14 +100,40 @@ public final class StringParse {
 		return value;
 	}
 
+	/**
+	 * <pre>
+	 * method not ready for prime time!!
+	 * mark1 and mark2 must be unique
+	 * 
+	 * @param name
+	 * @param mark1
+	 * @param mark2
+	 * @return data between mark[12] or returns "0" 
+	 */
 	public static String subString(String name, char mark1, char mark2) {
 		int posMk1 = name.lastIndexOf(mark1);
-		int poaMk2 = name.lastIndexOf(mark2);
-		String quality = "0";
-		if (posMk1 != -1 && poaMk2 != -1 && posMk1 < poaMk2) {
-			quality = name.substring(posMk1 + 1, poaMk2);
+		int posMk2 = name.lastIndexOf(mark2);
+		String val = "0";
+		if (posMk1 != -1 && posMk2 != -1 && posMk1 < posMk2) {
+			val = name.substring(posMk1 + 1, posMk2);
 		}
-		return quality;
+		return val;
+	}
+
+	@Override
+	public String[] parse(String targetString, String regex) {
+		
+		String[] temp = null;
+		
+		Pattern pattern = Pattern.compile(regex);
+		Matcher matcher = pattern.matcher(targetString);
+		if (matcher.find()) {
+			temp = new String[matcher.groupCount()];
+			for (int index = 0; index < matcher.groupCount();) {
+				temp[index++] = matcher.group(index);
+			}
+		}
+		return temp;
 	}
 
 }

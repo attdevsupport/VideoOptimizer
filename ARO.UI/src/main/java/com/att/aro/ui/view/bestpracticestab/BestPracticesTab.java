@@ -40,6 +40,7 @@ import com.att.aro.ui.commonui.TabPanelJScrollPane;
 import com.att.aro.ui.commonui.UIComponent;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.AROModelObserver;
+import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.statistics.DateTraceAppDetailPanel;
 
 /**
@@ -54,6 +55,7 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 	private JPanel container;
 	private JPanel mainPanel;
 	private IARODiagnosticsOverviewRoute diagnosticsOverviewRoute;
+	private MainFrame aroView;
 
 
 	Insets insets = new Insets(10, 1, 10, 1);
@@ -65,17 +67,19 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 	/**
 	 * Create the panel.
 	 */
-	public BestPracticesTab(IARODiagnosticsOverviewRoute diagnosticsOverviewRoute) {
+	public BestPracticesTab(MainFrame aroView, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute) {
 		super();
+		this.aroView = aroView;
 		this.diagnosticsOverviewRoute = diagnosticsOverviewRoute;
 
 		bpObservable = new AROModelObserver();
 
 		container = new JPanel(new BorderLayout());
-
-		// load graphic header
-		String headerTitle = MessageFormat.format(ResourceBundleHelper.getMessageString("bestPractices.header.result"), 
-													ApplicationConfig.getInstance().getAppShortName());
+		
+		String headerTitle = ApplicationConfig.getInstance().getAppBrandName() + " "
+				+ MessageFormat.format(ResourceBundleHelper.getMessageString("bestPractices.header.result"),
+						ApplicationConfig.getInstance().getAppCombinedName());
+				
 		container.add(UIComponent.getInstance().getLogoHeader(headerTitle), BorderLayout.NORTH);
 
 		ImagePanel panel = new ImagePanel(null);
@@ -114,7 +118,7 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 					, 0, 0));
 			
 			// BP Detail -aka- AROBpDetailedResultPanel
-			bpDetailResultsPanel = new BpDetailResultsPanel(diagnosticsOverviewRoute);
+			bpDetailResultsPanel = new BpDetailResultsPanel(aroView, diagnosticsOverviewRoute);
 			mainPanel.add(bpDetailResultsPanel, new GridBagConstraints(
 					0, section++
 					, 1, 1

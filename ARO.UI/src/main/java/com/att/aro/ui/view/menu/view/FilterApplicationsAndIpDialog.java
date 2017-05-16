@@ -180,7 +180,7 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 								}
 								
 								for (ApplicationSelection as : jApplicationsTableModel.getData()) {
-									if (appName == as.getAppName() || (appName != null && appName.equals(as.getAppName()))) {
+									if (appName != null && appName.equals(as.getAppName())) {
 										as.setSelected(b);
 										break;
 									}
