@@ -64,7 +64,7 @@ Before you download Video Optimizer 1.1, make sure you meet the following system
 6. FFMpeg library installed and configured for HD video
 
 #### Video Optimizer 1.1 Features
-Release 1.1 extends the features released in the Video Optimizer version 1.0.
+
 
 #### • Video Parser Utility (Beta version)
 The Video Parser utility significantly broadens the reach of video optimization by supporting different video formats. This tool has the ability to parse any streaming video URL to identify key streaming features using regular expressions. By using this tool, Video Optimizer can perform video stream analysis and allow the user to test any unencrypted stream of video. Different stream types like video on demand vs. live stream often have a different type of profile and characteristics.
