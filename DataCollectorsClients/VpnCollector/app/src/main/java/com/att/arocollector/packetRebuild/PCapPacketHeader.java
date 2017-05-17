@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 package com.att.arocollector.packetRebuild;
-
-import java.io.IOException;
-import java.io.InputStream;
-
-
-
 
 /**
  * Pkt header in the libcap file.

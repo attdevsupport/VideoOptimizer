@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import android.util.Log;
 import com.att.arotcpcollector.IClientPacketWriter;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
-import com.att.arotcpcollector.util.FileUtil;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
 import com.att.arotcpcollector.util.PacketUtil;

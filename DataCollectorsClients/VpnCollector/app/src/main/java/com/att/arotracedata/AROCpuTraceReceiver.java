@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,14 @@
  */
 package com.att.arotracedata;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-
 import android.content.Context;
 import android.content.Intent;
-import android.os.PowerManager;
-import android.provider.Settings;
-import android.provider.Settings.SettingNotFoundException;
 import android.util.Log;
 
 import com.att.arocollector.utils.AROCollectorUtils;
-import com.att.arocollector.utils.AROLogger;
+
+import java.io.File;
+import java.io.FileNotFoundException;
 
 public class AROCpuTraceReceiver extends AROBroadcastReceiver{
 	

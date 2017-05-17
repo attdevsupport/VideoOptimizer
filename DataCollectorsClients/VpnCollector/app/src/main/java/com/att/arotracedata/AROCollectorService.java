@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,6 @@
  * limitations under the License.
  */
 package com.att.arotracedata;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -53,6 +40,16 @@ import android.view.WindowManager;
 
 import com.att.arocollector.utils.AROCollectorUtils;
 import com.att.arocollector.utils.BundleKeyUtil;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This Service is for monitoring activity on a non rooted Android device

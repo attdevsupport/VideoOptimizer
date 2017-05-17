@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,11 @@
  */
 package com.att.arotcpcollector.ip;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
-import android.util.Log;
-
 import com.att.arotcpcollector.tcp.PacketHeaderException;
 import com.att.arotcpcollector.util.PacketUtil;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * class for creating packet data, header etc related to IP

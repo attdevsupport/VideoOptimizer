@@ -34,19 +34,6 @@ android {
         abortOnError false
     }
 
-    afterEvaluate { project ->
-        def propsFile = rootProject.file('/home/aroteam/.gradle/gradle.properties')
-        def configName = 'release'
-
-        if (propsFile.exists() && android.signingConfigs.hasProperty(configName)) {
-            def props = new Properties()
-            props.load(new FileInputStream(propsFile))
-            android.signingConfigs[configName].storeFile = file(props['RELEASE_STORE_FILE'])
-            android.signingConfigs[configName].storePassword = props['RELEASE_STORE_PASSWORD']
-            android.signingConfigs[configName].keyAlias = props['RELEASE_KEY_ALIAS']
-            android.signingConfigs[configName].keyPassword = props['RELEASE_KEY_PASSWORD']
-        }
-    }
 
     signingConfigs {
         release {
