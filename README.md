@@ -50,7 +50,7 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-####Video Optimizer 1.1 (05/11/17) 
+#### Video Optimizer 1.1 (05/11/17) 
 
 **System Requirements for Video Optimizer 1.1:**
 
