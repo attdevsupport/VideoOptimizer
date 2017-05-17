@@ -50,7 +50,7 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 1.1 (05/11/17) 
+#### Video Optimizer 1.1 
 
 **System Requirements for Video Optimizer 1.1:**
 
@@ -110,7 +110,7 @@ This release includes rebranding of the ARO Command Line Utility and folder stru
 +	A black screen is displayed on the video viewer as soon as the trace is opened instead of an image from the device on which the trace was collected.
 
 #### •	Android Device Data Capture – CPU Temperature
-+	Android Device Data Capture – CPU Temperature
++	CPU temperature is device dependent.
 
 #### •	Video Best Practices
 +	In line videos are sometimes captured as part of trace analysis and a single segment is displayed on the diagnostics chart. The user is able to select the segment.

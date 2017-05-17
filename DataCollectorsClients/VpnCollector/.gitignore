@@ -1,0 +1,10 @@
+*.iml
+.gradle/
+local.properties
+.idea/*
+build/
+bin/
+app/libs/
+app/build/
+gen/
+import-summary.txt

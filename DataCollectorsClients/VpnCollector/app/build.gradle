@@ -1,0 +1,78 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.3"
+
+    defaultConfig {
+        applicationId "com.att.arocollector"
+        def env = System.getenv()
+        versionName "1.1." + env['BUILD_NUMBER']
+        minSdkVersion 19
+        targetSdkVersion 21
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_7
+            targetCompatibility JavaVersion.VERSION_1_7
+        }
+        buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
+    }
+
+    buildTypes {
+        applicationVariants.all { variant ->
+            renameAPK(variant, defaultConfig)
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        // Or, if you prefer, you can continue to check for errors in release builds,
+        // but continue the build even when errors are found:
+        abortOnError false
+    }
+
+    afterEvaluate { project ->
+        def propsFile = rootProject.file('/home/aroteam/.gradle/gradle.properties')
+        def configName = 'release'
+
+        if (propsFile.exists() && android.signingConfigs.hasProperty(configName)) {
+            def props = new Properties()
+            props.load(new FileInputStream(propsFile))
+            android.signingConfigs[configName].storeFile = file(props['RELEASE_STORE_FILE'])
+            android.signingConfigs[configName].storePassword = props['RELEASE_STORE_PASSWORD']
+            android.signingConfigs[configName].keyAlias = props['RELEASE_KEY_ALIAS']
+            android.signingConfigs[configName].keyPassword = props['RELEASE_KEY_PASSWORD']
+        }
+    }
+
+    signingConfigs {
+        release {
+
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
+}
+def renameAPK(variant, defaultConfig) {
+    variant.outputs.each { output ->
+        def applicationName = "VPNCollector";
+        def file = output.packageApplication.outputFile
+        def fileName = applicationName + "-" + defaultConfig.versionName + ".apk"
+        output.packageApplication.outputFile = new File(file.parent, fileName)
+    }
+}
+
+dependencies {
+    compile 'org.apache.commons:commons-collections4:4.0'
+    compile 'com.android.support:support-v4:23.3.0'
+    compile 'com.android.support:appcompat-v7:23.3.0'
+    compile files('../libs/bcpkix-jdk15on-154.jar')
+    compile files('../libs/bcprov-jdk15on-154.jar')
+}
