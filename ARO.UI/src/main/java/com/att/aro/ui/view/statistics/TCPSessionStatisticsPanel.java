@@ -97,6 +97,7 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 				.copyNextLine(attributes)
 				.enumKey(LabelKeys.tcpstatistics_throughput)
 			.build());
+
 		return dataPanel;
 	}
 
@@ -114,6 +115,6 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 					intFormatString, statistic.getTotalPackets()));
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_throughput, String.format(
 					doubleFormatString, statistic.getAverageKbps()));
-		}	
+		}
 	}
 }

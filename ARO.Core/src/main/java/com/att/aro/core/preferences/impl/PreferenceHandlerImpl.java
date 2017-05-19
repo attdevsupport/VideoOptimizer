@@ -21,24 +21,14 @@ import com.att.aro.core.ILogger;
 import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.preferences.IPreferenceHandler;
 
-// Suppressing, otherwise PMD needs the class to be made "final".
-@SuppressWarnings("PMD")
-public class PreferenceHandlerImpl implements IPreferenceHandler {
+public final class PreferenceHandlerImpl implements IPreferenceHandler {
 
 	public static final String ARO_NODE_NAME = "/com/att/aro";
-	private static PreferenceHandlerImpl instance;
+	private static PreferenceHandlerImpl instance = new PreferenceHandlerImpl();
 	private Preferences prefs;
 	private ILogger logger = new LoggerImpl(PreferenceHandlerImpl.class.getName());	
 
 	public static PreferenceHandlerImpl getInstance() {
-		
-		if(instance == null) {
-			synchronized (PreferenceHandlerImpl.class) {
-				if(instance == null) {
-					instance = new PreferenceHandlerImpl();
-				}
-			}
-		}
 		return instance;
 	}
 

@@ -16,5 +16,7 @@
 package com.att.aro.ui.view.video;
 
 public enum VideoPlayerType {
-	MP4, MOV;
+	MP4_JFX,   // For Mac
+	MP4_VLCJ,  // For all Non-Mac OS
+	MOV;
 }

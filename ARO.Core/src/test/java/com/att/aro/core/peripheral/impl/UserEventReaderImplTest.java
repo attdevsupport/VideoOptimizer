@@ -84,7 +84,28 @@ public class UserEventReaderImplTest extends BaseTest {
 		assertEquals(1414108473.512000, listUserEvent.get(3).getReleaseTime(), 0);
 
 	}
-	
+	@Test
+	public void readEventsFileData() throws IOException {
+		Mockito.when(filereader.fileExist(Mockito.anyString())).thenReturn(true);
+		   
+		Mockito.when(filereader.readAllLine(Mockito.anyString())).thenReturn(new String[] {
+				"now at 11038786578074 nsecs",
+				"[   11040.931026] /dev/input/event6: EV_ABS       ABS_MT_POSITION_X    0000044b",
+				"[   11052.610105] /dev/input/event5: EV_KEY       KEY_VOLUMEUP         DOWN",
+				"[   11052.610105] /dev/input/event5: EV_KEY       KEY_VOLUMEDOWN       DOWN",
+				"[   11052.610105] /dev/input/event5: EV_KEY       KEY_POWER       DOWN",
+				"[   11052.610105] /dev/input/event5: EV_KEY       KEY_HOME       DOWN",
+				"[   11052.610105] /dev/input/event5: EV_KEY       KEY_MENU       DOWN",
+				"[   11052.610105] /dev/input/event5: EV_KEY       KEY_SEARCH       DOWN",
+				"[   11052.610105] /dev/input/event5: EV_KEY       KEY_BACK       DOWN",
+		});
+		
+		List<UserEvent> listUserEvent = traceDataReader.readGetEventsFile(traceFolder, 0, 0);
+		assertEquals(8.0, listUserEvent.size(), 0);
+		
+		assertEquals("SCREEN_TOUCH", listUserEvent.get(0).getEventType().toString());		
+		assertEquals("KEY_VOLUP",    listUserEvent.get(1).getEventType().toString());
+	}
 	
 	@Test
 	public void readData_InvalidUserEvent() throws IOException {

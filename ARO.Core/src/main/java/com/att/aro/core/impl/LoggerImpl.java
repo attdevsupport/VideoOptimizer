@@ -15,6 +15,8 @@
 */
 package com.att.aro.core.impl;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +30,32 @@ public class LoggerImpl implements ILogger {
 	public LoggerImpl(String className){
 		logger = LoggerFactory.getLogger(className);
 	}
+	
+	@Override
+	public Level getLevel() {
+		return LogManager.getRootLogger().getLevel();
+	}
+	
+	@Override
+	public Level setLevel(Level level) {
+		Level original = getLevel();
+		if (!original.equals(level)) {
+			LogManager.getRootLogger().setLevel(level);
+		}
+		return original;
+	}
+	
+	@Override
+	public void elevatedInfo(String message) {
+		Level original = getLevel();
+		LogManager.getRootLogger().setLevel(Level.INFO);
+
+		StringBuffer source = getSource();
+		logger.info(wrapMessage(message, source));
+		
+		LogManager.getRootLogger().setLevel(original);
+	}
+	
 	@Override
 	public void debug(String message) {
 		StringBuffer source = getSource();

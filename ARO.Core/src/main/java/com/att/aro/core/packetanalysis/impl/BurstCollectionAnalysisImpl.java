@@ -487,7 +487,7 @@ public class BurstCollectionAnalysisImpl implements IBurstCollectionAnalysis {
 			List<RrcStateRange> rrcstaterangelist) {
 		List<Burst> burstCollection;
 		// Validate that there are packets
-		if (packets.size() <= 0) {
+		if (packets == null || packets.isEmpty()) {
 			burstCollection = Collections.emptyList();
 			return burstCollection;
 		}

@@ -195,6 +195,18 @@ public class MessageDialogFactory extends JOptionPane{
 					, options
 					, options[0]);
 	}
+	
+	public int showStopDialog(Component parentComponent, String message, String title, int optionType) {
+		Object[] options = { ResourceBundleHelper.getMessageString("jdialog.option.stop")};
+		return JOptionPane.showOptionDialog(parentComponent
+					, message
+					, title
+					, optionType
+					, JOptionPane.QUESTION_MESSAGE
+					, null
+					, options
+					, options[0]);
+	}
 
 	/**
 	 * Displays a confirmation dialog for exporting data from a table. The dialog 

@@ -8,7 +8,6 @@ package com.att.aro.util;
  *
  */
 public interface AnalyticsCommon {
-	//Google Analytics Messages
 	public static final boolean GA_SENDFLAG=true;
 	public static final String GA_TRACK_ID="";
 	public static final int GA_VERSION_ID=1;

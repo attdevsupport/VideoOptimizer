@@ -16,12 +16,11 @@
 package com.att.aro.ui.commonui;
 
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import com.att.aro.core.AROConfig;
+import com.att.aro.core.SpringContextUtil;
 
 public class ContextAware {
 
-	private static ApplicationContext configContext = new AnnotationConfigApplicationContext(AROConfig.class);
+	private static ApplicationContext configContext = SpringContextUtil.getInstance().getContext();
 
 	private ContextAware(){
 		super();

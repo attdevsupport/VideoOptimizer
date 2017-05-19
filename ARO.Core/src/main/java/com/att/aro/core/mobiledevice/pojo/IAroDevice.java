@@ -60,8 +60,6 @@ public interface IAroDevice {
 
 	IDataCollector getCollector();
 
-//	boolean installPayloadFile(String tempFolder, String payloadFileName, String remotepath);
-
 	Object getDevice();
 
 	void setStatus(AroDeviceState status);

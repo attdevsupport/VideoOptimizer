@@ -206,11 +206,12 @@ public class SearchTextField extends JTextField {
 				simpleTextArea.setCaretPosition(indexEnd);
 				setFindNextButtonEnable(true);
 
-				if (areaContent
-						.indexOf(text, simpleTextArea.getCaretPosition()) == -1) {
+				// FIXME: Empty logic inside if statement, comment out
+//				if (areaContent
+//						.indexOf(text, simpleTextArea.getCaretPosition()) == -1) {
 					// no more matches, disable find next
 					// setFindNextButtonEnable(false);
-				}
+//				}
 
 			} else {
 				if (!findNext) {

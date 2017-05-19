@@ -16,10 +16,14 @@
 package com.att.aro.core.packetanalysis;
 
 import java.util.List;
+import java.util.TreeMap;
 
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
+import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.preferences.IPreferenceHandler;
+import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
 public interface IVideoUsageAnalysis {
 	
@@ -31,4 +35,15 @@ public interface IVideoUsageAnalysis {
 	 * @return
 	 */
 	VideoUsage analyze(AbstractTraceResult result, List<Session> sessionlist);
+
+	IPreferenceHandler getPrefs();
+	
+	VideoUsagePrefs getVideoUsagePrefs();
+	
+	void loadPrefs();
+
+	VideoUsage getVideoUsage();
+
+	TreeMap<Double, HttpRequestResponseInfo> getReqMap();
+
 }

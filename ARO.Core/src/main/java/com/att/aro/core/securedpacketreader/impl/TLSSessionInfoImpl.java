@@ -67,7 +67,6 @@ public class TLSSessionInfoImpl implements ITLSSessionInfo {
 	int keyBlockLen;
 
 	// for inflation
-	byte[] inflationBuf = null;
 	Inflater decompresser = null;
 
 	private List<SavedTLSSession> savedTLSSessionsByID = new ArrayList<SavedTLSSession>();
@@ -94,7 +93,6 @@ public class TLSSessionInfoImpl implements ITLSSessionInfo {
 		for (int i = 0; i < this.keyBlock.length; i++) {
 			this.keyBlock[i] = 0;
 		}
-		this.inflationBuf = null;
 		this.decompresser = null;
 	}
 
@@ -174,10 +172,6 @@ public class TLSSessionInfoImpl implements ITLSSessionInfo {
 		this.pCipherClient = -1;
 		this.pCipherServer = -1;
 		crypto.cryptoCipherDeinit(this.objectType);
-		if (this.inflationBuf != null) {
-			this.inflationBuf = null;
-		}
-
 		if (this.decompresser != null) {
 			this.decompresser = null;
 		}

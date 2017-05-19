@@ -30,14 +30,6 @@
   		<systemPath> ${basedir}/libs/aro-core-5.0.0-SNAPSHOT.jar</systemPath>
 
     </dependency>
-	<dependency>  
-			<groupId>com.att.aro.datacollector</groupId>
-	  		<artifactId>vpn-android-collector</artifactId>
-	  		<version>1.0</version>
-	  		        <scope>system</scope>
-  		<systemPath> ${basedir}/libs/vpn-android-collector-1.0.jar</systemPath>
-	  				
-	</dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>jcl-over-slf4j</artifactId>

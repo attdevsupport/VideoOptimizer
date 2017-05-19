@@ -40,7 +40,7 @@ import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.IAROExpandable;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.model.DataTableModel;
-import com.att.aro.ui.model.ImageMetaDataTable;
+import com.att.aro.ui.model.ImageBPTable;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
@@ -72,7 +72,7 @@ public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel imp
 	DataTableModel tableModel;
 	
 	@SuppressWarnings("rawtypes")
-	ImageMetaDataTable contentTable;
+	ImageBPTable contentTable;
 	
 	
 	
@@ -214,7 +214,7 @@ public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel imp
 	}
 
 	@SuppressWarnings("rawtypes")
-	public abstract ImageMetaDataTable getContentTable();
+	public abstract ImageBPTable getContentTable();
 
 	/**
 	 * clicks the "+" button if table needs to expand

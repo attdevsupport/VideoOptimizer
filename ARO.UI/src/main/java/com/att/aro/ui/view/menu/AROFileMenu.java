@@ -33,6 +33,7 @@ import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.att.aro.core.ILogger;
+import com.att.aro.core.preferences.UserPreferences;
 import com.att.aro.core.preferences.UserPreferencesFactory;
 import com.att.aro.core.util.CrashHandler;
 import com.att.aro.ui.commonui.AROMenuAdder;
@@ -41,13 +42,13 @@ import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.IAROPrintable;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.commonui.TabPanelCommon;
-import com.att.aro.core.preferences.UserPreferences;
 import com.att.aro.ui.exception.AROUIIllegalStateException;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.SharedAttributesProcesses.TabPanels;
 import com.att.aro.ui.view.menu.file.ADBPathDialog;
 import com.att.aro.ui.view.menu.file.MissingTraceFiles;
+import com.att.aro.ui.view.menu.file.PreferencesDialog;
 
 /**
  *
@@ -71,6 +72,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 		menu_file_open,
 		menu_file_pcap,
 		menu_file_adb,
+		menu_file_pref,
 		menu_file_print,
 		menu_file_exit,
 		error_printer,
@@ -97,7 +99,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_open));
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_pcap));
 			fileMenu.addSeparator();
-
+			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_pref));
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_adb));
 			fileMenu.addSeparator();
 
@@ -119,27 +121,30 @@ public class AROFileMenu implements ActionListener, MenuListener {
 	@Override
 	public void actionPerformed(ActionEvent aEvent) {
 		if (menuAdder.isMenuSelected(MenuItem.menu_file_open, aEvent)) {
-			File tracePath = null;
-			Object event = aEvent.getSource();
-			if (event instanceof JMenuItem) {
-				tracePath = chooseFileOrFolder(JFileChooser.DIRECTORIES_ONLY,
-						ResourceBundleHelper.getMessageString(MenuItem.menu_file_open));
-				if (tracePath != null) {
-					MissingTraceFiles missingTraceFiles = new MissingTraceFiles(tracePath);
-					Set<File> missingFiles = missingTraceFiles.retrieveMissingFiles();
-					if (missingFiles.size() > 0) {
-//						MessageDialogFactory.showMessageDialog(parent.getFrame(),
-//								MessageFormat.format(ResourceBundleHelper.getMessageString(
-//										MenuItem.file_missingAlert),
-//											missingTraceFiles.formatMissingFiles(missingFiles)));
-						log.warn(MessageFormat.format(ResourceBundleHelper.getMessageString(
-							MenuItem.file_missingAlert),
-								missingTraceFiles.formatMissingFiles(missingFiles)));
+			try {
+				File tracePath = null;
+				Object event = aEvent.getSource();
+				if (event instanceof JMenuItem) {
+					tracePath = chooseFileOrFolder(JFileChooser.DIRECTORIES_ONLY,
+							ResourceBundleHelper.getMessageString(MenuItem.menu_file_open));
+					if (tracePath != null) {
+						MissingTraceFiles missingTraceFiles = new MissingTraceFiles(tracePath);
+						Set<File> missingFiles = missingTraceFiles.retrieveMissingFiles();
+						if (missingFiles.size() > 0) {
+							log.warn(MessageFormat.format(ResourceBundleHelper.getMessageString(
+								MenuItem.file_missingAlert),
+									missingTraceFiles.formatMissingFiles(missingFiles)));
+						}
+						parent.updateTracePath(tracePath);
+						userPreferences.setLastTraceDirectory(tracePath.getParentFile());
 					}
-					parent.updateTracePath(tracePath);
-					userPreferences.setLastTraceDirectory(tracePath.getParentFile());
 				}
+			} catch(OutOfMemoryError err) {
+				log.error(err.getMessage(), err);
+				MessageDialogFactory.getInstance().showErrorDialog(parent.getFrame(),
+						"Video Optimizer failed to load the trace: Trace is too big to load", "Out of Memory");
 			}
+
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_pcap, aEvent)) {
 			File tracePath = null;
 			Object event = aEvent.getSource();
@@ -151,6 +156,8 @@ public class AROFileMenu implements ActionListener, MenuListener {
 					userPreferences.setLastTraceDirectory(tracePath.getParentFile().getParentFile());
 				}
 			}
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_pref, aEvent)) {
+			new PreferencesDialog(parent, (JMenuItem)aEvent.getSource()).setVisible(true);
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_adb, aEvent)) {
 			new ADBPathDialog(parent).setVisible(true);
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_print, aEvent)) {

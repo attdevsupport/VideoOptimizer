@@ -115,22 +115,18 @@ public class EmptyUrlImpl implements IBestPractice {
 			log.error("Failed to get content from HttpRequestResponseInfo", e);
 			return res;
 		}
+		Elements allSrcElements = new Elements();
 		try {
 			htmlDoc = Jsoup.parse(contentstr);
+			allSrcElements.addAll(htmlDoc.select("iframe"));
+			allSrcElements.addAll(htmlDoc.select("img"));
+			allSrcElements.addAll(htmlDoc.select("script"));
+			allSrcElements.addAll(htmlDoc.select("a"));
+			allSrcElements.addAll(htmlDoc.select("link"));
 		} catch (Exception e) {
 			log.error("Failed to parse :"+contentstr, e);
 		}
-
-		Elements allSrcElements = new Elements();
-		allSrcElements.addAll(htmlDoc.select("iframe"));
-		allSrcElements.addAll(htmlDoc.select("img"));
-		allSrcElements.addAll(htmlDoc.select("script"));
-		allSrcElements.addAll(htmlDoc.select("a"));
-		allSrcElements.addAll(htmlDoc.select("link"));
-
 		res = checkAttributeEmpty(request, allSrcElements, res);
-		
-
 		return res;
 		
 	}

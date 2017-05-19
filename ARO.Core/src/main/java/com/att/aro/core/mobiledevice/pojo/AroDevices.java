@@ -19,11 +19,10 @@ import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import com.android.ddmlib.IDevice;
-import com.att.aro.core.AROConfig;
 import com.att.aro.core.ILogger;
+import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.android.AndroidApiLevel;
 import com.att.aro.core.mobiledevice.IAndroidDevice;
 
@@ -32,7 +31,7 @@ public class AroDevices implements IAroDevices {
 	@Autowired
 	private ILogger log;
 
-	private ApplicationContext context = new AnnotationConfigApplicationContext(AROConfig.class);
+	private ApplicationContext context = SpringContextUtil.getInstance().getContext();
 
 	ArrayList<IAroDevice> deviceList = null;
 

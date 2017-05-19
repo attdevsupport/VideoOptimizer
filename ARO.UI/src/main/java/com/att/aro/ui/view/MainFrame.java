@@ -18,6 +18,7 @@ package com.att.aro.ui.view;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Insets;
@@ -46,6 +47,8 @@ import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.apache.commons.io.FileUtils;
+
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.ILogger;
@@ -55,7 +58,6 @@ import com.att.aro.core.datacollector.pojo.CollectorStatus;
 import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
-import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
@@ -66,6 +68,7 @@ import com.att.aro.core.util.CrashHandler;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.VideoOption;
+import com.att.aro.core.videoanalysis.impl.FFmpegConfirmationImpl;
 import com.att.aro.mvc.AROController;
 import com.att.aro.ui.collection.AROCollectorSwingWorker;
 import com.att.aro.ui.commonui.ARODiagnosticsOverviewRouteImpl;
@@ -82,19 +85,21 @@ import com.att.aro.ui.view.menu.AROMainFrameMenu;
 import com.att.aro.ui.view.menu.help.SplashScreen;
 import com.att.aro.ui.view.menu.tools.DataDump;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
+import com.att.aro.ui.view.menu.tools.RegexWizard;
 import com.att.aro.ui.view.menu.tools.VideoAnalysisDialog;
 import com.att.aro.ui.view.overviewtab.OverviewTab;
 import com.att.aro.ui.view.statistics.StatisticsTab;
-import com.att.aro.ui.view.video.AROMp4Player;
 import com.att.aro.ui.view.video.AROVideoPlayer;
 import com.att.aro.ui.view.video.IVideoPlayer;
+import com.att.aro.ui.view.video.JFxPlayer;
 import com.att.aro.ui.view.video.LiveScreenViewDialog;
 import com.att.aro.ui.view.video.VideoPlayerController;
+import com.att.aro.ui.view.video.VlcjPlayer;
+import com.att.aro.ui.view.videotab.VideoTab;
 import com.att.aro.ui.view.waterfalltab.WaterfallTab;
 import com.att.aro.view.images.Images;
 
 public class MainFrame implements SharedAttributesProcesses {
-
 	private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("messages"); //$NON-NLS-1$
 
 	private JFrame frmApplicationResourceOptimizer;
@@ -102,6 +107,7 @@ public class MainFrame implements SharedAttributesProcesses {
 	private BestPracticesTab bestPracticesTab;
 	private StatisticsTab statisticsTab;
 	private DiagnosticsTab diagnosticsTab;
+	private VideoTab videoTab;
 	private OverviewTab overviewTab;
 	private WaterfallTab waterfallTab;
 	private AROMainFrameMenu mainMenu;
@@ -109,16 +115,18 @@ public class MainFrame implements SharedAttributesProcesses {
 	private String tracePath;
 	private String reportPath;
 	private Profile profile;
-	private final List<PropertyChangeListener> propertyChangeListeners =
-			new ArrayList<PropertyChangeListener>();
+	private final List<PropertyChangeListener> propertyChangeListeners = new ArrayList<PropertyChangeListener>();
 	private final List<ActionListener> actionListeners = new ArrayList<ActionListener>();
 	private static MainFrame window;
-	private AROModelObserver modelObserver; //for updating all the observers
+	private AROModelObserver modelObserver;
 
 	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
 	private VersionInfo versionInfo = ContextAware.getAROConfigContext().getBean(VersionInfo.class);
 	private TabPanels tabPanel = TabPanels.tab_panel_best_practices;
 	
+	private FFmpegConfirmationImpl ffmpegConfirmationImpl = ContextAware.getAROConfigContext()
+			.getBean("ffmpegConfirmationImpl", FFmpegConfirmationImpl.class);
+
 	/**
 	 * private data dialog reference
 	 */
@@ -127,7 +135,7 @@ public class MainFrame implements SharedAttributesProcesses {
 	 * video analysis dialog reference
 	 */
 	private VideoAnalysisDialog videoAnalysisDialog;
-
+	private RegexWizard regexWizard;
 	private boolean videoPlayerSelected = true;
 	private VideoPlayerController videoPlayerController;
 
@@ -136,14 +144,19 @@ public class MainFrame implements SharedAttributesProcesses {
 	private IARODiagnosticsOverviewRoute route;
 
 	private LiveScreenViewDialog liveView;
-	
+
 	private AnalysisFilter filter;
+
+	private int playbackWidth = 350;
+	private int playbackHeight = 600;
+	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+	private int rtEdge = screenSize.width - playbackWidth;
 	
 	public static MainFrame getWindow() {
 		return window;
 	}
-	
-	public JFrame getJFrame(){
+
+	public JFrame getJFrame() {
 		return frmApplicationResourceOptimizer;
 	}
 
@@ -167,16 +180,24 @@ public class MainFrame implements SharedAttributesProcesses {
 		this.videoAnalysisDialog = videoAnalysisDialog;
 	}
 
+	public RegexWizard getRegexWizard() {
+		return regexWizard;
+	}
+
+	public void setRegexWizard(RegexWizard regexWizard) {
+		this.regexWizard = regexWizard;
+	}
+
 	/**
 	 * set up test conducted title to the location of related session
 	 */
 	public static void setLocationMap() {
 		Container container = window.frmApplicationResourceOptimizer.getContentPane();
 		Component[] components = container.getComponents();
-		
+
 		if (components != null && components.length > 0) {
 			Component bpComponent = components[0];
-			
+
 			try {
 				BestPracticesTab bpTab = (BestPracticesTab) bpComponent;
 				bpTab.setScrollLocationMap();
@@ -195,32 +216,14 @@ public class MainFrame implements SharedAttributesProcesses {
 				try {
 					window = new MainFrame();
 					window.frmApplicationResourceOptimizer.setVisible(true);
-					
 					setLocationMap();
-					
 				} catch (Exception e) {
 					e.printStackTrace();
-				}
-				// Code to display About window from Mac menu
-				if (System.getProperty("os.name").contains("Mac")) {
-				    try {
-				        Object app = Class.forName("com.apple.eawt.Application").getMethod("getApplication",
-				         (Class[]) null).invoke(null, (Object[]) null);
-
-//				        Object al = Proxy.newProxyInstance(Class.forName("com.apple.eawt.AboutHandler")
-//				                .getClassLoader(), new Class[] { Class.forName("com.apple.eawt.AboutHandler") },
-//				                    new AboutListener());
-//				        app.getClass().getMethod("setAboutHandler", new Class[] {
-//				            Class.forName("com.apple.eawt.AboutHandler") }).invoke(app, new Object[] { al });
-				    } catch (Exception e) {
-				        //fail quietly
-				    }
 				}
 				final SplashScreen splash = new SplashScreen();
 				splash.setVisible(true);
 				splash.setAlwaysOnTop(true);
 				new SwingWorker<Object, Object>() {
-
 					@Override
 					protected Object doInBackground() {
 						try {
@@ -233,10 +236,25 @@ public class MainFrame implements SharedAttributesProcesses {
 					protected void done() {
 						splash.dispose();
 					}
-
 				}.execute();
+
+				new Thread(() -> {
+					if (window.ffmpegConfirmationImpl.checkFFmpegExistance() == false) {
+						SwingUtilities.invokeLater(() -> window.launchFFmpegDialog());
+					}
+				}).start();
 			}
 		});
+	}
+
+	private void launchFFmpegDialog() {
+		FFmpegConfirmationDialog ffmpegDialog = new FFmpegConfirmationDialog();
+		ffmpegDialog.createDialog();
+		ffmpegDialog.pack();
+		ffmpegDialog.setSize(ffmpegDialog.getPreferredSize());
+		ffmpegDialog.validate();
+		ffmpegDialog.setModalityType(ModalityType.APPLICATION_MODAL);
+		ffmpegDialog.setVisible(true);
 	}
 
 	/**
@@ -253,8 +271,9 @@ public class MainFrame implements SharedAttributesProcesses {
 	public void initialize() {
 		AROUIManager.init();
 		int playbackWidth = 350;
-		int playbackHeight = 600;
+		// int playbackHeight = 600;
 
+		createVideoOptimizerFolder();
 		frmApplicationResourceOptimizer = new JFrame();
 		frmApplicationResourceOptimizer.setTitle(getAppTitle());
 		frmApplicationResourceOptimizer.setIconImage(Images.ICON.getImage());
@@ -269,63 +288,87 @@ public class MainFrame implements SharedAttributesProcesses {
 
 		aroController = new AROController(this);
 		frmApplicationResourceOptimizer.setContentPane(getJTabbedPane());
-
 		// ----- Video Player Setup - Start -----
 		initVideoPlayerController();
 		diagnosticsTab.setVideoPlayer(videoPlayerController.getDefaultPlayer()); // Default video player: AROVideoPlayer
 		// ----- Video Player Setup - End -----
-		
-		String titleName = MessageFormat.format(BUNDLE.getString("aro.title.short"), 
-												ApplicationConfig.getInstance().getAppShortName()).trim();
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().applicationInfo(GoogleAnalyticsUtil.getAnalyticsEvents().getTrackerID(), titleName, versionInfo.getVersion());
+
+		String titleName = MessageFormat
+				.format(BUNDLE.getString("aro.title.short"), ApplicationConfig.getInstance().getAppShortName()).trim();
+		Runnable runGA = () -> {
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().applicationInfo(
+				GoogleAnalyticsUtil.getAnalyticsEvents().getTrackerID(), titleName, versionInfo.getVersion());
 		sendInstallationInfoTOGA();
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsStartSessionEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(), GoogleAnalyticsUtil.getAnalyticsEvents().getStartApp());
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsStartSessionEvents(
+				GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(),
+				GoogleAnalyticsUtil.getAnalyticsEvents().getStartApp());
+		};
+		new Thread(runGA).start();
 		frmApplicationResourceOptimizer.addWindowListener(new WindowAdapter() {
 			@Override
-			public void windowClosing(WindowEvent wEvent){
+			public void windowClosing(WindowEvent wEvent) {
 				dispose();
 			}
-			
+
 		});
-		
+
 		log.info("ARO UI started");
 	}
-	
+
+	private void createVideoOptimizerFolder() {
+		File aroFolder = new File(Util.getAroLibrary());
+
+		String videoOptimizerFolder = Util.getVideoOptimizerLibrary() + System.getProperty("file.separator");
+		File videoOptimizerConfigFile = new File(videoOptimizerFolder + "config.properties");
+		if (aroFolder.exists() && videoOptimizerConfigFile.length() == 0) {
+			try {
+				FileUtils.copyDirectory(new File(Util.getAroLibrary()), new File(Util.getVideoOptimizerLibrary()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+	}
+
 	private String getAppTitle() {
-		return ApplicationConfig.getInstance().getAppBrandName() 
-				+ " " 
+		return ApplicationConfig.getInstance().getAppBrandName() + " "
 				+ ApplicationConfig.getInstance().getAppCombinedName();
 	}
 
 	private void initVideoPlayerController() {
 		List<IVideoPlayer> players = new ArrayList<IVideoPlayer>();
 		// Add all the video players intended to be used
-		players.add(new AROVideoPlayer());
-		players.add(new AROMp4Player());
+		players.add(new AROVideoPlayer(this));
+		players.add(new JFxPlayer(this));
+		players.add(new VlcjPlayer(this));
 		videoPlayerController = new VideoPlayerController(diagnosticsTab, players);
 		modelObserver.registerObserver(videoPlayerController);
-		videoPlayerController.initAppLaunchTimeInitialPlayer();
+		videoPlayerController.launchPlayer(rtEdge, 0, playbackWidth, playbackHeight);
 	}
-	
+
 	private JTabbedPane getJTabbedPane() {
 		if (jMainTabbedPane == null) {
 			UIManager.getDefaults().put("TabbedPane.contentBorderInsets", new Insets(0, 0, 0, 0));
 			UIManager.getDefaults().put("TabbedPane.tabsOverlapBorder", true);
-			
+
 			jMainTabbedPane = new JTabbedPane();
 			route = new ARODiagnosticsOverviewRouteImpl(jMainTabbedPane);
-			
-			bestPracticesTab = new BestPracticesTab(route);
+
+			bestPracticesTab = new BestPracticesTab(this, route);
 			jMainTabbedPane.add(BUNDLE.getString("aro.tab.bestpractices"), bestPracticesTab);
 			modelObserver.registerObserver(bestPracticesTab);
-			
+
 			overviewTab = new OverviewTab(route);
 			jMainTabbedPane.add(BUNDLE.getString("aro.tab.overview"), overviewTab.layoutDataPanel());
 			modelObserver.registerObserver(overviewTab);
 
 			diagnosticsTab = new DiagnosticsTab(this);
-			jMainTabbedPane.add(BUNDLE.getString("aro.tab.advanced"),diagnosticsTab);
+			jMainTabbedPane.add(BUNDLE.getString("aro.tab.advanced"), diagnosticsTab);
 			modelObserver.registerObserver(diagnosticsTab);
+
+			videoTab = new VideoTab(this, route);
+			jMainTabbedPane.add(BUNDLE.getString("aro.tab.video"), videoTab);
+			modelObserver.registerObserver(videoTab);
 
 			statisticsTab = new StatisticsTab(this);
 			jMainTabbedPane.add(BUNDLE.getString("aro.tab.statistics"), statisticsTab);
@@ -334,53 +377,42 @@ public class MainFrame implements SharedAttributesProcesses {
 			waterfallTab = new WaterfallTab(route);
 			jMainTabbedPane.add(BUNDLE.getString("aro.tab.waterfall"), waterfallTab.layoutDataPanel());
 			modelObserver.registerObserver(waterfallTab);
-			
-			jMainTabbedPane.addChangeListener(new ChangeListener(){
+
+			jMainTabbedPane.addChangeListener(new ChangeListener() {
 				@Override
 				public void stateChanged(ChangeEvent event) {
 					onTabChanged(event);
-				}});
+				}
+			});
 		}
 		return jMainTabbedPane;
 	}
-	
-	private void onTabChanged(ChangeEvent event){
-		if(getCurrentTabComponent() == bestPracticesTab){
-			tabPanel = TabPanels.tab_panel_best_practices;	
-			if(getController().getTheModel().getAnalyzerResult() != null){
-				bestPracticesTab.update(modelObserver, getController().getTheModel());//refresh(getController().getTheModel());
+
+	private void onTabChanged(ChangeEvent event) {
+		if (getCurrentTabComponent() == bestPracticesTab) {
+			tabPanel = TabPanels.tab_panel_best_practices;
+			if (getController().getTheModel().getAnalyzerResult() != null) {
+				bestPracticesTab.update(modelObserver, getController().getTheModel());// refresh(getController().getTheModel());
 			}
-		}else if(getCurrentTabComponent() == statisticsTab){
+		} else if (getCurrentTabComponent() == statisticsTab) {
 			tabPanel = TabPanels.tab_panel_statistics;
-		}else if(getCurrentTabComponent() == diagnosticsTab){
+		} else if (getCurrentTabComponent() == diagnosticsTab) {
 			tabPanel = TabPanels.tab_panel_other;
-		}else{
+		} else {
 			tabPanel = TabPanels.tab_panel_other;
 		}
-	}
-
-	
-	
-	/**
-	 * Takes care of displaying or removing the Video Player based on argument.
-	 * 
-	 * @param displayPlayer
-	 */
-	private void displayRemoveVideoPlayer(boolean displayPlayer) {
-		//VideoPlayerController videoPlayerController = VideoPlayerController.getInstance();
-		videoPlayerController.getCurrentVideoPlayer().setVisibility(displayPlayer);
 	}
 
 	@Override
 	public Component getCurrentTabComponent() {
 		return jMainTabbedPane.getSelectedComponent();
 	}
-	
+
 	@Override
 	public void addAROPropertyChangeListener(PropertyChangeListener propertyChangeListener) {
 		propertyChangeListeners.add(propertyChangeListener);
 	}
-	
+
 	@Override
 	public void addAROActionListener(ActionListener actionListener) {
 		actionListeners.add(actionListener);
@@ -388,60 +420,68 @@ public class MainFrame implements SharedAttributesProcesses {
 
 	@Override
 	public void updateTracePath(File path) {
-		if (path!=null){
+		if (path != null) {
 			notifyPropertyChangeListeners("tracePath", tracePath, path.getAbsolutePath());
-			if(path.getAbsolutePath().contains(".cap")) {
-				tracePath = path.getAbsolutePath().substring(0,path.getAbsolutePath().lastIndexOf(Util.FILE_SEPARATOR));
+			if (path.getAbsolutePath().contains(".cap")) {
+				tracePath = path.getAbsolutePath().substring(0,
+						path.getAbsolutePath().lastIndexOf(Util.FILE_SEPARATOR));
 			} else {
-				tracePath = path.getAbsolutePath();	
-			}
-			
-			updatePath();
-			if(path.isDirectory()){
-				GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(), GoogleAnalyticsUtil.getAnalyticsEvents().getLoadTrace()); //GA Request
-				
-			} else {
-				GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(), GoogleAnalyticsUtil.getAnalyticsEvents().getLoadPcap()); //GA Request
+				tracePath = path.getAbsolutePath();
 			}
 
+			updatePath();
+			boolean isDir = path.isDirectory();
+			Runnable sendAnalytics = () -> sendAnalytics(isDir);
+			new Thread(sendAnalytics).start();
+		}
+	}
+
+	private void sendAnalytics(boolean isDir) {
+		if (isDir) {
+			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+					GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(),
+					GoogleAnalyticsUtil.getAnalyticsEvents().getLoadTrace());
+
+		} else {
+			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+					GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(),
+					GoogleAnalyticsUtil.getAnalyticsEvents().getLoadPcap());
 		}
 	}
 
 	private void updatePath() {
-		PreferenceHandlerImpl.getInstance().setPref("TRACE_PATH", tracePath);	
+		PreferenceHandlerImpl.getInstance().setPref("TRACE_PATH", tracePath);
 	}
 
 	@Override
 	public void updateReportPath(File path) {
-		if (path!=null){
+		if (path != null) {
 			notifyPropertyChangeListeners("reportPath", reportPath, path.getAbsolutePath());
 			reportPath = path.getAbsolutePath();
 		}
 	}
 
 	private void showErrorMessage(String message) {
-		MessageDialogFactory.showMessageDialog(this.getJFrame(),
-				ResourceBundleHelper.getMessageString(message),
-				ResourceBundleHelper.getMessageString("menu.error.title"),
-				JOptionPane.ERROR_MESSAGE);	
+		MessageDialogFactory.showMessageDialog(this.getJFrame(), ResourceBundleHelper.getMessageString(message),
+				ResourceBundleHelper.getMessageString("menu.error.title"), JOptionPane.ERROR_MESSAGE);
 	}
 
-//	@Override
+	// @Override
 	public void refresh() {
-		
-		if(aroController != null){			
+
+		if (aroController != null) {
 			AROTraceData traceData = aroController.getTheModel();
 			if (traceData.isSuccess()) {
 				modelObserver.refreshModel(traceData);
 				this.profile = traceData.getAnalyzerResult().getProfile();
 				if (traceData.getAnalyzerResult().getTraceresult()
 						.getTraceResultType() == TraceResultType.TRACE_DIRECTORY) {
-					TraceDirectoryResult traceResults = (TraceDirectoryResult) traceData
-							.getAnalyzerResult().getTraceresult();
+					TraceDirectoryResult traceResults = (TraceDirectoryResult) traceData.getAnalyzerResult()
+							.getTraceresult();
 					GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
-									traceResults.getDeviceDetail().getDeviceModel(),
-									traceResults.getDeviceDetail().getOsType(),
-									traceResults.getDeviceDetail().getOsVersion()); // GA Request
+							traceResults.getDeviceDetail().getDeviceModel(), traceResults.getDeviceDetail().getOsType(),
+							traceResults.getDeviceDetail().getOsVersion()); // GA
+																			// Request
 				}
 			} else if (traceData.getError() != null) {
 				MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(),
@@ -453,7 +493,7 @@ public class MainFrame implements SharedAttributesProcesses {
 
 		}
 	}
-	
+
 	@Override
 	public String getTracePath() {
 		return tracePath;
@@ -461,8 +501,7 @@ public class MainFrame implements SharedAttributesProcesses {
 
 	@Override
 	public boolean isModelPresent() {
-		return aroController != null && aroController.getTheModel() != null &&
-				aroController.getTheModel().isSuccess();
+		return aroController != null && aroController.getTheModel() != null && aroController.getTheModel().isSuccess();
 	}
 
 	@Override
@@ -497,7 +536,7 @@ public class MainFrame implements SharedAttributesProcesses {
 	@Override
 	public void updateVideoPlayerSelected(boolean videoPlayerSelected) {
 		this.videoPlayerSelected = videoPlayerSelected;
-		displayRemoveVideoPlayer(videoPlayerSelected);
+		videoPlayerController.getCurrentVideoPlayer().setVisibility(videoPlayerSelected);
 	}
 
 	@Override
@@ -506,54 +545,35 @@ public class MainFrame implements SharedAttributesProcesses {
 	}
 
 	public void notifyPropertyChangeListeners(String property, Object oldValue, Object newValue) {
-		if (property.equals("profile"))	{
-			new AROSwingWorker<Void, Void>(frmApplicationResourceOptimizer, propertyChangeListeners, property, oldValue, newValue, 
-					ResourceBundleHelper.getMessageString("configuration.applied")).execute();
-		}else if (property.equals("filter")){
-			new AROSwingWorker<Void, Void>(frmApplicationResourceOptimizer, propertyChangeListeners, property, oldValue, newValue, 
-					null).execute();
+		if (property.equals("profile")) {
+			new AROSwingWorker<Void, Void>(frmApplicationResourceOptimizer, propertyChangeListeners, property, oldValue,
+					newValue, ResourceBundleHelper.getMessageString("configuration.applied")).execute();
+		} else if (property.equals("filter")) {
+			new AROSwingWorker<Void, Void>(frmApplicationResourceOptimizer, propertyChangeListeners, property, oldValue,
+					newValue, null).execute();
 		} else {
-			new AROSwingWorker<Void, Void>(frmApplicationResourceOptimizer, propertyChangeListeners, property, oldValue, newValue, null).execute();	
-		}	
+			new AROSwingWorker<Void, Void>(frmApplicationResourceOptimizer, propertyChangeListeners, property, oldValue,
+					newValue, null).execute();
+		}
 	}
 
-//	@Override
+	// @Override
 	public void notifyActionListeners(int id, String command) {
 		new AROSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, id, command, null).execute();
 	}
-	
-	/*-----------------------
-	 * Start-stop Collectors
-	 * ----------------------*/
+
 	@Override
-	public void startCollector(IAroDevice device, String traceFolderName, Hashtable<String, Object> extraParams){//VideoOption videoOption) {
-		// TODO Auto-generated method stub
-		new AROCollectorSwingWorker<Void, Void>(
-				frmApplicationResourceOptimizer
-				, actionListeners
-				, 1
-				, "startCollector"
-				, device
-				, traceFolderName
-				, extraParams
-				).execute();
+	public void startCollector(IAroDevice device, String traceFolderName, Hashtable<String, Object> extraParams) {
+		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 1, "startCollector",
+				device, traceFolderName, extraParams).execute();
 	}
 
-	
 	@Override
-	public void startCollectorIos(IDataCollector iOsCollector, String udid, String tracePath,  VideoOption videoOption) {
-		new AROCollectorSwingWorker<Void, Void>(
-									frmApplicationResourceOptimizer
-									, actionListeners
-									, 2
-									, "startCollectorIos"
-									, iOsCollector
-									, udid
-									, tracePath
-									, videoOption
-									).execute();
+	public void startCollectorIos(IDataCollector iOsCollector, String udid, String tracePath, VideoOption videoOption) {
+		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 2,
+				"startCollectorIos", iOsCollector, udid, tracePath, videoOption).execute();
 	}
-	
+
 	@Override
 	public void liveVideoDisplay(IDataCollector collector) {
 		liveView = new LiveScreenViewDialog(this, collector);
@@ -565,28 +585,30 @@ public class MainFrame implements SharedAttributesProcesses {
 	public void stopCollector() {
 		if (liveView != null) {
 			liveView.setVisible(false);
-			liveView = null;}
-		new AROCollectorSwingWorker<Void, Void>(
-									frmApplicationResourceOptimizer
-									, actionListeners
-									, 3
-									, "stopCollector"
-									, null
-									).execute();
+			liveView = null;
+		}
+		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3, "stopCollector",
+				null).execute();
+	}
+	
+	@Override
+	public void cancelCollector() {
+		if (liveView != null) {
+			liveView.setVisible(false);
+			liveView = null;
+		}
+		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3, "cancelCollector",
+				null).execute();
 	}
 
 	@Override
 	public void haltCollector() {
 		if (liveView != null) {
 			liveView.setVisible(false);
-			liveView = null;}
-		new AROCollectorSwingWorker<Void, Void>(
-									frmApplicationResourceOptimizer
-									, actionListeners
-									, 3
-									, "haltCollectorInDevice"
-									, null
-									).execute();
+			liveView = null;
+		}
+		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3,
+				"haltCollectorInDevice", null).execute();
 	}
 
 	@Override
@@ -606,37 +628,27 @@ public class MainFrame implements SharedAttributesProcesses {
 
 	@Override
 	public void updateCollectorStatus(CollectorStatus collectorStatus, StatusResult statusResult) {
-		
+
 		this.collectorStatus = collectorStatus;
-		
+
 		if (statusResult == null) {
 			return;
 		}
-		
+
 		log.info("updateCollectorStatus :STATUS :" + statusResult);
-		
+
 		// timeout - collection not approved in time
 		if (!statusResult.isSuccess()) {
 			//String traceFolder = aroController.getTraceFolderPath();
 			log.info("updateCollectorStatus :FAILED STATUS :" + statusResult.getError().getDescription());
-			MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(), statusResult.getError().getDescription());
-
-			
-//			String selection = MessageDialogFactory.getInstance().showTimeOutOptions(window.getJFrame()
-//																, traceFolder
-//																, statusResult.getError().getDescription()
-//																, "Off, due to timeout"
-//																, "");
-//			if (selection.equals("Stop")) {
-//				stopCollector();
-//			} else if (selection.equals("Quit")) {
-//				haltCollector();
-//			} else if (selection.equals("Restart")) {
-//			}
-			//this.collectorStatus = null;
-//			haltCollector();
-			
-			
+			if(statusResult.getError().getCode() == 206){
+				int option = MessageDialogFactory.getInstance().showStopDialog(window.getJFrame(), statusResult.getError().getDescription(), BUNDLE.getString("error.title"), JOptionPane.DEFAULT_OPTION);
+				if(option == JOptionPane.YES_NO_OPTION || CollectorStatus.CANCELLED == collectorStatus){
+					cancelCollector();
+				}
+			}else{
+				MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(), statusResult.getError().getDescription());
+			}
 			return;
 		}
 
@@ -651,7 +663,6 @@ public class MainFrame implements SharedAttributesProcesses {
 			}
 			return;
 		}
-		
 	}
 
 	@Override
@@ -670,9 +681,8 @@ public class MainFrame implements SharedAttributesProcesses {
 
 	@Override
 	public void updateChartSelection(List<ChartPlotOptions> optionsSelected) {
-		diagnosticsTab.setChartOptions(optionsSelected);		
+		diagnosticsTab.setChartOptions(optionsSelected);
 	}
-
 
 	@Override
 	public void dataDump(File dir) throws IOException {
@@ -680,33 +690,49 @@ public class MainFrame implements SharedAttributesProcesses {
 	}
 
 	@Override
-	public void dispose(){
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEndSessionEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(), GoogleAnalyticsUtil.getAnalyticsEvents().getEndApp());
+	public void dispose() {
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEndSessionEvents(
+				GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(),
+				GoogleAnalyticsUtil.getAnalyticsEvents().getEndApp());
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().close();
 	}
-	
-	private void sendInstallationInfoTOGA(){
-		
-    	String userHome = System.getProperty("user.home") + "/gaInstalledFile.txt";
-    	
-    	File installationFile = new File(userHome);
-    	
-    	if(installationFile.exists()){
-    		DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH-mm");  
-    		long installedTime = installationFile.lastModified();
-    		String lastModifiedDate = df.format(new Date(installedTime));
-    		lastModifiedDate = lastModifiedDate.replace(" ", "-");
-    		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getInstaller(), versionInfo.getVersion(), lastModifiedDate);
-    		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getInstaller(), GoogleAnalyticsUtil.getAnalyticsEvents().getLanguage(), System.getProperty("java.version"));
-    		installationFile.delete();
-    		
-    	} 
+
+	private void sendInstallationInfoTOGA() {
+
+		String userHome = System.getProperty("user.home") + "/gaInstalledFile.txt";
+
+		File installationFile = new File(userHome);
+
+		if (installationFile.exists()) {
+			DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH-mm");
+			long installedTime = installationFile.lastModified();
+			String lastModifiedDate = df.format(new Date(installedTime));
+			lastModifiedDate = lastModifiedDate.replace(" ", "-");
+			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+					GoogleAnalyticsUtil.getAnalyticsEvents().getInstaller(), versionInfo.getVersion(),
+					lastModifiedDate);
+			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+					GoogleAnalyticsUtil.getAnalyticsEvents().getInstaller(),
+					GoogleAnalyticsUtil.getAnalyticsEvents().getLanguage(), System.getProperty("java.version"));
+			installationFile.delete();
+
+		}
 	}
 
 	@Override
 	public void updateFilter(AnalysisFilter arg0) {
 		notifyPropertyChangeListeners("filter", this.filter, arg0);
 		this.filter = arg0;
-		
+
+	}
+	
+	@Override
+	public void hideAllCharts(){
+		diagnosticsTab.hideChartOptions();
+	}
+	
+	@Override
+	public void showAllCharts(){
+		diagnosticsTab.showChartOptions();
 	}
 }

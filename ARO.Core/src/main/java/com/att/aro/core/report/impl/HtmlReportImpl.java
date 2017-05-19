@@ -193,7 +193,9 @@ public class HtmlReportImpl implements IReport {
 	}
  
 	private double getRoundDouble(double number){
-
+		if(Double.isNaN(number)) {
+			return number;
+		}
 		BigDecimal bdecimal = new BigDecimal(number);
 	    bdecimal = bdecimal.setScale(2, RoundingMode.HALF_UP);
 	    return bdecimal.doubleValue();

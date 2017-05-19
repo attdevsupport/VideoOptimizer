@@ -52,9 +52,8 @@ public class WaterfallCategory implements Comparable<WaterfallCategory> {
 		return MessageFormat.format(
 				ResourceBundleHelper.getMessageString("waterfall.categoryText"),
 				index,
-				reqResp.getHostName() != null ? reqResp.getHostName() : ResourceBundleHelper.getMessageString("waterfall.unknownHost"),
-				(reqResp != null && reqResp.getObjName() != null ? reqResp
-						.getObjName() : ""));
+				(reqResp != null && reqResp.getHostName() != null ? reqResp.getHostName() : ResourceBundleHelper.getMessageString("waterfall.unknownHost")),
+				(reqResp != null && reqResp.getObjName() != null ? reqResp.getObjName() : ""));
 	}
 
 	/**
@@ -62,10 +61,14 @@ public class WaterfallCategory implements Comparable<WaterfallCategory> {
 	 * @return
 	 */
 	public String getTooltip() {
+		if(reqResp == null) {
+			return ResourceBundleHelper.getMessageString("waterfall.unknownHost");
+		}
+		
 		if (reqResp.isSsl()) {
 			return ResourceBundleHelper.getMessageString("waterfall.https");
 		} else {
-			return reqResp != null && reqResp.getObjUri() != null ? reqResp.getObjUri().toString() : ResourceBundleHelper.getMessageString("waterfall.unknownHost");
+			return reqResp.getObjUri() != null ? reqResp.getObjUri().toString() : ResourceBundleHelper.getMessageString("waterfall.unknownHost");
 		}
 	}
 

@@ -74,7 +74,7 @@ public class PCapAdapter {
 	/**
 	 * Load ARO Jpcap DLL lib file.
 	 */
-	public void loadAroJpacapLib(String filename, String libname) throws UnsatisfiedLinkError {
+	public void loadAroLib(String filename, String libname) throws UnsatisfiedLinkError {
 		try {
 			String libFolder = Util.makeLibFilesFromJar(filename);
 			Util.loadLibrary(filename, libFolder);

@@ -181,7 +181,14 @@ public abstract class AbstractBpDetailTablePanel extends TabPanelJPanel implemen
 	 * 
 	 */
 	void autoSetZoomBtn(){
-		zoomBtn.setEnabled(tableModel.getRowCount() > MINIMUM_ROWS);
+		if (tableModel.getRowCount() > MINIMUM_ROWS) {
+			zoomBtn.setEnabled(tableModel.getRowCount() > MINIMUM_ROWS);
+			String val = zoomBtn.getText();
+			if (val.equals(zoomIn)) {
+				zoomBtn.setText(zoomOut);
+				setScrollSize(MINIMUM_ROWS);
+			}
+		}
 	}
 
 	/**

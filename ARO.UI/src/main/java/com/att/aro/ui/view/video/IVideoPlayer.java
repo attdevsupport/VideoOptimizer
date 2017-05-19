@@ -56,10 +56,25 @@ public interface IVideoPlayer {
 	
 	/**
 	 * Called upon loading of a trace.
+	 * 
+	 * This method can be confusing because of the difference 
+	 * in the way a new trace/video is launched among players- 
+	 * JMF and JavaFx: a new player instance is created every
+	 * time when we load a new trace; VLCJ: player is created 
+	 * only once with a new video loaded when we load a new 
+	 * trace.
 	 */
-	void launchPlayer(AbstractTraceResult traceResult);
+	void loadVideo(AbstractTraceResult traceResult);
 	
+	/**
+	 * Called upon launching the VO app - launch the player 
+	 * GUI without video loaded.
+	 */
+	void launchPlayer(int xPosition, int yPosition, int frameWidth, int frameHeight);
+
 	void clear();
 	
 	VideoPlayerType getPlayerType();
+	
+	void notifyLauncher(boolean enabled);
 }

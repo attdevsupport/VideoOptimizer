@@ -33,7 +33,7 @@ public interface IARODiagnosticsOverviewRoute {
 	 * 
 	 * @param cacheEntryOrSessionOrHttpResponseInfo
 	 */
-	void updateDiagnosticsTab(Object cacheEntryOrSessionOrHttpResponseInfo);
+	public void updateDiagnosticsTab(Object cacheEntryOrSessionOrHttpResponseInfo);
 	/**
 	 * Returns which JPanel index <em>tableModel</em> would route to (-1 == none).
 	 * 

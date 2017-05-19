@@ -26,15 +26,31 @@ import com.att.aro.core.videoanalysis.pojo.amazonvideo.AdaptationSetAmz;
 import com.att.aro.core.videoanalysis.pojo.amazonvideo.MPDAmz;
 import com.att.aro.core.videoanalysis.pojo.amazonvideo.PeriodAmz;
 import com.att.aro.core.videoanalysis.pojo.amazonvideo.RepresentationAmz;
+import com.att.aro.core.videoanalysis.pojo.amazonvideo.SSMAmz;
 import com.att.aro.core.videoanalysis.pojo.amazonvideo.SegmentListAmz;
 import com.att.aro.core.videoanalysis.pojo.amazonvideo.SegmentURL;
+import com.att.aro.core.videoanalysis.pojo.amazonvideo.XmlManifestHelper;
+import com.att.aro.core.videoanalysis.pojo.config.VideoDataTags;
 
 public class ManifestDash extends AROManifest {
 
+	
 	private MPDAmz mpdOut;
+	private SSMAmz ssmOut;
 
-	public ManifestDash(MPDAmz mpdOut, HttpRequestResponseInfo req) {
-		super(VideoType.DASH, req);
+	public ManifestDash(HttpRequestResponseInfo req, byte[] content, String videoPath) {
+		super(VideoType.DASH, req, videoPath);
+		XmlManifestHelper mani = new XmlManifestHelper(content);
+		if (mani.getManifestType().equals(XmlManifestHelper.ManifestFormat.SmoothStreamingMedia)) {
+			this.ssmOut = (SSMAmz) mani.getManifest();
+		} else {
+			this.mpdOut = (MPDAmz) mani.getManifest();
+		}
+		parseManifestData();
+	}
+
+	public ManifestDash(MPDAmz mpdOut, HttpRequestResponseInfo req, String videoPath) {
+		super(VideoType.DASH, req, videoPath);
 		this.mpdOut = mpdOut;
 		parseManifestData();
 	}
@@ -50,9 +66,10 @@ public class ManifestDash extends AROManifest {
 			for (RepresentationAmz representationAmz : videoRepresentationAmz) {
 				if (videoName.isEmpty()) {
 					videoName = representationAmz.getUrl();
-					int pos = videoName.lastIndexOf('_');
-					if (pos != -1) {
-						videoName = videoName.substring(0, pos);
+					String[] str = stringParse.parse(videoName, "(.+)_([a-zA-Z_0-9\\-]*)_\\d+(\\.[a-zA-Z_0-9]*)");
+					if (str.length == 3){
+						exten = str[2];
+						videoName = str[0];//+"_"+str[1];
 					}
 				}
 				if (representationAmz.getEncodedSegment() != null) {
@@ -165,16 +182,19 @@ public class ManifestDash extends AROManifest {
 	 * Scan manifest for byte range assigned to a video
 	 * 
 	 * @param fullName
-	 * @param range
+	 * @param ved - VideoEventData
 	 * @return Segment - the position in byte range, -1 if not found
 	 */
 	@Override
-	public int parseSegment(String fullName, ByteRange range) {
-		if (range == null) {
+	public int parseSegment(String fullName, VideoEventData ved) {
+		if (ved.getSegment() != null && ved.getSegment().compareTo(0) > 0) {
+			return ved.getSegment();
+		}
+		if (ved.getByteRange() == null) {
 			return -2;
 		}
-		String begin = range.getBeginByteHex();
-		String end = range.getEndByteHex();
+		String begin = ved.getByteRange().getBeginByteHex();
+		String end = ved.getByteRange().getEndByteHex();
 
 		int segment = 0;
 		String contentType = StringParse.findLabeledDataFromString("_", "_", fullName);
@@ -191,6 +211,7 @@ public class ManifestDash extends AROManifest {
 								int pos = line.indexOf('-');
 								if (pos > 0) {
 									if (line.substring(0, pos).contains(begin) && line.substring(pos + 1).contains(end)) {
+										ved.setSegment(segment);
 										return segment;
 									} else {
 										segment++;
@@ -200,17 +221,18 @@ public class ManifestDash extends AROManifest {
 							
 						} else {
 							// SegmentURL mediaRange
-							range.getBeginByte();
-							range.getEndByte();
+							ved.getByteRange().getBeginByte();
+							ved.getByteRange().getEndByte();
 							String sRange;
 							// check Initialization (segment zero)
 							SegmentListAmz segList = representationAmz.getSegmentList();
-							if (segList.getInitialization() != null) {
+							if (segList!= null && segList.getInitialization() != null) {
 								sRange = segList.getInitialization().getRange();
-								int val = matchRange(range, sRange);
+								int val = matchRange(ved.getByteRange(), sRange);
 								if (val == 1) {
 									segment++;
 								} else if (val == 0) {
+									ved.setSegment(segment);
 									return segment;
 								} else if (val == -1) {
 									return -1;
@@ -221,10 +243,11 @@ public class ManifestDash extends AROManifest {
 							if (segList != null && !segList.getSegmentUrlList().isEmpty()) {
 								for (SegmentURL segmentURL:segList.getSegmentUrlList()){
 									sRange = segmentURL.getMediaRange();
-									int val = matchRange(range, sRange);
+									int val = matchRange(ved.getByteRange(), sRange);
 									if (val == 1) {
 										segment++;
 									} else if (val == 0) {
+										ved.setSegment(segment);
 										return segment;
 									} else if (val == -1) {
 										return -1;
@@ -274,4 +297,15 @@ public class ManifestDash extends AROManifest {
 		return "";
 	}
 	
+
+	@Override
+	public Integer getSegment(String[] voValues){
+//TODO remove debugging info, but keep this for now BCN
+//		VideoDataTags[] ref = vConfig.getXref();
+//		for (VideoDataTags videoDataTags : ref) {
+//			System.out.println("videoDataTags :" + videoDataTags);
+//		}
+		return super.getSegment(voValues);
+	}
+
 }

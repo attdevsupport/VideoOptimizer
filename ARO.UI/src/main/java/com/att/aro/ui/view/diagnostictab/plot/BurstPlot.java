@@ -86,7 +86,13 @@ public class BurstPlot implements IPlot{
 				public String generateToolTip(XYDataset dataset, int series, int item) {
 					BurstCategory eventType = (BurstCategory) burstDataCollection.getSeries(series)
 							.getKey();
-					Burst b = burstMap.get(eventType).get(item);
+					Burst b;
+					int size = burstMap.get(eventType).size();
+					if(size > item){
+						b = burstMap.get(eventType).get(item);
+					} else {
+						b = burstMap.get(eventType).get(size);
+					}
 					final String PREFIX = "BurstCategory.";
 					return MessageFormat.format(ResourceBundleHelper.getMessageString(PREFIX + eventType.ordinal()),
 							b.getPackets().size(), b.getBurstBytes(), b.getBurstThroughPut());

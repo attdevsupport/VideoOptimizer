@@ -44,6 +44,19 @@ public abstract class AbstractBufferOccupancyCalculator extends PlotHelperAbstra
 		return possibleStartPlayTime;
 	}
 	
+	protected double updatePlayStartTimeAfterStall(VideoEvent chunkPlaying) {
+		double possibleStartPlayTimeAfterStall = Math.ceil(chunkPlaying.getEndTS());
+		if (possibleStartPlayTimeAfterStall != -1) {
+			chunkPlayStartTime = possibleStartPlayTimeAfterStall;
+			chunkPlayEndTime = chunkPlayStartTime + chunkPlayTimeDuration;
+		}
+		return possibleStartPlayTimeAfterStall;
+	}
+	
+	protected void addToChunkPlayTimeList(VideoEvent chunkPlaying, double possibleStartPlayTimeAfterStall){
+		PlotHelperAbstract.chunkPlayTimeList.put(chunkPlaying, possibleStartPlayTimeAfterStall);
+	}
+	
 	protected void setNextPlayingChunk(int currentVideoSegmentIndex,List<VideoEvent> filteredChunk) { //, VideoUsage videoUsage
 		chunkPlaying = filteredChunk.get(currentVideoSegmentIndex);
 		chunkPlayStartTime = chunkPlayEndTime;

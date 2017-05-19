@@ -77,6 +77,11 @@ public class CryptoAdapter {
 			String aroCryptLibFileName = "lib" + filename + ".jnilib";
 			String libFolder = Util.makeLibFilesFromJar(aroCryptLibFileName);
 			Util.loadLibrary(aroCryptLibFileName, libFolder);
+		}else if (osname != null && osname.contains("Linux")) {
+			String filename = "AROCrypt";
+			String aroCryptLibFileName = "lib" + filename + ".so";
+			String libFolder = Util.makeLibFilesFromJar(aroCryptLibFileName);
+			Util.loadLibrary(aroCryptLibFileName, libFolder);
 		}
 	}
 }

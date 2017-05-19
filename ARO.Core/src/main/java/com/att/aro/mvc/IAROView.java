@@ -137,6 +137,11 @@ public interface IAROView {
 	 * Action to stop a running collector
 	 */
 	void stopCollector();
+	
+	/**
+	 * Action to cancel collection
+	 */
+	void cancelCollector();
 
 	/**
 	 * Action to force an Android collector apk to be stopped
@@ -182,4 +187,14 @@ public interface IAROView {
 	 * @param collector The collector used
 	 */
 	void liveVideoDisplay(IDataCollector collector);
+	
+	/**
+	 * Hide the Charts Panel on the Diagnostic tab
+	 */
+	void hideAllCharts();
+	
+	/**
+	 * Show the Charts Panel on the Diagnostic tab
+	 */
+	void showAllCharts();
 }

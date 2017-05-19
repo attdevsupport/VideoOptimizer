@@ -432,17 +432,12 @@ public class AndroidImpl implements IAndroid {
 
 	@Override
 	public boolean stopTcpDump(IDevice device) {
-		Socket emulatorSocket = null;
-		try {
-			emulatorSocket = getLocalSocket();
-			OutputStream out = emulatorSocket.getOutputStream();
+		try(Socket emulatorSocket = getLocalSocket();
+			OutputStream out = emulatorSocket.getOutputStream()) {
 			if (out != null) {
 				out.write("STOP".getBytes("ASCII"));
 				out.flush();
-				out.close();
 			}
-			out.close();
-			emulatorSocket.close();
 			return true;
 		} catch (UnknownHostException e) {
 			logger.error(e.getMessage());

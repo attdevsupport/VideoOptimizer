@@ -15,6 +15,7 @@
 */
 package com.att.aro.ui.view.diagnostictab;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Paint;
@@ -29,6 +30,7 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.entity.EntityCollection;
 import org.jfree.chart.entity.XYItemEntity;
+import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.CrosshairState;
 import org.jfree.chart.plot.PlotOrientation;
@@ -39,6 +41,7 @@ import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
 import org.jfree.chart.renderer.xy.XYBarRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
 import org.jfree.chart.renderer.xy.XYItemRendererState;
+import org.jfree.chart.renderer.xy.XYStepRenderer;
 import org.jfree.chart.renderer.xy.YIntervalRenderer;
 import org.jfree.data.xy.IntervalXYDataset;
 import org.jfree.data.xy.XYDataset;
@@ -76,7 +79,7 @@ public class CreateBarPlot{
 		return barPlot;
 	}
 	
-	//createBatteryPlot(), createRadioPlot(), createCpuPlot()
+	//createBatteryPlot(), createRadioPlot(), createCpuPlot(), createTemperaturePlot
 	public XYPlot drawStandardXYPlot(Shape shape,Color color, int minSignal, int maxSignal){
 		// Set up renderer
 		StandardXYItemRenderer batteryRenderer = new StandardXYItemRenderer(
@@ -197,6 +200,18 @@ public class CreateBarPlot{
 		plot.getRangeAxis().setVisible(false);
 
 		return plot;
+	}
+	
+	public XYPlot drawStepChartPlot(){
+		XYStepRenderer renderer = new XYStepRenderer();
+        renderer.setBaseShapesVisible(true);
+        renderer.setSeriesStroke(0, new BasicStroke(2.0f));
+        renderer.setSeriesStroke(1, new BasicStroke(2.0f));
+        renderer.setDefaultEntityRadius(6);
+        XYPlot plot = new XYPlot(null, null, new NumberAxis(), renderer);
+        plot.setDomainPannable(true);
+        plot.setRangePannable(true);
+        return plot;
 	}
 
 }

@@ -24,11 +24,9 @@ import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.pojo.PrivateDataInfo;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 
-// Suppressing, otherwise PMD needs the class to be made "final".
-@SuppressWarnings("PMD")
-public class UserPreferences {
+public final class UserPreferences {
 
-	private static UserPreferences instance;
+	private static UserPreferences instance = new UserPreferences();
 	
 	private static final String TD_PATH = "TD_PATH";
 	private static final String PROFILE_PATH = "PROFILE_PATH";
@@ -47,14 +45,6 @@ public class UserPreferences {
 	 * @return A static UserPreferences object.
 	 */
 	static UserPreferences getInstance() {
-		
-		if (instance == null) {
-			synchronized (UserPreferences.class) {		
-				if (instance == null) {
-					instance = new UserPreferences();
-				}
-			}
-		}	
 		return instance;
 	}
 

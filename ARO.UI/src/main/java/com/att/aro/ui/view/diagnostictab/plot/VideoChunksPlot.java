@@ -49,6 +49,7 @@ import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.diagnostictab.SliderDialogBox;
 
 
 public class VideoChunksPlot implements IPlot{
@@ -73,6 +74,7 @@ public class VideoChunksPlot implements IPlot{
     private static List<VideoEvent> segmentsToBePlayed;
 	VideoChunkPlotterImpl videoChunkPlotter;
 	Map<Integer,Double> seriesDataSets; 
+	boolean isReDraw = false;
 
 	public VideoChunksPlot(){
 		filteredChunks = new ArrayList<>();
@@ -85,26 +87,38 @@ public class VideoChunksPlot implements IPlot{
 	 */
     private Map<VideoEvent,Double> chunkPlayTime = new HashMap<>();
 
-    public void refreshPlot(XYPlot plot, AROTraceData analysis, double startTime,VideoEvent selectedChunk){
-    //	setFirstChunkPlayTime(startTime);
-        chunkPlayTime.put(selectedChunk,startTime);
+	public void refreshPlot(XYPlot plot, AROTraceData analysis, double startTime, VideoEvent selectedChunk) {
+		chunkPlayTime.put(selectedChunk, startTime);
 
-        videoChunkPlotter.setChunkPlayBackTimeList(chunkPlayTime);
-    	boPlot.setChunkPlayTimeList(chunkPlayTime);
-       // boTimePlot.setChunkPlayTimeList(chunkPlayTime);
-        
-    	populate(plot,analysis);
-    	boTimePlot.populate(bufferTimePlot, analysis);
+		videoChunkPlotter.setChunkPlayBackTimeList(chunkPlayTime);
+		boPlot.setChunkPlayTimeList(chunkPlayTime);
 
-    	boPlot.populate(bufferOccupancyPlot, analysis); 
+		populate(plot, analysis);
 		
-    	
-    	AbstractBestPracticeResult startupDelayBPResult= videoChunkPlotter.refreshStartUpDelayBP(analysis);
-    	AbstractBestPracticeResult stallBPResult=videoChunkPlotter.refreshVideoStallBP(analysis);
-    	AbstractBestPracticeResult bufferOccupancyBPResult=videoChunkPlotter.refreshVideoBufferOccupancyBP(analysis);
-    	
-    	refreshBPVideoResults(analysis, startupDelayBPResult, stallBPResult,bufferOccupancyBPResult);
-    }
+		boTimePlot.populate(bufferTimePlot, analysis);
+
+		boPlot.populate(bufferOccupancyPlot, analysis);
+		
+		refreshVCPlot(plot, analysis);
+		
+		AbstractBestPracticeResult startupDelayBPResult = videoChunkPlotter.refreshStartUpDelayBP(analysis);
+		AbstractBestPracticeResult stallBPResult = videoChunkPlotter.refreshVideoStallBP(analysis);
+		AbstractBestPracticeResult bufferOccupancyBPResult = videoChunkPlotter.refreshVideoBufferOccupancyBP(analysis);
+
+		refreshBPVideoResults(analysis, startupDelayBPResult, stallBPResult, bufferOccupancyBPResult);
+		
+		
+	}
+	
+	/**
+	 * This method redraws the Video Chunk plot with updated values
+	 * @param isReDraw to clear the video buffer plots
+	 * 
+	 */
+	public void refreshVCPlot(XYPlot plot, AROTraceData analysis) {
+	    isReDraw = true;
+		populate(plot, analysis);		
+	}
     
     private void refreshBPVideoResults(AROTraceData model,AbstractBestPracticeResult bpResult,AbstractBestPracticeResult stallBPResult,AbstractBestPracticeResult bufferOccupancyBPResult){
     	for(AbstractBestPracticeResult bp:model.getBestPracticeResults()){
@@ -133,7 +147,8 @@ public class VideoChunksPlot implements IPlot{
     		}
     	}
 	}
-    public void setBufferOccupancyPlot(XYPlot bufferOccupancyPlot){
+    
+    public void setBufferOccupancyPlot(XYPlot bufferOccupancyPlot) {
     	this.bufferOccupancyPlot = bufferOccupancyPlot;
     	newTraceData();
     }
@@ -143,6 +158,7 @@ public class VideoChunksPlot implements IPlot{
     
     private void newTraceData(){
     	chunkPlayTime.clear();
+    	SliderDialogBox.segmentListChosen= new ArrayList<>();
     }
     public void setDelayAROManifest(double seconds, Collection<AROManifest> aroManifests){
     	for (AROManifest aroManifest : aroManifests) {
@@ -156,8 +172,11 @@ public class VideoChunksPlot implements IPlot{
 	public void populate(XYPlot plot, AROTraceData analysis) {
 		if (analysis != null) {		
 			
-			boPlot.clearPlot(this.bufferOccupancyPlot);
-			boTimePlot.clearPlot(this.bufferTimePlot);
+			if(!isReDraw) {
+				boPlot.clearPlot(this.bufferOccupancyPlot);
+				boTimePlot.clearPlot(this.bufferTimePlot);
+			}
+			
 			videoChunksData.removeAllSeries();
 			for(XYSeriesCollection seriesColl : startUpDelayCollection){
 				seriesColl.removeAllSeries();
@@ -176,8 +195,10 @@ public class VideoChunksPlot implements IPlot{
 			imgSeries = videoChunkPlotter.getImageSeries();
 			filteredChunks = videoChunkPlotter.getFilteredSegments();
 			segmentsToBePlayed.clear();
-			for(VideoEvent ve: filteredChunks){
-				segmentsToBePlayed.add(ve);
+			if(videoChunkPlotter.getAllSegments() != null) {
+				for(VideoEvent ve: videoChunkPlotter.getAllSegments()){
+					segmentsToBePlayed.add(ve);
+				}
 			}
 			for(double timeStamp:seriesDataSets.values()){				
 				series.add(timeStamp, 0);
@@ -222,18 +243,18 @@ public class VideoChunksPlot implements IPlot{
 					     @Override
 					     public String generateToolTip(XYDataset dataset, int series, int item)
 					     {
-								 StringBuffer tooltipValue = new StringBuffer(); //"Video Chunk at: "+String.format("%.2f", xPt.doubleValue());
-								 VideoEvent currentVEvent =segmentsToBePlayed.get(item); //getFilteredChunks().get(item); //filteredChunks.get(item);
+								 StringBuffer tooltipValue = new StringBuffer(); 
+								 VideoEvent currentVEvent =segmentsToBePlayed.get(item);
 									
 								 DecimalFormat decimalFormat = new DecimalFormat("0.##");
 								 		 
 								 tooltipValue.append(decimalFormat.format(currentVEvent.getSegment())+","+String.format("%.2f",currentVEvent.getStartTS())+","+String.format("%.2f",currentVEvent.getEndTS())+",");
 
 								 if(!chunkPlayTime.isEmpty()){
-									 if(videoChunkPlotter.getChunkPlayStartTimeList().size() <= item){
+									 if(videoChunkPlotter.getSegmentPlayStartTime(currentVEvent) == -1){ 
 										 tooltipValue.append("- ,");
 									 }else{
-										 tooltipValue.append(String.format("%.2f", videoChunkPlotter.getChunkPlayStartTimeList().get(item))+" s,");
+										 tooltipValue.append(String.format("%.2f", videoChunkPlotter.getSegmentPlayStartTime(currentVEvent))+" s,");
 									 }
 								 }else{
 									 tooltipValue.append("- ,");
@@ -254,7 +275,7 @@ public class VideoChunksPlot implements IPlot{
 				    for(int i=0;i<startUpDelayCollection.size();i++)
 				    	plot.setRenderer(i,rendererDelay);
 		       }
-
+		isReDraw = false;
 		int seriesIndex = 0;
 		for (XYSeriesCollection seriesColl : startUpDelayCollection) {
 			plot.setDataset(seriesIndex, seriesColl);
@@ -280,7 +301,7 @@ public class VideoChunksPlot implements IPlot{
 	 * Validates if x & y data values represent the video chunk
 	 */
 	public boolean isDataItemPoint(double xDataValue, double yDataValue) { 
-		for(VideoEvent ve: filteredChunks){
+		for(VideoEvent ve: getAllChunks()){//filteredChunks
 			if(ve.getDLTimeStamp() == xDataValue && yDataValue ==0)
 				return true;
 		}
@@ -291,9 +312,9 @@ public class VideoChunksPlot implements IPlot{
 	
 	public Map<Integer,VideoEvent> getChunk(double xdataValue){
 		Map<Integer,VideoEvent> chunk = new HashMap<>();
-		for(int index=0;index< filteredChunks.size();index++){
-			if(filteredChunks.get(index).getDLTimeStamp() == xdataValue){
-				chunk.put(index, filteredChunks.get(index));
+		for(int index=0;index< getAllChunks().size();index++){
+			if(getAllChunks().get(index).getDLTimeStamp() == xdataValue){
+				chunk.put(index, getAllChunks().get(index));
 				return chunk;
 			}
 		}
@@ -301,7 +322,7 @@ public class VideoChunksPlot implements IPlot{
 	}
 	public Map<Integer,VideoEvent> getSegmentToPlayLocation(VideoEvent ve){
 		Map<Integer,VideoEvent> chunk = new HashMap<>();
-		for(int index=0;index< filteredChunks.size();index++){
+		for(int index=0;index< filteredChunks.size();index++){ 
 			if(filteredChunks.get(index).equals(ve)){
 				chunk.put(index, ve);
 				return chunk;
@@ -331,6 +352,9 @@ public class VideoChunksPlot implements IPlot{
 		return boTimePlot;
 	}
 	
+	public List<VideoEvent> getAllChunks(){
+		return videoChunkPlotter.getAllSegments();
+	}
 
 }
 

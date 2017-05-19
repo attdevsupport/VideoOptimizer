@@ -68,6 +68,8 @@ public class BpDetailDownloadPanel extends BpDetail {
 		
 		addPanel(row++, new BpDetailItem("imageCompression", BestPracticeType.IMAGE_CMPRS, new BpFileImageCompressionTablePanel()));
 		
+		addPanel(row++, new BpDetailItem("imageFormat", BestPracticeType.IMAGE_FORMAT, new BpFileImageFormatTablePanel()));
+		
 		// Minify CSS, JS, JSON and HTML
 		addPanel(row++, new BpDetailItem("minification", BestPracticeType.MINIFICATION, new BpFileMinificationTablePanel()));
 

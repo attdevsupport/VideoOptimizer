@@ -64,10 +64,15 @@ public class VideoSyncThread implements Runnable {
 		double currentVideoTime;
 		do {
 			synchronized (this) {
-				if (videoPlayer != null) {
-					currentVideoTime = videoPlayer.getMediaTime();
-					isPlaying = videoPlayer.isPlaying();
-				} else {
+				try {
+					if (videoPlayer != null) {
+						currentVideoTime = videoPlayer.getMediaTime();
+						isPlaying = videoPlayer.isPlaying();
+					} else {
+						break;
+					}
+				} catch (Exception ex){
+					logger.error("Exception in VideoSyncThread", ex.getCause());
 					break;
 				}
 			}

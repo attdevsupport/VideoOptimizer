@@ -23,6 +23,8 @@ import java.awt.Frame;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -59,6 +61,7 @@ import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.view.images.Images;
 
@@ -95,6 +98,11 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	private AROVideoUtil aroVideoUtil;
 	private AbstractTraceResult tdResult;
 	private DiagnosticsTab aroAdvancedTab;
+	private SharedAttributesProcesses aroView;
+	
+	public AROVideoPlayer(SharedAttributesProcesses aroView){
+    	this.aroView = aroView;
+    }
 
 	/* (non-Javadoc)
 	 * @see com.att.aro.ui.view.video.IVideoPlayer#setAroAdvancedTab(com.att.aro.ui.view.diagnostictab.DiagnosticsTab)
@@ -102,32 +110,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	@Override
 	public void setAroAdvancedTab(DiagnosticsTab aroAdvancedTab) {
 		this.aroAdvancedTab = aroAdvancedTab;
-	}
-
-	public AROVideoPlayer() {
-		String titleName = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.videoTitle"), 
-												ApplicationConfig.getInstance().getAppShortName());
-		setTitle(titleName);
-		
-		this.setIconImage(Images.ICON.getImage());
-
-		setDefaultCloseOperation(HIDE_ON_CLOSE);
-		Dimension frameDim = new Dimension(350, 500);
-		setMinimumSize(frameDim);
-		setResizable(true);
-		jVideoLabel = new JLabel(Images.NO_VIDEO_AVAILABLE.getIcon());
-		jButton = new JButton("Sync Video");
-		jButton.setBackground(Color.WHITE);
-		jButton.addActionListener(this);
-		jButton.setPreferredSize(new Dimension(20, 20));
-		jButton.setVisible(false);
-		aroVideoPanel = new JPanel();
-		aroVideoPanel.setLayout(new BorderLayout());
-		aroVideoPanel.add(jButton, BorderLayout.NORTH);
-		aroVideoPanel.add(jVideoLabel, BorderLayout.CENTER);
-		setContentPane(aroVideoPanel);
-	}
-
+	} 
 
 	// Is this being used? 2016/11/09
 	/**
@@ -287,7 +270,6 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 			jButton.setVisible(true);
 		}
 		aroAdvancedTab.setGraphPanelClicked(false);
-
 	}
 
 	/**
@@ -407,17 +389,30 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	
 	@Override
 	public double getMediaTime() {
+		
+		if (videoPlayer == null) {
+			logger.debug("Null Player in AROVideoPlayer");
+			return 0;
+		}
+		
 		return videoPlayer.getMediaTime().getSeconds();
 	}
 	
 	@Override
 	public double getDuration() {
-		return videoPlayer.getDuration().getSeconds();
+		if (videoPlayer != null) {
+			return videoPlayer.getDuration().getSeconds();
+		}
+		return -1;
 	}
 	
 	@Override
 	public boolean isPlaying() {
-		return videoPlayer.getState() == Controller.Started;
+		
+		if(null != videoPlayer) {
+			return videoPlayer.getState() == Controller.Started;
+		}
+		return false;
 	}
 
 	@Override
@@ -426,7 +421,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	}
 
 	@Override
-	public void launchPlayer(AbstractTraceResult traceResult) {	
+	public void loadVideo(AbstractTraceResult traceResult) {	
 		tdResult = traceResult;
 		createTracePath(tdResult.getTraceDirectory());
 		try {
@@ -439,5 +434,54 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	@Override
 	public VideoPlayerType getPlayerType() {
 		return VideoPlayerType.MOV;
+	}
+	
+	@Override
+	public void launchPlayer(int xPosition, int yPosition, int frameWidth, int frameHeight) {
+
+		String titleName = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.videoTitle"), 
+				ApplicationConfig.getInstance().getAppShortName());
+		setTitle(titleName);
+		
+		this.setIconImage(Images.ICON.getImage());
+		
+		setDefaultCloseOperation(HIDE_ON_CLOSE);
+		
+		addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+            	aroView.updateVideoPlayerSelected(false);
+            }
+        });
+		
+		Dimension frameDim = new Dimension(350, 500);
+		setMinimumSize(frameDim);
+		setResizable(true);
+		jVideoLabel = new JLabel(Images.NO_VIDEO_AVAILABLE.getIcon());
+		jButton = new JButton("Sync Video");
+		jButton.setBackground(Color.WHITE);
+		jButton.addActionListener(this);
+		jButton.setPreferredSize(new Dimension(20, 20));
+		jButton.setVisible(false);
+		aroVideoPanel = new JPanel();
+		aroVideoPanel.setLayout(new BorderLayout());
+		aroVideoPanel.add(jButton, BorderLayout.NORTH);
+		aroVideoPanel.add(jVideoLabel, BorderLayout.CENTER);
+		setContentPane(aroVideoPanel);
+		
+		setBounds(xPosition, yPosition, frameWidth, frameHeight);
+		setVisibility(true);
+	}
+	
+	public void stopPlayer(){
+		
+		if(null != videoPlayer) {
+			videoPlayer.stop();
+		}
+	}
+
+	@Override
+	public void notifyLauncher(boolean enabled) {
+		aroView.updateVideoPlayerSelected(enabled);
 	}
 }

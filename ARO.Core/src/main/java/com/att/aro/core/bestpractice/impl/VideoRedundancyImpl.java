@@ -17,6 +17,7 @@
 package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
+import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Value;
 
@@ -50,8 +51,11 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent;
  *  Understanding the number and quality of these versions can help a developer avoid overkill.
  *  
  * Result:
- *  There were X different versions of the same video segment. The optimal number of number of alternative versions could improve efficiency, while reducing congestion and preparation effort.
+ *  (orig) There were X different versions of the same video segment. The optimal number of number of alternative versions could improve efficiency, while reducing congestion and preparation effort.
  *  
+ *  videoRedundancy.results=There {0} {1} {2} version{3} of the same video. The optimal number of alternative versions could improve efficiency, while reducing congestion and preparation effort.
+ *  videoRedundancy.pass=There were {0} different versions and passes the test.
+ *
  * Link:
  *  goes to a view of all versions of identical content.
  */
@@ -105,27 +109,29 @@ public class VideoRedundancyImpl implements IBestPractice{
 					if (aroManifest instanceof ManifestDash && stuff.getSegment() == 0 ){
 						continue;
 					}
+					
 					if (preStuff != null 
 							&& preStuff.getSegment() == stuff.getSegment()
 							&& !preStuff.getQuality().equals(stuff.getQuality())
 							) {
-						System.out.println("Redundant :\n" + preStuff +"\n"+ stuff);
+						log.debug("Redundant :\t" + preStuff +"\n\t\t"+ stuff);
 						count++;
 					}
 					preStuff = stuff;
 				}
 			}
 
+			//  *  videoRedundancy.results=There {0} {1} {2} version{3} of the same video. The optimal number of alternative versions could improve efficiency, while reducing congestion and preparation effort.
+
 			result.setResultType(BPResultType.SELF_TEST); // this VideoBestPractice is to be reported as a selftest until further notice
 			result.setResultText(
 					MessageFormat.format(textResults, 
 							count == 1? "was" : "were", 
 							count,
-							count == 1? "" : "different",
+							count == 0? "" : "different",
 							count == 1? "" : "s"
 								));
 		}
 		return result;
 	}
-
 }

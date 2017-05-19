@@ -25,6 +25,7 @@ import javax.swing.JPanel;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
+import com.att.aro.ui.view.MainFrame;
 
 public class BpDetailSecurityPanel extends BpDetail {
 
@@ -33,7 +34,7 @@ public class BpDetailSecurityPanel extends BpDetail {
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	public BpDetailSecurityPanel(String title, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute) {
+	public BpDetailSecurityPanel(String title, MainFrame aroView, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute) {
 		super(title, diagnosticsOverviewRoute);
 		
 		setBackground(new Color(238,238,238));
@@ -43,7 +44,7 @@ public class BpDetailSecurityPanel extends BpDetail {
 		addPanel(row++, new BpDetailItem("security.httpsUsage", BestPracticeType.HTTPS_USAGE, new BpSecurityHttpsUsageTablePanel()));
 		
 		// Transmission of Private Data
-		addPanel(row++, new BpDetailItem("security.transmissionPrivateData", BestPracticeType.TRANSMISSION_PRIVATE_DATA, new BpSecurityTransmissionPrivateDataTablePanel()));
+		addPanel(row++, new BpDetailItem("security.transmissionPrivateData", BestPracticeType.TRANSMISSION_PRIVATE_DATA, new BpSecurityTransmissionPrivateDataTablePanel(), aroView));
 		
 		// Unsecure SSL Version
 		addPanel(row++, new BpDetailItem("security.unsecureSSLVersion", BestPracticeType.UNSECURE_SSL_VERSION, new BpSecurityUnsecureSSLVersionTablePanel()));

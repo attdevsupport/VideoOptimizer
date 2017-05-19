@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
@@ -31,6 +32,17 @@ import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 public class VideoUsage extends AbstractBestPracticeResult {
 
 	private TreeMap<Double, AROManifest> aroManifestMap = new TreeMap<>();
+	
+	/**
+	 * key: Double flag(['+'good, '-'failed to extract}),timestamp
+	 * data: HttpRequestResponseInfo
+	 */
+	private TreeMap<Double, HttpRequestResponseInfo> requestMap = new TreeMap<>();
+	
+	/**
+	 * a Map to record requests that failed to deliver content
+	 */
+	private TreeMap<Double, String> failedRequestMap = new TreeMap<>();
 	
 	private Map<AROManifest,Double> durationAROManifestMap = new HashMap<>();
 	private Map<AROManifest,Double> timescaleAROManifestMap = new HashMap<>();
@@ -141,6 +153,29 @@ public class VideoUsage extends AbstractBestPracticeResult {
 	public void setVideoUsagePrefs(VideoUsagePrefs videoUsagePrefs) {
 		this.videoUsagePrefs = videoUsagePrefs;
 	}
+
+	public TreeMap<Double, HttpRequestResponseInfo> getRequestMap() {
+		return requestMap;
+	}
+
+	public void setRequestMap(TreeMap<Double, HttpRequestResponseInfo> requestMap) {
+		this.requestMap = requestMap;
+	}
 	
-	
+	/**
+	 * 
+	 * @param flag
+	 * @param request
+	 */
+	public void addRequest(HttpRequestResponseInfo request) {
+		this.requestMap.put(request.getTimeStamp(), request);
+	}
+
+	public TreeMap<Double, String> getFailedRequestMap() {
+		return failedRequestMap;
+	}
+
+	public void addFailedRequestMap(HttpRequestResponseInfo request) {
+		this.failedRequestMap.put(request.getTimeStamp(), request.getObjUri().toString());
+	}
 }

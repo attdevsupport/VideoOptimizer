@@ -70,7 +70,7 @@ public class FileTypeSummary implements Comparable<FileTypeSummary>{
 	@Override
 	public int compareTo(FileTypeSummary arg0) {
 		// Sort descending
-		return -Long.valueOf(bytes).compareTo(arg0.bytes);
+		return ((Long)arg0.bytes).compareTo(bytes);
 	}
 	
 }

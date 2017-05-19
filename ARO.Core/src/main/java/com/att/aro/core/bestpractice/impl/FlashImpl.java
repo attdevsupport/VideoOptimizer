@@ -132,6 +132,7 @@ public class FlashImpl implements IBestPractice {
 				doc = Jsoup.parse(flashDownloaded);
 			} catch (Exception e) {
 				log.error("Failed to parse :"+flashDownloaded, e);
+				return result;
 			}
 			
 			//Parsing "embed" in HTML or CSS

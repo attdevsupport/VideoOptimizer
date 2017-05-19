@@ -20,8 +20,8 @@ import java.io.StringWriter;
 
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import com.att.aro.core.AROConfig;
 import com.att.aro.core.ILogger;
+import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.analytics.IGoogleAnalytics;
 
 public class CrashHandler implements Thread.UncaughtExceptionHandler {
@@ -30,8 +30,8 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 	public void uncaughtException(Thread thread, Throwable throwable) {
 		IGoogleAnalytics googleAnalytics = GoogleAnalyticsUtil.getGoogleAnalyticsInstance();
 		googleAnalytics.sendCrashEvents(convertTracetoString("", throwable), "");
-		AnnotationConfigApplicationContext context =
-				new AnnotationConfigApplicationContext(AROConfig.class);
+		AnnotationConfigApplicationContext context = (AnnotationConfigApplicationContext) SpringContextUtil
+				.getInstance().getContext();
 		context.getBean(ILogger.class).error("Uncaught ARO Exception:", throwable);
 		context.close();
 	}

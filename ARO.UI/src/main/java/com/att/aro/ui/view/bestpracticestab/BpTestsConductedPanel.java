@@ -198,8 +198,9 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				 */                                                          
 				  ,"combinejscss"                       //  #bp 06   File Download: Combine JS and CSS Requests                                       
 				  ,"imageSize"                          //  #bp 07   File Download: Resize Images for Mobile                                    
-				  ,"imageMetadata"
-				  ,"imageCompression"
+				  ,"imageMetadata"						// Image: Image Metadata
+				  ,"imageCompression"					// Image: Image Compression
+				  ,"imageFormat"						// Image: Image Format
 				  ,"minification"                       //  #bp 08   File Download: Minify CSS, JS, JSON and HTML                               
 				  ,"spriteimages"                       //  #bp 09   File Download: Use CSS Sprites for Images                                  
 				  ,"connections.connectionOpening"      //  #bp 10   Connections: Connection Opening                                            

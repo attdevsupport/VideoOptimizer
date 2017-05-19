@@ -15,6 +15,8 @@
 */
 package com.att.aro.core;
 
+import org.apache.log4j.Level;
+
 public interface ILogger {
 	void debug(String message);
 	void debug(String message, Throwable throwable);
@@ -24,4 +26,16 @@ public interface ILogger {
 	void info(String info, Throwable throwable);
 	void warn(String warn);
 	void warn(String warn, Throwable throwable);
+	Level getLevel();
+	Level setLevel(Level level);
+	/**<PRE>
+	 * Record a message into the log under Level.INFO regardless of log4j.properties
+	 * Use only for important messages about usage of the analyzer.
+	 * eg. trace analyzed, trace launched
+	 * 
+	 * <B>Do not use for debugging!!!</B></PRE>
+	 * 
+	 * @param message
+	 */
+	void elevatedInfo(String message);
 }

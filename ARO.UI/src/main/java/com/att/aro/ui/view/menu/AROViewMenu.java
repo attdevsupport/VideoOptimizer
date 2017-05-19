@@ -20,7 +20,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JDialog;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.event.MenuEvent;
@@ -89,8 +88,7 @@ public class AROViewMenu implements ActionListener, MenuListener {
 			menuViewApps.setEnabled(parent.isModelPresent());
 			viewMenu.add(menuToolsExcludetimerangeanalysis);
 			menuToolsExcludetimerangeanalysis.setEnabled(parent.isModelPresent());
-			menuViewOptionsDialog = new ChartPlotOptionsDialog(parent, menuViewOptions);
-			menuViewProcesses.setEnabled(parent.isModelPresent()&&menuViewOptionsDialog.isCpuCheckBoxSelected()&&cpuDataExists());
+			menuViewProcesses.setEnabled(parent.isModelPresent()&&cpuDataExists());
 			viewMenu.add(menuViewProcesses);			
 			viewMenu.addSeparator();
 			viewMenu.add(menuViewOptions);
@@ -112,6 +110,11 @@ public class AROViewMenu implements ActionListener, MenuListener {
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_view_processes, aEvent)) {
 			new FilterProcessesDialog(parent, menuViewProcesses).setVisible(true);;
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_view_options, aEvent)) {
+			synchronized(this) {
+				if(menuViewOptionsDialog == null) {
+					menuViewOptionsDialog = new ChartPlotOptionsDialog(parent, menuViewOptions);
+				}
+			}
 			menuViewOptionsDialog.setVisible(true);
 			menuViewOptions.setEnabled(false);
 		}
@@ -121,9 +124,10 @@ public class AROViewMenu implements ActionListener, MenuListener {
 	@Override
 	public void menuSelected(MenuEvent event) {
 		// There is a dependency to having a valid trace path specified
+		menuViewVideo.setSelected(parent.isVideoPlayerSelected());
 		menuViewApps.setEnabled(parent.isModelPresent());
 		menuToolsExcludetimerangeanalysis.setEnabled(parent.isModelPresent());
-		menuViewProcesses.setEnabled(parent.isModelPresent()&&menuViewOptionsDialog.isCpuCheckBoxSelected()&&cpuDataExists());
+		menuViewProcesses.setEnabled(parent.isModelPresent()&&cpuDataExists());
 	}
 	@Override
 	public void menuDeselected(MenuEvent e) { // NoOp

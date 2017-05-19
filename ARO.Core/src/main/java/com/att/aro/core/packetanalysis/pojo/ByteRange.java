@@ -24,6 +24,11 @@ public class ByteRange {
 		this.endByte = endByte;
 	}
 
+	public ByteRange(String byteStart, String byteEnd) {
+		this.beginByte = Integer.valueOf(byteStart);
+		this.endByte = Integer.valueOf(byteEnd);
+	}
+
 	public Integer getBeginByte() {
 		return beginByte;
 	}

@@ -63,7 +63,7 @@ import com.att.aro.core.report.IReport;
  *   serv.getHtmlReport("/yourPath/output.html", data);
  * </pre>
  * Date: March 27, 2014
- *
+ * 
  */
 public class AROServiceImpl implements IAROService {
 
@@ -109,6 +109,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice imageSize;
 	private IBestPractice imageMetadata;
 	private IBestPractice imageCompression;
+	private IBestPractice imageFormat;
 	private IBestPractice minify;
 	private IBestPractice emptyUrl;
 	private IBestPractice flash;
@@ -244,6 +245,12 @@ public class AROServiceImpl implements IAROService {
 	@Qualifier("imageCompression")
 	public void setImageCompression(IBestPractice imageCompression) {
 		this.imageCompression = imageCompression;
+	}
+	
+	@Autowired
+	@Qualifier("imageFormat")
+	public void setImageFormat(IBestPractice imageFormat) {
+		this.imageFormat = imageFormat;
 	}
 	@Autowired
 	@Qualifier("minify")
@@ -515,10 +522,12 @@ public class AROServiceImpl implements IAROService {
 			data.setError(ErrorCodeRegistry.getTraceDirectoryNotAnalyzed());
 			data.setSuccess(false);
 		} else {
-			if(result.getTraceresult().getAllpackets().size()==0){
-				//we set on purposed 
+			if (result.getTraceresult() == null) {
+				// we set this on purpose 
 				data.setError(ErrorCodeRegistry.getUnRecognizedPackets());
-			}else{
+			} else if(result.getTraceresult().getAllpackets() == null || result.getTraceresult().getAllpackets().size() == 0) {
+				data.setError(ErrorCodeRegistry.getTrafficFileNotFound());
+			} else{
 				List<AbstractBestPracticeResult> bestpractices = analyze(result, requests);
 				data.setAnalyzerResult(result);
 				data.setBestPracticeResults(bestpractices);
@@ -611,6 +620,9 @@ public class AROServiceImpl implements IAROService {
 				break;
 			case IMAGE_CMPRS:
 				workers.add(imageCompression);
+				break;
+			case IMAGE_FORMAT:
+				workers.add(imageFormat);
 				break;
 			case MINIFICATION:
 				workers.add(minify);

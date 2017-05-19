@@ -30,10 +30,12 @@ public class VideoUsagePrefs {
 
 	public static final String VIDEO_PREFERENCE = "VIDEO_PREFERENCE";
 
-	private double startupDelay = 10D;		// default startup delay
+	private double startupDelay = 10.000D;		// default startup delay
 	private double maxBuffer = 100.0D;		// MB
 	private double stallTriggerTime = .05D; // in seconds
 	private DUPLICATE_HANDLING duplicateHandling = DUPLICATE_HANDLING.HIGHEST;
+	
+	private boolean ffmpegConfirmationShowAgain=false;
 	
 	@Deprecated	
 	private double arrivalToPlay = 0.0D;	// reject if segment arrives within VIDEO_ARRIVAL_TO_PLAY of playing the segment
@@ -106,5 +108,11 @@ public class VideoUsagePrefs {
 		this.stallTriggerTime = stallTriggerTime;
 	}
 	
+	public boolean isFfmpegConfirmationShowAgain() {
+		return ffmpegConfirmationShowAgain;
+	}
 
+	public void setFfmpegConfirmationShowAgain(boolean ffmpegConfirmationShowAgain) {
+		this.ffmpegConfirmationShowAgain = ffmpegConfirmationShowAgain;
+	}
 }

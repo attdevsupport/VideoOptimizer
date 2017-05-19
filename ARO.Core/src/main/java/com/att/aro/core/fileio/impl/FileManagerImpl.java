@@ -118,8 +118,8 @@ public class FileManagerImpl implements IFileManager {
 
 	public boolean directoryExistAndNotEmpty(File directory) {
 		if (directory.exists() && directory.isDirectory()) {
-			//any file?
-			return directory.list().length > 0;
+			String[] list = directory.list();
+			return list != null && list.length > 0;
 		}
 		return false;
 	}
@@ -140,10 +140,12 @@ public class FileManagerImpl implements IFileManager {
 		boolean success = true;
 		if (directory.exists() && directory.isDirectory()) {
 			String[] innerList = directory.list();
-			for (String file : innerList) {
-				String filePath = directory + "/" + file;
-				if (!deleteFile(filePath)){
-					success = false;
+			if(innerList != null && innerList.length != 0) {
+				for (String file : innerList) {
+					String filePath = directory + "/" + file;
+					if (!deleteFile(filePath)){
+						success = false;
+					}
 				}
 			}
 		}

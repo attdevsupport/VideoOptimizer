@@ -18,7 +18,9 @@ package com.att.aro.core.peripheral.impl;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import com.att.aro.core.ILogger;
 import com.att.aro.core.model.InjectLogger;
@@ -150,6 +152,13 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		}
 		
 		if(matches!= null){
+			List<String> matchesList = new ArrayList<>();
+			for (int str = 0; str < matches.length; str++) {
+				if (!matches[str].startsWith("._")) {
+					matchesList.add(matches[str]);
+				}
+			}
+			matches = matchesList.toArray(new String[matchesList.size()]);
 			while(index < matches.length){
 				if(matches.length == 1){
 					// If trace directory contains any one file video.mp or video.mov , we allow normal native video flow.

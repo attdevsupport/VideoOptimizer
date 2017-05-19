@@ -52,6 +52,13 @@ public final class Util {
     }
 	
 	/**
+	 * Determines whether OS is Windows 32 bit.
+	 */
+	public static boolean isWindows32OS() {
+		return Util.OS_NAME.contains("Windows") && !isWindows64OS();
+	}
+	
+	/**
 	 * Determines whether OS is Windows 64 bit.
 	 */
 	public static boolean isWindows64OS() {
@@ -61,6 +68,13 @@ public final class Util {
 
 		return (arch != null && arch.endsWith("64"))
 		                  || (wow64Arch != null && wow64Arch.endsWith("64"));
+	}
+	
+	/**
+	 * Determines whether OS is Linux.
+	 */
+	public static boolean isLinuxOS() {		
+		return Util.OS_NAME.contains("Linux") || Util.OS_NAME.contains("LINUX");
 	}
 	
 	/**
@@ -92,15 +106,24 @@ public final class Util {
 	 * @return
 	 */
 	public static String getAROTraceDirIOS(){
-		return System.getProperty("user.home") + FILE_SEPARATOR + "AROTraceIOS";
+		return System.getProperty("user.home") + FILE_SEPARATOR + "VideoOptimizerTraceIOS";
 	}
 	
 	/**
 	 * location of AroLibrary
 	 * @return
 	 */
+	@Deprecated
 	public static String getAroLibrary(){
 		return System.getProperty("user.home") + FILE_SEPARATOR + "AroLibrary";
+	}
+	
+	/**
+	 * location of VideoOptimizerLibrary
+	 * @return
+	 */
+	public static String getVideoOptimizerLibrary(){
+		return System.getProperty("user.home") + FILE_SEPARATOR + "VideoOptimizerLibrary";
 	}
 	
 	/**
@@ -108,7 +131,7 @@ public final class Util {
 	 * @return
 	 */
 	public static String getAROTraceDirAndroid(){
-		return System.getProperty("user.home") + FILE_SEPARATOR + "AROTraceAndroid";
+		return System.getProperty("user.home") + FILE_SEPARATOR + "VideoOptimizerAndroid";
 	}
 	
 	/**
@@ -245,7 +268,6 @@ public final class Util {
 	 */
 	public static String byteArrayToString(byte[] recPayload) {
 		StringBuffer sb = new StringBuffer("");
-		int bEnd = recPayload.length + 1;
 		for (int i = 0; i < recPayload.length; i++) {
 			if (recPayload[i] >= 32 || recPayload[i] == '\n' || recPayload[i] == '\r' || recPayload[i] == '\t') {
 				sb.append((char) recPayload[i]);
@@ -264,7 +286,6 @@ public final class Util {
 	 */
 	public static String byteArrayToString(byte[] recPayload, int len) {
 		StringBuffer sb = new StringBuffer("[");
-		int bEnd = recPayload.length + 1;
 		int gotoLen = recPayload.length<len?recPayload.length:len;
 		for (int i = 0; i < gotoLen; i++) {
 			if (recPayload[i] > 32) {
@@ -284,14 +305,8 @@ public final class Util {
 	 */
 	public static String byteArrayToHex(byte[] bArray) {
 		StringBuffer sb = new StringBuffer("[");
-		int bEnd = bArray.length + 1;
 		for (int i = 0; i < bArray.length; i++) {
-			
 			sb.append(String.format("%02X", bArray[i])); 
-			
-//			if (i < bEnd) {
-//				sb.append(", ");
-//			}
 		}
 		sb.append("]");
 		return sb.toString();
@@ -363,7 +378,7 @@ public final class Util {
 	 */
 	public static String makeLibFilesFromJar(String filename) {
 		String homePath = System.getProperty("user.home");
-		String targetLibFolder = homePath + File.separator + "AroLibrary";
+		String targetLibFolder = homePath + File.separator + "VideoOptimizerLibrary";
 		ClassLoader aroClassloader = Util.class.getClassLoader();
 		try {
 			InputStream is = aroClassloader.getResourceAsStream(filename);

@@ -43,8 +43,6 @@ public class AndroidDeviceImpl implements IAndroidDevice {
 	public void setLogger(ILogger logger) {
 		this.logger = logger;
 	}
-
-	Boolean rootFlag;
 	
 	public RootCheckOutputReceiver makeRootCheckOutputReceiver() {
 		return new RootCheckOutputReceiver();
@@ -92,20 +90,16 @@ public class AndroidDeviceImpl implements IAndroidDevice {
 			return false;
 		}
 
-		if (rootFlag == null) {
-			for (String cmd : new String[] { "su -c id", "id" }) {
-				String[] res = android.getShellReturn(device, cmd);
-				for (String string : res) {
-					if (string.contains("uid=0(root) gid=0(root)")) {
-						rootFlag = true;
-						return true;
-					}
+		for (String cmd : new String[] { "su -c id", "id" }) {
+			String[] res = android.getShellReturn(device, cmd);
+			for (String string : res) {
+				if (string.contains("uid=0(root) gid=0(root)")) {
+					return true;
 				}
 			}
-			rootFlag = false;
 		}
 
-		return rootFlag;
+		return false;
 	}
 
 }

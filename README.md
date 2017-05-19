@@ -1,4 +1,5 @@
-#Video Optimizer
+
+# Video Optimizer
 
 All works distributed in this package are covered by the Apache 2.0 License unless otherwise stated.
 
@@ -31,7 +32,7 @@ AT&T Video Optimizer contains the following open source libraries or binaries wi
 **TCPDUMP/LIBPCAP**  
 > The AT&T Video Optimizer uses Open Source Software that is licensed under the following BSD (the "License"), and you may not use this file except in compliance with the License. You may obtain a copy of the Licenses at: http://www.tcpdump.org/#contribute. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licenses for the specific language governing permissions and limitations under the Licenses. License: BSD Redistribution and use in source and binary forms, with or withoutmodification, are permitted provided that the following conditionsare met: 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/o> rials provided with the distribution. 3. The names of the authors may not be used to endorse or promote products derived from this software without specific prior written permission.  THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS ORIMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIEDWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  
 
-##Open Source Code Package
+## Open Source Code Package
 
 Video Optimizer allows mobile application developers to test the network performance of video, images and other files for compression, speed, battery drain and other aspects of performance.
 
@@ -49,54 +50,72 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-Video Optimizer 1.0  
+#### Video Optimizer 1.1 
 
-**System Requirements for Video Optimizer 1.0:**
+**System Requirements for Video Optimizer 1.1:**
 
-Before you download Video Optimizer, make sure you meet the following system requirements for your operating system.
+Before you download Video Optimizer 1.1, make sure you meet the following system requirements for your operating system.
 
 1. 2GB or more for RAM
-2. Java 7 or above (should have the latest update of Java 1.7 or above)
+2. Java 8 or above (should have the latest update of Java 1.8 or above)
 3. Android SDK Level 19 or above for collecting Android devices trace
 4. Latest Xcode for collecting iOS devices trace
 5. WinPcap for windows user
 6. FFMpeg library installed and configured for HD video
 
-### Video Optimizer 1.0 Features
+#### Video Optimizer 1.1 Features
 
-#### • Video Best Practices
-A group of Best Practice tests that offer guidance on mobile development issues with video. These tests let you visualize and diagnose common streaming issues to optimally balance Deliver Quality (DQ) versus Video Quality (VQ). The DQ key performance indicators (KPI) are startup time, stalls, track switches, and latency.
 
-#### •	Security Best Practices
-A section of Best Practice tests in the area of security help you check that your app is using HTTPS to better secure private data, and that you are using the latest HTTPS version to help you avoid unsecure SSL connections. Other security tests look for weak ciphers to protect the data you are transmitting with a stronger method of encryption and checks that the ciphers you are using support forward secrecy.
-
-#### •	Image Best Practices
-New best practice tests to help you use images more efficiently. One new test looks at your image metadata to determine if unnecessary metadata is being included. Metadata can greatly increase file size, but has little benefit for the end user. Removing extra metadata makes the images smaller and lets them download faster.
-Another new test helps you find the best level of image compression so that the images in your app maintain quality at a smaller size. You can analyze all images (JPG, GIF, PNG, WebP) to ensure that the image was properly compressed.
-
-#### •  Peripheral support using the VPN Collector
-The VPN collector in Video Optimizer 1.0 can collect data from peripherals.
-
-### What are the known issues in Release 1.0?
-
-#### •	Security Best Practices
-+	In our testing, only Android devices with Kitkat OS detected a weak cipher.
-+	Private data transmission: There is a false positive scenario that Analyzer reports a sixteen digit number as a credit card number.
+#### • Video Parser Utility (Beta version)
+The Video Parser utility significantly broadens the reach of video optimization by supporting different video formats. This tool has the ability to parse any streaming video URL to identify key streaming features using regular expressions. By using this tool, Video Optimizer can perform video stream analysis and allow the user to test any unencrypted stream of video. Different stream types like video on demand vs. live stream often have a different type of profile and characteristics.
 
 #### •	Video Best Practices
-+	Traces that are collected from a paused video do not capture the manifest file, so the thumbnails are not displayed.
-+	Some traces do not generate segments as the manifest file is not created.
-+	Only stalls have the pass/fail criteria. All the other video best practices are currently informative only.
-+	Although there are stalls in the trace, sometimes the buffer occupancy graph doesn't report them.
-+	After setting the video start-up delay, you cannot set the recovery time that occurred in the trace.
+This release has enhancements to a group of best practice tests that offer guidance on mobile development issues with video. A new tab “Video” is available on the analyzer where all the manifest and the video segments are listed on this tab. A new pop-up window is displayed where all the video segments are listed when the user sets the startup delay. The stalls are automatically detected after the startup delay is set.
 
-#### •	HD/SD Video Options
-+	HD option is disabled for windows.
-+	HD/SD option is disabled for Linux.
+#### •	Image Best Practices
+This release has enhancements to the best practice tests in the area of image format. Video Optimizer converts all the images to WebP format (for Android) or Jpeg2000 format (for iOS) and it gives a “Pass” if there are no savings after the conversion. This best practice will give a “Pass” when there are no images with a savings of more than 15 percent, and a Fail if there is at least one image with more than 15 percent savings when converted.
 
-#### •	Analyzer
-+	HTTPS cache statistics tab displays all zeros.
-+	When the user click the zoom option on the Diagnostics Tab, the cursor is not kept at the same point.
+#### •  Android Device Data Capture – CPU Temperature and GPS Events
+This release includes Android device data capture and Diagnostic tab correlation, CPU Temperature, and location events.
+
+##### - CPU Temperature
+A new option “CPU Temperature” is available under View/Options/CPU Temperature. The thermal temperature of the device is displayed on the diagnostic chart as the CPU Temperature. A green graph is plotted on the diagnostic chart.
+
+##### - GPS/Location events
+GPS/location events information is collected from the device and displayed on the diagnostic chart. Active, Standby state is plotted on the graph. Pings are also marked on the diagnostic chart. The following information is available by hovering on hovering on the pings:
++	Time
++	Location info
++	Latitude
++	Longitude
++	Locality
++	Provider
+
+#### •  Performance Enhancements
+This release includes performance-related enhancements such as a faster launch for Video Optimizer and support for bigger traces.
+
+#### •  Rebranding
+This release includes rebranding of the ARO Command Line Utility and folder structures to the Video Optimizer.
+
+### What are the known issues in Release 1.1?
+
+#### •	Video Parser Utility
++	The “search success” message is displayed on top when you launch a new Video Parser Wizard from the menu.
++	In the Video Parser Wizard window, the result section of the wizard does not save the previously chosen XREF options for the data capture group when the next set of capture group is entered.
++	When a user sees a negative segment number, it means that there is no manifest in HLS and no recognized segment number is present in the request.
++	Analyzer is getting stuck while parsing the requests available in the Video requests under the Video tab.
+
+#### •	iOS Issues
++	Video Analysis is not available for iOS devices. For this release video analysis is only available for Android.
++	Screen capture is failing while collecting a trace via Command line interface for iOS devices.
++	A black screen is displayed on the video viewer as soon as the trace is opened instead of an image from the device on which the trace was collected.
+
+#### •	Android Device Data Capture – CPU Temperature
++	CPU temperature is device dependent.
+
+#### •	Video Best Practices
++	In line videos are sometimes captured as part of trace analysis and a single segment is displayed on the diagnostics chart. The user is able to select the segment.
++	When there are two manifest files in the video trace, the buffer graph for bytes and seconds are inaccurate.
++ 	“Show Video viewer” will still be available for traces with no videos and when clicked, it will open the previous trace video but it will not be playable.
 
 #### •	Other Issues
 +	When the Graph on the Diagnostics Tab is zoomed in, the video in the Image/Viewer may take longer to respond to commands such as Pause.

@@ -19,6 +19,11 @@
 
 	<repositories>
 		<repository>
+			<id>Typesafe</id>
+			<name>Maven Typesafe Repository</name>
+			<url>http://repo.typesafe.com/typesafe/maven-releases</url>
+		</repository>
+		<repository>
 			<id>com.springsource.repository.bundles.external</id>
 			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
 			<url>http://repository.springsource.com/maven/bundles/external</url>
@@ -29,7 +34,6 @@
 			<url>http://repo1.maven.org/maven2</url>
 		</repository>
 		<repository>
-
 			<id>apache.snapshots</id>
 			<name>Apache Development Snapshot Repository</name>
 			<url>https://repository.apache.org/content/repositories/snapshots/</url>
@@ -40,7 +44,10 @@
 				<enabled>true</enabled>
 			</snapshots>
 		</repository>
-
+		<repository>
+			<id>local</id>
+			<url>file://${project.basedir}/libs</url>
+		</repository>
 	</repositories>
 
 	<dependencies>
@@ -56,6 +63,36 @@
 			</exclusions>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>findbugs-maven-plugin</artifactId>
+			<version>3.0.4</version>
+		</dependency>
+		<dependency>
+			<groupId>org.hyperic</groupId>
+			<artifactId>sigar</artifactId>
+			<version>1.6.4</version>
+		</dependency>
+		<dependency>
+			<groupId>com.luciad.imageio</groupId>
+			<artifactId>webp-imageio</artifactId>
+			<version>0.4.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.jai-imageio</groupId>
+			<artifactId>jai-imageio-jpeg2000</artifactId>
+			<version>1.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-imaging</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
 		<!-- jaxb support -->
 		<dependency>
 			<groupId>org.glassfish.jaxb</groupId>
@@ -73,25 +110,21 @@
 			<version>2.2.11</version>
 		</dependency>
 		<!-- end jaxb support -->
-
 		<dependency>
 			<groupId>com.drewnoakes</groupId>
 			<artifactId>metadata-extractor</artifactId>
 			<version>2.8.1</version>
 		</dependency>
-
-
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-imaging</artifactId>
-			<version>1.0-SNAPSHOT</version>
-		</dependency>
-
-
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.5</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+			<version>3.5</version>
 		</dependency>
 
 		<dependency>
@@ -283,6 +316,52 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <id>install-webp-jar</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <executable>mvn</executable>
+                    <arguments>
+                        <argument>install:install-file</argument>
+                        <argument>-Dfile=${basedir}\libs/com/luciad/imageio/webp-imageio/0.4.2/webp-imageio-0.4.2.jar</argument>
+                        <argument>-DgroupId=com.luciad.imageio</argument>
+                        <argument>-DartifactId=webp-imageio</argument>
+                        <argument>-Dversion=0.4.2</argument>
+                        <argument>-Dpackaging=jar</argument>
+                    </arguments>
+                </configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>3.0.4</version>
+				<configuration>
+					<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
+					<effort>Max</effort>
+					<threshold>Max</threshold>
+					<maxRank>10</maxRank>
+					<xmlOutput>true</xmlOutput>
+					<findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<id>analyze-compile</id>
+						<!-- <phase>compile</phase> -->
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.17</version>
@@ -310,4 +389,3 @@
 		</plugins>
 	</reporting>
 </project>
- 

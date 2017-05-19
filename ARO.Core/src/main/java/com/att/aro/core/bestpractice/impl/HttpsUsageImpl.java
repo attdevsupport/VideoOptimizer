@@ -92,8 +92,7 @@ public class HttpsUsageImpl implements IBestPractice {
 		Map<InetAddress, List<Session>> ipSessionsMap = buildIpSessionsMap(sessions);
 		List<HttpsUsageEntry> httpsUsageEntries = buildHttpsUsageEntry(ipSessionsMap);
 
-		BigDecimal httpConnectionsPercentageCurrentTrace = getHttpConnectionsPercentage(
-				totalNumHttpConnectionsCurrentTrace, totalNumConnectionsCurrentTrace);
+		BigDecimal httpConnectionsPercentageCurrentTrace = getHttpConnectionsPercentage(totalNumHttpConnectionsCurrentTrace, totalNumConnectionsCurrentTrace);
 
 		HttpsUsageResult result = new HttpsUsageResult();
 		String testResultText = "";
@@ -153,11 +152,17 @@ public class HttpsUsageImpl implements IBestPractice {
 	}
 
 	private BigDecimal getHttpConnectionsPercentage(int numHttpConnections, int numConnections) {
+		if (numConnections == 0) {
+			return BigDecimal.ZERO;
+		}
 		return (new BigDecimal(numHttpConnections).multiply(new BigDecimal(100)))
 				.divide(new BigDecimal(numConnections), 3, RoundingMode.HALF_UP);
 	}
 
 	private BigDecimal getHttpTrafficPercentage(int httpTrafficInByte, int trafficInByte) {
+		if (trafficInByte == 0) {
+			return BigDecimal.ZERO;
+		}
 		return (new BigDecimal(httpTrafficInByte).multiply(new BigDecimal(100)))
 				.divide(new BigDecimal(trafficInByte), 3, RoundingMode.HALF_UP);
 	}

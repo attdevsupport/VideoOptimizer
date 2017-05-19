@@ -15,15 +15,16 @@
 */
 package com.att.aro.ui.view.video;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+
+import com.att.aro.core.AnalyzerOS;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
+import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.ContextAware;
@@ -37,10 +38,7 @@ public class VideoPlayerController implements Observer {
 	private AbstractTraceResult traceResult;
 	private String traceDirectory;
 	private DiagnosticsTab diagnosticsTab;
-	private int playbackWidth = 350;
-	private int playbackHeight = 600;
-	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-	private int rtEdge = screenSize.width - playbackWidth;
+	private AnalyzerOS analyzerOS;
 	
 	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
 	
@@ -66,26 +64,24 @@ public class VideoPlayerController implements Observer {
 	 * @return
 	 */
 	public IVideoPlayer getDefaultPlayer() {
-		return getMovPlayer();
+		if (analyzerOS == AnalyzerOS.MAC) {
+			return getMovPlayer();
+		} 
+		return getMp4VlcjPlayer();
+	}
+
+	private IVideoPlayer getMp4JfxPlayer() {		
+		for (IVideoPlayer player: players) {
+			if (player.getPlayerType() == VideoPlayerType.MP4_JFX) {
+				return player;
+			}
+		}		
+		return null;
 	}
 	
-	private void launchPlayer(String traceDirectory) {
-
-		IVideoPlayer mp4Player = getMp4Player();
-		IVideoPlayer movPlayer = getMovPlayer();
-		
-		if (mp4VideoExists(traceDirectory) && mp4Player != null) {
-			launchMp4Player();
-		} else if (movPlayer != null){
-			launchMovPlayer();
-		} else {
-			logger.error("Error launching video player - no Mp4 or Mov player found");
-		}
-	}
-
-	private IVideoPlayer getMp4Player() {		
+	private IVideoPlayer getMp4VlcjPlayer() {		
 		for (IVideoPlayer player: players) {
-			if (player.getPlayerType() == VideoPlayerType.MP4) {
+			if (player.getPlayerType() == VideoPlayerType.MP4_VLCJ) {
 				return player;
 			}
 		}		
@@ -101,47 +97,37 @@ public class VideoPlayerController implements Observer {
 		return null;
 	}
 	
-	// Making assumption here that there is only 1 Mp4 Player.
-	private void launchMp4Player() {
-		IVideoPlayer player = getMp4Player();
-		player.launchPlayer(traceResult);
-		diagnosticsTab.setVideoPlayer(player);
-		setCurrentVideoPlayer(player);
-	}
-	
-	// Making assumption here that there is only 1 Mov Player.
-	private void launchMovPlayer() {
-		IVideoPlayer player = getMovPlayer();
-		player.launchPlayer(traceResult);
-		diagnosticsTab.setVideoPlayer(player);
-		setCurrentVideoPlayer(player);
-	}
-	
-	/*
-	 * Returns whether the mp4 video file exists in the trace directory.
-	 */
 	private boolean mp4VideoExists(String traceDirectory) {
-		
 		if (traceDirectory == null) {
 			logger.error("Trace Dir = " + traceDirectory);
 			return false;
-		}
-		
+		}		
 		String videoMp4FilePath = traceDirectory 
 								+ System.getProperty("file.separator") 
 								+ ResourceBundleHelper.getMessageString("video.videoFileOnDevice");  
-		
 		if (new File(videoMp4FilePath).exists()) {
 			return true;
+		}		
+		return false;
+	}
+
+	private boolean movVideoExists(String traceDirectory) {
+		if (traceDirectory == null) {
+			logger.error("Trace Dir = " + traceDirectory);
+			return false;
+		}		
+		String movPath = traceDirectory + System.getProperty("file.separator")
+				+ ResourceBundleHelper.getMessageString("video.videoDisplayFile");
+		if (new File(movPath).exists()) {
+			return true;
 		}
-		
 		return false;
 	}
 
 	@Override
 	public void update(Observable observable, Object model) {
-		
 		traceResult = ((AROTraceData) model).getAnalyzerResult().getTraceresult();
+		TraceResultType traceResultType = traceResult.getTraceResultType();
 		traceDirectory = traceResult.getTraceDirectory();	
 
 		if (traceDirectory == null) {
@@ -149,30 +135,79 @@ public class VideoPlayerController implements Observer {
 			return;
 		}
 
-		if (currentPlayer != null) {
+		if (traceResultType == TraceResultType.TRACE_FILE
+				|| !(mp4VideoExists(traceDirectory) || movVideoExists(traceDirectory))) {
 			currentPlayer.clear();
+			currentPlayer.notifyLauncher(false);
+			return;
 		}
 		
-		launchPlayer(traceDirectory);		
+		IVideoPlayer mp4JfxPlayer = getMp4JfxPlayer();
+		IVideoPlayer mp4VlcjPlayer = getMp4VlcjPlayer();
+		IVideoPlayer movPlayer = getMovPlayer();
+		
+		if(null != movPlayer && ((AROVideoPlayer) movPlayer).isPlaying()) {
+			((AROVideoPlayer) movPlayer).stopPlayer();
+		}
+		
+		IVideoPlayer player = null;
+		
+		if (analyzerOS == AnalyzerOS.MAC) {
+			
+			if (currentPlayer != null) {
+				currentPlayer.clear();
+			}
+			
+			if (mp4VideoExists(traceDirectory) && mp4JfxPlayer != null) {
+				player = mp4JfxPlayer;
+			} else if (movPlayer != null) {
+				player = movPlayer;
+			}
+		} else {			 
+			if (mp4VlcjPlayer != null) {
+				player = mp4VlcjPlayer;
+				player.notifyLauncher(true);
+			}
+		}
+
+		if (player == null) {
+			logger.error("Error launching video player - no appropriate Mp4 or Mov player found");
+			return;
+		}
+		
+		player.loadVideo(traceResult);	
+		
+		if (analyzerOS == AnalyzerOS.MAC) {
+			diagnosticsTab.setVideoPlayer(player);
+			setCurrentVideoPlayer(player);
+			player.notifyLauncher(true);
+		}
 	}
 
-	public void initAppLaunchTimeInitialPlayer() {
+	public void launchPlayer(int xPosition, int yPosition, int frameWidth, int frameHeight) {	
 
 		if (players == null || players.size() == 0) {
 			logger.error("No player available to launch");
 			return;
 		}
 		
-		AROVideoPlayer movPlayer = (AROVideoPlayer) getDefaultPlayer();
+		if (Util.isMacOS()) {
+			analyzerOS = AnalyzerOS.MAC;
+		} else if (Util.isWindowsOS()) {
+			analyzerOS = AnalyzerOS.WIN;
+		} 
 		
-		if (movPlayer == null) {
-			logger.error("error launching player - mov player not available");
+		IVideoPlayer player = (IVideoPlayer) getDefaultPlayer();
+		
+		if (player == null) {
+			logger.error("Error launching player - player not available");
 			return;		
 		} 
 		
-		movPlayer.setBounds(rtEdge, 0, playbackWidth, playbackHeight);
-		movPlayer.setVisibility(true);
-		movPlayer.setAroAdvancedTab(diagnosticsTab); 
-		setCurrentVideoPlayer(movPlayer);
+		player.launchPlayer(xPosition, yPosition, frameWidth, frameHeight);
+		player.setAroAdvancedTab(diagnosticsTab);
+		diagnosticsTab.setVideoPlayer(player);
+		setCurrentVideoPlayer(player);
 	}
+
 }

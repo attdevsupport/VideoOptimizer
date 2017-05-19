@@ -80,6 +80,31 @@ public class TraceDataConst {
 		public static final String KEY_LANDSCAPE = "landscape";
 		public static final String KEY_PORTRAIT = "portrait";
 	}
+	
+	/**
+	 * group of constants for Get Event
+	 *
+	 */
+	public class GetEvent{
+		public static final String PRESS = "press";
+		public static final String RELEASE = "release";
+		public static final String SCREEN = "ABS_MT_POSITION_X";
+		public static final String KEY = "EV_KEY";
+		public static final String KEY_POWER = "KEY_POWER";
+		public static final String KEY_VOLUP = "KEY_VOLUMEUP";
+		public static final String KEY_VOLDOWN = "KEY_VOLUMEDOWN";
+		public static final String KEY_BALL = "ball";
+		public static final String KEY_HOME = "KEY_HOME";
+		public static final String KEY_MENU = "KEY_MENU";
+		public static final String KEY_BACK = "KEY_BACK";
+		public static final String KEY_SEARCH = "KEY_SEARCH";
+		public static final String KEY_GREEN = "green";
+		public static final String KEY_RED = "red";
+		public static final String KEY_KEY = "key";
+		public static final String KEY_LANDSCAPE = "landscape";
+		public static final String KEY_PORTRAIT = "portrait";
+	}
+	
 	/**
 	 * value of network type found when reading trace file
 	 *
@@ -209,9 +234,24 @@ public class TraceDataConst {
 		public static final String WIFI_FILE = "wifi_events";
 
 		/**
-		 * The name of the user events trace file
+		 * The name of the user events trace file from rooted devices
 		 */
 		public static final String USER_EVENTS_FILE = "processed_events";
+		
+		/**
+		 * The name of the user events trace file
+		 */
+		public static final String TEMPERATURE_FILE = "temperature_data";
+		
+		/**
+		 * The name of the location events trace file
+		 */
+		public static final String LOCATION_FILE = "location_events";
+		
+		/**
+		 * The name of the user events trace file from Non Rooted Devices
+		 */
+		public static final String USER_GETEVENTS_FILE = "geteventslog";
 		/**
 		 * The name of the screen rotations trace file
 		 */
@@ -256,6 +296,8 @@ public class TraceDataConst {
 	
 	/**
 	 * private_data file constant
+	 * 
+	 * @author chaozhang
 	 *
 	 */
 	public class PrivateData {

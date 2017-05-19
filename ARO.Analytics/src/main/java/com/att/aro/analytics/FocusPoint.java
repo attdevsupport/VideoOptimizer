@@ -142,5 +142,4 @@ public class FocusPoint {
             return name;
         }
     }
-
 }

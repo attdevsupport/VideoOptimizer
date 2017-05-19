@@ -43,9 +43,6 @@ public class PCapPacketHeader
 
 	protected long pktlenUint32 = 0;
 	
-	protected byte[] myOriginalCopy = null;
-	 
-	
 	//Commenting it out as we won;t need this  for writing PCAP 
 	
 //	/**
@@ -92,14 +89,6 @@ public class PCapPacketHeader
 		return tmp;
 	}
 	
-	/**
-	 * @return the header as read from the stream.
-	 */
-	protected byte[] getTheHeaderByteArray()
-	{
-		return myOriginalCopy;
-	}
-
 	/**
 	 *  (non-Javadoc)
 	 * @see java.lang.Object#toString()

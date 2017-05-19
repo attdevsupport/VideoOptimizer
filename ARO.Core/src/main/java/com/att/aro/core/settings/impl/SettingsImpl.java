@@ -17,150 +17,106 @@
 package com.att.aro.core.settings.impl;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.EnumSet;
-import java.util.Enumeration;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.att.aro.core.ILogger;
-import com.att.aro.core.exception.AROInvalidAttributeException;
 import com.att.aro.core.exception.ARORuntimeException;
 import com.att.aro.core.impl.LoggerImpl;
-import com.att.aro.core.settings.ISettings;
+import com.att.aro.core.settings.Settings;
 
 /**
- * Generic Configuration File implementation - assumes the configuration file is a .properties
- * file.  Supports optional specification of allowed attributes.
- * 
- *
+ * Implements Settings class and acts as interface to (load from/save to) config.properties file.
+ * @author bharath
  *
  */
-public class SettingsImpl implements ISettings {
-	private static final String FILE_SEPARATOR = System.getProperty("file.separator");
-	static final String CONFIG_FILE_PATH = System.getProperty("user.home") +
-			FILE_SEPARATOR + "AroLibrary" + FILE_SEPARATOR + "config.properties";
-
-	private final ILogger logger = new LoggerImpl(SettingsImpl.class.getName());
-
-	private final String currentConfigFilePath;
-
-	final Properties configProperties;
-	final EnumSet<? extends Enum<?>> validAttributes;
-
-	/**
-	 * Entry point to specify configuration .properties file
-	 * 
-	 * @param CONFIG_FILE_PATH
-	 * @param validAttributes enum of valid attribute names (not enforced if null)
-	 */
-	public SettingsImpl(String configFilePath, EnumSet<?> validAttributes) {
-		this.validAttributes = validAttributes;
-		currentConfigFilePath = configFilePath;
-		configProperties = loadProperties(configFilePath);
+public final class SettingsImpl implements Settings {
+	public enum ConfigFileAttributes {
+		adb, gaTrackerId
 	}
 
-	/**
-	 * Entry point to specify configuration .properties file
-	 * 
-	 * @param CONFIG_FILE_PATH
-	 */
-	public SettingsImpl(String configFilePath) {
-		this(configFilePath, (EnumSet<?>) null);
+	public static final String CONFIG_FILE_PATH = System.getProperty("user.home") + System.getProperty("file.separator")
+			+ "VideoOptimizerLibrary" + System.getProperty("file.separator") + "config.properties";
+	private static final ILogger LOGGER = new LoggerImpl(SettingsImpl.class.getName());
+	private static final SettingsImpl INSTANCE = new SettingsImpl();
+	private final Properties configProperties;
+	private final Map<String, String> valueMap = new ConcurrentHashMap<>();
+
+	public static Settings getInstance() {
+		return INSTANCE;
 	}
 
-	/**
-	 * 
-	 * @param validAttributes enum of valid attribute names (not enforced if null)
-	 */
-	public SettingsImpl(EnumSet<?> validAttributes) {
-		this(CONFIG_FILE_PATH, validAttributes);
+	private SettingsImpl() {
+		configProperties = loadProperties();
+		Set<Entry<Object, Object>> entrySet = configProperties.entrySet();
+		entrySet.stream().forEach(e -> valueMap.put((String) e.getKey(), (String) e.getValue()));
 	}
 
-	public SettingsImpl() {
-		this((EnumSet<?>) null);
-	}
-
-
-	private void createConfigFile(File configFile) {
-		File parent = configFile.getParentFile();
-		if (parent != null) {
-			parent.mkdirs();
-			try {
-				new FileWriter(configFile);
-			} catch (IOException e) {
-				throw new ARORuntimeException("Could not create config file: " +
-						e.getLocalizedMessage(), e);
-			}
-		}
-	}
-
-	private Properties loadProperties(String configFilePath) {
-		File configFile = new File(configFilePath);
-		logger.debug("Reading properties from: " + configFilePath);
-
-		if (!configFile.exists()) {
-			createConfigFile(configFile);
-		}
-
+	private Properties loadProperties() {
+		LOGGER.debug("Reading properties from: " + CONFIG_FILE_PATH);
+		createConfig(CONFIG_FILE_PATH);
 		Properties configProperties = new Properties();
 		try {
-			FileReader configReader = new FileReader(configFilePath);
+			FileReader configReader = new FileReader(CONFIG_FILE_PATH);
 			configProperties.load(configReader);
 			configReader.close();
-		} catch (FileNotFoundException e) {
-			throw new ARORuntimeException(
-				"Could not find config file file (real problem - should never happen): " +
-					e.getLocalizedMessage(), e);
 		} catch (IOException e) {
-			throw new ARORuntimeException(
-				"Could not read config file: " + e.getLocalizedMessage(), e);
+			throw new ARORuntimeException("Could not read config file: " + e.getLocalizedMessage(), e);
 		}
-		logger.debug(getPropertiesReadString(configProperties));
 		return configProperties;
+	}
+
+	private void createConfig(String configFilePath) {
+		File configFile = new File(configFilePath);
+		if (!configFile.exists()) {
+			File parent = configFile.getParentFile();
+			if (parent != null) {
+				parent.mkdirs();
+				try (FileWriter fileWriter = new FileWriter(configFile)) {
+				} catch (IOException e) {
+					throw new ARORuntimeException("Could not create config file: " + e.getLocalizedMessage(), e);
+				}
+			}
+		}
 	}
 
 	@Override
 	public String getAttribute(String name) {
-		String propertyValue = configProperties.getProperty(name);
-		logger.debug("Value of property " + name + ": " + propertyValue);
-		return propertyValue;
+		return valueMap.get(name);
 	}
-	private void checkForValidAttribute(String name) {
-		if (validAttributes != null) {
-			boolean valid = false;
-			for (Enum<?> currentAttribute : validAttributes) {
-				if (name.equals(currentAttribute.name())) {
-					valid = true;
-					break;
-				}
-			}
-			if (!valid) {
-				throw new AROInvalidAttributeException("Attribute '" + name + "' invalid\n" +
-						"(specified by " + validAttributes.getClass().getCanonicalName() + ")");
-			}
-		}
+
+	@Override
+	public Map<String, String> listAttributes() {
+		return valueMap;
 	}
+
 	@Override
 	public String setAttribute(String name, String value) {
-		checkForValidAttribute(name);
-		logger.debug("Replacing property " + name + " with " + value);
+		LOGGER.debug("Replacing property " + name + " with " + value);
+		valueMap.put(name, value);
 		return (String) configProperties.setProperty(name, value);
 	}
+
 	@Override
 	public String removeAttribute(String name) {
-		checkForValidAttribute(name);
-		logger.debug("Removing property " + name);
+		LOGGER.debug("Removing property " + name);
+		valueMap.remove(name);
 		return (String) configProperties.remove(name);
 	}
+
 	@Override
 	public String setAndSaveAttribute(String name, String value) {
 		String attribute = setAttribute(name, value);
 		saveConfigFile();
 		return attribute;
 	}
+
 	@Override
 	public String removeAndSaveAttribute(String name) {
 		String attribute = removeAttribute(name);
@@ -171,27 +127,12 @@ public class SettingsImpl implements ISettings {
 	@Override
 	public void saveConfigFile() {
 		try {
-			FileWriter writer = new FileWriter(currentConfigFilePath);
-			logger.debug(getPropertiesReadString());
-			logger.debug("Persisting properties to: " + currentConfigFilePath);
+			FileWriter writer = new FileWriter(CONFIG_FILE_PATH);
+			LOGGER.debug("Persisting properties to: " + CONFIG_FILE_PATH);
 			configProperties.store(writer, null);
 			writer.close();
 		} catch (IOException e) {
-			throw new ARORuntimeException("Could not save config file: " +
-					e.getLocalizedMessage(), e);
+			throw new ARORuntimeException("Could not save config file: " + e.getLocalizedMessage(), e);
 		}
-	}
-
-	private String getPropertiesReadString(Properties configProperties) {
-		StringBuilder propertiesString = new StringBuilder("current properties:\n");
-		for (Enumeration<?> iter = configProperties.propertyNames(); iter.hasMoreElements();) {
-			String propertyName = (String) iter.nextElement();
-			propertiesString.append(propertyName + " = " +
-					configProperties.getProperty(propertyName) + "\n");
-		}
-		return propertiesString.toString();
-	}
-	private String getPropertiesReadString() {
-		return getPropertiesReadString(configProperties);
 	}
 }

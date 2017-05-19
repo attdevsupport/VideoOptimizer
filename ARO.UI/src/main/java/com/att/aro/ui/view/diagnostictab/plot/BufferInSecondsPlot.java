@@ -19,6 +19,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
+import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,7 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class BufferInSecondsPlot implements IPlot{
 	
 	private static final String BUFFER_TIME_OCCUPANCY_TOOLTIP = ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip");
-
+	
 	XYSeriesCollection bufferFillDataCollection = new XYSeriesCollection();
 	XYSeries seriesBufferFill;
 	Map<Integer,String> seriesDataSets; 
@@ -95,10 +96,42 @@ public class BufferInSecondsPlot implements IPlot{
 					Number timestamp = dataset.getX(series, item);
 					Number bufferTime = dataset.getY(series, item);
 					StringBuffer tooltipValue = new StringBuffer();
-					tooltipValue.append(String.format("%.2f", bufferTime)+","+String.format("%.2f", timestamp));
- 
-				    String[] value = tooltipValue.toString().split(",");
-					return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP,value[0],value[1]));
+					
+
+					DecimalFormat decimalFormat = new DecimalFormat("0.##");
+					Map<Long, Double> segmentStartTimeMap = bufferInSecondsCalculatorImpl.getSegmentStartTimeMap();
+					if(segmentStartTimeMap == null || segmentStartTimeMap.isEmpty()) {
+						return "-,-,-";
+					}
+					Map<Double, Long> segmentEndTimeMap = bufferInSecondsCalculatorImpl.getSegmentEndTimeMap();
+
+					Long segmentNumber = 0L;
+					boolean isSegmentPlaying = false;
+					boolean startup = false;
+
+					for (double segmentEndTime : segmentEndTimeMap.keySet()) {
+						if (segmentEndTime > timestamp.doubleValue()) {
+							segmentNumber = segmentEndTimeMap.get(segmentEndTime);
+							if(segmentNumber==1){
+								startup=true;
+							}
+							if (segmentStartTimeMap.get(segmentNumber) <= timestamp.doubleValue()) {
+								tooltipValue.append(decimalFormat.format(segmentNumber) + ",");
+								isSegmentPlaying = true;
+							} 
+						}
+					}
+
+					if (!isSegmentPlaying && !startup) {
+						tooltipValue.append("Stall,");
+					} else if (startup) {
+						tooltipValue.append("-,");
+					}
+					
+					tooltipValue.append(String.format("%.2f", bufferTime) + "," + String.format("%.2f", timestamp));
+					
+					String[] value = tooltipValue.toString().split(",");
+					return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP, value[0], value[1], value[2]));
 				}
 
 			});

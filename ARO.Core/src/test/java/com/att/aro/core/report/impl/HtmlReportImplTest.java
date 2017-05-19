@@ -81,7 +81,9 @@ public class HtmlReportImplTest extends BaseTest{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		tempFile.deleteOnExit();
+		if(tempFile != null) {
+			tempFile.deleteOnExit();
+		}
 		when(filereader.createFile(any(String.class))).thenReturn(tempFile);
 		
     	AROTraceData results = new AROTraceData();

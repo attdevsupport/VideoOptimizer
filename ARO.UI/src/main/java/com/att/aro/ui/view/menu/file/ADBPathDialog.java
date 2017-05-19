@@ -29,7 +29,7 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import com.att.aro.core.AROConfig;
-import com.att.aro.core.settings.IAROSettings;
+import com.att.aro.core.settings.Settings;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -46,7 +46,7 @@ public class ADBPathDialog extends JDialog {
 	private final JPanel contentPanel = new JPanel();
 	private JTextField txtFile;
 	private JFileChooser file;
-	private IAROSettings settings = null;
+	private Settings settings = null;
 
 	private enum MessageKeys {
 		menu_file_adb_title,
@@ -64,7 +64,7 @@ public class ADBPathDialog extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public ADBPathDialog(SharedAttributesProcesses parent, IAROSettings settings) {
+	public ADBPathDialog(SharedAttributesProcesses parent, Settings settings) {
 		super(parent.getFrame());
 		this.settings = settings;
 		setAlwaysOnTop(true);

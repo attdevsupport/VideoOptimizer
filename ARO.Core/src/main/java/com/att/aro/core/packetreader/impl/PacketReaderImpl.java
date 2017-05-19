@@ -47,6 +47,9 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 	
 	String aroJpcapLibName = null;
 	String aroJpcapLibFileName = null;
+	
+	String aroWebPLibName = null;
+	String aroWebPLibFileName = null;
 
 	private String currentPacketfile = null;
 
@@ -60,6 +63,10 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 	private File currentPcapfile = null;
 	private File convertedPcapFile;
 	private PCapFileWriter pcapOutput;
+	private String unixExtn = ".so";
+	public String windowsOS = "Windows";
+	public String windowsExtn = ".dll";
+	public String linuxOS = "Linux";
 
 	public PacketReaderImpl() {
 
@@ -72,8 +79,8 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 	@Override
 	public void readPacket(String packetfile, IPacketListener listener) throws IOException {
 
-		if (aroJpcapLibName == null) {
-			setAroJpcapLibName();
+		if (aroJpcapLibName == null || aroWebPLibName==null) {
+			setVOLibName();
 		}
 		
 		currentPacketfile = packetfile;
@@ -88,7 +95,9 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 
 		if (adapter == null) {
 			adapter = new PCapAdapter();
-			adapter.loadAroJpacapLib(aroJpcapLibFileName, aroJpcapLibName);
+			adapter.loadAroLib(aroWebPLibFileName, aroWebPLibName);
+			adapter.loadAroLib(aroJpcapLibFileName, aroJpcapLibName);
+			
 		}
 
 		adapter.setSubscriber(this);
@@ -114,8 +123,9 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 		logger.debug("Created PCapAdapter");
 	}
 
-	public void setAroJpcapLibName() {
+	public void setVOLibName() {
 		setAroJpcapLibName(Util.OS_NAME, Util.OS_ARCHYTECTURE);
+		setAroWebPLib(Util.OS_NAME, Util.OS_ARCHYTECTURE);
 	}
 
 	/**
@@ -129,21 +139,21 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 
 		if (osname != null && osarch != null) {
 
-			if (osname.contains("Windows") && osarch.contains("64")) { // _______ 64 bit Windows jpcap64.DLL
+			if (osname.contains(windowsOS) && osarch.contains("64")) { // _______ 64 bit Windows jpcap64.DLL
 				aroJpcapLibName = "jpcap64";
-				aroJpcapLibFileName = aroJpcapLibName + ".dll";
+				aroJpcapLibFileName = aroJpcapLibName + windowsExtn;
 
-			} else if (osname.contains("Windows")) { // _________________________ 32 bit Windows jpcap.DLL
+			} else if (osname.contains(windowsOS)) { // _________________________ 32 bit Windows jpcap.DLL
 				aroJpcapLibName = "jpcap";
-				aroJpcapLibFileName = aroJpcapLibName + ".dll";
+				aroJpcapLibFileName = aroJpcapLibName + windowsExtn;
 
-			} else if (osname.contains("Linux") && osarch.contains("amd64")) { // 64 bit Linux libjpcap64.so
+			} else if (osname.contains(linuxOS) && osarch.contains("amd64")) { // 64 bit Linux libjpcap64.so
 				aroJpcapLibName = "jpcap64";
-				aroJpcapLibFileName = "lib" + aroJpcapLibName + ".so";
+				aroJpcapLibFileName = "lib" + aroJpcapLibName + unixExtn;
 
-			} else if (osname.contains("Linux") && osarch.contains("i386")) { //  32 bit Linux libjpcap.so
+			} else if (osname.contains(linuxOS) && osarch.contains("i386")) { //  32 bit Linux libjpcap.so
 				aroJpcapLibName = "jpcap32";
-				aroJpcapLibFileName = "lib" + aroJpcapLibName + ".so";
+				aroJpcapLibFileName = "lib" + aroJpcapLibName + unixExtn;
 
 			} else { // _________________________________________________________ Mac OS X libjpcap.jnilib
 				aroJpcapLibName = "jpcap";
@@ -159,7 +169,39 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 	public String getAroJpcapLibFileName() {
 		return aroJpcapLibFileName;
 	}
+	
+	
+	public void setAroWebPLib(String osname, String osarch) {
 
+		logger.info("OS: " + osname);
+
+		logger.info("OS Arch: " + osarch);
+
+		if (osname != null && osarch != null) {
+
+			if (osname.contains(windowsOS) && osarch.contains("64")) { // _______ 64 bit Windows jpcap64.DLL
+				aroWebPLibName = "webp-imageio";
+				aroWebPLibFileName = aroWebPLibName + windowsExtn ;
+			} else if (osname.contains(windowsOS)) { // _________________________ 32 bit Windows jpcap.DLL
+				aroWebPLibName = "webp-imageio32";
+				aroWebPLibFileName = aroWebPLibName + windowsExtn;
+			} else if (osname.contains(linuxOS) && osarch.contains("amd64")) { // 64 bit Linux libjpcap64.so
+				aroWebPLibName = "libwebp-imageio";
+				aroWebPLibFileName = aroWebPLibName + unixExtn;
+			} else if (osname.contains(linuxOS) && osarch.contains("i386")) { //  32 bit Linux libjpcap.so
+				aroWebPLibName = "libwebp-imageio32";
+				aroWebPLibFileName = aroWebPLibName + unixExtn;
+			} else { // _________________________________________________________ Mac OS X libjpcap.jnilib
+				aroWebPLibName = "libwebp-imageio";
+				aroWebPLibFileName = aroWebPLibName + ".dylib";
+			}
+		}
+		logger.info("ARO WebP DLL lib file name: " + aroWebPLibFileName);
+	}
+
+	public String getAroWebPLibFileName() {
+		return aroWebPLibFileName;
+	}
 	@Override
 	public void receive(int datalink, long seconds, long microSeconds, int len, byte[] data) {
 		try {

@@ -212,7 +212,7 @@ public class AndroidDeviceImplTest extends BaseTest {
 		} catch (Exception e) {
 			reason = e.getMessage();
 		}
-		assertTrue(reason.equals("device.executeShellCommand FAILED:"));
+		assertTrue(reason != null && reason.equals("device.executeShellCommand FAILED:"));
 
 	}
 

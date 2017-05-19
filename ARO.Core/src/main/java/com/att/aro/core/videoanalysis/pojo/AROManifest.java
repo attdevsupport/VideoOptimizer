@@ -19,17 +19,31 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.TreeMap;
 
-import com.att.aro.core.packetanalysis.pojo.ByteRange;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+import com.att.aro.core.AROConfig;
+import com.att.aro.core.ILogger;
+import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
+import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
 
 public class AROManifest {
 
+	ApplicationContext context = new AnnotationConfigApplicationContext(AROConfig.class);
+	ILogger log = (ILogger) context.getBean("logger");
+	
+	IStringParse stringParse = context.getBean(IStringParse.class);
+	
+	IHttpRequestResponseHelper reqhelper = (IHttpRequestResponseHelper) context.getBean("httpRequestResponseHelper");
 	Session session;                // session that manifest arrived on
 	
 	VideoType eventType;            // DASH, HLS, Unknown
-	String videoName = "";               //
+	String videoName = "";          //
+	String exten = "";
 	double duration = 0D;
 	double timeScale = 0D;
 	TreeMap<String, Double> bitrateMap = new TreeMap<>();
@@ -41,11 +55,32 @@ public class AROManifest {
 	double segmentCount;			// segments range from 0 to segmentCount
 	String encryption = "";
 	
+	/** <pre>
+	 * key definition timestamp-segment
+	 * value VideoEvent
+	 */
 	TreeMap<String, VideoEvent> videoEventList = new TreeMap<>();
+	
+	/** <pre>
+	 * key definition segment-quality-timestamp
+	 * value VideoEvent
+	 */
 	TreeMap<String, VideoEvent> segmentEventList = new TreeMap<>();
+	
+	/** <pre>
+	 * key videoName.extention
+	 * value segment number
+	 */
+	TreeMap<String, Integer> segmentList = new TreeMap<>();
+	
 	double delay;
 
 	private TreeMap<String, VideoData> videoDataMap;
+	byte[] content;
+	private String videoPath;
+
+	VideoAnalysisConfig vConfig;
+
 
 	/**
 	 * Initializes an instance of the VideoEvent class, using the specified event type, 
@@ -55,14 +90,16 @@ public class AROManifest {
 	 * @param manifestTime The time at which the event was initiated (such as a key being pressed down).
 	 * @param releaseTime The time at which the chunk finished downloading.
 	 */
-	public AROManifest(VideoType eventType, HttpRequestResponseInfo rrInfo) {
+	public AROManifest(VideoType eventType, HttpRequestResponseInfo req, String videoPath) {
+
 		this.eventType = eventType;
 		this.endTime = 0;
 		this.timeLength = 0;
-		if (rrInfo != null) {
-			this.beginTime = rrInfo.getTimeStamp();
-			this.session = rrInfo.getSession();
-			this.uri = rrInfo.getAssocReqResp().getObjUri();
+		this.videoPath = videoPath;
+		if (req != null) {
+			this.beginTime = req.getTimeStamp();
+			this.session = req.getSession();
+			this.uri = req.getAssocReqResp().getObjUri();
 		}
 	}
 
@@ -73,8 +110,11 @@ public class AROManifest {
 		strblr.append(", Name :");		   strblr.append(getVideoName());
 		strblr.append(", Encryption :");   strblr.append(getEncryption());
 		strblr.append(", URIs :");         strblr.append(uri != null ? uri.getRawPath() : "null");
+		strblr.append(", segmentList  :"); strblr.append(segmentList.size());
 		strblr.append(", segmentCount :"); strblr.append(getSegmentCount());
+		strblr.append(", duration :")    ; strblr.append(getDuration());
 		strblr.append(", \n\tbitrates :"); strblr.append(bitrateMap);
+		
 		strblr.append(", \n\tvideoEvents [\n\t ");
 		if (!videoEventList.isEmpty()) {
 			for (VideoEvent videoEvent : videoEventList.values()) {
@@ -82,8 +122,9 @@ public class AROManifest {
 				strblr.append("\n\t ");
 			}
 		}
-		strblr.append(", \n\tsegmentEvents [\n\t ");
 		strblr.append("]");
+		
+		strblr.append(", \n\tsegmentEvents [\n\t ");
 		if (!segmentEventList.isEmpty()) {
 			for (VideoEvent videoEvent : segmentEventList.values()) {
 				strblr.append(videoEvent);
@@ -91,9 +132,15 @@ public class AROManifest {
 			}
 		}
 		strblr.append("]");
+		
 		return strblr.toString();
 	}
 	
+	public boolean checkContent(byte[] data) {
+		// FIXME - this needs a real comparison for two byte arrays
+		return !(content == null || (new String(content)).equals(new String(data)));
+	}
+		
 	/**
 	 * Add VideoEvent to both videoEventList and segmentEventList.
 	 * 
@@ -103,12 +150,32 @@ public class AROManifest {
 	 */
 	public void addVideoEvent(double segment, double timestamp, VideoEvent videoEvent) {
 
-		String key = String.format("%010.4f:%08.0f", timestamp,segment );
+		String key = String.format("%010.4f:%08.0f", timestamp, segment );
 		videoEventList.put(key, videoEvent);
 		if (segment != -1) {
-			key = String.format("%08.0f:%f", segment, timestamp);
+//			key = String.format("%08.0f:%010.4f", segment, timestamp); // original key format
+			key = generateVideoEventKey(segment, timestamp, videoEvent.getQuality());
 			segmentEventList.put(key, videoEvent);
 		}
+	}
+
+	/**
+	 * <pre>
+	 * Generates a key
+	 *	 s = segment len = 8
+	 *	 Q = quality variable length
+	 *	 t = timestamp len = 11
+	 *   format ssssssssQualitytttttt.tttt
+	 *   
+	 * @param segment
+	 * @param timestamp
+	 * @param quality
+	 * @return
+	 */
+	public String generateVideoEventKey(double segment, double timestamp, String quality) {
+		String key;
+		key = String.format("%08.0f:%s:%010.4f", segment, quality, timestamp);
+		return key;
 	}
 
 	public VideoEvent getVideoEventBySegment(String key){
@@ -254,21 +321,12 @@ public class AROManifest {
 		this.uri = uri;
 	}
 
-	public int parseSegment(String fullName, ByteRange range) {
-		if (range==null){
+	public int parseSegment(String fullName, VideoEventData ved) {
+		if (ved.getByteStart() == null) {
 			return -1;
 		}
-		return range.getBeginByte();
+		return Integer.valueOf(ved.getByteStart());//TODO handle exception, double check logic
 	}
-
-//	public String getMinBufferTime() {
-//		String bufferTime = this.mpdOut.getMinBufferTime();
-//		if (bufferTime != null || (!bufferTime.trim().equals(""))) {
-//			return bufferTime.substring(2, bufferTime.length() - 1);
-//		}
-//		return null;
-//	}
-
 	
 	public void addVData(VideoData vData) {
 		if (videoDataMap == null){
@@ -306,4 +364,30 @@ public class AROManifest {
 	public void setTimeScale(double timeScale) {
 		this.timeScale = timeScale;
 	}
+
+	public boolean isVideoType(VideoType eventType) {
+		return this.eventType.equals(eventType);
+	}
+
+	public int getSegIncremental() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public Integer getSegment(String segName) {
+		// TODO Auto-generated method stub
+		return -1;
+	}
+
+	public Integer getSegment(String[] voValues) {
+		return -1;
+		
+	}
+
+	public void setConfig(VideoAnalysisConfig vConfig) {
+		this.vConfig = vConfig;
+		
+	}
+
+	
 }
