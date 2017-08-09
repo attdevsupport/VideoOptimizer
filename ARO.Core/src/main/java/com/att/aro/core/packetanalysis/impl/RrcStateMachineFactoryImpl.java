@@ -155,6 +155,7 @@ public class RrcStateMachineFactoryImpl implements IRrcStateMachineFactory {
 			default:
 				break;
 			}
+			rrc.setEnergy(energy);
 		}
 		double bytes = totalBytes;
 		double joulesPerKilobyte = bytes != 0 ? totalRRCEnergy / (bytes / 1000.0) : 0.0;

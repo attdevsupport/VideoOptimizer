@@ -80,7 +80,7 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 		}
 
 		for (String jsonFile : list) {
-			loadConfigFile(jsonFile);
+			loadConfigFile(folderPath + jsonFile);
 		}
 
 	}
@@ -150,7 +150,7 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 //								VideoDataTags.Timestamp, 
 								VideoDataTags.ContentLength, VideoDataTags.ContentType, VideoDataTags.ContentSize });
 
-				saveConfigFile(VideoType.DASH, "dash_vod", "GET", "\\/([a-zA-Z_0-9\\-]*)_video_(\\d)\\.([a-zA-Z]*\\d{1})", "Range: bytes=(\\d+)\\-(\\d+)",
+				saveConfigFile(VideoType.DASH, "dash_vod", "GET", "\\/([a-zA-Z_0-9\\-]*)_video_(\\d+)\\.([a-zA-Z]*\\d{1})", "Range: bytes=(\\d+)\\-(\\d+)",
 						"Content\\-Length: (\\d+).+Content-Range: bytes (\\d+)-(\\d+)\\/(\\d+)",
 						new VideoDataTags[] { VideoDataTags.ID, VideoDataTags.Quality, VideoDataTags.Extension, VideoDataTags.ByteStart, VideoDataTags.ByteEnd, VideoDataTags.ContentLength,
 								VideoDataTags.ContentStart, VideoDataTags.ContentEnd, VideoDataTags.ContentSize });
@@ -209,7 +209,7 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 	}
 
 	/**
-	 * Load VideoUsage Preferences
+	 * Load a VideoUsage Preference json file, add to the key
 	 * 
 	 * @return VideoAnalysisConfig, null if invalid
 	 */
@@ -218,7 +218,7 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 		String error = null;
 		VideoAnalysisConfig vConfig = null;
 
-		Path filePath = Paths.get(folderPath + file);
+		Path filePath = Paths.get(file);
 		String temp = null;
 		try {
 			temp = new String(Files.readAllBytes(filePath));

@@ -55,7 +55,7 @@ public final class ErrorCodeRegistry {
 		ErrorCode err = new ErrorCode();
 		err.setCode(403);
 		err.setName("No Android device found.");
-		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " cannot find any Android deviced plugged into the machine.");
+		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " cannot find any Android device plugged into the machine.");
 		return err;
 	}
 	
@@ -69,7 +69,7 @@ public final class ErrorCodeRegistry {
 		ErrorCode err = new ErrorCode();
 		err.setCode(404);
 		err.setName("Android device Id or serial number not found.");
-		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " cannot find any Android deviced plugged into the machine that matched the device Id or serial number you specified.");
+		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " cannot find any Android device plugged into the machine that matched the device ID or serial number you specified.");
 		return err;
 	}
 
@@ -94,11 +94,11 @@ public final class ErrorCodeRegistry {
 		return err;
 	}
 
-	public static ErrorCode getTimeoutVpnActivation(int seconds) {
+	public static ErrorCode getTimeoutVpnActivation() {
 		ErrorCode err = new ErrorCode();
 		err.setCode(407);
 		err.setName("VPN activation timeout");
-		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " waited " + seconds + " seconds for VPN service to activate.");
+		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " failed to get the VPN service to activate.");
 		return err;
 	}
 
@@ -122,7 +122,7 @@ public final class ErrorCodeRegistry {
 		ErrorCode err = new ErrorCode();
 		err.setCode(206);
 		err.setName( ApplicationConfig.getInstance().getAppShortName() + ApplicationConfig.getInstance().getVPNCollectorName() + " is already running");
-		err.setDescription("There is already an " + ApplicationConfig.getInstance().getVPNCollectorName() +" running on this device. Stop it first, manually, before starting a new trace.");
+		err.setDescription("There is already a " + ApplicationConfig.getInstance().getVPNCollectorName() +" running on this device. Stop it first, manually, before starting a new trace.");
 		return err;
 	}
 	
@@ -147,6 +147,14 @@ public final class ErrorCodeRegistry {
 		err.setCode(416);
 		err.setName("ADB command failed to pull data.");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " was unable to pull trace from target device.");
+		return err;
+	}
+	
+	public static ErrorCode getScriptAdapterError(String path){
+		ErrorCode err = new ErrorCode();
+		err.setCode(417);
+		err.setName("Script convert Error");
+		err.setDescription(ApplicationConfig.getInstance().getAppShortName() +" was unable to read the profile "+ path);
 		return err;
 	}
 	

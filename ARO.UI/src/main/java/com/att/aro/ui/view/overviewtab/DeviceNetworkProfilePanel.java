@@ -29,6 +29,7 @@ import javax.swing.UIManager;
 
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
+import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.TabPanelJPanel;
@@ -47,7 +48,8 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 
 	private JLabel networkTypeValueLabel;
 	private JLabel profileValueLabel;
-
+		
+ 
 	private static final Font LABEL_FONT = new Font("TEXT_FONT", Font.BOLD, 12);
 	private static final Font TEXT_FONT = new Font("TEXT_FONT", Font.PLAIN, 12);
 
@@ -68,6 +70,9 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 	 * @return the dataPanel
 	 */
 	private JPanel getDataPanel() {
+
+		final int gridX = 7;
+		final double wightX = 0.5;
 
 		JPanel dataPanel  = new JPanel(new GridBagLayout());
 		
@@ -91,6 +96,8 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 		profileValueLabel.setFont(TEXT_FONT);
 		profileValueLabel.setHorizontalTextPosition(JLabel. TRAILING);
 
+ 
+
 		Insets insets = new Insets(1, 1, 1, 1);
 		JLabel dateLabel = new JLabel(
 				ResourceBundleHelper.getMessageString("bestPractices.date"));
@@ -104,6 +111,7 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 				0.0, GridBagConstraints.PAGE_START, GridBagConstraints.NONE,
 				insets, 0, 0));
 		
+ 		
 		JLabel networkTypeLabel = new JLabel(
 				ResourceBundleHelper.getMessageString("bestPractices.networktype"),
 				JLabel.RIGHT);
@@ -151,27 +159,16 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 		return dataPanel;
 	}
 	
-	public void setData(TraceInfo info){
-		this.dateValueLabel.setText(info.getDateValue());
-		this.traceValueLabel.setText(info.getTraceValue());
-		this.byteCountTotalLabel.setText(info.getByteCountTotal().toString());
-		this.profileValueLabel.setText(info.getProfileValue());
-		this.networkTypeValueLabel.setText(info.getNetworkType());
+	public void refresh(AROTraceData aModel){
+		this.dateValueLabel.setText(aModel.getAnalyzerResult().getTraceresult().getTraceDateTime().toString());
+		this.traceValueLabel.setText(aModel.getAnalyzerResult().getTraceresult().getTraceDirectory());
+		this.byteCountTotalLabel.setText(Integer.toString(aModel.getAnalyzerResult().getStatistic().getTotalByte()));
+		this.profileValueLabel.setText(aModel.getAnalyzerResult().getProfile().getName());
+		this.networkTypeValueLabel.setText("");
+		if (TraceResultType.TRACE_DIRECTORY.equals(aModel.getAnalyzerResult().getTraceresult().getTraceResultType())) {
+			TraceDirectoryResult tracedirectoryResult = (TraceDirectoryResult)aModel.getAnalyzerResult().getTraceresult();
+			this.networkTypeValueLabel.setText(tracedirectoryResult.getNetworkTypesList());
+		}
 	}
 	
-	public void refresh(AROTraceData aModel){
-		
-		TraceInfo tInfo = new TraceInfo();
-		tInfo.setDateValue(aModel.getAnalyzerResult().getTraceresult().getTraceDateTime().toString());
-		tInfo.setTraceValue(aModel.getAnalyzerResult().getTraceresult().getTraceDirectory());
-		tInfo.setByteCountTotal(aModel.getAnalyzerResult().getStatistic().getTotalByte());
-		tInfo.setProfileValue(aModel.getAnalyzerResult().getProfile().getName());
-		if(aModel.getAnalyzerResult().getTraceresult().getTraceResultType().equals(TraceResultType.TRACE_DIRECTORY)){
-			TraceDirectoryResult tracedirectoryResult = (TraceDirectoryResult)aModel.getAnalyzerResult().getTraceresult();
-			tInfo.setNetworkType(tracedirectoryResult.getNetworkTypesList());			
-		}
-		
-		setData(tInfo);
-	}
-
 }

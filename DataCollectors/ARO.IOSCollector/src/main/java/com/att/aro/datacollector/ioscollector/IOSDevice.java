@@ -172,15 +172,8 @@ public class IOSDevice implements IAroDevice {
 		return this.collector;
 	}
 
-//	@Override
-//	public boolean installPayloadFile(String tempFolder, String payloadFileName, String remotepath) {
-//		// TODO Auto-generated method stub
-//		return false;
-//	}
-
 	@Override
 	public Object getDevice() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

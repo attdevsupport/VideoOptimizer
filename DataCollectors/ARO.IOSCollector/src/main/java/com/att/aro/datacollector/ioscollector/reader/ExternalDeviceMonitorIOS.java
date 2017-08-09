@@ -48,7 +48,7 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
 	void init() {
 		subscribers = new ArrayList<IOSDeviceStatus>();
 		
-		exepath = Util.getAroLibrary()
+		exepath = Util.getVideoOptimizerLibrary()
 				+ Util.FILE_SEPARATOR + ".drivers" 
 				+ Util.FILE_SEPARATOR + "libimobiledevice" 
 				+ Util.FILE_SEPARATOR + "idevicesyslog_aro";

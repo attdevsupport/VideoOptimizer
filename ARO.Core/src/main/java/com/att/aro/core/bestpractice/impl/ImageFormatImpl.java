@@ -49,13 +49,14 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.util.Util;
 import com.luciad.imageio.webp.WebPWriteParam;
-import com.github.jaiimageio.jpeg2000.J2KImageWriteParam;
+import com.sun.media.imageio.plugins.jpeg2000.J2KImageWriteParam;
+
 
 //FIXME ADD UNIT TESTS
 public class ImageFormatImpl implements IBestPractice {
 
 	@InjectLogger
-	private static ILogger LOGGER;
+	private static ILogger logger;
 
 	@Value("${imageFormat.title}")
 	private String overviewTitle;
@@ -77,7 +78,7 @@ public class ImageFormatImpl implements IBestPractice {
 
 	@Autowired
 	private IFileManager filemanager;
-
+	
 	long orginalImagesSize = 0L;
 	long convImgsSize = 0L;
 	PacketAnalyzerResult tracedataResult = null;
@@ -99,7 +100,11 @@ public class ImageFormatImpl implements IBestPractice {
 		}
 
 		if (!isImagesConverted()) {
-			formatImages();
+			try {
+				formatImages();
+			} catch (Exception imgException) {
+				logger.error("Image Format  exception : ", imgException);
+			}
 		}
 
 		List<ImageMdataEntry> entrylist = getEntryList();
@@ -176,37 +181,35 @@ public class ImageFormatImpl implements IBestPractice {
 						&& reqResp.getContentType().contains("image/")) {
 
 					originalImage = extractFullNameFromRRInfo(reqResp);
-					orgImageSize = new File(imageFolderPath + originalImage).length();
+					File orgImage = new File(imageFolderPath + originalImage);
+					orgImageSize = orgImage.length();
 					int pos = originalImage.lastIndexOf(".");
 					imgExtn = originalImage.substring(pos + 1, originalImage.length());
-					if (orgImageSize > 0) {
-						if (imgExtn.equalsIgnoreCase("jpeg") || imgExtn.equalsIgnoreCase("jpg")) {
 
-							convertedImagesFolderPath = imageFolderPath + "Format"
-									+ System.getProperty("file.separator");
-							convImage = convertedImagesFolderPath
-									+ originalImage.substring(0, originalImage.lastIndexOf(".") + 1) + convExtn;
+					if (orgImageSize > 0 && Util.isJPG(orgImage, imgExtn)) {
 
-							convertedImgSize = new File(convImage).length();
-							long indSavings = (orgImageSize - convertedImgSize) * 100 / orgImageSize;
-							if (convertedImgSize > 0 && (indSavings >= 15)) {
+						convertedImagesFolderPath = imageFolderPath + "Format" + System.getProperty("file.separator");
+						convImage = convertedImagesFolderPath
+								+ originalImage.substring(0, originalImage.lastIndexOf(".") + 1) + convExtn;
 
-								orginalImagesSize = orginalImagesSize + orgImageSize;
-								convImgsSize = convImgsSize + convertedImgSize;
+						convertedImgSize = new File(convImage).length();
+						long indSavings = (orgImageSize - convertedImgSize) * 100 / orgImageSize;
+						if (convertedImgSize > 0 && (indSavings >= 15)) {
 
-								orgImgSize = orgImageSize / 1024;
-								convImageSize = convertedImgSize / 1024;
+							orginalImagesSize = orginalImagesSize + orgImageSize;
+							convImgsSize = convImgsSize + convertedImgSize;
 
-								imgEntryList.add(new ImageMdataEntry(reqResp, session.getDomainName(),
-										imageFolderPath + originalImage, orgImgSize, convImageSize,
-										Long.toString(indSavings)));
-							}
+							orgImgSize = orgImageSize / 1024;
+							convImageSize = convertedImgSize / 1024;
 
+							imgEntryList.add(new ImageMdataEntry(reqResp, session.getDomainName(),
+									imageFolderPath + originalImage, orgImgSize, convImageSize,
+									Long.toString(indSavings)));
 						}
 					}
 				}
 			}
-		}
+			}
 		return imgEntryList;
 	}
 
@@ -222,20 +225,19 @@ public class ImageFormatImpl implements IBestPractice {
 					if (imgFile.exists() && !imgFile.isDirectory()) {
 						int posExtn = extractedImage.lastIndexOf(".");
 						String imgExtn = extractedImage.substring(posExtn + 1, extractedImage.length());
-						if (imgExtn.equalsIgnoreCase("jpeg") || imgExtn.equalsIgnoreCase("jpg")) {
-
+						if (Util.isJPG(imgFile, imgExtn)) {
 							formatImage(extractedImage);
-
 						}
 					}
 				}
 			}
 		}
+		
 		try {// Time out after 10 minutes
 			exec.shutdown();
 			exec.awaitTermination(10, TimeUnit.MINUTES);
 		} catch (InterruptedException e) {
-			LOGGER.error(e.getMessage(), e);
+			logger.error("Image Format execution exception : ", e);
 		}
 	}
 
@@ -250,41 +252,37 @@ public class ImageFormatImpl implements IBestPractice {
 			+ imgfile.substring(0, imgfile.lastIndexOf(".") + 1) + convExtn;
 			imageOutputStream = ImageIO.createImageOutputStream(new File(formattedImagePath));
 
-			if (convExtn.equalsIgnoreCase("webp")) {
+			if (renderedImage != null) {
+				if (convExtn.equalsIgnoreCase("webp")) {
+					ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
 
-				ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
+					WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
+					writeParam.setCompressionMode(WebPWriteParam.MODE_EXPLICIT);
+					writer.setOutput(imageOutputStream);
+					writer.write(null, new IIOImage(renderedImage, null, null), writeParam);
 
-				
-				WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
-				writeParam.setCompressionMode(WebPWriteParam.MODE_EXPLICIT);
+					imageOutputStream.flush();
+					writer.dispose();
 
-				
-				writer.setOutput(imageOutputStream);
+				} else {
+					ImageWriter jp2Writer = ImageIO.getImageWritersBySuffix("jp2").next();
+					J2KImageWriteParam writeParams = (J2KImageWriteParam) jp2Writer.getDefaultWriteParam();
+					writeParams.setLossless(false);
+					writeParams.setCompressionMode(J2KImageWriteParam.MODE_EXPLICIT);
+					writeParams.setFilter(J2KImageWriteParam.FILTER_97);
+					writeParams.setCompressionType("JPEG2000");
+					writeParams.setCompressionQuality(0.85f);
+					jp2Writer.setOutput(imageOutputStream);
+					jp2Writer.write(null, new IIOImage(renderedImage, null, null), writeParams);
+					imageOutputStream.flush();
+					jp2Writer.dispose();
 
-				writer.write(null, new IIOImage(renderedImage, null, null), writeParam);
-				imageOutputStream.flush();
-				writer.dispose();
-				
-
-			} else {
-				ImageWriter jp2Writer = ImageIO.getImageWritersBySuffix("jp2").next();
-				J2KImageWriteParam writeParams = (J2KImageWriteParam) jp2Writer.getDefaultWriteParam();
-				writeParams.setLossless(false);
-				writeParams.setCompressionMode(J2KImageWriteParam.MODE_EXPLICIT);
-				writeParams.setFilter(J2KImageWriteParam.FILTER_97);
-				writeParams.setCompressionType("JPEG2000");
-				writeParams.setCompressionQuality(0.85f);
-				jp2Writer.setOutput(imageOutputStream);
-				jp2Writer.write(null, new IIOImage(renderedImage, null, null), writeParams);
-				imageOutputStream.flush();
-				jp2Writer.dispose();
-
-			}
-			
+				}
+			}	
 			imageOutputStream.close();
 		
 		} catch (IOException e) {
-
+			logger.error("Format Image exception : ", e);
 		}
 	}
 

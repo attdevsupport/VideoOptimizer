@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 AT&T
+ *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.att.arocollector.client;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -41,11 +43,18 @@ import com.att.arocollector.privatedata.AROPrivateDataCollectorService;
 import com.att.arotcpcollector.ClientPacketWriterImpl;
 import com.att.arotcpcollector.IClientPacketWriter;
 import com.att.arotcpcollector.SessionHandler;
+import com.att.arotcpcollector.ip.IPPacketFactory;
+import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.socket.IProtectSocket;
 import com.att.arotcpcollector.socket.SocketData;
 import com.att.arotcpcollector.socket.SocketDataPublisher;
 import com.att.arotcpcollector.socket.SocketNIODataService;
 import com.att.arotcpcollector.socket.SocketProtector;
+import com.att.arotcpcollector.tcp.PacketHeaderException;
+import com.att.arotcpcollector.tcp.TCPHeader;
+import com.att.arotcpcollector.tcp.TCPPacketFactory;
+import com.att.arotcpcollector.udp.UDPHeader;
+import com.att.arotcpcollector.udp.UDPPacketFactory;
 import com.att.arotracedata.AROCameraMonitorService;
 import com.att.arotracedata.AROCollectorService;
 import com.att.arotracedata.AROCpuTempService;
@@ -77,6 +86,8 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 	public static final String SERVICE_NAME = "com.collector.client.VpnService";
 
+	public static final int MAX_PACKET_SIZE = 32767;
+
 	private Handler mHandler;
 	private Thread mThread;
 
@@ -89,6 +100,9 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 	private Intent theIntent;
 
 	private SocketNIODataService dataService;
+
+	private VPNInterfaceWriter writerService;
+	private Thread writerServiceThread;
 
 	private Thread dataServiceThread;
 
@@ -113,6 +127,10 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 	private SocketData dataTransmitter = null;
 	BufferedWriter mAppNameWriter = null;
 
+
+	// Sets an ID for the notification, so it can be updated
+	private int notifyID = 1;
+	private Notification.Builder mBuilder;
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 
@@ -123,7 +141,9 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		dataTransmitter = SocketData.getInstance();
 
 		registerReceiver(serviceCloseCmdReceiver, new IntentFilter(CaptureVpnService.SERVICE_CLOSE_CMD_INTENT));
- 		loadExtras(theIntent);
+		//Those broadcast receiver depend on VPN exist
+
+		loadExtras(theIntent);
 
 		try {
 			initTraceFiles();
@@ -284,7 +304,9 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 			processApplicationNameVersion();
 			serviceValid = false;
 			unregisterAnalyzerCloseCmdReceiver();
-
+			NotificationManager mNotificationManager =
+					(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+			mNotificationManager.cancel(notifyID);
 			closeFileDescriptors();
 			stopTraceServices();
 			stopSelf();
@@ -396,6 +418,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 	protected void stopTraceServices() {
 		Log.i(TAG, "stopping Trace Services...");
+
 		stopAROCollectorService();
 		stopAROGpsMonitorService();
 		stopAROCameraMonitorService();
@@ -500,7 +523,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		unregisterAnalyzerCloseCmdReceiver();
 
 		dataService.setShutdown(true);
-
+		writerService.setShutdown(true);
 		packetBackGroundWriter.setIsShuttingDown(true);
 
 		//	closeTraceFiles();
@@ -510,6 +533,10 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		}
 		if(packetQueueThread != null){
 			packetQueueThread.interrupt();
+		}
+
+		if(writerServiceThread != null){
+			writerServiceThread.interrupt();
 		}
 
 		closeFileDescriptors();
@@ -552,15 +579,16 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		try {
 			success = startVpnService();
 		} catch (IOException e) {
-			Log.e(TAG,e.getMessage());
+			Log.e(TAG,"startVpnService() failed: "+ e.getMessage(),e);
 		}
 
 		if(success){
 			try {
+				startNotification();
 				startCapture();
 				Log.i(TAG, "Capture completed");
 			} catch (IOException e) {
-				Log.e(TAG,e.getMessage());
+				Log.e(TAG,e.getMessage(),e);
 			}
 		}else{
 			Log.e(TAG,"Failed to start VPN Service!");
@@ -685,6 +713,8 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 				.addRoute("0.0.0.0", 0)
 				.setSession(getString(R.string.app_name))
 				.setConfigureIntent(mConfigureIntent)
+				.addDnsServer("8.8.8.8")
+				.addDnsServer("8.8.4.4")
 				;
 		if (mInterface != null) {
 			try {
@@ -719,10 +749,9 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		// Packets received need to be written to this output stream.
 		FileOutputStream vpnInterfaceWriter = new FileOutputStream(mInterface.getFileDescriptor());
 
-
 		// Allocate the buffer for a single packet.
 		// TODO: Packet Size chosen from the ToyVPNService example. May need tweaking.
-		ByteBuffer packet = ByteBuffer.allocate(32767);
+		ByteBuffer packetData = ByteBuffer.allocate(MAX_PACKET_SIZE);
 
 		IClientPacketWriter clientPacketWriter = new ClientPacketWriterImpl(vpnInterfaceWriter);
 
@@ -731,8 +760,9 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 		//background task for non-blocking socket
 		dataService = new SocketNIODataService();
-		dataService.setClientWriter(clientPacketWriter);
-		dataServiceThread = new Thread(dataService, "dataServiceThread");
+
+ 		dataService.setSecureEnable(theIntent.getBooleanExtra("secure", false));
+ 		dataServiceThread = new Thread(dataService, "dataServiceThread");
 		dataServiceThread.start();
 
 		//background task for writing packet data to pcap file
@@ -741,23 +771,67 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		packetQueueThread = new Thread(packetBackGroundWriter, "packetQueueThread");
 		packetQueueThread.start();
 
+		writerService = VPNInterfaceWriter.getInstance();
+		writerService.setClientWriter(clientPacketWriter);
+		writerServiceThread = new Thread(writerService, "VPNWriter");//writer for pcap file
+		writerServiceThread.start();
+
  		int length;
 
 		serviceValid = true;
+
+		int totalData = 0;
+		long startTime = System.nanoTime();
+		long stopTime = System.nanoTime();
+		boolean startFlag = true;
+
+
+		int count = 0;
+
 		while (serviceValid) {
 
 			// Read a packet from the VPN Interface.
-			length = vpnInterfaceReader.read(packet.array());
-			packet.position(length);
+			length = vpnInterfaceReader.read(packetData.array());
+			packetData.position(length);
 
 			if(length > 0){
+				if(startFlag || (1000000000 <= (stopTime - startTime))) {
+//					Log.d(TAG, "Round : " + ++count);
+					startFlag = false;
+					startTime = System.nanoTime();
+					totalData = 0;
+				}
 
 				Log.d(TAG, "Received packet from vpn client: " + length);
 
-				byte[] clientPacketData = Arrays.copyOf(packet.array(),length);
-
+				byte[] clientPacketData = Arrays.copyOf(packetData.array(),length);
 				dataTransmitter.sendDataToBeTransmitted(clientPacketData);
-				packet.clear();
+
+				int headerLength = 0;
+				UDPHeader udpHeader = null;
+				TCPHeader tcpHeader = null;
+				TCPPacketFactory tcpFactory = new TCPPacketFactory();
+				UDPPacketFactory udpFactory = new UDPPacketFactory();
+
+				try {
+					IPv4Header ipHeader = IPPacketFactory.createIPv4Header(packetData.array(), 0);
+					headerLength += ipHeader.getIPHeaderLength();
+					if (ipHeader.getProtocol() == 6) {
+						tcpHeader = tcpFactory.createTCPHeader(packetData.array(), ipHeader.getIPHeaderLength());
+						headerLength += tcpHeader.getTCPHeaderLength();
+					} else {
+						udpHeader = udpFactory.createUDPHeader(packetData.array(), ipHeader.getIPHeaderLength());
+						headerLength += udpHeader.getLength();
+					}
+				} catch (PacketHeaderException ex){
+					Log.e(TAG , ex.getMessage(), ex);
+				}
+				totalData += (length - headerLength);
+				packetData.clear();
+				Log.i(TAG, "totalData: "+ totalData + " Bytes");
+
+
+				stopTime = System.nanoTime();
 
  			} else{
 				try {
@@ -783,6 +857,22 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 			Toast.makeText(this.getApplicationContext(), message.what, Toast.LENGTH_SHORT).show();
 		}
 		return true;
+	}
+
+	public void startNotification(){
+
+		if(mBuilder==null){
+		mBuilder = new Notification.Builder(this)
+				.setSmallIcon(R.drawable.icon)
+
+				.setContentTitle("Video Optimizer VPN Collector")
+				.setAutoCancel(false)
+				.setOngoing(true);
+		}
+
+ 		NotificationManager mNotificationManager =
+				(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+ 		mNotificationManager.notify(notifyID, mBuilder.build());
 	}
 
 }

@@ -16,18 +16,18 @@
 
 package com.att.arotcpcollector;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-
 import android.util.Log;
 
 import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.udp.UDPHeader;
 import com.att.arotcpcollector.util.PacketUtil;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 
 /**
  * This object stores information about a socket connection from a VPN client. Each session
@@ -150,6 +150,8 @@ public class Session {
 		receivingStream = new ByteArrayOutputStream();
 		sendingStream = new ByteArrayOutputStream();
 	}
+
+
 
 	/**
 	 * decrease value of sendAmountSinceLastAck so that client's window is not
@@ -467,8 +469,13 @@ public class Session {
 
 	public void setClosingConnection(boolean closingConnection) {
 		this.closingConnection = closingConnection;
+		destroySSLEngines();
 	}
 
+	private void destroySSLEngines(){
+
+	}
+	
 	public boolean isDataForSendingReady() {
 		return isDataForSendingReady;
 	}

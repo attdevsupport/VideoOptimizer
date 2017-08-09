@@ -42,21 +42,20 @@ public class ImageBPTableModel extends DataTableModel<ImageMdataEntry> {
 	private static final int COL1_MAX = 100;
 	private static final int COL1_PREF = 70;
 
-	private static final int COL2_MIN = 500;
-	private static final int COL2_MAX = 550;
-	private static final int COL2_PREF = 550;
+	private static final int COL2_MIN = 300;
+	private static final int COL2_PREF = 300;
 
-	private static final int COL3_MIN = 70;
-	private static final int COL3_MAX = 100;
-	private static final int COL3_PREF = 70;
+	private static final int COL3_MIN = 80;
+	private static final int COL3_MAX = 120;
+	private static final int COL3_PREF = 80;
 
-	private static final int COL4_MIN = 70;
-	private static final int COL4_MAX = 100;
+	private static final int COL4_MIN = 80;
+	private static final int COL4_MAX = 120;
 	private static final int COL4_PREF = 70;
 
-	private static final int COL5_MIN = 70;
-	private static final int COL5_MAX = 100;
-	private static final int COL5_PREF = 70;
+	private static final int COL5_MIN = 80;
+	private static final int COL5_MAX = 120;
+	private static final int COL5_PREF = 80;
 
 	private static final int COL_1 = 0;
 	private static final int COL_2 = 1;
@@ -102,7 +101,6 @@ public class ImageBPTableModel extends DataTableModel<ImageMdataEntry> {
 		col = cols.getColumn(ImageBPTableModel.COL_2);
 		col.setMinWidth(ImageBPTableModel.COL2_MIN);
 		col.setPreferredWidth(ImageBPTableModel.COL2_PREF);
-		col.setMaxWidth(ImageBPTableModel.COL2_MAX);
 
 		col = cols.getColumn(ImageBPTableModel.COL_3);
 		col.setMinWidth(ImageBPTableModel.COL3_MIN);

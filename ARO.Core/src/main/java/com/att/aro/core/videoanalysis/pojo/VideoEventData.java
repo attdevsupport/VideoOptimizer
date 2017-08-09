@@ -62,7 +62,6 @@ public class VideoEventData {
 	}
 
 	public VideoEventData() {
-		// TODO Auto-generated constructor stub
 	}
 
 	public ByteRange getByteRange() {
@@ -218,7 +217,7 @@ public class VideoEventData {
 	public void setDuration(String duration) {
 		this.duration = duration;
 	}
-
+	
 	public void setRateCode(String rateCode) {
 		this.rateCode = rateCode;
 	}
@@ -266,5 +265,5 @@ public class VideoEventData {
 	public void setContentEnd(double contentEnd) {
 		this.contentEnd = contentEnd;
 	}
-	
+
 }

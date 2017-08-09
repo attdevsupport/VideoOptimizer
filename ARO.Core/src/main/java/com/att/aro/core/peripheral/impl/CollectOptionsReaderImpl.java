@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 AT&T
+ *  Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,61 +15,111 @@
  */
 package com.att.aro.core.peripheral.impl;
 
-import java.io.IOException;
+import static java.lang.Integer.parseInt;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.util.List;
+import java.util.Properties;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.ICollectOptionsReader;
 import com.att.aro.core.peripheral.pojo.CollectOptions;
+import com.att.aro.core.peripheral.pojo.CollectOptions.SecureStatus;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.Orientation;
 
-public class CollectOptionsReaderImpl extends PeripheralBase implements ICollectOptionsReader {
-	@InjectLogger
-	private static ILogger logger;
-	
-	//FIXME This shouldn't be a member variable.
-	private String orientation = Orientation.PORTRAIT.toString();
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-	public void setLogger(ILogger logger) {
-		this.logger = logger;
-	}
+public class CollectOptionsReaderImpl implements ICollectOptionsReader {
+	private static final String REGEX_NUMBER = "\\D+";
+	private static Logger logger = Logger.getLogger(CollectOptionsReaderImpl.class.getName());
 
 	@Override
 	public CollectOptions readData(String directory) {
-		String filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.COLLECT_OPTIONS;
+		String path = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.COLLECT_OPTIONS;
 		CollectOptions collectOptions = new CollectOptions();
-		
-		if (!filereader.fileExist(filepath)) {
+		File file = new File(path);
+		if (!file.exists()) {
 			return collectOptions;
 		}
-		String[] lines = null;
 		try {
-			lines = filereader.readAllLine(filepath);
-		} catch (IOException e) {
-			logger.error("failed to read collection detail file: "+filepath);
+			List<String> lines = Files.readAllLines(file.toPath());
+			collectOptions = lines.size() < 5 ? readOldFormat(lines) : readNewFormat(file);
+			logger.info("Collection options: " + collectOptions.toString());
+		} catch (IOException | InvalidPathException | NumberFormatException e) {
+			logger.error("failed to read collection details file: " + path, e);
 		}
-		if(lines == null || lines.length < 1){
-			return collectOptions;
-		}
-		collectOptions.setTotalLines(lines.length);
-		if (lines.length == 1) {
-			String[] orientationType = lines[0].split(":");
-			if (orientationType.length > 1) {
-				orientation = orientationType[1];
-			}
-		} else {
-			orientation = Orientation.PORTRAIT.name();
-		}
-		collectOptions.setOrientation(orientation);
+		return collectOptions;
 
-	logger.info("result for collection: "+ 
-				"orientation: "+ collectOptions.getOrientation() );
+	}
+
+	@SuppressFBWarnings("RE_BAD_SYNTAX_FOR_REGULAR_EXPRESSION")
+	CollectOptions readNewFormat(File file) {
+		Properties properties = new Properties();
+		try (InputStream inStream = new FileInputStream(file)) {
+			if(Util.isWindowsOS()) {
+				String theString = IOUtils.toString(inStream, StandardCharsets.UTF_8); 
+				properties.load(new StringReader(theString.replace("\\", "\\\\")));
+			}else {
+				properties.load(inStream);
+			}
+			return new CollectOptions(properties);
+		} catch(Exception ex) {
+			logger.error("Failed to read collection details file: " + file.getPath(), ex);
+			return new CollectOptions();
+		}
+	}
+
+	CollectOptions readOldFormat(List<String> lines) {
+		CollectOptions collectOptions = new CollectOptions();
+		try {
+			switch (lines.size()) {
+			case 4:
+				collectOptions.setOrientation(getOrientation(lines.get(3)));
+			case 3:
+				collectOptions.setSecureStatus(getSecure(lines.get(2)));
+			case 2:
+				collectOptions.setUsDelay(parseInt(lines.get(1).replaceAll(REGEX_NUMBER, "")));
+			case 1:
+				collectOptions.setDsDelay(parseInt(lines.get(0).replaceAll(REGEX_NUMBER, "")));
+			default:
+				break;
+			}
+		} catch (Exception e) {
+			logger.error("failed to read collection options: " + lines);
+		}
 		return collectOptions;
 	}
 
-	public String getOrientation() {
-		return orientation;
+	private SecureStatus getSecure(String line) {
+		SecureStatus status = SecureStatus.UNKNOWN;
+		String[] split = line.split(" ");
+		if (split.length > 1) {
+			if (Boolean.parseBoolean(split[1])) {
+				status = SecureStatus.TRUE;
+			} else {
+				status = SecureStatus.FALSE;
+			}
+		}
+		return status;
 	}
+
+	private Orientation getOrientation(String line) {
+		String[] split = line.split(":");
+		if (split.length > 1) {
+			return Orientation.valueOf(split[1]);
+		}
+		return Orientation.PORTRAIT;
+	}
+
 }

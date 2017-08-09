@@ -217,6 +217,11 @@ public class FileManagerImpl implements IFileManager {
 	}
 
 	@Override
+	public InputStream getFileInputStream(File file) throws FileNotFoundException {
+		return new FileInputStream(file);
+	}
+
+	@Override
 	public OutputStream getFileOutputStream(String filepath) throws FileNotFoundException {
 		return new FileOutputStream(filepath);
 	}

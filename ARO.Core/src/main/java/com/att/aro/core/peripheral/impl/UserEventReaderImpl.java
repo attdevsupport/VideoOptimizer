@@ -100,7 +100,9 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 				}
 
 				String strFields[] = lineBuf.split("]");
-
+				if (strFields[0].indexOf('[') != -1) {
+					strFields[0] = strFields[0].substring(strFields[0].indexOf('[') + 1, strFields[0].length());
+				}
 				String timeArray[] = strFields[0].split(" ");
 				Double currentTime = Double.parseDouble(timeArray[timeArray.length - 1]);
 

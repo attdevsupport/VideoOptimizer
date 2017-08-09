@@ -90,6 +90,16 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 				}
 				break;
 			}
+			
+			case HexSegment: {
+				try {
+					ved.setSegment(Integer.valueOf(strData[i], 16));
+				} catch (NumberFormatException e) {
+					ved.setSegment(-3);
+					ved.setFailure(ved.getFailure() + ",segment :" + strData[i]);
+				}
+				break;
+			}
 
 			case SegmentStartTime: {
 				ved.setSegmentStartTime(strData[i]);

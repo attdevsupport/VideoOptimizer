@@ -87,7 +87,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 	private JCheckBox jVideoVideoChunksCheckBox;
 	private JCheckBox jVideoBufferTimeOccupancyCheckBox;
 	private JCheckBox jTemperatureStateCheckBox;
-
+ 
 	private List<ChartPlotOptions> currentCheckedOptionList;
 	private List<ChartPlotOptions> selectedOptions;
 	private List<ChartPlotOptions> defaultOptions;
@@ -157,7 +157,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 		jVideoBufferOccupancyCheckBox.setEnabled(enabled);
 		jVideoVideoChunksCheckBox.setEnabled(enabled);
 		jVideoBufferTimeOccupancyCheckBox.setEnabled(enabled);
-	}
+ 	}
 
 	/**
 	 * Initializes the dialog.
@@ -357,6 +357,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 					getGridBagConstraints(16));
 			jAdvancedOptionsPanel.add(jTemperatureStateCheckBox = getJCheckBox(jTemperatureStateCheckBox, DialogItem.chart_options_dialog_temperature, ChartPlotOptions.TEMPERATURE),
 					getGridBagConstraints(20));
+ 
 
 		}
 		return jAdvancedOptionsPanel;

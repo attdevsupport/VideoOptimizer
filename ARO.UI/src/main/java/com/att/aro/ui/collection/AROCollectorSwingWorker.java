@@ -18,14 +18,12 @@ package com.att.aro.ui.collection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeListener;
-import java.text.MessageFormat;
 import java.util.Hashtable;
 import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.SwingWorker;
 
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
@@ -38,8 +36,6 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  * Manages launching & stopping 
- * 
- *
  *
  * @param <T>
  * @param <V>
@@ -66,6 +62,8 @@ public class AROCollectorSwingWorker<T, V> extends SwingWorker<T, V>{
 
 	private Hashtable<String, Object> extraParams;
 	private VideoOption videoCapture;
+//	private int delayTime;
+//	private boolean secure;
 	
 	/**
 	 *  Stop Collector
@@ -156,7 +154,7 @@ public class AROCollectorSwingWorker<T, V> extends SwingWorker<T, V>{
 			for (ActionListener name : actionListeners) {
 				if (eventId == 1) {
 					// start collector for Android ?
-					name.actionPerformed(new AROCollectorActionEvent(this, eventId, command, device, traceFolderPath, extraParams));//videoCapture, delayTime));
+					name.actionPerformed(new AROCollectorActionEvent(this, eventId, command, device, traceFolderPath, extraParams));//videoCapture, delayTime, secure));
 				} else if (eventId == 2) {
 					// start collector for iOS ?
 					name.actionPerformed(new AROCollectorActionEvent(this, eventId, command, collector, udid, traceFolderPath, videoCapture));
@@ -167,6 +165,10 @@ public class AROCollectorSwingWorker<T, V> extends SwingWorker<T, V>{
 			}
 		}
 		return null;
+	}
+	
+	public void hideProgressDialog() {
+		progress.setVisible(false);
 	}
 	
 	@Override

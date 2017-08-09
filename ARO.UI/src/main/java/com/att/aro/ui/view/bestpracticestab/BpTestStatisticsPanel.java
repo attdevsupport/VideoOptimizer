@@ -32,8 +32,12 @@ import javax.swing.JPanel;
 
 import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
+import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
+import com.att.aro.core.packetanalysis.pojo.TraceResultType;
+import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.ContextAware;
+import com.att.aro.ui.utils.CommonHelper;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BpTestStatisticsPanel extends AbstractBpPanel {
@@ -50,8 +54,9 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 	private JLabel summaryFillerHeaderLabel;
 	private JLabel testFillerHeaderLabel;
 	
-	private NumberFormat pctFmt = null;
+ 	private NumberFormat pctFmt = null;
 	private NumberFormat intFormat = null;
+	private NumberFormat numFormat;
 	private DecimalFormat decFormat;
 
 	public BpTestStatisticsPanel() {
@@ -66,12 +71,13 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 		pctFmt  = NumberFormat.getPercentInstance();
 		pctFmt.setMaximumFractionDigits(2);
 		intFormat = NumberFormat.getIntegerInstance();
+		numFormat = NumberFormat.getNumberInstance();
 		decFormat = new DecimalFormat("#.##");
 		
 	    summaryHeaderLabel             = new JLabel();
         statisticsHeaderLabel          = new JLabel();
-        
-        durationLabel                  = new JLabel();
+
+         durationLabel                  = new JLabel();
         energyConsumedLabel            = new JLabel();
         httpsDataNotAnalyzedLabel      = new JLabel();
         summaryFillerHeaderLabel       = new JLabel();
@@ -87,7 +93,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
         
         summaryHeaderLabel        .setFont(SUMMARY_FONT);
         statisticsHeaderLabel     .setFont(SUMMARY_FONT);
-                                                         
+                                                          
         appScoreLabel             .setFont(TEXT_FONT);   
         causesScoreLabel          .setFont(TEXT_FONT);   
         durationLabel             .setFont(TEXT_FONT);   
@@ -100,7 +106,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
         totalAppScoreLabel        .setFont(TEXT_FONT);   
         totalDataLabel            .setFont(TEXT_FONT);   
         totalhttpsDataLabel       .setFont(TEXT_FONT);
-                
+        
         add(layoutDataPanel(), BorderLayout.CENTER);
 
 	}
@@ -139,7 +145,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 			addLabelLine(energyConsumedLabel       , "bestPractices.energyConsumed"         , ++idx ,2, weightX, insets, TEXT_FONT);     // 
 			addLabelLine(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     // 
 			
-			addLabelLine(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     // 
+ 			addLabelLine(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     // 
 			
 		}
 		return dataPanel;
@@ -181,5 +187,8 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 				ResourceBundleHelper.getMessageString("bestPractices.energyConsumedValue"),
 				decFormat.format(analyzerResults.getEnergyModel().getTotalEnergyConsumed())));		
 		
+
 	}
+
+
 }

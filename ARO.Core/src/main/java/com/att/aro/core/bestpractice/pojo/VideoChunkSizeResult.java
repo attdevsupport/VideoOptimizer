@@ -15,16 +15,30 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
-/**
- * 
- * VBP #6
- *
- */
 public class VideoChunkSizeResult extends AbstractBestPracticeResult {
 
+	private int segmentSize;
+	private int segmentCount;
+	
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.CHUNK_SIZE;
+	}
+
+	public int getSegmentSize() {
+		return segmentSize;
+	}
+
+	public void setSegmentSize(int segmentSize) {
+		this.segmentSize = segmentSize;
+	}
+
+	public int getSegmentCount() {
+		return segmentCount;
+	}
+
+	public void setSegmentCount(int segmentCount) {
+		this.segmentCount = segmentCount;
 	}
 
 }

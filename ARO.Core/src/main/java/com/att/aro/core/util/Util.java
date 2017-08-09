@@ -15,7 +15,10 @@
 */
 package com.att.aro.core.util;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +33,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.att.aro.core.ILogger;
+import com.att.aro.core.model.InjectLogger;
+
+
+
 public final class Util {
 
 	public static final String OS_NAME = System.getProperty("os.name");
@@ -38,6 +46,9 @@ public final class Util {
 	public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 	public static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
 	private static final double TIME_CORRECTION = 1.0E9;
+	
+	@InjectLogger
+	private static ILogger logger;
 	
 	public static boolean isMacOS(){
 		return Util.OS_NAME.contains("Mac OS");
@@ -547,5 +558,25 @@ public final class Util {
 			ffprobe = ("/usr/bin/ffprobe");
 		} 
 		return ffprobe;
+	}
+	
+	
+	public static boolean isJPG(File imgfile, String imgExtn) {
+
+		boolean isJPG = false;
+		if (imgfile.isFile() && imgfile.length() > 0) {
+			if ((imgExtn.equalsIgnoreCase("jpeg") || imgExtn.equalsIgnoreCase("jpg"))) {
+				try (FileInputStream fis = new FileInputStream(imgfile);
+						BufferedInputStream bis = new BufferedInputStream(fis);
+						DataInputStream inputStrm = new DataInputStream(bis)) {
+					if (inputStrm.readInt() == 0xffd8ffe0) {
+						isJPG = true;
+					}
+				} catch (Exception e) {
+					logger.info("Image Format check jpeg exception : ", e);
+				}
+			}
+		}
+		return isJPG;
 	}
 }

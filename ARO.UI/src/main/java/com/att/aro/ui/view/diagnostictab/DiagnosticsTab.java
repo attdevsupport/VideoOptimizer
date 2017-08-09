@@ -51,11 +51,13 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.ContextAware;
+import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.diagnostic.PacketViewTableModel;
 import com.att.aro.ui.model.diagnostic.TCPUDPFlowsTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.overviewtab.DeviceNetworkProfilePanel;
 import com.att.aro.ui.view.video.IVideoPlayer;
 
@@ -138,6 +140,11 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	private boolean bTCPPacketFound = false;
 
 	private IAROView aroview;
+	private IARODiagnosticsOverviewRoute diagnosticRoute;
+	
+	public IAROView getAroView(){
+		return this.aroview;
+	}
 	
 	public AROTraceData getAnalyzerResult() {
 		return analyzerResult;
@@ -146,9 +153,10 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	public void setAnalyzerResult(AROTraceData analyzerResult) {
 		this.analyzerResult = analyzerResult;
 	}
-	public DiagnosticsTab(IAROView aroview) {
+	public DiagnosticsTab(IAROView aroview, IARODiagnosticsOverviewRoute diagnosticRoute) {
 		super(true);
 		this.aroview = aroview;
+		this.diagnosticRoute = diagnosticRoute;
 		setLayout(new BorderLayout());
 		add(getDeviceNetworkProfilePanel().layoutDataPanel(), BorderLayout.NORTH);
 		JPanel chartAndTablePanel = new JPanel();
@@ -162,10 +170,14 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 
 	}
 
+	public IARODiagnosticsOverviewRoute getDiagnosticRoute() {
+		return diagnosticRoute;
+	}
+
 	/**
 	 * Returns the Panel that contains the graph.
 	 */
-	private GraphPanel getGraphPanel() {
+	public GraphPanel getGraphPanel() {
 		if ( graphPanel == null) {
 			 graphPanel = new GraphPanel(aroview,this);
 				graphPanel.setZoomFactor(2);
@@ -660,6 +672,11 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		else {
 			logger.warn("No timestamp for Diagnostic Tab routing");
 		}
+	}
+	
+	public void launchSliderDialog(){
+		if(null != getGraphPanel())
+			getGraphPanel().launchSliderDialog(0);
 	}
 	
 	// only for security best practice table route

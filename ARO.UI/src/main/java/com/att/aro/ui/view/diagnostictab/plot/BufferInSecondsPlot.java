@@ -21,6 +21,8 @@ import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -33,6 +35,7 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
@@ -49,6 +52,7 @@ public class BufferInSecondsPlot implements IPlot{
 	XYSeries seriesBufferFill;
 	Map<Integer,String> seriesDataSets; 
 	private Shape shape  = new Ellipse2D.Double(0,0,10,10);
+	private List<Double> bufferTimeList = new ArrayList<>();
 
 	BufferInSecondsCalculatorImpl bufferInSecondsCalculatorImpl= (BufferInSecondsCalculatorImpl) ContextAware.getAROConfigContext().getBean("bufferInSecondsCalculatorImpl",PlotHelperAbstract.class);
 	
@@ -70,6 +74,7 @@ public class BufferInSecondsPlot implements IPlot{
 			//updating video stall result in packetAnalyzerResult
 			analysis.getAnalyzerResult().setVideoStalls(bufferInSecondsCalculatorImpl.getVideoStallResult());
 			
+			bufferTimeList.clear();
 			double xCoordinate,yCoordinate;
 			String ptCoordinate[] = new String[2]; // to hold x & y values
 			if(!seriesDataSets.isEmpty()){
@@ -78,17 +83,22 @@ public class BufferInSecondsPlot implements IPlot{
 					ptCoordinate = seriesDataSets.get(key).trim().split(",");
 					xCoordinate = Double.parseDouble(ptCoordinate[0]);
 					yCoordinate = Double.parseDouble(ptCoordinate[1]);
+					bufferTimeList.add(yCoordinate);
 					
 					seriesBufferFill.add(xCoordinate,yCoordinate);
 				}			
 			}
 			
+			Collections.sort(bufferTimeList);
+			BufferTimeBPResult bufferTimeResult = bufferInSecondsCalculatorImpl.updateBufferTimeResult(bufferTimeList);
+			analysis.getAnalyzerResult().setBufferTimeResult(bufferTimeResult);
 			// populate collection
 			bufferFillDataCollection.addSeries(seriesBufferFill);
 			
 			XYItemRenderer renderer = new StandardXYItemRenderer();
 			renderer.setBaseToolTipGenerator(new XYToolTipGenerator() {
-
+				
+		
 				@Override
 				public String generateToolTip(XYDataset dataset, int series, int item) {
 
@@ -96,36 +106,46 @@ public class BufferInSecondsPlot implements IPlot{
 					Number timestamp = dataset.getX(series, item);
 					Number bufferTime = dataset.getY(series, item);
 					StringBuffer tooltipValue = new StringBuffer();
-					
+
+					Map<Double, Long> segmentEndTimeMap = bufferInSecondsCalculatorImpl.getSegmentEndTimeMap();
+					Map<Long, Double> segmentStartTimeMap = bufferInSecondsCalculatorImpl.getSegmentStartTimeMap();
+					double firstSegmentNo = bufferInSecondsCalculatorImpl.getChunksBySegmentNumber().get(0).getSegment();
 
 					DecimalFormat decimalFormat = new DecimalFormat("0.##");
-					Map<Long, Double> segmentStartTimeMap = bufferInSecondsCalculatorImpl.getSegmentStartTimeMap();
-					if(segmentStartTimeMap == null || segmentStartTimeMap.isEmpty()) {
+					if (segmentStartTimeMap == null || segmentStartTimeMap.isEmpty()) {
 						return "-,-,-";
 					}
-					Map<Double, Long> segmentEndTimeMap = bufferInSecondsCalculatorImpl.getSegmentEndTimeMap();
 
+					List<Long> segmentList = new ArrayList<Long>(segmentEndTimeMap.values());
+					Collections.sort(segmentList);
+					Long lastSegmentNo =segmentList.get(segmentList.size()-1);
+					
 					Long segmentNumber = 0L;
 					boolean isSegmentPlaying = false;
 					boolean startup = false;
+					boolean endPlay = false;
 
 					for (double segmentEndTime : segmentEndTimeMap.keySet()) {
 						if (segmentEndTime > timestamp.doubleValue()) {
 							segmentNumber = segmentEndTimeMap.get(segmentEndTime);
-							if(segmentNumber==1){
-								startup=true;
+							if (segmentNumber == firstSegmentNo) {
+								startup = true;
 							}
 							if (segmentStartTimeMap.get(segmentNumber) <= timestamp.doubleValue()) {
 								tooltipValue.append(decimalFormat.format(segmentNumber) + ",");
 								isSegmentPlaying = true;
-							} 
+								startup = false;
+							}
+						} else if (lastSegmentNo.equals(segmentEndTimeMap.get(segmentEndTime))
+								&& segmentEndTime == timestamp.doubleValue()) {
+							endPlay = true;
 						}
 					}
 
-					if (!isSegmentPlaying && !startup) {
-						tooltipValue.append("Stall,");
-					} else if (startup) {
+					if (endPlay || startup) {
 						tooltipValue.append("-,");
+					} else if (!isSegmentPlaying && !startup) {
+						tooltipValue.append("Stall,");
 					}
 					
 					tooltipValue.append(String.format("%.2f", bufferTime) + "," + String.format("%.2f", timestamp));

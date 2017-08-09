@@ -20,5 +20,7 @@ package com.att.arotcpcollector.socket;
  * Date: June 2, 2014
  */
 public class DataConst {
+
 	public static final int MAX_RECEIVE_BUFFER_SIZE = 65535;//4096;
+
 }

@@ -93,6 +93,7 @@ public class BufferOccupancyPlot implements IPlot {
 			}
 			Collections.sort(bufferSizeList);
 			BufferOccupancyBPResult bufferOccupancyResult = bufferOccupancyCalculatorImpl.setMaxBuffer(bufferSizeList.get(bufferSizeList.size()-1));
+			bufferOccupancyResult.setBufferByteDataSet(bufferSizeList);
 			analysis.getAnalyzerResult().setBufferOccupancyResult(bufferOccupancyResult);
 			// populate collection
 			bufferFillDataCollection.addSeries(seriesBufferFill);

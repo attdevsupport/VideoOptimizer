@@ -89,9 +89,9 @@ public class TabPanelSupport {
 		return aroModel;
 	}
 
-	public void update(Observable observable, AROTraceData aroModel, boolean visible){
+	public void update(Observable observable, AROTraceData aroModel, boolean visible) {
 		this.aroModel = aroModel;
-		if(visible || alwaysLoad){
+		if (visible || alwaysLoad) {
 			((IUITabPanelLayoutUpdate) component).refresh(aroModel);
 			this.lazyLoadFlag = false;
 		} else {

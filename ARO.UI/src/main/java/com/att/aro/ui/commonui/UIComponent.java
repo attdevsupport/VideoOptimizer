@@ -57,16 +57,18 @@ public class UIComponent extends JPanel {
 	/**
 	 * Returns the blue header panel with the ATT logo.
 	 */
-	public ImagePanel getLogoHeader(String headerTitle) {			
-			ImagePanel headerPanel = new ImagePanel(Images.BLUE_HEADER.getImage());
+	public ImagePanel getLogoHeader(String headerTitle) {
+		ImagePanel	headerPanel = new ImagePanel(Images.BLUE_HEADER.getImage());
 			headerPanel.setLayout(new BorderLayout(50, 50));
-			headerPanel.setPreferredSize(new Dimension(80, 80));
 			headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+			JLabel label = new JLabel(Images.HEADER_ICON.getIcon(), SwingConstants.CENTER);
+			label.setPreferredSize(new Dimension(80, 80));
+			headerPanel.add(label, BorderLayout.WEST);
 			JLabel bpHeaderLabel = new JLabel(headerTitle);
 			bpHeaderLabel.setFont(UIManager.getFont(AROUIManager.TITLE_FONT_KEY));
 			bpHeaderLabel.setForeground(Color.WHITE);
 			headerPanel.add(bpHeaderLabel, BorderLayout.CENTER);
-
+	
 		return headerPanel;
 	}
 

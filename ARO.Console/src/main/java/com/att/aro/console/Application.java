@@ -15,6 +15,8 @@
 */
 package com.att.aro.console;
 
+import static com.att.aro.core.settings.SettingsUtil.retrieveBestPractices;
+
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
@@ -22,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -31,17 +32,14 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.console.printstreamutils.ImHereThread;
 import com.att.aro.console.printstreamutils.NullOut;
 import com.att.aro.console.printstreamutils.OutSave;
 import com.att.aro.console.util.UtilOut;
-import com.att.aro.core.AROConfig;
 import com.att.aro.core.IAROService;
 import com.att.aro.core.SpringContextUtil;
-import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.configuration.pojo.Profile;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.datacollector.IDataCollectorManager;
@@ -52,8 +50,8 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice.AroDeviceState;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
-import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
+import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.ErrorCode;
 import com.att.aro.core.util.Util;
@@ -405,14 +403,14 @@ public final class Application implements IAROView {
 		try {
 			if (serv.isFile(trace)) {
 				try {
-					results = serv.analyzeFile(getBestPractice(), trace);
+					results = serv.analyzeFile(retrieveBestPractices(), trace);
 				} catch (IOException e) {
 					errln("Error occured analyzing trace, detail: " + e.getMessage());
 					System.exit(1);
 				}
 			} else {
 				try {
-					results = serv.analyzeDirectory(getBestPractice(), trace);
+					results = serv.analyzeDirectory(retrieveBestPractices(), trace);
 				} catch (IOException e) {
 					errln("Error occured analyzing trace directory, detail: " + e.getMessage());
 					System.exit(1);
@@ -531,12 +529,18 @@ public final class Application implements IAROView {
 			if (cmds.getOverwrite().equalsIgnoreCase("yes")) {
 				String traceName = cmds.getOutput();
 				IFileManager filemanager = context.getBean(IFileManager.class);
-				boolean r = filemanager.directoryDeleteInnerFiles(traceName);
+				filemanager.directoryDeleteInnerFiles(traceName);
 			}
 			OutSave outSave = prepareSystemOut();
 			try {			
 				Hashtable<String,Object> extras = new Hashtable<String,Object>();
 				extras.put("video_option", getVideoOption());
+				extras.put("AttenuatorModel", getAttenuateModel());
+				if (getSecureOption()) {
+					extras.put("secure", getSecureOption());
+					extras.put("installCert", getCertInstallOption());
+				}
+
 				if (cmds.getDeviceid() != null) {
 					result = collector.startCollector(true, cmds.getOutput(), getVideoOption(), false, cmds.getDeviceid(), extras, password);
 				} else {
@@ -582,6 +586,18 @@ public final class Application implements IAROView {
 		}
 	}
 	
+	private AttenuatorModel getAttenuateModel() {
+		return getConstantThrottleAttenuateModel();
+	}
+	
+	private AttenuatorModel getConstantThrottleAttenuateModel() {
+		AttenuatorModel model = new AttenuatorModel();
+		model.setConstantThrottle(true);
+		model.setDelayUS(getDelayTimeUplink());
+		model.setDelayDS(getDelayTimeDownlink());
+		return model;
+	}
+
 	/**
 	 * Provides for user input
 	 * 
@@ -616,56 +632,6 @@ public final class Application implements IAROView {
 
 	void errln(String str) {
 		utilOut.errMessageln(str);
-	}
-
-	/**
-	 * return a list of best practice we want to run. the sequence is according
-	 * to the Analyzer
-	 * 
-	 * @return a list of best practice
-	 */
-	private List<BestPracticeType> getBestPractice() {
-		List<BestPracticeType> req = new ArrayList<BestPracticeType>();
-		req.add(BestPracticeType.FILE_COMPRESSION);
-		req.add(BestPracticeType.DUPLICATE_CONTENT);
-		req.add(BestPracticeType.USING_CACHE);
-		req.add(BestPracticeType.CACHE_CONTROL);
-		req.add(BestPracticeType.COMBINE_CS_JSS);
-		req.add(BestPracticeType.IMAGE_SIZE);
-		req.add(BestPracticeType.IMAGE_MDATA);
-		req.add(BestPracticeType.IMAGE_CMPRS);
-		req.add(BestPracticeType.MINIFICATION);
-		req.add(BestPracticeType.SPRITEIMAGE);
-		req.add(BestPracticeType.CONNECTION_OPENING);
-		req.add(BestPracticeType.UNNECESSARY_CONNECTIONS);
-		req.add(BestPracticeType.PERIODIC_TRANSFER);
-		req.add(BestPracticeType.SCREEN_ROTATION);
-		req.add(BestPracticeType.CONNECTION_CLOSING);
-		req.add(BestPracticeType.HTTP_4XX_5XX);
-		req.add(BestPracticeType.HTTP_3XX_CODE);
-		req.add(BestPracticeType.SCRIPTS_URL);
-		req.add(BestPracticeType.ASYNC_CHECK);
-		req.add(BestPracticeType.HTTP_1_0_USAGE);
-		req.add(BestPracticeType.FILE_ORDER);
-		req.add(BestPracticeType.EMPTY_URL);
-		req.add(BestPracticeType.FLASH);
-		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
-		req.add(BestPracticeType.HTTPS_USAGE);
-		req.add(BestPracticeType.TRANSMISSION_PRIVATE_DATA);
-		req.add(BestPracticeType.UNSECURE_SSL_VERSION);
-		req.add(BestPracticeType.WEAK_CIPHER);
-		req.add(BestPracticeType.FORWARD_SECRECY);
-		req.add(BestPracticeType.VIDEO_STALL);
-		req.add(BestPracticeType.NETWORK_COMPARISON);
-		req.add(BestPracticeType.STARTUP_DELAY);
-		req.add(BestPracticeType.BUFFER_OCCUPANCY);
-		req.add(BestPracticeType.TCP_CONNECTION);
-		req.add(BestPracticeType.CHUNK_PACING);
-		req.add(BestPracticeType.CHUNK_SIZE);
-		req.add(BestPracticeType.VIDEO_REDUNDANCY);
-		req.add(BestPracticeType.ACCESSING_PERIPHERALS);
- 
-		return req;
 	}
 
 	/**

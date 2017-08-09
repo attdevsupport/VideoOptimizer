@@ -16,10 +16,10 @@
 package com.att.aro.ui.view.video;
 
 import com.att.aro.core.ILogger;
-import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
-import com.att.aro.core.peripheral.impl.CollectOptionsReaderImpl;
-//import com.att.aro.core.peripheral.impl.CollectOptionsReaderImpl;
+import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.ui.commonui.ContextAware;
+import com.att.aro.ui.view.MainFrame;
+import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 
 import javafx.application.Platform;
@@ -63,17 +63,18 @@ public class JFxPlayerControl {
 	private VideoSyncThread diagnosticTabSynThread;	
 	private JFxPlayer jfxPlayer;
 	private static ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private SharedAttributesProcesses aroView;
 	 /*
-	  *  25 is frame rate, we multiply video duration by it to be the max 
-	  *  value of the slider of the player so that we can see every frame 
+	  *  We multiply video duration by it to be the max value of  
+	  *  the slider of the player so that we can see every frame 
 	  *  when we increment the slider in the slider dialog box.
 	  */
-	private static final int FRAME_RATE = 25;
-	private boolean isLandscape = false;
-	
-	public JFxPlayerControl(JFxPlayer jfxPlayer, final MediaPlayer mediaPlayer, DiagnosticsTab diagnosticTab, 
+	private static final int FRAME_RATE = VideoUtil.FRAME_RATE;
+
+	public JFxPlayerControl(SharedAttributesProcesses aroView, JFxPlayer jfxPlayer, final MediaPlayer mediaPlayer, DiagnosticsTab diagnosticTab, 
 			double videoOffset) {
 
+		this.aroView = aroView;
 		this.jfxPlayer = jfxPlayer;
 		this.mediaPlayer = mediaPlayer;
 		this.diagnosticTab = diagnosticTab;
@@ -108,20 +109,8 @@ public class JFxPlayerControl {
 		DoubleProperty mediaViewHeight = mediaView.fitHeightProperty();
 		mediaViewWidth.bind(Bindings.selectDouble(mediaView.sceneProperty(), "width"));
 		mediaViewHeight.bind(Bindings.selectDouble(mediaView.sceneProperty(), "height"));
-		
-		getOrientaion();
+
 		mediaView.setPreserveRatio(true);	
-	}
-
-
-	private void getOrientaion() {
-		CollectOptionsReaderImpl collectOptionsReaderImpl = (CollectOptionsReaderImpl) ContextAware
-				.getAROConfigContext().getBean("collectOptionsReaderImpl");
-
-		if (TraceDataConst.UserEvent.KEY_LANDSCAPE.equalsIgnoreCase(collectOptionsReaderImpl.getOrientation())) {
-			isLandscape = true;
-		}
-
 	}
 
 	private void setUpControllerBar() {
@@ -199,6 +188,13 @@ public class JFxPlayerControl {
 
 	private void setUpMediaPlayer() {
 		
+		AnalysisFilter filter = ((MainFrame)aroView).getController().getTheModel().getAnalyzerResult().getFilter();
+		if(null != filter){
+			Double startTime = filter.getTimeRange().getBeginTime();
+			mediaPlayer.setStartTime(new Duration(startTime * 1000));
+			updateControllerBar();
+		}
+		
 		mediaPlayer.currentTimeProperty().addListener(new InvalidationListener() {	
 			@Override
 			public void invalidated(Observable arg0) {
@@ -225,9 +221,14 @@ public class JFxPlayerControl {
 		mediaPlayer.setOnStopped(new Runnable() {		
 			@Override
 			public void run() {
-				mediaPlayer.seek(mediaPlayer.getStartTime());
+				Double startTime = 0.0;
+				AnalysisFilter filter = ((MainFrame)aroView).getController().getTheModel().getAnalyzerResult().getFilter();
+				if(null != filter){
+					startTime = filter.getTimeRange().getBeginTime();
+				}
+				mediaPlayer.seek(new Duration(startTime));
 				playButton.setText(">");				
-				timeSlider.setValue(0);
+				timeSlider.setValue(startTime);
 			}
 		});
 		
@@ -248,10 +249,15 @@ public class JFxPlayerControl {
 		mediaPlayer.setOnEndOfMedia(new Runnable() {
 			@Override
 			public void run() {
-				mediaPlayer.seek(mediaPlayer.getStartTime());
+				Double startTime = 0.0;
+				AnalysisFilter filter = ((MainFrame)aroView).getController().getTheModel().getAnalyzerResult().getFilter();
+				if(null != filter){
+					startTime = filter.getTimeRange().getBeginTime();
+				}
+				mediaPlayer.seek(new Duration(startTime));
 				mediaPlayer.pause();
 				playButton.setText(">");
-				timeSlider.setValue(0);
+				timeSlider.setValue(startTime);
 				updateTimeLabel();
 			}
 		});
@@ -372,7 +378,7 @@ public class JFxPlayerControl {
 	 		mediaPlayer.seek(newMediaTime);	 		
  		}
  		
- 		diagnosticTab.setTimeLineLinkedComponents(newMediaTime.toSeconds() + finalizedVideoOffset, true);
+ 		diagnosticTab.setTimeLineLinkedComponents(newMediaTime.toSeconds() + getFinalizedVideoOffset(), true);
  		updateControllerBar();
  	}
  	
@@ -397,7 +403,4 @@ public class JFxPlayerControl {
  		mediaPlayer.dispose();
  	}
 
-	public boolean isLandscape() {
-		return isLandscape;
-	}
 }

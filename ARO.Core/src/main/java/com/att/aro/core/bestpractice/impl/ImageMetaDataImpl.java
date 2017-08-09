@@ -92,7 +92,7 @@ public class ImageMetaDataImpl implements IBestPractice {
 					String imgFile = "";
 
 					String extractedImageName = extractFullNameFromRRInfo(req);
-					int pos = extractedImageName.lastIndexOf("/") + 1;
+					int pos = extractedImageName.lastIndexOf('.') + 1;
 
 					// List<String> imageList = new ArrayList<String>();
 					File folder = new File(imagePath);
@@ -131,13 +131,16 @@ public class ImageMetaDataImpl implements IBestPractice {
 			HttpRequestResponseInfo req, String imagePath, String imgFile, String extractedImageName, int pos,
 			File[] listOfFiles) {
 		String imgFullName = "";
+		String imgExtn = "";
+
 		// check folder exists
 		for (int i = 0; i < listOfFiles.length; i++) {
 			if (listOfFiles[i].isFile()) {
 				imgFullName = listOfFiles[i].getName();
-				if (extractedImageName.substring(pos).equalsIgnoreCase(imgFullName)) {
+				if (extractedImageName.equalsIgnoreCase(imgFullName)) {
+					imgExtn = imgFullName.substring(pos, imgFullName.length());
 					imgFile = imagePath + imgFullName;
-					if (imgFullName.contains("jpeg") || imgFullName.contains("jpg")) {
+					if (Util.isJPG(new File(imgFile), imgExtn)) {
 						extractMetadata(imgFile);
 					}
 					// isMetaDataPresent = true;
@@ -150,27 +153,27 @@ public class ImageMetaDataImpl implements IBestPractice {
 				byte[] mdata = null;
 				long mSize = 0;
 
-				long imgFileSize;
-				long mdataSize;
+				double imgFileSize;
+				double mdataSize;
 
 				try {
 					mdata = imgP.getExifRawData(new ByteSourceFile(getImage));
 					mSize = mdata.length;
 				} catch (ImageReadException | IOException e) {
-					
+
 				}
 				imageList.add(imgFile);
 
 				long iSize = getImage.length();
 
-					imgFileSize = iSize/1024;				
-					mdataSize = mSize/1024;
-				
+				imgFileSize = iSize / 1024;
+				mdataSize = mSize / 1024;
+
 				double savings = (mSize * 100) / iSize;
-				
+
 				if (savings >= 1.00) {
-					entrylist.add(new ImageMdataEntry(req, session.getDomainName(), imgFile, imgFileSize,
-							mdataSize, String.valueOf(new DecimalFormat("##.##").format(savings)) + "%"));
+					entrylist.add(new ImageMdataEntry(req, session.getDomainName(), imgFile, imgFileSize, mdataSize,
+							String.valueOf(new DecimalFormat("##.##").format(savings)) + "%"));
 				}
 				isMetaDataPresent = false;
 			}
@@ -180,15 +183,12 @@ public class ImageMetaDataImpl implements IBestPractice {
 	private void extractMetadata(String fullpath) {
 		ImageMetadata metadata;
 		try {
-
 			metadata = Imaging.getMetadata(new File(fullpath));
 			if (metadata != null) {
-
 				if (!metadata.getClass().equals(GenericImageMetadata.class)) {
 					JpegImageMetadata jpegMetadata = (JpegImageMetadata) metadata;
 					TiffImageMetadata exif = jpegMetadata.getExif();
 					if (exif != null) {
-
 						isMetaDataPresent = true;
 					}
 				} else {

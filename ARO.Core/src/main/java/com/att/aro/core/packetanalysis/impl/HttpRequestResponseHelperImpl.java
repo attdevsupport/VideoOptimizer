@@ -34,6 +34,7 @@ import com.att.aro.core.packetanalysis.pojo.Session;
  * Date: November 20, 2014
  */
 public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper {
+	private static final int TWO_MB = 2 * 1024 * 1024;
 	@InjectLogger
 	private static ILogger log;
 	
@@ -98,7 +99,14 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 	 */
 	public String getContentString(HttpRequestResponseInfo req, Session session) throws Exception {
 		byte[] content = getContent(req, session);
-		return content != null ? new String(content, "UTF-8") : null;
+		if(content == null || content.length == 0) {
+			return "";
+		} else if (content.length > TWO_MB) {
+			log.error("Ignoring this html file as it's too big to process - possibly a speed test file.");
+			return "";
+		} else {
+			return new String(content, "UTF-8");
+		}
 	}
 	/**
 	 * get content of the request/response in byte[]
@@ -119,6 +127,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 			if (buffer == null) {
 				return new byte[0];
 			}
+//			System.out.println("Byte Count:" + buffer.length);
 			
 			ByteArrayOutputStream output = null;
 			for (Map.Entry<Integer, Integer> entry : contentOffsetLength.entrySet()) {

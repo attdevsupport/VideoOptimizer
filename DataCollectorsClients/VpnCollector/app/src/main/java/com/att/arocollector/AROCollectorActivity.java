@@ -49,14 +49,14 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
 import com.att.arocollector.client.CaptureVpnService;
 import com.att.arocollector.privatedata.AROPrivateDataCollectorService;
 import com.att.arocollector.utils.AROCollectorUtils;
 import com.att.arocollector.utils.BundleKeyUtil;
+import com.att.arocollector.video.Orientation;
 import com.att.arocollector.video.VideoCapture;
 import com.att.arocollector.video.VideoOption;
-import com.att.arocollector.video.Orientation;
-import com.att.arotcpcollector.util.FileUtil;
 import com.att.arotracedata.AROCollectorService;
 import com.att.arotracedata.AROCpuTempService;
 import com.att.arotracedata.AROCpuTraceService;
@@ -73,9 +73,12 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import javax.security.cert.CertificateException;
+import javax.security.cert.X509Certificate;
+
 public class AROCollectorActivity extends Activity {
 
-	private static String TAG = "AroCollectorActivity";
+	private static String TAG = AROCollectorActivity.class.getSimpleName();
 
 	private Context context;
 	private Intent captureVpnServiceIntent;
@@ -91,7 +94,11 @@ public class AROCollectorActivity extends Activity {
 	private String screenSize = "";
 	private VideoCapture videoCapture;
 	private MediaProjectionManager mediaProjectionManager;
+	private boolean secureEnable = false;//do not change the default value
+	private boolean certInstall = false;
 	private File tempCertFile;
+	private String CERTFILE = "cacert.pem";
+	private int RSRC = R.raw.cacert;
 	private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
 	@Override
@@ -109,8 +116,13 @@ public class AROCollectorActivity extends Activity {
 		setContentView(R.layout.splash);
 		final TextView splashText = (TextView) findViewById(R.id.splash_message);
 		splashText.setText(String.format(getString(R.string.splashmessageopensource), getString(R.string.app_brand_name), getString(R.string.app_url_name)));
-
 		Intent intent = getIntent();
+
+		secureEnable = intent.getBooleanExtra(BundleKeyUtil.SECURE, false);//do not change the default value
+
+		if(secureEnable) {
+			certInstall = intent.getBooleanExtra(BundleKeyUtil.CERT_INSTALL, false);
+		}
 
 		setVideoOption(intent);
 
@@ -120,8 +132,11 @@ public class AROCollectorActivity extends Activity {
 
 		setVideoOrient(intent);
 
-		Log.i(TAG, " video: " + videoOption + " bitRate: " +
-				bitRate + " screenSize: " + screenSize + " orientation: " + videoOrient);
+		Log.i(TAG,  " video: " + videoOption
+				+ " bitRate: " + bitRate + " screenSize: " + screenSize
+				+ " orientation: " + videoOrient);
+
+
 		context = getApplicationContext();
 		launchAROCpuTraceService();
 		launchAROCpuTempService();
@@ -151,8 +166,9 @@ public class AROCollectorActivity extends Activity {
 			}
 
 			String display =
-					"App Build Date: "+ appBuildDate + "\n" +
-							"version: " + packageInfo.versionName + " (" + (valu ? "Debug" : "Production") + ")";
+					"App Build Date: "+ appBuildDate + "\n"
+					+" Version: " + packageInfo.versionName + " (" + (valu ? "Debug" : "Production") + ")";
+
 			((TextView) findViewById(R.id.version)).setText(display);
 		}
 	}
@@ -268,8 +284,13 @@ public class AROCollectorActivity extends Activity {
 			case Config.Permission.VPN_PERMISSION_REQUEST_CODE:
 				if (resultCode == RESULT_OK) {
 
+					if (certInstall) {
+						startCertificateInstall();
+					}
+
 					captureVpnServiceIntent = new Intent(getApplicationContext(), CaptureVpnService.class);
 					captureVpnServiceIntent.putExtra("TRACE_DIR", Config.TRACE_DIR);
+					captureVpnServiceIntent.putExtra(BundleKeyUtil.SECURE, isSecureEnable());
 
 					if(isExternalStorageWritable()){
 						Log.i(TAG, "TRACE_DIR: "+ Config.TRACE_DIR +"trace directory: "+
@@ -324,6 +345,49 @@ public class AROCollectorActivity extends Activity {
 			default:
 				break;
 		}
+	}
+
+	/**
+	 * Once the VPN Permission is provided, Install the Certificate
+	 * Done only if Requested.
+	 */
+	private void startCertificateInstall() {
+
+		boolean externalStoragePermEnabled = checkWritePerm();
+		if (externalStoragePermEnabled) {
+			Log.d("SecureCollector", "StartCertificateInstall");
+			String CERTFILE = "cacert.pem";
+			int RSRC = R.raw.cacert;
+
+			File path = locateARO();
+
+			tempCertFile = new File(path, CERTFILE);
+
+			boolean result = extractResource(tempCertFile, RSRC);
+
+			if (result) {
+
+				Intent intent = null;
+				try {
+					intent = KeyChain.createInstallIntent();
+					FileInputStream certIs = new FileInputStream(tempCertFile);
+					byte[] cert = new byte[(int) tempCertFile.length()];
+					certIs.read(cert);
+					X509Certificate x509 = X509Certificate.getInstance(cert);
+					intent.putExtra(KeyChain.EXTRA_CERTIFICATE, x509.getEncoded());
+					intent.putExtra(KeyChain.EXTRA_NAME, "ARO Cert");
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (CertificateException e) {
+					e.printStackTrace();
+				}
+				this.startActivityForResult(intent, Config.Permission.CERT_INSTALL_REQUEST_CODE);
+				// this.sendBroadcast(intent);  // this doesn't install cert
+			} else {
+				Log.d(TAG, "Failed to extract");
+			}
+		}
+
 	}
 
 	/**
@@ -388,7 +452,7 @@ public class AROCollectorActivity extends Activity {
 	private void launchAROCollectorService() {
 		aroCollectorService = new Intent(getApplicationContext(), AROCollectorService.class);
 		aroCollectorService.putExtra("TRACE_DIR", Config.TRACE_DIR);
-		aroCollectorService.putExtra(BundleKeyUtil.VIDEO_ORIENTATION, videoOrient.toString());
+  		aroCollectorService.putExtra(BundleKeyUtil.VIDEO_ORIENTATION, videoOrient.toString());
 		aroCollectorService.addCategory(AROCollectorService.ARO_COLLECTOR_SERVICE);
 		collectorService = startService(aroCollectorService);
 	}
@@ -430,7 +494,6 @@ public class AROCollectorActivity extends Activity {
 			Log.d(TAG, "calling unregisterAnalyzerCloseCmdReceiver inside onDestroy()");
 			unregisterAnalyzerCloseCmdReceiver();
 		}
-//		FileUtil.terminate();
 
 		if (videoCapture != null) {
 			videoCapture.stop();
@@ -578,20 +641,29 @@ public class AROCollectorActivity extends Activity {
 		return false;
 	}
 
+
+	public void setSecureEnable(boolean secureEnable) {
+		this.secureEnable = secureEnable;
+	}
+
+	public boolean isSecureEnable() {
+		return secureEnable;
+	}
+
 	public void handleUncaughtException (Thread thread, Throwable e)  {
-		FileUtil.print("SSL1.txt", "UNCAUGHT, Class: " + e.getClass() + " ,  Throwable Cause: " + e.getCause() + " , thread name: " + thread.getName() + "\n");
-		FileUtil.print("SSL1.txt", "UNCAUGHT " + thread.getStackTrace()[0] + "\n");
-		FileUtil.print("SSL1.txt", "UNCAUGHT " + thread.getStackTrace()[1] + "\n");
-		FileUtil.print("SSL1.txt", "UNCAUGHT " + thread.getStackTrace()[2] + "\n");
-		FileUtil.print("SSL1.txt", "UNCAUGHT " + thread.getStackTrace()[3] + "\n");
-		FileUtil.print("SSL1.txt", "UNCAUGHT " + thread.getStackTrace()[4] + "\n");
-		FileUtil.print("SSL1.txt", "UNCAUGHT " + thread.getStackTrace()[5] + "\n");
+		Log.e(TAG, "UNCAUGHT, Class: " + e.getClass() + " ,  Throwable Cause: " + e.getCause() + " , thread name: " + thread.getName() + "\n");
+		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[0] + "\n");
+		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[1] + "\n");
+		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[2] + "\n");
+		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[3] + "\n");
+		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[4] + "\n");
+		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[5] + "\n");
 
 		MemoryInfo mi = new MemoryInfo();
 		ActivityManager activityManager = (ActivityManager)this.getSystemService(Activity.ACTIVITY_SERVICE);
 		activityManager.getMemoryInfo(mi);
 		long availableMegs = mi.availMem / 1048576L;
-		FileUtil.print("SSL1.txt", " ServerBuff : Available memory: "+ availableMegs + "\n\n");
+		Log.e(TAG," ServerBuff : Available memory: "+ availableMegs + "\n\n");
 	}
 
 	private boolean doVideoCapture() {

@@ -21,8 +21,8 @@ import com.att.arocollector.packetRebuild.PCapFileWriter;
 import com.att.arotcpcollector.SessionManager;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Publish packet data to subscribers that implement interface IPcapSubscriber
@@ -35,7 +35,7 @@ public class SocketDataPublisher implements Runnable, IPcapSubscriber {
 	
 	SocketData socketData;
 	private PCapFileWriter pcapWriter;
-	private Queue<byte[]> dataToBeWrittenToPcap;
+	private BlockingQueue<byte[]> dataToBeWrittenToPcap;
 	
 	private static Object syncPcapData = new Object();
 	
@@ -52,7 +52,7 @@ public class SocketDataPublisher implements Runnable, IPcapSubscriber {
 	public SocketDataPublisher() {
 		socketData = SocketData.getInstance();
 		socketData.registerPcapSubscriber(this);
-		dataToBeWrittenToPcap = new LinkedList<byte[]>();
+		dataToBeWrittenToPcap = new LinkedBlockingQueue<>();
 	}
 
 
@@ -63,10 +63,13 @@ public class SocketDataPublisher implements Runnable, IPcapSubscriber {
 	public void run() {
 		Log.d(TAG, "BackgroundWriter starting...");
 
+		byte[] packetdata = null;
+
 		while (!isShuttingDown) {
-			byte[] packetdata;
-			synchronized (syncPcapData) {
-				packetdata = dataToBeWrittenToPcap.poll();
+			try {
+				packetdata = dataToBeWrittenToPcap.take();
+			} catch (InterruptedException ex){
+				Log.e(TAG, "Data Publish Interrupted");
 			}
 			if (packetdata != null) {
 				if (pcapWriter != null) {
@@ -104,17 +107,7 @@ public class SocketDataPublisher implements Runnable, IPcapSubscriber {
 
 	@Override
 	public void writePcap(byte[] packet) {
-		synchronized (syncPcapData) {
-			try {
-				dataToBeWrittenToPcap.add(packet);
-			} catch (IllegalStateException ex) {
-				ex.printStackTrace();
-			} catch (NullPointerException ex1) {
-				ex1.printStackTrace();
-			} catch (Exception ex2) {
-				ex2.printStackTrace();
-			}
-		}
+		dataToBeWrittenToPcap.offer(packet);
 	}
 
 }

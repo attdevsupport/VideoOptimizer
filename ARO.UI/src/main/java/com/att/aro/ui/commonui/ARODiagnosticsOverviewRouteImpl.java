@@ -32,8 +32,8 @@ import com.att.aro.core.bestpractice.pojo.HttpEntry;
 import com.att.aro.core.bestpractice.pojo.ImageCompressionEntry;
 import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.bestpractice.pojo.PeriodicTransferResult;
-import com.att.aro.core.bestpractice.pojo.ScreenRotationResult;
 import com.att.aro.core.bestpractice.pojo.ScriptsResult;
+import com.att.aro.core.bestpractice.pojo.SimultnsConnEntry;
 import com.att.aro.core.bestpractice.pojo.SpriteImageEntry;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
 import com.att.aro.core.bestpractice.pojo.UnnecessaryConnectionEntry;
@@ -223,13 +223,13 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 				}
 			}
 			break;
-			case SCREEN_ROTATION: {// to test
-				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-					if (result instanceof ScreenRotationResult) {
-						diagnosticsTab.setHighlightedTCP(((ScreenRotationResult)result).getScreenRotationBurstTime());
-						break;
-					}
-				}
+			case SCREEN_ROTATION: {
+				
+			}
+			break;
+			
+			case SIMUL_CONN: {
+				
 			}
 			break;
 			case PERIODIC_TRANSFER: {//done
@@ -384,6 +384,9 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		else if (routeInfo instanceof ImageCompressionEntry) {
 			diagnosticsTab.setHighlightedTCP(((ImageCompressionEntry) routeInfo)
 					.getHttpRequestResponse());
+		}else if (routeInfo instanceof SimultnsConnEntry) {
+			diagnosticsTab.setHighlightedTCP(((SimultnsConnEntry) routeInfo)
+					.getHttpReqRespInfo());
 		}
 		else if (routeInfo instanceof SpriteImageEntry) {
 			diagnosticsTab.setHighlightedTCP(((SpriteImageEntry) routeInfo)
@@ -405,6 +408,12 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 					routeInfo.getClass().getSimpleName() + " for updating");
 		}
 		
+	}
+	
+	public void launchSliderDialogFromDiagnosticTab(){
+		jtabbedPane.setSelectedIndex(DIAGNOSTIC_INDEX);
+		DiagnosticsTab diagnosticTab = (DiagnosticsTab) jtabbedPane.getSelectedComponent();
+		diagnosticTab.launchSliderDialog();
 	}
 
 	public void updateOverviewTab(Object routeInfo) {

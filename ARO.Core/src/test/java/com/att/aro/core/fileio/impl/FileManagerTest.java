@@ -35,22 +35,73 @@ public class FileManagerTest extends BaseTest {
 	@Spy
 	FileManagerImpl fileManager;
 	boolean isfileclose = false;
-
+	
 	@Before
 	public void setup() {
 		fileManager = (FileManagerImpl) context.getBean(IFileManager.class);
 		MockitoAnnotations.initMocks(this);
 	}
 
+	byte[] sampledata = new byte[] { 1, 2, 3, 5, 7, 11, 13, 17};
+
 	@Test
 	public void getFileInputStream() throws Exception {
+		File file = Mockito.mock(File.class);
 		FileInputStream fileInputStream = Mockito.mock(FileInputStream.class);
-		PowerMockito.whenNew(FileInputStream.class).withArguments(Mockito.anyString()).thenReturn(fileInputStream);
-		boolean result = fileManager.fileDirExist("parent/mockPath");
+		
+		Mockito.doAnswer(new Answer<Void>() {
+
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				byte[] data = (byte[]) invocation.getArguments()[0];
+				for (int i = 0; i < data.length && i < sampledata.length; i++) {
+					data[i] = sampledata[i];
+				}
+				return null;
+			}
+		}).when(fileInputStream).read(Mockito.any(byte[].class));
+
+		doReturn(file).when(fileManager).createFile("theFile");
+		doReturn(fileInputStream).when(fileManager).getFileInputStream(file);
+		
+		File aFile = fileManager.createFile("theFile");
+		InputStream result = fileManager.getFileInputStream(aFile);
+		byte[] val = new byte[8];
+		result.read(val);
+		assertTrue(val[0] == 1);
+		assertTrue(val[7] == 17);
+	}
+
+	@Test
+	public void getFileInputStreamFile() throws Exception {
+		File file = Mockito.mock(File.class);
+		FileInputStream fileInputStream = Mockito.mock(FileInputStream.class);
+		
+		Mockito.doAnswer(new Answer<Void>() {
+
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				byte[] data = (byte[]) invocation.getArguments()[0];
+				for (int i = 0; i < data.length && i < sampledata.length; i++) {
+					data[i] = sampledata[i];
+				}
+				return null;
+			}
+		}).when(fileInputStream).read(Mockito.any(byte[].class));
+
+		doReturn(fileInputStream).when(fileManager).getFileInputStream(file);
+		
+		PowerMockito.whenNew(FileInputStream.class).withArguments(Mockito.mock(File.class)).thenReturn(fileInputStream);
+		InputStream result = fileManager.getFileInputStream(file);
+		byte[] val = new byte[8];
+		result.read(val);
+		assertTrue(val[0] == 1);
+		assertTrue(val[7] == 17);
 	}
 
 	@Test
 	public void findFilesByExtention() throws Exception {
+		
 		File file = Mockito.mock(File.class);
 		File targetFile = Mockito.mock(File.class);
 
@@ -64,6 +115,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void directoryDeleteInnerFilesTest() throws Exception {
+		
 		String path = "myTestFolder";
 		File file = Mockito.mock(File.class);
 		File directory = Mockito.mock(File.class);
@@ -84,6 +136,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void failed_directoryDeleteInnerFilesTest() throws Exception {
+		
 		String path = "myTestFolder";
 		File file = Mockito.mock(File.class);
 		File directory = Mockito.mock(File.class);
@@ -104,6 +157,8 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void badPath_directoryDeleteInnerFilesTest() throws Exception {
+		
+		
 		String path = null;
 		if (Util.OS_NAME.contains("Windows")) {
 			path = "C:\\";
@@ -129,6 +184,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void renameFile() throws Exception {
+		
 
 		File origFileName = Mockito.mock(File.class);
 		File newfullfile = Mockito.mock(File.class);
@@ -150,6 +206,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void fileDirExist() throws Exception {
+		
 		File file = Mockito.mock(File.class);
 		File targetFile = Mockito.mock(File.class);
 
@@ -161,6 +218,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void mkDirTest() {
+		
 		File file = Mockito.mock(File.class);
 		Mockito.when(file.exists()).thenReturn(false);
 		Mockito.doAnswer(new Answer() {
@@ -175,6 +233,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void dirExistNotEmpty_1_Test() throws Exception {
+		
 		String[] files = new String[0];
 		String sdir = "one";
 		File dir = Mockito.mock(File.class);
@@ -200,6 +259,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void dirExistNotEmpty_2_Test() {
+		
 		String[] files = new String[0];
 		File dir = Mockito.mock(File.class);
 		Mockito.when(dir.exists()).thenReturn(true);
@@ -220,6 +280,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void closeFileTest() throws IOException {
+		
 		FileOutputStream output = Mockito.mock(FileOutputStream.class);
 		Mockito.doAnswer(new Answer<Void>() {
 			@Override
@@ -241,6 +302,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void readAllLineTest() throws IOException {
+		
 
 		BufferedReader buffreader = Mockito.mock(BufferedReader.class);
 		Mockito.when(buffreader.readLine()).thenReturn("line1").thenReturn("line2").thenReturn(null);
@@ -251,6 +313,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void fileExistTest() {
+		
 		String currentdir = Util.getCurrentRunningDir();
 		boolean exist = fileManager.fileExist(currentdir);
 		assertTrue(exist);
@@ -262,6 +325,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void listTest() {
+		
 		String currentdir = Util.getCurrentRunningDir();
 		FilenameFilter filter = new FilenameFilter() {
 
@@ -279,6 +343,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void getLastModifyTest() {
+		
 		String currentdir = Util.getCurrentRunningDir();
 		long date = fileManager.getLastModified(currentdir);
 		boolean ok = date > 0;
@@ -287,6 +352,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void getDirectoryTest() {
+		
 		String currentdir = Util.getCurrentRunningDir();
 		String dir = fileManager.getDirectory(currentdir);
 		boolean found = dir != null;
@@ -312,6 +378,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void saveFile_resultIsNoError() throws IOException {
+		
 		InputStream istream = new ByteArrayInputStream(new byte[] { 1, 2 });
 		File mockFile = Mockito.mock(File.class);
 
@@ -326,6 +393,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void deleteFile_testresultIsFalse() {
+		
 		File mockFile = Mockito.mock(File.class);
 		doReturn(mockFile).when(fileManager).createFile(any(String.class));
 		doReturn(true).when(fileManager).fileExist(any(String.class));
@@ -335,6 +403,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void deleteFile_testresultIsTrue() {
+		
 		File mockFile = Mockito.mock(File.class);
 		doReturn(mockFile).when(fileManager).createFile(any(String.class));
 		doReturn(true).when(fileManager).fileExist(any(String.class));
@@ -345,6 +414,7 @@ public class FileManagerTest extends BaseTest {
 
 	@Test
 	public void testGetCreatedTime() throws IOException {
+		
 		Date before = new Date();
 		File createdFile = fileManager.createFile("test.txt");
 		createdFile.createNewFile();

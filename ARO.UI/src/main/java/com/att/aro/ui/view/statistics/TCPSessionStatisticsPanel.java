@@ -25,12 +25,14 @@ import javax.swing.UIManager;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
+import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.TabPanelCommon;
 import com.att.aro.ui.commonui.TabPanelCommonAttributes;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.utils.CommonHelper;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  *
@@ -44,9 +46,6 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 		tcpstatistics_packets,
 		tcpstatistics_throughput,
 		
-		bestPractice_header_attenuator,
-		bestPractice_header_attenuator_downlink,
-		bestPractice_header_attenuator_uplink
 	}
 	private static final long serialVersionUID = 1L;
 	private JPanel dataPanel;
@@ -98,6 +97,7 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 				.enumKey(LabelKeys.tcpstatistics_throughput)
 			.build());
 
+
 		return dataPanel;
 	}
 
@@ -116,5 +116,9 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_throughput, String.format(
 					doubleFormatString, statistic.getAverageKbps()));
 		}
+
 	}
+
+
+
 }

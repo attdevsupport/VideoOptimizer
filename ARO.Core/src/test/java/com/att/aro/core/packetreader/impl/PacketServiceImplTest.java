@@ -28,6 +28,7 @@ public class PacketServiceImplTest extends BaseTest {
 
 		helper = Mockito.mock(IPcapngHelper.class);
 		Mockito.when(helper.isApplePcapng(Mockito.any(File.class))).thenReturn(true);
+		Mockito.when(helper.isApplePcapng(Mockito.anyString())).thenReturn(true);
 		
 		file = Mockito.mock(File.class);
 		Mockito.when(file.getAbsolutePath()).thenReturn("test");
@@ -35,7 +36,7 @@ public class PacketServiceImplTest extends BaseTest {
 	}	
 	@Test
 	public void createPacketFromPcapTest(){
-//		ReflectionTestUtils.setField(service, "pcapngHelper", helper);
+		ReflectionTestUtils.setField(service, "pcapngHelper", helper);
 		byte[] data = new byte[64];
 		data[0] = 0;
 		data[1] = 0;
@@ -43,17 +44,9 @@ public class PacketServiceImplTest extends BaseTest {
 		data[3] = 0;
 		data[4] = 12;
 		data[5] = 15;
-
-		try {
-			Mockito.when(helper.isApplePcapng(Mockito.any(File.class))).thenReturn(true);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		service.createPacketFromPcap(13, 1, 1, 1, data, "abcde");
-		
-		
+		Packet packet = service.createPacketFromPcap(13, 1, 1, 1, data, "abcde");
+		assertNotNull(packet);
+		assertEquals(packet.getData()[5], 15);
 	}
 	
 	@Test

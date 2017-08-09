@@ -27,6 +27,7 @@ import com.att.aro.core.packetreader.INativePacketSubscriber;
 import com.att.aro.core.packetreader.IPacketListener;
 import com.att.aro.core.packetreader.IPacketReader;
 import com.att.aro.core.packetreader.IPacketService;
+import com.att.aro.core.packetreader.IPcapngHelper;
 import com.att.aro.core.packetreader.pojo.Packet;
 import com.att.aro.core.util.Util;
 import com.att.aro.pcap.PCapAdapter;
@@ -43,6 +44,9 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 	@Autowired
 	private IFileManager filemanager;
 
+	@Autowired
+	IPcapngHelper pcapngHelper;
+	
 	private IPacketListener packetlistener;
 	
 	String aroJpcapLibName = null;
@@ -236,7 +240,6 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 		File backupCapFile = new File(tracePath, backupCapFileName);
 		if (!backupCapFile.exists()) {
 			try {
-				PcapngHelperImpl pcapngHelper = new PcapngHelperImpl();
 				if (pcapngHelper.isApplePcapng(file)) {
 					currentPcapfile = new File(traceFile);
 					convertedPcapFile = new File(tracePath, convertedCapFile);

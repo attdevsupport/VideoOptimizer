@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarException;
 
@@ -139,14 +139,9 @@ public final class JvmSettings implements Settings {
 	}
 
 	private void validateSize(Long value) {
-		Sigar sigar = new Sigar();
-		long ram;
-		try {
-			ram = sigar.getMem().getRam();
-		} catch (SigarException e) {
-			String msg = "Failed to get system info";
-			LOGGER.error(msg, e);
-			throw new ARORuntimeException(msg, e);
+		long ram = getSystemMemory();
+		if(ram <= 0) {
+			throw new ARORuntimeException("Failed to get system info");
 		}
 		if (value < Integer.valueOf(DEFAULT_MEM)) {
 			throw new IllegalArgumentException("This is too low for optimal performance; Please enter value between "
@@ -156,6 +151,17 @@ public final class JvmSettings implements Settings {
 			throw new IllegalArgumentException("You have " + ram + "mb of system memory; Please enter value between "
 					+ DEFAULT_MEM + " and " + ram / 2);
 		}
+	}
+
+	public long getSystemMemory() {
+		long ram = 0;
+		try {
+			Sigar sigar = new Sigar();
+			ram = sigar.getMem().getRam();
+		} catch (UnsatisfiedLinkError | SigarException e) {
+			LOGGER.error("Failed to get system info", e);
+		}
+		return ram;
 	}
 
 	@Override

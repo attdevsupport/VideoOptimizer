@@ -17,12 +17,12 @@ package com.att.aro.ui.view.bestpracticestab;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JPanel;
 
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
+import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 
@@ -46,6 +46,8 @@ public class BpDetailConnectionsPanel extends BpDetail {
 		
 		addPanel(row++, new BpDetailItem("connections.unnecssaryConn", BestPracticeType.UNNECESSARY_CONNECTIONS, new BpConnectionsUnnecessaryTablePanel()));
 		
+		addPanel(row++, new BpDetailItem("connections.simultaneous", BestPracticeType.SIMUL_CONN, new BPConnectionsSimultnsTablePanel()));
+		
 		addPanel(row++, new BpDetailItem("connections.periodic", BestPracticeType.PERIODIC_TRANSFER));
 		
 		addPanel(row++, new BpDetailItem("connections.screenRotation", BestPracticeType.SCREEN_ROTATION));
@@ -58,8 +60,11 @@ public class BpDetailConnectionsPanel extends BpDetail {
 		addPanel(row++, new BpDetailItem("connections.http4xx5xx", BestPracticeType.HTTP_4XX_5XX, new BpConnectionsHttp4xx5xxTablePanel()));
 		
 		addPanel(row++, new BpDetailItem("connections.http3xx", BestPracticeType.HTTP_3XX_CODE, new BpConnectionsHttp3xxTablePanel()));
+
+		
 		
 		addPanel(row++, new BpDetailItem("3rd.party.scripts", BestPracticeType.SCRIPTS_URL));
+		
 
 //		fullPanel.setBackground(Color.GREEN);   // bcn
 //		dataPanel.setBackground(Color.RED);     // bcn
@@ -69,9 +74,7 @@ public class BpDetailConnectionsPanel extends BpDetail {
 		fullPanel.add(detailPanel, BorderLayout.SOUTH);
 		add(fullPanel);
 		
-		List<BestPracticeType> list = Arrays.asList(new BestPracticeType[]{BestPracticeType.CONNECTION_OPENING, BestPracticeType.UNNECESSARY_CONNECTIONS, 
-				BestPracticeType.PERIODIC_TRANSFER, BestPracticeType.SCREEN_ROTATION, BestPracticeType.CONNECTION_CLOSING, 
-				BestPracticeType.HTTP_4XX_5XX, BestPracticeType.HTTP_3XX_CODE, BestPracticeType.SCRIPTS_URL});
+		List<BestPracticeType> list = BestPracticeType.getByCategory(Category.CONNECTIONS);
 		bpFileDownloadTypes.addAll(list);
 	}
 

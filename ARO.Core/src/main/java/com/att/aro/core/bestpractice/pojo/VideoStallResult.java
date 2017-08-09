@@ -15,16 +15,22 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
-/**
- * 
- * VBP #1
- *
- */
 public class VideoStallResult extends AbstractBestPracticeResult {
 
+	private int videoStalls;
+	
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.VIDEO_STALL;
 	}
+	
+	public void setVideoStallResult(int videoStalls){
+		this.videoStalls  = videoStalls;
+	}
+
+	public int getStallResult() {
+		return videoStalls;
+	}
+	
 
 }

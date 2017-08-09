@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 AT&T
+ *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package com.att.arotcpcollector.socket;
 
 import android.util.Log;
 
-import com.att.arotcpcollector.IClientPacketWriter;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
 import com.att.arotcpcollector.ip.IPv4Header;
+
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
@@ -41,24 +41,23 @@ import java.nio.channels.SocketChannel;
  */
 public class SocketDataReaderWorker implements Runnable {
 	public static final String TAG = "SocketDataReaderWorker";
-	private IClientPacketWriter clientPacketWriter;
 	private TCPPacketFactory tcpFactory;
 	private UDPPacketFactory udpFactory;
 	private SessionManager sessionManager;
 	private String sessionKey = "";
 	private SocketData pcapData; // for traffic.cap
+ 	private boolean secureEnable = false;
 
 	public SocketDataReaderWorker() {
 		sessionManager = SessionManager.getInstance();
 		pcapData = SocketData.getInstance();
 	}
 
-	public SocketDataReaderWorker(TCPPacketFactory tcpfactory, UDPPacketFactory udpfactory, IClientPacketWriter clientPacketWriter) {
+	public SocketDataReaderWorker(TCPPacketFactory tcpfactory, UDPPacketFactory udpfactory) {
 		sessionManager = SessionManager.getInstance();
 		pcapData = SocketData.getInstance();
 		this.tcpFactory = tcpfactory;
 		this.udpFactory = udpfactory;
-		this.clientPacketWriter = clientPacketWriter;
  	}
 
 	@Override
@@ -132,11 +131,14 @@ public class SocketDataReaderWorker implements Runnable {
 					if (len > 0) { // -1 indicates end of stream
 						// Log.d(TAG, "SocketDataService received " + len + " from remote server: " + name);
 						// send packet to client app
+						//***************
+						if (isSecureEnable()) {
+
+						}
+						//***************
 						sendToRequester(buffer, channel, len, session);
 						buffer.clear();
 					} else if (len == -1) {
-//						Log.d(TAG, "====> End of data from remote server, will send FIN to client <====");
-//						Log.d(TAG, "==> send FIN to: " + name);
 						sendFin(session);
 						session.setAbortingConnection(true);
 					} 
@@ -189,6 +191,11 @@ public class SocketDataReaderWorker implements Runnable {
 		} else {
 			sess.setHasReceivedLastSegment(false);
 		}
+		
+		//Fix: For Data Size that may exceed fixed buffer size during a Secure Transmission
+		if(isSecureEnable() && datasize < buffer.capacity()){
+			sess.setHasReceivedLastSegment(true);
+		}
 
 		buffer.limit(datasize);
 		buffer.flip();
@@ -239,14 +246,11 @@ public class SocketDataReaderWorker implements Runnable {
 			data = tcpFactory.createResponsePacketData(ipheader, tcpheader, packetbody, session.hasReceivedLastSegment(), session.getRecSequence(), unack,
 					session.getTimestampSender(), session.getTimestampReplyto());
 
-			try {
-				clientPacketWriter.write(data); // send packet back to client
+
+				pcapData.sendDataRecieved(data); // send packet back to client
 				pcapData.sendDataToPcap(data); // send packet off to be recorded in traffic.cap
 
-			} catch (IOException e) {
-				Log.e(TAG, "Failed to send ACK+Data packet: " + e.getMessage());
-				return false;
-			}
+
 			return true;
 		}
 		return false;
@@ -262,8 +266,7 @@ public class SocketDataReaderWorker implements Runnable {
 		IPv4Header ipheader = session.getLastIPheader();
 		TCPHeader tcpheader = session.getLastTCPheader();
 		byte[] data = tcpFactory.createFinData(ipheader, tcpheader, session.getSendNext(), session.getRecSequence(), session.getTimestampSender(), session.getTimestampReplyto());
-		try {
-			clientPacketWriter.write(data); // send packet back to client
+		pcapData.sendDataRecieved(data); // send packet back to client
 			pcapData.sendDataToPcap(data); // send packet off to be recorded in traffic.cap
 
 			// for debugging purpose
@@ -287,10 +290,7 @@ public class SocketDataReaderWorker implements Runnable {
 			//
 			//	Log.d(TAG, "=======> BG: finished sending FIN packet to vpn client ========");
 
-		} catch (IOException e) {
-			Log.e(TAG, "Failed to send FIN packet: " + e.getMessage());
 
-		}
 	}
 
 	private void readUDP(Session session) {
@@ -312,7 +312,9 @@ public class SocketDataReaderWorker implements Runnable {
 					System.arraycopy(buffer.array(), 0, data, 0, len);
 					byte[] packetdata = udpFactory.createResponsePacket(session.getLastIPheader(), session.getLastUDPheader(), data);
 					//write to client
-					clientPacketWriter.write(packetdata); // send packet back to client
+
+
+					pcapData.sendDataRecieved(packetdata); // send packet back to client
 
 					//publish to packet subscriber
 					pcapData.sendDataToPcap(packetdata); // send packet off to be recorded in traffic.cap
@@ -349,4 +351,13 @@ public class SocketDataReaderWorker implements Runnable {
 	public void setSessionKey(String sessionKey) {
 		this.sessionKey = sessionKey;
 	}
+
+	public void setSecureEnable(boolean Secure){
+		this.secureEnable = Secure;
+	}
+	
+	public boolean isSecureEnable() {
+		return secureEnable;
+	}
+
 }

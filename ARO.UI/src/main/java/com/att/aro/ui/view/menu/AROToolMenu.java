@@ -245,10 +245,7 @@ public class AROToolMenu implements ActionListener{
 	}
 
 	private void openRegexWizard(){
-		RegexWizard regexWizard = ((MainFrame) parent).getRegexWizard();
-		if(regexWizard == null){
-			regexWizard = new RegexWizard(parent);
-		}
+		RegexWizard regexWizard = RegexWizard.getInstance();
 		if (regexWizard != null) {
 			regexWizard.setVisible(true);
 			regexWizard.setAlwaysOnTop(true);

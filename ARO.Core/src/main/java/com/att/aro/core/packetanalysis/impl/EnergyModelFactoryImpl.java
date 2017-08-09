@@ -86,6 +86,9 @@ public class EnergyModelFactoryImpl implements IEnergyModelFactory {
 		if (bluetoothIter.hasNext()) {
 			while (bluetoothIter.hasNext()) {
 				BluetoothInfo btInfo = bluetoothIter.next();
+				if(btInfo == null || btInfo.getBluetoothState() == null) {
+					continue;
+				}
 				switch (btInfo.getBluetoothState()) {
 				case BLUETOOTH_CONNECTED:
 					bluetoothActiveEnergy += profile.getPowerBluetoothActive()

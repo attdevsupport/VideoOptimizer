@@ -70,7 +70,6 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	private static final Dimension PREFERRED_SIZE_LARGE = new Dimension(650, 520);
 	private static final Dimension PREFERRED_SIZE_MEDIUM = new Dimension(650, 440);
 	private static final Dimension PREFERRED_SIZE_SMALL = new Dimension(650, 400);
-	private static final Dimension PREFERRED_SIZE_EXTRASMALL = new Dimension(650, 340);
 
 	private static final long serialVersionUID = 1L;
 	
@@ -181,7 +180,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 			jContentPane.add(getDeviceSelectionPanel(), BorderLayout.PAGE_START);
 			jContentPane.add(getTraceOptionsPanel(),BorderLayout.CENTER);
 			jContentPane.add(getButtonPanel(), BorderLayout.PAGE_END);
-			jContentPane.setPreferredSize(PREFERRED_SIZE_EXTRASMALL);
+			jContentPane.setPreferredSize(PREFERRED_SIZE_MEDIUM);
 		}
 		return jContentPane;
 	}

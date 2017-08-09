@@ -65,7 +65,7 @@ public class ManifestDash extends AROManifest {
 		if (videoRepresentationAmz != null) {
 			for (RepresentationAmz representationAmz : videoRepresentationAmz) {
 				if (videoName.isEmpty()) {
-					videoName = representationAmz.getUrl();
+					setVideoName(representationAmz.getUrl());
 					String[] str = stringParse.parse(videoName, "(.+)_([a-zA-Z_0-9\\-]*)_\\d+(\\.[a-zA-Z_0-9]*)");
 					if (str.length == 3){
 						exten = str[2];
@@ -77,13 +77,13 @@ public class ManifestDash extends AROManifest {
 						duration = simpleStringToDouble(representationAmz.getEncodedSegment().getDuration());
 					}
 
-					if (timeScale == 0) {
-						timeScale = simpleStringToDouble(representationAmz.getEncodedSegment().getTimescale());
+					if (timeScale <= 1) {
+						setTimeScale(simpleStringToDouble(representationAmz.getEncodedSegment().getTimescale()));
 					}
 				} else if (representationAmz.getSegmentList() != null) {
 					SegmentListAmz segList = representationAmz.getSegmentList();
 					duration = simpleStringToDouble(segList.getDuration());
-					timeScale = simpleStringToDouble(segList.getTimescale());
+					setTimeScale(simpleStringToDouble(segList.getTimescale()));
 				}
 				String quality = StringParse.subString(representationAmz.getUrl(), '_', '.');
 				try {
@@ -297,7 +297,14 @@ public class ManifestDash extends AROManifest {
 		return "";
 	}
 	
-
+	@Override
+	public void setTimeScale(double timeScale) {
+		if (timeScale == 0){
+			timeScale = 1;
+		}
+		super.setTimeScale(timeScale);
+	}
+	
 	@Override
 	public Integer getSegment(String[] voValues){
 //TODO remove debugging info, but keep this for now BCN

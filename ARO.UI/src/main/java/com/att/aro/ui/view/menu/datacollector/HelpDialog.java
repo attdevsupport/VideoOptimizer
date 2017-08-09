@@ -120,8 +120,7 @@ public class HelpDialog extends JDialog implements KeyListener{
 			sb.append(ResourceBundleHelper.getMessageString("collector.help.devices.ios"));
 		}
 		sb.append(ResourceBundleHelper.getMessageString("collector.help.devices.android"));
-		sb.append(ResourceBundleHelper.getMessageString("collector.help.devices.emulator"));
-		textPane.setText(sb.toString());
+ 		textPane.setText(sb.toString());
 		return textPane;
 	}
 

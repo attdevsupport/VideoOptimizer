@@ -16,15 +16,23 @@
 package com.att.aro.core.bestpractice.pojo;
 
 /**
- * 
  * VBP #7
- *
  */
 public class VideoChunkPacingResult extends AbstractBestPracticeResult {
 
+	private double chunkPacing;
+	
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.CHUNK_PACING;
+	}
+
+	public double getChunkPacing() {
+		return chunkPacing;
+	}
+
+	public void setChunkPacing(double chunkPacing) {
+		this.chunkPacing = chunkPacing;
 	}
 
 }

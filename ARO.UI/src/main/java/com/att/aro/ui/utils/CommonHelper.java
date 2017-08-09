@@ -16,8 +16,7 @@
 package com.att.aro.ui.utils;
 
 /**
- *
- *
+ * Utility class 
  */
 public class CommonHelper {
 
@@ -44,56 +43,107 @@ public class CommonHelper {
 	}
 	
 	/**
-	 * This is the util class for transfer the user attenuator value to signal info
+	 * This is the utility method for number of the speed setting match with the cellular networks terms
 	 * Define for Down link
 	 * 1-10 LTE
 	 * 11-125 4g
 	 * 126-1999 3g
 	 * 2000 2g
-	 *
-	 *
 	 */
 
 	public String transferSignalSignDownload(int number) {
 		if (number == 0) {
-			return ResourceBundleHelper.getMessageString("waterfall.na");
+			return getMessage("waterfall.na");
 		} else if (number > 0 && number < 10) {
-			return ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.4glte");
+			return getMessage("dlog.collector.option.attenuator.4glte");
 		} else if (number >= 10 && number < 126) {
-			return ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.4g");
+			return getMessage("dlog.collector.option.attenuator.4g");
 		} else if (number >= 126 && number < 2000) {
-			return ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.3g");
+			return getMessage("dlog.collector.option.attenuator.3g");
 		} else {
-			return ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.2g");
+			return getMessage("dlog.collector.option.attenuator.2g");
+		}
+
+	}
+
+	/**
+	 * This is the utility method for number of the speed setting match with the cellular networks terms
+	 * Define for Down link
+	 * 102400 LTE
+	 * 12288 - 102399 4g
+	 * 5120 - 12287 3g
+	 * 64 - 5119 2g
+	 */
+
+	public String numberTransferSignalDL(int number){
+		if (number < 0) {
+			return getMessage("waterfall.na");
+		}else if(number ==0){
+			return getMessage("dlog.collector.option.attenuator.block");
+		}else if (number > 0 && number < 64) {
+			return getMessage("dlog.collector.option.attenuator.2g");
+		} else if (number >= 64 && number < 5120) {
+			return getMessage("dlog.collector.option.attenuator.3g");
+		} else if (number >= 5120 && number < 12288) {
+			return getMessage("dlog.collector.option.attenuator.4g");
+		} else {
+			return getMessage("dlog.collector.option.attenuator.4glte");
 		}
 
 	}
 	
 	
 	/**
-	 * This is the util class for transfer the user  attenuator value to signal info
+	 * This is the utility method for number of the speed setting match with the cellular networks terms
 	 * Define for up link
 	 * 1-27 LTE
 	 * 27-77 4g
 	 * 77-84 3g
 	 * 84 above 2g
-	 *
-	 *
 	 */
 	
 	public String transferSignalSignUpload(int number){
 		if (number == 0) {
-			return ResourceBundleHelper.getMessageString("waterfall.na");
+			return getMessage("waterfall.na");
 		} else if (number > 0 && number < 27) {
-			return ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.4glte");
+			return getMessage("dlog.collector.option.attenuator.4glte");
 		} else if (number >= 27 && number < 77) {
-			return ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.4g");
+			return getMessage("dlog.collector.option.attenuator.4g");
 		} else if (number >= 77 && number < 84) {
-			return ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.3g");
+			return getMessage("dlog.collector.option.attenuator.3g");
 		} else {
-			return ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.2g");
+			return getMessage("dlog.collector.option.attenuator.2g");
+		}
+	}
+	
+	/**
+	 * This is the utility method for number of the speed setting match with the cellular networks terms
+	 * Define for Up link
+	 * 102400 LTE
+	 * 12288 - 102399 4g
+	 * 5120 - 12287 3g
+	 * 64 - 5119 2g
+	 */
+
+	public String numberTransferSignalUL(int number){
+		if (number < 0) {
+			return getMessage("waterfall.na");
+		}else if(number == 0){
+			return getMessage("dlog.collector.option.attenuator.block");
+		}else if (number > 0 && number < 64) {
+			return getMessage("dlog.collector.option.attenuator.2g");
+		} else if (number >= 64 && number < 5120) {
+			return getMessage("dlog.collector.option.attenuator.3g");
+		} else if (number >= 5120 && number < 12288) {
+			return getMessage("dlog.collector.option.attenuator.4g");
+		} else {
+			return getMessage("dlog.collector.option.attenuator.4glte");
 		}
 
-
 	}
+
+	private String getMessage(String key) {
+		return ResourceBundleHelper.getMessageString(key);
+	}
+	
 }

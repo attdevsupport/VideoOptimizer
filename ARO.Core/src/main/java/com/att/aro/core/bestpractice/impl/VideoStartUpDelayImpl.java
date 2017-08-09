@@ -97,7 +97,6 @@ public class VideoStartUpDelayImpl implements IBestPractice{
 		TreeMap<Double, AROManifest> videoEventList = videoUsage.getAroManifestMap(); //getVideoEventList();
 
 		double count = 0;
-		double averageDelay = 0;
 		double definedDelay = videoPref.getVideoUsagePreference().getStartupDelay();
 		startupDelay = definedDelay;
 		
@@ -110,42 +109,33 @@ public class VideoStartUpDelayImpl implements IBestPractice{
 													ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
 		result.setResultType(BPResultType.SELF_TEST);	// this VideoBestPractice is to be reported as a selftest until further notice
-		PlotHelperAbstract videoChunkPlot = new VideoChunkPlotterImpl();
-		
 		if(videoEventList.isEmpty()){
 			result.setResultText(textResultEmpty);
 		}else{
-			if(videoChunkPlot.chunkPlayTimeList.size() ==0){
+			if(PlotHelperAbstract.chunkPlayTimeList.size() ==0){
 				result.setResultText(MessageFormat.format(textResultInit, startupDelay, startupDelay ==1 ?"":"s"));
-			}else{		
-				//	if (videoEventList != null) {
-					double delay = 0;
-					for (AROManifest aroManifest : videoEventList.values()) {
-						if (!aroManifest.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
-
-							// locate shortest startupDelay
-							delay += aroManifest.getDelay();
-							count++;
-							//	if (aroManifest.getDelay() < startupDelay) {
-							startupDelay = aroManifest.getDelay();
-						//}
-						}
+			} else {
+				// if (videoEventList != null) {
+				double delay = 0;
+				for (AROManifest aroManifest : videoEventList.values()) {
+					if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
+						// don't count if no videos with manifest
+						// locate shortest startupDelay
+						delay += aroManifest.getDelay();
+						count++;
+						startupDelay = aroManifest.getDelay();
 					}
-					if (count != 0) {
-						averageDelay = delay / count;
-					}	
-					//	}
-			
+				}
+
 				result.setResultText(MessageFormat.format(textResults, startupDelay // 0
-					, startupDelay == 1 ? "" : "s" // 1
-					, definedDelay // 2
-					, definedDelay == 1 ? "" : "s" // 3
+						, startupDelay == 1 ? "" : "s" // 1
+						, definedDelay // 2
+						, definedDelay == 1 ? "" : "s" // 3
 				));
-			
 			}
 		}
 		
-		
+		result.setStartUpDelay(startupDelay);
 
 		/*
 		 * startUpDelay.results=

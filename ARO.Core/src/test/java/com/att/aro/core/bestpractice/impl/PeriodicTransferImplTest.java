@@ -109,7 +109,6 @@ public class PeriodicTransferImplTest extends BaseTest {
 	@Test
 	public void runTest_resultIsFail() {
 		PacketAnalyzerResult tracedata = new PacketAnalyzerResult();
-		Date date = new Date();
 
 		Profile3G profile3g = new Profile3G();
 		profile3g.setPeriodMinCycle(10.0);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 AT&T
+ *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.att.arotcpcollector.socket;
 
 import android.util.Log;
 
-import com.att.arotcpcollector.IClientPacketWriter;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionHandler;
 import com.att.arotcpcollector.SessionManager;
@@ -47,7 +46,7 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 	public static Object syncSelectorForUse = new Object();
 
 	private Queue<byte[]> dataToBeTransmitted;
-	private static Object syncTransmittedData = new Object();
+	private static final Object syncTransmittedData = new Object();
 
 
 	SessionManager sessionmg;
@@ -55,7 +54,6 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 
 	int printcount = 0;
 	SocketData socketData;
-	private IClientPacketWriter clientPacketWriter;
 	private TCPPacketFactory tcpFactory;
 	private UDPPacketFactory udpFactory;
 	private volatile boolean shutdown = false;
@@ -64,6 +62,9 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 	//create thread pool for reading/writing data to socket
 	private BlockingQueue<Runnable> taskQueue;
 	private ThreadPoolExecutor workerPool;
+
+	//is this a secure collector session?
+	private boolean secureEnable;
 
 	public SocketNIODataService() {
 		tcpFactory = new TCPPacketFactory();
@@ -75,10 +76,6 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 		workerPool = new ThreadPoolExecutor(8, 100, 10, TimeUnit.SECONDS, taskQueue);//8, 100
 	}
 
-	public void setClientWriter(IClientPacketWriter clientPacketWriter) {
-		this.clientPacketWriter = clientPacketWriter;
-	}
-
 	/**
 	 * runs SessionManager
 	 */
@@ -88,7 +85,6 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 		sessionmg = SessionManager.getInstance();
 		selector = sessionmg.getSelector();
 		sessionHandler = SessionHandler.getInstance();
- 		sessionHandler.setClientWriter(clientPacketWriter);
 		runTask();
 	}
 
@@ -99,6 +95,7 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 	 */
 	public void setShutdown(boolean isshutdown) {
 		this.shutdown = isshutdown;
+		workerPool.shutdownNow();
 		this.sessionmg.getSelector().wakeup();
 	}
 
@@ -271,21 +268,31 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 		if(key.isValid() && key.isWritable() && !session.isBusyWrite()){
 			if(session.hasDataToSend() && session.isDataForSendingReady()){
  					session.setBusyWrite(true);
-					SocketDataWriterWorker worker = new SocketDataWriterWorker(tcpFactory, udpFactory, clientPacketWriter);
+					SocketDataWriterWorker worker = new SocketDataWriterWorker(tcpFactory, udpFactory);
 					worker.setSessionKey(sessionKey);
+					worker.setSecureEnable(isSecureEnable());
 					workerPool.execute(worker);
 			}	 
 		}
 		
 		if(key.isValid() && key.isReadable() && !session.isBusyRead()){
  				session.setBusyRead(true);
-				SocketDataReaderWorker worker = new SocketDataReaderWorker(tcpFactory, udpFactory, clientPacketWriter);
+				SocketDataReaderWorker worker = new SocketDataReaderWorker(tcpFactory, udpFactory);
 				worker.setSessionKey(sessionKey);
+				worker.setSecureEnable(isSecureEnable());
 				workerPool.execute(worker);
 		} 
 		
 
 
+	}
+
+	public void setSecureEnable(boolean Secure){
+		this.secureEnable = Secure;
+	}
+	
+	public boolean isSecureEnable() {
+		return secureEnable;
 	}
 
 	@Override

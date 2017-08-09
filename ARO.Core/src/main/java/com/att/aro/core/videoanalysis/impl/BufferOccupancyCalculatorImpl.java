@@ -65,24 +65,19 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 	}
 
 	private void initialize(VideoUsage videoUsage){
-    	/*if(getFilteredSegments() != null){
-    		filteredSegmentByLastArrival=getFilteredSegments();
-    	}else{*/
-    		filteredSegmentByLastArrival = getFilteredSegments();//getChunksBySegmentNumber();
-    	//}
-    		filteredSegmentByStartTS=filterVideoSegment(videoUsage); 
-    	TreeMap<Double, AROManifest> videoEventList = videoUsage.getAroManifestMap(); // getVideoEventList(); //getAroManifestMap();
-		for (AROManifest aroManifest : videoEventList.values()) {
-			if (!aroManifest.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
-				for(VideoEvent ve: aroManifest.getVideoEventList().values()){
-					if(ve.getSegment() !=0){ 
-						chunkDownload.add(ve);			
+		filteredSegmentByLastArrival = getFilteredSegments();
+		filteredSegmentByStartTS = filterVideoSegment(videoUsage);
+	
+		for (AROManifest aroManifest : videoUsage.getManifests()) {
+			if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
+				for (VideoEvent ve : aroManifest.getVideoEventList().values()) {
+					if (ve.getSegment() != 0) {
+						chunkDownload.add(ve);
 					}
 				}
 			}
 		}
-    	//chunkDownload = videoUsage.getAroManifestMap() getFilteredSegments(); //filterVideoSegment(videoUsage);
-    	
+    	    	
     	chunkPlay.clear();
     	for(VideoEvent vEvent:chunkDownload){
     		chunkPlay.add(vEvent);

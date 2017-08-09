@@ -23,7 +23,9 @@ public class TraceInfo {
 	private String profileValue = "";
 	private Integer downlinkValue = new Integer(0);
 	private Integer uplinkValue = new Integer(0);
-	
+ 
+	private boolean attnrProfile = false;
+	private String attnrProfileName = "";
 
 	public String getDateValue() {
 		return dateValue;
@@ -68,4 +70,17 @@ public class TraceInfo {
 	public void setUplinkValue(Integer uplinkValue) {
 		this.uplinkValue = uplinkValue;
 	}
+	public boolean isAttnr_Profile() {
+		return attnrProfile;
+	}
+	public void setAttnr_Profile(boolean attnr_Profile) {
+		this.attnrProfile = attnr_Profile;
+	}
+	public String getAttnrProfileName() {
+		return attnrProfileName;
+	}
+	public void setAttnrProfileName(String attnrProfileName) {
+		this.attnrProfileName = attnrProfileName;
+	}
+
 }

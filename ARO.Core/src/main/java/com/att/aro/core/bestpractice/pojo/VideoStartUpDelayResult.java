@@ -15,16 +15,21 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
-/**
- * 
- * VBP #2
- *
- */
 public class VideoStartUpDelayResult extends AbstractBestPracticeResult {
 
+	private double startUpDelay;
+	
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.STARTUP_DELAY;
+	}
+
+	public double getStartUpDelay() {
+		return startUpDelay;
+	}
+
+	public void setStartUpDelay(double startUpDelay) {
+		this.startUpDelay = startUpDelay;
 	}
 
 }

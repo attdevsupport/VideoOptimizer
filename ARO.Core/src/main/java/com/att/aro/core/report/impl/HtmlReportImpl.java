@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
@@ -100,7 +99,7 @@ public class HtmlReportImpl implements IReport {
 		htmlHead.append(System.getProperty(lineSeperator()));
 		htmlHead.append("	<head>");
 		htmlHead.append(System.getProperty(lineSeperator()));
-		htmlHead.append("		<title>" + ApplicationConfig.getInstance().getAppShortName() +" Best Practices</title>");
+		htmlHead.append("		<title>ARO Best Practices</title>");
 		htmlHead.append(System.getProperty(lineSeperator()));
 		htmlHead.append(getCss());
 		htmlHead.append(System.getProperty(lineSeperator()));

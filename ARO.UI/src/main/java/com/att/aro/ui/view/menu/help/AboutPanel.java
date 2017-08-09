@@ -103,6 +103,8 @@ public class AboutPanel extends JPanel {
 													ApplicationConfig.getInstance().getAppCombinedName());
 			JLabel titleLabel = new JLabel(titleLabelName, SwingConstants.CENTER);
 			
+			JLabel brandLabel = new JLabel(Images.BRAND.getIcon());
+			
 			String labelName = MessageFormat.format(RES_BUN.getString("About.built"), 
 													ApplicationConfig.getInstance().getAppBrandName(), 
 													ApplicationConfig.getInstance().getAppShortName());
@@ -121,6 +123,7 @@ public class AboutPanel extends JPanel {
 			Insets aboutInsets = new Insets(10, 3, 0, 5);
 			aboutPanel.setLayout(new GridBagLayout());
 			aboutPanel.setBackground(Color.WHITE);
+			aboutPanel.add(brandLabel, new GridBagConstraints(0, 0, 5, 5, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.NONE, insets, 0, 0));
 			aboutPanel.add(vPanel, new GridBagConstraints(5, 0, 0, 0, 0.0, 0.0, GridBagConstraints.EAST, GridBagConstraints.NONE, aboutInsets, 0, 0));
 		}
 		return aboutPanel;

@@ -99,7 +99,7 @@ public abstract class AbstractBpPanel extends JPanel implements Observer, IUITab
 		if (!(model instanceof AROTraceData)) {
 			throw new AROUIPanelException("Bad data model type passed");
 		}
-		tabPanelSupport.update(observable, (AROTraceData) model, isVisible());
+		tabPanelSupport.update(observable, (AROTraceData) model, true);
 	}
 
 
@@ -111,20 +111,17 @@ public abstract class AbstractBpPanel extends JPanel implements Observer, IUITab
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public JPanel layoutDataPanel() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
-		// TODO Auto-generated method stub
-		
+
 	}
 
 

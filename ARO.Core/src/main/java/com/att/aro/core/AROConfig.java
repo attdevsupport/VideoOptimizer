@@ -91,6 +91,7 @@ import com.att.aro.core.peripheral.IAlarmAnalysisInfoParser;
 import com.att.aro.core.peripheral.IAlarmDumpsysTimestampReader;
 import com.att.aro.core.peripheral.IAlarmInfoReader;
 import com.att.aro.core.peripheral.IAppInfoReader;
+import com.att.aro.core.peripheral.IAttenuattionEventReader;
 import com.att.aro.core.peripheral.IBatteryInfoReader;
 import com.att.aro.core.peripheral.IBluetoothInfoReader;
 import com.att.aro.core.peripheral.ICameraInfoReader;
@@ -106,6 +107,7 @@ import com.att.aro.core.peripheral.IPrivateDataReader;
 import com.att.aro.core.peripheral.IRadioInfoReader;
 import com.att.aro.core.peripheral.IScreenRotationReader;
 import com.att.aro.core.peripheral.IScreenStateInfoReader;
+import com.att.aro.core.peripheral.ISpeedThrottleEventReader;
 import com.att.aro.core.peripheral.IUserEventReader;
 import com.att.aro.core.peripheral.IVideoTimeReader;
 import com.att.aro.core.peripheral.IWakelockInfoReader;
@@ -115,6 +117,7 @@ import com.att.aro.core.peripheral.impl.AlarmAnalysisInfoParserImpl;
 import com.att.aro.core.peripheral.impl.AlarmDumpsysTimestampReaderImpl;
 import com.att.aro.core.peripheral.impl.AlarmInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.AppInfoReaderImpl;
+import com.att.aro.core.peripheral.impl.AttenuationEventReaderImpl;
 import com.att.aro.core.peripheral.impl.BatteryInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.BluetoothInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.CameraInfoReaderImpl;
@@ -131,6 +134,7 @@ import com.att.aro.core.peripheral.impl.PrivateDataReaderImpl;
 import com.att.aro.core.peripheral.impl.RadioInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.ScreenRotationReaderImpl;
 import com.att.aro.core.peripheral.impl.ScreenStateInfoReaderImpl;
+import com.att.aro.core.peripheral.impl.SpeedThrottleEventReaderImpl;
 import com.att.aro.core.peripheral.impl.UserEventReaderImpl;
 import com.att.aro.core.peripheral.impl.VideoTimeReaderImpl;
 import com.att.aro.core.peripheral.impl.WakelockInfoReaderImpl;
@@ -175,6 +179,7 @@ import com.att.aro.core.videoanalysis.impl.BufferInSecondsCalculatorImpl;
 import com.att.aro.core.videoanalysis.impl.BufferOccupancyCalculatorImpl;
 import com.att.aro.core.videoanalysis.impl.FFmpegConfirmationImpl;
 import com.att.aro.core.videoanalysis.impl.VideoAnalysisConfigHelperImpl;
+import com.att.aro.core.videoanalysis.impl.VideoBestPractices;
 import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
 import com.att.aro.core.videoanalysis.impl.VideoEventDataHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
@@ -204,6 +209,11 @@ public class AROConfig {
 	@Bean
 	public IAROService getAROService() {
 		return new AROServiceImpl();
+	}
+	
+	@Bean(name = "videoBestPractices")
+	public IVideoBestPractices getVideoBestPractices() {
+		return new VideoBestPractices();
 	}
 
 	@Bean
@@ -393,6 +403,16 @@ public class AROConfig {
 	}
 
 	@Bean
+	public IAttenuattionEventReader getAttnrEventReader() {
+		return new AttenuationEventReaderImpl();
+	}
+
+	@Bean
+	public ISpeedThrottleEventReader getSpeedThrottleReader(){
+		return new SpeedThrottleEventReaderImpl();
+	}
+	
+	@Bean
 	public INetworkTypeReader getNetworkTypeReader() {
 		return new NetworkTypeReaderImpl();
 	}
@@ -411,7 +431,7 @@ public class AROConfig {
 	public IDeviceInfoReader getDeviceInfoReader() {
 		return new DeviceInfoReaderImpl();
 	}
-	
+
 	@Bean(name="collectOptionsReaderImpl")
 	public ICollectOptionsReader getCollectOptionReader() {
 		return new CollectOptionsReaderImpl();

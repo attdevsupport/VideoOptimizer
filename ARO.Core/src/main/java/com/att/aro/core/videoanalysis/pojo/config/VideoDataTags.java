@@ -3,6 +3,7 @@ package com.att.aro.core.videoanalysis.pojo.config;
 public enum VideoDataTags {
 	  ID
 	, Segment
+	, HexSegment
 	, ByteStart
 	, ByteEnd
 	, Timestamp

@@ -22,9 +22,10 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
 import javax.swing.JOptionPane;
-
+import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
+import com.att.aro.core.peripheral.impl.CollectOptionsReaderImpl;
+import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -34,10 +35,20 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
  *
  *
  */
-public class AROVideoUtil {
+public final class VideoUtil {
 
-	private File existingExternalVideoFile = null;
-	private boolean isMediaConversionError = false;
+	public static final int FRAME_RATE = 25;
+	
+	public static final int PLAYER_CONTENT_WIDTH_PORTRAIT = 351;
+	public static final int PLAYER_CONTENT_HEIGHT_PORTRAIT = 624;
+    public static final int PLAYER_CONTENT_WIDTH_LANDSCAPE = 512;
+	public static final int PLAYER_CONTENT_HEIGHT_LANDSCAPE = 288;
+	
+	public static final String WIN_VLCLIBPATH = "C:\\Program Files\\VideoLAN\\VLC";
+    public static final String LINUX_VLCLIBPATH = "/usr/lib/vlc";
+    
+	private static File existingExternalVideoFile = null;
+	private static boolean isMediaConversionError = false;
 	private static final String operatingSystem = System.getProperty("os.name");
 
 	public enum FileTypeEnum {
@@ -54,7 +65,7 @@ public class AROVideoUtil {
 	 * @return URL in {@link String} format.
 	 * @throws IOException
 	 */
-	public String getMediaUrl(File traceDirectory) throws IOException {
+	public static String getMediaUrl(File traceDirectory) throws IOException {
 		String result = null;
 		if ((traceDirectory != null) && (traceDirectory.isDirectory() || isPcaPFile(traceDirectory))) {
 			if (isPcaPFile(traceDirectory)) {
@@ -110,7 +121,7 @@ public class AROVideoUtil {
 	 * @return boolean true if pcap else false.
 	 */
 
-	public boolean isPcaPFile(File pcapFilename) {
+	public static boolean isPcaPFile(File pcapFilename) {
 		String extension = "";
 
 		String filePath = pcapFilename.getPath();
@@ -132,7 +143,7 @@ public class AROVideoUtil {
 	 *            {@link File} object that contains the trace directory.
 	 * @return count of external video files.
 	 */
-	private int getVideoFilesCount(File traceDirectory) {
+	private static int getVideoFilesCount(File traceDirectory) {
 		int totalVideoFile = 0;
 		if ((traceDirectory != null) && (traceDirectory.isDirectory())) {
 			File[] files = traceDirectory.listFiles();
@@ -192,7 +203,7 @@ public class AROVideoUtil {
 	 * @param fileName
 	 * @return extension.
 	 */
-	private String getExtension(String fileName) {
+	private static String getExtension(String fileName) {
 		int extensionIndex = fileName.lastIndexOf(".");
 		if (extensionIndex == -1) {
 			return null;
@@ -210,7 +221,7 @@ public class AROVideoUtil {
 	 * @throws IOException
 	 */
 
-	private void convertVideoToMOV(File traceDirectory, File source, File destination) throws IOException {
+	private static void convertVideoToMOV(File traceDirectory, File source, File destination) throws IOException {
 		System.out.println("convertVideoToMOV( src:"+source+", dest:"+destination+")");
 		String strProgramName = ResourceBundleHelper.getMessageString("video.converter.programName");
 		if (operatingSystem.startsWith("Mac")) {
@@ -259,7 +270,7 @@ public class AROVideoUtil {
 	 * @param strFullPathConvertProgram
 	 * @throws IOException
 	 */
-	private void convertMp4ToMov(File videoInputFile, File videoOutputFile, String strFullPathConvertProgram)
+	private static void convertMp4ToMov(File videoInputFile, File videoOutputFile, String strFullPathConvertProgram)
 			throws IOException {
 
 		if (!videoInputFile.exists()) {
@@ -360,7 +371,7 @@ public class AROVideoUtil {
 	 *            directory of pcap
 	 * @return File exvideo.Mov
 	 */
-	private File getExVideoMovIfPresent(File traceDirectory) {
+	private static File getExVideoMovIfPresent(File traceDirectory) {
 		File exVideoFileMatch[] = traceDirectory.listFiles(new FilenameFilter() {
 			public boolean accept(File dir, String name) {
 				return name.toLowerCase().equals("exvideo.mov");
@@ -372,4 +383,38 @@ public class AROVideoUtil {
 			return null;
 		}
 	}
+
+	public static boolean isVideoLandscape(String traceDirectory) {
+
+		CollectOptionsReaderImpl collectOptionsReaderImpl = (CollectOptionsReaderImpl) ContextAware
+					.getAROConfigContext().getBean("collectOptionsReaderImpl");
+
+		return TraceDataConst.UserEvent.KEY_LANDSCAPE.equalsIgnoreCase(collectOptionsReaderImpl.readData(traceDirectory).getOrientation()); 			
+	}
+	
+	public static boolean mp4VideoExists(String traceDirectory) {
+		if (traceDirectory == null) {
+			return false;
+		}		
+		String videoMp4FilePath = traceDirectory 
+								+ System.getProperty("file.separator") 
+								+ ResourceBundleHelper.getMessageString("video.videoFileOnDevice");  
+		if (new File(videoMp4FilePath).exists()) {
+			return true;
+		}		
+		return false;
+	}
+
+	public static boolean movVideoExists(String traceDirectory) {
+		if (traceDirectory == null) {
+			return false;
+		}		
+		String movPath = traceDirectory + System.getProperty("file.separator")
+				+ ResourceBundleHelper.getMessageString("video.videoDisplayFile");
+		if (new File(movPath).exists()) {
+			return true;
+		}
+		return false;
+	}
+
 }

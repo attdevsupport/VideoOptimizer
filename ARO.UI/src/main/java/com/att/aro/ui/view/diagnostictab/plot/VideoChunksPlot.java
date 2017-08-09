@@ -25,6 +25,7 @@ import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,9 @@ import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
+import com.att.aro.core.videoanalysis.impl.SortSelection;
 import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
+import com.att.aro.core.videoanalysis.impl.VideoEventComparator;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.ui.commonui.ContextAware;
@@ -87,7 +90,8 @@ public class VideoChunksPlot implements IPlot{
 	 */
     private Map<VideoEvent,Double> chunkPlayTime = new HashMap<>();
 
-	public void refreshPlot(XYPlot plot, AROTraceData analysis, double startTime, VideoEvent selectedChunk) {
+	public AROTraceData refreshPlot(XYPlot plot, AROTraceData analysis, double startTime, VideoEvent selectedChunk) {
+		chunkPlayTime.clear();
 		chunkPlayTime.put(selectedChunk, startTime);
 
 		videoChunkPlotter.setChunkPlayBackTimeList(chunkPlayTime);
@@ -105,9 +109,7 @@ public class VideoChunksPlot implements IPlot{
 		AbstractBestPracticeResult stallBPResult = videoChunkPlotter.refreshVideoStallBP(analysis);
 		AbstractBestPracticeResult bufferOccupancyBPResult = videoChunkPlotter.refreshVideoBufferOccupancyBP(analysis);
 
-		refreshBPVideoResults(analysis, startupDelayBPResult, stallBPResult, bufferOccupancyBPResult);
-		
-		
+		return refreshBPVideoResults(analysis, startupDelayBPResult, stallBPResult, bufferOccupancyBPResult);		
 	}
 	
 	/**
@@ -120,7 +122,9 @@ public class VideoChunksPlot implements IPlot{
 		populate(plot, analysis);		
 	}
     
-    private void refreshBPVideoResults(AROTraceData model,AbstractBestPracticeResult bpResult,AbstractBestPracticeResult stallBPResult,AbstractBestPracticeResult bufferOccupancyBPResult){
+    private AROTraceData refreshBPVideoResults(AROTraceData model,AbstractBestPracticeResult bpResult,AbstractBestPracticeResult stallBPResult,AbstractBestPracticeResult bufferOccupancyBPResult){
+		List<AbstractBestPracticeResult> removeList = new ArrayList<>();
+		AROTraceData trace = model;
     	for(AbstractBestPracticeResult bp:model.getBestPracticeResults()){
     		if(bp.getBestPracticeType() == BestPracticeType.STARTUP_DELAY){
     			bp.setAboutText(bpResult.getAboutText());
@@ -128,7 +132,8 @@ public class VideoChunksPlot implements IPlot{
     			bp.setLearnMoreUrl(bpResult.getLearnMoreUrl());
     			bp.setOverviewTitle(bpResult.getOverviewTitle());
     			bp.setResultText(bpResult.getResultText());
-    			bp.setResultType(bpResult.getResultType());					
+    			bp.setResultType(bpResult.getResultType());	
+    			removeList.add(bp);		
     		}
     		else if(bp.getBestPracticeType() == BestPracticeType.VIDEO_STALL){
     			bp.setAboutText(stallBPResult.getAboutText());
@@ -136,7 +141,8 @@ public class VideoChunksPlot implements IPlot{
     			bp.setLearnMoreUrl(stallBPResult.getLearnMoreUrl());
     			bp.setOverviewTitle(stallBPResult.getOverviewTitle());
     			bp.setResultText(stallBPResult.getResultText());
-    			bp.setResultType(stallBPResult.getResultType());	
+    			bp.setResultType(stallBPResult.getResultType());
+    			removeList.add(bp);		
     		}else if(bp.getBestPracticeType() == BestPracticeType.BUFFER_OCCUPANCY){
     			bp.setAboutText(bufferOccupancyBPResult.getAboutText());
     			bp.setDetailTitle(bufferOccupancyBPResult.getDetailTitle());
@@ -144,8 +150,19 @@ public class VideoChunksPlot implements IPlot{
     			bp.setOverviewTitle(bufferOccupancyBPResult.getOverviewTitle());
     			bp.setResultText(bufferOccupancyBPResult.getResultText());
     			bp.setResultType(bufferOccupancyBPResult.getResultType());	
+    			removeList.add(bp);		
     		}
     	}
+		if (!removeList.isEmpty()) {
+			for (AbstractBestPracticeResult bp : removeList) {
+				trace.getBestPracticeResults().remove(bp);
+			}
+			trace.getBestPracticeResults().add(bpResult);
+			trace.getBestPracticeResults().add(stallBPResult);
+			trace.getBestPracticeResults().add(bufferOccupancyBPResult);
+
+		}
+    	return trace;
 	}
     
     public void setBufferOccupancyPlot(XYPlot bufferOccupancyPlot) {
@@ -162,7 +179,7 @@ public class VideoChunksPlot implements IPlot{
     }
     public void setDelayAROManifest(double seconds, Collection<AROManifest> aroManifests){
     	for (AROManifest aroManifest : aroManifests) {
-			if (!aroManifest.getVideoEventList().isEmpty()) { 
+			if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) { 
 				aroManifest.setDelay(seconds);
 			}
     	}
@@ -206,8 +223,10 @@ public class VideoChunksPlot implements IPlot{
 			
 			XYSeriesCollection playTimeStartSeries;
 			int first = 0;
-
-			for (VideoEvent ve : chunkPlayTime.keySet()) {
+			
+			List<VideoEvent> chunkPlayBackTimeList = new ArrayList<VideoEvent>(chunkPlayTime.keySet());
+			Collections.sort(chunkPlayBackTimeList, new VideoEventComparator(SortSelection.SEGMENT));
+			for (VideoEvent ve : chunkPlayBackTimeList) {
 
 				playTimeStartSeries = new XYSeriesCollection();
 
@@ -216,7 +235,7 @@ public class VideoChunksPlot implements IPlot{
 				seriesStartUpDelay.add((double)chunkPlayTime.get(ve),0);
 				
 				
-				if(first==chunkPlayTime.keySet().size()-1){		
+				if (first == 0) {	
 					VideoUsage videoUsage = analysis.getAnalyzerResult().getVideoUsage();
 					TreeMap<Double, AROManifest> videoEventList = videoUsage.getAroManifestMap();
 					

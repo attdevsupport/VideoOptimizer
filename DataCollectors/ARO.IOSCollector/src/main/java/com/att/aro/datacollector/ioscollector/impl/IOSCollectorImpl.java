@@ -76,11 +76,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private VideoCaptureMacOS videoCapture;
 	private boolean hasRVI = false;
 	private List<IVideoImageSubscriber> videoImageSubscribers = new ArrayList<IVideoImageSubscriber>();
-//	private LiveScreenViewDialog liveview;
+	// private LiveScreenViewDialog liveview;
 	private IOSDeviceInfo deviceinfo;
 	private SwingWorker<String, Object> videoworker;
 	private boolean hasxCodeV = false;
-	private String sudoPassword = ""; //sudo password is required for run some commands on Mac
+	private String sudoPassword = ""; // sudo password is required for run some
+										// commands on Mac
 
 	private String datadir; // dir to save pcap file, video, etc..
 	private File videofile;
@@ -93,19 +94,19 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private boolean isCommandLine;
 	private boolean isCapturingVideo;
 	private VideoOption videoOption;
-	
+
 	public IOSCollectorImpl() {
 		super();
 		deviceinfo = new IOSDeviceInfo();
 	}
 
-//	/**
-//	 * 
-//	 */
-//	private void initVideo() {
-//		liveview = new LiveScreenViewDialog();
-//		log.debug("LiveScreenViewDialog done");
-//	}
+	// /**
+	// *
+	// */
+	// private void initVideo() {
+	// liveview = new LiveScreenViewDialog();
+	// log.debug("LiveScreenViewDialog done");
+	// }
 
 	@Autowired
 	public void setFileManager(IFileManager filemanager) {
@@ -124,12 +125,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	@Override
 	public void onDisconnected() {
-		//		showWaitBox();
+		// showWaitBox();
 
 		this.isDeviceConnected = false;
-//		if (liveview != null && liveview.isVisible()) {
-//			liveview.setVisible(false);
-//		}
+		// if (liveview != null && liveview.isVisible()) {
+		// liveview.setVisible(false);
+		// }
 		if (packetworker != null) {
 			this.stopWorkers();
 		}
@@ -140,8 +141,9 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				log.debug("IOException:", e);
 			}
 		}
-		//		hideWaitBox();
-		//		MessageDialogFactory.showErrorDialog(null, "Device disconnected. Please reconnect device.");
+		// hideWaitBox();
+		// MessageDialogFactory.showErrorDialog(null, "Device disconnected.
+		// Please reconnect device.");
 	}
 
 	/**
@@ -156,12 +158,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		}
 
 		monitor.stopMonitoring();
-		
+
 		if (rvi != null) {
 			try {
 				rvi.stop();
 			} catch (IOException e) {
-				log.error("IOException",e);
+				log.error("IOException", e);
 			}
 			recordPcapStartStop();
 		}
@@ -173,14 +175,14 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		}
 
 		if (videoCapture != null) {
-			videoCapture.stopCapture();// blocking till video capture engine fully stop
+			videoCapture.stopCapture();// blocking till video capture engine
+										// fully stop
 
 			// create video timestamp file that will sync with pcap file
-			BufferedWriter videoTimeStampWriter = null;
-
-			try {
+			try(BufferedWriter videoTimeStampWriter = new BufferedWriter(
+					new FileWriter(new File(localTraceFolder, TraceDataConst.FileName.VIDEO_TIME_FILE)));) {
 				log.info("Writing video time to file");
-				videoTimeStampWriter = new BufferedWriter(new FileWriter(new File(localTraceFolder, TraceDataConst.FileName.VIDEO_TIME_FILE)));
+				
 				// Writing a video time in file.
 				String timestr = Double.toString(videoCapture.getVideoStartTime().getTime() / 1000.0);
 				// append time from tcpdump
@@ -188,23 +190,17 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				videoTimeStampWriter.write(timestr);
 
 			} catch (IOException e) {
-				//				e.printStackTrace();
+				// e.printStackTrace();
 				log.info("Error writing video time to file: " + e.getMessage());
-			} finally {
-				try {
-					videoTimeStampWriter.close();
-				} catch (IOException e) {
-					log.debug("IOException:", e);
-				}
 			}
-
+			
 			if (videoCapture.isAlive()) {
 				videoCapture.interrupt();
 			}
 
 			videoCapture = null;
 			log.info("disposed videoCapture");
-			//			closeTimeFile();
+			// closeTimeFile();
 		}
 
 		if (videoworker != null) {
@@ -216,13 +212,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		running = false;
 
 		return status;
-		//		mainAROAnalyzer.dataCollectorStatusCallBack(Status.READY);
+		// mainAROAnalyzer.dataCollectorStatusCallBack(Status.READY);
 	}
-	
+
 	private boolean isVideo() {
 		return !videoOption.equals(VideoOption.NONE);
 	}
-
 
 	@Override
 	public String getName() {
@@ -238,7 +233,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	@Override
 	public void addVideoImageSubscriber(IVideoImageSubscriber subscriber) {
 		log.debug("subscribe :" + subscriber.getClass().getName());
-		//videoImageSubscribers.add(subscriber);
+		// videoImageSubscribers.add(subscriber);
 		videoCapture.addSubscriber(subscriber);
 	}
 
@@ -254,22 +249,24 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		}
 	}
 
-//	@Override
-//	public void receiveImage(BufferedImage image) {
-//		if (isLiveViewVideo && liveview.isVisible()) {
-//			BufferedImage newimg = ImageHelper.resize(image, liveview.getViewWidth(), liveview.getViewHeight());
-//			liveview.setImage(newimg);
-//
-//			// TODO iterate through IVideo subscribers and send them the image 
-//			//			BufferedImage newimg = ImageHelper.resize(image, liveview.getViewWidth(),liveview.getViewHeight());
-//			//			subscriber.receiveImage(image);
-//		}
-//		if (!deviceinfo.foundScreensize()) {
-//			deviceinfo.updateScreensize(image.getWidth(), image.getHeight());
-//			log.info("xxxxxxxxxxxxxx Update screen resolution => " + image.getWidth() + "x" + image.getHeight() + " xxxxxxxxxxxxxxxxxx");
-//		}
-//	}
-
+	// @Override
+	// public void receiveImage(BufferedImage image) {
+	// if (isLiveViewVideo && liveview.isVisible()) {
+	// BufferedImage newimg = ImageHelper.resize(image, liveview.getViewWidth(),
+	// liveview.getViewHeight());
+	// liveview.setImage(newimg);
+	//
+	// // TODO iterate through IVideo subscribers and send them the image
+	// // BufferedImage newimg = ImageHelper.resize(image,
+	// liveview.getViewWidth(),liveview.getViewHeight());
+	// // subscriber.receiveImage(image);
+	// }
+	// if (!deviceinfo.foundScreensize()) {
+	// deviceinfo.updateScreensize(image.getWidth(), image.getHeight());
+	// log.info("xxxxxxxxxxxxxx Update screen resolution => " + image.getWidth()
+	// + "x" + image.getHeight() + " xxxxxxxxxxxxxxxxxx");
+	// }
+	// }
 
 	@Override
 	public int getMajorVersion() {
@@ -296,42 +293,34 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	}
 
 	@Override
-	public StatusResult startCollector(boolean isCommandLine, String tracepath, VideoOption videoOption, String passwd) {
-		return this.startCollector(isCommandLine
-									, tracepath
-									, videoOption
-									, false
-									, null
-									, null
-									, passwd);
+	public StatusResult startCollector(boolean isCommandLine, String tracepath, VideoOption videoOption,
+			String passwd) {
+		return this.startCollector(isCommandLine, tracepath, videoOption, false, null, null, passwd);
 	}
 
 	@Override
-	public StatusResult startCollector(boolean commandLine
-										, String folderToSaveTrace
-										, VideoOption videoOption
-										, boolean liveViewVideo
-										, String deviceId
-										, Hashtable<String, Object> extraParams
-										, String password) {
+	public StatusResult startCollector(boolean commandLine, String folderToSaveTrace, VideoOption videoOption,
+			boolean liveViewVideo, String deviceId, Hashtable<String, Object> extraParams, String password) {
 
-		if (password != null){
+		if (password != null) {
 			this.sudoPassword = password;
 		}
-		
-		this.videoOption = (VideoOption)extraParams.get("video_option");
- 		isCapturingVideo = isVideo();
-		
+
+		if(extraParams != null) {
+			this.videoOption = (VideoOption) extraParams.get("video_option");
+		}
+		isCapturingVideo = isVideo();
+
 		this.isCommandLine = commandLine;
-		if (isCommandLine){
+		if (isCommandLine) {
 			isLiveViewVideo = false;
 		}
-		
+
 		this.isLiveViewVideo = liveViewVideo;
 
 		StatusResult status = new StatusResult();
 		status.setSuccess(true);
-		//avoid running it twice
+		// avoid running it twice
 		if (this.running) {
 			return status;
 		} // else keep it false until all the following checks are passed
@@ -339,8 +328,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			status.setError(ErrorCodeRegistry.getTraceDirExist());
 			return status;
 		}
-		
-		//there might be permission issue to creating dir to save trace
+
+		// there might be permission issue to creating dir to save trace
 		filemanager.mkDir(folderToSaveTrace);
 		if (!filemanager.directoryExist(folderToSaveTrace)) {
 			status.setError(ErrorCodeRegistry.getFailedToCreateLocalTraceDirectory());
@@ -352,12 +341,13 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (!status.isSuccess()) {// an error has occurred in initialization
 			return status;
 		}
-		
+
 		// TODO handle multi
 		String[] deviceIds = getDeviceSerialNumber(status);
 		String udid = deviceIds != null ? deviceIds[0] : null;
 		if (udid == null || udid.length() < 2) {
-			//Failed to get Serial Number of Device, connect an IOS device to start.
+			// Failed to get Serial Number of Device, connect an IOS device to
+			// start.
 			log.error(defaultBundle.getString("Error.serialnumberconnection"));
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getIncorrectSerialNumber());
@@ -366,13 +356,13 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (!status.isSuccess()) {
 			return status; // failed to get device s/n
 		}
-		
+
 		datadir = folderToSaveTrace;
 		localTraceFolder = new File(folderToSaveTrace);
 		if (!localTraceFolder.exists()) {
 			if (!localTraceFolder.mkdirs()) {
 				datadir = "";
-				//There was an error creating directory: 
+				// There was an error creating directory:
 				log.error(defaultBundle.getString("Error.foldernamerequired"));
 				status.setSuccess(false);
 				status.setError(ErrorCodeRegistry.getMissingFolderName());
@@ -380,27 +370,29 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			}
 		}
 
-		final String trafficFilePath = datadir + Util.FILE_SEPARATOR + defaultBundle.getString("datadump.trafficFile"); //"traffic.pcap";
+		final String trafficFilePath = datadir + Util.FILE_SEPARATOR + defaultBundle.getString("datadump.trafficFile"); // "traffic.pcap";
 
-		//device info
+		// device info
 		String deviceDetails = datadir + Util.FILE_SEPARATOR + "device_details";
 		status = checkDeviceInfo(status, udid, deviceDetails);
 		if (!status.isSuccess()) {
 			return status; // device info error
 		}
 
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
-				GoogleAnalyticsUtil.getAnalyticsEvents().getStartTrace()); //GA Request
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+				GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
+				GoogleAnalyticsUtil.getAnalyticsEvents().getStartTrace(),
+				deviceinfo != null && deviceinfo.getDeviceVersion() != null ? deviceinfo.getDeviceVersion()
+						: "Unknown"); // GA Request
 		final String serialNumber = udid;
 
-		if (this.sudoPassword == "" || !isValidSudoPassword(sudoPassword)) {
+		if ("".equals(this.sudoPassword) || !isValidSudoPassword(sudoPassword)) {
 			if (isCommandLine) {
 				status.setError(ErrorCodeRegistry.getSudoPasswordIssue());
 				log.info(defaultBundle.getString("Error.sudopasswordissue"));
-//				System.exit(0);
+				// System.exit(0);
 				return status;
-			} 
-			else {
+			} else {
 				status.setData("requestPassword");
 				return status; // bad or missing sudo password
 			}
@@ -409,7 +401,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		launchCollection(trafficFilePath, serialNumber, status);
 		return status;
 	}
-	
+
 	/**
 	 * @param isCapturingVideo
 	 * @param isLiveViewVideo
@@ -418,7 +410,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	 * @param serialNumber
 	 * @return
 	 */
-	private StatusResult launchCollection(final String trafficFilePath, final String serialNumber, StatusResult status) {
+	private StatusResult launchCollection(final String trafficFilePath, final String serialNumber,
+			StatusResult status) {
 		// check RVI status, and reinitialize it if not initialized already
 		status = initRVI(status, trafficFilePath, serialNumber);
 		if (!status.isSuccess()) {
@@ -448,10 +441,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	private StatusResult startVideoCapture(StatusResult status) {
 
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
-				GoogleAnalyticsUtil.getAnalyticsEvents().getVideoCheck()); //GA Request
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+				GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
+				GoogleAnalyticsUtil.getAnalyticsEvents().getVideoCheck()); // GA
+																			// Request
 
-		//TODO add ScreenRecorder
+		// TODO add ScreenRecorder
 		if (videoCapture == null) {
 			final String videofilepath = datadir + Util.FILE_SEPARATOR + TraceDataConst.FileName.VIDEO_MOV_FILE;
 			videofile = new File(videofilepath);
@@ -514,7 +509,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	}
 
 	private StatusResult initRVI(StatusResult status, final String trafficFilePath, final String serialNumber) {
-		
+
 		log.debug("initRVI");
 		if (rvi == null) {
 			rvi = new RemoteVirtualInterface(this.sudoPassword);
@@ -544,7 +539,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getDeviceInfoIssue());
 		} else {
-			String version = deviceinfo.getDeviceVersion(); //get device version number
+			String version = deviceinfo.getDeviceVersion(); // get device
+															// version number
 			log.info("Device Version :" + version);
 			if (version != null && version.length() > 0) {
 				int versionNumber = 0;
@@ -559,8 +555,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 					status.setError(ErrorCodeRegistry.getDeviceVersionIssue());
 				}
 				if (versionNumber < 5) {
-					String msg = MessageFormat.format(defaultBundle.getString("Error.iosunsupportedversion"), 
-														ApplicationConfig.getInstance().getAppShortName());
+					String msg = MessageFormat.format(defaultBundle.getString("Error.iosunsupportedversion"),
+							ApplicationConfig.getInstance().getAppShortName());
 					log.error(msg);
 					status.setSuccess(false);
 					status.setError(ErrorCodeRegistry.getiOSUnsupportedVersion());
@@ -617,7 +613,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			monitor = new ExternalDeviceMonitorIOS();
 			monitor.subscribe(this);
 			monitor.start();
-			log.info(defaultBundle.getString("Status.start"));//"Started device monitoring");
+			log.info(defaultBundle.getString("Status.start"));// "Started device
+																// monitoring");
 		}
 		if (xcode == null) {
 			xcode = new XCodeInfo();
@@ -626,7 +623,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			hasRVI = xcode.isRVIAvailable();
 		}
 		if (!hasRVI) {
-			//please install the latest version of XCode to continue.
+			// please install the latest version of XCode to continue.
 			log.error(defaultBundle.getString("Error.xcoderequired"));
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getFailedToLoadXCode());
@@ -640,13 +637,13 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 						status.setSuccess(false);
 						status.setError(ErrorCodeRegistry.getXCodeCLTError());
 						return status;
-					}else if(!hasxCodeV){
+					} else if (!hasxCodeV) {
 						status.setSuccess(false);
 						status.setError(ErrorCodeRegistry.getUnsupportedXCodeVersion());
 						return status;
 					}
 				} else {
-					//please install the latest version of XCode to continue.
+					// please install the latest version of XCode to continue.
 					log.error(defaultBundle.getString("Error.xcoderequired"));
 					status.setSuccess(false);
 					status.setError(ErrorCodeRegistry.getFailedToLoadXCode());
@@ -686,7 +683,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	 * @return true if password is correct otherwise false
 	 */
 	private boolean isValidSudoPassword(String password) {
-		
+
 		ExternalProcessRunner runner = new ExternalProcessRunner();
 		String cmd = "echo " + password + " | sudo -k -S cat /etc/sudoers 2>&1";
 		String data = null;
@@ -694,7 +691,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			data = runner.runCmd(new String[] { "bash", "-c", cmd });
 		} catch (IOException e) {
 			log.debug("IOException:", e);
-			//There was an error validating password.
+			// There was an error validating password.
 			log.error(defaultBundle.getString("Error.validatepassword"));
 			return false;
 		}
@@ -723,11 +720,15 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			log.error("file creation error: " + e.getMessage());
 		}
 
-		String str = String.format("%s\n%.3f\n%d\n%.3f\n", "Synchronized timestamps" // line 1 (header),,
-				, rvi.getStartCaptureDate().getTime() / 1000.0 // line 2 (pcap start time)
+		String str = String.format("%s\n%.3f\n%d\n%.3f\n", "Synchronized timestamps" // line
+																						// 1
+																						// (header),,
+				, rvi.getStartCaptureDate().getTime() / 1000.0 // line 2 (pcap
+																// start time)
 				, 0 // line 3 (userTime) should refer to device. [ not used ]
-				, rvi.getTcpdumpStopDate().getTime() / 1000.0 // line 4 (pcap stop time)
-				);
+				, rvi.getTcpdumpStopDate().getTime() / 1000.0 // line 4 (pcap
+																// stop time)
+		);
 
 		try {
 			timeStream.write(str.getBytes());
@@ -742,20 +743,24 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	@Override
 	public StatusResult stopCollector() {
 		StatusResult status = new StatusResult();
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
-				GoogleAnalyticsUtil.getAnalyticsEvents().getEndTrace()); //GA Request
-		//		showWaitBox();
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+				GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
+				GoogleAnalyticsUtil.getAnalyticsEvents().getEndTrace()); // GA
+																			// Request
+		// showWaitBox();
 		this.stopWorkers();
 		if (datadir.length() > 1) {
 			File folder = new File(datadir);
 			if (folder.exists()) {
-				//if video data is zero, java media player will throw exception
+				// if video data is zero, java media player will throw exception
 				if (videofile != null && videofile.exists() && videofile.length() < 2) {
 					videofile.delete();
 					log.info("deleted empty video file");
 				}
-				//now check for pcap existence otherwise there will be popup error.
-				File pcapfile = new File(datadir + Util.FILE_SEPARATOR + defaultBundle.getString("datadump.trafficFile"));
+				// now check for pcap existence otherwise there will be popup
+				// error.
+				File pcapfile = new File(
+						datadir + Util.FILE_SEPARATOR + defaultBundle.getString("datadump.trafficFile"));
 				status.setSuccess(pcapfile.exists());
 			}
 		}
@@ -775,11 +780,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			return false;
 		}
 		do {// TODO
-			log.debug("isTrafficCaptureRunning :" + packetworker.isCancelled() +" - "+ packetworker.isDone());
-			tcpdumpActive = (packetworker.isCancelled() || packetworker.isDone());//checkTcpDumpRunning(device);
+			log.debug("isTrafficCaptureRunning :" + packetworker.isCancelled() + " - " + packetworker.isDone());
+			tcpdumpActive = (packetworker.isCancelled() || packetworker.isDone());// checkTcpDumpRunning(device);
 			if (!tcpdumpActive) {
 				try {
-					//log.info("waiting " + timer + ", for tcpdump to launch:" + count);
+					// log.info("waiting " + timer + ", for tcpdump to launch:"
+					// + count);
 					Thread.sleep(timer);
 				} catch (InterruptedException e) {
 				}
@@ -809,7 +815,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	 */
 	@Override
 	public boolean setPassword(String password) {
-		if (isValidSudoPassword(password)){
+		if (isValidSudoPassword(password)) {
 			sudoPassword = password;
 			return true;
 		}
@@ -818,13 +824,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	/**
 	 * Retrieve the sudo password
+	 * 
 	 * @return password
 	 */
 	@Override
 	public String getPassword() {
 		return sudoPassword;
 	}
-
-
 
 }

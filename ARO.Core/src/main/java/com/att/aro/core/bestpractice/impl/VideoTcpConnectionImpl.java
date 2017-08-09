@@ -19,7 +19,6 @@ package com.att.aro.core.bestpractice.impl;
 import java.text.MessageFormat;
 import java.util.TreeMap;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
@@ -82,7 +81,7 @@ public class VideoTcpConnectionImpl implements IBestPractice{
 		if (videoEventList != null) {
 			TreeMap<Session, Integer> uniqSessions = new TreeMap<>();
 			for (AROManifest aroManifest : videoEventList.values()) {
-				if (!aroManifest.getVideoEventList().isEmpty()) {
+				if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
 					int count = 0;
 					for (VideoEvent videoEvent : aroManifest.getVideoEventList().values()) {
 						if (uniqSessions.containsKey(videoEvent.getSession())) {
@@ -107,7 +106,7 @@ public class VideoTcpConnectionImpl implements IBestPractice{
 													ApplicationConfig.getInstance().getAppShortName(), 
 													sessionCount, 
 													sessionCount == 1 ? "" : "s"));
-
+		result.setTcpConnections(sessionCount);
 		return result;
 	}
 

@@ -250,7 +250,9 @@ public class RemoteVirtualInterface {
 				Date dt = pcaphelp.getFirstPacketDate(this.pcapfilepath);
 				if (dt != null) {
 					this.startDate = dt;
-					this.startCaptureDate = startDate;
+					if(startCaptureDate != null) {
+						this.startCaptureDate = startDate;
+					}
 					log.info("RVI Set packet date to: " + dt.getTime());
 				}
 			}

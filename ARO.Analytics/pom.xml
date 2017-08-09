@@ -19,13 +19,16 @@
 			<name>Sonatype Flex</name>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</repository>
+
 	</repositories>
+	
 	<pluginRepositories>
 		<pluginRepository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
 			<url>http://repo1.maven.org/maven2</url>
 		</pluginRepository>
+ 
 	</pluginRepositories>
 
 	<!-- dependencies -->
@@ -39,7 +42,7 @@
 		    <groupId>org.codehaus.mojo</groupId>
 		    <artifactId>findbugs-maven-plugin</artifactId>
 		    <version>3.0.4</version>
- 		</dependency>		
+ 		</dependency>			
 		<dependency>
 			<groupId>com.orientechnologies</groupId>
 			<artifactId>orientdb-core</artifactId>
@@ -66,15 +69,17 @@
 			<version>4.0.3.RELEASE</version>
 			<scope>test</scope>
 		</dependency>
-		<!-- -->
+<!--Please download the source code from the web site and compile it and publish to your own local repository-->
+<!-- mvn install:install-file -Dfile=proxy-vole_20131209.jar -DgroupId=com.proxy \-DartifactId=proxy-vole -Dversion=1.0 -Dpackaging=jar -->
+		
 		<dependency>
 			<groupId>com.proxy</groupId>
 			<artifactId>proxy-vole</artifactId>
 			<version>1.0</version>
-			<scope>system</scope> <systemPath>${project.basedir}/lib/proxy-vole_20131209.jar</systemPath>
+			
+			<!-- <scope>system</scope> <systemPath>${project.basedir}/lib/proxy-vole_20131209.jar</systemPath> -->
 		</dependency>
-
-	</dependencies>
+ 	</dependencies>
 
 	<!-- build -->
 	<build>
@@ -96,28 +101,6 @@
 				</configuration>
 			</plugin>
 			<plugin>
-	            <groupId>org.codehaus.mojo</groupId>
-	            <artifactId>findbugs-maven-plugin</artifactId>
-	            <version>3.0.4</version>
-	            <configuration>
-	            	<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
-	                <effort>Max</effort>
-	                <threshold>Max</threshold>
-	                <maxRank>10</maxRank>
-	                <xmlOutput>true</xmlOutput>
-	                <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-	            </configuration>
-	            <executions>
-	                <execution>
-	                    <id>analyze-compile</id>
-	                    <!-- <phase>compile</phase> -->
-	                    <goals>
-	                        <goal>check</goal>
-	                    </goals>
-	                </execution>
-	            </executions>
-	        </plugin>
-			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
 					<execution>
@@ -132,28 +115,27 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-install-plugin</artifactId>
-				<version>2.5.2</version>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>3.0.4</version>
+				<configuration>
+					<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
+					<effort>Max</effort>
+					<threshold>Max</threshold>
+					<xmlOutput>true</xmlOutput>
+					<findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+				</configuration>
 				<executions>
 					<execution>
-						<id>install-external</id>
-						<phase>clean</phase>
-						<configuration>
-							<file>${basedir}/lib/proxy-vole_20131209.jar</file>
-							<repositoryLayout>default</repositoryLayout>
-							<groupId>com.proxy</groupId>
-							<artifactId>proxy-vole</artifactId>
-							<version>1.0</version>
-							<packaging>jar</packaging>
-							<generatePom>true</generatePom>
-						</configuration>
+						<id>analyze-compile</id>
+						<!-- <phase>compile</phase> -->
 						<goals>
-							<goal>install-file</goal>
+							<goal>check</goal>
 						</goals>
 					</execution>
 				</executions>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>

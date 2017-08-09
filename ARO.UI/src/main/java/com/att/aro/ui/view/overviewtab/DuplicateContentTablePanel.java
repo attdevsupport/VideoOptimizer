@@ -205,7 +205,8 @@ public class DuplicateContentTablePanel extends TabPanelJPanel implements MouseL
 	
 	public Collection<CacheEntry> getDublicateContentTableData(){
 		List<CacheEntry> dupContent = new ArrayList<CacheEntry>();
-		if(traceDataModel != null && traceDataModel.getAnalyzerResult()!= null){
+		if (traceDataModel != null && traceDataModel.getAnalyzerResult() != null
+				&& traceDataModel.getAnalyzerResult().getCacheAnalysis() != null) {
 			dupContent = traceDataModel.getAnalyzerResult().getCacheAnalysis().getDuplicateContentWithOriginals();
 		}
 		

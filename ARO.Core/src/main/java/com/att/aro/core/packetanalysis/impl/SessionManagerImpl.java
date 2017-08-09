@@ -56,7 +56,6 @@ import com.att.aro.core.securedpacketreader.pojo.BidirDataChunk;
 import com.att.aro.core.securedpacketreader.pojo.CryptoEnum;
 import com.att.aro.core.securedpacketreader.pojo.MatchedRecord;
 import com.att.aro.core.securedpacketreader.pojo.SavedTLSSession;
-import com.att.aro.core.util.Util;
 
 /**
  * group packet into session
@@ -74,7 +73,6 @@ public class SessionManagerImpl implements ISessionManager {
 	@Autowired
 	IRequestResponseBuilder requestResponseBuilder;
 
-	// TODO @Autowired add here
 	@Autowired
 	ITLSSessionInfo tsiServer;
 	@Autowired
@@ -140,7 +138,6 @@ public class SessionManagerImpl implements ISessionManager {
 		List<PacketInfo> dnsPackets = new ArrayList<PacketInfo>();
 		List<PacketInfo> udpPackets = new ArrayList<PacketInfo>();
 		Map<InetAddress, String> hostMap = new HashMap<InetAddress, String>();
-		// int packetIndex = 0;
 
 		iteratePackets(packets, allSessions, dnsPackets, udpPackets, hostMap);
 
@@ -154,19 +151,9 @@ public class SessionManagerImpl implements ISessionManager {
 		Reassembler dol = new Reassembler();
 		try {
 			reassembleSessions(sessions, upl, dol);
-	
 			logger.debug("creating HttpReqResInfo for sessions: " + sessions.size());
-	
-			// no ssl activity here
-			// TODO handle ssl
-	
-			// analyzeRequestResponseInfo(sessions);
-			//FIXME Temporary fix until dll issue is resolved
-			if(Util.isMacOS()) {
-				analyzeSSLRequestResponseInfo(sessions);
-			} else {
-				analyzeRequestResponseInfo(sessions);
-			}
+			analyzeSSLRequestResponseInfo(sessions);
+			// OLD analysismethod analyzeRequestResponseInfo(sessions);
 		} finally {
 			upl.clear();
 			dol.clear();
@@ -174,7 +161,6 @@ public class SessionManagerImpl implements ISessionManager {
 
 		Collections.sort(sessions);
 
-		/* Get UDP sessions. */
 		if (!udpPackets.isEmpty()) {
 			List<Session> udpSessions;
 			try {
@@ -183,7 +169,6 @@ public class SessionManagerImpl implements ISessionManager {
 			} catch (IOException e) {
 				logger.error("Error", e);
 			}
-
 		}
 
 		for(Session session : sessions) {
@@ -377,7 +362,7 @@ public class SessionManagerImpl implements ISessionManager {
 			if (pData == null) {
 				// TODO fix -
 				// logger.error(Util.RB.getString("tls.error.ssldata"));
-				logger.error("tls.error.ssldata");
+				logger.warn("tls.error.ssldata");
 				return -1;
 			}
 
@@ -396,7 +381,7 @@ public class SessionManagerImpl implements ISessionManager {
 				if (checkTLSVersion(pData.array(), 1) == 0) {
 					// TODO fix -
 					// logger.error(Util.RB.getString("tls.error.sslversion"));
-					logger.error("tls.error.sslversion");
+					logger.warn("tls.error.sslversion");
 					return -1;
 				}
 				int encRecPayloadSize = pData.getShort(3); // Reverse not
@@ -480,7 +465,7 @@ public class SessionManagerImpl implements ISessionManager {
 							if (resRead == 0) {
 								// TODO fix -
 								// logger.error(Util.RB.getString("tls.error.readhandshake"));
-								logger.error("tls.error.readhandshake");
+								logger.warn("tls.error.readhandshake");
 							}
 							return -1;
 						}
@@ -511,7 +496,7 @@ public class SessionManagerImpl implements ISessionManager {
 								} else {
 									// TODO fix -
 									// logger.error(Util.RB.getString("tls.error.PacketIDList"));
-									logger.error("tls.error.PacketIDList");
+									logger.warn("tls.error.PacketIDList");
 									return -1;
 								}
 							}
@@ -568,7 +553,7 @@ public class SessionManagerImpl implements ISessionManager {
 							if (tsiPending.getTLSCipherSuite() == null) {
 								// TODO fix -
 								// logger.error(Util.RB.getString("tls.error.keyexchange"));
-								logger.error("tls.error.keyexchange");
+								logger.warn("tls.error.keyexchange");
 								return -1;
 							}
 							// TODO: Diffie-Hellman not supported
@@ -576,7 +561,7 @@ public class SessionManagerImpl implements ISessionManager {
 									.getKeyexchange() != CryptoEnum.TLSKeyExchange.TLS_KEY_X_RSA) {
 								// TODO fix -
 								// logger.error(Util.RB.getString("tls.error.onlyRSAsupported"));
-								logger.error("tls.error.onlyRSAsupported");
+								logger.debug("tls.error.onlyRSAsupported");
 								return -1;
 							}
 
@@ -585,7 +570,7 @@ public class SessionManagerImpl implements ISessionManager {
 							if (tsiPending.getCipherData() == null) {
 								// TODO fix -
 								// logger.error(Util.RB.getString("tls.error.cipherdata"));
-								logger.error("tls.error.cipherdata");
+								logger.debug("tls.error.cipherdata");
 								return -1;
 							}
 
@@ -603,7 +588,7 @@ public class SessionManagerImpl implements ISessionManager {
 									}
 									if (handshake.getSessionIDLen() == sessionID.length && match) {
 										// sessionID of client and server match
-										logger.error("sessionID of client and server match");
+										logger.warn("sessionID of client and server match");
 									} else {
 										sessionID = null;
 									}
@@ -623,11 +608,11 @@ public class SessionManagerImpl implements ISessionManager {
 							// logger.info(session);
 							// }
 							if (handshake.getTicketLen() == -1) {
-								logger.error("Invalid TLS handshake ticket length");
+								logger.warn("Invalid TLS handshake ticket length");
 							} else if (handshake.getTicketLen() == 0) {
 								// -logger.info("Zero TLS handshake ticket
 								// length:"+session);
-								logger.error("Zero TLS handshake ticket length");
+								logger.warn("Zero TLS handshake ticket length");
 							} else {
 
 								serverTicketExtension = new byte[handshake.getTicketLen()];
@@ -769,7 +754,7 @@ public class SessionManagerImpl implements ISessionManager {
 							if (bServerIssuedTicket != 0 || masterSecret == null) {
 								// TODO fix -
 								// logger.error(Util.RB.getString("tls.error.invalidServerIssuedTicket"));
-								logger.error("tls.error.invalidServerIssuedTicket");
+								logger.warn("tls.error.invalidServerIssuedTicket");
 								return -1;
 							}
 
@@ -800,7 +785,7 @@ public class SessionManagerImpl implements ISessionManager {
 							// -logger.info(">>>>TLS_ nothing ... so default");
 							// TODO fix -
 							// logger.error(Util.RB.getString("tls.error.invalidHSType"));
-							logger.error("tls.error.invalidHSType");
+							logger.warn("tls.error.invalidHSType");
 							return -1;
 						} // End of inner switch
 					} // End of while loop
@@ -1007,7 +992,7 @@ public class SessionManagerImpl implements ISessionManager {
 				default:
 					// TODO fix -
 					// logger.error(Util.RB.getString("tls.error.invalidHSType"));
-					logger.error("tls.error.invalidHSType");
+					logger.warn("tls.error.invalidHSType");
 					return -1;
 				}// End of main switch
 			} // End of custom block
@@ -1480,6 +1465,7 @@ public class SessionManagerImpl implements ISessionManager {
 
 	// end of ssl
 	
+	@SuppressWarnings("unused")//Keeping this method to be able to switch
 	private void analyzeRequestResponseInfo(List<Session> sessions) {
 		for (Session session : sessions) {
 			for (PacketInfo sPacket : session.getPackets()) {
@@ -1493,7 +1479,7 @@ public class SessionManagerImpl implements ISessionManager {
 			try {
 				session.setRequestResponseInfo(requestResponseBuilder.createRequestResponseInfo(session));
 			} catch (IOException exe) {
-				logger.error("Error create RequestResponseInfo", exe);
+				logger.warn("Error create RequestResponseInfo", exe);
 			}
 			for (HttpRequestResponseInfo rrinfo : session.getRequestResponseInfo()) {
 				if (rrinfo.getDirection() == HttpDirection.REQUEST) {
@@ -1617,7 +1603,7 @@ public class SessionManagerImpl implements ISessionManager {
 							upl.setBaseSeq(pac.getAckNumber());
 							break;
 						default:
-							logger.error("Invalid packet direction");
+							logger.warn("Invalid packet direction");
 						}
 					}
 				}

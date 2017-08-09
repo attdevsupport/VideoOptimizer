@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 AT&T
+ *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ import java.util.List;
 public class AROCollectorService extends Service {
 
 	/** A string for logging an ARO Data Collector service. */
-	public static final String TAG = "AROCollectorService_SRV";
+	public static final String TAG = AROCollectorService.class.getSimpleName();
 	
 	public static final String ARO_COLLECTOR_SERVICE = "com.att.arocollector.ARO_COLLECTOR_SERVICE";
 
@@ -247,13 +247,12 @@ public class AROCollectorService extends Service {
 			if (receiverNetworkDetails != null) {
 				deviceInfo = new DeviceDetails();
 				setDeviceDetails();
+
 				String videoOrientation = intent.getStringExtra(BundleKeyUtil.VIDEO_ORIENTATION);
 
 				recordCollectOptions(videoOrientation);
 			}
-
-			initializeFlurryObjects();
-
+			
 			getRunningApplications();
 		}
 		return super.onStartCommand(intent, flags, startId);
@@ -363,17 +362,6 @@ public class AROCollectorService extends Service {
 			Log.i(TAG, "Running Task " + recentTask.baseActivity);
 		}
 
-		// Log.i(TAG, "recentApplicationsList ");
-		// for (RunningAppProcessInfo recentApplication : recentApplicationsList) {
-		// Log.i(TAG, "Running Task " + recentApplication.processName);
-		// }
-		//
-		// Log.i(TAG, "runningServiceList ");
-		// for (RunningServiceInfo runningService : runningServiceList) {
-		// //if (runningService.clientPackage != null) Log.i(TAG, "----Running Task " + runningService.clientPackage);
-		// //Log.i(TAG, "Running Task " + runningService.clientLabel);
-		// Log.i(TAG, "Running Task " + runningService.process);
-		// }
 	}
 
 	/**
@@ -412,11 +400,19 @@ public class AROCollectorService extends Service {
 	}
 
 	private void recordCollectOptions(String videoOrientation){
+
 		File file = new File(traceDir, COLLECT_OPTIONS);
 		Log.i(TAG, "create file:" + file.getAbsolutePath());
 		try(BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
 			file.createNewFile();
-			bw.write("Video Orientation :" + videoOrientation
+			bw.write("dsDelay=" + System.lineSeparator()
+					+ "usDelay="  + System.lineSeparator()
+					+ "throttleDL="  + System.lineSeparator()
+					+ "throttleUL="  + System.lineSeparator()
+					+ "secure="  + System.lineSeparator()
+					+ "orientation=" + videoOrientation + System.lineSeparator()
+					+ "attnrProfile="+ System.lineSeparator()
+					+ "attnrProfileName="
 			);
 			bw.close();
 		} catch (IOException e) {
@@ -462,25 +458,6 @@ public class AROCollectorService extends Service {
 		return null;
 	}
 
-	/**
-	 * Initializes Flurry Event objects
-	 */
-	private void initializeFlurryObjects() {
-
-		// tests need to maintain states
-		/*
-		networkTypeFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_networkType), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		networkInterfaceFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_networkInterface), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		wifiFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_wifi), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		batteryFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_battery), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		gpsFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_gps), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		cameraFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_camera), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		bluetoothFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_bluetooth), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		// log events at end; do not need states
-		backgroundAppsFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_backgroundApps), 0, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		makeModelEvent = new FlurryEvent(this.getString(R.string.flurry_makeModel), 0, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		*/
-	}
 
 	/** Broadcast receiver for Batter events */
 	private BroadcastReceiver mBatteryLevelReceiver;

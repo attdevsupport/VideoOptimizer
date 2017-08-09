@@ -85,7 +85,6 @@ import com.att.aro.ui.view.menu.AROMainFrameMenu;
 import com.att.aro.ui.view.menu.help.SplashScreen;
 import com.att.aro.ui.view.menu.tools.DataDump;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
-import com.att.aro.ui.view.menu.tools.RegexWizard;
 import com.att.aro.ui.view.menu.tools.VideoAnalysisDialog;
 import com.att.aro.ui.view.overviewtab.OverviewTab;
 import com.att.aro.ui.view.statistics.StatisticsTab;
@@ -101,6 +100,9 @@ import com.att.aro.view.images.Images;
 
 public class MainFrame implements SharedAttributesProcesses {
 	private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("messages"); //$NON-NLS-1$
+
+	public static final String FILE_SEPARATOR = System.getProperty("file.separator");
+	String voPath = System.getProperty("user.dir");
 
 	private JFrame frmApplicationResourceOptimizer;
 	private JTabbedPane jMainTabbedPane;
@@ -135,7 +137,6 @@ public class MainFrame implements SharedAttributesProcesses {
 	 * video analysis dialog reference
 	 */
 	private VideoAnalysisDialog videoAnalysisDialog;
-	private RegexWizard regexWizard;
 	private boolean videoPlayerSelected = true;
 	private VideoPlayerController videoPlayerController;
 
@@ -146,11 +147,14 @@ public class MainFrame implements SharedAttributesProcesses {
 	private LiveScreenViewDialog liveView;
 
 	private AnalysisFilter filter;
-
+	
+	private AROCollectorSwingWorker<Void, Void> stopCollectorWorker;
+	
 	private int playbackWidth = 350;
 	private int playbackHeight = 600;
 	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	private int rtEdge = screenSize.width - playbackWidth;
+	private long lastOpened = 0;
 	
 	public static MainFrame getWindow() {
 		return window;
@@ -178,14 +182,6 @@ public class MainFrame implements SharedAttributesProcesses {
 
 	public void setVideoAnalysisDialog(VideoAnalysisDialog videoAnalysisDialog) {
 		this.videoAnalysisDialog = videoAnalysisDialog;
-	}
-
-	public RegexWizard getRegexWizard() {
-		return regexWizard;
-	}
-
-	public void setRegexWizard(RegexWizard regexWizard) {
-		this.regexWizard = regexWizard;
 	}
 
 	/**
@@ -271,9 +267,9 @@ public class MainFrame implements SharedAttributesProcesses {
 	public void initialize() {
 		AROUIManager.init();
 		int playbackWidth = 350;
-		// int playbackHeight = 600;
 
 		createVideoOptimizerFolder();
+
 		frmApplicationResourceOptimizer = new JFrame();
 		frmApplicationResourceOptimizer.setTitle(getAppTitle());
 		frmApplicationResourceOptimizer.setIconImage(Images.ICON.getImage());
@@ -301,7 +297,8 @@ public class MainFrame implements SharedAttributesProcesses {
 		sendInstallationInfoTOGA();
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsStartSessionEvents(
 				GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(),
-				GoogleAnalyticsUtil.getAnalyticsEvents().getStartApp());
+				GoogleAnalyticsUtil.getAnalyticsEvents().getStartApp(), 
+				Util.OS_NAME + (Util.OS_ARCHYTECTURE.contains("64") ? " 64" : " 32"));
 		};
 		new Thread(runGA).start();
 		frmApplicationResourceOptimizer.addWindowListener(new WindowAdapter() {
@@ -315,9 +312,9 @@ public class MainFrame implements SharedAttributesProcesses {
 		log.info("ARO UI started");
 	}
 
+	@SuppressWarnings("deprecation")
 	private void createVideoOptimizerFolder() {
 		File aroFolder = new File(Util.getAroLibrary());
-
 		String videoOptimizerFolder = Util.getVideoOptimizerLibrary() + System.getProperty("file.separator");
 		File videoOptimizerConfigFile = new File(videoOptimizerFolder + "config.properties");
 		if (aroFolder.exists() && videoOptimizerConfigFile.length() == 0) {
@@ -327,7 +324,6 @@ public class MainFrame implements SharedAttributesProcesses {
 				e.printStackTrace();
 			}
 		}
-
 	}
 
 	private String getAppTitle() {
@@ -362,7 +358,7 @@ public class MainFrame implements SharedAttributesProcesses {
 			jMainTabbedPane.add(BUNDLE.getString("aro.tab.overview"), overviewTab.layoutDataPanel());
 			modelObserver.registerObserver(overviewTab);
 
-			diagnosticsTab = new DiagnosticsTab(this);
+			diagnosticsTab = new DiagnosticsTab(this, route);
 			jMainTabbedPane.add(BUNDLE.getString("aro.tab.advanced"), diagnosticsTab);
 			modelObserver.registerObserver(diagnosticsTab);
 
@@ -398,6 +394,11 @@ public class MainFrame implements SharedAttributesProcesses {
 			tabPanel = TabPanels.tab_panel_statistics;
 		} else if (getCurrentTabComponent() == diagnosticsTab) {
 			tabPanel = TabPanels.tab_panel_other;
+		} else if(getCurrentTabComponent() == videoTab){
+			tabPanel = TabPanels.tab_panel_video_tab;
+			if (getDiagnosticTab().getGraphPanel().getTraceData() != null) {
+				videoTab.update(modelObserver, getDiagnosticTab().getGraphPanel().getTraceData());
+			}
 		} else {
 			tabPanel = TabPanels.tab_panel_other;
 		}
@@ -421,6 +422,7 @@ public class MainFrame implements SharedAttributesProcesses {
 	@Override
 	public void updateTracePath(File path) {
 		if (path != null) {
+			lastOpened = System.currentTimeMillis();
 			notifyPropertyChangeListeners("tracePath", tracePath, path.getAbsolutePath());
 			if (path.getAbsolutePath().contains(".cap")) {
 				tracePath = path.getAbsolutePath().substring(0,
@@ -434,6 +436,10 @@ public class MainFrame implements SharedAttributesProcesses {
 			Runnable sendAnalytics = () -> sendAnalytics(isDir);
 			new Thread(sendAnalytics).start();
 		}
+	}
+	
+	public long getLastOpenedTime() {
+		return lastOpened;
 	}
 
 	private void sendAnalytics(boolean isDir) {
@@ -587,8 +593,9 @@ public class MainFrame implements SharedAttributesProcesses {
 			liveView.setVisible(false);
 			liveView = null;
 		}
-		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3, "stopCollector",
-				null).execute();
+		stopCollectorWorker = new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3, "stopCollector",
+				null);
+		stopCollectorWorker.execute();
 	}
 	
 	@Override
@@ -653,7 +660,8 @@ public class MainFrame implements SharedAttributesProcesses {
 		}
 
 		// Collection has been stopped ask to open trace
-		if (collectorStatus != null && collectorStatus.equals(CollectorStatus.STOPPED)){
+		if (collectorStatus != null && collectorStatus.equals(CollectorStatus.STOPPED)) {
+			stopCollectorWorker.hideProgressDialog();
 			log.info("stopDialog");
 			String traceFolder = aroController.getTraceFolderPath();
 			int seconds = (int) (aroController.getTraceDuration()/1000);
@@ -734,5 +742,13 @@ public class MainFrame implements SharedAttributesProcesses {
 	@Override
 	public void showAllCharts(){
 		diagnosticsTab.showChartOptions();
+	}
+	
+	public DiagnosticsTab getDiagnosticTab(){
+		return diagnosticsTab;
+	}
+	
+	public VideoTab getVideoTab(){
+		return videoTab;
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 AT&T
+ *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,14 @@
  */
 package com.att.arocollector.privatedata;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class AROPrivateDataCollectorService extends Service{
 

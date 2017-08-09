@@ -18,10 +18,12 @@ package com.att.aro.core;
 import java.io.IOException;
 import java.util.List;
 
+import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.configuration.pojo.Profile;
 import com.att.aro.core.packetanalysis.IPacketAnalyzer;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
+import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.pojo.AROTraceData;
 
 /**
@@ -215,5 +217,8 @@ public interface IAROService {
 	 *             if trace file not found
 	 */
 	AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory, Profile profile, AnalysisFilter filter) throws IOException;
+
+	List<AbstractBestPracticeResult> analyze(PacketAnalyzerResult result,
+			List<BestPracticeType> requests);
 
 }

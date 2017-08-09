@@ -292,6 +292,15 @@ public class TraceDataConst {
 		 */
 		public static final String COLLECT_OPTIONS = "collect_options";
 		
+		/**
+		 *The name of the user attenuation event trace file
+		 */
+		public static final String ATTENUATION_EVENT = "attenuation_logs";
+
+		/**
+		 *The name of the user speed throttle event trace file
+		 */
+		public static final String SPEED_THROTTLE_EVENT = "speedthrottle_logs";
 	}
 	
 	/**

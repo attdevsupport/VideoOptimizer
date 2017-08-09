@@ -44,8 +44,8 @@ public abstract class AbstractBufferOccupancyCalculator extends PlotHelperAbstra
 		return possibleStartPlayTime;
 	}
 	
-	protected double updatePlayStartTimeAfterStall(VideoEvent chunkPlaying) {
-		double possibleStartPlayTimeAfterStall = Math.ceil(chunkPlaying.getEndTS());
+	protected double updatePlayStartTimeAfterStall(VideoEvent chunkPlaying,double stallPausePoint, double stallRecovery) {
+		double possibleStartPlayTimeAfterStall = chunkPlaying.getEndTS()+stallPausePoint+stallRecovery;//Math.ceil(chunkPlaying.getEndTS());
 		if (possibleStartPlayTimeAfterStall != -1) {
 			chunkPlayStartTime = possibleStartPlayTimeAfterStall;
 			chunkPlayEndTime = chunkPlayStartTime + chunkPlayTimeDuration;
@@ -57,10 +57,14 @@ public abstract class AbstractBufferOccupancyCalculator extends PlotHelperAbstra
 		PlotHelperAbstract.chunkPlayTimeList.put(chunkPlaying, possibleStartPlayTimeAfterStall);
 	}
 	
-	protected void setNextPlayingChunk(int currentVideoSegmentIndex,List<VideoEvent> filteredChunk) { //, VideoUsage videoUsage
+	protected void setNextPlayingChunk(int currentVideoSegmentIndex,List<VideoEvent> filteredChunk) {
 		chunkPlaying = filteredChunk.get(currentVideoSegmentIndex);
-		chunkPlayStartTime = chunkPlayEndTime;
-		chunkPlayTimeDuration = getChunkPlayTimeDuration(chunkPlaying);//, videoUsage);
+		// chunkPlayStartTime = chunkPlayEndTime;
+		chunkPlayTimeDuration = getChunkPlayTimeDuration(chunkPlaying);
+		VideoEvent previousChunk = filteredChunk.get(currentVideoSegmentIndex - 1);
+		int diff = (int) (chunkPlaying.getSegment() - previousChunk.getSegment()) > 1
+				? (int) (chunkPlaying.getSegment() - previousChunk.getSegment()) : 1;
+		chunkPlayStartTime = chunkPlayEndTime + (diff - 1) * chunkPlayTimeDuration;
 		chunkPlayEndTime = chunkPlayStartTime + chunkPlayTimeDuration;
 		chunkByteRange = (chunkPlaying.getTotalBytes());
 	}

@@ -83,7 +83,7 @@ public class VideoChunkSizeImpl implements IBestPractice{
 		if (videoUsage != null && videoUsage.getAroManifestMap() != null) {
 
 			for (AROManifest aroManifest : videoUsage.getAroManifestMap().values()) {
-				if (!aroManifest.getVideoEventList().isEmpty()) {
+				if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
 
 					for (VideoEvent videoEvent : aroManifest.getVideoEventsBySegment()) {
 
@@ -116,7 +116,9 @@ public class VideoChunkSizeImpl implements IBestPractice{
 				count == 1? "" : "s",
 				(int) averageSize / 1024
 				));
-
+		result.setSegmentSize((int) averageSize / 1024); //Size in KB
+		result.setSegmentCount((int) count);
+		
 		return result;
 	}
 

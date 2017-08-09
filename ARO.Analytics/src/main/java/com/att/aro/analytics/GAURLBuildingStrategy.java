@@ -99,11 +99,11 @@ public class GAURLBuildingStrategy implements URLBuildingStrategy {
 
 	private String getExceptionParams() {
 		StringBuffer appParams = new StringBuffer();
-		appParams.append(appendString(GACommonParameter.applicationname.param(), "ARO"));
+		appParams.append(appendString(GACommonParameter.applicationname.param(), "VO"));
 		if (encode(this.appName) != null && encode(this.appName).length() > 0) {
 			appParams.append(appendString(GACommonParameter.applicationversion.param(), encode(this.appName)));
 		} else {
-			appParams.append(appendString(GACommonParameter.applicationversion.param(), "1.1.0"));
+			appParams.append(appendString(GACommonParameter.applicationversion.param(), "1.2.0"));
 		}
 		appParams.append(appendString(GARequiredParameter.hittype.param(), GAHitTypes.typeEX.type()));
 

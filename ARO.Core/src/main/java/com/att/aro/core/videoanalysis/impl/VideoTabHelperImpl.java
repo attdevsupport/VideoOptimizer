@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.att.aro.core.packetanalysis.IVideoUsageAnalysis;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.videoanalysis.IVideoTabHelper;
+import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 
 public class VideoTabHelperImpl implements IVideoTabHelper{
 
@@ -32,9 +33,25 @@ public class VideoTabHelperImpl implements IVideoTabHelper{
 	
 	@Override
 	public TreeMap<Double, HttpRequestResponseInfo> getRequestListMap(){
+		if(videoUsageImpl.getVideoUsage() == null) {
+			return new TreeMap<Double, HttpRequestResponseInfo>();
+		}
 		return videoUsageImpl.getVideoUsage().getRequestMap();
 	}
 
+	@Override
+	public void resetRequestMapList(){
+		if(videoUsageImpl.getVideoUsage() != null){
+			videoUsageImpl.getVideoUsage().setRequestMap(new TreeMap<Double, HttpRequestResponseInfo>());
+		}
+	}
 	
+	@Override
+	public boolean isStartUpDelaySet(){
+		if(PlotHelperAbstract.chunkPlayTimeList.size() == 0){
+			return false;
+		}
+		return true;
+	}
 }
 

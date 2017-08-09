@@ -9,15 +9,10 @@ public class MockUserPreferencesFactory {
 	
 	private MockUserPreferencesFactory() {}
 	
-	public static MockUserPreferencesFactory getInstance() {
-		
+	public static synchronized MockUserPreferencesFactory getInstance() {
 		if (instance == null) {
-			synchronized (UserPreferences.class) {		
-				if (instance == null) {
-					instance = new MockUserPreferencesFactory();
-				}
-			}
-		}	
+			instance = new MockUserPreferencesFactory();
+		}
 		return instance;
 	}
 	

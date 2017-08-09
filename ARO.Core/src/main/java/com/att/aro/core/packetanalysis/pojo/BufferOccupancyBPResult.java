@@ -15,9 +15,12 @@
 */
 package com.att.aro.core.packetanalysis.pojo;
 
+import java.util.List;
+
 public class BufferOccupancyBPResult {
 
 	private double maxBuffer=0.0;
+	private List<Double> bufferByteDataSet;
 	
 	public BufferOccupancyBPResult(double maxBuffer){
 		this.maxBuffer = maxBuffer;
@@ -26,4 +29,18 @@ public class BufferOccupancyBPResult {
 	public  double getMaxBuffer(){
 		return maxBuffer;
 	}
+
+	public void setMaxBuffer(double maxBuffer) {
+		this.maxBuffer = maxBuffer;
+	}
+
+	public List<Double> getBufferByteDataSet() {
+		return bufferByteDataSet;
+	}
+
+	public void setBufferByteDataSet(List<Double> bufferByteDataSet) {
+		this.bufferByteDataSet = bufferByteDataSet;
+	}
+	
+	
 }

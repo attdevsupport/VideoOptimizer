@@ -177,11 +177,6 @@ public class VideoTimeReaderImplTest extends BaseTest {
 	 */
 	@Test
 	public void readData4() throws IOException {
-		
-
-		Date traceDateTime = new Date((long) 1414092264446.0);
-		VideoTime videoTime = null;
-
 		makeFile("video.dv", null);
 		makeFile("video.qt", null);
 		makeFile("video.mev", null);

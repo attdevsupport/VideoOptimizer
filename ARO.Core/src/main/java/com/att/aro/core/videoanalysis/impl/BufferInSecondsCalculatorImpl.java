@@ -26,6 +26,7 @@ import java.util.TreeMap;
 import org.apache.commons.math3.util.MathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
+import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.videoanalysis.AbstractBufferOccupancyCalculator;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
@@ -44,6 +45,8 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 
 	Map<Integer, String> seriesDataSets = new TreeMap<Integer, String>();
 	int key;
+	
+	private BufferTimeBPResult bufferTimeResult;
 
 	@Autowired
 	private VideoChunkPlotterImpl videoChunkPlotterImpl;
@@ -53,11 +56,14 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	// private int stallCount;
 	private List<VideoStall> videoStallResult;
 	private boolean stallStarted;
+	double possibleStartPlayTime;
 
 	@Autowired
 	private IVideoUsagePrefsManager videoPrefManager;
 
 	private double stallTriggerTime;
+	private double stallPausePoint;
+	private double stallRecovery;
 
 	public List<VideoStall> getVideoStallResult() {
 		return videoStallResult;
@@ -71,9 +77,27 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 		this.stallTriggerTime = stallTriggerTime;
 	}
 
+	public double getStallPausePoint() {
+		return stallPausePoint;
+	}
+
+	public void setStallPausePoint(double stallPausePoint) {
+		this.stallPausePoint = stallPausePoint;
+	}
+
+	public double getStallRecovery() {
+		return stallRecovery;
+	}
+
+	public void setStallRecovery(double stallRecovery) {
+		this.stallRecovery = stallRecovery;
+	}
+
 	public Map<Integer, String> populate(VideoUsage videoUsage, Map<VideoEvent, Double> chunkPlayTimeList) {
 		if (videoPrefManager.getVideoUsagePreference() != null) {
 			setStallTriggerTime(videoPrefManager.getVideoUsagePreference().getStallTriggerTime());
+			setStallPausePoint(videoPrefManager.getVideoUsagePreference().getStallPausePoint());
+			setStallRecovery(videoPrefManager.getVideoUsagePreference().getStallRecovery());
 		}
 		// this.chunkPlayTimeList = chunkPlayTimeList;
 		seriesDataSets.clear();
@@ -93,6 +117,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 			initialize(videoUsage);
 
 			double bufferInSeconds = 0;
+			possibleStartPlayTime =0;
 			for (int index = 0; index < getChunksBySegmentNumber().size(); index++) {// filteredChunk
 				bufferInSeconds = 0;
 
@@ -108,13 +133,22 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 
 				if (bufferInSeconds < 0 ) { // using -ve as stall indicator
 					// if indicated push the chunk play start time
-					double possibleStartPlayTime = updatePlayStartTime(chunkPlaying);
+					double tempPrevTime = 0;
+					if (possibleStartPlayTime != 0) {
+						tempPrevTime = possibleStartPlayTime;
+					}
+					possibleStartPlayTime = updatePlayStartTime(chunkPlaying);
 
-					if (possibleStartPlayTime == -1) {
+					if (possibleStartPlayTime == -1 || possibleStartPlayTime == tempPrevTime) {
+						possibleStartPlayTime = updatePlayStartTimeAfterStall(chunkPlaying, stallPausePoint, stallRecovery);
+						if (possibleStartPlayTime <= tempPrevTime) {
+							seriesDataSets.clear();
+							break;
+						}
 						if (!videoStallResult.isEmpty()) {
 							videoStallResult.get(videoStallResult.size() - 1).setSegmentTryingToPlay(chunkPlaying);
+							videoStallResult.get(videoStallResult.size()-1).setStallEndTimeStamp(possibleStartPlayTime);
 						}
-						possibleStartPlayTime = updatePlayStartTimeAfterStall(chunkPlaying);
 						addToChunkPlayTimeList(chunkPlaying, possibleStartPlayTime);
 					}
 					index--;
@@ -287,9 +321,11 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	}
 
 	public void updateStallInformation(double stallTime) {
-		if (stallStarted) {
-			// oops >> videoStallResult.size() - 1 = 0
-			videoStallResult.get(videoStallResult.size() - 1).setStallEndTimeStamp(stallTime);
+		if (stallStarted && (videoStallResult != null && videoStallResult.size()!=0)) {
+			VideoStall veStall = videoStallResult.get(videoStallResult.size() - 1);
+			if(veStall.getStallStartTimeStamp() != stallTime){
+				veStall.setStallEndTimeStamp(stallTime);
+			}
 		} else {
 			stallStarted = true;
 			VideoStall stall = new VideoStall(stallTime);
@@ -354,5 +390,10 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 			}
 		}
 		return segmentEndTimeMap;
+	}
+	
+	public BufferTimeBPResult updateBufferTimeResult(List<Double> bufferTimeBPResult){
+		bufferTimeResult= new BufferTimeBPResult(bufferTimeBPResult);
+		return bufferTimeResult;
 	}
 }

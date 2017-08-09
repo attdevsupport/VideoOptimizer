@@ -24,7 +24,7 @@
     
     <!-- Branding & Product name changes -->
     <string name="app_name">VPN Collector</string>
-    <string name="app_brand_name"></string>
+    <string name="app_brand_name">AT&amp;T</string>
     <!-- <string name="app_short_name">ARO</string> -->
     <string name="app_short_name">Video Optimizer</string>
     <string name="app_url_name">VideoOptimizer</string>

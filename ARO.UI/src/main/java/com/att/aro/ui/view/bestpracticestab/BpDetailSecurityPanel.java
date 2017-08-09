@@ -23,6 +23,7 @@ import java.util.List;
 import javax.swing.JPanel;
 
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
+import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.view.MainFrame;
@@ -59,12 +60,7 @@ public class BpDetailSecurityPanel extends BpDetail {
 		fullPanel.add(detailPanel, BorderLayout.SOUTH);
 		add(fullPanel);
 		
-		List<BestPracticeType> list = Arrays.asList(new BestPracticeType[] {
-				BestPracticeType.HTTPS_USAGE, 
-				BestPracticeType.TRANSMISSION_PRIVATE_DATA, 
-				BestPracticeType.UNSECURE_SSL_VERSION, 
-				BestPracticeType.WEAK_CIPHER, 
-				BestPracticeType.FORWARD_SECRECY});
+		List<BestPracticeType> list = BestPracticeType.getByCategory(Category.SECURITY);
 		bpFileDownloadTypes.addAll(list);
 	}
 

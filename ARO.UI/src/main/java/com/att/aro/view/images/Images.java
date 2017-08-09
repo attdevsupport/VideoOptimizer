@@ -57,6 +57,10 @@ public enum Images {
 	 */
 	AROLOGO("arologo"),
 	/**
+	 * The Brand image key.
+	 */
+	BRAND("brand"),
+	/**
 	 * The Pass image key. The associated image is used to identify when a Best
 	 * Practices test has passed.
 	 */
@@ -89,6 +93,10 @@ public enum Images {
 	 * The default video player image.
 	 */
 	NO_VIDEO_AVAILABLE("noVideoAvailable"),
+	/**
+	 * The Header image key.
+	 */
+	HEADER_ICON("headerIcon"),
 	/**
 	 * The Blue header image key.
 	 */

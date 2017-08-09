@@ -40,6 +40,7 @@ import org.jfree.data.general.DatasetUtilities;
 import org.jfree.ui.TextAnchor;
 
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
+import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.UnnecessaryConnectionResult;
 import com.att.aro.core.packetanalysis.pojo.Burst;
@@ -287,7 +288,7 @@ public class ConnectionStatisticsChartPanel extends TabPanelJPanel{
 		
 			int tightlyCoupledBurstCount = 0;
 			for (AbstractBestPracticeResult  abstractResult : traceDataModel.getBestPracticeResults()){
-				if(abstractResult.getBestPracticeType().equals(BestPracticeType.UNNECESSARY_CONNECTIONS)){
+				if(abstractResult.getBestPracticeType().equals(BestPracticeType.UNNECESSARY_CONNECTIONS) && abstractResult.getResultType() != BPResultType.NONE){
 					UnnecessaryConnectionResult unnecessaryConnt = (UnnecessaryConnectionResult)abstractResult;
 					tightlyCoupledBurstCount = 	unnecessaryConnt.getTightlyCoupledBurstCount();
 					
