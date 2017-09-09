@@ -21,8 +21,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -134,80 +132,10 @@ public class PcapngHelperImpl implements IPcapngHelper {
 			ByteBuffer buffer = ByteBuffer.wrap(data).order(ByteOrder.nativeOrder());
 			int blocktype = 0x0A0D0D0A;
 			int type = buffer.getInt();
-			if (type != blocktype) {
-				return applePcapNG;
-			}
-			int blocklen = buffer.getInt(); // 156
-			int startpos = 24;
-			short optioncode = 0;
-			short optionlen = 0;
-			byte[] dst = null;
-			int mod;
-			int stop = blocklen - 4;
-			buffer.position(startpos);
-
-			do {
-				optioncode = buffer.getShort();
-				optionlen = buffer.getShort();
-				startpos = buffer.position();
-
-				if (optionlen > 0) {
-					dst = new byte[optionlen];
-					buffer.get(dst, 0, optionlen);
-					startpos = buffer.position();
-				}
-				switch (optioncode) {
-				case 2:// hardware like x86_64 etc.
-					hardware = new String(dst);
-					break;
-				case 3:// Operating System like Mac OS 10.8.5
-					osname = new String(dst); // Darwin 16.5.0:x
-					break;
-				case 4:// name of application that created this packet file like tcpdump( libpcap version 1.3)
-					appname = new String(dst);
-					break;
-				default:
-					break;
-				}
-				// 16 bit align and 32 bit align
-				mod = startpos % 2;
-				startpos += mod;
-				mod = startpos % 4;
-				startpos += mod;
-				buffer.position(startpos);
-			} while (optioncode > 0 && optionlen > 0 && startpos < stop);
-
-			if (osname.length() > 1 && appname.length() > 1) {
-				/*
-				 * look for OS >= Darwin 13.0.0 App: tcpdump (libpcap version 1.3.0 - Apple version 41)
-				 */
-				extractOSVersion();
-				extractAppVersion();
-				if (osVersion >= 13 && osMajor >= 0 && appVersion >= 41) {
-					setApplePcapNG(true);
-				}
-			}
+			setApplePcapNG(type == blocktype);
+			return isApplePcapNG();
 		}
-		return applePcapNG;
-	}
-
-	void extractOSVersion() {
-		Pattern pattern = Pattern.compile("Darwin (\\d+)\\.(\\d+)");
-		Matcher match = pattern.matcher(osname);
-		boolean success = match.find();
-		if (success) {
-			osVersion = Integer.parseInt(match.group(1));
-			osMajor = Integer.parseInt(match.group(2));
-		}
-	}
-
-	void extractAppVersion() {
-		Pattern pattern = Pattern.compile("tcpdump.+Apple version (\\d+)");
-		Matcher match = pattern.matcher(appname);
-		boolean success = match.find();
-		if (success) {
-			appVersion = Integer.parseInt(match.group(1));
-		}
+		return false;
 	}
 
 	@Override
@@ -231,7 +159,8 @@ public class PcapngHelperImpl implements IPcapngHelper {
 		return applePcapNG;
 	}
 
-	private void setApplePcapNG(boolean applePcapNG) {
+	@Override
+	public void setApplePcapNG(boolean applePcapNG) {
 		this.applePcapNG = applePcapNG;
 	}
 

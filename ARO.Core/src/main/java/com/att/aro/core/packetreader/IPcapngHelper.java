@@ -28,6 +28,7 @@ public interface IPcapngHelper {
 	boolean isApplePcapng(File file) throws FileNotFoundException;
 	boolean isApplePcapng(String filepath) throws FileNotFoundException;
 	boolean isApplePcapNG();
+	void setApplePcapNG(boolean applePcapNG);
 	String getHardware();
 	String getOs();
 	boolean isNoLinkLayer(String pcapfile) throws FileNotFoundException;
