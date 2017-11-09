@@ -32,8 +32,10 @@ public class ResultVideoTagTableModel extends AbstractTableModel {
 		return data[row][col];
 	}
 
-	public Class getColumnClass(int col) {
-		return getValueAt(0, col).getClass();
+	public Class<?> getColumnClass(int col) {
+		Class<? extends Object> classObj = null;
+		classObj = getValueAt(0, col).getClass();
+		return classObj;
 	}
 
 	public boolean isCellEditable(int row, int col) {
@@ -49,6 +51,9 @@ public class ResultVideoTagTableModel extends AbstractTableModel {
 	 * Column 1 is VideoDataTag
 	 */
 	public void setValueAt(Object value, int row, int col) {
+		if (row < 0 || col < 0 || row >= data.length || col >= data[row].length) {
+			return;
+		}
 		if (col == 1 && value.getClass().equals(String.class)) {
 			data[row][col] = getVideoDataTag((String) value);
 		} else {
@@ -79,29 +84,26 @@ public class ResultVideoTagTableModel extends AbstractTableModel {
 	public VideoDataTags[] getVideoDataTags() {
 		VideoDataTags[] tags = new VideoDataTags[data.length];
 		for (int idx = 0; idx < tags.length; idx++) {
-			try {
-				tags[idx]=(VideoDataTags) data[idx][1];
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			tags[idx] = (VideoDataTags) data[idx][1];
 		}
 		return tags;
 	}
 
 	public void update(String[] results, VideoDataTags[] videoDataTags) {
-		if (results != null) {
+		if (results != null && videoDataTags != null && results.length > 0) {
 			int resSize = results.length;
 			int vdtSize = videoDataTags.length;
-			data = new Object[resSize][2];
-			for (int idx = 0; idx < results.length; idx++) {
+			int maxCount = resSize > vdtSize ? resSize : vdtSize; // find larger array to avoid overruns
+			data = new Object[maxCount][2];
+			// data will be at least results.length in size
+			for (int idx = 0; idx < resSize; idx++) {
 				data[idx][0] = results[idx];
-				data[idx][1] = vdtSize > idx ? videoDataTags[idx] : VideoDataTags.unknown;
+				data[idx][1] = (videoDataTags.length > idx && videoDataTags[idx] != null) ? videoDataTags[idx] : VideoDataTags.unknown;
 			}
-			fireTableDataChanged();
 		} else {
 			data = new Object[0][2];
 		}
+		fireTableDataChanged();
 	}
 
 }

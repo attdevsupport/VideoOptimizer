@@ -12,44 +12,49 @@
 		<build.timestamp>${maven.build.timestamp}</build.timestamp>
 		<maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
 	</properties>
-
+	
 	<name>aro-core</name>
 	<description>central project for Video Optimizer</description>
 	<url>https://github.com/attdevsupport/ARO</url>
 
 	<repositories>
+			<repository>
+			<id>central</id>
+			<name>MavenCentral Repository</name>
+			<url>http://repo1.maven.org/maven2</url>
+		</repository>
+	
 		<repository>
 			<id>Typesafe</id>
 			<name>Maven Typesafe Repository</name>
 			<url>http://repo.typesafe.com/typesafe/maven-releases</url>
 		</repository>
-		<repository>
+ 		<repository>
 			<id>com.springsource.repository.bundles.external</id>
 			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
 			<url>http://repository.springsource.com/maven/bundles/external</url>
-		</repository>
+			</repository>
 		<repository>
-			<id>central</id>
-			<name>MavenCentral Repository</name>
-			<url>http://repo1.maven.org/maven2</url>
+			<id>atlassian-public</id>
+			<url>https://maven.atlassian.com/repository/public</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+				<checksumPolicy>warn</checksumPolicy>
+			</releases>
 		</repository>
 		<repository>
 			<id>apache.snapshots</id>
 			<name>Apache Development Snapshot Repository</name>
 			<url>https://repository.apache.org/content/repositories/snapshots/</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>local</id>
-			<url>file://${project.basedir}/libs</url>
-		</repository>
-	</repositories>
-
+		</repository>		
+		
+  	</repositories>
+ 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -62,31 +67,23 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 			<version>3.5</version>
 		</dependency>
-		<dependency>
-			<groupId>org.codehaus.mojo</groupId>
-			<artifactId>findbugs-maven-plugin</artifactId>
-			<version>3.0.4</version>
-		</dependency>
-		<dependency>
-			<groupId>org.hyperic</groupId>
-			<artifactId>sigar</artifactId>
-			<version>1.6.4</version>
-		</dependency>
+<!--Please download the source code from the web site and compile it and publish to your own local repository-->
+<!--https://bitbucket.org/luciad/webp-imageio  -->
+<!--mvn install:install-file -Dfile=luciad-webp-imageio-0.6.0-SNAPSHOT.jar -DgroupId=com.luciad.imageio \-DartifactId=webp-imageio \-Dversion=0.6.0-SNAPSHOT \-Dpackaging=jar -->		
 		<dependency>
 			<groupId>com.luciad.imageio</groupId>
 			<artifactId>webp-imageio</artifactId>
-			<version>0.4.2</version>
+			<version>0.5.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.jai-imageio</groupId>
 			<artifactId>jai-imageio-jpeg2000</artifactId>
-			<version>1.3.0</version>
+			<version>1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -94,6 +91,7 @@
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		<!-- jaxb support -->
+		
 		<dependency>
 			<groupId>org.glassfish.jaxb</groupId>
 			<artifactId>jaxb-runtime</artifactId>
@@ -110,11 +108,13 @@
 			<version>2.2.11</version>
 		</dependency>
 		<!-- end jaxb support -->
+
 		<dependency>
 			<groupId>com.drewnoakes</groupId>
 			<artifactId>metadata-extractor</artifactId>
 			<version>2.8.1</version>
 		</dependency>
+
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
@@ -126,7 +126,7 @@
 			<artifactId>commons-math3</artifactId>
 			<version>3.5</version>
 		</dependency>
-
+		
 		<dependency>
 			<groupId>org.springframework.plugin</groupId>
 			<artifactId>spring-plugin-core</artifactId>
@@ -231,6 +231,11 @@
 			<version>1.9.13</version>
 		</dependency>
 		<dependency>
+		    <groupId>org.codehaus.mojo</groupId>
+		    <artifactId>findbugs-maven-plugin</artifactId>
+		    <version>3.0.4</version>
+		</dependency>
+		<dependency>
 			<groupId>com.android.tools.ddms</groupId>
 			<artifactId>ddmlib</artifactId>
 			<version>24.0.1</version>
@@ -241,6 +246,11 @@
 			<version>1.4.0</version>
 		</dependency>
 
+		<dependency>
+		  <groupId>org.hyperic</groupId>
+		  <artifactId>sigar</artifactId>
+		  <version>1.6.4</version>
+		</dependency>
 		<!-- jni ffmpeg support -->
 		<dependency>
 			<groupId>org.bytedeco</groupId>
@@ -288,9 +298,64 @@
 				</includes>
 			</resource>
 		</resources>
+		<pluginManagement>
 		<plugins>
+		
+			<plugin>
+			  <artifactId>maven-install-plugin</artifactId>
+			  <version>2.5.2</version>
+			  <executions>
+			    <execution>
+		    		<id>1</id>
+			      <phase>pre-clean</phase>
+			      <goals>
+			        <goal>install-file</goal>
+			      </goals>
+			      <configuration>
+					<groupId>com.luciad.imageio</groupId>
+					<artifactId>webp-imageio</artifactId>
+					<packaging>jar</packaging>
+					<version>0.5.2</version>
+			        <file>lib/webp-imageio-0.5.2.jar</file>
+			      </configuration>
+			    </execution>
+			    <execution>
+			    	<id>2</id>
+			      <phase>pre-clean</phase>
+			      <goals>
+			        <goal>install-file</goal>
+			      </goals>
+			      <configuration>
+					<groupId>com.proxy</groupId>
+					<artifactId>proxy-vole</artifactId>
+					<packaging>jar</packaging>
+					<version>1.0</version>
+			        <file>lib/proxy-vole-1.0.jar</file>
+			      </configuration>
+			    </execution>
+			    <execution>
+		    		<id>3</id>
+			      <phase>pre-clean</phase>
+			      <goals>
+			        <goal>install-file</goal>
+			      </goals>
+			      <configuration>
+					<groupId>com.github.jai-imageio</groupId>
+					<artifactId>jai-imageio-jpeg2000</artifactId>
+					<packaging>jar</packaging>
+					<version>1.1</version>
+			        <file>lib/jai-imageio-jpeg2000-1.1.jar</file>
+			      </configuration>
+			    </execution>
+			  </executions>
+			</plugin>
 
-			<!-- compile to 1.7 -->
+		
+		
+		</plugins>
+		</pluginManagement>
+		<plugins>
+			<!-- compile to 1.8 -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -300,6 +365,29 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+
+			<plugin>
+	            <groupId>org.codehaus.mojo</groupId>
+	            <artifactId>findbugs-maven-plugin</artifactId>
+	            <version>3.0.4</version>
+	            <configuration>
+	            	<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
+	                <effort>Max</effort>
+	                <threshold>Max</threshold>
+	                <maxRank>15</maxRank>
+	                <xmlOutput>true</xmlOutput>
+	                <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+	            </configuration>
+	            <executions>
+	                <execution>
+	                    <id>analyze-compile</id>
+	                    <!-- <phase>compile</phase> -->
+	                    <goals>
+	                        <goal>check</goal>
+	                    </goals>
+	                </execution>
+	            </executions>
+	        </plugin>
 
 			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -316,52 +404,6 @@
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.2.1</version>
-                <executions>
-                    <execution>
-                        <id>install-webp-jar</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <executable>mvn</executable>
-                    <arguments>
-                        <argument>install:install-file</argument>
-                        <argument>-Dfile=${basedir}\libs/com/luciad/imageio/webp-imageio/0.4.2/webp-imageio-0.4.2.jar</argument>
-                        <argument>-DgroupId=com.luciad.imageio</argument>
-                        <argument>-DartifactId=webp-imageio</argument>
-                        <argument>-Dversion=0.4.2</argument>
-                        <argument>-Dpackaging=jar</argument>
-                    </arguments>
-                </configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>3.0.4</version>
-				<configuration>
-					<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
-					<effort>Max</effort>
-					<threshold>Max</threshold>
-					<maxRank>10</maxRank>
-					<xmlOutput>true</xmlOutput>
-					<findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-				</configuration>
-				<executions>
-					<execution>
-						<id>analyze-compile</id>
-						<!-- <phase>compile</phase> -->
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.17</version>
@@ -373,7 +415,120 @@
 					</dependency>
 				</dependencies>
 			</plugin>
+ 			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.7.6.201602180812</version>
+				<executions>
+					<execution>
+						<id>default-prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>default-report</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>default-check</id>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<rule>
+									<element>CLASS</element>
+									<excludes>
+										<exclude>*Test</exclude>
+										<exclude>*Config</exclude>
+										<exclude>*LoggerPostProcessor</exclude>
+										<exclude>*pojo*</exclude>
+										<exclude>*NetmonAdapter</exclude>
+										<exclude>com.att.aro.pcap.PCapAdapter</exclude>
+										<exclude>*securedpacketreader*</exclude>
+										<exclude>com.att.aro.core.commandline.impl.ProcessFactoryImpl</exclude>
+										<exclude>com.att.aro.core.datacollector.impl.DefaultDataCollectorImpl</exclude>
+										<exclude>com.att.aro.mvc.MainController</exclude>
+										<exclude>com.att.aro.core.util.Util</exclude>
+										<exclude>com.att.aro.mvc.AROController*</exclude>
+										<exclude>com.att.aro.mvc.AROCollectorActionEvent</exclude>
+										<exclude>com.att.aro.core.exception.*</exclude>
+										<exclude>com.att.aro.core.analytics.*</exclude>
+										<exclude>com.att.aro.core.util.GoogleAnalyticsUtil</exclude>
+										<exclude>com.att.aro.core.util.CrashHandler</exclude>
+										<exclude>com.att.aro.core.packetanalysis.impl.SessionManagerImpl</exclude>
+										<exclude>com.att.aro.pcap.packetrebuild.*</exclude>
+										<exclude>com.att.aro.core.packetreader.impl.PacketReaderImpl</exclude>
+										<exclude>com.att.aro.core.fileio.impl.FileManagerImpl.1</exclude>
 
+										<!-- exclude for screenrecord development -->
+										<exclude>com.att.aro.core.video.IScreenRecorder</exclude>
+										<exclude>com.att.aro.core.video.IScreenRecorder.State</exclude>
+										<exclude>com.att.aro.core.video.impl.ScreenRecorderImpl</exclude>
+										<exclude>com.att.aro.core.video.impl.ScreenRecorderImpl.1</exclude>
+										<exclude>com.att.aro.core.video.impl.ScreenRecorderImpl.VideoSegment</exclude>
+										<exclude>com.att.aro.core.video.impl.ScreenRecorderImpl.VideoSegment.Segment</exclude>
+										<exclude>com.att.aro.core.adb.impl.AdbServiceImpl</exclude>
+										<!-- end of exclude for screenrecord development -->
+
+										<!-- exclude for development VideoBP -->
+										<exclude>com.att.aro.core.bestpractice.impl.*</exclude>
+										<exclude>com.att.aro.core.impl.AROServiceImpl</exclude>
+										<exclude>com.att.aro.core.packetanalysis.impl.VideoUsageAnalysisImpl</exclude>
+										<exclude>com.att.aro.core.videoanalysis.impl.BufferOccupancyCalculatorImp</exclude>
+										<exclude>com.att.aro.core.videoanalysis.*</exclude>
+										<exclude>com.att.aro.core.videoanalysis.pojo.*</exclude>
+										<exclude>com.att.aro.core.videoanalysis.impl.*</exclude>
+										<exclude>com.att.aro.core.util.StringParse</exclude>
+										<!-- end of exclude for development VideoBP -->
+
+										<exclude>com.att.aro.core.fileio.impl.FileManagerImpl</exclude>
+										<exclude>com.att.aro.core.video.VideoHelper</exclude>
+										<exclude>com.att.aro.core.AnalyzerOS</exclude>
+
+										<!-- exclude for wrapper classes -->
+										<exclude>com.att.aro.core.preferences.impl.PreferenceHandlerImpl</exclude>
+										<exclude>com.att.aro.core.settings.*</exclude>
+										<exclude>com.att.aro.core.settings.impl.*</exclude>
+										
+										<!-- exclude for enums -->
+										<exclude>com.att.aro.core.settings.impl.SettingsImpl.ConfigFileAttributes</exclude>										
+										
+										<!-- Lambdas -->
+										<exclude>com.att.aro.core.impl.AROServiceImpl.*</exclude>
+										
+										<!--  temporary  -->
+										<exclude>com.att.aro.core.peripheral.impl.CollectOptionsReaderImpl</exclude>
+										<exclude>com.att.aro.core.util.AttnScriptUtil</exclude>
+										
+									</excludes>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.80</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.1</version>
+				<configuration>
+					<show>private</show>
+					<nohelp>true</nohelp>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 	<reporting>

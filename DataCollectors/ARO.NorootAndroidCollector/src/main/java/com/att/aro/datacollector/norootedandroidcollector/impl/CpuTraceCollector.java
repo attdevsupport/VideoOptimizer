@@ -28,7 +28,7 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevice;
  */
 public class CpuTraceCollector implements Runnable {
 	
-	/*public enum State{
+	public enum State{
 		Initialized
 		, Capturing
 		, Stopping
@@ -38,7 +38,7 @@ public class CpuTraceCollector implements Runnable {
 		, Done
 		, Error
 		, Undefined
-	}*/
+	}
 
 	private static ILogger log;
 	private IAroDevice aroDevice;

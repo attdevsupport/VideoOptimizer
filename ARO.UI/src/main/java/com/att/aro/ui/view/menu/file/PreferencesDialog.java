@@ -15,6 +15,7 @@
 */
 package com.att.aro.ui.view.menu.file;
 
+import static com.att.aro.ui.view.menu.file.PreferencesDialog.ConfigType.FILE;
 import static com.att.aro.ui.view.menu.file.PreferencesDialog.ConfigType.TEXT;
 import static javax.swing.BoxLayout.LINE_AXIS;
 import static javax.swing.JFileChooser.APPROVE_OPTION;
@@ -26,6 +27,8 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -36,12 +39,14 @@ import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -51,6 +56,7 @@ import javax.swing.text.Document;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.settings.Settings;
+import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.settings.impl.JvmSettings;
 import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
@@ -67,6 +73,8 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
  * 
  */
 public class PreferencesDialog extends JDialog {
+	private static final int BORDER_HEIGHT = 80;
+	private static final int BORDER_WIDTH = 15;
 	private static final Logger LOGGER = Logger.getLogger(PreferencesDialog.class);
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane;
@@ -94,9 +102,8 @@ public class PreferencesDialog extends JDialog {
 	 * to be displayed on the preferences dialog
 	 */
 	enum Config {
-		// TODO Should update it to replace adb in next iteration after demo
-		// ADB("adb2", "adb path", FILE, SettingsImpl.getInstance(), true),
-		MEM("Xmx", "Max heap in MB", TEXT, JvmSettings.getInstance(), !(Util.isWindows32OS()||Util.isLinuxOS()));
+		MEM("Xmx", "Max heap in MB", TEXT, JvmSettings.getInstance(), isHeapEnabled()), ADB("adb", "Adb Path", FILE,
+				SettingsImpl.getInstance(), true);
 
 		private String name;
 		private String desc;
@@ -131,25 +138,32 @@ public class PreferencesDialog extends JDialog {
 		public Boolean isEnabled() {
 			return enabled;
 		}
+
+		private static boolean isHeapEnabled() {
+			boolean isLinuxOrWin32 = Util.isWindows32OS() || Util.isLinuxOS();
+			boolean isMoreThan4GB = ((JvmSettings)JvmSettings.getInstance()).getSystemMemory() > 4096;
+			return !isLinuxOrWin32 && isMoreThan4GB;
+		}
 	}
 
 	public PreferencesDialog(SharedAttributesProcesses parent, JMenuItem callerMenuItem) {
 		super(parent.getFrame());
 		this.parent = parent;
 		this.callerMenuItem = callerMenuItem;
+		callerMenuItem.setEnabled(false);
 		init();
 	}
 
 	private void init() {
 		this.setContentPane(getJContentPane());
-		this.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		this.setTitle("Preferences");
 		enableEscKeyCloseDialog = new EnableEscKeyCloseDialog(getRootPane(), this, false);
 		this.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowDeactivated(WindowEvent event) {
 				if (enableEscKeyCloseDialog.consumeEscPressed()) {
-					closeDialog();
+					dispose();
 				}
 			}
 		});
@@ -158,15 +172,45 @@ public class PreferencesDialog extends JDialog {
 		getRootPane().setDefaultButton(okButton);
 	}
 
-	private JPanel getJContentPane() {
+	private JComponent getJContentPane() {
 		if (jContentPane == null) {
 			jContentPane = new JPanel();
-			jContentPane.setPreferredSize(new Dimension(500, 120));
+			jContentPane.setPreferredSize(new Dimension(750, 500));
 			jContentPane.setLayout(new BorderLayout());
+
+			JTabbedPane tabbedPane = new JTabbedPane();
+			tabbedPane.addTab("General", getGeneralTab());
+			tabbedPane.addTab("Best Practices", BPSelectionPanel.getBPPanel());
+			this.addComponentListener(new ComponentListener() {
+				@Override
+				public void componentResized(ComponentEvent e) {
+					Dimension d = e.getComponent().getSize();
+					tabbedPane.setSize(
+							new Dimension((int) d.getWidth() - BORDER_WIDTH, (int) d.getHeight() - BORDER_HEIGHT));
+				}
+
+				@Override
+				public void componentMoved(ComponentEvent e) {
+				}
+
+				@Override
+				public void componentShown(ComponentEvent e) {
+				}
+
+				@Override
+				public void componentHidden(ComponentEvent e) {
+				}
+			});
 			jContentPane.add(getButtonPanel(), BorderLayout.SOUTH);
-			jContentPane.add(getConfigPanel(), BorderLayout.CENTER);
+			jContentPane.add(tabbedPane, BorderLayout.NORTH);
 		}
 		return jContentPane;
+	}
+
+	private JPanel getGeneralTab() {
+		JPanel general = new JPanel();
+		general.add(getConfigPanel(), BorderLayout.CENTER);
+		return general;
 	}
 
 	private JPanel getButtonPanel() {
@@ -187,7 +231,7 @@ public class PreferencesDialog extends JDialog {
 			jButtonGrid.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 			jButtonGrid.setLayout(gridLayout);
 			jButtonGrid.add(okButton = getButton("Save & Close", (ActionEvent arg) -> saveAndClose()));
-			jButtonGrid.add(getButton("Cancel", (ActionEvent arg) -> closeDialog()));
+			jButtonGrid.add(getButton("Cancel", (ActionEvent arg) -> dispose()));
 		}
 		return jButtonGrid;
 	}
@@ -288,29 +332,40 @@ public class PreferencesDialog extends JDialog {
 				}
 			}
 		});
+		value.setEnabled(config.isEnabled());
 		return value;
 	}
 
 	private void saveAndClose() {
 		try {
-			saveValues();
-			closeDialog();
-		} catch (RuntimeException e) {
-			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(), e.getMessage(),
-					"Failed to save preferences", JOptionPane.ERROR_MESSAGE);
+			saveGenTabValues();
+			saveBPSelection();
+			dispose();
+		} catch (Exception e) {
+			LOGGER.error("Failed to save preferences", e);
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
+					"Error occurred while trying to save Preferences", "Error saving preferences",
+					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
-	private void saveValues() {
+	private void saveGenTabValues() {
 		if (updates != null && updates.size() > 0) {
 			updates.forEach((config, value) -> config.getSettings().setAttribute(config.getName(), value));
 			settings.saveConfigFile();
 		}
 	}
 
-	private void closeDialog() {
-		setVisible(false);
-		callerMenuItem.setEnabled(true);
+	private void saveBPSelection() {
+		SettingsUtil.saveBestPractices(BPSelectionPanel.getInstance().getCheckedBP());
+		if (parent.getTracePath() != null && !"".equals(parent.getTracePath().trim())) {
+			parent.updateTracePath(new File(parent.getTracePath()));
+		}
 	}
 
+	@Override
+	public void dispose() {
+		callerMenuItem.setEnabled(true);
+		super.dispose();
+	}
 }

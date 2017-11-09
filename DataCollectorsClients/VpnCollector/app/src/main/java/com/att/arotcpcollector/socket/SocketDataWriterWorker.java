@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 AT&T
+ *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@ package com.att.arotcpcollector.socket;
 
 import android.util.Log;
 
-import com.att.arotcpcollector.IClientPacketWriter;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
+
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
 import com.att.arotcpcollector.util.PacketUtil;
@@ -33,19 +33,18 @@ import java.nio.channels.SocketChannel;
 public class SocketDataWriterWorker implements Runnable {
 
 	public static final String TAG = "SocketDataWriterWorker";
-	private IClientPacketWriter clientPacketWriter;
 	private TCPPacketFactory tcpFactory;
 	private UDPPacketFactory udpFactory;
 	private SessionManager sessionMngr;
 	private String sessionKey = "";
 	private SocketData pcapData; // for traffic.cap
+	private boolean secureEnable = false;
 	
-	public SocketDataWriterWorker(TCPPacketFactory tcpFactory, UDPPacketFactory udpFactory, IClientPacketWriter clientPacketWriter) {
+	public SocketDataWriterWorker(TCPPacketFactory tcpFactory, UDPPacketFactory udpFactory) {
 		sessionMngr = SessionManager.getInstance();
 		pcapData = SocketData.getInstance();
 		this.tcpFactory = tcpFactory;
 		this.udpFactory = udpFactory;
-		this.clientPacketWriter = clientPacketWriter;
 	}
 
 	public String getSessionKey() {
@@ -144,6 +143,11 @@ public class SocketDataWriterWorker implements Runnable {
 		if (data != null && data.length>0){
 			Log.i("SSL", "data more than zero, data length: " + data.length);
 		}
+		// ******************************** SSL *************************************
+		if (isSecureEnable()){
+
+		}
+		// ******************************** SSL *************************************
 		ByteBuffer buffer = ByteBuffer.allocate(data.length);
 		buffer.put(data);
 		buffer.flip();
@@ -161,16 +165,23 @@ public class SocketDataWriterWorker implements Runnable {
 
 			//close connection with vpn client
 			byte[] rstdata = tcpFactory.createRstData(session.getLastIPheader(), session.getLastTCPheader(), 0);
-			try {
-				Log.i("TCPTRACK"+session.getDestPort(), "<RST");
-				clientPacketWriter.write(rstdata);
-				pcapData.sendDataToPcap(rstdata);
-			} catch (IOException e1) {
-			}
+			Log.i("TCPTRACK"+session.getDestPort(), "<RST");
+			pcapData.sendDataRecieved(rstdata);
+			pcapData.sendDataToPcap(rstdata);
 			//remove session
 			Log.e(TAG, "failed to write to remote socket, aborting connection");
 			session.setAbortingConnection(true);
 		}
 
 	}
+
+
+	public void setSecureEnable(boolean Secure){
+		this.secureEnable = Secure;
+	}
+	
+	public boolean isSecureEnable() {
+		return secureEnable;
+	}
+
 }

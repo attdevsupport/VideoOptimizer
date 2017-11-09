@@ -87,7 +87,7 @@ public class VideoChunkPacingImpl implements IBestPractice{
 		if (videoUsage != null && videoUsage.getAroManifestMap() != null) {
 
 			for (AROManifest aroManifest : videoUsage.getAroManifestMap().values()) {
-				if (!aroManifest.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
+				if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
 					for (VideoEvent videoEvent : aroManifest.getVideoEventsBySegment()) {
 
 						if (ManifestDash.class.isInstance(aroManifest) && videoEvent.getSegment() == 0) {
@@ -120,6 +120,7 @@ public class VideoChunkPacingImpl implements IBestPractice{
 		result.setResultText(MessageFormat.format(textResults, count == 1 ? "was" : "were", count,
 				count == 1 ? "" : "different", count == 1 ? "" : "s", count == 1 ? "was" : "were", chunkPacing,
 				MathUtils.equals(chunkPacing, 1.0) ? "" : "s"));
+		result.setChunkPacing(chunkPacing);
 		
 		return result;
 	}

@@ -21,16 +21,17 @@ import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.ILogger;
+import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetreader.INativePacketSubscriber;
 import com.att.aro.core.packetreader.IPacketListener;
 import com.att.aro.core.packetreader.IPacketReader;
 import com.att.aro.core.packetreader.IPacketService;
+import com.att.aro.core.packetreader.IPcapngHelper;
 import com.att.aro.core.packetreader.pojo.Packet;
 import com.att.aro.core.util.Util;
 import com.att.aro.pcap.PCapAdapter;
-import com.att.aro.pcap.packetrebuild.PCapFileWriter;
 
 public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber {
 
@@ -42,7 +43,13 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 
 	@Autowired
 	private IFileManager filemanager;
+	
+	@Autowired
+	private IExternalProcessRunner extrunner;
 
+	@Autowired
+	IPcapngHelper pcapngHelper;
+	
 	private IPacketListener packetlistener;
 	
 	String aroJpcapLibName = null;
@@ -55,14 +62,7 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 
 	PCapAdapter adapter = null;
 
-	/*
-	 * converting pcap file support
-	 */
-	String convertedCapFile = "converted.cap";
 	String backupCapFileName = "backup.cap";
-	private File currentPcapfile = null;
-	private File convertedPcapFile;
-	private PCapFileWriter pcapOutput;
 	private String unixExtn = ".so";
 	public String windowsOS = "Windows";
 	public String windowsExtn = ".dll";
@@ -84,7 +84,7 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 		}
 		
 		currentPacketfile = packetfile;
-		provisionalStartPcapConversion(packetfile);
+		provisionalPcapConversion(packetfile);
 		
 		if (listener == null) {
 			logger.error("PacketListener cannot be null");
@@ -106,16 +106,6 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 		String result = adapter.readData(packetfile);
 
 		// finish 
-		if (pcapOutput != null) {
-			logger.info("close converted.cap and rename stuff");
-			pcapOutput.close();
-			pcapOutput = null;
-
-			if (filemanager.renameFile(currentPcapfile, backupCapFileName)) {
-				filemanager.renameFile(convertedPcapFile, currentPcapfile.getName());
-			}
-		}
-
 		if (result != null) {
 			logger.debug("Result from executing all pcap packets: " + result);
 			throw new IOException(result);
@@ -170,7 +160,10 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 		return aroJpcapLibFileName;
 	}
 	
-	
+	public String getAroWebPLibName() {
+		return aroWebPLibName;
+	}
+
 	public void setAroWebPLib(String osname, String osarch) {
 
 		logger.info("OS: " + osname);
@@ -202,6 +195,7 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 	public String getAroWebPLibFileName() {
 		return aroWebPLibFileName;
 	}
+	
 	@Override
 	public void receive(int datalink, long seconds, long microSeconds, int len, byte[] data) {
 		try {
@@ -210,15 +204,6 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 			}
 			Packet tempPacket = packetservice.createPacketFromPcap(datalink, seconds, microSeconds, len, data, currentPacketfile);
 			packetlistener.packetArrived(null, tempPacket);
-			if (pcapOutput != null) {
-				int offset = tempPacket.getDatalinkHeaderSize();
-				if (offset == 4) {
-					int length = tempPacket.getData().length;
-					pcapOutput.addPacketConvertedPcapng(tempPacket.getData(), offset, length, seconds * 1000000 + microSeconds);
-				} else {
-					pcapOutput.addPacket(tempPacket.getData(), seconds * 1000000 + microSeconds);
-				}
-			}
 		} catch (Throwable t) {
 			logger.error("Unexpected exception parsing packet", t);
 		}
@@ -228,27 +213,47 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 	 * Potentially start the pcapng conversion process. Two conditions are
 	 * tested, has conversion already been done and is the pcap file a pcapng.
 	 * 
-	 * @param file
+	 * @param traceFile
+	 * @throws IOException if failed check or conversion
 	 */
-	private void provisionalStartPcapConversion(String traceFile) {
-		File file = new File(traceFile);
+	private void provisionalPcapConversion(String traceFile) throws IOException {
+		File file = filemanager.createFile(traceFile);
+		
 		String tracePath = file.getAbsolutePath().substring(0, file.getAbsolutePath().length() - file.getName().length());
-		File backupCapFile = new File(tracePath, backupCapFileName);
+		File backupCapFile = filemanager.createFile(tracePath, backupCapFileName);
+		String eStr = null;
 		if (!backupCapFile.exists()) {
+			String lines = null;
 			try {
-				PcapngHelperImpl pcapngHelper = new PcapngHelperImpl();
-				if (pcapngHelper.isApplePcapng(file)) {
-					currentPcapfile = new File(traceFile);
-					convertedPcapFile = new File(tracePath, convertedCapFile);
-					pcapOutput = new PCapFileWriter(convertedPcapFile);
+				if (!pcapngHelper.isApplePcapng(file)) {
+					return;
 				}
+				// pcapng is active, so convert it to pcap
+				File temp = filemanager.createFile(tracePath, "temp.cap");
+				//File temp = new File(tracePath, "temp.cap");
+				if (temp.exists()) {
+					temp.delete();
+				}
+
+				lines = extrunner.executeCmd(Util.getEditCap() + " -F pcap " + "\"" + file + "\" \"" + temp.getAbsolutePath() + "\"");
+				logger.elevatedInfo("convert pcapng to pcap results :" + lines);
+				if (temp.exists()) {
+					filemanager.renameFile(file, backupCapFileName);
+					filemanager.renameFile(temp, file.getName());
+					pcapngHelper.setApplePcapNG(false);
+					return;
+				} else {
+					eStr = String.format("failed to convert pcapng to pcap :%s\n%s", file, lines);
+				}
+
 			} catch (Exception e) {
-				logger.error("failed to create :" + convertedPcapFile);
-				pcapOutput = null;
+				eStr = String.format("failed to convert pcapng to pcap :%s ERROR:%s", file, e.getMessage());
 			}
+		} else {
+			return;
 		}
+		logger.error(eStr);
+		throw new IOException(eStr);
 	}
 
-
-	
 }

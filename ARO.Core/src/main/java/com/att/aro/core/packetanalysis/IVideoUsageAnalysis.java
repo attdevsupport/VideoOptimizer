@@ -44,6 +44,8 @@ public interface IVideoUsageAnalysis {
 
 	VideoUsage getVideoUsage();
 
-	TreeMap<Double, HttpRequestResponseInfo> getReqMap();
+	TreeMap<Long, HttpRequestResponseInfo> getReqMap();
+
+	VideoUsage clearData();
 
 }

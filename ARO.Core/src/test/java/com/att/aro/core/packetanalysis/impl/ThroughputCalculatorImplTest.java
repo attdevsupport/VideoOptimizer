@@ -71,7 +71,7 @@ public class ThroughputCalculatorImplTest extends BaseTest{
 		 PacketInfo pktInfo06 = Mockito.mock(PacketInfo.class);
 		 Mockito.when(pktInfo06.getDir()).thenReturn(PacketDirection.UPLINK);
 		 Mockito.when(pktInfo06.getTimeStamp()).thenReturn(date.getTime()+72000.0);
-		 packets.add(pktInfo06);		 
+		 packets.add(pktInfo06);
 		 testResult = throughputCalculator.calculateThroughput(date.getTime()+0.0, date.getTime()+100000.0, 15000.0, packets);
 		 assertEquals(7,testResult.size());
 		 

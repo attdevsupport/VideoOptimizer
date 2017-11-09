@@ -17,10 +17,11 @@
 package com.att.aro.datacollector.norootedandroidcollector.impl;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -31,12 +32,13 @@ import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.android.ddmlib.AdbCommandRejectedException;
+import com.android.ddmlib.AndroidDebugBridge;
+import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IDevice.DeviceState;
 import com.android.ddmlib.InstallException;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.android.AndroidApiLevel;
@@ -51,13 +53,17 @@ import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.StringParse;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.IScreenRecorder;
 import com.att.aro.core.video.IVideoCapture;
+import com.att.aro.core.video.impl.VideoCaptureImpl;
+import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
+import com.att.aro.datacollector.norootedandroidcollector.impl.CpuTraceCollector.State;
 import com.att.aro.datacollector.norootedandroidcollector.pojo.ErrorCodeRegistry;
 
 public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImageSubscriber {
@@ -71,28 +77,29 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	private VideoOption videoOption = VideoOption.NONE;
 	private IDevice device;
 	private IAroDevice aroDevice;
+	private IDeviceChangeListener deviceChangeListener;
 
-	private IAdbService adbservice;
+	private IAdbService adbService;
 	private IFileManager filemanager;
 	// local directory in user machine to pull trace from device to
 	private String localTraceFolder;
 	private static final int MILLISECONDSFORTIMEOUT = 300;
-	private static final String APK_FILE_NAME = "VPNCollector-1.0.0.apk";
+	private static String APK_FILE_NAME = "VPNCollector-1.2.%s.apk";
 	private static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 
 	private IAndroid android;
 	private boolean usingScreenRecorder = false;
-
-	private static final String[] WIN_RUNTIME = { "cmd.exe", "/C" };
-	private static final String[] OS_LINUX_RUNTIME = { "/bin/bash", "-l", "-c" };
+	
+	private static final int RETRY_TIME = 3;
+	
 
 	// files to pull from device
 	private String[] mDataDeviceCollectortraceFileNames = { "cpu", "appid", "appname", "time", "processed_events",
 			"active_process", "battery_events", "bluetooth_events", "camera_events", "device_details", "device_info",
 			"gps_events", "network_details", "prop", "radio_events", "screen_events", "screen_rotations",
 			"user_input_log_events", "alarm_info_start", "alarm_info_end", "batteryinfo_dump", "dmesg", "video_time",
-			"wifi_events", "traffic.cap", "collect_options" };
-
+			"wifi_events", "traffic.cap", "collect_options", "location_events" };
+ 	
 	@Autowired
 	public void setLog(ILogger log) {
 		this.log = log;
@@ -121,7 +128,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 	@Autowired
 	public void setAdbService(IAdbService adbservice) {
-		this.adbservice = adbservice;
+		this.adbService = adbservice;
 	}
 
 	@Autowired
@@ -133,6 +140,10 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	private IScreenRecorder screenRecorder;
 
 	private CpuTraceCollector cpuTraceCollector;
+	
+	private CpuTemperatureCollector cpuTemperatureCollector;
+	
+	private UserInputTraceCollector userInputTraceCollector;
 
 	@Autowired
 	public void setThreadExecutor(IThreadExecutor thread) {
@@ -211,6 +222,124 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		}
 		return val;
 	}
+	
+	/**
+	 * initialize device change listener
+	 */
+	private void initDeviceChangeListener() {
+		final NorootedAndroidCollectorImpl collectorHelper = this;
+		try {
+			deviceChangeListener = new AndroidDebugBridge.IDeviceChangeListener() {
+				
+				private static final int MAX_RETRY_TIMES = 5;
+				
+				@Override
+				public void deviceDisconnected(IDevice device) {
+					if (isRunning() && isCurrentRunningDevice(device)) {
+						log.info("Device " + device.getSerialNumber() + " disconnected...");
+						if (videoCapture instanceof VideoCaptureImpl) {
+							((VideoCaptureImpl) videoCapture).setUsbConnected(false);
+						}
+					}
+				}
+				
+				@Override
+				public void deviceConnected(IDevice device) {
+					if (isRunning()) {
+						if (!isCurrentRunningDevice(device)) {
+							return;
+						}
+						
+						if (connect(device)) {
+							log.info("Device " + device.getSerialNumber() + " reconnected...");
+							if (videoCapture instanceof VideoCaptureImpl) {
+								((VideoCaptureImpl) videoCapture).setUsbConnected(true);
+							}
+						} else {
+							log.error("Cannot reconnect device " + device.getSerialNumber());
+						}
+					}
+				}
+				
+				/**
+				 * check if the connected device is the current one which is collecting data
+				 * @param device
+				 * @return
+				 */
+				private boolean isCurrentRunningDevice(IDevice device) {
+					return device.getSerialNumber().equals(collectorHelper.device.getSerialNumber());
+				}
+				
+				/**
+				 * try to connect the same device with limited retry times
+				 * @param device
+				 * @return
+				 */
+				private boolean connect(IDevice device) {
+					int retry = 0;
+					int interval = is32BitMachine()? 15000 : 3000;
+					while(!isDeviceOnline(device) && retry++ < MAX_RETRY_TIMES) {
+						log.info("Trying to reconnect device " + device.getSerialNumber() + "...");
+						try {
+							Thread.sleep(interval);
+						} catch (InterruptedException e) {}
+					}
+					return retry < MAX_RETRY_TIMES;
+				}
+				
+				private boolean is32BitMachine() {
+					return "32".equals(System.getProperty("sun.arch.data.model"));
+				}
+				
+				/**
+				 * check if device is online
+				 * @return
+				 */
+				private boolean isDeviceOnline(IDevice device) {
+					InputStream in = exec();
+					if (in == null) {
+						return false;
+					}
+					try (InputStreamReader iReader = new InputStreamReader(in);
+							BufferedReader bReader = new BufferedReader(iReader);) {
+						String line = null;
+						while((line = bReader.readLine()) != null) {
+							if (line.contains(device.getSerialNumber())) {
+								return line.contains("device");
+							}
+						}
+					} catch(IOException e) {
+						log.error("Exception occurs when checking device online status :: " + e.getMessage());
+					}
+					return false;
+				}
+				
+				/**
+				 * execute adb devices command to check device status
+				 * @return
+				 */
+				private InputStream exec() {
+					String[] cmd = {adbService.getAdbPath(), "devices"};
+					ProcessBuilder pBuilder = new ProcessBuilder(cmd);
+					try {
+						Process ps = pBuilder.start();
+						return ps.getInputStream();
+					} catch (IOException e) {
+						log.error("Exception occurs when execute adb devices command for checking device online status :: " + e.getMessage());
+					}
+					return null;
+				}
+				
+				@Override
+				public void deviceChanged(IDevice device, int changeMask) {
+					// Do nothing
+				}
+			};
+			AndroidDebugBridge.addDeviceChangeListener(deviceChangeListener);
+		} catch(Exception e) {
+			log.error("Could not initialize device change listener to android debug bridge :: " + e.getMessage());
+		}
+	}
 
 	@Override
 	public StatusResult startCollector(boolean isCommandLine, String tracepath, VideoOption videoOption_deprecated,
@@ -238,25 +367,36 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			VideoOption videoOption_deprecated, boolean isLiveViewVideo, String deviceId,
 			Hashtable<String, Object> extraParams, String password) {
 		log.info("startCollector() for non-rooted-android-collector");
+		
+		if (deviceChangeListener == null) {
+			initDeviceChangeListener();
+		}
 
+		AttenuatorModel atnr = new AttenuatorModel();
 		int delayTimeDL = 0;
 		int delayTimeUL = 0;
+		int throttleDL = -1;
+		int throttleUL = -1;
+		boolean atnrProfile = false;
 		boolean secure = false;
 		boolean installCert = false;
+		String location = "";
+		String profileName = "";
+		Orientation videoOrientation = Orientation.PORTRAIT;
+		
 		if (extraParams != null) {
-			delayTimeDL = (int) getOrDefault(extraParams, "delayTimeDL", 0);
-			delayTimeUL = (int) getOrDefault(extraParams, "delayTimeUL", 0);
-			secure = (boolean) getOrDefault(extraParams, "secure", false);
+			atnr = (AttenuatorModel)getOrDefault(extraParams, "AttenuatorModel", atnr);
+ 			secure = (boolean) getOrDefault(extraParams, "secure", false);
 			if (secure) {
 				installCert = (boolean) getOrDefault(extraParams, "installCert", false);
 			}
 			videoOption = (VideoOption) getOrDefault(extraParams, "video_option", VideoOption.NONE);
+			videoOrientation = (Orientation) getOrDefault(extraParams, "videoOrientation", Orientation.PORTRAIT);
+  			
 		}
-
+		
 		int bitRate = videoOption.getBitRate();
 		String screenSize = videoOption.getScreenSize();
-
-		log.info("get the delayTime: " + delayTimeDL);
 
 		StatusResult result = new StatusResult();
 
@@ -306,12 +446,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			return result;
 		}
 
-		// String tracename =
-		// folderToSaveTrace.substring(folderToSaveTrace.lastIndexOf(Util.FILE_SEPARATOR)
-		// + 1);
-
 		this.localTraceFolder = folderToSaveTrace;
-		this.videoOption = videoOption;
 
 		// remove existing trace if presence
 		android.removeEmulatorData(this.device, "/sdcard/ARO");
@@ -320,22 +455,15 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		// there might be an instance of vpn_collector running
 		// to be sure it is not in memory
 		this.haltCollectorInDevice();
-
+		new LogcatCollector(adbService, device.getSerialNumber()).clearLogcat();
+	
 		if (pushApk(this.device)) {
-			// if (!android.runVpnApkInDevice(this.device)) {
 			String cmd;
-
-			/*if (installCert) {
-				cmd = "am start -n com.att.arocollector/com.att.arocollector.AROCertInstallerActivity"
-						+ " --ei delayDL " + delayTimeDL + " --ei delayUL " + delayTimeUL + " --ez secure " + secure
-						+ " --es video " + videoOption.toString() + " --ei bitRate " + bitRate + " --es screenSize "
-						+ screenSize;
-			} else {*/
-			cmd = "am start -n com.att.arocollector/com.att.arocollector.AROCollectorActivity" + " --ei delayDL "
-					+ delayTimeDL + " --ei delayUL " + delayTimeUL + " --ez secure " + secure + " --es video "
-					+ videoOption.toString() + " --ei bitRate " + bitRate + " --es screenSize " + screenSize 
-					+ " --ez certInstall " + installCert;
-			//}
+			cmd = "am start -n com.att.arocollector/com.att.arocollector.AROCollectorActivity" 
+					+ " --es video "+ videoOption.toString() 
+					+ " --ei bitRate " + bitRate + " --es screenSize " + screenSize 
+					+ " --es videoOrientation " + videoOrientation.toString() 
+					;
 			log.info(cmd);
 			if (!android.runApkInDevice(this.device, cmd)) {
 				result.setError(ErrorCodeRegistry.getFaildedToRunVpnApk());
@@ -349,24 +477,26 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		if (!isTrafficCaptureRunning(MILLISECONDSFORTIMEOUT)) {
 			// timeout while waiting for VPN to activate within 15 seconds
 			timeOutShutdown();
-			result.setError(ErrorCodeRegistry.getTimeoutVpnActivation(MILLISECONDSFORTIMEOUT));
+			result.setError(ErrorCodeRegistry.getTimeoutVpnActivation());
+			result.setSuccess(false);
 			return result;
 		}
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
 				GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
-				GoogleAnalyticsUtil.getAnalyticsEvents().getStartTrace()); // GA
-																			// Request
-
+				GoogleAnalyticsUtil.getAnalyticsEvents().getStartTrace(),
+				aroDevice != null && aroDevice.getApi() != null ? aroDevice.getApi() : "Unknown"); // GA
 		if (isAndroidVersionNougatOrHigher(this.device) == true) {
 			startCpuTraceCapture();
 		}
+		
 		if (isVideo()) {
 			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
 					GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
-					GoogleAnalyticsUtil.getAnalyticsEvents().getVideoCheck()); // GA
-																				// Request
+					GoogleAnalyticsUtil.getAnalyticsEvents().getVideoCheck(),
+					videoOption != null ? videoOption.name() : "Unknown"); // GA
 			startVideoCapture();
 		}
+		startUserInputCapture();
 		result.setSuccess(true);
 		this.running = true;
 		return result;
@@ -387,7 +517,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 	void startCpuTraceCapture() {
 		cpuTraceCollector = new CpuTraceCollector();
-		cpuTraceCollector.setAdbFileMgrLogExtProc(this.adbservice, this.filemanager, this.log, this.extrunner);
+		cpuTraceCollector.setAdbFileMgrLogExtProc(this.adbService, this.filemanager, this.log, this.extrunner);
 		try {
 			if (State.Initialized == cpuTraceCollector.init(android, aroDevice, this.localTraceFolder)) {
 				log.debug("execute cpucapture Thread");
@@ -398,17 +528,46 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		}
 	}
 
+	
+	@Deprecated
+	void startCpuTemperatureCapture() {
+		cpuTemperatureCollector = new CpuTemperatureCollector();
+		cpuTemperatureCollector.setAdbFileMgrLogExtProc(this.adbService, this.filemanager, this.log, this.extrunner);
+		try {
+			if (CpuTemperatureCollector.State.Initialized == cpuTemperatureCollector.init(android, aroDevice, this.localTraceFolder)) {
+				log.debug("execute cpucapture Thread");
+				threadexecutor.execute(cpuTemperatureCollector);
+			}
+		} catch (Exception e) {
+			log.error(e.getMessage());
+		}
+	}
+
+	
+	void startUserInputCapture(){
+		userInputTraceCollector = new UserInputTraceCollector();
+		userInputTraceCollector.setAdbFileMgrLogExtProc(this.adbService, this.filemanager, this.log, this.extrunner);
+		try {
+			if (UserInputTraceCollector.State.Initialized == userInputTraceCollector.init(android, aroDevice, this.localTraceFolder)) {
+				log.debug("execute userinputcapture Thread");
+				threadexecutor.execute(userInputTraceCollector);
+			}
+		} catch (Exception e) {
+			log.error(e.getMessage());
+		}
+	}
+
 	private StatusResult findDevice(String deviceId, StatusResult result) {
 		IDevice[] devlist = null;
 		try {
-			devlist = adbservice.getConnectedDevices();
+			devlist = adbService.getConnectedDevices();
 		} catch (Exception e1) {
 			if (e1.getMessage().contains("AndroidDebugBridge failed to start")) {
 				result.setError(ErrorCodeRegistry.getAndroidBridgeFailedToStart());
 				return result;
 			}
 		}
-		if (devlist.length < 1) {
+		if (devlist==null || devlist.length < 1) {
 			result.setError(ErrorCodeRegistry.getNoDeviceConnected());
 			return result;
 		}
@@ -587,21 +746,23 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	 * @return
 	 */
 	boolean pushApk(IDevice device) {
-
-		//Still need to figure out the root cause of chrome hang up when VPN collector runs, hence disabling this performance fix for 6.0.
-//		if (isAPKInstallationRequired() == false)			
-//			return true;
-		
-		try {
-			device.uninstallPackage("com.att.arocollector");
-		} catch (InstallException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		//FIXME FIND A BETTER WAY OF LOOKING UP APK IN NOROOT COLLECTION 
+		ClassLoader loader = NorootedAndroidCollectorImpl.class.getClassLoader();
+		long x = System.nanoTime();
+		for(int i = 0; i < 500; i++) {
+			String tempFile = String.format(APK_FILE_NAME, i);
+			if(loader.getResource(tempFile) != null) {
+				APK_FILE_NAME = tempFile;
+				break;
+			}
 		}
-		String filepath = localTraceFolder + Util.FILE_SEPARATOR + APK_FILE_NAME; // getAROCollectorLocation();
+		//Still need to figure out the root cause of chrome hang up when VPN collector runs, hence disabling this performance fix for 6.0.
+		if (!isAPKInstallationRequired()) {
+			return true;
+		}
+		String filepath = localTraceFolder + Util.FILE_SEPARATOR + APK_FILE_NAME;
 		boolean gotlocalapk = true;
 		if (!filemanager.fileExist(filepath)) {
-			ClassLoader loader = NorootedAndroidCollectorImpl.class.getClassLoader();
 			if (!extractor.extractFiles(filepath, APK_FILE_NAME, loader)) {
 				gotlocalapk = false;
 			}
@@ -621,6 +782,10 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		return true;
 	}
 
+	/**
+	 * check if APK installation is required, if so, remove the previous one first
+	 * @return
+	 */
 	boolean isAPKInstallationRequired() {
 
 		boolean installationRequired = false;
@@ -629,7 +794,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		String cmdAROAPKVersion = "dumpsys package " + ARO_PACKAGE_NAME + " | grep versionName";
 		String[] result = android.getShellReturn(this.device, cmdAROAPKVersion);
 		if (result != null && (result.length > 0) && result[0] != null) {
-			deviceAPKVersion = StringParse.findLabeledDataFromString("versionName=", "=", result[0]);
+			deviceAPKVersion = StringParse.findLabeledDataFromString("versionName=", "=", result[0].trim());
 		}
 		installationRequired = !(Objects.equals(deviceAPKVersion, newAPKVersion));
 		// result.length is "0", means ARO not installed in the device.
@@ -653,57 +818,84 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	@Override
 	public StatusResult stopCollector() {
 		StatusResult result = new StatusResult();
-		int count = 0;
-		boolean stillRunning = true;
-		log.debug("send stop command to app");
-		this.sendStopCommand();
-		// wait at most 2 seconds
-		while (count < 20 && stillRunning) {
-			count++;
-			try {
-				Thread.sleep(100);
-			} catch (InterruptedException e) {
-			}
-			stillRunning = isCollectorRunning();
+		if (!stopAllServices()) {
+			log.error("Cannot stop all services, please check services in device Settings->Apps->Running");
 		}
-		if (stillRunning) {
-			log.debug("send stop command again");
-			this.sendStopCommand();
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e) {
-			}
-			// last option is to force stop it
-			if (isCollectorRunning()) {
-				log.debug("Force stop app");
-				this.haltCollectorInDevice();
-			}
+		if (!forceStopProcess()) {
+			log.error("Cannot force stop VPN Collector");
 		}
+		
+		userInputTraceCollector.stopUserInputTraceCapture(this.device);
 		if (isAndroidVersionNougatOrHigher(device) == true)
 			cpuTraceCollector.stopCpuTraceCapture(this.device);
 		if (isVideo()) {
 			log.debug("stopping video capture");
 			this.stopCaptureVideo();
 		}
+		
+		
 		log.debug("pulling trace to local dir");
+		new LogcatCollector(adbService, device.getSerialNumber()).collectLogcat(localTraceFolder, "Logcat.log");
 		result = pullTrace(this.mDataDeviceCollectortraceFileNames);
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
 				GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
-				GoogleAnalyticsUtil.getAnalyticsEvents().getEndTrace()); // GA
-																			// Request
-		// Uninstall the ARO package
-		try {
-			if(null != device)
-				device.uninstallPackage(ARO_PACKAGE_NAME);
-		} catch (InstallException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		// Remove the data from the device after the trace pull
-		// android.removeEmulatorData(this.device, "/sdcard/ARO");
-		
+				GoogleAnalyticsUtil.getAnalyticsEvents().getEndTrace()); // GA Request
 		running = false;
 		return result;
+	}
+	
+	/**
+	 * stop VPN service and all other services associated with it
+	 */
+	private boolean stopAllServices() {
+		try {
+			int count = 0;
+			while(count < RETRY_TIME) {
+				this.sendStopCommand();
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+				}
+				if (isServiceClosed()) {
+					return true;
+				}
+				count++;
+			}
+			return false;
+		} catch (Exception e) {
+			log.error("Exception occured when stopping all services in VPN Collector :: " + e.getMessage());
+			return false;
+		}
+	}
+	
+	/**
+	 * check if all associated services are closed
+	 * @return
+	 */
+	private boolean isServiceClosed() {
+		String cmd = "dumpsys activity services " + ARO_PACKAGE_NAME;
+		String[] lines = android.getShellReturn(this.device, cmd);
+		for(String line : lines) {
+			if (line != null && line.contains("(nothing)")) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * force stop ARO process in device
+	 */
+	private boolean forceStopProcess() {
+		try {
+			if (isCollectorRunning()) {
+				this.haltCollectorInDevice();
+			}
+			return !isCollectorRunning();
+		} catch (Exception e) {
+			log.error("Exception occuered when force stopping VPN Collector :: " + e.getMessage());
+			return false;
+		}
 	}
 
 	@Override
@@ -713,15 +905,19 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 	@Override
 	public void haltCollectorInDevice() {
-		android.getShellReturn(this.device, "am force-stop com.att.arocollector");
+		android.getShellReturn(this.device, "am force-stop " + ARO_PACKAGE_NAME);
 	}
 
+	/**
+	 * check if the ARO process is still running
+	 * @return
+	 */
 	private boolean isCollectorRunning() {
-		String cmd = "ps | grep com.att";
+		String cmd = "ps | grep " + ARO_PACKAGE_NAME;
 		String[] lines = android.getShellReturn(this.device, cmd);
 		boolean found = false;
 		for (String line : lines) {
-			if (line.contains("com.att.arocollector")) {
+			if (line.contains(ARO_PACKAGE_NAME)) {
 				found = true;
 				break;
 			}
@@ -731,7 +927,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 	/**
 	 * <pre>
-	 * send stop capture command send
+	 * send stop capture command send, stop captureVPNService and home activity
 	 */
 	private void sendStopCommand() {
 		String cmdclosevpn = "am broadcast -a arovpndatacollector.service.close"; // stop capture
@@ -759,7 +955,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 		if (Util.isWindowsOS()) {
 			deviceTracePath = "/sdcard/ARO/";
-			setCommand = adbservice.getAdbPath() + " -s " + device.getSerialNumber() + " pull " + deviceTracePath + ". "
+			setCommand = adbService.getAdbPath() + " -s " + device.getSerialNumber() + " pull " + deviceTracePath + ". "
 					+ localTraceFolder + "/ARO ";
 			commandFailure = runCommand(setCommand);
 
@@ -774,7 +970,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		} else {
 
 			deviceTracePath = "/sdcard/ARO/";
-			setCommand = adbservice.getAdbPath() + " -s " + device.getSerialNumber() + " pull " + deviceTracePath + ". "
+			setCommand = adbService.getAdbPath() + " -s " + device.getSerialNumber() + " pull " + deviceTracePath + ". "
 					+ localTraceFolder;
 			commandFailure = runCommand(setCommand);
 		}

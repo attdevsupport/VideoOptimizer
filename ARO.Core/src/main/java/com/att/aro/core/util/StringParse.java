@@ -122,12 +122,12 @@ public final class StringParse implements IStringParse{
 
 	@Override
 	public String[] parse(String targetString, String regex) {
-		
+
 		String[] temp = null;
-		
+
 		Pattern pattern = Pattern.compile(regex);
 		Matcher matcher = pattern.matcher(targetString);
-		if (matcher.find()) {
+		if (matcher.find() && matcher.groupCount() > 0) {
 			temp = new String[matcher.groupCount()];
 			for (int index = 0; index < matcher.groupCount();) {
 				temp[index++] = matcher.group(index);

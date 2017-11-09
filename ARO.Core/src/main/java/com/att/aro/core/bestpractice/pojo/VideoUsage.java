@@ -24,11 +24,6 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
-/**
- * 
- * VBP #- ,
- *
- */
 public class VideoUsage extends AbstractBestPracticeResult {
 
 	private TreeMap<Double, AROManifest> aroManifestMap = new TreeMap<>();
@@ -85,14 +80,16 @@ public class VideoUsage extends AbstractBestPracticeResult {
 		aroManifestMap.put(timeStamp,aroManifest);
 	}
 
-	public AROManifest findVideoInManifest(String videoName){
-		
-		for(AROManifest aroManifest:getAroManifestMap().values()){
-			if (videoName.contains(aroManifest.getVideoName())) {
+	public AROManifest findVideoInManifest(String videoName) {
+
+		for (AROManifest aroManifest : getAroManifestMap().values()) {
+			// FIXME - compare
+			// FNCHD.gmott.1080.mobile compare to FNCHD_gmott_1080_mobile
+			if (videoName.replaceAll("\\.", "_").contains(aroManifest.getVideoName())) {
 				return aroManifest;
 			}
 		}
-		
+
 		return null;
 	}
 	

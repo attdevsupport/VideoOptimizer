@@ -29,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.att.aro.core.configuration.IProfileFactory;
 import com.att.aro.core.configuration.pojo.Profile;
 import com.att.aro.core.configuration.pojo.Profile3G;
-import com.att.aro.core.configuration.pojo.ProfileLTE;
 import com.att.aro.core.configuration.pojo.ProfileType;
 import com.att.aro.core.configuration.pojo.ProfileWiFi;
 import com.att.aro.core.packetanalysis.IBurstCollectionAnalysis;
@@ -74,7 +73,7 @@ public class BurstCollectionAnalysisImpl implements IBurstCollectionAnalysis {
 			int longBurstCount = analyzeBursts(burstCollection, usereventlist, cpuactivitylist, profile);
 			data.setLongBurstCount(longBurstCount);
 			
-			double totalEnergy = computeBurstEnergyRadioResource(rrcstaterangelist, burstCollection, profile, packets);
+			double totalEnergy = computeBurstEnergyRadioResource(rrcstaterangelist, burstCollection, profile);
 			data.setTotalEnergy(totalEnergy);
 			
 			List<BurstAnalysisInfo> burstAnalysisInfo = analyzeBurstStat(burstCollection);
@@ -196,7 +195,7 @@ public class BurstCollectionAnalysisImpl implements IBurstCollectionAnalysis {
 	 * @return 
 	 */
 	private double computeBurstEnergyRadioResource(List<RrcStateRange> rrcstaterangelist, List<Burst> burstCollection,
-			Profile profile, List<PacketInfo> packets) {
+			Profile profile) {
 		List<RrcStateRange> rrcCollection = rrcstaterangelist;
 		int rrcCount = rrcCollection.size();
 		if (rrcCount == 0) {
@@ -223,7 +222,7 @@ public class BurstCollectionAnalysisImpl implements IBurstCollectionAnalysis {
 						if(profile.getProfileType() == ProfileType.T3G){
 							energy += profilefactory.energy3G(time1, rrCntrl.getEndTime(), rrCntrl.getState(), (Profile3G)profile);
 						}else if(profile.getProfileType() == ProfileType.LTE){
-							energy += profilefactory.energyLTE(time1, rrCntrl.getEndTime(), rrCntrl.getState(), (ProfileLTE)profile, packets);
+							energy += rrCntrl.getEnergy();
 						}else if(profile.getProfileType() == ProfileType.WIFI){
 							energy += profilefactory.energyWiFi(time1, rrCntrl.getEndTime(), rrCntrl.getState(), (ProfileWiFi)profile);
 						}
@@ -245,7 +244,7 @@ public class BurstCollectionAnalysisImpl implements IBurstCollectionAnalysis {
 					if(profile.getProfileType() == ProfileType.T3G){
 						energy += profilefactory.energy3G(Math.max(rrCntrl.getBeginTime(), time1), rrCntrl.getEndTime(), rrCntrl.getState(), (Profile3G)profile);
 					}else if(profile.getProfileType() == ProfileType.LTE){
-						energy += profilefactory.energyLTE(Math.max(rrCntrl.getBeginTime(), time1), rrCntrl.getEndTime(), rrCntrl.getState(), (ProfileLTE)profile, packets);
+						energy += rrCntrl.getEnergy();
 					}else if(profile.getProfileType() == ProfileType.WIFI){
 						energy += profilefactory.energyWiFi(Math.max(rrCntrl.getBeginTime(), time1), rrCntrl.getEndTime(), rrCntrl.getState(), (ProfileWiFi)profile);
 					}
@@ -260,7 +259,7 @@ public class BurstCollectionAnalysisImpl implements IBurstCollectionAnalysis {
 					if(profile.getProfileType() == ProfileType.T3G){
 						energy += profilefactory.energy3G(Math.max(rrCntrl.getBeginTime(), time1), time2, rrCntrl.getState(), (Profile3G)profile);
 					}else if(profile.getProfileType() == ProfileType.LTE){
-						energy += profilefactory.energyLTE(Math.max(rrCntrl.getBeginTime(), time1), time2, rrCntrl.getState(), (ProfileLTE)profile, packets);
+						energy += rrCntrl.getEnergy();
 					}else if(profile.getProfileType() == ProfileType.WIFI){
 						energy += profilefactory.energyWiFi(Math.max(rrCntrl.getBeginTime(), time1), time2, rrCntrl.getState(), (ProfileWiFi)profile);
 					}

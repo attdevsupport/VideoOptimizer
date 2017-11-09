@@ -301,5 +301,11 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 		
 	}
 
+	public AccessedDomainsTableModel getAccessDomainModel() {
+		return accessDomainModel;
+	}
+	
+	
+
 
 }

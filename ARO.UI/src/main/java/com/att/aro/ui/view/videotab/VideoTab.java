@@ -1,293 +1,389 @@
-
 /*
-*  Copyright 2017 AT&T
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
-
+ *  Copyright 2017 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.att.aro.ui.view.videotab;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.ComponentListener;
 import java.io.File;
-import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.List;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JFileChooser;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JViewport;
-import javax.swing.UIManager;
 
-import org.springframework.util.FileCopyUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.att.aro.core.ApplicationConfig;
+import com.att.aro.core.bestpractice.pojo.BestPracticeType;
+import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
+import com.att.aro.core.fileio.impl.FileManagerImpl;
+import com.att.aro.core.packetanalysis.IVideoUsageAnalysis;
+import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
+import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.util.Util;
-import com.att.aro.core.videoanalysis.IVideoTabHelper;
-import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
+import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
-import com.att.aro.mvc.IAROView;
-import com.att.aro.ui.commonui.AROUIManager;
+import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
+import com.att.aro.ui.commonui.IAROPrintable;
+import com.att.aro.ui.commonui.ImagePanel;
 import com.att.aro.ui.commonui.RoundedBorder;
+import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.commonui.TabPanelJScrollPane;
 import com.att.aro.ui.commonui.UIComponent;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.AROModelObserver;
 import com.att.aro.ui.view.MainFrame;
+import com.att.aro.ui.view.bestpracticestab.BpHeaderPanel;
+import com.att.aro.ui.view.statistics.DateTraceAppDetailPanel;
+import com.att.aro.ui.view.video.VideoUtil;
+import com.att.aro.view.images.Images;
 
+public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 
-public class VideoTab extends TabPanelJScrollPane implements ActionListener {
-
-	private JScrollPane scrollPanel;
-	private JViewport viewParent;
-	private JPanel videoTabPanel;
-	private List<AccordionComponent> accordionList;
-	private IARODiagnosticsOverviewRoute diagnosticsOverviewRoute;
-	private AROTraceData trace;
+	private static final long serialVersionUID = 1L;
+	AROModelObserver bpObservable;
+	private JPanel container;
 	private JPanel mainPanel;
-	private JPanel extManifestPanel;
-	private JButton downloadBtn;
-	private JButton loadBtn;
-	private IAROView aroView;
-	private VideoTabHelperImpl videoTabHelper = (VideoTabHelperImpl) ContextAware.getAROConfigContext().getBean("videoTabHelperImpl", IVideoTabHelper.class);
+	private IARODiagnosticsOverviewRoute overviewRoute = null;
+	private MainFrame aroView;
+	private IVideoUsageAnalysis videoUsage = ContextAware.getAROConfigContext().getBean(IVideoUsageAnalysis.class);
+	private VideoUsagePrefs videoUsagePrefs;
+	private Insets insets = new Insets(10, 1, 10, 1);
+	private Insets headInsets = new Insets(10, 1, 0, 1);
+	private Insets noInsets = new Insets(0, 0, 0, 0);
+	private ArrayList<TabPanelJPanel> localRefreshList = new ArrayList<>();
+	private VideoManifestPanel videoManifestPanel;
+	
+	private String trace = "";
+	private long lastOpenedTrace;
+	private StartUpDelayWarningDialog startUpDelayWarningDialog = null;
+	private String warningMessage;
 
-	public VideoTab(IAROView aroview, IARODiagnosticsOverviewRoute route) {
+	/**
+	 * Create the panel.
+	 */
+	public VideoTab(MainFrame aroView, IARODiagnosticsOverviewRoute overviewRoute) {
 		super();
-		this.aroView = aroview;
-		this.diagnosticsOverviewRoute = route;
-		this.aroView = aroview;
-		accordionList = new ArrayList<>();
-		videoTabPanel = new JPanel(new BorderLayout());
-		videoTabPanel.setBackground(Color.white);
+		this.aroView = aroView;
+		this.overviewRoute = overviewRoute;
 
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.HORIZONTAL;
-		constraint.gridx = 0;
-		constraint.gridy = 0;
-		constraint.insets = new Insets(50, 0, 0, 20);
+		bpObservable = new AROModelObserver();
 
-		layoutDataPanel();
+		container = new JPanel(new BorderLayout());
+		
+		String headerTitle = MessageFormat.format(ResourceBundleHelper.getMessageString("videoTab.title")
+				, ApplicationConfig.getInstance().getAppBrandName()
+				, ApplicationConfig.getInstance().getAppShortName());
+				
+		container.add(UIComponent.getInstance().getLogoHeader(headerTitle), BorderLayout.NORTH);
 
-		// add the header VO
-		String headerTitle = MessageFormat.format(ResourceBundleHelper.getMessageString("videoTab.title"),
-				ApplicationConfig.getInstance().getAppBrandName(), ApplicationConfig.getInstance().getAppShortName());
-
-		videoTabPanel.add(UIComponent.getInstance().getLogoHeader(headerTitle), BorderLayout.NORTH);
-		videoTabPanel.add(scrollPanel, BorderLayout.CENTER);
-
-		this.setViewportView(videoTabPanel);
-		this.getVerticalScrollBar().setUnitIncrement(10);
-	}
-
-	// new panel added to video tab
-	private JPanel getExternalManifestPanel() {
-		if (extManifestPanel == null) {
-			extManifestPanel = new JPanel(new FlowLayout());
-			extManifestPanel.setBorder(BorderFactory.createTitledBorder("External Manifest"));
-
-			loadBtn = new JButton("Load");
-			downloadBtn = new JButton("Download");
-			loadBtn.setName("Load");
-			downloadBtn.setName("Download");
-
-			loadBtn.addActionListener(this);
-			downloadBtn.addActionListener(this);
-
-			extManifestPanel.add(loadBtn);
-			// extManifestPanel.add(downloadBtn);
-		}
-		return extManifestPanel;
+		// Summaries, Manifest, Requests
+		ImagePanel panel = new ImagePanel(null);
+		panel.setLayout(new GridBagLayout());
+		panel.add(layoutDataPanel(), new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0
+				, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL
+				, new Insets(10, 10, 0, 10)
+				, 0, 0));
+		container.add(panel, BorderLayout.CENTER);
+		
+		setViewportView(container);
+		getVerticalScrollBar().setUnitIncrement(10);
+		getHorizontalScrollBar().setUnitIncrement(10);
 	}
 
 	@Override
 	public JPanel layoutDataPanel() {
-		JPanel panel = getMainPanel();
-
-		// add the scrollable panel here
-		scrollPanel = getJScrollPane(); // new JScrollPane();
-		scrollPanel.setViewportView(getViewParentScrollPane());
-
-		setVisible(true);
-		revalidate();
-		repaint();
-		return panel;
-	}
-
-	private JPanel getMainPanel() {
 		if (mainPanel == null) {
-			mainPanel = new JPanel(new BorderLayout());
-			mainPanel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
+			
+			mainPanel = new JPanel(new GridBagLayout());
 			mainPanel.setOpaque(false);
-			mainPanel.setBorder(new RoundedBorder(new Insets(10, 10, 10, 10), Color.WHITE));
 
+			int section = 1;			
+
+			mainPanel.add(buildSummariesGroup(), new GridBagConstraints(
+					0, section++
+					, 1, 1
+					, 1.0, 0.0
+					, GridBagConstraints.EAST
+					, GridBagConstraints.HORIZONTAL
+					, new Insets(0, 0, 0, 0)
+					, 0, 0));
+			
+			mainPanel.add(buildManifestsGroup(), new GridBagConstraints(
+					0, section++
+					, 1, 1
+					, 1.0, 0.0
+					, GridBagConstraints.EAST
+					, GridBagConstraints.HORIZONTAL
+					, new Insets(10, 0, 0, 0)
+					, 0, 0));
+			
+			mainPanel.add(buildRequestsGroup(), new GridBagConstraints(
+					0, section++
+					, 1, 1
+					, 1.0, 0.0
+					, GridBagConstraints.EAST
+					, GridBagConstraints.HORIZONTAL
+					, new Insets(10, 0, 0, 0)
+					, 0, 0));
 		}
 		return mainPanel;
 	}
-
-	private JScrollPane getJScrollPane() {
-		if (scrollPanel == null) {
-			scrollPanel = new JScrollPane();
-			scrollPanel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-			scrollPanel.setBorder(new RoundedBorder(new Insets(20, 20, 20, 20), Color.black));
-
+	
+	private boolean isVideoAvailable(AbstractTraceResult traceResult) {
+		String traceDirectory = traceResult.getTraceDirectory();	
+		TraceResultType traceResultType = traceResult.getTraceResultType();
+		if (traceResultType == TraceResultType.TRACE_FILE
+				|| !(VideoUtil.mp4VideoExists(traceDirectory) || VideoUtil.movVideoExists(traceDirectory))) {
+			return false;
+		}else{
+			return true;
 		}
-		return scrollPanel;
 	}
 
-	private JViewport getViewParentScrollPane() {
-		if (viewParent == null) {
-			viewParent = new JViewport();
-		}
-		viewParent.setView(getTablePanel());
-		return viewParent;
+	public JLabel getTitle(){
+		JLabel VideoResultSummaryLabel = new JLabel(ResourceBundleHelper.getMessageString("videoSummary.title"));
+		VideoResultSummaryLabel.setFont(new Font("HeaderFont", Font.BOLD, 18));
+		return VideoResultSummaryLabel; 
 	}
+	
 
-	private JPanel getTablePanel() {
-		JPanel panel = new JPanel();
-		panel.setLayout(new GridBagLayout());
-
-		int gridy = 0;
-		GridBagConstraints constraint = new GridBagConstraints();
-		constraint.fill = GridBagConstraints.HORIZONTAL;
-		constraint.gridx = 0;
-		constraint.gridy = gridy;
-		constraint.insets = new Insets(0, 10, 25, 30);
-		constraint.anchor = GridBagConstraints.FIRST_LINE_START;
-		constraint.weightx = 1;
-
-		if (trace != null) {
-			// go through the video events manifest file to create the number of
-			// collapsible/expandable componnents
-			accordionList.clear();
-
-			if (trace.getAnalyzerResult().getVideoUsage() != null) {
-				for (AROManifest aroManifest : trace.getAnalyzerResult().getVideoUsage().getManifests()) {
-					if (!aroManifest.getVideoEventList().isEmpty()) {
-						accordionList.add(new AccordionComponent(aroManifest, this.diagnosticsOverviewRoute));
+	public void openStartUpDelayWarningDialog(String tracePath) {
+		if(tracePath == null) {
+			return;
+		}
+		File trace = new File(tracePath);
+		if (trace.exists() && trace.isDirectory() && VideoUtil.mp4VideoExists(tracePath)) {
+			openStartUpDelayWarningDialog();
+		}
+	}
+	
+	private void openStartUpDelayWarningDialog() {
+		boolean videoAnalyzed = CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(),
+				BestPracticeType.getByCategory(Category.VIDEO));
+		if (videoAnalyzed && isStartUpReminderRequired() && aroView != null
+				&& aroView.getCurrentTabComponent() == aroView.getVideoTab()) {
+			if(null == startUpDelayWarningDialog){
+				startUpDelayWarningDialog = new StartUpDelayWarningDialog(aroView, overviewRoute);
+			}
+			startUpDelayWarningDialog.setWarningMessage(warningMessage);
+			startUpDelayWarningDialog.setVisible(true);
+			startUpDelayWarningDialog.setAlwaysOnTop(true);
+		}
+	}
+	
+	private boolean isStartUpReminderRequired(){
+		boolean preferenceStartUpReminder = false;
+		boolean startupDelaySet = false;
+		int manifestsSelected = 0;
+		boolean moreManifestsSelected = false;
+		boolean result = true;
+		
+		if(null != videoUsage){
+			videoUsage.loadPrefs();
+			videoUsagePrefs = videoUsage.getVideoUsagePrefs();
+			preferenceStartUpReminder = videoUsagePrefs.isStartupDelayReminder();
+			
+			if (videoUsage.getVideoUsage() != null
+					&& CollectionUtils.isNotEmpty(videoUsage.getVideoUsage().getManifests())) {
+				for (AROManifest aroManifest : videoUsage.getVideoUsage().getManifests()){
+					if(true == aroManifest.isSelected()){
+						// if any of the manifest file is selected
+						manifestsSelected = manifestsSelected + 1;
+						// User updated the startup delay
+						if(aroManifest.getDelay() > 0 && false == startupDelaySet){
+							startupDelaySet = true;
+						}
 					}
 				}
 			}
-			JLabel subTitleLabel = new JLabel(ResourceBundleHelper.getMessageString("video.tab.title"));
-			subTitleLabel.setFont(AROUIManager.HEADER_FONT);
-			panel.add(subTitleLabel, constraint);
-
-			// external manifest downloading and uploading interface
-			gridy = gridy + 1;
-			constraint.gridy = gridy;
-			constraint.fill = GridBagConstraints.HORIZONTAL;
-			constraint.gridx = 0;
-			constraint.insets = new Insets(0, 5, 15, 750);
-			constraint.anchor = GridBagConstraints.FIRST_LINE_START;
-			constraint.weightx = 1;
-			panel.add(getExternalManifestPanel(), constraint);
-
-			// external manifest downloading and uploading interface
-			gridy = gridy + 1;
-			constraint.gridy = gridy;
-			constraint.fill = GridBagConstraints.HORIZONTAL;
-			constraint.gridx = 0;
-			constraint.insets = new Insets(0, 5, 15, 750);
-			constraint.anchor = GridBagConstraints.FIRST_LINE_START;
-			constraint.weightx = 1;
-			panel.add(getExternalManifestPanel(), constraint);
-
-			// Movie Manifests
-			gridy = gridy + 1;
-			constraint.gridy = gridy;
-			constraint.insets = new Insets(0, 0, 15, 20);
-			for (AccordionComponent accordion : accordionList) {
-				panel.add(accordion, constraint);
-				gridy = gridy + 1;
-				constraint = new GridBagConstraints();
-				constraint.fill = GridBagConstraints.HORIZONTAL;
-				constraint.gridx = 0;
-				constraint.gridy = gridy;
-				constraint.insets = new Insets(0, 0, 15, 20);
-				constraint.anchor = GridBagConstraints.FIRST_LINE_START;
-				constraint.weightx = 1;
-			}
-			//constraint.weighty = 1;
-			//panel.add(new JPanel(), constraint);
+			moreManifestsSelected = (manifestsSelected > 1) ? true : false;
 			
-			// Video Requests
-			constraint.gridy = gridy;
-			constraint.fill = GridBagConstraints.HORIZONTAL;
-			constraint.gridx = 0;
-			constraint.insets = new Insets(5, 5, 15, 20);
-			constraint.anchor = GridBagConstraints.FIRST_LINE_START;
-			constraint.weightx = 1;
-			constraint.weighty = 1;
-	
-			panel.add(new AccordionComponent(false, aroView), constraint);
-
+			if(moreManifestsSelected){
+				warningMessage = ResourceBundleHelper.getMessageString("startupdelay.warning.dialog.message1");
+			}else{
+				warningMessage = ResourceBundleHelper.getMessageString("startupdelay.warning.dialog.message2");
+			}
+			
+			if(preferenceStartUpReminder == false){
+				result = false;
+			} if(manifestsSelected == 0){
+				result = false;
+			}else if(preferenceStartUpReminder == true && (moreManifestsSelected == false && startupDelaySet == true)){
+				result = false;
+			}
 		}
+		return result;
+	}
 
-		panel.validate();
-		panel.repaint();
-		return panel;
+	/**
+	 * TopPanel contains summaries
+	 */
+	private JPanel buildSummariesGroup() {
+		
+		JPanel topPanel;
+		topPanel = new JPanel(new GridBagLayout());
+
+		topPanel.setOpaque(false);
+		topPanel.setBorder(new RoundedBorder(new Insets(20, 20, 20, 20), Color.WHITE));
+		int section = 0;
+
+		// Trace Summary, common with Best Practices and Statistics
+		DateTraceAppDetailPanel dateTraceAppDetailPanel = new DateTraceAppDetailPanel();
+		topPanel.add(dateTraceAppDetailPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		bpObservable.registerObserver(dateTraceAppDetailPanel);
+		
+		// Separator
+		topPanel.add(UIComponent.getInstance().getSeparator(),
+				new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 10, 0), 0, 0));
+		
+		topPanel.add(getTitle(),new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		
+		// VideoSummaryPanel
+		VideoSummaryPanel videoSummaryPanel = new VideoSummaryPanel();
+		localRefreshList.add(videoSummaryPanel);
+		topPanel.add(videoSummaryPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		bpObservable.registerObserver(videoSummaryPanel);
+
+		return topPanel;
+	}
+
+	/**
+	 * MidPanel contains Video Manifests
+	 */
+	private JPanel buildManifestsGroup() {
+		
+		JPanel pane;
+		pane = new JPanel(new GridBagLayout());
+
+		int section = 0;
+		
+		videoManifestPanel = new VideoManifestPanel(overviewRoute, aroView);
+		pane.add(videoManifestPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));		
+		bpObservable.registerObserver(videoManifestPanel);
+        
+		JPanel wrapper = getTitledWrapper("video.tab.manifest.title", new LoadManifestDialog(aroView));
+		wrapper.add(pane, new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
+
+		pane.setBorder(BorderFactory.createLineBorder(Color.WHITE));
+		
+		return wrapper;
+	}
+	
+	/**
+	 * MidPanel contains Video Requests
+	 */
+	private JPanel buildRequestsGroup() {
+		
+		JPanel pane;
+		pane = new JPanel(new GridBagLayout());
+
+		int section = 0;
+		
+		VideoRequestPanel requestPanel = new VideoRequestPanel();
+		pane.add(requestPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
+		bpObservable.registerObserver(requestPanel);
+		
+		JPanel wrapper = getTitledWrapper("video.tab.request.title", null);
+		wrapper.add(pane, new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
+		return wrapper;
+	}
+	
+	private JPanel getTitledWrapper(String title, JComponent component) {
+
+		JPanel pane = new JPanel(new GridBagLayout());
+
+		pane.setOpaque(false);
+		pane.setBorder(new RoundedBorder(new Insets(0, 10, 10, 10), Color.WHITE));
+
+		JPanel fullPanel = new JPanel(new BorderLayout());
+
+
+		fullPanel.setOpaque(false);
+
+		// Create the header bar
+		BpHeaderPanel header = new BpHeaderPanel(ResourceBundleHelper.getMessageString(title));
+		header.setImageTitle(Images.BLUE_HEADER.getImage(), null);
+		if (component != null) {
+			header.add(component, BorderLayout.EAST);
+		}
+		fullPanel.add(header, BorderLayout.NORTH);
+		pane.add(fullPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0
+				, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL
+				, headInsets, 0, 0));
+		return pane;
+	}
+	
+	/**
+	 * Refreshes the VideoTab using the specified trace analysis
+	 * data. This method is typically called when a new trace file is loaded.
+	 * 
+	 * @param analysisData
+	 *            The trace analysis data.
+	 */
+	@Override
+	public void refresh(AROTraceData analyzerResult) {
+		AbstractTraceResult result = analyzerResult.getAnalyzerResult().getTraceresult();
+		long newTraceTime = ((MainFrame)aroView).getLastOpenedTime();
+		if (lastOpenedTrace == newTraceTime &&
+				(trace.equals(result.getTraceDirectory()) || trace.equals(result.getTraceFile()))) {
+			refreshLocal(analyzerResult);
+		} else {
+			trace = result.getTraceDirectory() != null ? result.getTraceDirectory() : result.getTraceFile();
+			lastOpenedTrace = newTraceTime;
+			bpObservable.refreshModel(analyzerResult);
+			updateUI();
+		}
+		if (isVideoAvailable(result)) {
+			openStartUpDelayWarningDialog();
+		}
+	}
+	
+	public void refreshLocal(AROTraceData analyzerResult) {
+		for (TabPanelJPanel container : localRefreshList) {
+			container.refresh(analyzerResult);
+		}
+		videoManifestPanel.refreshLocal(analyzerResult);
 	}
 
 	@Override
-	public void refresh(AROTraceData analyzerResult) {
-		trace = analyzerResult;
-		// populateData
-		accordionList = new ArrayList<>();
-		scrollPanel.setViewportView(getViewParentScrollPane());
+	public synchronized void addComponentListener(ComponentListener listener) {
+		super.addComponentListener(listener);
+	}
 
+	/**
+	 * Triggers and expansion of any tableViews that need expanding before returning the container.
+	 * @return a JPanel prepared for printing everything
+	 */
+	@Override
+	public JPanel getPrintablePanel() {
+		return container;
 	}
 
 	@Override
 	public void setScrollLocationMap() {
 	}
-
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		JButton btn = (JButton) e.getSource();
-		if (btn.getName().equals("Load")) {
-
-			// Open filechooser
-			JFileChooser fileChooser = new JFileChooser(this.aroView.getTracePath());
-			int result = fileChooser.showOpenDialog(this);
-			if (result == JFileChooser.APPROVE_OPTION) {
-
-				// save selected file/files inside downloads folder
-				fileChooser.getSelectedFile().getPath();
-				String downloadsPath = this.aroView.getTracePath() + Util.FILE_SEPARATOR 
-						+ "downloads" + Util.FILE_SEPARATOR + fileChooser.getSelectedFile().getName();
-				try {
-					FileCopyUtils.copy(fileChooser.getSelectedFile(), new File(downloadsPath));
-				} catch (IOException e1) {
-
-				}
-				// refresh analyzer
-				this.aroView.updateTracePath(new File(this.aroView.getTracePath()));
-			}
-		}
-
-	}
-	
 
 }

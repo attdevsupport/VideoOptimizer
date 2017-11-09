@@ -73,8 +73,8 @@ import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
-import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.ContextAware;
@@ -187,6 +187,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private WakeLockPlot wlPlot;
 	private VideoChunksPlot vcPlot;
 
+	private CombinedDomainXYPlot combinedPlot;
+	
 	private double endTime = 0.0;
 
 	public double getEndTime() {
@@ -518,7 +520,11 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	// In 4.1.1, the method name is resetChart(TraceData.Analysis analysis)
 	public void refresh(AROTraceData aroTraceData) {
 		getSaveGraphButton().setEnabled(aroTraceData != null);
-		setGraphView(0, true);// 103
+		if (combinedPlot != null) {
+			setGraphView(combinedPlot.getDomainCrosshairValue(), true);
+		} else {
+			setGraphView(0, true);
+		}
 		setTraceData(aroTraceData);
 		if(aroTraceData != null) {
 			setAllPackets(aroTraceData.getAnalyzerResult().getTraceresult().getAllpackets());
@@ -602,12 +608,10 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					alarmPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
 				case GPS:
-					if (aroTraceData.getAnalyzerResult().getTraceresult() instanceof TraceDirectoryResult) {
-						if (gpsPlot == null) {
-							gpsPlot = new GpsPlot();
-						}
-						gpsPlot.populate(entry.getValue().getPlot(), aroTraceData);
+					if (gpsPlot == null) {
+						gpsPlot = new GpsPlot();
 					}
+					gpsPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
 				case RADIO:
 					if (radioPlot == null) {
@@ -669,7 +673,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					}
 					wlPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
-
+					
 				case VIDEO_CHUNKS:
 					if (vcPlot == null) {
 						vcPlot = new VideoChunksPlot();
@@ -681,7 +685,20 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					vcPlot.setBufferOccupancyPlot(bufferOccupancyPlot);
 					vcPlot.setBufferTimePlot(bufferTimePlot);
 					// vcPlot.setFirstChunkPlayTime(0);
-					vcPlot.populate(entry.getValue().getPlot(), aroTraceData);
+					AROManifest selectedManifest=null;
+					int count=0;
+					for(AROManifest manifest: aroTraceData.getAnalyzerResult().getVideoUsage().getManifests()){
+						if(manifest.isSelected()){
+							selectedManifest = manifest;
+							count++;
+						}
+					}
+					if(count==1 && selectedManifest != null && selectedManifest.getDelay() != 0){
+						VideoEvent firstSegment = (VideoEvent) selectedManifest.getVideoEventsBySegment().toArray()[0];
+						vcPlot.refreshPlot(getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot(), aroTraceData, selectedManifest.getDelay() + firstSegment.getEndTS(), firstSegment);
+					}else{
+						vcPlot.populate(entry.getValue().getPlot(), aroTraceData);
+					}
 			    	SliderDialogBox.segmentListChosen = new ArrayList<>();
 
 					break;
@@ -708,10 +725,13 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 	// need add more
 	public void hideChartOptions() {
+		resetGraphZoom();
 		advancedGraphPanel.setVisible(false);
 	}
 	
 	public void showChartOptions() {
+		// these log.error lines are for tracking down a problem in jfreechart, leave in until problem is resolved
+		// if "showChartOptions()" is not followed by " done" then VO is stuck in a deadlock
 		advancedGraphPanel.setVisible(true);
 	}
 	
@@ -1107,7 +1127,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		// set the cross hair values of plot and sub-plots
 		Plot mainplot = getAdvancedGraph().getPlot();
 		if (mainplot instanceof CombinedDomainXYPlot) {
-			CombinedDomainXYPlot combinedPlot = (CombinedDomainXYPlot) mainplot;
+			combinedPlot = (CombinedDomainXYPlot) mainplot;
 			List<?> plots = combinedPlot.getSubplots();
 			for (Object p : plots) {
 				if (p instanceof XYPlot) {
@@ -1175,6 +1195,18 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		}
 	}
 
+	/**
+	 * This method implements the reset of Zoom.
+	 */
+	private void resetGraphZoom() {
+		getChartPanel()
+		.setPreferredSize(new Dimension((int) (getChartPanel().getBounds().width / Math.pow(this.zoomFactor, zoomCounter)), 100));
+		zoomCounter = 0;
+		zoomEventUIUpdate();
+		chartPanelScrollPane().getViewport().setViewPosition(new Point(getPointX(), 0));
+		positionHairLineHandle(getPointX());
+	}
+	
 	/**
 	 * Updates the graph UI after zoom in or zoom out.
 	 */
@@ -1299,14 +1331,11 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		}
 	}
 
-	private void launchSliderDialog(int indexKey) {
+	public void launchSliderDialog(int indexKey) {
 		IVideoPlayer player = parent.getVideoPlayer();
 		double maxDuration = player.getDuration();
 		if (maxDuration != -1) {
 			JDialog dialog = new SliderDialogBox(this, maxDuration, chunkInfo, indexKey, vcPlot.getAllChunks());
-
-			// revalidate();
-			// repaint();
 			dialog.pack();
 			dialog.setSize(dialog.getPreferredSize());
 			dialog.validate();

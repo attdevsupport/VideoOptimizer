@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 AT&T
+ *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 package com.att.arocollector;
 
+import java.io.File;
 import android.media.MediaRecorder;
 import android.os.Environment;
-
-import java.io.File;
 
 public class Config {
 

@@ -45,6 +45,7 @@ public class PacketAnalyzerResult {
 
 	private List<VideoStall> videoStalls;
 	private BufferOccupancyBPResult bufferOccupancyResult;
+	private BufferTimeBPResult bufferTimeResult;
 	
 	/**
 	 * The profile used in creating the EnergyModel
@@ -234,46 +235,16 @@ public class PacketAnalyzerResult {
 		this.cacheAnalysis = cacheAnalysis;
 	}
 
-	/**
-	 * @return the ipv4Packets
-	 */
 	public boolean isIpv4Packets() {
 		return ipv4Packets;
 	}
 
-	/**
-	 * @param ipv4Packets the ipv4Packets to set
-	 */
-	public void setIpv4Packets(boolean ipv4Packets) {
-		this.ipv4Packets = ipv4Packets;
-	}
-
-	/**
-	 * @return the ipv6Packets
-	 */
 	public boolean isIpv6Packets() {
 		return ipv6Packets;
 	}
 
-	/**
-	 * @param ipv6Packets the ipv6Packets to set
-	 */
-	public void setIpv6Packets(boolean ipv6Packets) {
-		this.ipv6Packets = ipv6Packets;
-	}
-
-	/**
-	 * @return the udpPackets
-	 */
 	public boolean isUdpPackets() {
 		return udpPackets;
-	}
-
-	/**
-	 * @param udpPackets the udpPackets to set
-	 */
-	public void setUdpPackets(boolean udpPackets) {
-		this.udpPackets = udpPackets;
 	}
 
 	public Map<String, String> getDeviceKeywords() {
@@ -310,5 +281,18 @@ public class PacketAnalyzerResult {
 		this.bufferOccupancyResult = bufferOccupancyResult;
 	}
 	
-	
+	public void clearBPResults() {
+		videoStalls = null;
+		bufferOccupancyResult = null;
+		cacheAnalysis = null;
+		videoUsage = null;
+	}
+
+	public BufferTimeBPResult getBufferTimeResult() {
+		return bufferTimeResult;
+	}
+
+	public void setBufferTimeResult(BufferTimeBPResult bufferTimeResult) {
+		this.bufferTimeResult = bufferTimeResult;
+	}
 }

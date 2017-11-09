@@ -15,6 +15,8 @@
 */
 package com.att.aro.core.videoanalysis.pojo;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
 /**
  * <pre>
  * Stores:
@@ -26,6 +28,7 @@ package com.att.aro.core.videoanalysis.pojo;
  * Note: arrivalToPlay is deprecated, need a clean way to clean out of stored preferences
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true) // allows for changes dropping items or using older versions, but not before this ignore
 public class VideoUsagePrefs {
 
 	public static final String VIDEO_PREFERENCE = "VIDEO_PREFERENCE";
@@ -36,10 +39,10 @@ public class VideoUsagePrefs {
 	private DUPLICATE_HANDLING duplicateHandling = DUPLICATE_HANDLING.HIGHEST;
 	
 	private boolean ffmpegConfirmationShowAgain=false;
+	private double stallPausePoint= 0.0D;
+	private double stallRecovery= 0.0D;
+	private boolean startupDelayReminder = true;
 	
-	@Deprecated	
-	private double arrivalToPlay = 0.0D;	// reject if segment arrives within VIDEO_ARRIVAL_TO_PLAY of playing the segment
-
 	/**
 	 * Determine which segment should be used when there are duplicate segments
 	 *
@@ -58,7 +61,6 @@ public class VideoUsagePrefs {
 		strblr.append(", startupDelay = ");		strblr.append(getStartupDelay());
 		strblr.append(", maxBuffer = ");		strblr.append(getMaxBuffer());
 		strblr.append(", stallTriggerTime = ");	strblr.append(getStallTriggerTime());
-//		strblr.append(", arrivalToPlay = ");	strblr.append(getArrivalToPlay());
 		return strblr.toString();
 	}
 
@@ -68,16 +70,6 @@ public class VideoUsagePrefs {
 
 	public void setStartupDelay(double startupDelay) {
 		this.startupDelay = startupDelay;
-	}
-
-	@Deprecated
-	public double getArrivalToPlay() {
-		return arrivalToPlay;
-	}
-
-	@Deprecated
-	public void setArrivalToPlay(double arrivalToPlay) {
-		this.arrivalToPlay = arrivalToPlay * 0; // mult by zero to nullify this feature
 	}
 
 	public DUPLICATE_HANDLING getDuplicateHandling() {
@@ -115,4 +107,29 @@ public class VideoUsagePrefs {
 	public void setFfmpegConfirmationShowAgain(boolean ffmpegConfirmationShowAgain) {
 		this.ffmpegConfirmationShowAgain = ffmpegConfirmationShowAgain;
 	}
+
+	public double getStallPausePoint() {
+		return stallPausePoint;
+	}
+
+	public void setStallPausePoint(double stallPausePoint) {
+		this.stallPausePoint = stallPausePoint;
+	}
+
+	public double getStallRecovery() {
+		return stallRecovery;
+	}
+
+	public void setStallRecovery(double stallRecovery) {
+		this.stallRecovery = stallRecovery;
+	}
+
+	public boolean isStartupDelayReminder() {
+		return startupDelayReminder;
+	}
+
+	public void setStartupDelayReminder(boolean startupDelayReminder) {
+		this.startupDelayReminder = startupDelayReminder;
+	}
+	
 }

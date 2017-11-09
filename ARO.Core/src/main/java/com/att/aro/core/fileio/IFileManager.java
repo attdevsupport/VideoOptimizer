@@ -85,6 +85,8 @@ public interface IFileManager {
 
 	InputStream getFileInputStream(String filepath) throws FileNotFoundException;
 
+	InputStream getFileInputStream(File file) throws FileNotFoundException;
+
 	OutputStream getFileOutputStream(String filepath) throws FileNotFoundException;
 
 	/**

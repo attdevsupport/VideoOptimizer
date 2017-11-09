@@ -38,17 +38,20 @@ import org.jfree.data.xy.XYIntervalSeriesCollection;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
+import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.GpsInfo;
 import com.att.aro.core.peripheral.pojo.GpsInfo.GpsState;
 import com.att.aro.core.peripheral.pojo.LocationEvent;
-import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.ImageHelper;
+import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class GpsPlot implements IPlot{
 	
+	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);	
 	XYIntervalSeriesCollection gpsData = new XYIntervalSeriesCollection();
 	XYSeriesCollection locationData = new XYSeriesCollection();
 	ArrayList<LocationEvent> listLocationEvent;
@@ -57,16 +60,28 @@ public class GpsPlot implements IPlot{
 
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
-		if (analysis != null) {
+		if (analysis == null) {
+			logger.info("analysis data is null");
+			return;
+		} 
 			
+		gpsData.removeAllSeries();
+		locationData.removeAllSeries();
+		
+		TraceResultType resultType = analysis.getAnalyzerResult()
+				.getTraceresult().getTraceResultType();
+		if (resultType.equals(TraceResultType.TRACE_FILE)) {
+			logger.info("didn't get analysis trace data!");
+
+		} else {
+		
 			try {
 				image = ImageIO.read(GpsPlot.class.getResourceAsStream("/images/location.png"));
 				image = ImageHelper.resize(image, 12, 12);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-			gpsData.removeAllSeries();
+		
 			// create the GPS dataset...
 			Map<GpsState, XYIntervalSeries> seriesMap = new EnumMap<GpsState, XYIntervalSeries>(
 					GpsState.class);
@@ -76,7 +91,6 @@ public class GpsPlot implements IPlot{
 				gpsData.addSeries(series);
 			}
 			
-			locationData.removeAllSeries();
 			series = new XYSeries("location");
 			TraceDirectoryResult traceresult = (TraceDirectoryResult) analysis.getAnalyzerResult().getTraceresult();
 			listLocationEvent = (ArrayList<LocationEvent>) traceresult.getLocationEventInfos();
@@ -136,7 +150,6 @@ public class GpsPlot implements IPlot{
 					return displayInfo.toString();
 				}
 			});
-
 		}
 		plot.setDataset(2, gpsData);
 		plot.setDataset(1, locationData);

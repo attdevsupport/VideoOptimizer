@@ -25,12 +25,14 @@ import java.util.Set;
 
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisInfo;
 import com.att.aro.core.peripheral.pojo.AlarmInfo;
+import com.att.aro.core.peripheral.pojo.AttenuatorEvent;
 import com.att.aro.core.peripheral.pojo.BatteryInfo;
 import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.peripheral.pojo.DeviceDetail;
 import com.att.aro.core.peripheral.pojo.LocationEvent;
 import com.att.aro.core.peripheral.pojo.NetworkType;
 import com.att.aro.core.peripheral.pojo.RadioInfo;
+import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent;
 import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
@@ -66,9 +68,10 @@ import com.att.aro.core.peripheral.pojo.WifiInfo;
  *    traffic.cap         
  *    video.mov           
  *    video_time          
- *    wifi_events
- *    collect_options     
- *    attenuattionEvent   
+ *    wifi_events     
+ *    collect_options
+ *    attenuattionEvent
+ *    speedThrottleEvent   
  *  </pre>
  * 
  * Date: October 23, 2014
@@ -168,7 +171,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	 * from collect options directory - collect_options
 	 */
 	private CollectOptions collectOptions;
-	
+
 	/**
 	 * default screen size width<br>
 	 * initially set to a default - updated with real size from trace directory
@@ -219,7 +222,17 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	 * from trace directory - network_details
 	 */
 	private List<NetworkType> networkTypesList = null;
-		
+	
+	/**
+	 * list of attenuation event 
+	 */
+	private  List<AttenuatorEvent> attenautionEvent = null;
+	
+	/**
+	 * list of throttle speed evnt
+	 */
+	private List<SpeedThrottleEvent> speedThrottleEvent = null;
+	
 	/**
 	 * Total packets extracted from pcap file.
 	 * <br>from trace directory - traffic.cap
@@ -231,7 +244,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	 * <br> Note: No visible usage found
 	 */
 	private NetworkType networkType;
-	
+
 	public CollectOptions getCollectOptions() {
 		return collectOptions;
 	}
@@ -265,6 +278,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 
 		this.deviceDetail = new DeviceDetail();
 		this.collectOptions = new CollectOptions();
+		this.attenautionEvent = new ArrayList<AttenuatorEvent>();
 		
 		deviceScreenSizeX = 480;
 		deviceScreenSizeY = 800;
@@ -735,6 +749,30 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	public void setTotalNoPackets(int totalNoPackets) {
 		this.totalNoPackets = totalNoPackets;
 	}
+	
+	public List<AttenuatorEvent> getAttenautionEvent() {
+		return attenautionEvent;
+	}
+	
+	/**
+	 * set Attenuation event information
+	 */
+	public void setAttenautionEvent(List<AttenuatorEvent> attenautionEvent) {
+		this.attenautionEvent = attenautionEvent;
+	}
+	
+	public List<SpeedThrottleEvent> getSpeedThrottleEvent() {
+		return speedThrottleEvent;
+	}
+	
+	/**
+	 * set speed throttle event information
+	 * @param speedThrottleEvent
+	 */
+	public void setSpeedThrottleEvent(List<SpeedThrottleEvent> speedThrottleEvent) {
+		this.speedThrottleEvent = speedThrottleEvent;
+	}
+
 
 	/**
 	 * Return TraceResultType.TRACE_DIRECTORY to identify that this trace is

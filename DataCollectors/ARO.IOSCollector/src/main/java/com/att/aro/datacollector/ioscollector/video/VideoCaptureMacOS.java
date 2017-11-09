@@ -49,8 +49,6 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 
 	private String workingFolder = "";
 
-	private QuickTimeOutputStream qos;
-
 	private Date videoStartTime;
 
 	IScreenCapture capt = null;
@@ -74,7 +72,6 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 	//for use in unit test
 	public VideoCaptureMacOS(QuickTimeOutputStream qt, IScreenCapture screencapture) {
 		subscribers = new ArrayList<ImageSubscriber>();
-		this.qos = qt;
 		this.capt = screencapture;
 	}
 
@@ -270,26 +267,21 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 
 	@Override
 	public void init(IDevice device, String videoOutputFile) throws IOException {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void setDeviceManufacturer(String deviceManufacturer) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void stopRecording() {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public boolean isVideoCaptureActive() {
-		// TODO Auto-generated method stub
 		return false;
 	}
-}//end class
-
+}

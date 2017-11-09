@@ -94,7 +94,7 @@ public class PacketServiceImpl implements IPacketService {
 			default:
 				if (pcapfile != null) {
 					try {
-						if (pcapngHelper.isApplePcapng(pcapfile)) {
+						if (pcapngHelper.isApplePcapng(pcapfile) || pcapngHelper.isNoLinkLayer(pcapfile)) {
 							network = IPV4;
 							hdrLen = 4;
 						}

@@ -44,6 +44,7 @@ public interface SharedAttributesProcesses extends IAROView {
 	public enum TabPanels {
 		tab_panel_other,
 		tab_panel_best_practices,
+		tab_panel_video_tab,
 		tab_panel_statistics
 	}
 

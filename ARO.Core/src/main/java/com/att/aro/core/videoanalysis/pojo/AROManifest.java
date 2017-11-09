@@ -16,6 +16,7 @@
 package com.att.aro.core.videoanalysis.pojo;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.TreeMap;
 
@@ -40,8 +41,8 @@ public class AROManifest {
 	
 	IHttpRequestResponseHelper reqhelper = (IHttpRequestResponseHelper) context.getBean("httpRequestResponseHelper");
 	Session session;                // session that manifest arrived on
-	
-	VideoType eventType;            // DASH, HLS, Unknown
+	VideoFormat videoFormat = VideoFormat.UNKNOWN;
+	VideoType videoType = VideoType.UNKNOWN;            // DASH, HLS, Unknown
 	String videoName = "";          //
 	String exten = "";
 	double duration = 0D;
@@ -73,6 +74,8 @@ public class AROManifest {
 	 */
 	TreeMap<String, Integer> segmentList = new TreeMap<>();
 	
+	TreeMap<Integer, String> durationList = new TreeMap<>();
+	
 	double delay;
 
 	private TreeMap<String, VideoData> videoDataMap;
@@ -81,18 +84,19 @@ public class AROManifest {
 
 	VideoAnalysisConfig vConfig;
 
+	private boolean selected = false;
 
 	/**
 	 * Initializes an instance of the VideoEvent class, using the specified event type, 
 	 * press time, and release time.
 	 * 
-	 * @param eventType The event type. One of the values of the VideoEventType enumeration.
+	 * @param videoType The event type. One of the values of the VideoEventType enumeration.
 	 * @param manifestTime The time at which the event was initiated (such as a key being pressed down).
 	 * @param releaseTime The time at which the chunk finished downloading.
 	 */
-	public AROManifest(VideoType eventType, HttpRequestResponseInfo req, String videoPath) {
+	public AROManifest(VideoType videoType, HttpRequestResponseInfo req, String videoPath) {
 
-		this.eventType = eventType;
+		this.videoType = videoType;
 		this.endTime = 0;
 		this.timeLength = 0;
 		this.videoPath = videoPath;
@@ -105,8 +109,8 @@ public class AROManifest {
 
 	@Override
 	public String toString() {
-		StringBuilder strblr = new StringBuilder("AROManifest :");
-		strblr.append(eventType);
+		StringBuilder strblr = new StringBuilder("\n\tAROManifest :");
+		strblr.append(videoType);
 		strblr.append(", Name :");		   strblr.append(getVideoName());
 		strblr.append(", Encryption :");   strblr.append(getEncryption());
 		strblr.append(", URIs :");         strblr.append(uri != null ? uri.getRawPath() : "null");
@@ -136,9 +140,17 @@ public class AROManifest {
 		return strblr.toString();
 	}
 	
+	public VideoFormat getVideoFormat() {
+		return videoFormat;
+	}
+
+	public void setVideoFormat(VideoFormat videoFormat) {
+		this.videoFormat = videoFormat;
+	}
+	
 	public boolean checkContent(byte[] data) {
-		// FIXME - this needs a real comparison for two byte arrays
-		return !(content == null || (new String(content)).equals(new String(data)));
+		// FIXME - this needs a real comparison for the two byte arrays instead of through String comparison
+		return !(content == null || (Arrays.equals(content, data)));//new String(content)).equals(new String(data)));
 	}
 		
 	/**
@@ -152,6 +164,7 @@ public class AROManifest {
 
 		String key = String.format("%010.4f:%08.0f", timestamp, segment );
 		videoEventList.put(key, videoEvent);
+		this.selected=true;
 		if (segment != -1) {
 //			key = String.format("%08.0f:%010.4f", segment, timestamp); // original key format
 			key = generateVideoEventKey(segment, timestamp, videoEvent.getQuality());
@@ -203,11 +216,11 @@ public class AROManifest {
 	}
 
 	public VideoType getEventType() {
-		return eventType;
+		return videoType;
 	}
 
 	public void setEventType(VideoType eventType) {
-		this.eventType = eventType;
+		this.videoType = eventType;
 	}
 
 	public double getBeginTime() {
@@ -260,7 +273,9 @@ public class AROManifest {
 	}
 
 	public void setVideoName(String videoName) {
-		this.videoName = videoName;
+		if (videoName != null) {
+			this.videoName = videoName;
+		}
 	}
 
 	public String getEncryption() {
@@ -278,7 +293,7 @@ public class AROManifest {
 	 * @return bitrate
 	 */
 	public Double getBitrate(String key) {
-		return bitrateMap.get(key);
+		return bitrateMap.get(key.toUpperCase());
 	}
 
 	public TreeMap<String, Double> getBitrateMap() {
@@ -325,7 +340,11 @@ public class AROManifest {
 		if (ved.getByteStart() == null) {
 			return -1;
 		}
-		return Integer.valueOf(ved.getByteStart());//TODO handle exception, double check logic
+		try {
+			return Integer.valueOf(ved.getByteStart());
+		} catch (NumberFormatException e) {
+			return -1;
+		}
 	}
 	
 	public void addVData(VideoData vData) {
@@ -345,8 +364,24 @@ public class AROManifest {
 		return "";
 	}
 
-	public String getDuration(String videoName) {
-		return "";
+	public String getDuration(String segment) {
+		Integer seg;
+		try {
+			seg = Integer.valueOf(segment);
+		} catch (NumberFormatException e) {
+			return "-1";
+		}
+		return getDuration(seg);
+	}
+
+	public String getDuration(Integer segName) {
+		if (!segmentList.isEmpty()) {
+			String val = durationList.get(segName);
+			if (val != null) {
+				return val;
+			}
+		}
+		return "0";
 	}
 
 	public double getDuration() {
@@ -366,16 +401,14 @@ public class AROManifest {
 	}
 
 	public boolean isVideoType(VideoType eventType) {
-		return this.eventType.equals(eventType);
+		return this.videoType.equals(eventType);
 	}
 
 	public int getSegIncremental() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	public Integer getSegment(String segName) {
-		// TODO Auto-generated method stub
 		return -1;
 	}
 
@@ -389,5 +422,59 @@ public class AROManifest {
 		
 	}
 
-	
+	/**
+	 * Is this video selected for analysis
+	 */
+	public boolean isSelected() {
+		return selected;
+	}
+
+	/**
+	 * Set the video to be analyzed or skipped over if false.
+	 * 
+	 * @param selected true to analyze, false to skip analysis
+	 */
+	public void setSelected(boolean selected) {
+		this.selected = selected;
+	}
+
+	public String getVideoPath() {
+		return videoPath;
+	}
+
+	public void setVideoPath(String videoPath) {
+		this.videoPath = videoPath;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof AROManifest){
+			if (this == obj){
+				return true;
+			}		
+			AROManifest manifestObj = (AROManifest) obj;
+			if (!videoName.equals(manifestObj.getVideoName())){
+				return false;
+			}
+			if(!getVideoEventsBySegment().equals(manifestObj.getVideoEventsBySegment())){
+				return false;
+			}
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+
+		result = prime * result + videoName.hashCode();
+		result = prime * result + uriStr.hashCode();
+		temp = Double.doubleToLongBits(beginTime);
+		result = prime * result + (int)(temp ^ (temp >>> 32));
+		
+		return result;
+	}
 }

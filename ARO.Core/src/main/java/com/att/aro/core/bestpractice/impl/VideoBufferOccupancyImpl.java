@@ -18,6 +18,8 @@ package com.att.aro.core.bestpractice.impl;
 
 
 import java.text.MessageFormat;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -29,8 +31,10 @@ import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.BufferOccupancyResult;
 import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.BufferOccupancyBPResult;
+import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
+import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 
 
 
@@ -76,6 +80,9 @@ public class VideoBufferOccupancyImpl implements IBestPractice{
 	@Value("${bufferOccupancy.results}")
 	private String textResults;
 	
+	@Value("${bufferOccupancy.init}")
+	private String textResultInit;
+	
 	//private PreferenceHandlerImpl prefs;
 	
 	@Autowired
@@ -93,22 +100,26 @@ public class VideoBufferOccupancyImpl implements IBestPractice{
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 		BufferOccupancyBPResult bufferBPResult = tracedata.getBufferOccupancyResult();
-		if(bufferBPResult != null){
+		BufferTimeBPResult bufferTimeBPResult = tracedata.getBufferTimeResult();
+		BufferOccupancyResult result = new BufferOccupancyResult();
+		if (bufferBPResult != null && bufferBPResult.getBufferByteDataSet().size() > 0) {
 			maxBufferReached = bufferBPResult.getMaxBuffer();// maxBufferReached is in KB (1024)
 			maxBufferReached = maxBufferReached/1024; //change to MB (2^20)
+			List<Double> bufferDataSet = bufferBPResult.getBufferByteDataSet();
+			result.setMinBufferByte(bufferDataSet.get(0)/1024);
+			double bufferSum = bufferDataSet.stream().reduce((a, b) -> a + b).get();
+			result.setAvgBufferByte((bufferSum / bufferDataSet.size())/1024);
+		}else{
+			maxBufferReached=0;
+		}
+		if (bufferTimeBPResult != null && bufferTimeBPResult.getBufferTimeDataSet().size() > 0) {
+			List<Double> bufferTimeDataSet = bufferTimeBPResult.getBufferTimeDataSet();
+			result.setMinBufferTime(bufferTimeDataSet.get(0));
+			result.setMaxBufferTime(bufferTimeDataSet.get(bufferTimeDataSet.size() - 1));
+			double sum = bufferTimeDataSet.stream().reduce((a, b) -> a + b).get();
+			result.setAvgBufferTime(sum / bufferTimeDataSet.size());
 		}
 
-	/*	VideoUsage videoUsage = tracedata.getVideoUsage();
-		TreeMap<Double, AROManifest> videoEventList = videoUsage.getVideoEventList();
-		
-		int count = 0;
-		for (AROManifest aroManifest : videoEventList.values()) {
-			if (!aroManifest.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
-				count += 2;
-			}
-		}
-		*/
-		BufferOccupancyResult result = new BufferOccupancyResult();
 		result.setSelfTest(true);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
@@ -116,19 +127,21 @@ public class VideoBufferOccupancyImpl implements IBestPractice{
 													ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
 		result.setResultType(BPResultType.SELF_TEST);
+		result.setMaxBuffer(maxBufferReached);
 
-		//TODO fix this
-	/*	if (count == 0) {
-			result.setResultText(textResultPass);
-		} else {
-			result.setResultText(MessageFormat.format(this.textResults, count));
-		}*/
 		updateVideoPrefMaxBuffer();
 		double percentage = 0;
 		if(maxBufferSet != 0){
 			percentage = (maxBufferReached/maxBufferSet)*100; 
 		}
-		result.setResultText(MessageFormat.format(this.textResults,String.format("%.2f",percentage),String.format("%.2f", maxBufferReached),String.format("%.2f",maxBufferSet)));
+		
+		if (PlotHelperAbstract.chunkPlayTimeList.size() == 0) {
+			result.setResultText(MessageFormat.format(textResultInit, String.format("%.2f", percentage),
+					String.format("%.2f", maxBufferReached), String.format("%.2f", maxBufferSet)));
+		} else {
+			result.setResultText(MessageFormat.format(this.textResults, String.format("%.2f", percentage),
+					String.format("%.2f", maxBufferReached), String.format("%.2f", maxBufferSet)));
+		}
 		return result;
 	}
 

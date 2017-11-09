@@ -29,7 +29,6 @@ import com.att.arotcpcollector.udp.UDPHeader;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
 import com.att.arotcpcollector.util.PacketUtil;
 
-import java.io.IOException;
 import java.util.Date;
 
 /**
@@ -45,7 +44,6 @@ public class SessionHandler {
 
 	private static volatile SessionHandler handler = null;
 	private SessionManager sessionManager;
-	private IClientPacketWriter clientWriter;
 	private TCPPacketFactory tcpFactory;
 	private UDPPacketFactory udpFactory;
 	private SocketData pcapData = null; // for traffic.cap
@@ -65,16 +63,9 @@ public class SessionHandler {
 
 	private SessionHandler() {
 		sessionManager = SessionManager.getInstance();
+		pcapData = SocketData.getInstance();
 		tcpFactory = new TCPPacketFactory();
 		udpFactory = new UDPPacketFactory();
-		pcapData = SocketData.getInstance();
-	}
-
-	/**
-	 * @param clientWriter
-	 */
-	public void setClientWriter(IClientPacketWriter clientWriter) {
-		this.clientWriter = clientWriter;
 	}
 
 	public Context getAndroidContext() {
@@ -155,6 +146,7 @@ public class SessionHandler {
 
 			// any data from client?
 			if (datalength > 0) {
+
 
 				// accumulate data from client
 				int totalAdded = sessionManager.addClientData(ipheader, tcpheader, clientpacketdata);
@@ -302,13 +294,9 @@ public class SessionHandler {
 	 */
 	void sendRstPacket(IPv4Header ip, TCPHeader tcp, int datalength) {
 		byte[] data = tcpFactory.createRstData(ip, tcp, datalength);
-		try {
-			clientWriter.write(data);
-			pcapData.sendDataToPcap(data);
-			Log.d(TAG, "Sent RST Packet to client with dest => " + PacketUtil.intToIPAddress(ip.getDestinationIP()) + ":" + tcp.getDestinationPort());
-		} catch (IOException e) {
-			Log.e(TAG, "failed to send RST packet: " + e.getMessage());
-		}
+		pcapData.sendDataRecieved(data);
+		pcapData.sendDataToPcap(data);
+		Log.d(TAG, "Sent RST Packet to client with dest => " + PacketUtil.intToIPAddress(ip.getDestinationIP()) + ":" + tcp.getDestinationPort());
 	}
 
 	/**
@@ -323,9 +311,9 @@ public class SessionHandler {
 		int ack = tcp.getSequenceNumber() + 1;
 		int seq = tcp.getAckNumber();
 		byte[] data = tcpFactory.createFinAckData(ip, tcp, ack, seq, true, true);
-		try {
-			clientWriter.write(data);
-			pcapData.sendDataToPcap(data);
+
+		pcapData.sendDataRecieved(data);
+		pcapData.sendDataToPcap(data);
 			
 			if (session != null) {
 				session.getSelectionkey().cancel();
@@ -334,9 +322,6 @@ public class SessionHandler {
 						"ACK to client's FIN and close session => " + PacketUtil.intToIPAddress(ip.getDestinationIP()) + ":" + tcp.getDestinationPort() + "-"
 								+ PacketUtil.intToIPAddress(ip.getSourceIP()) + ":" + tcp.getSourcePort());
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -350,10 +335,8 @@ public class SessionHandler {
 		int ack = tcp.getSequenceNumber();
 		int seq = tcp.getAckNumber();
 		byte[] data = tcpFactory.createFinAckData(ip, tcp, ack, seq, true, false);
-		try {
-
-			clientWriter.write(data);
-			pcapData.sendDataToPcap(data);
+		pcapData.sendDataRecieved(data);
+		pcapData.sendDataToPcap(data);
 			Log.d(TAG, "00000000000 FIN-ACK packet data to vpn client 000000000000");
 			IPv4Header vpnip = null;
 			try {
@@ -373,9 +356,6 @@ public class SessionHandler {
 			}
 			Log.d(TAG, "0000000000000 finished sending FIN-ACK packet to vpn client 000000000000");
 
-		} catch (IOException e) {
-			Log.e(TAG, "Failed to send ACK packet: " + e.getMessage());
-		}
 		session.setSendNext(seq + 1);
 		//avoid re-sending it, from here client should take care the rest
 		session.setClosingConnection(false);
@@ -418,9 +398,9 @@ public class SessionHandler {
 		Log.d(TAG, "sent ack, ack# " + session.getRecSequence() + " + " + acceptedDataLength + " = " + acknumber);
 		session.setRecSequence(acknumber);
 		byte[] data = tcpFactory.createResponseAckData(ipheader, tcpheader, acknumber);
-		try {
-				clientWriter.write(data);
-				pcapData.sendDataToPcap(data);
+
+			pcapData.sendDataRecieved(data);
+			pcapData.sendDataToPcap(data);
 				/* for debugging purpose
 					Log.d(TAG,"&&&&&&&&&&&&& ACK packet data to vpn client &&&&&&&&&&&&&&");
 					IPv4Header vpnip = null;
@@ -440,10 +420,7 @@ public class SessionHandler {
 						Log.d(TAG,sout);
 					}
 				Log.d(TAG,"&&&&&&&&&&&& finished sending ACK packet to vpn client &&&&&&&&&&&&&&&&");
-				 */	
-		} catch (IOException e) {
-			Log.e(TAG, "Failed to send ACK packet: " + e.getMessage());
-		}
+				 */
 	}
 
 	/**
@@ -535,13 +512,9 @@ public class SessionHandler {
 		session.setSendUnack(tcpheader.getSequenceNumber());
 		session.setRecSequence(tcpheader.getAckNumber());
 
-		try {
-			clientWriter.write(packet.getBuffer());
-			pcapData.sendDataToPcap(packet.getBuffer());
+		pcapData.sendDataRecieved(packet.getBuffer());
+		pcapData.sendDataToPcap(packet.getBuffer());
 			Log.d(TAG, "Send SYN-ACK to client");
-		} catch (IOException e) {
-			Log.e(TAG, "Error sending data to client: " + e.getMessage());
-		}
 
 	}
 	

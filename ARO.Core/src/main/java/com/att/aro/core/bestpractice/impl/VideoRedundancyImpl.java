@@ -82,9 +82,6 @@ public class VideoRedundancyImpl implements IBestPractice{
 	@Value("${videoRedundancy.results}")
 	private String textResults;
 
-//	private String manifestLabel = null;
-//	private String videoLabel = null;
-
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 
@@ -98,26 +95,25 @@ public class VideoRedundancyImpl implements IBestPractice{
 		result.setOverviewTitle(overviewTitle);
 
 		VideoUsage videoUsage = tracedata.getVideoUsage();
+		int count = 0;
 		if (videoUsage != null) {
-
-			int count = 0;
 
 			// count duplicate chunks (same segment number)
 			for (AROManifest aroManifest : videoUsage.getManifests()) {
-				VideoEvent preStuff = null;
-				for (VideoEvent stuff : aroManifest.getVideoEventsBySegment()) {
-					if (aroManifest instanceof ManifestDash && stuff.getSegment() == 0 ){
-						continue;
+				if (aroManifest.isSelected()) {
+					VideoEvent preStuff = null;
+					for (VideoEvent stuff : aroManifest.getVideoEventsBySegment()) {
+						if (aroManifest instanceof ManifestDash && stuff.getSegment() == 0) {
+							continue;
+						}
+
+						if (preStuff != null && preStuff.getSegment() == stuff.getSegment()
+								&& !preStuff.getQuality().equals(stuff.getQuality())) {
+							log.debug("Redundant :\t" + preStuff + "\n\t\t" + stuff);
+							count++;
+						}
+						preStuff = stuff;
 					}
-					
-					if (preStuff != null 
-							&& preStuff.getSegment() == stuff.getSegment()
-							&& !preStuff.getQuality().equals(stuff.getQuality())
-							) {
-						log.debug("Redundant :\t" + preStuff +"\n\t\t"+ stuff);
-						count++;
-					}
-					preStuff = stuff;
 				}
 			}
 
@@ -132,6 +128,7 @@ public class VideoRedundancyImpl implements IBestPractice{
 							count == 1? "" : "s"
 								));
 		}
+		result.setRedundancy(count);
 		return result;
 	}
 }

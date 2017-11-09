@@ -25,6 +25,9 @@ public interface IVideoTabHelper {
 
 	TreeMap<Double, HttpRequestResponseInfo> getRequestListMap();
 
+	void resetRequestMapList();
+
+	boolean isStartUpDelaySet();
 	
 }
 

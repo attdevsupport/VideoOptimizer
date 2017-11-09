@@ -51,11 +51,18 @@ public interface IARODiagnosticsOverviewRoute {
 	 * @return the tab index of where the request was routed (-1 == nowhere).
 	 */
 	public int route(DataTableModel<? extends DataTableModel<?>> tableModel,
-		Object cacheEntryOrSessionOrHttpResponseInfo);	/**
+		Object cacheEntryOrSessionOrHttpResponseInfo);	
+	/**
 	 * <p>
 	 * Interface to route to the another Tab based on clicking a hyperlink 
 	 * 
 	 * @param bpType
 	 */
 	public void routeHyperlink(BestPracticeType bpType);
+	/**
+	 * <p>
+	 * Interface to route to the diagnostic Tab & launch slider dialog 
+	 * 
+	 */
+	public void launchSliderDialogFromDiagnosticTab();
 }

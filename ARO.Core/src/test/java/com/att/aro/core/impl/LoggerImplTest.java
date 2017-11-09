@@ -30,6 +30,7 @@ public class LoggerImplTest extends BaseTest {
 	public void info(){
 		logger.info("test info");
 		logger.info("test info2",throwable);
+		logger.elevatedInfo("test elevated info");
 	}
 	@Test
 	public void warn(){

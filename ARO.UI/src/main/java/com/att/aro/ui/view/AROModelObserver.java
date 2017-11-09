@@ -51,12 +51,12 @@ public class AROModelObserver extends Observable{
 	}
 
 	public void notifyObservers(AROTraceData aModelupdate) {
-		synchronized(observers) {
-	         for (Observer ob : observers) {  
-	             ob.update(this,aModelupdate);  
-	         }
+		synchronized (observers) {
+			for (Observer ob : observers) {
+				ob.update(this, aModelupdate);
+			}
 		}
-      }  
+	}  
 
 	public void registerObserver(Observer observer) {
 		observers.add(observer);  

@@ -190,35 +190,38 @@ public class ImageCompressionImpl implements IBestPractice {
 
 					originalImage = extractFullNameFromRRInfo(reqResp);
 					int pos = originalImage.lastIndexOf(".");
-					imgExtn = originalImage.substring(pos + 1, originalImage.length());
-					if (imgExtn.equalsIgnoreCase("jpeg") || imgExtn.equalsIgnoreCase("jpg")) {
+					if (pos != -1) {
+						imgExtn = originalImage.substring(pos + 1, originalImage.length());
+						if (Util.isJPG(new File(imageFolderPath + originalImage), imgExtn)) {
 
-						midCompressedImagePath = imageCompressionFolderPath 
-								+ originalImage.substring(0, originalImage.lastIndexOf(".")) + Quality.MID.getFileDesc()
-								+ originalImage.substring(originalImage.lastIndexOf("."), originalImage.length());
+							midCompressedImagePath = imageCompressionFolderPath
+									+ originalImage.substring(0, originalImage.lastIndexOf("."))
+									+ Quality.MID.getFileDesc()
+									+ originalImage.substring(originalImage.lastIndexOf("."), originalImage.length());
 
-						logCompressedImagepath = imageCompressionFolderPath 
-								+ originalImage.substring(0, originalImage.lastIndexOf(".")) + Quality.LOW.getFileDesc()
-								+ originalImage.substring(originalImage.lastIndexOf("."), originalImage.length());
-						orgImageSize = new File(imageFolderPath + originalImage).length();
-						midQualityImgSize = new File(midCompressedImagePath).length();
-						lowQualityImgSize = new File(logCompressedImagepath).length();
-						if (midQualityImgSize > 0 && ((orgImageSize - midQualityImgSize) * 100 / orgImageSize >= 15)
-								&& lowQualityImgSize < orgImageSize) {
+							logCompressedImagepath = imageCompressionFolderPath
+									+ originalImage.substring(0, originalImage.lastIndexOf("."))
+									+ Quality.LOW.getFileDesc()
+									+ originalImage.substring(originalImage.lastIndexOf("."), originalImage.length());
+							orgImageSize = new File(imageFolderPath + originalImage).length();
+							midQualityImgSize = new File(midCompressedImagePath).length();
+							lowQualityImgSize = new File(logCompressedImagepath).length();
+							if (midQualityImgSize > 0 && ((orgImageSize - midQualityImgSize) * 100 / orgImageSize >= 15)
+									&& lowQualityImgSize < orgImageSize) {
 
-							orginalImagesSize = orginalImagesSize + orgImageSize;
-							midQualImgsSize = midQualImgsSize + midQualityImgSize;
+								orginalImagesSize = orginalImagesSize + orgImageSize;
+								midQualImgsSize = midQualImgsSize + midQualityImgSize;
 
-							orgImgSize = orgImageSize / 1024;
-							midQualityImageSize = midQualityImgSize / 1024;
-							lowQualityImageSize = lowQualityImgSize / 1024;
-						
+								orgImgSize = orgImageSize / 1024;
+								midQualityImageSize = midQualityImgSize / 1024;
+								lowQualityImageSize = lowQualityImgSize / 1024;
 
-							entryList.add(new ImageCompressionEntry(reqResp, session.getDomainName(),
-									imageFolderPath + originalImage, orgImgSize, midQualityImageSize,
-									lowQualityImageSize));
+								entryList.add(new ImageCompressionEntry(reqResp, session.getDomainName(),
+										imageFolderPath + originalImage, orgImgSize, midQualityImageSize,
+										lowQualityImageSize));
+							}
+
 						}
-
 					}
 				}
 			}
@@ -238,7 +241,7 @@ public class ImageCompressionImpl implements IBestPractice {
 					if (imgFile.exists() && !imgFile.isDirectory()) {
 						int posExtn = extractedImage.lastIndexOf(".");
 						String imgExtn = extractedImage.substring(posExtn + 1, extractedImage.length());
-						if (imgExtn.equalsIgnoreCase("jpeg") || imgExtn.equalsIgnoreCase("jpg")) {
+						if (Util.isJPG(imgFile, imgExtn)) {
 							exec.submit(new Runnable() {
 								@Override
 								public void run() {

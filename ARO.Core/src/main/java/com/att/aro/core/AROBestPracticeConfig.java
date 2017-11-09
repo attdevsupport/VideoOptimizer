@@ -48,6 +48,7 @@ import com.att.aro.core.bestpractice.impl.PeriodicTransferImpl;
 import com.att.aro.core.bestpractice.impl.PrefetchingImpl;
 import com.att.aro.core.bestpractice.impl.ScreenRotationImpl;
 import com.att.aro.core.bestpractice.impl.ScriptsImpl;
+import com.att.aro.core.bestpractice.impl.SimultnsConnImpl;
 import com.att.aro.core.bestpractice.impl.SpriteImageImpl;
 import com.att.aro.core.bestpractice.impl.TransmissionPrivateDataImpl;
 //import com.att.aro.core.bestpractice.impl.TransmissionPersonalImpl;
@@ -57,6 +58,7 @@ import com.att.aro.core.bestpractice.impl.UsingCacheImpl;
 import com.att.aro.core.bestpractice.impl.VideoBufferOccupancyImpl;
 import com.att.aro.core.bestpractice.impl.VideoChunkPacingImpl;
 import com.att.aro.core.bestpractice.impl.VideoChunkSizeImpl;
+import com.att.aro.core.bestpractice.impl.VideoConcurrentSessionImpl;
 import com.att.aro.core.bestpractice.impl.VideoNetworkComparisonImpl;
 import com.att.aro.core.bestpractice.impl.VideoRedundancyImpl;
 import com.att.aro.core.bestpractice.impl.VideoStallImpl;
@@ -180,6 +182,11 @@ public class AROBestPracticeConfig {
 	IBestPractice getHttp4xx5xx() {
 		return new Http4xx5xxImpl();
 	}
+	
+	@Bean(name = "simultaneous")
+	IBestPractice getSimultaneous() {
+		return new SimultnsConnImpl();
+	}
 
 	@Bean(name = "http3xx")
 	IBestPractice getHttp3xx() {
@@ -254,55 +261,52 @@ public class AROBestPracticeConfig {
 		return new FileOrderImpl();
 	}
 
-	// ARO 6.0 release
+	// VIDEO
 	@Bean(name = "videoStall")
-//	@DependsOn(VIDEOUSAGE)
 	IBestPractice getVideoStall() {
 		return new VideoStallImpl();
 	}
 	
 	@Bean(name = "startupDelay")
-//	@DependsOn(VIDEOUSAGE)
 	IBestPractice getStartupDelay() {
 		return new VideoStartUpDelayImpl();
 	}
 
 	@Bean(name = "bufferOccupancy")
-//	@DependsOn(VIDEOUSAGE)
 	IBestPractice getBufferOccupancy() {
 		return new VideoBufferOccupancyImpl();
 	}
 
 	@Bean(name = "networkComparison")
-//	@DependsOn(VIDEOUSAGE)
 	IBestPractice getNetworkComparison() {
 		return new VideoNetworkComparisonImpl();
 	}
 
 	@Bean(name = "tcpConnection")
-//	@DependsOn(VIDEOUSAGE)
 	IBestPractice getTcpConnection() {
 		return new VideoTcpConnectionImpl();
 	}
 
 	@Bean(name = "chunkSize")
-//	@DependsOn(VIDEOUSAGE)
 	IBestPractice getChunkSize() {
 		return new VideoChunkSizeImpl();
 	}
 
 	@Bean(name = "chunkPacing")
-//	@DependsOn(VIDEOUSAGE)
 	IBestPractice getChunkPacing() {
 		return new VideoChunkPacingImpl();
 	}
 
 	@Bean(name = "videoRedundancy")
-//	@DependsOn(VIDEOUSAGE)
 	IBestPractice getVideoRedundancy() {
 		return new VideoRedundancyImpl();
-	}	
-
+	}
+	
+	@Bean(name = "videoConcurrentSessions")
+	IBestPractice getVideoConcurrentSesisons() {
+		return new VideoConcurrentSessionImpl();
+	}
+	//End of Video
 
 	@Bean(name = "httpsUsage")
 	IBestPractice getHttpsUsage() {

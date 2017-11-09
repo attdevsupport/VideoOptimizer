@@ -53,6 +53,7 @@ import com.att.aro.core.peripheral.IAlarmAnalysisInfoParser;
 import com.att.aro.core.peripheral.IAlarmDumpsysTimestampReader;
 import com.att.aro.core.peripheral.IAlarmInfoReader;
 import com.att.aro.core.peripheral.IAppInfoReader;
+import com.att.aro.core.peripheral.IAttenuattionEventReader;
 import com.att.aro.core.peripheral.IBatteryInfoReader;
 import com.att.aro.core.peripheral.IBluetoothInfoReader;
 import com.att.aro.core.peripheral.ICameraInfoReader;
@@ -68,6 +69,7 @@ import com.att.aro.core.peripheral.IPrivateDataReader;
 import com.att.aro.core.peripheral.IRadioInfoReader;
 import com.att.aro.core.peripheral.IScreenRotationReader;
 import com.att.aro.core.peripheral.IScreenStateInfoReader;
+import com.att.aro.core.peripheral.ISpeedThrottleEventReader;
 import com.att.aro.core.peripheral.IUserEventReader;
 import com.att.aro.core.peripheral.IVideoTimeReader;
 import com.att.aro.core.peripheral.IWakelockInfoReader;
@@ -77,6 +79,7 @@ import com.att.aro.core.peripheral.pojo.AlarmAnalysisResult;
 import com.att.aro.core.peripheral.pojo.AlarmDumpsysTimestamp;
 import com.att.aro.core.peripheral.pojo.AlarmInfo;
 import com.att.aro.core.peripheral.pojo.AppInfo;
+import com.att.aro.core.peripheral.pojo.AttenuatorEvent;
 import com.att.aro.core.peripheral.pojo.BatteryInfo;
 import com.att.aro.core.peripheral.pojo.BluetoothInfo;
 import com.att.aro.core.peripheral.pojo.CameraInfo;
@@ -89,6 +92,7 @@ import com.att.aro.core.peripheral.pojo.NetworkTypeObject;
 import com.att.aro.core.peripheral.pojo.PrivateDataInfo;
 import com.att.aro.core.peripheral.pojo.RadioInfo;
 import com.att.aro.core.peripheral.pojo.ScreenStateInfo;
+import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent;
 import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.peripheral.pojo.VideoTime;
@@ -166,7 +170,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	
 	@Autowired
 	private ICollectOptionsReader collectOptionsReader;
-		
+	
 	private ICrypto crypto;
 		
 	@Autowired
@@ -176,7 +180,13 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	private IDeviceDetailReader devicedetailreader;
 	
 	@Autowired
-	private IDeviceInfoReader deviceinforeader;		
+	private IDeviceInfoReader deviceinforeader;
+	
+	@Autowired
+	private IAttenuattionEventReader attnrEventReader;
+		
+	@Autowired
+	private ISpeedThrottleEventReader speedThrottleReader;
 	
 	private Set<InetAddress> localIPAddresses = null;
 	private List<PacketInfo> allPackets = null;
@@ -248,6 +258,10 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		readSSLKeys(result);
 		
 		readPrivateData(result);
+		
+		readAttenuationEvent(result);
+		
+		readThrottleEvent(result);
 
 		return result;
 	}
@@ -261,7 +275,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 	private void readSSLKeys(TraceDirectoryResult result) {
 		String filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.SSLKEY_FILE;
-		if (filereader.fileExist(filepath)) {
+		if (filereader.fileExist(filepath) && !Util.isLinuxOS()) {
 			crypto.readSSLKeys(filepath);
 			result.setCrypto(crypto);
 			logger.info("crypto read:" + crypto.getSSLKeyList().size() + " records");
@@ -574,7 +588,17 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		
 		result.setDeviceKeywordInfos(deviceKeywordInfos);
 	}
-		
+	
+	private void readAttenuationEvent(TraceDirectoryResult result){
+		List<AttenuatorEvent> attenuatorEvents = attnrEventReader.readData(result.getTraceDirectory());
+		result.setAttenautionEvent(attenuatorEvents);
+	}
+	
+	private void readThrottleEvent(TraceDirectoryResult result){
+		List<SpeedThrottleEvent> speedThrottleEvents = speedThrottleReader.readData(result.getTraceDirectory());
+		result.setSpeedThrottleEvent(speedThrottleEvents);
+	}
+	
 	/**
 	 * Method to read times from the video time trace file and store video time
 	 * variables.
@@ -855,11 +879,11 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if(obj != null){
 			result.setNetworkTypeInfos(obj.getNetworkTypeInfos());
 			result.setNetworkTypesList(obj.getNetworkTypesList());
-		}
-		
+		}	
+
 		CollectOptions collectOptions = collectOptionsReader.readData(result.getTraceDirectory());
 		result.setCollectOptions(collectOptions);
-
+		
 		List<UserEvent> userEvents = usereventreader.readData(result.getTraceDirectory(), result.getEventTime0(), result.getPcapTime0());
 		result.setUserEvents(userEvents);
  

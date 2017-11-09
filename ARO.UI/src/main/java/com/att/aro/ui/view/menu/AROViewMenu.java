@@ -58,6 +58,8 @@ public class AROViewMenu implements ActionListener, MenuListener {
 	private final JMenuItem menuViewOptions =
 			menuAdder.getMenuItemInstance(MenuItem.menu_view_options);
 
+	private FilterProcessesDialog filterProcessDialog;
+	
 	private enum MenuItem {
 		menu_view,
 		menu_view_video,
@@ -107,8 +109,10 @@ public class AROViewMenu implements ActionListener, MenuListener {
 		} else if(menuAdder.isMenuSelected(
 				MenuItem.menu_tools_excludetimerangeanalysis, aEvent)) {
 			new ExcludeTimeRangeAnalysisDialog(parent).setVisible(true);
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_view_processes, aEvent)) {
-			new FilterProcessesDialog(parent, menuViewProcesses).setVisible(true);;
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_view_processes, aEvent)) {
+			filterProcessDialog = (filterProcessDialog != null) ? filterProcessDialog
+					: new FilterProcessesDialog(parent, menuViewProcesses);
+			filterProcessDialog.setVisible(true);
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_view_options, aEvent)) {
 			synchronized(this) {
 				if(menuViewOptionsDialog == null) {

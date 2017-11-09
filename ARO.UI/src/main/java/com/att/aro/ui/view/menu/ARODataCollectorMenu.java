@@ -169,15 +169,23 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
 		IAroDevice device = null;
 
+ 		int delayTimeDL = 0;
+		int delayTimeUL = 0;
+		int throttleDL = 0;
+		int throttleUL = 0;
+		boolean secure = false;
+		boolean installCert = false;
+		boolean profileBoolean = false;
 		
 		String traceFolderName = "";
+		String profileLocation = "";
 		DataCollectorSelectNStartDialog dialog = new DataCollectorSelectNStartDialog(((MainFrame) parent).getJFrame(), deviceList, traceFolderName, collectors, true);
 
 		if (dialog.getResponse()) {
 			device = dialog.getDevice();
 			traceFolderName = dialog.getTraceFolder();
 			device.setCollector(dialog.getCollectorOption());
-			
+ 
 			if (device.isPlatform(IAroDevice.Platform.iOS)) {
 				IDataCollector iosCollector = findIOSCollector(collectors);
 				if (!checkSetSuPassword(iosCollector)) {
@@ -210,7 +218,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
  			Hashtable<String,Object> extras = new Hashtable<String,Object>();
 			extras.put("video_option", dialog.getRecordVideoOption());
-			extras.put("videoOrientation", dialog.getVideoOrientation());
+			extras.put("videoOrientation", dialog.getVideoOrientation());			 
 
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			

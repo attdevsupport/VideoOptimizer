@@ -17,15 +17,10 @@
 	<!-- repositories -->
 	<repositories>
 		<repository>
-			<id>com.springsource.repository.bundles.external</id>
-			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
-			<url>http://repository.springsource.com/maven/bundles/external</url>
-		</repository>
-<!-- 		<repository>
-			<id>jboss-eap</id>
-			<name>ARO third party</name>
-			<url>http://mavencentral.it.att.com:8084/nexus/service/local/repositories/JBossEAP</url>
-		</repository> -->
+			<id>central</id>
+			<name>MavenCentral Repository</name>
+			<url>http://repo1.maven.org/maven2</url>
+		</repository>	
 		<repository>
 			<id>apache.snapshots</id>
 			<name>Apache Development Snapshot Repository</name>
@@ -37,28 +32,27 @@
 				<enabled>true</enabled>
 			</snapshots>
 		</repository>
+
 		<repository>
-			<id>sonatype</id>
-			<name>Sonatype</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+			<id>Typesafe</id>
+			<name>Maven Typesafe Repository</name>
+			<url>http://repo.typesafe.com/typesafe/maven-releases</url>
 		</repository>
 		<repository>
-			<id>sonatype-flex</id>
-			<name>Sonatype Flex</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+			<id>com.springsource.repository.bundles.external</id>
+			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
+			<url>http://repository.springsource.com/maven/bundles/external</url>
 		</repository>
 	</repositories>
 
-	<!-- pluginRepositories -->
-	<pluginRepositories>
-		<pluginRepository>
-			<id>central</id>
-			<url>http://repo1.maven.org/maven2</url>
-		</pluginRepository>
-	</pluginRepositories>
-
+ 
 	<!-- dependencies -->
 	<dependencies>
+		<dependency>
+			<groupId>com.att.aro</groupId>
+			<artifactId>aro-core</artifactId>
+			<version>6.0.0-SNAPSHOT</version>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -87,7 +81,7 @@
 			<artifactId>vpn-android-collector</artifactId>
 			<version>6.0.0-SNAPSHOT</version>
 		</dependency>
-		<dependency>
+ 		<dependency>
 			<groupId>com.att.aro.datacollector</groupId>
 			<artifactId>ios-collector</artifactId>
 			<version>6.0.0-SNAPSHOT</version>
@@ -111,6 +105,8 @@
 
 	</dependencies>
 
+
+
 	<!-- build -->
 	<build>
 		<plugins>
@@ -131,29 +127,6 @@
 				</configuration>
 			</plugin>
 
-<!-- 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>3.0.4</version>
-				<configuration>
-					<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
-					<effort>Max</effort>
-					<threshold>Max</threshold>
-					<maxRank>15</maxRank>
-					<xmlOutput>true</xmlOutput>
-					<findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-				</configuration>
-				<executions>
-					<execution>
-						<id>analyze-compile</id>
-						<phase>compile</phase>
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
- -->
 			<!-- shade -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -217,6 +190,7 @@
 				</executions>
 			</plugin>
 
+			<!-- junit -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -229,6 +203,52 @@
 					</dependency>
 				</dependencies>
 			</plugin>
+
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.7.0.201403182114</version>
+				<executions>
+					<execution>
+						<id>default-prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>default-report</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>default-check</id>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<rule>
+									<element>CLASS</element>
+									<excludes>
+										<exclude>*Test</exclude>
+										<exclude>*Config</exclude>
+									</excludes>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>0.80</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 		<pluginManagement>
 			<plugins>

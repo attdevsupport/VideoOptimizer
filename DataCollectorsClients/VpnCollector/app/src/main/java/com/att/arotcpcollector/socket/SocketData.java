@@ -29,13 +29,14 @@ import java.util.Arrays;
  * 
  * @author Borey Sao Date: May 12, 2014
  */
-public class SocketData implements IReceivePcapData, IReceiveDataToBeTransmitted {
+public class SocketData implements IReceivePcapData, IReceiveDataToBeTransmitted, IReceiveDataResponse {
 	
 	private volatile static SocketData instance = null;
 	
 	private ArrayList<IPcapSubscriber> pcapSubscribers;
 	private ArrayList<ISocketDataSubscriber> socketDataSubscribers;
-	
+	private ArrayList<IDataReceivedSubscriber> dataReceivedSubscribers;
+
 	/**
 	 * get instance
 	 * @return
@@ -56,14 +57,19 @@ public class SocketData implements IReceivePcapData, IReceiveDataToBeTransmitted
 	 * Subscribers are differentiated based on functionality
 	 */
 	private SocketData() {
-		pcapSubscribers = new ArrayList<IPcapSubscriber>();
-		socketDataSubscribers = new ArrayList<ISocketDataSubscriber>();
+		pcapSubscribers = new ArrayList<>();
+		socketDataSubscribers = new ArrayList<>();
+		dataReceivedSubscribers = new ArrayList<>();
 	}
 	
 	public void sendDataToBeTransmitted(byte[] packet) {
 		notifyDataTransmitterSubscriber(packet);
 	}
 	
+	public void sendDataRecieved(byte[] packet) {
+		notifyDataReceivedSubscribers(packet);
+	}
+
 	public void sendDataToPcap(byte[] packet) {
 		notifyPcapSubscriber(packet);
 	}
@@ -112,7 +118,7 @@ public class SocketData implements IReceivePcapData, IReceiveDataToBeTransmitted
 	public void unregisterPcapSubscriber(IPcapSubscriber subscriber) {
 		// Removes a Pcap Subscriber from the list
 		pcapSubscribers.remove(subscriber);
-		
+
 	}
 	
 	
@@ -128,5 +134,31 @@ public class SocketData implements IReceivePcapData, IReceiveDataToBeTransmitted
 			}
 		}
 		
+	}
+
+	@Override
+	public void registerDataReceivedSubscribers(IDataReceivedSubscriber subscriber) {
+		// Adds a new Data Received Subscriber to the list
+		if (!dataReceivedSubscribers.contains(subscriber)) {
+			dataReceivedSubscribers.add(subscriber);
+		}
+	}
+
+	@Override
+	public void unregisterDataReceivedSubscribers(IDataReceivedSubscriber subscriber) {
+		// Removes the Data Received Subscriber from the list
+		dataReceivedSubscribers.remove(subscriber);
+	}
+
+	@Override
+	public void notifyDataReceivedSubscribers(byte[] packet) {
+		// Cycle through the subscribers and notify them
+		for(IDataReceivedSubscriber dataRecievedSubscriber: dataReceivedSubscribers){
+			if(dataReceivedSubscribers.size() > 1) {
+				dataRecievedSubscriber.receiveData(Arrays.copyOf(packet,packet.length));
+			} else {
+			dataRecievedSubscriber.receiveData(packet);
+			}
+		}
 	}
 }

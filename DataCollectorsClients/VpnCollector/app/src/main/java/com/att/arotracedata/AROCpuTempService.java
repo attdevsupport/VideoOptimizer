@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 AT&T
+ *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,23 @@ package com.att.arotracedata;
 
 import android.app.Service;
 import android.content.Intent;
+import android.nfc.Tag;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
+import com.att.arocollector.utils.AROCollectorUtils;
 
 public class AROCpuTempService extends Service {
 
@@ -148,6 +155,19 @@ public class AROCpuTempService extends Service {
                 scriptThread.interrupt();
             }
             Process proc = Runtime.getRuntime().exec(cmd);
+            if (proc != null) {
+                printError(proc);
+            }
+        } catch(Exception e) {
+            Log.e(TAG, "Exception occurs when stopping CPU temperature. :: " + e.getMessage());
+        }
+
+        final String deleteScript = "rm " + ARO_TRACE_ROOTDIR + payloadFileName;
+        try {
+            if (scriptThread != null) {
+                scriptThread.interrupt();
+            }
+            Process proc = Runtime.getRuntime().exec(deleteScript);
             if (proc != null) {
                 printError(proc);
             }

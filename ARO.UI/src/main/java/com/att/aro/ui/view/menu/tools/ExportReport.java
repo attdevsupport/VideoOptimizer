@@ -30,16 +30,16 @@ import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 
-public class ExportReport extends AROUIWorker<Void, Void>{
+public class ExportReport extends AROUIWorker<Void, Void> {
 
 	JFileChooser chooser;
 	IAROView parent;
 	boolean json;
 	File exportPath;
 	private UserPreferences userPreferences = UserPreferencesFactory.getInstance().create();
-	
+
 	public ExportReport(IAROView parent, boolean json, String message) {
-		super(((MainFrame)parent).getJFrame(), message);
+		super(((MainFrame) parent).getJFrame(), message);
 		this.parent = parent;
 		this.json = json;
 	}
@@ -50,15 +50,17 @@ public class ExportReport extends AROUIWorker<Void, Void>{
 		chooser = new JFileChooser(userPreferences.getLastExportDirectory());
 		chooser.setDialogTitle(ResourceBundleHelper.getMessageString("fileChooser.Title"));
 		chooser.setApproveButtonText(ResourceBundleHelper.getMessageString("fileChooser.Save"));
-		chooser.setMultiSelectionEnabled(false);	
+		chooser.setMultiSelectionEnabled(false);
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		if (json){
-			FileNameExtensionFilter htmlFilter = new FileNameExtensionFilter(ResourceBundleHelper.getMessageString("fileChooser.desc.json"), 
+		if (json) {
+			FileNameExtensionFilter htmlFilter = new FileNameExtensionFilter(
+					ResourceBundleHelper.getMessageString("fileChooser.desc.json"),
 					ResourceBundleHelper.getMessageString("fileChooser.contentType.json"));
 			chooser.addChoosableFileFilter(htmlFilter);
 			chooser.setFileFilter(htmlFilter);
 		} else {
-			FileNameExtensionFilter htmlFilter = new FileNameExtensionFilter(ResourceBundleHelper.getMessageString("fileChooser.desc.html"), 
+			FileNameExtensionFilter htmlFilter = new FileNameExtensionFilter(
+					ResourceBundleHelper.getMessageString("fileChooser.desc.html"),
 					ResourceBundleHelper.getMessageString("fileChooser.contentType.html"));
 			chooser.addChoosableFileFilter(htmlFilter);
 			chooser.setFileFilter(htmlFilter);
@@ -66,13 +68,13 @@ public class ExportReport extends AROUIWorker<Void, Void>{
 	}
 
 	@Override
-	public void doing() throws Exception{
+	public void doing() throws Exception {
 		saveFile(chooser);
 	}
 
 	@Override
 	public void after() {
-		if (exportPath!=null) {
+		if (exportPath != null) {
 			userPreferences.setLastExportDirectory(exportPath);
 		}
 	}
@@ -84,43 +86,54 @@ public class ExportReport extends AROUIWorker<Void, Void>{
 	 *            {@link JFileChooser} object to validate the save option.
 	 */
 	private void saveFile(JFileChooser chooser) throws Exception {
-		if (chooser.showSaveDialog(((MainFrame)parent).getJFrame()) == JFileChooser.APPROVE_OPTION) {
+		if (chooser.showSaveDialog(((MainFrame) parent).getJFrame()) == JFileChooser.APPROVE_OPTION) {
 			exportPath = chooser.getSelectedFile();
 			if (!chooser.getFileFilter().accept(exportPath)) {
 				if (json) {
-					exportPath = new File(exportPath.getAbsolutePath() + "." + ResourceBundleHelper.getMessageString("fileChooser.contentType.json"));
+					exportPath = new File(exportPath.getAbsolutePath() + "."
+							+ ResourceBundleHelper.getMessageString("fileChooser.contentType.json"));
 				} else {
-					exportPath = new File(exportPath.getAbsolutePath() + "." + ResourceBundleHelper.getMessageString("fileChooser.contentType.html"));
+					exportPath = new File(exportPath.getAbsolutePath() + "."
+							+ ResourceBundleHelper.getMessageString("fileChooser.contentType.html"));
 				}
 			}
-			
-			if (exportPath.exists()){
+
+			if (exportPath.exists()) {
 				// file already exists
-				int res = MessageDialogFactory.showConfirmDialog(((MainFrame)parent).getJFrame(), ResourceBundleHelper.getMessageString("menu.tools.export.warning"));
+				int res = MessageDialogFactory.showConfirmDialog(((MainFrame) parent).getJFrame(),
+						ResourceBundleHelper.getMessageString("menu.tools.export.warning"));
 				if (res != JOptionPane.YES_OPTION) {
 					return;
 				}
 			} else {
 				if (json) {
-					((MainFrame)parent).getController().printReport(true, exportPath.getAbsolutePath());
+					((MainFrame) parent).getController().printReport(true, exportPath.getAbsolutePath());
 				} else {
-					((MainFrame)parent).getController().printReport(false, exportPath.getAbsolutePath());
+					((MainFrame) parent).getController().printReport(false, exportPath.getAbsolutePath());
 				}
 			}
-			
+
 			if (exportPath.getName().contains(".html") || exportPath.getName().contains(".json")) {
 				MessageDialogFactory dialogFactory = new MessageDialogFactory();
-				int res = dialogFactory.showExportConfirmDialog(((MainFrame)parent).getJFrame());
+				int res = dialogFactory.showExportConfirmDialog(((MainFrame) parent).getJFrame());
 				if (res == JOptionPane.YES_OPTION) {
 					try {
 						Desktop desktop = Desktop.getDesktop();
-						desktop.open(exportPath);
+						if (desktop != null) {
+							desktop.open(exportPath);
+						} else {
+							showFailedToOpen();
+						}
 					} catch (UnsupportedOperationException unsupportedException) {
-						MessageDialogFactory.showMessageDialog(((MainFrame)parent).getJFrame(),
-								ResourceBundleHelper.getMessageString("Error.unableToOpen"));
+						showFailedToOpen();
 					}
 				}
-			} 
+			}
 		}
+	}
+
+	private void showFailedToOpen() {
+		MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
+				ResourceBundleHelper.getMessageString("Error.unableToOpen"));
 	}
 }

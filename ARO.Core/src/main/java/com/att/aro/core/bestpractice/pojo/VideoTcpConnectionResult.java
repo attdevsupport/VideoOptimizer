@@ -15,16 +15,21 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
-/**
- * 
- * VBP #5
- *
- */
 public class VideoTcpConnectionResult extends AbstractBestPracticeResult {
 
+	private int tcpConnections;
+	
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.TCP_CONNECTION;
+	}
+
+	public int getTcpConnections() {
+		return tcpConnections;
+	}
+
+	public void setTcpConnections(int tcpConnections) {
+		this.tcpConnections = tcpConnections;
 	}
 
 }

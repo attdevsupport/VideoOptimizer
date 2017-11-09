@@ -167,24 +167,34 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 	}
 
 	private void addTestsConductedSummary() {
+		int bpRunCt = 0;
 		if (bpResults != null) {
+			for (AbstractBestPracticeResult bestPracticeResult : bpResults) {
+				if (bestPracticeResult.getResultType() != BPResultType.NONE) {
+					bpRunCt++;
+				}
+			}
 			int gridY1 = 1;
 			int column = 0;
-			int rows = bpResults.size() / 2 + 1;
+			int rows = bpRunCt / 2 + 1;
 			for (AbstractBestPracticeResult bestPracticeResult : bpResults) {
+				if (bestPracticeResult.getResultType() == BPResultType.NONE) {
+					continue;
+				}
 				if (gridY1 > rows) {
 					gridY1 = 1;
 					column = 2;
 				}
 
-				bestPracticeResult.getOverviewTitle(); 
+				bestPracticeResult.getOverviewTitle();
 				bestPracticeResult.getResultText();
-
 				ImageIcon icon = loadImageIcon(bestPracticeResult);
-				
 				addGridCell(gridY1++, column, icon, bestPracticeResult.getOverviewTitle());
 			}
-		} 
+		}
+		if (bpRunCt == 0) {
+			addGridCell(1, 0, null, "No tests conducted");
+		}
 	}
 	
 	private void addNullSummary() {
@@ -205,10 +215,11 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"spriteimages"                       //  #bp 09   File Download: Use CSS Sprites for Images                                  
 				  ,"connections.connectionOpening"      //  #bp 10   Connections: Connection Opening                                            
 				  ,"connections.unnecssaryConn"         //  #bp 11   Connections: Unnecessary Connections - Multiple Simultaneous Connections                               
+				  ,"connections.simultaneous"  			//  #bp      Connections: Multiple Connections to One Endpoint
 				  ,"connections.periodic"               //  #bp 12   Connections: Inefficient Connections - Periodic Transfers                    
 				  ,"connections.screenRotation"         //  #bp 13   Connections: Inefficient Connections - Screen Rotation                                                 
-				  ,"connections.connClosing"            //  #bp 14   Connections: Inefficient Connections - Connection Closing Problems                                     
-				/*
+				  ,"connections.connClosing"            //  #bp 14   Connections: Inefficient Connections - Connection Closing Problems
+				 /*
 				 * ,"connections.offloadingToWifi" // #bp 15 Connections: Inefficient Connections - Offloading to WiFi when Possible
 				 */                  
 				  ,"connections.http4xx5xx"             //  #bp 16   Connections: 400, 500 HTTP Status Response Codes                           
@@ -228,8 +239,8 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"security.forwardSecrecy"			//  #bp 19	 Security: Forward Secrecy
 				  
 				  ,"videoStall"                         //  #bp
-				  ,"bufferOccupancy"                    //  #bp
 				  ,"startUpDelay"                       //  #bp
+				  ,"bufferOccupancy"                    //  #bp
 				  ,"networkComparison"                  //  #bp
 				  ,"tcpConnection"                      //  #bp
 				  ,"chunkSize"                          //  #bp

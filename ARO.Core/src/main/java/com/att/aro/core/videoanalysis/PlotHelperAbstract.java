@@ -16,6 +16,7 @@
 package com.att.aro.core.videoanalysis;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.model.InjectLogger;
+import com.att.aro.core.videoanalysis.impl.SortSelection;
+import com.att.aro.core.videoanalysis.impl.VideoEventComparator;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.ManifestDash;
 import com.att.aro.core.videoanalysis.pojo.ManifestHLS;
@@ -59,9 +62,9 @@ public abstract class PlotHelperAbstract {
 
 		allSegments = new ArrayList<>();
 
-		for (AROManifest aroManifest : videoUsage.getManifests()) {
+		for (AROManifest aroManifest : videoUsage.getManifests()){
 			// don't count if no videos with manifest, or only one video
-			if (!aroManifest.getVideoEventList().isEmpty() && aroManifest.getVideoEventList().size() > 1) {
+			if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty() && aroManifest.getVideoEventList().size() > 1) {
 
 				TreeMap<String, VideoEvent> segmentEventList = aroManifest.getSegmentEventList();
 				Entry<String, VideoEvent> segmentValue = segmentEventList.higherEntry("00000000:z");
@@ -121,10 +124,11 @@ public abstract class PlotHelperAbstract {
 		chunkDownload = new ArrayList<>();
 
 		removeChunks = new ArrayList<>();
+		allSegments = new ArrayList<>();
 
-		for (AROManifest aroManifest : videoUsage.getManifests()) {
+		for (AROManifest aroManifest : videoUsage.getManifests()){
 			// don't count if no videos with manifest, or only one video
-			if (!aroManifest.getVideoEventList().isEmpty() && aroManifest.getVideoEventList().size() > 1) {
+			if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty() && aroManifest.getVideoEventList().size() > 1) {
 
 				for (VideoEvent videoEvent : aroManifest.getVideoEventList().values()) {
 					if (!(videoEvent.getSegment() == 0 && aroManifest instanceof ManifestDash)
@@ -146,6 +150,8 @@ public abstract class PlotHelperAbstract {
 
 						veManifestList.put(videoEvent, aroManifest);
 						chunkDownload.add(videoEvent);
+						allSegments.add(videoEvent);
+
 					}
 				}
 			}
@@ -216,7 +222,7 @@ public abstract class PlotHelperAbstract {
 	}
 
 
-	public List<VideoEvent> getAllSegments() {
+	public static List<VideoEvent> getAllSegments() {
 			return allSegments;
 	}
 
@@ -224,11 +230,11 @@ public abstract class PlotHelperAbstract {
 
 		chunksBySegment = new ArrayList<>();
 
-		for (AROManifest aroManifest : videoUsage.getManifests()) {
-			if (!aroManifest.getVideoEventList().isEmpty()) {
+		for (AROManifest aroManifest : videoUsage.getManifests()){
+			if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
 				for (VideoEvent videoEvent : aroManifest.getVideoEventsBySegment()) {
 					if ((videoEvent.getSegment() != 0)
-							|| (videoEvent.getSegment() == 0 && (aroManifest instanceof ManifestHLS))) { // &&
+							|| (videoEvent.getSegment() == 0 && (aroManifest instanceof ManifestHLS))) { 
 						chunksBySegment.add(videoEvent);
 					}
 				}
@@ -238,10 +244,11 @@ public abstract class PlotHelperAbstract {
 			chunksBySegment.remove(ve);
 		}
 
+		Collections.sort(chunksBySegment, new VideoEventComparator(SortSelection.SEGMENT));
 		return chunksBySegment;
 	}
 
-	protected List<VideoEvent> getChunksBySegmentNumber() {
+	public List<VideoEvent> getChunksBySegmentNumber() {
 		return chunksBySegment;
 	}
 
@@ -257,7 +264,9 @@ public abstract class PlotHelperAbstract {
 					AROManifest aroManifest = veManifestList.get(vEvent);
 					duration = aroManifest.getDuration();
 					double timescale = aroManifest.getTimeScale();
-					duration = duration / timescale;
+					if(timescale != 0){
+						duration = duration / timescale;
+					}
 					return duration;
 				}
 			}

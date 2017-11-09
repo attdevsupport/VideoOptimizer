@@ -15,177 +15,103 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import static com.att.aro.core.bestpractice.pojo.BestPracticeType.Category.CONNECTIONS;
+import static com.att.aro.core.bestpractice.pojo.BestPracticeType.Category.FILE;
+import static com.att.aro.core.bestpractice.pojo.BestPracticeType.Category.HTML;
+import static com.att.aro.core.bestpractice.pojo.BestPracticeType.Category.OTHER;
+import static com.att.aro.core.bestpractice.pojo.BestPracticeType.Category.PRE_PROCESS;
+import static com.att.aro.core.bestpractice.pojo.BestPracticeType.Category.SECURITY;
+import static com.att.aro.core.bestpractice.pojo.BestPracticeType.Category.VIDEO;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * BestPracticeType is an enumeration of best practice types.
  *
  */
 public enum BestPracticeType {
-	
-	/*
-	 * FILE DOWNLOAD SECTION
-	 */
-	
-	/**
-	 * FILE DOWNLOAD SECTION, Examine download data for compression efficiency
-	 */
-	FILE_COMPRESSION,
-	/**
-	 * FILE DOWNLOAD SECTION, Examine for duplicated downloads
-	 */
-	DUPLICATE_CONTENT,
-	/**
-	 * FILE DOWNLOAD SECTION, Examine for usage of cache
-	 */
-	USING_CACHE,
-	/**
-	 * FILE DOWNLOAD SECTION, Examine for good usage of caching downloads
-	 */
-	CACHE_CONTROL,
-	/*
-	 * FILE DOWNLOAD SECTION, Examine 
-	 */
-	//PREFETCHING, => removed
-	/**
-	 * FILE DOWNLOAD SECTION, Examine css and javascript request usage
-	 */
-	COMBINE_CS_JSS,
-	/**
-	 * FILE DOWNLOAD SECTION, Examine images for efficient sizing
-	 */
-	IMAGE_SIZE, 
-	
-	/**
-	 * FILE DOWNLOAD SECTION, Examine images for metadata
-	 */
-	IMAGE_MDATA, 
-	/**
-	 * FILE DOWNLOAD SECTION, Image Compression
-	 */
-	IMAGE_CMPRS,
-	/**
-	 * FILE DOWNLOAD SECTION, Image Format
-	 */
-	IMAGE_FORMAT,
-	
-	/**
-	 * FILE DOWNLOAD SECTION, Examine by comparing re-compressed html, javascript, css, and json 
-	 */
-	MINIFICATION, 
-	/**
-	 * FILE DOWNLOAD SECTION, Examine sprite image usage
-	 */
-	SPRITEIMAGE,
-	
-	/* 
-	 * CONNECTION SECTION
-	 */
-	
-	/**
-	 * CONNECTION SECTION, Currently only performs a BestPractice self test
-	 */
-	CONNECTION_OPENING, 
-	/**
-	 * CONNECTION SECTION, Examine burst activity for unnecessary connections
-	 */
-	UNNECESSARY_CONNECTIONS,
-	/**
-	 * CONNECTION SECTION, Examine burst activity for suspicious periodic activity(pinging).
-	 */
-	PERIODIC_TRANSFER, 
-	/**
-	 * CONNECTION SECTION, Examine for network activity after a screen rotation.
-	 */
-	SCREEN_ROTATION,
-	/**
-	 * CONNECTION SECTION, Examine network activity when connections are closing
-	 */
-	CONNECTION_CLOSING, 
-	/*
-	 * CONNECTION SECTION, Examine 
-	 */
-	//WIFI_OFFLOADING, => removed
-	/**
-	 * CONNECTION SECTION, Examine for Http 4xx/5xx errors
-	 */
-	HTTP_4XX_5XX, 
-	/**
-	 * CONNECTION SECTION, Examine for Http 3xx errors
-	 */
-	HTTP_3XX_CODE,
-	/**
-	 * CONNECTION SECTION, Examine 
-	 */
-	SCRIPTS_URL,
-	
-	/*
-	 * HTML SECTION
-	 */
-	
-	/**
-	 * HTML SECTION, Look for Sync packets 
-	 */
-	ASYNC_CHECK, 
-	/**
-	 * HTML SECTION, Look for HTTP version 1.0. headers
-	 */
-	HTTP_1_0_USAGE, 
-	/**
-	 * HTML SECTION, Examine sequence of downloads ie. javascript, css
-	 */
-	FILE_ORDER, 
-	/**
-	 * HTML SECTION, Examine existence of empty URL's
-	 */
-	EMPTY_URL, 
-	/**
-	 * HTML SECTION, Examine flash usage
-	 */
-	FLASH, 
-	/**
-	 * HTML SECTION, Look for "display:none" in css 
-	 */
-	DISPLAY_NONE_IN_CSS,
-	
-	/*
-	 * OTHER SECTION
-	 */
-	
-	/**
-	 * OTHER SECTION, Examine gps, bluetooth, camera usage above some limit
-	 */
-	ACCESSING_PERIPHERALS,
-	
-	/**
-	 * security best practice: encourage developer always use HTTPS instead of HTTP
-	 */
-	HTTPS_USAGE,
-	
-	/**
-	 * security best practice: alert developer that your application is transferring user's private data
-	 */
-	TRANSMISSION_PRIVATE_DATA,
-	
-	/**
-	 * security best practice: alert developer SSL version prior to 3.x are no longer considered secure, which should be upgraded.
-	 */
-	UNSECURE_SSL_VERSION,
-	
-	/**
-	 * security best practice: alert developer weak ciphers
-	 */
-	WEAK_CIPHER,
-	
-	/**
-	 * security best practice: forward secrecy
-	 */
-	FORWARD_SECRECY,
-	
-	/*
-	 * Video Section
-	 */
-	
-	/**
-	 * Video usage, Examine Buffer Occupancy, Stalls, VBP 1-9
-	 */
-	VIDEOUSAGE, VIDEO_STALL, STARTUP_DELAY, BUFFER_OCCUPANCY, NETWORK_COMPARISON, TCP_CONNECTION, CHUNK_SIZE, CHUNK_PACING, VIDEO_REDUNDANCY
+	FILE_COMPRESSION(FILE, "Text File Compression"), DUPLICATE_CONTENT(FILE, "Duplicate Content"), USING_CACHE(FILE,
+			"Cache Control"), CACHE_CONTROL(FILE, "Content Expiration"), COMBINE_CS_JSS(FILE,
+					"Combine JS and CSS Requests"), IMAGE_SIZE(FILE, "Resize Images for Mobile"), IMAGE_MDATA(FILE,
+							"Image Metadata"), IMAGE_CMPRS(FILE, "Image Compression"), IMAGE_FORMAT(FILE,
+									"Image Format"), MINIFICATION(FILE, "Minify CSS, JS, HTML"), SPRITEIMAGE(FILE,
+											"Use CSS Sprites for Images"),
+
+	CONNECTION_OPENING(CONNECTIONS, "Connection opening"), UNNECESSARY_CONNECTIONS(CONNECTIONS,
+			"Unnecessary Connections - Multiple Simultaneous Connections"),SIMUL_CONN(CONNECTIONS,
+					"Unnecessary Connections - Multiple Connections to One Endpoint"), PERIODIC_TRANSFER(CONNECTIONS,
+					"Inefficient Connections - Periodic Transfers"), SCREEN_ROTATION(CONNECTIONS,
+							"Inefficient Connections - Screen Rotation"), CONNECTION_CLOSING(CONNECTIONS,
+									"Inefficient Connections - Connection Closing Problems"), HTTP_4XX_5XX(CONNECTIONS,
+											"400, 500 HTTP Status Response Codes"), HTTP_3XX_CODE(CONNECTIONS,
+													"301, 302 HTTP Status Response Codes"), SCRIPTS_URL(CONNECTIONS,
+															"3rd Party Scripts"),
+
+	ASYNC_CHECK(HTML, "Asynchronous Load of JavaScript in HTML"), HTTP_1_0_USAGE(HTML, "HTTP 1.0 Usage"), FILE_ORDER(
+			HTML, "File Order"), EMPTY_URL(HTML, "Empty Source and Link Attributes"), FLASH(HTML,
+					"Flash"), DISPLAY_NONE_IN_CSS(HTML, "\"display:none\" in CSS"),
+
+	HTTPS_USAGE(SECURITY, "HTTPS Usage"), TRANSMISSION_PRIVATE_DATA(SECURITY,
+			"Transmission of Private Data"), UNSECURE_SSL_VERSION(SECURITY, "Unsecure SSL Version"), WEAK_CIPHER(
+					SECURITY, "Weak Cipher"), FORWARD_SECRECY(SECURITY, "Forward Secrecy"),
+
+	VIDEO_STALL(VIDEO, "Stalls"), STARTUP_DELAY(VIDEO, "Start-up Delay"), BUFFER_OCCUPANCY(VIDEO,
+			"Buffer Occupancy"), NETWORK_COMPARISON(VIDEO, "Network Comparison"), TCP_CONNECTION(VIDEO,
+					"TCP Connection"), CHUNK_SIZE(VIDEO, "Segment Size"), CHUNK_PACING(VIDEO,
+							"Segment Pacing"), VIDEO_REDUNDANCY(VIDEO, "Redundancy"), 
+							VIDEO_CONCURRENT_SESSION(VIDEO, "Concurrent Session"),
+
+	ACCESSING_PERIPHERALS(OTHER, "Accessing Peripheral Applications"),
+
+	VIDEOUSAGE(PRE_PROCESS, "Video Pre-Process"); // NOT IN GROUP
+
+	public static enum Category {
+		FILE("File Download"), CONNECTIONS("Connections"), HTML("HTML"), VIDEO("Video"), SECURITY("Security"), OTHER(
+				"Other"), PRE_PROCESS("Pre Process");
+		private String description;
+
+		private Category(String description) {
+			this.description = description;
+		}
+
+		public String getDescription() {
+			return description;
+		}
+	}
+
+	private Category category;
+	private String description;
+
+	private BestPracticeType(Category category, String description) {
+		this.category = category;
+		this.description = description;
+	}
+
+	public Category getCategory() {
+		return category;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public static List<BestPracticeType> getByCategory(Category category) {
+		return Arrays.asList(BestPracticeType.values()).stream().filter((a) -> a.category.equals(category))
+				.collect(Collectors.toList());
+	}
+
+	public static BestPracticeType getByDescription(String description) {
+		List<BestPracticeType> resultList = Arrays.asList(BestPracticeType.values()).stream()
+				.filter((type) -> type.description.equals(description)).collect(Collectors.toList());
+		if (resultList.isEmpty()) {
+			return null;
+		}
+		if (resultList.size() > 1) {
+			throw new IllegalStateException("Multiple Best Practice Types found with same description");
+		}
+		return resultList.get(0);
+	}
+
 }

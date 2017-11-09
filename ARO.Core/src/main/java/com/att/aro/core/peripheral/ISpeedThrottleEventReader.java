@@ -12,17 +12,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
-package com.att.aro.datacollector.norootedandroidcollector.impl;
+ */
 
-public enum State{
-	Initialized
-	, Capturing
-	, Stopping
-	, Pulling
-	, PullComplete
-	, Compile
-	, Done
-	, Error
-	, Undefined
+package com.att.aro.core.peripheral;
+
+import java.util.List;
+
+import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent;
+
+public interface ISpeedThrottleEventReader {
+	List<SpeedThrottleEvent> readData(String directory);
 }

@@ -32,6 +32,7 @@ import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
+import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 
 
 /**
@@ -76,7 +77,10 @@ public class VideoStallImpl implements IBestPractice{
 	@Value("${videoStall.results}")
 	private String textResults;
 	
-    @Autowired
+	@Value("${videoStall.init}")
+	private String textResultInit;
+
+	@Autowired
 	private IVideoUsagePrefsManager videoPref;
 
     
@@ -103,12 +107,16 @@ public class VideoStallImpl implements IBestPractice{
 					}
 				}
 			}	
-			result.setResultType((stallCount==0)? BPResultType.PASS : BPResultType.FAIL);
-			result.setResultText(MessageFormat.format(this.textResults, 
-					stallCount, 
-					stallCount == 1? "" : "s",
-					stallCount == 0? "passes the test" : "fails the test"
-		     ));
+		
+		result.setResultType((stallCount == 0) ? BPResultType.PASS : BPResultType.FAIL);
+		if (PlotHelperAbstract.chunkPlayTimeList.size() == 0) {
+			// Meaning startup delay is not set yet
+			result.setResultText(MessageFormat.format(textResultInit, stallCount));
+		} else {
+			result.setResultText(MessageFormat.format(this.textResults, stallCount, stallCount == 1 ? "" : "s",
+					stallCount == 0 ? "passes the test" : "fails the test"));
+		}
+		result.setVideoStallResult(stallCount);
 
 		return result;
 	}

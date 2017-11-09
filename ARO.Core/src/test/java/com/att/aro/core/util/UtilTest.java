@@ -130,7 +130,7 @@ public class UtilTest {
 	@Test
 	public void testFormatDecimal_PositiveMinMaxFractionDigits() {
 		
-		BigDecimal number = new BigDecimal(6.7987).setScale(3, RoundingMode.HALF_UP);
+		BigDecimal number = new BigDecimal("6.7987").setScale(3, RoundingMode.HALF_UP);
 		String formattedNumber = Util.formatDecimal(number, 3, 0);
 		
 		assertEquals("6.799", formattedNumber);
@@ -139,7 +139,7 @@ public class UtilTest {
 	@Test
 	public void testFormatDecimal_NegativeMaxFractionDigitReplacedByZero() {
 		
-		BigDecimal number = new BigDecimal(19801.1).setScale(2, RoundingMode.HALF_UP);
+		BigDecimal number = new BigDecimal("19801.1").setScale(2, RoundingMode.HALF_UP);
 		String formattedNumber = Util.formatDecimal(number, -1, 0);
 		
 		assertEquals("19801", formattedNumber);

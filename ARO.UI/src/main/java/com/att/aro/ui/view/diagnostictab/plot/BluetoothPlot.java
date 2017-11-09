@@ -55,16 +55,20 @@ public class BluetoothPlot implements IPlot{
 				if (iter.hasNext()) {
 					while (iter.hasNext()) {
 						BluetoothInfo btEvent = iter.next();
-						switch (btEvent.getBluetoothState()) {
-						case BLUETOOTH_CONNECTED:
-							series = bluetoothConnected;
-							break;
-						case BLUETOOTH_DISCONNECTED:
-							series = bluetoothDisconnected;
-							break;
-						default:
+						if(btEvent.getBluetoothState() == null) {
 							series = bluetoothOff;
-							break;
+						} else {
+							switch (btEvent.getBluetoothState()) {
+							case BLUETOOTH_CONNECTED:
+								series = bluetoothConnected;
+								break;
+							case BLUETOOTH_DISCONNECTED:
+								series = bluetoothDisconnected;
+								break;
+							default:
+								series = bluetoothOff;
+								break;
+							}
 						}
 						series.add(btEvent.getBeginTimeStamp(), btEvent.getBeginTimeStamp(),
 								btEvent.getEndTimeStamp(), 0.5, 0, 1);

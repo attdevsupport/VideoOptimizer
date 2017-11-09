@@ -15,6 +15,8 @@
  */
 package com.att.aro.mvc;
 
+import static com.att.aro.core.settings.SettingsUtil.retrieveBestPractices;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
@@ -22,7 +24,6 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,7 +40,6 @@ import com.att.aro.core.IAROService;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.adb.IAdbService;
-import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.configuration.pojo.Profile;
 import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
@@ -138,9 +138,9 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			// analyze trace file or directory?
 			try {
 				if (serv.isFile(trace)) {
-					results = serv.analyzeFile(getBestPractice(), trace, profile, filter);
+					results = serv.analyzeFile(retrieveBestPractices(), trace, profile, filter);
 				} else {
-					results = serv.analyzeDirectory(getBestPractice(), trace, profile, filter);
+					results = serv.analyzeDirectory(retrieveBestPractices(), trace, profile, filter);
 				}
 			} catch(OutOfMemoryError err) {
 				log.error(err.getMessage(), err);
@@ -548,58 +548,6 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			collector.haltCollectorInDevice();
 		}
 
-	}
-
-	/**
-	 * return a list of best practice we want to run. the sequence is according
-	 * to the Analyzer
-	 * 
-	 * @return a list of best practice
-	 */
-	private static List<BestPracticeType> getBestPractice() {
-		List<BestPracticeType> req = new ArrayList<BestPracticeType>();
-		req.add(BestPracticeType.FILE_COMPRESSION);
-		req.add(BestPracticeType.DUPLICATE_CONTENT);
-		req.add(BestPracticeType.USING_CACHE);
-		req.add(BestPracticeType.CACHE_CONTROL);
-		req.add(BestPracticeType.COMBINE_CS_JSS);
-		req.add(BestPracticeType.IMAGE_SIZE);
-		req.add(BestPracticeType.IMAGE_MDATA);
-		req.add(BestPracticeType.IMAGE_CMPRS);
-		req.add(BestPracticeType.IMAGE_FORMAT);
-		req.add(BestPracticeType.MINIFICATION);
-		req.add(BestPracticeType.SPRITEIMAGE);
-		req.add(BestPracticeType.CONNECTION_OPENING);
-		req.add(BestPracticeType.UNNECESSARY_CONNECTIONS);
-		req.add(BestPracticeType.PERIODIC_TRANSFER);
-		req.add(BestPracticeType.SCREEN_ROTATION);
-		req.add(BestPracticeType.CONNECTION_CLOSING);
-		req.add(BestPracticeType.HTTP_4XX_5XX);
-		req.add(BestPracticeType.HTTP_3XX_CODE);
-		req.add(BestPracticeType.SCRIPTS_URL);
-		req.add(BestPracticeType.ASYNC_CHECK);
-		req.add(BestPracticeType.HTTP_1_0_USAGE);
-		req.add(BestPracticeType.FILE_ORDER);
-		req.add(BestPracticeType.EMPTY_URL);
-		req.add(BestPracticeType.FLASH);
-		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
-		req.add(BestPracticeType.HTTPS_USAGE);
-		req.add(BestPracticeType.TRANSMISSION_PRIVATE_DATA);
-		req.add(BestPracticeType.UNSECURE_SSL_VERSION);
-		req.add(BestPracticeType.WEAK_CIPHER);
-		req.add(BestPracticeType.FORWARD_SECRECY);
-//		req.add(BestPracticeType.VIDEOUSAGE);
-		req.add(BestPracticeType.VIDEO_STALL);
-		req.add(BestPracticeType.NETWORK_COMPARISON);
-		req.add(BestPracticeType.STARTUP_DELAY);
-		req.add(BestPracticeType.BUFFER_OCCUPANCY);
-		req.add(BestPracticeType.TCP_CONNECTION);
-		req.add(BestPracticeType.CHUNK_PACING);
-		req.add(BestPracticeType.CHUNK_SIZE);
-		req.add(BestPracticeType.VIDEO_REDUNDANCY);
-
-		req.add(BestPracticeType.ACCESSING_PERIPHERALS);
-		return req;
 	}
 
 	/**

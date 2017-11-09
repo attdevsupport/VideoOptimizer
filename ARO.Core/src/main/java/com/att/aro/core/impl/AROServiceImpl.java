@@ -19,17 +19,24 @@ package com.att.aro.core.impl;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.att.aro.core.IAROService;
+import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
+import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
+import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
 import com.att.aro.core.configuration.pojo.Profile;
 import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.ICacheAnalysis;
 import com.att.aro.core.packetanalysis.IPacketAnalyzer;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
@@ -38,6 +45,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.ErrorCodeRegistry;
 import com.att.aro.core.pojo.VersionInfo;
 import com.att.aro.core.report.IReport;
+import com.att.aro.core.settings.SettingsUtil;
 
 /**
  * This class provides access to ARO.Core functionality for analyzing and
@@ -66,6 +74,9 @@ import com.att.aro.core.report.IReport;
  * 
  */
 public class AROServiceImpl implements IAROService {
+
+	@InjectLogger
+	private ILogger logger;
 
 	private IPacketAnalyzer packetanalyzer;
 	private ICacheAnalysis cacheAnalyzer;
@@ -123,6 +134,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice unsecureSSLVersion;
 	private IBestPractice weakCipher;
 	private IBestPractice forwardSecrecy;
+	private IBestPractice simultaneous;
 
 	// ARO 6.0 VideoBp
 	private IBestPractice videoStall;
@@ -133,6 +145,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice chunkSize;
 	private IBestPractice chunkPacing;
 	private IBestPractice videoRedundancy;
+	private IBestPractice videoConcurrentSessions;
 
 	@Autowired
 	public void setPacketAnalyzer(IPacketAnalyzer packetanalyzer) {
@@ -214,6 +227,12 @@ public class AROServiceImpl implements IAROService {
 	@Qualifier("http4xx5xx")
 	public void setHttp4xx5xx(IBestPractice http4xx5xx) {
 		this.http4xx5xx = http4xx5xx;
+	}
+
+	@Autowired
+	@Qualifier("simultaneous")
+	public void setSimultaneous(IBestPractice simultaneous) {
+		this.simultaneous = simultaneous;
 	}
 
 	@Autowired
@@ -349,6 +368,12 @@ public class AROServiceImpl implements IAROService {
 	public void setVideoredundancyImpl(IBestPractice videoredundancy) {
 		this.videoRedundancy = videoredundancy;
 	}
+	
+	@Autowired
+	@Qualifier("videoConcurrentSessions")
+	public void setVideoConcurrentSessionImpl(IBestPractice videoConcurrentSessions) {
+		this.videoConcurrentSessions = videoConcurrentSessions;
+	}
 
 	@Autowired
 	@Qualifier("httpsUsage")
@@ -448,7 +473,6 @@ public class AROServiceImpl implements IAROService {
 		AROTraceData data = new AROTraceData();
 		PacketAnalyzerResult result = packetanalyzer.analyzeTraceFile(traceFile, profile, filter);
 		if (result == null) {
-			//TODO: define error code, description etc.
 			data.setError(ErrorCodeRegistry.getTraceFileNotAnalyzed());			
 		} else {
 			if (result.getTraceresult().getAllpackets().size()==0){
@@ -456,9 +480,10 @@ public class AROServiceImpl implements IAROService {
 				data.setError(ErrorCodeRegistry.getUnRecognizedPackets());
 				data.setSuccess(false);
 			} else{
-				List<AbstractBestPracticeResult> bestpractices = analyze(result, requests);
+				List<AbstractBestPracticeResult> bestPractices = analyze(result, requests);
+				bestPractices.addAll(createEmptyResults());
 				data.setAnalyzerResult(result);
-				data.setBestPracticeResults(bestpractices);
+				data.setBestPracticeResults(bestPractices);
 				data.setSuccess(true);
 			}
 		}
@@ -518,7 +543,6 @@ public class AROServiceImpl implements IAROService {
 		}
  
 		if (result == null) {
-			//TODO: any other reason that caused failure?
 			data.setError(ErrorCodeRegistry.getTraceDirectoryNotAnalyzed());
 			data.setSuccess(false);
 		} else {
@@ -528,13 +552,35 @@ public class AROServiceImpl implements IAROService {
 			} else if(result.getTraceresult().getAllpackets() == null || result.getTraceresult().getAllpackets().size() == 0) {
 				data.setError(ErrorCodeRegistry.getTrafficFileNotFound());
 			} else{
-				List<AbstractBestPracticeResult> bestpractices = analyze(result, requests);
+				List<AbstractBestPracticeResult> bestPractices = analyze(result, requests);
+				bestPractices.addAll(createEmptyResults());				
 				data.setAnalyzerResult(result);
-				data.setBestPracticeResults(bestpractices);
+				data.setBestPracticeResults(bestPractices);
 				data.setSuccess(true);
 			}
 		}
 		return data;
+	}
+
+	private List<AbstractBestPracticeResult> createEmptyResults() {
+		List<BestPracticeType> allBP = Arrays.asList(BestPracticeType.values());
+		List<BestPracticeType> selected = SettingsUtil.retrieveBestPractices();
+		Function<? super BestPracticeType, ? extends AbstractBestPracticeResult> resMapper = (bp) -> {
+			AbstractBestPracticeResult res = new AbstractBestPracticeResult() {
+				@Override
+				public BestPracticeType getBestPracticeType() {
+					return bp;
+				}
+			};
+			res.setResultType(BPResultType.NONE);
+			res.setDetailTitle(res.getBestPracticeType().getDescription());
+			res.setOverviewTitle(res.getBestPracticeType().getDescription());
+			return res;
+		};
+		List<AbstractBestPracticeResult> results = allBP.stream()
+				.filter((bp) -> bp.getCategory() != Category.PRE_PROCESS && !selected.contains(bp)).map(resMapper)
+				.collect(Collectors.toList());
+		return results;
 	}
 
 	/**
@@ -549,7 +595,7 @@ public class AROServiceImpl implements IAROService {
 	 *            a List of BestPracticeType
 	 * @return ArrayList&lt;IBestPractice&gt; or null if result was null
 	 */
-	private List<AbstractBestPracticeResult> analyze(PacketAnalyzerResult result, List<BestPracticeType> requests) {
+	public List<AbstractBestPracticeResult> analyze(PacketAnalyzerResult result, List<BestPracticeType> requests) {
 		if (result == null) {
 			return null;
 		}
@@ -633,6 +679,9 @@ public class AROServiceImpl implements IAROService {
 			case SCRIPTS_URL:
 				workers.add(scripts);
 				break;
+			case SIMUL_CONN:
+				workers.add(simultaneous);
+				break;
 			case SPRITEIMAGE:
 				workers.add(spriteImage);
 				break;
@@ -667,6 +716,9 @@ public class AROServiceImpl implements IAROService {
 			case VIDEO_REDUNDANCY:
 				workers.add(videoRedundancy);
 				break;
+			case VIDEO_CONCURRENT_SESSION:
+				workers.add(videoConcurrentSessions);
+				break;
 
 			case HTTPS_USAGE:
 				workers.add(httpsUsage);
@@ -688,8 +740,12 @@ public class AROServiceImpl implements IAROService {
 			}
 		}
 		for (IBestPractice worker : workers) {
-			AbstractBestPracticeResult testresult = worker.runTest(result);
-			resultlist.add(testresult);
+			try {
+				AbstractBestPracticeResult testresult = worker.runTest(result);
+				resultlist.add(testresult);
+			} catch(Exception | Error ex) {
+				logger.error("Error running best practice:", ex);
+			}
 		}
 		return resultlist;
 	}

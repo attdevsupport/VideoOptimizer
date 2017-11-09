@@ -23,6 +23,7 @@ import java.util.List;
 import javax.swing.JPanel;
 
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
+import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 
@@ -48,7 +49,7 @@ public class BpDetailOtherPanel extends BpDetail {
 		fullPanel.add(detailPanel, BorderLayout.SOUTH);
 		add(fullPanel);
 		
-		List<BestPracticeType> list = Arrays.asList(new BestPracticeType[]{BestPracticeType.ACCESSING_PERIPHERALS});
+		List<BestPracticeType> list = BestPracticeType.getByCategory(Category.OTHER);
 		bpFileDownloadTypes.addAll(list);
 	}
 

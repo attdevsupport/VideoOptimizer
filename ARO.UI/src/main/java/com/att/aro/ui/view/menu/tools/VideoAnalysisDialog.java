@@ -29,7 +29,9 @@ import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -53,11 +55,11 @@ public class VideoAnalysisDialog extends JDialog {
 	private static int MAXBUFFER = 5000;
 	private static int MAXSTARTUPDELAY = 50;
 	private static int MAXSTALLTRIGGERTIME = 10;
+	private static int MAXSTALLRECOVERY = 10;
 	
 	@InjectLogger
 	private static ILogger log;
-
-			
+	
 	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 	
 	private JPanel jDialogPanel;
@@ -68,15 +70,15 @@ public class VideoAnalysisDialog extends JDialog {
 	private JButton cancelButton;
 	private VideoUsagePrefs videoUsagePrefs;
 	private JTextField startupDelayEdit;
-	private JTextField arrivalToPlayEdit;
 	private ObjectMapper mapper;
 	private PreferenceHandlerImpl prefs;
 	private JTextField stallTriggerTimeEdit;
 	private JTextField maxBufferEdit;
-
+	private JTextField stallPausePointEdit;
+	private JTextField stallRecoveryEdit;
+	private JCheckBox startupDelayReminder;
+	
 	private JComboBox<DUPLICATE_HANDLING> duplicateHandlingEditCombo;
-
-	private NumericInputVerifier verifier;
 	
 	/**
 	 * Load VideoUsage Preferences
@@ -116,7 +118,7 @@ public class VideoAnalysisDialog extends JDialog {
 	}
 	
 	private void initialize() {
-		this.setSize(500, 200);
+		this.setSize(500, 300);
 		this.setModal(false);
 		this.setTitle(resourceBundle.getString("video.usage.dialog.legend"));
 		this.setLocationRelativeTo(getOwner());
@@ -138,20 +140,27 @@ public class VideoAnalysisDialog extends JDialog {
 	private Component getPrefencesPanel() {
 
 		Label startupDelayLabel      = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.startupDelay"));
-//		Label arrivalToPlayLabel     = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.arrivalToPlay"));
 		Label stallTriggerTimeLabel  = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallTriggerTime"));
 		Label maxBufferLabel         = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.maxBuffer"));
 		Label duplicateHandlingLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.duplicateHandling"));
+		Label stallPausePointLabel	 = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallPausePoint"));
+		Label stallRecoveryLabel	 = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallRecovery"));
+		Label startupDelayReminderLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.startupDelayReminder"));
 
 		startupDelayEdit      = new JTextField(String.format("%.3f", videoUsagePrefs.getStartupDelay())     ,5); 
-		arrivalToPlayEdit     = new JTextField(String.format("%.2f", videoUsagePrefs.getArrivalToPlay())    ,5); 
 		stallTriggerTimeEdit  = new JTextField(String.format("%.3f", videoUsagePrefs.getStallTriggerTime()) ,5); 
 		maxBufferEdit         = new JTextField(String.format("%.2f", videoUsagePrefs.getMaxBuffer())        ,5); 
+		stallPausePointEdit   = new JTextField(String.format("%.4f", videoUsagePrefs.getStallPausePoint())  ,5);
+		stallRecoveryEdit     = new JTextField(String.format("%.4f", videoUsagePrefs.getStallRecovery())    ,5);
 		
 		startupDelayEdit	.setInputVerifier(new NumericInputVerifier(MAXSTARTUPDELAY, 0, 3));
 		stallTriggerTimeEdit.setInputVerifier(new NumericInputVerifier(MAXSTALLTRIGGERTIME, 0.01, 3));
 		maxBufferEdit		.setInputVerifier(new NumericInputVerifier(MAXBUFFER, 0, 2));
-		
+		stallPausePointEdit .setInputVerifier(new NumericInputVerifier(MAXSTALLRECOVERY, 0, 4));
+		stallRecoveryEdit   .setInputVerifier(new NumericInputVerifier(MAXSTALLRECOVERY, 0, 4));
+
+		startupDelayReminder  = new JCheckBox();
+		startupDelayReminder.setSelected(videoUsagePrefs.isStartupDelayReminder());
 		duplicateHandlingEditCombo = new JComboBox<>();
 		for (DUPLICATE_HANDLING item : DUPLICATE_HANDLING.values()) {
 			duplicateHandlingEditCombo.addItem(item);
@@ -161,9 +170,11 @@ public class VideoAnalysisDialog extends JDialog {
 		JPanel panel = new JPanel(new GridBagLayout());
 
 		idx = addLine(startupDelayLabel    , startupDelayEdit    , idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
-//		idx = addLine(arrivalToPlayLabel   , arrivalToPlayEdit   , idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		idx = addLine(stallTriggerTimeLabel, stallTriggerTimeEdit, idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
+		idx = addLine(stallPausePointLabel , stallPausePointEdit , idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
+		idx = addLine(stallRecoveryLabel   , stallRecoveryEdit   , idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		idx = addLine(maxBufferLabel       , maxBufferEdit       , idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.mbytes")));
+		idx = addLineComboBox(startupDelayReminderLabel, startupDelayReminder, idx, panel);
 		idx = addLineComboBox(duplicateHandlingLabel       , duplicateHandlingEditCombo       , idx, panel);
 
 		return panel;
@@ -172,15 +183,13 @@ public class VideoAnalysisDialog extends JDialog {
 
 	private int addLine(Label label, JTextField edit, int idx, JPanel panel, Label units) {
 		edit.setHorizontalAlignment(SwingConstants.RIGHT);
-//		verifier = new MyInputVerifier(500,.001);
-//		edit.setInputVerifier(verifier);
 		panel.add(label, new GridBagConstraints(0, idx, 1, 1, 1.0, 0.2, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0, 10, 0, 0), 0, 0));
 		panel.add(edit,  new GridBagConstraints(2, idx, 1, 1, 1.0, 0.2, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,  0, 0, 0), 0, 0));
 		panel.add(units, new GridBagConstraints(3, idx, 1, 1, 1.0, 0.2, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,  0, 0, 0), 0, 0));
 		return ++idx;
 	}
 	
-	private int addLineComboBox(Label label, JComboBox<DUPLICATE_HANDLING> editable, int idx, JPanel panel){
+	private int addLineComboBox(Label label, JComponent editable, int idx, JPanel panel){
 		panel.add(label, new GridBagConstraints(0, idx, 1, 1, 1.0, 0.2, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0, 10, 0, 0), 0, 0));
 		panel.add(editable,  new GridBagConstraints(2, idx, 1, 1, 1.0, 0.2, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(0,  0, 0, 0), 0, 0));
 		return ++idx;
@@ -228,9 +237,8 @@ public class VideoAnalysisDialog extends JDialog {
 				
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					if (preSaveCheck(startupDelayEdit, maxBufferEdit, stallTriggerTimeEdit)) {
+					if (preSaveCheck(startupDelayEdit, maxBufferEdit, stallTriggerTimeEdit, stallPausePointEdit, stallRecoveryEdit)) {
 						executeOkButton();
-						verifier = null;
 					}
 				}
 			});
@@ -254,11 +262,13 @@ public class VideoAnalysisDialog extends JDialog {
 	private boolean savePreference() {
 
 		videoUsagePrefs.setStartupDelay(Double.valueOf(startupDelayEdit.getText()));
-		videoUsagePrefs.setArrivalToPlay(Double.valueOf(arrivalToPlayEdit.getText()));
 		videoUsagePrefs.setMaxBuffer(Double.valueOf(maxBufferEdit.getText()));
 		videoUsagePrefs.setStallTriggerTime(Double.valueOf(stallTriggerTimeEdit.getText()));
 		videoUsagePrefs.setDuplicateHandling((DUPLICATE_HANDLING) duplicateHandlingEditCombo.getSelectedItem());
-
+		videoUsagePrefs.setStallPausePoint(Double.valueOf(stallPausePointEdit.getText()));
+		videoUsagePrefs.setStallRecovery(Double.valueOf(stallRecoveryEdit.getText()));
+		videoUsagePrefs.setStartupDelayReminder(startupDelayReminder.isSelected());
+		
 		String temp;
 		try {
 			temp = mapper.writeValueAsString(videoUsagePrefs);
@@ -299,7 +309,6 @@ public class VideoAnalysisDialog extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent e) {
 					executeCancelButton();
-					verifier = null;
 				}
 			});
 		}

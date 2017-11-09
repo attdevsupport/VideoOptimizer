@@ -22,11 +22,11 @@ import java.awt.Font;
 import java.awt.Image;
 
 import javax.swing.BorderFactory;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import com.att.aro.ui.commonui.ImagePanel;
-import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.view.images.Images;
 
 /**
@@ -43,9 +43,6 @@ public class BpHeaderPanel extends ImagePanel {
 	private static final Image PASS_HEADER = Images.TEST_PASS_HEADER.getImage();
 	private static final Image FAIL_HEADER = Images.TEST_FAIL_HEADER.getImage();
 	private static final Image WARNING_HEADER = Images.TEST_WARNING_HEADER.getImage();
-	private static final String PASS = ResourceBundleHelper.getMessageString("bestPractices.pass");
-	private static final String FAIL = ResourceBundleHelper.getMessageString("bestPractices.fail");
-	private static final String WARNING = ResourceBundleHelper.getMessageString("bestPractices.warning");
 
 	private JLabel rightLabel;
 
@@ -57,6 +54,34 @@ public class BpHeaderPanel extends ImagePanel {
 	 *            - The header text for the Detailed Results section.
 	 */
 	public BpHeaderPanel(String title) {
+		super(NOT_RUN_HEADER, true);
+		this.setOpaque(false);
+		this.setLayout(new BorderLayout());
+
+		JPanel panel = new JPanel(new BorderLayout());
+		{
+			panel.setOpaque(false);
+			panel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+			JLabel leftLabel = new JLabel(title);
+			leftLabel.setFont(TITLE_FONT);
+			leftLabel.setForeground(Color.WHITE);
+			panel.add(leftLabel, BorderLayout.WEST);
+
+			this.rightLabel = new JLabel();
+			rightLabel.setFont(PAGE_FONT);
+			rightLabel.setForeground(Color.WHITE);
+			panel.add(rightLabel, BorderLayout.EAST);
+		}
+		this.add(panel, BorderLayout.WEST);
+	}
+
+	/**
+	 * 
+	 * @param title
+	 * @param component
+	 */
+	public BpHeaderPanel(String title, JComponent component) {
 		super(NOT_RUN_HEADER, true);
 		setOpaque(false);
 		setLayout(new BorderLayout());
@@ -90,18 +115,19 @@ public class BpHeaderPanel extends ImagePanel {
 	 */
 	public void setPass(Boolean pass, boolean warning) {
 		if (pass == null) {
-			rightLabel.setText(null);
-			setImage(NOT_RUN_HEADER);
+			setImageTitle(NOT_RUN_HEADER, null);
 		} else if (!pass.booleanValue()) {
-			rightLabel.setText(FAIL);
 			setImage(FAIL_HEADER);
 		} else if (warning) {
-			rightLabel.setText(WARNING);
 			setImage(WARNING_HEADER);
 		} else {
-			rightLabel.setText(PASS);
 			setImage(PASS_HEADER);
-		} 
+		}
+	}
+	
+	public void setImageTitle(Image image, String text){
+		rightLabel.setText(text);
+		setImage(image);
 	}
 
 }

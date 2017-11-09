@@ -224,7 +224,7 @@ public class SelectProfileDialog extends JDialog {
 										MessageFormat.format(ResourceBundleHelper.getMessageString("configuration.parseerror"), profileException.getMessage()));
 							} catch (IllegalArgumentException illegalArgException) {
 								logger.debug(illegalArgException.getMessage(), illegalArgException);
-								MessageDialogFactory.getInstance().showErrorDialog(SelectProfileDialog.this, illegalArgException.getMessage());
+								MessageDialogFactory.getInstance().showErrorDialog(SelectProfileDialog.this, ResourceBundleHelper.getMessageString("profile.invalid"));
 							}
 						}
 					} else {

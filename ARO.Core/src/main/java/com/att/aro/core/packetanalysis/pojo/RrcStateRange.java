@@ -28,6 +28,7 @@ public class RrcStateRange implements Comparable<RrcStateRange>, Serializable{
 	private double beginTime;
 	private double endTime;
 	private RRCState state;
+	private double energy;
 
 	/**
 	 * Initializes an instance of the RrcStateRange class with one RRC state
@@ -96,6 +97,14 @@ public class RrcStateRange implements Comparable<RrcStateRange>, Serializable{
 
 	public void setState(RRCState state) {
 		this.state = state;
+	}
+
+	public double getEnergy() {
+		return energy;
+	}
+
+	public void setEnergy(double energy) {
+		this.energy = energy;
 	}
 	
 }

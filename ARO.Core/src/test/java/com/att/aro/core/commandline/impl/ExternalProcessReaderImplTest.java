@@ -31,6 +31,8 @@ import org.mockito.stubbing.Answer;
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.commandline.IExternalProcessReaderSubscriber;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class ExternalProcessReaderImplTest extends BaseTest {
 
 	public static String message = null;
@@ -40,6 +42,7 @@ public class ExternalProcessReaderImplTest extends BaseTest {
 	@Mock
 	IExternalProcessReaderSubscriber subscriber;
 
+	@SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD", justification = "Not holding test case to same standard")
 	@Before
 	public void setup() {
 		ExternalProcessReaderImplTest.message = "";

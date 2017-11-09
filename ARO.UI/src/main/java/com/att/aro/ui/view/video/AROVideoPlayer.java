@@ -57,10 +57,12 @@ import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
+import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.view.images.Images;
@@ -95,7 +97,6 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	private boolean showInfoMsg = true;
 	private File traceFile;
 
-	private AROVideoUtil aroVideoUtil;
 	private AbstractTraceResult tdResult;
 	private DiagnosticsTab aroAdvancedTab;
 	private SharedAttributesProcesses aroView;
@@ -184,10 +185,9 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	 */
 	private void refresh() throws IOException {
 		
-		aroVideoUtil = new AROVideoUtil();
 		aroAdvancedTab.setVideoPlayer(this);
 		
-		String mediaUrl = aroVideoUtil.getMediaUrl(traceFile); // file:/Users/barrynelson/AROTraceAndroid/nt/video.mov
+		String mediaUrl = VideoUtil.getMediaUrl(traceFile); // file:/Users/barrynelson/AROTraceAndroid/nt/video.mov
 		if (traceFile == null || mediaUrl == null) {
 			setVideoNotAvailableImage(true);
 			return;
@@ -263,13 +263,19 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 				}
 			}
 		});
-		setMediaTime(0.0);
 
 		setVisible(true);
 		if (!tdResult.isNativeVideo()) {
 			jButton.setVisible(true);
 		}
 		aroAdvancedTab.setGraphPanelClicked(false);
+		
+		Double startTime = 0.0;
+		AnalysisFilter filter = ((MainFrame)aroView).getController().getTheModel().getAnalyzerResult().getFilter();
+		if(null != filter){
+			 startTime = filter.getTimeRange().getBeginTime();
+		}
+		setMediaTime(startTime);
 	}
 
 	/**
@@ -363,7 +369,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 
 	/* Initializes the FileOutputStream and BufferedWriter. */
 	private void initVideoTraceTime() throws FileNotFoundException {
-		if (aroVideoUtil.isPcaPFile(traceFile)) {
+		if (VideoUtil.isPcaPFile(traceFile)) {
 			mTraceVideoTimeStampFile = new FileOutputStream((traceFile.getParentFile().getAbsolutePath()) + File.separator + outVideoTimeFileName);
 			mTraceVideoTimeStampWriter = new BufferedWriter(new OutputStreamWriter(mTraceVideoTimeStampFile));
 
@@ -391,7 +397,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	public double getMediaTime() {
 		
 		if (videoPlayer == null) {
-			logger.debug("Null Player in AROVideoPlayer");
+			logger.debug("player is not available");
 			return 0;
 		}
 		

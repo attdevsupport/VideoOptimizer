@@ -80,12 +80,14 @@ public class CryptoImpl implements ICrypto, IReceiveSSLKey {
 			
 			byte[] preMaster = key.getPreMaster();
 			vpnKey = true;
-			for (int i=0;i<4;i++) {
-				if(preMaster[i]!=0) {
-					vpnKey = false;
-					break;
+			if(preMaster != null && preMaster.length > 0) {
+				for (int i = 0; i < 4 && i < preMaster.length; i++) {
+					if (preMaster[i] != 0) {
+						vpnKey = false;
+						break;
+					}
 				}
-			}			
+			}
 		}
 		
 		Collections.sort(sslkeys);

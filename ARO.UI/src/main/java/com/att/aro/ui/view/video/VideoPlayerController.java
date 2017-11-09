@@ -15,7 +15,6 @@
 */
 package com.att.aro.ui.view.video;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
@@ -28,7 +27,6 @@ import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.ContextAware;
-import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 
 public class VideoPlayerController implements Observer {
@@ -96,33 +94,6 @@ public class VideoPlayerController implements Observer {
 		}		
 		return null;
 	}
-	
-	private boolean mp4VideoExists(String traceDirectory) {
-		if (traceDirectory == null) {
-			logger.error("Trace Dir = " + traceDirectory);
-			return false;
-		}		
-		String videoMp4FilePath = traceDirectory 
-								+ System.getProperty("file.separator") 
-								+ ResourceBundleHelper.getMessageString("video.videoFileOnDevice");  
-		if (new File(videoMp4FilePath).exists()) {
-			return true;
-		}		
-		return false;
-	}
-
-	private boolean movVideoExists(String traceDirectory) {
-		if (traceDirectory == null) {
-			logger.error("Trace Dir = " + traceDirectory);
-			return false;
-		}		
-		String movPath = traceDirectory + System.getProperty("file.separator")
-				+ ResourceBundleHelper.getMessageString("video.videoDisplayFile");
-		if (new File(movPath).exists()) {
-			return true;
-		}
-		return false;
-	}
 
 	@Override
 	public void update(Observable observable, Object model) {
@@ -136,7 +107,7 @@ public class VideoPlayerController implements Observer {
 		}
 
 		if (traceResultType == TraceResultType.TRACE_FILE
-				|| !(mp4VideoExists(traceDirectory) || movVideoExists(traceDirectory))) {
+				|| !(VideoUtil.mp4VideoExists(traceDirectory) || VideoUtil.movVideoExists(traceDirectory))) {
 			currentPlayer.clear();
 			currentPlayer.notifyLauncher(false);
 			return;
@@ -158,7 +129,7 @@ public class VideoPlayerController implements Observer {
 				currentPlayer.clear();
 			}
 			
-			if (mp4VideoExists(traceDirectory) && mp4JfxPlayer != null) {
+			if (VideoUtil.mp4VideoExists(traceDirectory) && mp4JfxPlayer != null) {
 				player = mp4JfxPlayer;
 			} else if (movPlayer != null) {
 				player = movPlayer;

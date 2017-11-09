@@ -90,7 +90,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 	 * @return
 	 */
 	public JMenu getMenu() {
-		if(fileMenu == null){
+		if (fileMenu == null) {
 			fileMenu = new JMenu(ResourceBundleHelper.getMessageString(MenuItem.menu_file));
 			fileMenu.setMnemonic(KeyEvent.VK_UNDEFINED);
 			fileMenu.addActionListener(this);
@@ -100,13 +100,14 @@ public class AROFileMenu implements ActionListener, MenuListener {
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_pcap));
 			fileMenu.addSeparator();
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_pref));
-			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_adb));
 			fileMenu.addSeparator();
 
 			printItem = menuAdder.getMenuItemInstance(MenuItem.menu_file_print);
 			TabPanels tabbedPanel = parent.getCurrentTabPanel();
-			printItem.setEnabled(tabbedPanel == TabPanels.tab_panel_best_practices ||
-					tabbedPanel == TabPanels.tab_panel_statistics);
+			printItem.setEnabled(tabbedPanel == TabPanels.tab_panel_best_practices
+					  || tabbedPanel == TabPanels.tab_panel_video_tab
+					  || tabbedPanel == TabPanels.tab_panel_statistics
+							  );
 			fileMenu.add(printItem);
 			fileMenu.addSeparator();
 

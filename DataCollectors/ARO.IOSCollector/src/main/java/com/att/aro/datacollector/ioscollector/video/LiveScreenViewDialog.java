@@ -53,7 +53,7 @@ public class LiveScreenViewDialog extends JDialog {
 		File dirfile = new File(dir);
 		dir = dirfile.getParent();
 		
-		String imagesDir = Util.getAroLibrary()
+		String imagesDir = Util.getVideoOptimizerLibrary()
 				+ Util.FILE_SEPARATOR + ".drivers" 
 				+ Util.FILE_SEPARATOR + "libimobiledevice"
 				+ Util.FILE_SEPARATOR + "images"

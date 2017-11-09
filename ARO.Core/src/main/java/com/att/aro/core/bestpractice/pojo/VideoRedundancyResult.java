@@ -15,16 +15,21 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
-/**
- * 
- * VBP #8
- *
- */
 public class VideoRedundancyResult extends AbstractBestPracticeResult {
 
+	private int redundancy;
+	
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.VIDEO_REDUNDANCY;
+	}
+
+	public int getRedundancy() {
+		return redundancy;
+	}
+
+	public void setRedundancy(int redundancy) {
+		this.redundancy = redundancy;
 	}
 
 }

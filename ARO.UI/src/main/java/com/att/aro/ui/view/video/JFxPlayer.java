@@ -26,12 +26,13 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
+import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.view.images.Images;
@@ -56,40 +57,22 @@ public class JFxPlayer implements IVideoPlayer {
 	private JFxPlayerControl playerControl;
 	private MediaPlayer mediaPlayer;
 	private JFrame frame;
-	private int playbackWidth = 359;
-	private int playbackHeight = 660;
+	private int playerContentWidth;
+	private int playerContentHeight;
 	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-	int rtEdge = screenSize.width - playbackWidth;
 	private SharedAttributesProcesses aroView;
-	
+
 	public JFxPlayer(SharedAttributesProcesses aroView){
     	this.aroView = aroView;
     }
 		
     private void initAndShowGUI() {
 
-        frame = new JFrame();    
-        final JFXPanel fxPanel = new JFXPanel();
-
-        frame.setContentPane(fxPanel);
-        frame.setBounds(rtEdge, 0, playbackWidth, playbackHeight);
-       // frame.setMinimumSize(new Dimension(300, 540));
-        setPlayerControl() ;
-        if(playerControl != null  && playerControl.isLandscape()) {
-        	playbackWidth = 512;
-        	playbackHeight = 288;
-        } else {
-        	playbackWidth = 359;
-        	playbackHeight = 660;
-        }
-        frame.setSize(playbackWidth, playbackHeight);
-        
+        frame = new JFrame();   
         String titleName = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.videoTitle"),  
         										ApplicationConfig.getInstance().getAppShortName());
-        frame.setTitle(titleName);
-        
+        frame.setTitle(titleName);       
 		frame.setIconImage(Images.ICON.getImage());
-        frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
             @Override
@@ -97,7 +80,24 @@ public class JFxPlayer implements IVideoPlayer {
             	aroView.updateVideoPlayerSelected(false);
             }
         });
+        
+        final JFXPanel fxPanel = new JFXPanel();
+        frame.setContentPane(fxPanel);
 
+        setPlayerControl() ;
+        if(playerControl != null  && VideoUtil.isVideoLandscape(traceDirectory)) {
+        	playerContentWidth = VideoUtil.PLAYER_CONTENT_WIDTH_LANDSCAPE;
+        	playerContentHeight = VideoUtil.PLAYER_CONTENT_HEIGHT_LANDSCAPE;
+        } else {
+        	playerContentWidth = VideoUtil.PLAYER_CONTENT_WIDTH_PORTRAIT;
+        	playerContentHeight = VideoUtil.PLAYER_CONTENT_HEIGHT_PORTRAIT;
+        }
+        int rtEdge = screenSize.width - playerContentWidth;
+        frame.getContentPane().setPreferredSize(new Dimension(playerContentWidth, playerContentHeight));
+        frame.setLocation(rtEdge, 0);
+        frame.pack();
+        frame.setVisible(true);
+        
         Platform.setImplicitExit(false);
         Platform.runLater(new Runnable() {
             @Override
@@ -149,7 +149,7 @@ public class JFxPlayer implements IVideoPlayer {
     	
      	Media media = new Media(mediaUrl);
         mediaPlayer = new MediaPlayer(media);
-        playerControl = new JFxPlayerControl(JFxPlayer.this, mediaPlayer, diagnosticsTab, videoOffset);
+        playerControl = new JFxPlayerControl(aroView, this, mediaPlayer, diagnosticsTab, videoOffset);
 	}
 
 	private void launchFXPlayer() {
@@ -190,7 +190,14 @@ public class JFxPlayer implements IVideoPlayer {
 		}
 		
 		videoOffset = playerControl.getFinalizedVideoOffset();
-		setMediaTime(0.0);		
+
+		Double startTime = 0.0;
+		AnalysisFilter filter = ((MainFrame)aroView).getController().getTheModel().getAnalyzerResult().getFilter();
+		if(null != filter){
+			startTime = filter.getTimeRange().getBeginTime();
+		}
+		setMediaTime(startTime);
+		
 		diagnosticsTab.setGraphPanelClicked(false);
 	}
 

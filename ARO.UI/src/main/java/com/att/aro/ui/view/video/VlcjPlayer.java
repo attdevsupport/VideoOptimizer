@@ -1,6 +1,7 @@
 package com.att.aro.ui.view.video;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -25,13 +26,12 @@ import com.att.aro.core.ILogger;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
-import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
-import com.att.aro.core.peripheral.impl.CollectOptionsReaderImpl;
-//import com.att.aro.core.peripheral.impl.CollectOptionsReaderImpl;
+import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.view.images.Images;
@@ -60,16 +60,17 @@ public class VlcjPlayer implements IVideoPlayer {
 	private double duration;
 	private String lastPlayedMRL;
 	private libvlc_state_t lastLibVLCState;
-
-	// TODO: Move these to a config file
-	private static final String WIN_VLCLIBPATH = "C:\\Program Files\\VideoLAN\\VLC";
-    private static final String LINUX_VLCLIBPATH = "/usr/lib/vlc";
+	private int playerContentWidth;
+	private int playerContentHeight;
 	 /*
-	  *  25 is frame rate, we multiply video duration by it to be the max 
-	  *  value of the slider of the player so that we can see every frame 
+	  *  We multiply video duration by it to be the max value of  
+	  *  the slider of the player so that we can see every frame 
 	  *  when we increment the slider in the slider dialog box.
 	  */
-    private static final int FRAME_RATE = 25;
+	private static final int FRAME_RATE = VideoUtil.FRAME_RATE;
+
+	private static final String WIN_VLCLIBPATH = VideoUtil.WIN_VLCLIBPATH;
+    private static final String LINUX_VLCLIBPATH = VideoUtil.LINUX_VLCLIBPATH;
     
     private static ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
     private IExternalProcessRunner extRunner = ContextAware.getAROConfigContext().getBean(IExternalProcessRunner.class);
@@ -89,18 +90,11 @@ public class VlcjPlayer implements IVideoPlayer {
     }
     
     private void setUpPlayer(int xPosition, int yPosition, int frameWidth, int frameHeight) {
-
+    
     	String title = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.videoTitle"),  
 				ApplicationConfig.getInstance().getAppShortName());    	
     	
         frame = new JFrame(title);
-        
-        if(isLandscape()) {
-        	xPosition=1200;
-        	frameWidth = 512;
-        	frameHeight = 288;
-        }
-        frame.setBounds(xPosition, yPosition, frameWidth, frameHeight);
 		frame.setIconImage(Images.ICON.getImage());
         frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         frame.addWindowListener(new WindowAdapter() {
@@ -112,7 +106,7 @@ public class VlcjPlayer implements IVideoPlayer {
 
         JPanel contentPane = new JPanel();
         contentPane.setLayout(new BorderLayout());
-
+     
         if (!createMediaPlayerComponent()) {
         	return;
     	}
@@ -121,7 +115,12 @@ public class VlcjPlayer implements IVideoPlayer {
         player.setRepeat(true);
         
         contentPane.add(mediaPlayerComponent, BorderLayout.CENTER);
-
+   
+        // Have player in portrait orientation before a trace is loaded
+        playerContentWidth = VideoUtil.PLAYER_CONTENT_WIDTH_PORTRAIT;
+        playerContentHeight = VideoUtil.PLAYER_CONTENT_HEIGHT_PORTRAIT;
+        mediaPlayerComponent.setPreferredSize(new Dimension(playerContentWidth, playerContentHeight));
+        
         JPanel controlsPane = new JPanel();
         playButton = new JButton(">");
         controlsPane.add(playButton);
@@ -136,7 +135,7 @@ public class VlcjPlayer implements IVideoPlayer {
         playtimeLabel = new JLabel("00:00/00:00");
         controlsPane.add(playtimeLabel);
         contentPane.add(controlsPane, BorderLayout.SOUTH);
-
+       
         player.addMediaPlayerEventListener(new MediaPlayerEventAdapter() {  
         	
         	@Override
@@ -238,23 +237,10 @@ public class VlcjPlayer implements IVideoPlayer {
         });
 
         frame.setContentPane(contentPane);
+    	frame.setLocation(Toolkit.getDefaultToolkit().getScreenSize().width - playerContentWidth, 0);
+    	frame.pack();
         frame.setVisible(true);  	
     }
-    
-    private boolean isLandscape() {
-
-    	boolean isOrientationLandscape = false;
-    	 
-		CollectOptionsReaderImpl collectOptionsReaderImpl = (CollectOptionsReaderImpl) ContextAware
-				.getAROConfigContext().getBean("collectOptionsReaderImpl");
-
-		if (TraceDataConst.UserEvent.KEY_LANDSCAPE.equalsIgnoreCase(collectOptionsReaderImpl.getOrientation())) {
-			isOrientationLandscape = true;
-		}
-		
-		return isOrientationLandscape;
-
-	}
 
 	private boolean createMediaPlayerComponent() {
 	
@@ -369,9 +355,8 @@ public class VlcjPlayer implements IVideoPlayer {
 	@Override
 	public double getMediaTime() {	
 		
-		// Example: vlc player is not found on OS
 		if (player == null) {
-			logger.debug("null player");
+			logger.debug("player is not available");
 			return 0;
 		}
 		
@@ -383,9 +368,8 @@ public class VlcjPlayer implements IVideoPlayer {
 	@Override
 	public void setMediaTime(final double hairlineTime) {
         
-		// Example: vlc player is not found on OS
 		if (player == null) {
-			logger.debug("null player");
+			logger.debug("player is not available");
 			return;
 		}
 		
@@ -404,14 +388,36 @@ public class VlcjPlayer implements IVideoPlayer {
 		
 		player.setTime(Math.round(videoTime * 1000));
 		slider.setValue((int) (videoTime*FRAME_RATE));
-	} 
+		playtimeLabel.setText(formatPlaytimeDisplay(hairlineTime));
+	}
+	
+	private void updateUserInterfaceElements(final double hairlineTime){
+		if (player == null) {
+			logger.debug("player is not available");
+			return;
+		}
+		
+		double videoTime = hairlineTime - this.videoOffset;
+
+		if ((videoTime < 0.0)) {	
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override
+				public void run() {
+					if (diagnosticsTab != null) {
+						diagnosticsTab.setTimeLineLinkedComponents(hairlineTime, false);
+					}
+				}
+			});
+		}
+		slider.setValue((int) (videoTime*FRAME_RATE));
+		playtimeLabel.setText(formatPlaytimeDisplay(hairlineTime));
+	}
 
 	@Override
 	public double getDuration() {
 		
-		// Example: vlc player is not found on OS
 		if (player == null) {
-			logger.debug("null player");
+			logger.debug("player is not available");
 			return 0;
 		}
 		
@@ -422,9 +428,8 @@ public class VlcjPlayer implements IVideoPlayer {
 	@Override
 	public boolean isPlaying() {
 		
-		// Example: vlc player is not found on OS
 		if (player == null) {
-			logger.debug("null player");
+			logger.debug("player is not available");
 			return false;
 		}
 		
@@ -514,9 +519,8 @@ public class VlcjPlayer implements IVideoPlayer {
 	@Override
 	public void loadVideo(AbstractTraceResult traceResult) {
         
-		// Example: vlc player is not found on OS
 		if (player == null) {
-			logger.debug("null player");
+			logger.debug("player is not available");
 			return;
 		}
 		
@@ -538,11 +542,31 @@ public class VlcjPlayer implements IVideoPlayer {
 		 * video player to be able to go in sync before 
 		 * user starts playing the video
 		 */
-		player.startMedia(videoPath);
-		player.pause(); 
+		String videoOptions = "";
+		int beginTime = 0;
+        AnalysisFilter filter = ((MainFrame)aroView).getController().getTheModel().getAnalyzerResult().getFilter();
+        if(null != filter){
+        	beginTime = (int)(filter.getTimeRange().getBeginTime());
+        	videoOptions = "start-time=" + String.valueOf(beginTime);
+        }
+        
+        if(VideoUtil.isVideoLandscape(traceResult.getTraceDirectory())) {
+        	playerContentWidth = VideoUtil.PLAYER_CONTENT_WIDTH_LANDSCAPE;
+        	playerContentHeight = VideoUtil.PLAYER_CONTENT_HEIGHT_LANDSCAPE;
+        } else {
+        	playerContentWidth = VideoUtil.PLAYER_CONTENT_WIDTH_PORTRAIT;
+        	playerContentHeight = VideoUtil.PLAYER_CONTENT_HEIGHT_PORTRAIT;
+        }
+
+    	frame.setLocation(Toolkit.getDefaultToolkit().getScreenSize().width - playerContentWidth, 0);
+    	mediaPlayerComponent.setPreferredSize(new Dimension(playerContentWidth, playerContentHeight));
+    	frame.pack();
+    	
+        player.startMedia(videoPath, videoOptions);
+		player.pause();
 		
 		duration = getDuration();
-
+		updateUserInterfaceElements(beginTime);
 		double videoStartTime = traceResult.getVideoStartTime();
         this.videoOffset = videoStartTime > 0.0 ? videoStartTime - ((double) traceResult.getTraceDateTime().getTime() / 1000) : 0.0;
         if (Math.abs(videoOffset) >= duration) {
@@ -554,12 +578,6 @@ public class VlcjPlayer implements IVideoPlayer {
 		 * accurate and custom fitting to the timestamp.
 		 */
 		slider.setMaximum((int) (duration*FRAME_RATE)); 
-		playtimeLabel.setText(getZeroPlaytimeDisplay());
-        if(isLandscape()) {
-        	frame.setBounds(Toolkit.getDefaultToolkit().getScreenSize().width-512, 0, 512, 288);
-        } else {
-        	frame.setBounds(Toolkit.getDefaultToolkit().getScreenSize().width-350, 0, 350, 600);
-        }
 	}
 
 	@Override

@@ -33,7 +33,7 @@ public class ManifestHLS extends AROManifest {
 		exten = EXTEN_TS; // default for HLS
 		parseManifestData(data);
 		if (videoName != null) {
-			this.videoName = videoName;
+			setVideoName(videoName);
 		}
 	}
 
@@ -42,7 +42,7 @@ public class ManifestHLS extends AROManifest {
 			return;
 		}
 		String strData = new String(data);
-		String[] sData = (new String(data)).split("\n");
+		String[] sData = (new String(data)).split("[\n\r]");
 
 		log.info("import Manifest:\n"+strData);
 		
@@ -54,9 +54,9 @@ public class ManifestHLS extends AROManifest {
 		}
 		
 		if (duration == 0) {
-			Double dblDuration = StringParse.findLabeledDoubleFromString("TARGETDURATION:", strData);
+			Double dblDuration = StringParse.findLabeledDoubleFromString("#EXTINF:", strData);
 			if (dblDuration != null) {
-				duration = dblDuration;
+				setDuration(dblDuration);
 				timeScale = 1;
 			}
 		}
@@ -72,32 +72,46 @@ public class ManifestHLS extends AROManifest {
 
 					String format = "";
 
-					String[] capGroup = stringParse.parse(nameLine, "(^.+)\\/([a-zA-Z0-9]*)()\\.(.+)"); 				// DTV_Live 05/playlist.m3u8
-					if (capGroup != null) {
-						videoName = capGroup[1];
-						format = capGroup[0];
-					} else {
-						if (capGroup == null) {
-							capGroup = stringParse.parse(nameLine, "([a-zA-Z0-9]*)\\/([a-zA-Z0-9]*)\\_(\\d+)\\.(.+)");	// VOD HLS0/B001950818U0_0.m3u8
-							if (capGroup != null) {
-								videoName = capGroup[1];
-								format = capGroup[0];
-							} 
+					String[] capGroup = null;
+
+					if (capGroup == null) {
+						capGroup = stringParse.parse(nameLine, "channel\\/([a-z0-9]*)\\/([a-z])\\.m3u8"); // espn channel/852f3e08953a485d90f8c924a101b668/d.m3u8
+						if (capGroup != null) {
+							setVideoName(capGroup[0]);
+							format = capGroup[1];
 						}
-						if (capGroup == null) {
-							capGroup = stringParse.parse(nameLine, "([a-zA-Z0-9]*)\\_(\\d+)\\.(.+)"); // AmzHLS 2e08c253-9a90-4db2-9e67-8baa3a152a00_v4.m3u8
-							if (capGroup != null) {
-								videoName = capGroup[0];
-								format = capGroup[1];
-							}
-						}
-						if (capGroup == null) {
-							capGroup = stringParse.parse(nameLine, "([a-zA-Z0-9]*)\\.(.+)");							// DTVNOW 03.m3u8
-							videoName = capGroup[0];
+					}
+					if (capGroup == null) {
+						capGroup = stringParse.parse(nameLine, "(^.+)\\/([a-zA-Z0-9]*)()\\.(.+)"); // DTV_Live 05/playlist.m3u8
+						if (capGroup != null) {
+							setVideoName(capGroup[1]);
 							format = capGroup[0];
 						}
 					}
-					bitrateMap.put(format, bandWidth);
+
+					if (capGroup == null) {
+						capGroup = stringParse.parse(nameLine, "([a-zA-Z0-9]*)\\/([a-zA-Z0-9]*)\\d\\_(\\d+)\\.(.+)"); // VOD HLS0/B001950818U0_0.m3u8
+						if (capGroup != null) {
+							setVideoName(capGroup[1]);
+							format = capGroup[0];
+						}
+					}
+					if (capGroup == null) {
+						capGroup = stringParse.parse(nameLine, "([a-zA-Z0-9]*)\\_(\\d+)\\.(.+)"); // AmzHLS 2e08c253-9a90-4db2-9e67-8baa3a152a00_v4.m3u8
+						if (capGroup != null) {
+							setVideoName(capGroup[0]);
+							format = capGroup[1];
+						}
+					}
+					if (capGroup == null) {
+						capGroup = stringParse.parse(nameLine, "([a-zA-Z0-9]*)\\.(.+)"); // DTVNOW 03.m3u8
+						if (capGroup != null) {
+							setVideoName(capGroup[0]);
+							format = capGroup[0];
+						}
+					}
+
+					bitrateMap.put(format.toUpperCase(), bandWidth);
 				}
 			}
 		} else {
@@ -122,11 +136,28 @@ public class ManifestHLS extends AROManifest {
 	 * 
 	 * @param sData
 	 */
-
 	private void loadSegments(String[] sData) {
+		String[] parsData;
+		Integer lineSeg = 0;
+		String segDuration = null;
+		
 		for (String line : sData) {
-			if (line.endsWith(EXTEN_TS) && !segmentList.containsKey(line)) {
-				segmentList.put(line, getSegIncremental());
+			if (line.startsWith("#EXTINF:")) {
+				parsData = stringParse.parse(line, "#EXTINF:(.+),");
+				if (parsData != null) {
+					segDuration = parsData[0];
+				}
+			}
+			if (line.contains(EXTEN_TS) && !segmentList.containsKey(line)) {
+				parsData = stringParse.parse(line, "([a-zA-Z0-9]*\\..+)");
+				if (parsData != null && !segmentList.containsKey(parsData[0])) {
+					lineSeg = getSegIncremental();
+					segmentList.put(parsData[0], lineSeg);
+					durationList.put(lineSeg, segDuration);
+				} else if (!segmentList.containsKey(line)) {
+					segmentList.put(line, lineSeg);
+					durationList.put(lineSeg, segDuration);
+				}
 			}
 		}
 	}
@@ -142,6 +173,8 @@ public class ManifestHLS extends AROManifest {
 		return -1;
 	}
 	
+//	@Override
+	
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("ManifestHLS:");
@@ -155,7 +188,9 @@ public class ManifestHLS extends AROManifest {
 		if (ved.getSegment() != null) {
 			return ved.getSegment();
 		} else if (ved.getDateTime() != null) {
-			ved.setSegment(getSegment(ved.getDateTime()));
+			Integer segment = getSegment(ved.getDateTime());
+			ved.setSegment(segment);
+			ved.setDuration(getDuration(segment));
 			return ved.getSegment();
 		}
 		int segment = -1;

@@ -179,21 +179,27 @@ public  class BpDetail extends AbstractBpPanel {
 	}
 
 	void updateHeader(AROTraceData analyzerResult){
-		boolean fail = false, warning = false;
+		boolean fail = false, warning = false, bpExecuted = false;
 		if (analyzerResult.getBestPracticeResults()!=null){
 			List<AbstractBestPracticeResult> results = analyzerResult.getBestPracticeResults();
 			// analysis run: either pass --> green, warning --> yellow, fail --> red
 			for (int i=0; i<results.size(); i++){
 				if (bpFileDownloadTypes.contains(results.get(i).getBestPracticeType())){
-					if (results.get(i).getResultType().compareTo(BPResultType.FAIL)==0){
-						fail = true;
-						break;
-					} else if (results.get(i).getResultType().compareTo(BPResultType.WARNING)==0){
-						warning = true;
+					if (results.get(i).getResultType() != BPResultType.NONE) {
+						bpExecuted = true;
+						if (results.get(i).getResultType().compareTo(BPResultType.FAIL) == 0) {
+							fail = true;
+							break;
+						} else if (results.get(i).getResultType().compareTo(BPResultType.WARNING) == 0) {
+							warning = true;
+						}
 					}
 				}
 			}
-			header.setPass(!fail,warning);				
+			if(bpExecuted)
+				header.setPass(!fail,warning);
+			else 
+				header.setPass(null, false);
 		} else {
 			// analysis not run --> gray
 			header.setPass(null,false);

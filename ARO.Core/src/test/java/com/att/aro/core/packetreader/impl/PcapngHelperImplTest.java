@@ -1,23 +1,36 @@
 package com.att.aro.core.packetreader.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InjectMocks;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.att.aro.core.BaseTest;
+import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.packetreader.IPcapngHelper;
 
 public class PcapngHelperImplTest extends BaseTest {
-
+	
+	@InjectMocks
 	PcapngHelperImpl helper;
 	FileInputStream stream;
+	
+	@Spy
+	FileManagerImpl fileManager;
+	
 	byte[] sampledata = new byte[] { 10, 13, 13, 10, -108, 0, 0, 0, 77, 60, 43, 26, 1, 0, 0, 0, -1, -1, -1, -1, -1, -1,
 			-1, -1, 1, 0, 21, 0, 115, 101, 99, 116, 105, 111, 110, 32, 104, 101, 97, 100, 101, 114, 32, 98, 108, 111,
 			99, 107, 0, 0, 0, 0, 2, 0, 7, 0, 120, 56, 54, 95, 54, 52, 0, 0, 3, 0, 14, 0, 68, 97, 114, 119, 105, 110, 32,
@@ -92,11 +105,80 @@ public class PcapngHelperImplTest extends BaseTest {
 	@Before
 	public void setup() {
 		stream = Mockito.mock(FileInputStream.class);
+		fileManager = Mockito.mock(FileManagerImpl.class);
+		helper = (PcapngHelperImpl) context.getBean(IPcapngHelper.class);
+		ReflectionTestUtils.setField(helper, "fileManager", fileManager);
+	}
+
+	@Test
+	public void isNoLinkLayer() throws IOException {
+		
+		byte[] sampledata = new byte[]{-44, -61, -78, -95, 2, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0};
+		File file = Mockito.mock(File.class);
+		String fileName = "/File/Path/traffic.pcap";
+
+		doReturn(0L).when(file).lastModified();
+		doReturn(240L).when(file).length();
+		doReturn(stream).when(fileManager).getFileInputStream(fileName);
+		
+		Mockito.doAnswer(new Answer<Void>() {
+
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				byte[] data = (byte[]) invocation.getArguments()[0];
+				for (int i = 0; i < data.length && i < sampledata.length; i++) {
+					data[i] = sampledata[i];
+				}
+				return null;
+			}
+		}).when(stream).read(Mockito.any(byte[].class));
+
+		helper = (PcapngHelperImpl) context.getBean(IPcapngHelper.class);
+		boolean ispcapng = helper.isNoLinkLayer(fileName);
+		assertEquals(true, ispcapng);
 
 	}
 
 	@Test
+	public void isApplePcapngFile() throws IOException {
+		
+		File file = Mockito.mock(File.class);
+
+		doReturn(0L).when(file).lastModified();
+		doReturn("/File/Path/traffic.pcap").when(file).getAbsolutePath();
+		doReturn(240L).when(file).length();
+		doReturn(stream).when(fileManager).getFileInputStream(file);
+		
+		Mockito.doAnswer(new Answer<Void>() {
+
+			@Override
+			public Void answer(InvocationOnMock invocation) throws Throwable {
+				byte[] data = (byte[]) invocation.getArguments()[0];
+				for (int i = 0; i < data.length && i < sampledata.length; i++) {
+					data[i] = sampledata[i];
+				}
+				return null;
+			}
+		}).when(stream).read(Mockito.any(byte[].class));
+
+		helper = (PcapngHelperImpl) context.getBean(IPcapngHelper.class);
+		boolean ispcapng = helper.isApplePcapng(file);
+		assertEquals(true, ispcapng);
+		
+		int max = 2048;
+		int length = (sampledata.length < max ? sampledata.length : max);
+		byte[] streamedData = helper.getByteArrayFromStream(stream, length);
+		
+		ispcapng = helper.isApplePcapng(streamedData);
+		assertEquals(true, ispcapng);
+
+		String str = helper.getHardware();
+		str = helper.getOs();
+	}
+
+	@Test
 	public void isApplePcapng() throws IOException {
+		
 		Mockito.doAnswer(new Answer<Void>() {
 
 			@Override
@@ -113,16 +195,21 @@ public class PcapngHelperImplTest extends BaseTest {
 		boolean ispcapng = helper.isApplePcapng(sampledata);
 		assertEquals(true, ispcapng);
 
-		ispcapng = helper.isApplePcapng(stream, sampledata.length);
+		int max = 2048;
+		int length = (sampledata.length < max ? sampledata.length : max);
+		byte[] streamedData = helper.getByteArrayFromStream(stream, length);
+		
+		ispcapng = helper.isApplePcapng(streamedData);
 		assertEquals(true, ispcapng);
 
 		String str = helper.getHardware();
-		str = helper.getOs();
+		assertTrue("x86_64 ".equals(helper.getHardware()));
+		assertTrue("Darwin 13.0.0 ".equals(helper.getOs()));
 	}
 
 	@Test
 	public void errorTest() {
-
+		
 		try {
 			Mockito.doAnswer(new Answer<Void>() {
 
@@ -133,11 +220,10 @@ public class PcapngHelperImplTest extends BaseTest {
 			}).when(stream).read(Mockito.any(byte[].class));
 		} catch (IOException e) {
 		}
+
 		helper = (PcapngHelperImpl) context.getBean(IPcapngHelper.class);
-		try {
-			helper.isApplePcapng(stream, 128);
-		} catch (Exception ex) {
-		}
+		byte[] data = helper.getByteArrayFromStream(stream, 128);
+		assertFalse(helper.isApplePcapng(data));
 
 	}
 }

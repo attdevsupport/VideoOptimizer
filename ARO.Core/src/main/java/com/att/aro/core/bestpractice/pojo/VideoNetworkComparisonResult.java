@@ -15,11 +15,6 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
-/**
- * 
- * VBP #4
- *
- */
 public class VideoNetworkComparisonResult extends AbstractBestPracticeResult {
 
 	private double avgKbps = 0.0;

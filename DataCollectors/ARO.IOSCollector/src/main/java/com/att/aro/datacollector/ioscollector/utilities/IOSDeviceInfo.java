@@ -48,7 +48,7 @@ public class IOSDeviceInfo {
 
 	public IOSDeviceInfo() {
 		list = new HashMap<String, String>();
-		exepath = Util.getAroLibrary()
+		exepath = Util.getVideoOptimizerLibrary()
 				+ Util.FILE_SEPARATOR + ".drivers" 
 				+ Util.FILE_SEPARATOR + "libimobiledevice" 
 				+ Util.FILE_SEPARATOR + "ideviceinfo";

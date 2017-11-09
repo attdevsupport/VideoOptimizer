@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 AT&T
+ *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,22 @@
  */
 package com.att.arotracedata;
 
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RecentTaskInfo;
 import android.content.Context;
 import android.content.Intent;
+import android.hardware.Camera;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraManager;
+import android.os.Build;
 import android.util.Log;
-
 import com.att.arocollector.utils.AROCollectorUtils;
 
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-
+@TargetApi(21)
 public class AROCameraMonitorService extends AROMonitorService{
 
 	private static final String TAG = "AROCameraMonitorService";
@@ -41,6 +45,10 @@ public class AROCameraMonitorService extends AROMonitorService{
 	/** Previous Camera state on/off boolean flag */
 	private Boolean mPrevCameraOn = true;
 
+	/** For API level 21 or above */
+	private CameraManager mCameraManager;
+	private CameraManager.AvailabilityCallback mCamAvailCallback;
+	private Boolean mCameraInUse = false;
 
 	/**
 	 * Camera/GPS/Screen trace timer repeat time value to capture camera events
@@ -64,47 +72,97 @@ public class AROCameraMonitorService extends AROMonitorService{
 			
 			startAROCameraTraceMonitor();
 
+			initCamera();
 		}
 		return super.onStartCommand(intent, flags, startId);
 		
 	}
 
+	private void initCamera() {
+
+		if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+			mCamAvailCallback = new CameraManager.AvailabilityCallback() {
+
+				public void onCameraAvailable(String cameraId) {
+					mCameraInUse = false;
+				}
+
+				public void onCameraUnavailable(String cameraId) {
+					mCameraInUse = true;
+				}
+			};
+
+			mCameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+			/*
+			   There is a bug in android 5.1 - code.google.com/p/android/issues/detail?id=164769.
+			   For those versions, you'll have to call getCameraIdList() to get the
+			   service properly initialized before you can registerAvailabilityCallback.
+			 */
+			try {
+				mCameraManager.getCameraIdList();
+			} catch (CameraAccessException e) {
+				Log.e(TAG, e.getMessage());
+			}
+			mCameraManager.registerAvailabilityCallback(mCamAvailCallback, null);
+
+		}
+	}
+
 	/**
-	 * Starts the GPS peripherals trace collection
+	 * Starts the Camera trace collection
 	 */
 	private void startAROCameraTraceMonitor() {
+
 		Log.i(TAG, "startAROCameraTraceMonitor()");
-		
-		checkCameraLaunch.scheduleAtFixedRate(new TimerTask() {
-			public void run() {
-				final String recentTaskName = getRecentTaskInfo().toLowerCase();
-				if (recentTaskName.contains("camera")
-						|| checkCurrentProcessStateForGround("camera")) {
-					mCameraOn = true;
-				} else
-					mCameraOn = false;
-				if (checkCurrentProcessState("camera"))
-					mCameraOn = false;
-				if (mCameraOn && !mPrevCameraOn) {
-					Log.d(TAG, "Camera Turned on");
-					writeTraceLineToAROTraceFile("ON", true);
-				//	writeToFlurryAndMaintainStateAndLogEvent(cameraFlurryEvent, getString(R.string.flurry_param_status), "ON", true);
-					mCameraOn = true;
-					mPrevCameraOn = true;
-				} else if (!mCameraOn && mPrevCameraOn) {
-					Log.d(TAG, "Camera Turned Off");
-					writeTraceLineToAROTraceFile(AroTraceFileConstants.OFF, true);
-				//	writeToFlurryAndMaintainStateAndLogEvent(cameraFlurryEvent, getString(R.string.flurry_param_status), AroTraceFileConstants.OFF, true);
-					mCameraOn = false;
-					mPrevCameraOn = false;
+
+		if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
+			checkCameraLaunch.scheduleAtFixedRate(new TimerTask() {
+				public void run() {
+					mCameraOn = mCameraInUse;
+					writeToTraceFile();
 				}
-			}
-		}, HALF_SECOND_TARCE_TIMER_REPATE_TIME, HALF_SECOND_TARCE_TIMER_REPATE_TIME);
+			}, HALF_SECOND_TARCE_TIMER_REPATE_TIME, HALF_SECOND_TARCE_TIMER_REPATE_TIME);
+
+		} else {
+
+				checkCameraLaunch.scheduleAtFixedRate(new TimerTask() {
+				public void run() {
+					final String recentTaskName = getRecentTaskInfo().toLowerCase();
+					if (recentTaskName.contains("camera")
+							|| checkCurrentProcessStateForGround("camera")) {
+						mCameraOn = true;
+					} else
+						mCameraOn = false;
+					if (checkCurrentProcessState("camera"))
+						mCameraOn = false;
+					writeToTraceFile();
+				}
+			}, HALF_SECOND_TARCE_TIMER_REPATE_TIME, HALF_SECOND_TARCE_TIMER_REPATE_TIME);
+
+		}
 	}
-	
+
+	private void writeToTraceFile() {
+		if (mCameraOn && !mPrevCameraOn) {
+            Log.d(TAG, "Camera Turned on");
+            writeTraceLineToAROTraceFile("ON", true);
+            //	writeToFlurryAndMaintainStateAndLogEvent(cameraFlurryEvent, getString(R.string.flurry_param_status), "ON", true);
+            mCameraOn = true;
+            mPrevCameraOn = true;
+        } else if (!mCameraOn && mPrevCameraOn) {
+            Log.d(TAG, "Camera Turned Off");
+            writeTraceLineToAROTraceFile(AroTraceFileConstants.OFF, true);
+            //	writeToFlurryAndMaintainStateAndLogEvent(cameraFlurryEvent, getString(R.string.flurry_param_status), AroTraceFileConstants.OFF, true);
+            mCameraOn = false;
+            mPrevCameraOn = false;
+        }
+	}
+
 	/**
 	 * Gets the recent opened package name
-	 * 
+	 *
 	 * @return recent launched package name
 	 */
 	private String getRecentTaskInfo() {
@@ -136,7 +194,5 @@ public class AROCameraMonitorService extends AROMonitorService{
 			checkCameraLaunch = null;
 		}
 	}
-
-
 
 }

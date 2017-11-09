@@ -17,9 +17,65 @@ package com.att.aro.core.bestpractice.pojo;
 
 public class BufferOccupancyResult extends AbstractBestPracticeResult {
 
+	private double maxBuffer = 0.0;
+	private double minBufferByte = 0.0;
+	private double avgBufferByte = 0.0;
+
+	private double maxBufferTime = 0.0;
+	private double minBufferTime = 0.0;
+	private double avgBufferTime = 0.0;
+
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.BUFFER_OCCUPANCY;
+	}
+
+	public double getMaxBuffer() {
+		return maxBuffer;
+	}
+
+	public void setMaxBuffer(double maxBuffer) {
+		this.maxBuffer = maxBuffer;
+	}
+
+	public void setMinBufferByte(double minBuffer) {
+		this.minBufferByte = minBuffer;
+	}
+
+	public void setAvgBufferByte(double avgBufferByte) {
+		this.avgBufferByte = avgBufferByte;
+	}
+
+	public double getMinBufferByte() {
+		return minBufferByte;
+	}
+
+	public double getAvgBufferByte() {
+		return avgBufferByte;
+	}
+
+	public double getMaxBufferTime() {
+		return maxBufferTime;
+	}
+
+	public void setMaxBufferTime(double maxBufferTime) {
+		this.maxBufferTime = maxBufferTime;
+	}
+
+	public double getMinBufferTime() {
+		return minBufferTime;
+	}
+
+	public void setMinBufferTime(double minBufferTime) {
+		this.minBufferTime = minBufferTime;
+	}
+
+	public double getAvgBufferTime() {
+		return avgBufferTime;
+	}
+
+	public void setAvgBufferTime(double avgBufferTime) {
+		this.avgBufferTime = avgBufferTime;
 	}
 
 }

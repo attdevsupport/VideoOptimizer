@@ -71,6 +71,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 			key = 0;
 			imgSeries = new ArrayList<BufferedImage>();
 			seriesDataSets.clear();
+			filterVideoSegment(videoUsage);
 			filterVideoSegmentUpdated(videoUsage);
 
 			if (!chunkPlayTimeList.isEmpty()) {
@@ -137,23 +138,25 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 		double duration = getChunkPlayTimeDuration(getChunksBySegmentNumber().get(0)); // filteredChunks
 		Map<Double, VideoEvent> playStartTimeBySegment = new TreeMap<>();
 
-		for (int i = 0; i < getChunksBySegmentNumber().size(); i++) {
-			possibleStartTime = getChunkPlayStartTime(getChunksBySegmentNumber().get(i));
-			if (possibleStartTime != -1)
+		for (int index = 0; index < getChunksBySegmentNumber().size(); index++) {
+			possibleStartTime = getChunkPlayStartTime(getChunksBySegmentNumber().get(index));
+			if (possibleStartTime != -1) {
 				playtime = possibleStartTime;
-			else {
-				playtime = duration + playtime;
+			} else {
+				int diff = (index > 1) ? (int) (getChunksBySegmentNumber().get(index).getSegment()
+						- getChunksBySegmentNumber().get(index - 1).getSegment()) : 1;
+				playtime = diff * duration + playtime;
 			}
 
-			if (getChunksBySegmentNumber().get(i).getEndTS() > playtime) { // Meaning this is not the right quality level chunk picked by the player
+			if (getChunksBySegmentNumber().get(index).getEndTS() > playtime) { // Meaning this is not the right quality level chunk picked by the player
 				// alter filteredChunks & chunksBySegment List
-				boolean shuffled = alterFilteredSegmentList(getChunksBySegmentNumber().get(i),playtime);
+				boolean shuffled = alterFilteredSegmentList(getChunksBySegmentNumber().get(index),playtime);
 				if(shuffled){
 					filterAgain = true;
 				}
 			}
-			playStartTimeBySegment.put(playtime, getChunksBySegmentNumber().get(i));
-			duration = getChunkPlayTimeDuration(getChunksBySegmentNumber().get(i));
+			playStartTimeBySegment.put(playtime, getChunksBySegmentNumber().get(index));
+			duration = getChunkPlayTimeDuration(getChunksBySegmentNumber().get(index));
 		}
 
 		for (VideoEvent ve : getFilteredSegments()) {

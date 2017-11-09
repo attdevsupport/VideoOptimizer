@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -74,6 +75,7 @@ import com.att.aro.core.bestpractice.pojo.ImageSizeEntry;
 import com.att.aro.core.bestpractice.pojo.ImageSizeResult;
 import com.att.aro.core.bestpractice.pojo.MinificationEntry;
 import com.att.aro.core.bestpractice.pojo.MinificationResult;
+import com.att.aro.core.bestpractice.pojo.SimultnsConnectionResult;
 import com.att.aro.core.bestpractice.pojo.SpriteImageEntry;
 import com.att.aro.core.bestpractice.pojo.SpriteImageResult;
 import com.att.aro.core.bestpractice.pojo.TextFileCompressionEntry;
@@ -485,8 +487,6 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			break;
 			case FORWARD_SECRECY: learnMoreURI = ResourceBundleHelper.getMessageString("security.forwardSecrecy.url");
 			break;
-			/*case VIDEOUSAGE : learnMoreURI = ResourceBundleHelper.getMessageString("videoStall.url");
-			break;*/
 			case VIDEO_STALL : learnMoreURI = ResourceBundleHelper.getMessageString("videoStall.url");
 			break;
 			case STARTUP_DELAY :learnMoreURI = ResourceBundleHelper.getMessageString("startUpDelay.url");
@@ -503,7 +503,10 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			break;
 			case VIDEO_REDUNDANCY : learnMoreURI = ResourceBundleHelper.getMessageString("videoRedundancy.url");
 			break;
-			
+			case SIMUL_CONN: learnMoreURI = ResourceBundleHelper.getMessageString("connections.simultaneous.url");
+			break;
+			default:
+			break;
 		}			
 		return URI.create(MessageFormat.format(learnMoreURI, 
 												ApplicationConfig.getInstance().getAppUrlBase()));
@@ -569,7 +572,6 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 
 	@Override
 	public void refresh(AROTraceData model) {
-		// System.out.println("---------BpDetailItem.refresh(AROTraceData)");
 		List<AbstractBestPracticeResult> bpResults = model.getBestPracticeResults();
 		for (AbstractBestPracticeResult bpr : bpResults) {
 
@@ -582,68 +584,146 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 				switch (resultType) {
 
 				case FILE_COMPRESSION:
-					// System.out.println("case FILE_COMPRESSION:");
-					((BpFileCompressionTablePanel)resultsTablePanel).setData((Collection<TextFileCompressionEntry>) ((FileCompressionResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpFileCompressionTablePanel) resultsTablePanel).setData(Collections.emptyList());
+					else
+						((BpFileCompressionTablePanel) resultsTablePanel).setData(
+								(Collection<TextFileCompressionEntry>) ((FileCompressionResult) bpr).getResults());
 					return;
 				case DUPLICATE_CONTENT:
-					((BpFileDuplicateContentTablePanel)resultsTablePanel).setData((Collection<CacheEntry>) ((DuplicateContentResult) bpr).getDuplicateContentList());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpFileDuplicateContentTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpFileDuplicateContentTablePanel) resultsTablePanel)
+							.setData((Collection<CacheEntry>) ((DuplicateContentResult) bpr).getDuplicateContentList());
 					return;
 				case IMAGE_SIZE:
-					((BpFileImageSizeTablePanel)resultsTablePanel).setData((Collection<ImageSizeEntry>) ((ImageSizeResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpFileImageSizeTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpFileImageSizeTablePanel) resultsTablePanel)
+							.setData((Collection<ImageSizeEntry>) ((ImageSizeResult) bpr).getResults());
 					return;
 				case IMAGE_MDATA:
-					((BpFileImageMDataTablePanel)imgMdataResultsTablePanel).setData((Collection<ImageMdataEntry>) ((ImageMdtaResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpFileImageMDataTablePanel) imgMdataResultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpFileImageMDataTablePanel) imgMdataResultsTablePanel)
+							.setData((Collection<ImageMdataEntry>) ((ImageMdtaResult) bpr).getResults());
 					return;
 				case IMAGE_CMPRS:
-					((BpFileImageCompressionTablePanel)imageCompressionResultsTablePanel).setData((Collection<ImageCompressionEntry>) ((ImageCompressionResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpFileImageCompressionTablePanel) imageCompressionResultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpFileImageCompressionTablePanel) imageCompressionResultsTablePanel)
+							.setData((Collection<ImageCompressionEntry>) ((ImageCompressionResult) bpr).getResults());
 					return;
 				case IMAGE_FORMAT:
-					((BpFileImageFormatTablePanel)imageFormatResultsTablePanel).setData((Collection<ImageMdataEntry>) ((ImageFormatResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpFileImageFormatTablePanel) imageFormatResultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpFileImageFormatTablePanel) imageFormatResultsTablePanel)
+							.setData((Collection<ImageMdataEntry>) ((ImageFormatResult) bpr).getResults());
 					return;
 				case MINIFICATION:
-					((BpFileMinificationTablePanel)resultsTablePanel).setData((Collection<MinificationEntry>) ((MinificationResult) bpr).getMinificationEntryList());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpFileMinificationTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpFileMinificationTablePanel) resultsTablePanel).setData(
+							(Collection<MinificationEntry>) ((MinificationResult) bpr).getMinificationEntryList());
 					return;
 				case SPRITEIMAGE:
-					((BpFileSpriteImagesTablePanel)resultsTablePanel).setData((Collection<SpriteImageEntry>) ((SpriteImageResult) bpr).getAnalysisResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpFileSpriteImagesTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpFileSpriteImagesTablePanel) resultsTablePanel)
+							.setData((Collection<SpriteImageEntry>) ((SpriteImageResult) bpr).getAnalysisResults());
 					return;
 				case HTTP_4XX_5XX:
-					((BpConnectionsHttp4xx5xxTablePanel)resultsTablePanel).setData((Collection<Http4xx5xxStatusResponseCodesEntry>) ((Http4xx5xxResult) bpr).getHttpResCodelist());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpConnectionsHttp4xx5xxTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpConnectionsHttp4xx5xxTablePanel) resultsTablePanel)
+							.setData((Collection<Http4xx5xxStatusResponseCodesEntry>) ((Http4xx5xxResult) bpr)
+									.getHttpResCodelist());
 					return;
 				case HTTP_3XX_CODE:
-					((BpConnectionsHttp3xxTablePanel)resultsTablePanel).setData((Collection<HttpCode3xxEntry>) ((Http3xxCodeResult) bpr).getHttp3xxResCode());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpConnectionsHttp3xxTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpConnectionsHttp3xxTablePanel) resultsTablePanel)
+							.setData((Collection<HttpCode3xxEntry>) ((Http3xxCodeResult) bpr).getHttp3xxResCode());
 					return;
 				case ASYNC_CHECK:
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpHtmlAsyncLoadTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else {
 					List<AsyncCheckEntry> res = ((AsyncCheckInScriptResult) bpr).getResults();
-					((BpHtmlAsyncLoadTablePanel)resultsTablePanel).setData((Collection<AsyncCheckEntry>) res);
-					/*
-					 * ((BpHtmlAsyncLoadTablePanel)resultsTablePanel).setData((
-					 * Collection<AsyncCheckEntry>) ((AsyncCheckInScriptResult)
-					 * bpr).getResults());
-					 */
+					((BpHtmlAsyncLoadTablePanel) resultsTablePanel).setData((Collection<AsyncCheckEntry>) res);
+					
+						}
 					return;
 				case FILE_ORDER:
-					((BpHtmlFileOrderTablePanel)resultsTablePanel).setData((Collection<FileOrderEntry>) ((FileOrderResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpHtmlFileOrderTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpHtmlFileOrderTablePanel) resultsTablePanel)
+							.setData((Collection<FileOrderEntry>) ((FileOrderResult) bpr).getResults());
 					return;
 				case DISPLAY_NONE_IN_CSS:
-					((BpHtmlDisplayNoneInCSSTablePanel)resultsTablePanel).setData((Collection<DisplayNoneInCSSEntry>) ((DisplayNoneInCSSResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpHtmlDisplayNoneInCSSTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpHtmlDisplayNoneInCSSTablePanel) resultsTablePanel)
+							.setData((Collection<DisplayNoneInCSSEntry>) ((DisplayNoneInCSSResult) bpr).getResults());
 					return;
 				case UNNECESSARY_CONNECTIONS:
-					((BpConnectionsUnnecessaryTablePanel)resultsTablePanel).setData((Collection<UnnecessaryConnectionEntry>) ((UnnecessaryConnectionResult) bpr).getTightlyCoupledBurstsDetails());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpConnectionsUnnecessaryTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpConnectionsUnnecessaryTablePanel) resultsTablePanel)
+							.setData((Collection<UnnecessaryConnectionEntry>) ((UnnecessaryConnectionResult) bpr)
+									.getTightlyCoupledBurstsDetails());
 					return;
 				case HTTPS_USAGE:
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpSecurityHttpsUsageTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
 					((BpSecurityHttpsUsageTablePanel) resultsTablePanel).setData(((HttpsUsageResult) bpr).getResults());
 					return;
 				case TRANSMISSION_PRIVATE_DATA:
-					((BpSecurityTransmissionPrivateDataTablePanel) resultsTablePanel).setData(((TransmissionPrivateDataResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpSecurityTransmissionPrivateDataTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpSecurityTransmissionPrivateDataTablePanel) resultsTablePanel)
+							.setData(((TransmissionPrivateDataResult) bpr).getResults());
 					return;
 				case UNSECURE_SSL_VERSION:
-					((BpSecurityUnsecureSSLVersionTablePanel) resultsTablePanel).setData(((UnsecureSSLVersionResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpSecurityUnsecureSSLVersionTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpSecurityUnsecureSSLVersionTablePanel) resultsTablePanel)
+							.setData(((UnsecureSSLVersionResult) bpr).getResults());
 					return;
 				case WEAK_CIPHER:
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpSecurityWeakCipherTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
 					((BpSecurityWeakCipherTablePanel) resultsTablePanel).setData(((WeakCipherResult) bpr).getResults());
 					return;
 				case FORWARD_SECRECY:
-					((BpSecurityForwardSecrecyTablePanel) resultsTablePanel).setData(((ForwardSecrecyResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BpSecurityForwardSecrecyTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BpSecurityForwardSecrecyTablePanel) resultsTablePanel)
+							.setData(((ForwardSecrecyResult) bpr).getResults());
+					return;
+				case SIMUL_CONN:
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BPConnectionsSimultnsTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BPConnectionsSimultnsTablePanel) resultsTablePanel)
+							.setData(((SimultnsConnectionResult) bpr).getResults());
 					return;
 				default:
 					return;
@@ -654,13 +734,11 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 	
 	@Override
 	public JPanel layoutDataPanel() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
