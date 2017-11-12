@@ -16,6 +16,7 @@
 
 package com.att.arotcpcollector;
 
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.att.arotcpcollector.ip.IPv4Header;
@@ -49,7 +50,6 @@ public class SessionManager {
 	private static Object syncObj = new Object();
 	private static volatile SessionManager instance = null;
 	private SessionTable table = null;
-	public static Object syncTable = new Object();
 	private SocketProtector protector = null;
 	Selector selector;
 
@@ -89,9 +89,7 @@ public class SessionManager {
 			if (sessionKey == null) {
 				sessionKey = this.createKey(session.getDestAddress(), session.getDestPort(), session.getSourceIp(), session.getSourcePort());
 			}
-			synchronized (syncTable) {
-				table.put(sessionKey, session);
-			}
+			table.put(sessionKey, session);
 		}
 	}
 
@@ -162,81 +160,51 @@ public class SessionManager {
 		String sessionKey = createKey(ipAddress, destPort, srcIpAddress, srcPort);
 		Session session = null;
 
-		synchronized (syncTable) {
-			if (table.containsKey(sessionKey)) {
-				session = table.get(sessionKey);
-			}
+		if (table.containsKey(sessionKey)) {
+			session = table.get(sessionKey);
 		}
 		return session;
 	}
 
 	public Session getSessionByKey(String sessionKey) {
 		Session session = null;
-		synchronized (syncTable) {
-			if (table.containsKey(sessionKey)) {
-				session = table.get(sessionKey);
-			}
+
+		if (table.containsKey(sessionKey)) {
+			session = table.get(sessionKey);
 		}
 		return session;
 	}
 
+	@Nullable
 	public Session getSessionByDatagramChannel(DatagramChannel channel) {
-		Session session = null;
-		synchronized (syncTable) {
-			Iterator<Session> it = table.values().iterator();
-			while (it.hasNext()) {
-				Session sess = it.next();
-				if (sess.getUdpChannel() == channel) {
-					session = sess;
-					break;
-				}
+		for (final Session session: table.values()) {
+			if (session.getUdpChannel() == channel) {
+				return session;
 			}
 		}
-		return session;
+		return null;
 	}
 
+	@Nullable
 	public Session getSessionByChannel(SocketChannel channel) {
-		Session session = null;
-		synchronized (syncTable) {
-			Iterator<Session> it = table.values().iterator();
-			while (it.hasNext()) {
-				Session sess = it.next();
-				if (sess.getSocketchannel() == channel) {
-					session = sess;
-					break;
-				}
+		for (final Session session: table.values()) {
+			if (session.getSocketchannel() == channel) {
+				return session;
 			}
 		}
-		return session;
+		return null;
 	}
 
 	public void removeSessionByChannel(SocketChannel channel) {
-		String key = null;
-		String tmp = null;
-		Session session = null;
-		synchronized (syncTable) {
-			Iterator<String> it = table.keySet().iterator();
-			while (it.hasNext()) {
-				tmp = it.next();
-				Session sess = table.get(tmp);
-				if (sess != null && sess.getSocketchannel() == channel) {
-					key = tmp;
-					session = sess;
-					break;
-				}
-
-			}
-		}
-		if (key != null) {
-			synchronized (syncTable) {
+		for (final String key: table.keySet()) {
+			Session session = table.get(key);
+			if (session != null && session.getSocketchannel() == channel) {
 				table.remove(key);
+				Log.d(TAG,
+						"closed session -> " + PacketUtil.intToIPAddress(session.getDestAddress()) + ":" + session.getDestPort() + "-"
+								+ PacketUtil.intToIPAddress(session.getSourceIp()) + ":" + session.getSourcePort());
+				break;
 			}
-		}
-		if (session != null) {
-			Log.d(TAG,
-					"closed session -> " + PacketUtil.intToIPAddress(session.getDestAddress()) + ":" + session.getDestPort() + "-"
-							+ PacketUtil.intToIPAddress(session.getSourceIp()) + ":" + session.getSourcePort());
-			session = null;
 		}
 	}
 
@@ -250,10 +218,8 @@ public class SessionManager {
 	 */
 	public void closeSession(int ip, int port, int srcIp, int srcPort) {
 		String keys = createKey(ip, port, srcIp, srcPort);
-		Session session = null; //getSession(ip, port, srcIp, srcPort);
-		synchronized (syncTable) {
-			session = table.remove(keys);
-		}
+		Session session = table.remove(keys); //getSession(ip, port, srcIp, srcPort);
+
 		if (session != null) {
 			try {
 				SocketChannel chan = session.getSocketchannel();
@@ -266,7 +232,6 @@ public class SessionManager {
 			Log.d(TAG,
 					"closed session -> " + PacketUtil.intToIPAddress(session.getDestAddress()) + ":" + session.getDestPort() + "-"
 							+ PacketUtil.intToIPAddress(session.getSourceIp()) + ":" + session.getSourcePort());
-			session = null;
 		}
 	}
 
@@ -285,23 +250,19 @@ public class SessionManager {
 			sessionKey = this.createKey(session.getDestAddress(), session.getDestPort(), session.getSourceIp(), session.getSourcePort());
 		}
 		
-		synchronized (syncTable) {
-			table.remove(sessionKey);
-		}
-		if (session != null) {
-			try {
-				SocketChannel chan = session.getSocketchannel();
-				if (chan != null) {
-					chan.close();
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
+		table.remove(sessionKey);
+
+		try {
+			SocketChannel chan = session.getSocketchannel();
+			if (chan != null) {
+				chan.close();
 			}
-			Log.d(TAG,
-					"closed session -> " + PacketUtil.intToIPAddress(session.getDestAddress()) + ":" + session.getDestPort() + "-"
-							+ PacketUtil.intToIPAddress(session.getSourceIp()) + ":" + session.getSourcePort());
-			session = null;
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+		Log.d(TAG,
+				"closed session -> " + PacketUtil.intToIPAddress(session.getDestAddress()) + ":" + session.getDestPort() + "-"
+						+ PacketUtil.intToIPAddress(session.getSourceIp()) + ":" + session.getSourcePort());
 	}
 
 	/**
@@ -315,11 +276,8 @@ public class SessionManager {
 	 */
 	public Session createNewUDPSession(int ip, int port, int srcIp, int srcPort) {
 		String sessionKey = createKey(ip, port, srcIp, srcPort);
-		boolean found = false;
-		synchronized (syncTable) {
-			found = table.containsKey(sessionKey);
-		}
-		if (found) {
+
+		if (table.containsKey(sessionKey)) {
 			return null;
 		}
 		Session ses = new Session();
@@ -385,20 +343,16 @@ public class SessionManager {
 
 		ses.setUdpChannel(channel);
 
-		synchronized (syncTable) {
-			if (!table.containsKey(sessionKey)) {
-				table.put(sessionKey, ses);
-			} else {
-				found = true;
-			}
-		}
-		if (found) {
+		if (table.containsKey(sessionKey)) {
 			try {
 				channel.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		} else {
+			table.put(sessionKey, ses);
 		}
+
 		if (ses != null) {
 			Log.d(TAG, "new UDP session successfully created.");
 		}
@@ -417,11 +371,8 @@ public class SessionManager {
 	 */
 	public Session createNewSession(int ip, int port, int srcIp, int srcPort) throws SessionCreateException {
 		String sessionKey = createKey(ip, port, srcIp, srcPort);
-		boolean found = false;
-		synchronized (syncTable) {
-			found = table.containsKey(sessionKey);
-		}
-		if (found) {
+
+		if (table.containsKey(sessionKey)) {
 			Session session = table.get(sessionKey);
 			session.setAbortingConnection(true);
 			throw new SessionCreateException("Session already exist");
@@ -495,20 +446,15 @@ public class SessionManager {
 
 		session.setSocketchannel(channel);
 
-		synchronized (syncTable) {
-			if (!table.containsKey(sessionKey)) {
-				table.put(sessionKey, session);
-			} else {
-				found = true;
-			}
-		}
-		if (found) {
+		if (table.containsKey(sessionKey)) {
 			try {
 				channel.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			session = null;
+		} else {
+			table.put(sessionKey, session);
 		}
 
 		return session;
