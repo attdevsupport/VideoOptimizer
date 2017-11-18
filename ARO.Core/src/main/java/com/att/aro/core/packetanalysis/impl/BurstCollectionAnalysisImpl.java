@@ -98,7 +98,7 @@ public class BurstCollectionAnalysisImpl implements IBurstCollectionAnalysis {
 			Burst burst = burstCollection.get(i);
 			if (burst.getBurstCategory() == BurstCategory.PERIODICAL) {
 				if (periodicPacketCounter != 0) {
-					time = burst.getBeginTime() - lastPeriodicalBurst.getBeginTime();
+					time = burst.getBeginTime() - ((lastPeriodicalBurst != null) ? lastPeriodicalBurst.getBeginTime() : 0);
 					if (time < minRepeatTime) {
 						minRepeatTime = time;
 						pktId = burst.getFirstUplinkDataPacket();
@@ -109,10 +109,8 @@ public class BurstCollectionAnalysisImpl implements IBurstCollectionAnalysis {
 				}
 				periodicPacketCounter++;
 				lastPeriodicalBurst = burst;
-				
 			}
 		}
-
 		return pktId;
 	}
 	/**
@@ -358,6 +356,9 @@ public class BurstCollectionAnalysisImpl implements IBurstCollectionAnalysis {
 					burst.setBurstInfo(BurstCategory.TCP_LOSS_OR_DUP);
 					continue;
 				}
+			}
+			if(pkt0 == null) {
+				continue;
 			}
 
 			// Step 4: Server delay
@@ -626,7 +627,7 @@ public class BurstCollectionAnalysisImpl implements IBurstCollectionAnalysis {
 			}
 		}
 		
-		if (totLargePkts > 0) {
+		if (totLargePkts > 0 && packetSizeToCountMap != null) {
 			for (Map.Entry<Integer, Integer> entry : packetSizeToCountMap.entrySet()) {
 				Integer keyValuePacketSize = entry.getKey();
 				Integer valueCount = entry.getValue();

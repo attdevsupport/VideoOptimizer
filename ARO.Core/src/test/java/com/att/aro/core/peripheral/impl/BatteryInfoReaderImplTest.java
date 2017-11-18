@@ -15,11 +15,8 @@ import com.att.aro.core.peripheral.IBatteryInfoReader;
 import com.att.aro.core.peripheral.pojo.BatteryInfo;
 
 public class BatteryInfoReaderImplTest extends BaseTest{
-	
 	BatteryInfoReaderImpl batteryreader;
-	
 	private IFileManager filereader;
-	private String traceFolder = "traceFolder";
 
 	@Before
 	public void setup() {

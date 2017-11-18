@@ -75,13 +75,13 @@ public class VideoTcpConnectionImpl implements IBestPractice{
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 
-		VideoUsage videoUsage = tracedata.getVideoUsage();
-		TreeMap<Double, AROManifest> videoEventList = videoUsage.getVideoEventList();
 		int sessionCount = 0;
-		if (videoEventList != null) {
+
+		VideoUsage videoUsage = tracedata.getVideoUsage();
+		if (videoUsage != null) {
 			TreeMap<Session, Integer> uniqSessions = new TreeMap<>();
-			for (AROManifest aroManifest : videoEventList.values()) {
-				if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
+			for (AROManifest aroManifest : videoUsage.getManifests()) {
+				if (aroManifest != null && aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
 					int count = 0;
 					for (VideoEvent videoEvent : aroManifest.getVideoEventList().values()) {
 						if (uniqSessions.containsKey(videoEvent.getSession())) {

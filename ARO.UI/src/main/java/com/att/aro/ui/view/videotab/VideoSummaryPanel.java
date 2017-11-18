@@ -156,7 +156,7 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 		tabPanelCommon.setText(LabelKeys.videoSummary_segmentPacing,
 				MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.seconds"),
 						decimalFormat.format(videoResultSummary.getSegmentPacing()), videoResultSummary.getSegmentPacing() == 1 ? "" : "s"));
-		tabPanelCommon.setText(LabelKeys.videoSummary_redundancy, String.valueOf(videoResultSummary.getRedundancy()));
+		tabPanelCommon.setText(LabelKeys.videoSummary_redundancy, String.format("%.0f", videoResultSummary.getRedundancy()) + "%");
 		tabPanelCommon.setText(LabelKeys.videoSummary_duplicate, String.valueOf(videoResultSummary.getDuplicate()));
 		tabPanelCommon.setText(LabelKeys.videoSummary_concurrentSessions,
 				String.valueOf(videoResultSummary.getConcurrentSessions()));

@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Appender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
@@ -37,6 +38,7 @@ import com.android.ddmlib.IDevice;
 import com.att.aro.console.printstreamutils.ImHereThread;
 import com.att.aro.console.printstreamutils.NullOut;
 import com.att.aro.console.printstreamutils.OutSave;
+import com.att.aro.console.util.ThrottleUtil;
 import com.att.aro.console.util.UtilOut;
 import com.att.aro.core.IAROService;
 import com.att.aro.core.SpringContextUtil;
@@ -79,6 +81,8 @@ public final class Application implements IAROView {
 	ResourceBundle buildBundle = ResourceBundle.getBundle("build");
 	
 	private Application(String[] args) {
+
+		removeStdoutAppender();
 		
 		ApplicationContext context = SpringContextUtil.getInstance().getContext();
 
@@ -151,6 +155,13 @@ public final class Application implements IAROView {
 			restoreSystemOut(outSave);
 		}
 
+	}
+	
+	// Avoid exceptions to be displayed to users in the command prompt
+	private void removeStdoutAppender() {
+		Logger rootLogger = Logger.getRootLogger();
+		Appender appd = rootLogger.getAppender("stdout");
+		rootLogger.removeAppender(appd);
 	}
 
 	private void selectDevice(ApplicationContext context, OutSave outSave) {
@@ -417,7 +428,7 @@ public final class Application implements IAROView {
 				}
 			}
 
-			if (results.isSuccess()) {
+			if (results != null && results.isSuccess()) {
 				outSave = prepareSystemOut();
 				if (cmds.getFormat().equals("json")) {
 					if (serv.getJSonReport(cmds.getOutput(), results)) {
@@ -433,7 +444,7 @@ public final class Application implements IAROView {
 					}
 				}
 			} else {
-				printError(results.getError());
+				printError(results == null ? new ErrorCode() : results.getError());
 			}
 		} finally {
 			imHereThread.endIndicator();
@@ -458,14 +469,17 @@ public final class Application implements IAROView {
 		}
 	}
 	
-	private int getDelayTimeUplink() {
-		return cmds.getUplink();
-	}
+	private int getThrottleUL() {
+		String throttleUL = cmds.getThrottleUL();
+		return ThrottleUtil.getInstance().parseNumCvtUnit(throttleUL);
+ 	}
 	
-	private int getDelayTimeDownlink() {
-		return cmds.getDownlink();
+	private int getThrottleDL() {
+		String throttleDL = cmds.getThrottleDL();
+		return ThrottleUtil.getInstance().parseNumCvtUnit(throttleDL);
 	}
-	
+ 
+
 	private boolean getSecureOption() {
 		return cmds.isSecure();
 	}
@@ -541,11 +555,7 @@ public final class Application implements IAROView {
 					extras.put("installCert", getCertInstallOption());
 				}
 
-				if (cmds.getDeviceid() != null) {
-					result = collector.startCollector(true, cmds.getOutput(), getVideoOption(), false, cmds.getDeviceid(), extras, password);
-				} else {
-					result = collector.startCollector(true, cmds.getOutput(), getVideoOption(), false, null, extras, password);
-				}
+				result = runCommand(cmds, collector, password, extras);
 			} finally {
 				restoreSystemOut(outSave);
 			}
@@ -569,7 +579,8 @@ public final class Application implements IAROView {
 
 				outln("stopping collector...");
 				try {
-					collector.stopCollector();
+					if(collector!= null)
+						collector.stopCollector();
 				} finally {
 					restoreSystemOut(outSave);
 				}
@@ -585,16 +596,37 @@ public final class Application implements IAROView {
 			System.exit(1);
 		}
 	}
+
+	private StatusResult runCommand(Commands cmds, IDataCollector collector, String password,
+			Hashtable<String, Object> extras) {
+		StatusResult result;
+		if (cmds.getDeviceid() != null) {
+			result = collector.startCollector(true, cmds.getOutput(), getVideoOption(), false, cmds.getDeviceid(), extras, password);
+		} else {
+			result = collector.startCollector(true, cmds.getOutput(), getVideoOption(), false, null, extras, password);
+		}
+		return result;
+	}
 	
 	private AttenuatorModel getAttenuateModel() {
 		return getConstantThrottleAttenuateModel();
 	}
 	
+	/**
+	 * if the user set throttle number, VO CLI will enable the throttle option
+	 * @return
+	 */
 	private AttenuatorModel getConstantThrottleAttenuateModel() {
 		AttenuatorModel model = new AttenuatorModel();
 		model.setConstantThrottle(true);
-		model.setDelayUS(getDelayTimeUplink());
-		model.setDelayDS(getDelayTimeDownlink());
+		model.setThrottleUL(getThrottleUL());
+		model.setThrottleDL(getThrottleDL());
+		if(model.getThrottleDL() > -1){
+			model.setThrottleDLEnable(true);
+		}
+		if(model.getThrottleUL() > -1){
+			model.setThrottleULEnable(true);
+		}
 		return model;
 	}
 
@@ -660,8 +692,8 @@ public final class Application implements IAROView {
 						)
 				.append("\n  --secure: optional command to enable secure collector.")
 				.append("\n  --certInstall: optional command to install certificate if secure collector is enabled.")
-				.append("\n  --uplink [number in millisecond]: optional command for uplink delay, range from 0 to 100 millisecond.")
-				.append("\n  --downlink [number in millisecond]: optional command for downlink delay, range from 0 to 2000 millisecond.")
+				.append("\n  --throttleUL [number in kbps/mbps]: optional command for throttle uplink throughput, range from 64k - 100m (102400k).")
+				.append("\n  --throttleDL [number in kbps/mbps]: optional command for throttle downlink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --listcollectors: optional command to list available data collector.")
 				.append("\n  --verbose:  optional command to enables detailed messages for '--analyze' and '--startcollector'")
 				.append("\n  --help,-h,-?: show help menu.")
@@ -677,9 +709,9 @@ public final class Application implements IAROView {
 				.append("\n  --startcollector vpn_android --output /User/documents/test --video slow --secure --certInstall")
 				
 				.append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation applied:")
-				.append("\n    uplink can accept 0 - 100 milliseconds delay")
-				.append("\n    downlink can accept 0 - 2000 milliseconds delay")
-				.append("\n  --startcollector vpn_android --output /User/documents/test --video slow --uplink 55 --downlink 1400")
+				.append("\n    throttle uplink throughput can accept 64k - 100m (102400k)")
+				.append("\n    throttle downlink throughput can accept 64k - 100m (102400k)")
+				.append("\n  --startcollector vpn_android --output /User/documents/test --video slow --throttleUL 2m --throttleDL 64k")
 				
 				.append("\nRun iOS collector to capture trace with video: ")
 				.append("\n    trace will be overwritten if it exits: ")

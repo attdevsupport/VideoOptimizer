@@ -20,7 +20,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
 import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 
 import com.att.aro.ui.commonui.AROMenuAdder;
 import com.att.aro.ui.commonui.BrowserLauncher;

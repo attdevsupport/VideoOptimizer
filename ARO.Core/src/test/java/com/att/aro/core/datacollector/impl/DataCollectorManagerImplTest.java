@@ -27,8 +27,7 @@ public class DataCollectorManagerImplTest extends BaseTest {
 		String[] arr = {"ios"};
 		Mockito.when(context.getBeanNamesForType((Class<?>) Mockito.any())).thenReturn(arr);
 		Mockito.when(context.getBean("ios")).thenReturn(ios);
-		List<IDataCollector> collectors = cmg.getAvailableCollectors(context);
-		//TODO: check size 
+		cmg.getAvailableCollectors(context);
 		IDataCollector res = cmg.getIOSCollector();
 		assertNotNull(res);
 	}

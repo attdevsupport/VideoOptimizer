@@ -48,6 +48,7 @@ import javax.swing.table.TableRowSorter;
 
 import com.att.aro.core.IVideoBestPractices;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.ui.commonui.AROUIManager;
@@ -74,6 +75,10 @@ public class AccordionComponent extends JPanel implements ActionListener {
 	private JScrollPane tableScrollPane;
 	private JPanel titlePanel;
 	private JCheckBox enableCheckBox;
+	private static final int  HEIGHT_MAC = 18;
+	private static final int HEIGHT_LINUX = 23;
+	private static final int HEIGHT_WIN = 28;
+	private int tableHeight = HEIGHT_MAC;
 	
 	public AccordionComponent(AROManifest aroManifest, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute, AROTraceData analyzerResult, SharedAttributesProcesses aroView) {
 		this(true, aroView, aroManifest);
@@ -117,9 +122,9 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		lbl.setFont(new Font("accordionLabel", Font.ITALIC, 12));// AROUIManager.LABEL_FONT);
 		
 		enableCheckBox = new JCheckBox();
-		boolean selected = aroManifest.getVideoEventsBySegment() != null? true:false;		
-		if ((!selected) || aroManifest.getVideoEventsBySegment().isEmpty()
-				|| ((VideoEvent) aroManifest.getVideoEventsBySegment().toArray()[0]).getSegment() < 0) {
+		boolean selected = aroManifest.getVideoEventList() != null? true:false;
+		if ((!selected) || aroManifest.getVideoEventList().isEmpty()
+				|| ((VideoEvent) aroManifest.getVideoEventList().values().toArray()[0]).getSegment() < 0) {
 			enableCheckBox.setEnabled(false);
 		} else {
 			enableCheckBox.setSelected(aroManifest.isSelected());
@@ -161,19 +166,23 @@ public class AccordionComponent extends JPanel implements ActionListener {
 	private IVideoBestPractices videoBestPractices = ContextAware.getAROConfigContext().getBean(IVideoBestPractices.class);
 
 	protected void reAnalyze() {
+		((MainFrame)aroView).getDiagnosticTab().getGraphPanel().refresh(analyzerResult);
 		analyzerResult = videoBestPractices.analyze(analyzerResult);
 		((MainFrame)aroView).getDiagnosticTab().getGraphPanel().setTraceData(analyzerResult);
-		((MainFrame)aroView).getDiagnosticTab().getGraphPanel().refresh(analyzerResult);
 		((MainFrame)aroView).getVideoTab().refreshLocal(analyzerResult);
 	}
 
 	private void updateHiddenPanelContent(boolean manifestFlag) {
 		String text = "";
-
+		if(Util.isWindowsOS()){
+			tableHeight = HEIGHT_WIN;
+		}else if(Util.isLinuxOS()){
+			tableHeight = HEIGHT_LINUX;
+		}
 		if (manifestFlag) {
 			if (aroManifest.getVideoEventsBySegment() != null) {
 				text = (aroManifest.getVideoEventsBySegment().isEmpty()
-						|| ((VideoEvent) aroManifest.getVideoEventsBySegment().toArray()[0]).getSegment() < 0)
+						|| ((VideoEvent) aroManifest.getVideoEventList().values().toArray()[0]).getSegment() < 0)
 								? MessageFormat.format(
 										ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"),
 										aroManifest.getVideoName())
@@ -183,9 +192,9 @@ public class AccordionComponent extends JPanel implements ActionListener {
 				text = MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"),
 						aroManifest.getVideoName());
 			}
-			lbl.setText(text + ", segment count:" + aroManifest.getSegmentEventList().size());
+			lbl.setText(text + ", segment count:" + aroManifest.getVideoEventList().size());
 			hiddenPanel.add(addTable(), new GridBagConstraints(0, 2, 1, 2, 1.0, 1.0, GridBagConstraints.WEST,
-					GridBagConstraints.HORIZONTAL, new Insets(10, 10, 5, 10), 0, 0));
+					GridBagConstraints.BOTH, new Insets(10, 10, 5, 10), 0, 0));
 		}
 	}
 
@@ -198,20 +207,21 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		jTable.setGridColor(Color.LIGHT_GRAY);
 
 		JTableHeader header = jTable.getTableHeader();
+		header.setFont(new Font(Font.SERIF,Font.PLAIN,12));
 		JPanel panel = new JPanel();
 		tableScrollPane = new JScrollPane();
-		tableScrollPane.setMinimumSize(new Dimension(this.getWidth(), 20));
-		if(rowCount>20){
+		tableScrollPane.setMinimumSize(new Dimension(this.getWidth(), tableHeight));
+		if(rowCount>tableHeight){
 			tableScrollPane.setPreferredSize(new Dimension(tableScrollPane.getWidth(),400));
 		}else{
-			tableScrollPane.setPreferredSize(new Dimension(tableScrollPane.getWidth(),jTable.getHeight()+20));
-			tableScrollPane.getBounds().setSize(tableScrollPane.getWidth(), jTable.getHeight()+20);
+			tableScrollPane.setPreferredSize(new Dimension(tableScrollPane.getWidth(),jTable.getHeight()+tableHeight));
+			tableScrollPane.getBounds().setSize(tableScrollPane.getWidth(), jTable.getHeight()+tableHeight);
 		}
 		
 		tableScrollPane.setViewportView(jTable);
 		panel.setLayout(new BorderLayout());
 		panel.add(header, BorderLayout.NORTH);
-		panel.add(tableScrollPane, BorderLayout.CENTER);
+		panel.add(tableScrollPane, BorderLayout.SOUTH); //.CENTER);
 
 		// Sorter for jTable
 		TableRowSorter<TableModel> rowSorter = new TableRowSorter<TableModel>(jTable.getModel());
@@ -227,8 +237,8 @@ public class AccordionComponent extends JPanel implements ActionListener {
 				if (diagnosticsOverviewRoute != null && e.getClickCount() == 2) {
 					if (e.getSource() instanceof JTable) {
 						int selectionIndex = ((JTable) e.getSource()).getSelectedRow();
-						double segmentNo = jTable.getModel().getValueAt(selectionIndex, 0) != null
-								? (Double.parseDouble(jTable.getModel().getValueAt(selectionIndex, 0).toString())) 
+						double segmentNo = jTable.getValueAt(selectionIndex, 0) != null
+								? (Double.parseDouble(jTable.getValueAt(selectionIndex, 0).toString())) 
 								: -1;
 						AccordionTableModel tableModel = (AccordionTableModel) jTable.getModel();
 						BigDecimal segmentNumber = BigDecimal.valueOf(segmentNo);
@@ -256,11 +266,11 @@ public class AccordionComponent extends JPanel implements ActionListener {
 			arrowButton = (BasicArrowButton) e.getSource();
 			if (arrowButton.getDirection() == SwingConstants.EAST) {
 				arrowButton.setDirection(SwingConstants.SOUTH);
-				if(rowCount>20){
+				if(rowCount>tableHeight){
 					tableScrollPane.setPreferredSize(new Dimension(tableScrollPane.getWidth(),400));
 				}else{
-					tableScrollPane.setPreferredSize(new Dimension(tableScrollPane.getWidth(),jTable.getHeight()+20));
-					tableScrollPane.getBounds().setSize(tableScrollPane.getWidth(), jTable.getHeight()+20);
+					tableScrollPane.setPreferredSize(new Dimension(tableScrollPane.getWidth(),jTable.getHeight()+tableHeight));
+					tableScrollPane.getBounds().setSize(tableScrollPane.getWidth(), jTable.getHeight()+tableHeight);
 				}
 				nestedPanel.updateUI();
 

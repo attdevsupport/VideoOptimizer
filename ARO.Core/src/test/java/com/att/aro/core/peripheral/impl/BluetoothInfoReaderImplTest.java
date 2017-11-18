@@ -20,7 +20,6 @@ public class BluetoothInfoReaderImplTest extends BaseTest {
 	BluetoothInfoReaderImpl bluetoothReader;
 	
 	private IFileManager filereader;
-	private String traceFolder = "traceFolder";
 
 	@Before
 	public void setup() {
@@ -287,7 +286,7 @@ public class BluetoothInfoReaderImplTest extends BaseTest {
 		};
 
 		Mockito.when(filereader.readAllLine(Mockito.anyString())).thenReturn(arr);
-		List<BluetoothInfo> bluetoothInfo = bluetoothReader.readData("/", 0, 0);
+		bluetoothReader.readData("/", 0, 0);
 
 		double activeDuration = bluetoothReader.getBluetoothActiveDuration();
 

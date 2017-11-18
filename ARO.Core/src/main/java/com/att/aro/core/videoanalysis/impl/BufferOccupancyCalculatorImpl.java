@@ -46,7 +46,6 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 	private List<VideoEvent> filteredSegmentByLastArrival;
 	private List<VideoEvent> completedDownloads = new ArrayList<>();
 	List<VideoEvent> veCollection = new ArrayList<>();
-	private List<VideoEvent> filteredSegmentByStartTS;
 
 	Map<Integer, String> seriesDataSets = new TreeMap<Integer, String>();
 	int key = 1;
@@ -65,8 +64,7 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 	}
 
 	private void initialize(VideoUsage videoUsage){
-		filteredSegmentByLastArrival = getFilteredSegments();
-		filteredSegmentByStartTS = filterVideoSegment(videoUsage);
+		filteredSegmentByLastArrival = videoUsage.getFilteredSegments();
 	
 		for (AROManifest aroManifest : videoUsage.getManifests()) {
 			if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
@@ -84,10 +82,8 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
     	}
     	Collections.sort(chunkPlay, new VideoEventComparator(SortSelection.SEGMENT));
         Collections.sort(filteredSegmentByLastArrival, new VideoEventComparator(SortSelection.SEGMENT));
-    	veManifestList = getVideoEventManifestMap();
-		
-    	runInit(veManifestList,filteredSegmentByLastArrival);
-
+    	veManifestList = videoUsage.getVideoEventManifestMap();
+    	runInit(videoUsage, veManifestList,filteredSegmentByLastArrival);
     }
     
 	public double getChunkPlayStartTime(VideoEvent chunkPlaying) {
@@ -199,7 +195,7 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 			initialize(videoUsage);
 
 			double bufferFill = 0;
-			for (int index = 0, limit = 0; index < filteredSegmentByLastArrival.size(); index++, limit++) { // chunkPlay.size()
+			for (int index = 0; index < filteredSegmentByLastArrival.size(); index++) { // chunkPlay.size()
 				bufferFill = 0;
 
 				updateUnfinishedDoneVideoEvent();
@@ -235,10 +231,10 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 			}
 		}*/
 		
-		
-		if(PlotHelperAbstract.chunkPlayTimeList != null && !PlotHelperAbstract.chunkPlayTimeList.isEmpty()){
-			if(PlotHelperAbstract.chunkPlayTimeList.keySet().contains(chunkPlaying)){
-				chunkPlayStartTime = PlotHelperAbstract.chunkPlayTimeList.get(chunkPlaying);
+		Map<VideoEvent, Double> chunkPlayTimeList = videoChunkPlotterRef.getVideoUsage().getChunkPlayTimeList();
+		if (chunkPlayTimeList != null && !chunkPlayTimeList.isEmpty()) {
+			if (chunkPlayTimeList.keySet().contains(chunkPlaying)) {
+				chunkPlayStartTime = chunkPlayTimeList.get(chunkPlaying);
 			}else{
 				nonStalled = true;
 			}

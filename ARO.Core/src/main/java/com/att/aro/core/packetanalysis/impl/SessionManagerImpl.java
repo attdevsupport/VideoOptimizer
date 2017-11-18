@@ -57,11 +57,7 @@ import com.att.aro.core.securedpacketreader.pojo.CryptoEnum;
 import com.att.aro.core.securedpacketreader.pojo.MatchedRecord;
 import com.att.aro.core.securedpacketreader.pojo.SavedTLSSession;
 
-/**
- * group packet into session
- * Date: February 5, 2015
- *
- */
+//FIXME LOT OF TODOS IN HERE - RENAMING IT TO FROM TODO to TODOS FOR NOW
 public class SessionManagerImpl implements ISessionManager {
 
 	@InjectLogger
@@ -152,8 +148,7 @@ public class SessionManagerImpl implements ISessionManager {
 		try {
 			reassembleSessions(sessions, upl, dol);
 			logger.debug("creating HttpReqResInfo for sessions: " + sessions.size());
-			analyzeSSLRequestResponseInfo(sessions);
-			// OLD analysismethod analyzeRequestResponseInfo(sessions);
+			analyzeRequestResponseInfo(sessions);
 		} finally {
 			upl.clear();
 			dol.clear();
@@ -186,8 +181,9 @@ public class SessionManagerImpl implements ISessionManager {
 	 * 
 	 * @param sessions
 	 */
+	@SuppressWarnings("unused")
 	private void analyzeSSLRequestResponseInfo(List<Session> sessions) {
-		// TODO refactor this
+		// TODOS refactor this
 		// there is ssl here
 		List<List<BidirDataChunk>> bdcRawList = new ArrayList<List<BidirDataChunk>>();
 		int passIndex = 0;
@@ -245,7 +241,7 @@ public class SessionManagerImpl implements ISessionManager {
 						// TCPPacket tcp = (TCPPacket) packet.getPacket();
 						// if ((tcp.isSsl()) || (tcp.getDestinationPort() ==
 						// 443) || (tcp.getSourcePort() == 443)) {
-						// //TODO find references to the following
+						// //TODOS find references to the following
 						// analysis.setTotalHTTPSAnalyzedBytes(analysis.getTotalHTTPSAnalyzedBytes()
 						// + packet.getLen());
 						// }
@@ -267,10 +263,10 @@ public class SessionManagerImpl implements ISessionManager {
 				analyzeZeroWindow(session);
 				analyzeRecoverPkts(session);
 
-				// TODO Validate TCP info is set on all
+				// TODOS Validate TCP info is set on all
 				// CheckTCPInfo(s);
 
-				// // TODO Check this?
+				// // TODOS Check this?
 				// s.pStorageUL->CheckPacketsRange();
 				// s.pStorageDL->CheckPacketsRange();
 				//
@@ -360,7 +356,7 @@ public class SessionManagerImpl implements ISessionManager {
 			PacketDirection dir = mrList.get(mrListItr).getDir();
 			ByteBuffer pData = ByteBuffer.wrap(getRecord(session, mrList.get(mrListItr)));
 			if (pData == null) {
-				// TODO fix -
+				// TODOS fix -
 				// logger.error(Util.RB.getString("tls.error.ssldata"));
 				logger.warn("tls.error.ssldata");
 				return -1;
@@ -379,7 +375,7 @@ public class SessionManagerImpl implements ISessionManager {
 			{
 				byte recType = pData.get(0);
 				if (checkTLSVersion(pData.array(), 1) == 0) {
-					// TODO fix -
+					// TODOS fix -
 					// logger.error(Util.RB.getString("tls.error.sslversion"));
 					logger.warn("tls.error.sslversion");
 					return -1;
@@ -421,7 +417,7 @@ public class SessionManagerImpl implements ISessionManager {
 						break;
 
 					default:
-						// TODO fix -
+						// TODOS fix -
 						// logger.error(Util.RB.getString(TLS_ERROR_INVALIDPKTDIR));
 						logger.error(TLS_ERROR_INVALIDPKTDIR);
 						return -1;
@@ -463,7 +459,7 @@ public class SessionManagerImpl implements ISessionManager {
 						int resRead = handshake.read(recPayloadtemp, recPayloadLen[0] - handshakeOffset, handshakeSize);
 						if (resRead != 1) {
 							if (resRead == 0) {
-								// TODO fix -
+								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.readhandshake"));
 								logger.warn("tls.error.readhandshake");
 							}
@@ -494,7 +490,7 @@ public class SessionManagerImpl implements ISessionManager {
 									session.setTsTLSHandshakeBegin(
 											packetList.get(tempArray.get(0) - 1).getPacket().getTimeStamp());
 								} else {
-									// TODO fix -
+									// TODOS fix -
 									// logger.error(Util.RB.getString("tls.error.PacketIDList"));
 									logger.warn("tls.error.PacketIDList");
 									return -1;
@@ -536,7 +532,7 @@ public class SessionManagerImpl implements ISessionManager {
 								if (tempArray.size() == 1) {
 									serverHelloTS = packetList.get(tempArray.get(0) - 1).getPacket().getTimeStamp();
 								} else {
-									// TODO fix -
+									// TODOS fix -
 									// logger.error(Util.RB.getString("tls.error.PacketIDList"));
 									logger.error("tls.error.PacketIDList");
 									return -1;
@@ -551,15 +547,15 @@ public class SessionManagerImpl implements ISessionManager {
 							tsiPending
 									.setTLSCipherSuite(cipherDataService.getTLSCipherSuite(handshake.getCipherSuite()));
 							if (tsiPending.getTLSCipherSuite() == null) {
-								// TODO fix -
+								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.keyexchange"));
 								logger.warn("tls.error.keyexchange");
 								return -1;
 							}
-							// TODO: Diffie-Hellman not supported
+							// TODOS: Diffie-Hellman not supported
 							if (tsiPending.getTLSCipherSuite()
 									.getKeyexchange() != CryptoEnum.TLSKeyExchange.TLS_KEY_X_RSA) {
-								// TODO fix -
+								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.onlyRSAsupported"));
 								logger.debug("tls.error.onlyRSAsupported");
 								return -1;
@@ -568,7 +564,7 @@ public class SessionManagerImpl implements ISessionManager {
 							tsiPending.setCipherData(
 									cipherDataService.getTLSCipherData(tsiPending.getTLSCipherSuite().getCipher()));
 							if (tsiPending.getCipherData() == null) {
-								// TODO fix -
+								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.cipherdata"));
 								logger.debug("tls.error.cipherdata");
 								return -1;
@@ -641,7 +637,7 @@ public class SessionManagerImpl implements ISessionManager {
 							int retVal = -1;
 
 							if (serverHelloTS == -1.0 || serverRandom == null) {
-								// TODO fix -
+								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.invalidRecType"));
 								logger.error("tls.error.invalidRecType");
 								return -1;
@@ -658,7 +654,7 @@ public class SessionManagerImpl implements ISessionManager {
 
 							if (retVal == 0) {
 								if (nPass == 2) {
-									// TODO -fix
+									// TODOS -fix
 									// logger.warning(Util.RB.getString("tls.error.masterNotFound"));
 									logger.info("tls.error.masterNotFound");
 								}
@@ -714,7 +710,7 @@ public class SessionManagerImpl implements ISessionManager {
 							}
 
 							default:
-								// TODO fix -
+								// TODOS fix -
 								// logger.error(Util.RB.getString(TLS_ERROR_INVALIDPKTDIR));
 								logger.error(TLS_ERROR_INVALIDPKTDIR);
 								return -1;
@@ -743,7 +739,7 @@ public class SessionManagerImpl implements ISessionManager {
 							// -logger.info(">>>>TLS_HANDSHAKE_CERTIFICATE_REQUEST");
 						case TLS_HANDSHAKE_CERTIFICATE_VERIFY: {
 							// -logger.info(">>>>TLS_HANDSHAKE_CERTIFICATE_VERIFY");
-							// TODO fix -
+							// TODOS fix -
 							// logger.error(Util.RB.getString("tls.error.unsupportedTLSHandshake"));
 							logger.error("tls.error.unsupportedTLSHandshake");
 							return -1;
@@ -752,7 +748,7 @@ public class SessionManagerImpl implements ISessionManager {
 						case TLS_HANDSHAKE_NEW_SESSION_TICKET: {
 							// -logger.info(">>>>TLS_HANDSHAKE_NEW_SESSION_TICKET");
 							if (bServerIssuedTicket != 0 || masterSecret == null) {
-								// TODO fix -
+								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.invalidServerIssuedTicket"));
 								logger.warn("tls.error.invalidServerIssuedTicket");
 								return -1;
@@ -766,7 +762,7 @@ public class SessionManagerImpl implements ISessionManager {
 							bServerIssuedTicket = 1;
 
 							if (masterSecret.length != TLS_MASTER_SECRET_LEN) {
-								// TODO fix -
+								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.incorrectMasterLen"));
 								logger.error("tls.error.incorrectMasterLen");
 								return -1;
@@ -783,7 +779,7 @@ public class SessionManagerImpl implements ISessionManager {
 
 						default:
 							// -logger.info(">>>>TLS_ nothing ... so default");
-							// TODO fix -
+							// TODOS fix -
 							// logger.error(Util.RB.getString("tls.error.invalidHSType"));
 							logger.warn("tls.error.invalidHSType");
 							return -1;
@@ -866,7 +862,7 @@ public class SessionManagerImpl implements ISessionManager {
 						}
 
 						default:
-							// TODO fix -
+							// TODOS fix -
 							// logger.error(Util.RB.getString("tls.error.invalidTLSstate"));
 							logger.error("tls.error.invalidTLSstate");
 							return -1;
@@ -885,7 +881,7 @@ public class SessionManagerImpl implements ISessionManager {
 					}
 
 					default: // dir
-						// TODO fix -
+						// TODOS fix -
 						// logger.error(Util.RB.getString(TLS_ERROR_INVALIDPKTDIR));
 						logger.error(TLS_ERROR_INVALIDPKTDIR);
 						return -1;
@@ -947,7 +943,7 @@ public class SessionManagerImpl implements ISessionManager {
 						break;
 
 					default:
-						// TODO fix -
+						// TODOS fix -
 						// logger.error(Util.RB.getString(TLS_ERROR_INVALIDPKTDIR));
 						logger.error(TLS_ERROR_INVALIDPKTDIR);
 						return -1;
@@ -957,7 +953,7 @@ public class SessionManagerImpl implements ISessionManager {
 
 				case TLS_RECORD_ALERT: {
 					if (recPayloadLen[0] != 2) {
-						// TODO fix -
+						// TODOS fix -
 						// logger.error(Util.RB.getString("tls.error.wrongTLS_AlertSize"));
 						logger.error("tls.error.wrongTLS_AlertSize");
 						return -1;
@@ -967,7 +963,7 @@ public class SessionManagerImpl implements ISessionManager {
 					byte alert = recPayload[1];
 
 					if (alertLevel != ALERT_LEVEL_WARNING && alertLevel != ALERT_LEVEL_FATAL) {
-						// TODO fix -
+						// TODOS fix -
 						// logger.error(Util.RB.getString("tls.error.wrongTLS_AlertLevel"));
 						logger.error("tls.error.wrongTLS_AlertLevel");
 						return -1;
@@ -980,7 +976,7 @@ public class SessionManagerImpl implements ISessionManager {
 							bServerClosed = 1;
 						}
 					} else {
-						// TODO fix -
+						// TODOS fix -
 						// logger.error(Util.RB.getString("tls.error.invalidTLS_Alert"));
 						logger.error("tls.error.invalidTLS_Alert");
 						return -1;
@@ -990,7 +986,7 @@ public class SessionManagerImpl implements ISessionManager {
 				}
 
 				default:
-					// TODO fix -
+					// TODOS fix -
 					// logger.error(Util.RB.getString("tls.error.invalidHSType"));
 					logger.warn("tls.error.invalidHSType");
 					return -1;
@@ -1042,7 +1038,7 @@ public class SessionManagerImpl implements ISessionManager {
 	}
 	// end of parsing
 
-	// TODO generateRecords
+	// TODOS generateRecords
 	private void generateRecords(Session session, int protocol) {
 		logger.info(session.toString());
 		List<MatchedRecord> mrList = session.getMrList();
@@ -1072,7 +1068,7 @@ public class SessionManagerImpl implements ISessionManager {
 		checkCompleteness(session, protocol, 0, upls - 1, PacketDirection.UPLINK);
 		checkCompleteness(session, protocol, upls, dnls - 1, PacketDirection.DOWNLINK);
 		Collections.sort(mrList);
-		// TODO verify mrList
+		// TODOS verify mrList
 
 	}
 
@@ -1519,11 +1515,16 @@ public class SessionManagerImpl implements ISessionManager {
 			// "+pSes.getPackets().size());
 			PacketInfo lastPacket = null;
 			for (PacketInfo packetInfo : pSes.getPackets()) {
+				TCPPacket pac = (TCPPacket) packetInfo.getPacket();
+				if(pac.isDecrypted()) {
+					pSes.setDecrypted(true);
+				}
+			}
+			for (PacketInfo packetInfo : pSes.getPackets()) {
 
 				TCPPacket pac = (TCPPacket) packetInfo.getPacket();
 
 				pSes.setSsl(pac.isSsl());
-
 				Reassembler reassembledSession;
 				switch (packetInfo.getDir()) {
 				case UPLINK:
@@ -1612,8 +1613,6 @@ public class SessionManagerImpl implements ISessionManager {
 				String appName = packetInfo.getAppName();
 				if (appName != null) {
 					pSes.getAppNames().add(appName);
-					assert (pSes.getAppNames().size() <= 1) : pSes.getAppNames().size() + " app names per TCP session: "
-							+ pSes.getAppNames();
 				}
 
 				long seqn = pac.getSequenceNumber() - reassembledSession.getBaseSeq();
@@ -1676,6 +1675,9 @@ public class SessionManagerImpl implements ISessionManager {
 					// -logger.info(" f "+reassembledSession);
 
 				} else { // out of order packet, i_temp.e., seq != *XLseq
+					if(pac.isDecrypted()) {
+						reassembledSession = reAssembleSession(pac, packetInfo, reassembledSession, pSes);
+					}
 					if (pac.getPayloadLen() == 0 && seqn == reassembledSession.getSeq() - 1 && pac.isACK()
 							&& !pac.isSYN() && !pac.isFIN() && !pac.isRST()) {
 						packetInfo.setTcpInfo(TcpInfo.TCP_KEEP_ALIVE);
@@ -1715,14 +1717,11 @@ public class SessionManagerImpl implements ISessionManager {
 		logger.debug("looping thru packets info list, total packets: " + (packets != null ? packets.size() : "null"));
 
 		if (packets != null) {
-
 			for (PacketInfo packet : packets) {
-
 				/**
-				 * Save DNS packets
+				 * Save DNS packets for the later verifying Domain name 
 				 */
 				if (!(packet.getPacket() instanceof TCPPacket)) {
-
 					// Check for DNS packets
 					if (packet.getPacket() instanceof UDPPacket) {
 						UDPPacket udp = (UDPPacket) packet.getPacket();
@@ -1819,10 +1818,8 @@ public class SessionManagerImpl implements ISessionManager {
 									session.setDnsRequestPacket(pac);
 								}
 
-								// Remove from DNS packets so that it is not
-								// used again
+								// Remove from DNS packets so that it is not used again
 								iter.remove();
-
 								// Stop processing once response is reached
 								if (pac == session.getDnsResponsePacket()) {
 									break;
@@ -1852,16 +1849,28 @@ public class SessionManagerImpl implements ISessionManager {
 			int effectivePayloadLen = pac.getPayloadLen();
 			int dataOffset = pac.getDataOffset();
 
-			if (data.length >= dataOffset + effectivePayloadLen) {
+			if (data.length >= dataOffset + effectivePayloadLen || pac.isDecrypted()) {
 				reAsmSession.getPacketOffsets().put(reAsmSession.getStorage().size(), packetInfo);
-				reAsmSession.getStorage().write(data, dataOffset, effectivePayloadLen);
+				if(session.isDecrypted()) {
+					if(pac.isDecrypted()) {
+						reAsmSession.getStorage().write(data, 0, data.length);
+					}
+				} else {
+					reAsmSession.getStorage().write(data, dataOffset, effectivePayloadLen);
+				}
 				int offset = reAsmSession.getStorage().size() - effectivePayloadLen;
 				if (reAsmSession.getPktRanges().size() == 0) {
 					offset = 0;
 				}
 				reAsmSession.getPktRanges()
 						.add(new PacketRangeInStorage(offset, effectivePayloadLen, packetInfo.getPacketId()));
-				session.getpStorageBothRAW().getStorage().write(data, dataOffset, effectivePayloadLen);
+				if (session.isDecrypted()) {
+					if(pac.isDecrypted()) {
+						session.getpStorageBothRAW().getStorage().write(data, 0, data.length);
+					}
+				} else {
+					session.getpStorageBothRAW().getStorage().write(data, dataOffset, effectivePayloadLen);
+				}
 
 				// -logger.info("packet: " + packetInfo.getTimeStamp());
 				updateBDC(session, packetInfo.getDir(), effectivePayloadLen);
@@ -1887,17 +1896,16 @@ public class SessionManagerImpl implements ISessionManager {
 
 		if (!bdcRaw.isEmpty()) {
 			back = bdcRaw.get(bdcRawSize - 1);
-		}
-
-		if (bdcRaw.isEmpty() || back.getDirection() != dir) {
-			BidirDataChunk dataChunk = new BidirDataChunk();
-			dataChunk.setnBytes(payloadLen);
-			dataChunk.setDirection(dir);
-			dataChunk.setnPrevBytes(bdcRaw.isEmpty() ? 0 : (back.getnPrevBytes() + back.getnBytes()));
-			// -logger.info("add Session:" + session.getSessionStartTime());
-			bdcRaw.add(dataChunk);
-		} else {
-			back.setnBytes(back.getnBytes() + payloadLen);
+			if (bdcRaw.isEmpty() || back.getDirection() != dir) {
+				BidirDataChunk dataChunk = new BidirDataChunk();
+				dataChunk.setnBytes(payloadLen);
+				dataChunk.setDirection(dir);
+				dataChunk.setnPrevBytes(bdcRaw.isEmpty() ? 0 : (back.getnPrevBytes() + back.getnBytes()));
+				// -logger.info("add Session:" + session.getSessionStartTime());
+				bdcRaw.add(dataChunk);
+			} else {
+				back.setnBytes(back.getnBytes() + payloadLen);
+			}
 		}
 	}
 
@@ -1962,7 +1970,6 @@ public class SessionManagerImpl implements ISessionManager {
 			}
 			long key = ((ackNum << 32) | tcpFlag);
 
-			// TODO Verify change in asserts ie getTCP!=null is ok
 			int payloadLen = pack.getPayloadLen();
 			if (pAliveAck2.contains(ackNum - 1) && payloadLen == 0 && !pack.isSYN() && !pack.isFIN() && !pack.isRST()) {
 				if (pinfo.getTcpInfo() != null) {
@@ -2095,50 +2102,17 @@ public class SessionManagerImpl implements ISessionManager {
 	}
 
 	/**
-	 * Get the UDP sessions from different UDP packets.
+	 * Get the UDP sessions include from DNS server.
 	 * 
-	 * @return Collection of TCPSession objects containing only UDP packets
+	 * @return Collection of UDP sessions
 	 */
 	private List<Session> getUDPSessions(List<PacketInfo> udpPackets, List<Session> sessions) throws IOException {
 
 		Map<String, Session> allUDPSessions = new LinkedHashMap<String, Session>();
-		ListIterator<PacketInfo> iter = null;// =
-												// udpPackets.listIterator();//(udpPackets.size());
 		DomainNameSystem dns = null;
 		Reassembler rAssemblerUL = new Reassembler();
 		Reassembler rAssemblerDL = new Reassembler();
 
-		/* Remove all the dns packets part of TCP connections */
-		for (Session sess : sessions) {
-			iter = udpPackets.listIterator();
-			while (iter.hasNext()) {
-				PacketInfo pInfo = iter.next();
-				UDPPacket udp = ((UDPPacket) pInfo.getPacket());
-				if (udp.isDNSPacket()) {
-					dns = udp.getDns();
-					if (dns != null) {
-						if (!dns.isResponse()) {
-							if (sess.getDnsRequestPacket() != null) {
-								String domainName = ((UDPPacket) sess.getDnsRequestPacket().getPacket()).getDns()
-										.getDomainName();
-								if (domainName.equals(dns.getDomainName())) {
-									iter.remove();
-								}
-							}
-						} else {
-							if (sess.getDnsResponsePacket() != null) {
-								String domainName = ((UDPPacket) sess.getDnsResponsePacket().getPacket()).getDns()
-										.getDomainName();
-								if (domainName.equals(dns.getDomainName())
-										&& (dns.getIpAddresses().contains(sess.getRemoteIP()))) {
-									iter.remove();
-								}
-							}
-						}
-					}
-				}
-			}
-		}
 		/*
 		 * Create a UDP session for those UDP packets which are not associated
 		 * with TCP connection
@@ -2184,7 +2158,7 @@ public class SessionManagerImpl implements ISessionManager {
 			} // END: Create new session
 			session.getUDPPackets().add(packet);
 		}
-
+		
 		List<Session> udpSessions = new ArrayList<Session>(allUDPSessions.values());
 
 		try{

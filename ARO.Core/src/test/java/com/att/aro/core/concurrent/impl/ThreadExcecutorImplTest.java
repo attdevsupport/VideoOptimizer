@@ -1,7 +1,6 @@
 package com.att.aro.core.concurrent.impl;
 
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -25,17 +24,11 @@ public class ThreadExcecutorImplTest extends BaseTest {
 	@Test
 	public void executeFuture() throws InterruptedException, ExecutionException{
 		MyWorker worker = new MyWorker();
-		Future<?> result = exec.executeFuture(worker);
+		exec.executeFuture(worker);
 	}
 	private class MyWorker implements Runnable{
-
-		boolean finished = false;
 		@Override
 		public void run() {
-			this.finished = true;
-		}
-		public boolean isFinished(){
-			return finished;
 		}
 	}
 }

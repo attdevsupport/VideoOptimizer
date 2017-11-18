@@ -21,16 +21,16 @@ import java.util.TreeMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.IVideoUsageAnalysis;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.videoanalysis.IVideoTabHelper;
-import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 
 public class VideoTabHelperImpl implements IVideoTabHelper{
 
 	@Autowired
 	private IVideoUsageAnalysis videoUsageImpl;
-	
+		
 	@Override
 	public TreeMap<Double, HttpRequestResponseInfo> getRequestListMap(){
 		if(videoUsageImpl.getVideoUsage() == null) {
@@ -47,11 +47,13 @@ public class VideoTabHelperImpl implements IVideoTabHelper{
 	}
 	
 	@Override
-	public boolean isStartUpDelaySet(){
-		if(PlotHelperAbstract.chunkPlayTimeList.size() == 0){
-			return false;
+	public boolean isStartUpDelaySet() {
+		boolean result = false;
+		if (videoUsageImpl != null && videoUsageImpl.getVideoUsage() != null) {
+			VideoUsage videousage = videoUsageImpl.getVideoUsage();
+			result = ((!videousage.getChunkPlayTimeList().isEmpty()) ? true : false);
 		}
-		return true;
+		return result;
 	}
 }
 

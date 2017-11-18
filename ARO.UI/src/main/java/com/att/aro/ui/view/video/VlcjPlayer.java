@@ -254,7 +254,9 @@ public class VlcjPlayer implements IVideoPlayer {
 	        if (disableOverlay()) {
 	        	
 	        	 mediaPlayerComponent = new EmbeddedMediaPlayerComponent() {
-	             	protected String[] onGetMediaPlayerFactoryArgs() {
+					private static final long serialVersionUID = 1L;
+
+					protected String[] onGetMediaPlayerFactoryArgs() {
 	             		return MEDIA_PLAYER_FACTORY_ARGS;
 	             	}
 	             };
@@ -550,7 +552,7 @@ public class VlcjPlayer implements IVideoPlayer {
         	videoOptions = "start-time=" + String.valueOf(beginTime);
         }
         
-        if(VideoUtil.isVideoLandscape(traceResult.getTraceDirectory())) {
+        if(VideoUtil.isVideoLandscape(traceResult) ){
         	playerContentWidth = VideoUtil.PLAYER_CONTENT_WIDTH_LANDSCAPE;
         	playerContentHeight = VideoUtil.PLAYER_CONTENT_HEIGHT_LANDSCAPE;
         } else {
@@ -579,6 +581,7 @@ public class VlcjPlayer implements IVideoPlayer {
 		 */
 		slider.setMaximum((int) (duration*FRAME_RATE)); 
 	}
+	
 
 	@Override
 	public void notifyLauncher(boolean enabled) {

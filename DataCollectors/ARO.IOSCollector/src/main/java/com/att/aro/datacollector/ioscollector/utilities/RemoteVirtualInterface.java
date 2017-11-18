@@ -23,13 +23,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
-import com.att.aro.datacollector.ioscollector.reader.ExternalTcpdumpExecutor;
+import com.att.aro.datacollector.ioscollector.reader.ExternalDumpcapExecutor;
 import com.att.aro.datacollector.ioscollector.reader.PcapHelper;
 
 /**
  * For Mac OS machine. This class start/stop Remote Virtual Interface. It also
- * start tcpdump which is capturing packet and save it as .pcap file. This class
- * require Sudo password to perform tcpdump command.
+ * start dumpcap which is capturing packet and save it as .pcap file. This class
+ * require Sudo password to perform dumpcap command.
  */
 public class RemoteVirtualInterface {
 	private ILogger log = new LoggerImpl("IOSCollector");
@@ -42,7 +42,7 @@ public class RemoteVirtualInterface {
 	Date stopDate;
 	String pcapfilepath;
 	PcapHelper pcaphelp = null;
-	ExternalTcpdumpExecutor tcpdumpExecutor;
+	ExternalDumpcapExecutor dumpcapExecutor;
 	int totalPacketCaptured = 0;
 	String errorMsg;
 	volatile boolean hasSetup = false;
@@ -77,7 +77,7 @@ public class RemoteVirtualInterface {
 
 	/**
 	 * <pre>
-	 * Start Remote Virtual Interface (RVI), which is required before tcpdump
+	 * Start Remote Virtual Interface (RVI), which is required before dumpcap
 	 * can capture packet in device. 
 	 * 
 	 * sequence:
@@ -209,42 +209,42 @@ public class RemoteVirtualInterface {
 	}
 
 	/**
-	 * start new tcpdump command in background thread
+	 * start new dumpcap command in background thread
 	 * 
 	 * @throws Exception
 	 */
 	public void startCapture() throws Exception {
 		
-		log.info("********** Starting tcpdump... **********");
+		log.info("********** Starting dumpcap... **********");
 		
 		startDate = new Date();
 		initDate = startDate;
 		startCaptureDate = startDate;
 		
-		tcpdumpExecutor = new ExternalTcpdumpExecutor(this.pcapfilepath, sudoPassword, this.runner);
-		tcpdumpExecutor.start();
+		dumpcapExecutor = new ExternalDumpcapExecutor(this.pcapfilepath, sudoPassword, this.runner);
+		dumpcapExecutor.start();
 		
 		log.info("************  Tcpdump started in background. ****************");
 	}
 
 	/**
-	 * stop background thread that run tcpdump and destroy thread
+	 * stop background thread that run dumpcap and destroy thread
 	 */
 	public void stopCapture() {
 		
-		log.info("********** Stop tcpdump... **********");
+		log.info("********** Stop dumpcap... **********");
 
-		if (tcpdumpExecutor != null) {
+		if (dumpcapExecutor != null) {
 			try {
-				tcpdumpExecutor.stopTcpdump();
+				dumpcapExecutor.stopTshark();
 				stopDate = new Date();
-				this.totalPacketCaptured = tcpdumpExecutor.getTotalPacketCaptured();
-				tcpdumpExecutor.interrupt();
+				this.totalPacketCaptured = dumpcapExecutor.getTotalPacketCaptured();
+				dumpcapExecutor.interrupt();
 			} catch (Exception ex) {
 			}
-			tcpdumpExecutor = null;
+			dumpcapExecutor = null;
 
-			log.info("destroyed tcpdump executor thread");
+			log.info("destroyed dumpcap executor thread");
 
 			if (this.totalPacketCaptured > 0) {
 				Date dt = pcaphelp.getFirstPacketDate(this.pcapfilepath);

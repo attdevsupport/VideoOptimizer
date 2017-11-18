@@ -27,13 +27,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.UIManager;
+
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.AROUIManager;
@@ -44,19 +45,8 @@ import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-/**
- *
- *
- */
 public abstract class AbstractBpDetailTablePanel extends TabPanelJPanel implements IAROExpandable, MouseListener {
-//	private static final Logger logger = Logger.getLogger(AbstractBpDetailTablePanel.class.getName()); 
-
-	@Override
-	public void refresh(AROTraceData analyzerResult) {
-		// TODO Auto-generated method stub
-		
-	}
-
+	private static final Logger LOGGER = Logger.getLogger(AbstractBpDetailTablePanel.class.getName()); 
 	private static final long serialVersionUID = 1L;
 
 	final static int ROW_HEIGHT = 20;
@@ -67,19 +57,15 @@ public abstract class AbstractBpDetailTablePanel extends TabPanelJPanel implemen
 
 	private JButton zoomBtn;
 	private IARODiagnosticsOverviewRoute diagnosticsOverviewRoute;
-	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+	private JPanel contentPanel;
+	private JScrollPane scrollPane;
 
 	@SuppressWarnings("rawtypes")
 	DataTableModel tableModel;
 	@SuppressWarnings("rawtypes")
 	DataTable contentTable;
-	
-	int noOfRecords;
-
-	private JPanel contentPanel;
-
-	private JScrollPane scrollPane;
-	
+		
 	public AbstractBpDetailTablePanel() {
 		initTableModel();
 		setLayout(new BorderLayout());
@@ -98,13 +84,9 @@ public abstract class AbstractBpDetailTablePanel extends TabPanelJPanel implemen
 
 	@Override
 	public JPanel layoutDataPanel() {
-		
-		JPanel layout = new JPanel();
-		
+		JPanel layout = new JPanel();		
 		layout.setLayout(new BorderLayout());
-		
-		layout.add(getContentPanel(), BorderLayout.CENTER);
-		
+		layout.add(getContentPanel(), BorderLayout.CENTER);		
 		JPanel contentPanelWidth = new JPanel(new GridLayout(2, 1, 5, 5));
 		JPanel contentPanelWidthAdjust = new JPanel(new GridBagLayout());
 		contentPanelWidthAdjust.add(contentPanelWidth
@@ -137,16 +119,11 @@ public abstract class AbstractBpDetailTablePanel extends TabPanelJPanel implemen
 	 * Returns the panel that contains the view and save button.
 	 */
 	private JPanel getButtonsPanel() {
-
 		JPanel bpButtonPanel = new JPanel(new GridBagLayout());
-
-		JPanel panel = new JPanel(new GridLayout(2, 1, 5, 5));
-		
+		JPanel panel = new JPanel(new GridLayout(2, 1, 5, 5));		
 		panel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-		bpButtonPanel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-		
+		bpButtonPanel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));		
 		panel.add(getZoomBtn());
-
 		bpButtonPanel.add(panel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
 
 		return bpButtonPanel;
@@ -156,7 +133,6 @@ public abstract class AbstractBpDetailTablePanel extends TabPanelJPanel implemen
 	 * Returns the zoom button.
 	 */
 	private JButton getZoomBtn() {
-		//TODO		
 		zoomBtn = new JButton(zoomOut);
 		zoomBtn.setEnabled(false);
 		zoomBtn.addActionListener(new ActionListener() {
@@ -173,13 +149,9 @@ public abstract class AbstractBpDetailTablePanel extends TabPanelJPanel implemen
 			}
 
 		});
-
 		return zoomBtn;
 	}
 	
-	/**
-	 * 
-	 */
 	void autoSetZoomBtn(){
 		if (tableModel.getRowCount() > MINIMUM_ROWS) {
 			zoomBtn.setEnabled(tableModel.getRowCount() > MINIMUM_ROWS);
@@ -234,18 +206,19 @@ public abstract class AbstractBpDetailTablePanel extends TabPanelJPanel implemen
 	}
 
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void mousePressed(MouseEvent event) {
 		if (diagnosticsOverviewRoute != null && event.getClickCount() == 2) {
  			if (event.getSource() instanceof JTable){
-				int selectionIndex = ((JTable)event.getSource()).getSelectedRow();
-				int original = ((JTable)event.getSource()).convertRowIndexToModel(selectionIndex);
-//				logger.info("BP selectionIndex: "+ selectionIndex);
-//				logger.info("Table Model: "+ tableModel);
-				if(selectionIndex > -1){
-					diagnosticsOverviewRoute.route(tableModel,
-							tableModel.getValueAt(original));
+				JTable table = (JTable)event.getSource();
+				int selectionIndex = table.getSelectedRow();
+				if (selectionIndex < 0 || selectionIndex >= table.getRowCount()) {
+					LOGGER.warn("Can't process Event:\nSelected Row:" + selectionIndex);
+					return;
 				}
+				int original = table.convertRowIndexToModel(selectionIndex);
+				diagnosticsOverviewRoute.route(tableModel, tableModel.getValueAt(original));
 			}
 		}
 	}
@@ -260,6 +233,9 @@ public abstract class AbstractBpDetailTablePanel extends TabPanelJPanel implemen
 	}
 	@Override
 	public void mouseExited(MouseEvent event) {
+	}
+	@Override
+	public void refresh(AROTraceData analyzerResult) {	
 	}
 
 }

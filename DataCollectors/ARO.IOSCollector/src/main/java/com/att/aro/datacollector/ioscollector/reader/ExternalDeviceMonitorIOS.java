@@ -56,10 +56,9 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
 	}
 
 	public void clearExe() {
-		String response = null;
 		try {
 			String[] cmd = {"bash", "-c", "fuser -f "+exepath+"|xargs kill"};
-			response = runner.runCmd(cmd);
+			runner.runCmd(cmd);
 		} catch (IOException e) {
 			log.error("IOException", e);
 		}

@@ -19,58 +19,38 @@
 		</license>
 	</licenses>
 	<repositories>
-
- 
-	<repository>
-		<id>java-net</id>
-		<name>Java Net</name>
-		<url>https://maven.java.net/content/repositories/public/</url>
-	</repository>
-	<repository>
-		<id>codehaus-snapshots</id>
-		<name>Codehause Snapshots</name>
-		<url>https://repository-master.mulesoft.org/nexus/content/groups/public/</url>
-	</repository>
-
-	<repository>
-		<id>central</id>
-		<name>Central Repository</name>
-		<url>http://repo.maven.apache.org/maven2</url>
-	</repository>
-	<repository>
-		<id>apache-snapshots</id>
-		<name>Apache Snapshot</name>
-                <url>https://repository.apache.org/content/repositories/snapshots</url>
-		<releases>
-                	<enabled>false</enabled>
-            	</releases>
-            	<snapshots>
+		<repository>
+			<id>central</id>
+			<name>MavenCentral Repository</name>
+			<url>http://repo1.maven.org/maven2</url>
+		</repository>
+		<repository>
+			<id>apache-snapshots</id>
+			<name>Apache Snapshots</name>
+            <url>https://repository.apache.org/content/repositories/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
                 <enabled>true</enabled>
-           	 </snapshots>
-	</repository>
-	<repository>
-		<id>sonatype</id>
-		<name>Sonatype</name>
-		<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-	</repository>
-	<repository>
-		<id>sonatype-flex</id>
-		<name>Sonatype Flex</name>
-		<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-	</repository>
-</repositories>
+            </snapshots>
+		</repository>
+		<repository>
+			<id>sonatype-public</id>
+			<name>Sonatype Public</name>
+			<url>http://repository.sonatype.org/content/groups/public</url>
+		</repository>
+		<repository>
+			<id>sonatype-flex</id>
+			<name>Sonatype Flex</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</repository>
+	</repositories>
 	<pluginRepositories>
 		<pluginRepository>
 			<id>central</id>
-			<name>Maven Plugin Repository</name>
+			<name>MavenCentral Repository</name>
 			<url>http://repo1.maven.org/maven2</url>
-			<layout>default</layout>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<releases>
-				<updatePolicy>never</updatePolicy>
-			</releases>
 		</pluginRepository>
 	</pluginRepositories>
 	<dependencies>
@@ -78,14 +58,7 @@
 			<groupId>com.att.aro</groupId>
 			<artifactId>aro-core</artifactId>
 			<version>6.0.0-SNAPSHOT</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.luciad.imageio</groupId>
-					<artifactId>web-imageio</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
-
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
@@ -119,14 +92,13 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.codehaus.mojo</groupId>
-			<artifactId>findbugs-maven-plugin</artifactId>
-			<version>3.0.4</version>
+		    <groupId>org.codehaus.mojo</groupId>
+		    <artifactId>findbugs-maven-plugin</artifactId>
+		    <version>3.0.4</version>
 		</dependency>
 	</dependencies>
-
-
-	<build>
+ 
+ 	<build>
 		<plugins>
 			<!-- compile to 1.8 -->
 			<plugin>
@@ -154,27 +126,27 @@
 				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>3.0.4</version>
-				<configuration>
-					<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
-					<effort>Max</effort>
-					<threshold>Max</threshold>
-					<maxRank>15</maxRank>
-					<xmlOutput>true</xmlOutput>
-					<findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-				</configuration>
-				<executions>
-					<execution>
-						<id>analyze-compile</id>
-						<!-- <phase>compile</phase> -->
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+	            <groupId>org.codehaus.mojo</groupId>
+	            <artifactId>findbugs-maven-plugin</artifactId>
+	            <version>3.0.4</version>
+	            <configuration>
+	            	<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
+	                <effort>Max</effort>
+	                <threshold>Max</threshold>
+	                <maxRank>15</maxRank>
+	                <xmlOutput>true</xmlOutput>
+	                <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+	            </configuration>
+	            <executions>
+	                <execution>
+	                    <id>analyze-compile</id>
+	                    <!-- <phase>compile</phase> -->
+	                    <goals>
+	                        <goal>check</goal>
+	                    </goals>
+	                </execution>
+	            </executions>
+	        </plugin>
 			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
@@ -201,8 +173,6 @@
 					</dependency>
 				</dependencies>
 			</plugin>
-
-
 		</plugins>
 	</build>
 	<reporting>

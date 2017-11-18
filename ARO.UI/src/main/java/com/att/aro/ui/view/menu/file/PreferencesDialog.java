@@ -15,6 +15,7 @@
 */
 package com.att.aro.ui.view.menu.file;
 
+import static com.att.aro.ui.view.menu.file.PreferencesDialog.ConfigType.COMBO;
 import static com.att.aro.ui.view.menu.file.PreferencesDialog.ConfigType.FILE;
 import static com.att.aro.ui.view.menu.file.PreferencesDialog.ConfigType.TEXT;
 import static javax.swing.BoxLayout.LINE_AXIS;
@@ -35,10 +36,12 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -48,6 +51,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
@@ -62,6 +66,7 @@ import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 
@@ -86,15 +91,16 @@ public class PreferencesDialog extends JDialog {
 	private final SharedAttributesProcesses parent;
 	private final JMenuItem callerMenuItem;
 	private Map<Config, String> updates = new HashMap<>();
+	String logginglevel = "ERROR";
 
 	private Settings settings = SettingsImpl.getInstance();
-
+	
 	/**
 	 * Type of configuration This is used to provide appropriate method for
 	 * displaying configuration
 	 */
 	enum ConfigType {
-		TEXT, NUMBER, FILE
+		TEXT, NUMBER, FILE,COMBO
 	}
 
 	/**
@@ -102,14 +108,33 @@ public class PreferencesDialog extends JDialog {
 	 * to be displayed on the preferences dialog
 	 */
 	enum Config {
-		MEM("Xmx", "Max heap in MB", TEXT, JvmSettings.getInstance(), isHeapEnabled()), ADB("adb", "Adb Path", FILE,
-				SettingsImpl.getInstance(), true);
+		MEM("Xmx", "Max heap in MB", TEXT, JvmSettings.getInstance(), isHeapEnabled()), 
+		ADB("adb", "Adb Path", FILE, SettingsImpl.getInstance(), true),
+		DUMP_CAP("dumpCap", "Dumpcap Path", FILE, SettingsImpl.getInstance(), Util.isMacOS(), null, ()->Util.getDumpCap()),
+		IDEVICE_SCREENSHOT("iDeviceScreenshot", "iDeviceScreenshot Path", FILE, SettingsImpl.getInstance(),
+				Util.isMacOS(), null, () -> Util.getIdeviceScreenshot()),
+		FFMPEG("ffmpeg", "FFMpeg Path", FILE, SettingsImpl.getInstance(), true, null, () -> Util.getFFMPEG()),
+		FFPROBE("ffprobe", "FFProbe Path", FILE, SettingsImpl.getInstance(), true, null, () -> Util.getFFPROBE()),
+		IOS_PROV("iosProv", "iOS Provisioning Profile", FILE, SettingsImpl.getInstance(), isEnvDev() & Util.isMacOS()),
+		IOS_CERT("iosCert", "iOS Certificate", TEXT, SettingsImpl.getInstance(), isEnvDev() & Util.isMacOS(), 
+				ResourceBundleHelper.getMessageString("preferences.iosCert.textField.hint"), null),
+		LOG_LVL("logging", "Logging Level", COMBO, SettingsImpl.getInstance(),true,ResourceBundleHelper.getMessageString("preferences.logging.dropdown.values"));
+		
 
 		private String name;
 		private String desc;
 		private ConfigType type;
 		private Settings settings;
 		private Boolean enabled;
+		private String hint; // tool tip text for JTextField
+		private Supplier<String> defValue;
+		private String comboValues;
+
+		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled, String hint, Supplier<String> defValue) {
+			this(name, desc, type, settings, enabled);
+			this.hint = hint;
+			this.defValue = defValue;
+		}
 
 		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled) {
 			this.name = name;
@@ -117,6 +142,11 @@ public class PreferencesDialog extends JDialog {
 			this.type = type;
 			this.settings = settings;
 			this.enabled = enabled;
+		}
+		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled, String comboValues) {
+			this(name, desc, type, settings, enabled);
+			this.comboValues = comboValues;
+			
 		}
 
 		public String getName() {
@@ -138,14 +168,30 @@ public class PreferencesDialog extends JDialog {
 		public Boolean isEnabled() {
 			return enabled;
 		}
+		
+		public String getHint() {
+			return hint;
+		}
+			
+		public String getDefValue() {
+			return defValue != null ? defValue.get() : null;
+		}
+
+		public String getComboValues() {
+			return comboValues;
+		}
 
 		private static boolean isHeapEnabled() {
 			boolean isLinuxOrWin32 = Util.isWindows32OS() || Util.isLinuxOS();
 			boolean isMoreThan4GB = ((JvmSettings)JvmSettings.getInstance()).getSystemMemory() > 4096;
 			return !isLinuxOrWin32 && isMoreThan4GB;
 		}
+		
+		private static boolean isEnvDev() {
+			return SettingsImpl.getInstance().checkAttributeValue("env", "dev");
+		}
 	}
-
+	
 	public PreferencesDialog(SharedAttributesProcesses parent, JMenuItem callerMenuItem) {
 		super(parent.getFrame());
 		this.parent = parent;
@@ -179,8 +225,9 @@ public class PreferencesDialog extends JDialog {
 			jContentPane.setLayout(new BorderLayout());
 
 			JTabbedPane tabbedPane = new JTabbedPane();
-			tabbedPane.addTab("General", getGeneralTab());
-			tabbedPane.addTab("Best Practices", BPSelectionPanel.getBPPanel());
+			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.general.tabtile"), getGeneralTab());
+			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.bestpractice.tabtile"), BPSelectionPanel.getBPPanel());
+			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.video.tabtitle"), BPVideoPassFailPanel.getBPPanel());
 			this.addComponentListener(new ComponentListener() {
 				@Override
 				public void componentResized(ComponentEvent e) {
@@ -248,17 +295,20 @@ public class PreferencesDialog extends JDialog {
 			optionsPanel = new JPanel();
 			optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.PAGE_AXIS));
 			optionsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-			Arrays.asList(Config.values()).stream().forEach(config -> optionsPanel.add(getConfigCombo(config)));
+			Arrays.asList(Config.values()).stream().filter(config -> config.isEnabled())
+			.forEach(config -> optionsPanel.add(getConfigCombo(config)));
 		}
 		return optionsPanel;
 	}
 
+	
 	/* Gets a combination of label and update/set a configuration value */
 	private Component getConfigCombo(final Config config) {
 		JPanel configCombo = new JPanel();
 		configCombo.setLayout(new BoxLayout(configCombo, LINE_AXIS));
 		configCombo.setAlignmentX(RIGHT_ALIGNMENT);
 		JLabel key = new JLabel(config.getDesc());
+		key.setBorder(new EmptyBorder(0, 0, 0, 5));
 		configCombo.add(key);
 		configCombo.setEnabled(config.isEnabled());
 		configCombo.add(getValuePanel(config));
@@ -281,8 +331,25 @@ public class PreferencesDialog extends JDialog {
 			btnBrowse.addActionListener((ActionEvent e) -> setPathTextField(textField));
 			panel.add(textField);
 			panel.add(btnBrowse);
+		} else if (config.getConfigType() == ConfigType.COMBO) {
+			JComboBox<String> comboBox = new JComboBox<>(getComboValue(config));
+			comboBox.addActionListener((ActionEvent e) -> setLoggingLvl((String) comboBox.getSelectedItem()));
+			comboBox.setSelectedItem(Util.getLoggingLevel());
+			panel.add(comboBox);
 		}
 		return panel;
+	}
+
+	private String[] getComboValue(Config config) {
+		String[] value = new String[0];
+		if(config.getComboValues() != null) {
+			value =config.getComboValues().split(",");
+		}
+		return value;
+	}
+
+	public void setLoggingLvl(String selectedItem) {
+		logginglevel = selectedItem;
 	}
 
 	private void setSize(Component comp, Dimension btnSize) {
@@ -308,6 +375,10 @@ public class PreferencesDialog extends JDialog {
 	private JTextField getValueTextField(final Config config, Dimension size) {
 		JTextField value = new JTextField(config.getSettings().getAttribute(config.getName()), 5);
 		setSize(value, size);
+		setToolTip(config, value);
+		if(config.getDefValue() != null) {
+			value.setText(config.getDefValue());
+		}
 		value.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
 			public void removeUpdate(DocumentEvent e) {
@@ -336,10 +407,20 @@ public class PreferencesDialog extends JDialog {
 		return value;
 	}
 
+	private void setToolTip(Config config, JTextField textField) {	
+		String toolTipText = config.getHint();
+		if (toolTipText != null) {
+			textField.setToolTipText(toolTipText);
+		}
+	}
+	
 	private void saveAndClose() {
 		try {
 			saveGenTabValues();
 			saveBPSelection();
+			saveWarnFail();
+			SettingsImpl.getInstance().setAndSaveAttribute("LOG_LEVEL", logginglevel);
+			Util.setLoggingLevel(logginglevel);
 			dispose();
 		} catch (Exception e) {
 			LOGGER.error("Failed to save preferences", e);
@@ -347,6 +428,12 @@ public class PreferencesDialog extends JDialog {
 					"Error occurred while trying to save Preferences", "Error saving preferences",
 					JOptionPane.ERROR_MESSAGE);
 		}
+	}
+
+	
+	
+	private void saveWarnFail() {
+		 BPVideoPassFailPanel.getInstance().saveWarnFail();	
 	}
 
 	private void saveGenTabValues() {
@@ -366,6 +453,8 @@ public class PreferencesDialog extends JDialog {
 	@Override
 	public void dispose() {
 		callerMenuItem.setEnabled(true);
+		BPVideoPassFailPanel.dropInstance();
 		super.dispose();
 	}
+	
 }

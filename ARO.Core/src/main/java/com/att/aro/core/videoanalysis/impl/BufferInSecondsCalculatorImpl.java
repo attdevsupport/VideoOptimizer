@@ -118,7 +118,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 
 			double bufferInSeconds = 0;
 			possibleStartPlayTime =0;
-			for (int index = 0; index < getChunksBySegmentNumber().size(); index++) {// filteredChunk
+			for (int index = 0; index < videoUsage.getChunksBySegmentNumber().size(); index++) {// filteredChunk
 				bufferInSeconds = 0;
 
 				updateUnfinishedDoneVideoEvent();
@@ -156,8 +156,8 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 				}
 
 				beginBuffer = endBuffer;
-				if (index + 1 <= getChunksBySegmentNumber().size() - 1) {
-					setNextPlayingChunk(index + 1, getChunksBySegmentNumber());
+				if (index + 1 <= videoUsage.getChunksBySegmentNumber().size() - 1) {
+					setNextPlayingChunk(index + 1, videoUsage.getChunksBySegmentNumber());
 				}
 			}
 		}
@@ -192,7 +192,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	public double drawVeWithIn(List<VideoEvent> veWithIn, double beginBuffer) {
 		double buffer = beginBuffer;
 
-		if (veWithIn.size() == 0) {
+		if (veWithIn.size() == 0  && completedDownloads.contains(chunkPlaying)) {
 			buffer = bufferDrain(buffer);
 		} else if (completedDownloads.contains(chunkPlaying)) {
 			Collections.sort(veWithIn, new VideoEventComparator(SortSelection.END_TS));
@@ -291,14 +291,15 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	}
 
 	private void initialize(VideoUsage videoUsage) {
-		filteredChunk = getFilteredSegments(); // filterVideoSegment(videoUsage);
+		this.videoUsage = videoUsage;
+		filteredChunk = videoUsage.getFilteredSegments(); // filterVideoSegment(videoUsage);
 		chunkDownload = new ArrayList<>();
 		for (VideoEvent vEvent : filteredChunk) {
 			chunkDownload.add(vEvent);
 		}
-		veManifestList = getVideoEventManifestMap();
+		veManifestList = videoUsage.getVideoEventManifestMap();
 
-		runInit(veManifestList, getChunksBySegmentNumber());
+		runInit(videoUsage, veManifestList, videoUsage.getChunksBySegmentNumber());
 	}
 
 	public double getChunkPlayStartTime(VideoEvent chunkPlaying) {
@@ -380,7 +381,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 		Map<Long, Double> segmentStartTimeMap = getSegmentStartTimeMap();
 		Map<Double, Long> segmentEndTimeMap = new HashMap<Double, Long>();
 		if(segmentStartTimeMap!=null) {
-			for (VideoEvent ve : getFilteredSegments()) {
+			for (VideoEvent ve : videoUsage.getFilteredSegments()) {
 				if(ve == null) {
 					continue;
 				}

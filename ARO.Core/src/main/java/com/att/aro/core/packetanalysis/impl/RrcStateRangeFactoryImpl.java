@@ -346,11 +346,11 @@ public class RrcStateRangeFactoryImpl implements IRrcStateRangeFactory {
 					currTimeStamp = packet.getTimeStamp();
 					currLen = packet.getLen();
 				}
-				double prevTimeStamp = prevPacket.getTimeStamp();
+				double prevTimeStamp = (prevPacket == null ? 0.0 : prevPacket.getTimeStamp());
 				double deltaTime = currTimeStamp - prevTimeStamp;
 
 				RRCState state = null; // the next state to be determined
-				RRCState promoState = prevPacket.getStateMachine();
+				RRCState promoState = (prevPacket == null ? RRCState.STATE_IDLE : prevPacket.getStateMachine());
 				
 				if(promoState == RRCState.PROMO_IDLE_DCH || promoState == RRCState.PROMO_FACH_DCH){
 					double promoAvg, promoMin, promoMax;
@@ -752,7 +752,7 @@ public class RrcStateRangeFactoryImpl implements IRrcStateRangeFactory {
 	 * This method adds the an RrcStateRange to the list rrc.
 	 * 
 	 * @param time
-	 * @param duration
+	 * @param d
 	 *            The duration of the state.
 	 * @param state
 	 *            The RRC state

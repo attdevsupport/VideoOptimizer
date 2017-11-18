@@ -34,8 +34,6 @@ import com.att.aro.core.packetanalysis.pojo.BufferOccupancyBPResult;
 import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
-import com.att.aro.core.videoanalysis.PlotHelperAbstract;
-
 
 
 /**
@@ -88,6 +86,7 @@ public class VideoBufferOccupancyImpl implements IBestPractice{
 	@Autowired
     private IVideoUsagePrefsManager videoUsagePrefs;
 	
+	
 	private double maxBufferSet;
 	double maxBufferReached;
 	
@@ -135,7 +134,7 @@ public class VideoBufferOccupancyImpl implements IBestPractice{
 			percentage = (maxBufferReached/maxBufferSet)*100; 
 		}
 		
-		if (PlotHelperAbstract.chunkPlayTimeList.size() == 0) {
+		if (tracedata.getVideoUsage() != null && tracedata.getVideoUsage().getChunkPlayTimeList().isEmpty()){
 			result.setResultText(MessageFormat.format(textResultInit, String.format("%.2f", percentage),
 					String.format("%.2f", maxBufferReached), String.format("%.2f", maxBufferSet)));
 		} else {

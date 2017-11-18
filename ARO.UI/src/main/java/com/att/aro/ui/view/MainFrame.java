@@ -48,6 +48,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.ApplicationConfig;
@@ -65,10 +66,11 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.VersionInfo;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.util.CrashHandler;
+import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
+import com.att.aro.core.util.PcapConfirmationImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.VideoOption;
-import com.att.aro.core.videoanalysis.impl.FFmpegConfirmationImpl;
 import com.att.aro.mvc.AROController;
 import com.att.aro.ui.collection.AROCollectorSwingWorker;
 import com.att.aro.ui.commonui.ARODiagnosticsOverviewRouteImpl;
@@ -128,6 +130,9 @@ public class MainFrame implements SharedAttributesProcesses {
 	
 	private FFmpegConfirmationImpl ffmpegConfirmationImpl = ContextAware.getAROConfigContext()
 			.getBean("ffmpegConfirmationImpl", FFmpegConfirmationImpl.class);
+
+	private PcapConfirmationImpl pcapConfirmationImpl = ContextAware.getAROConfigContext()
+			.getBean("pcapConfirmationImpl", PcapConfirmationImpl.class);
 
 	/**
 	 * private data dialog reference
@@ -236,21 +241,26 @@ public class MainFrame implements SharedAttributesProcesses {
 
 				new Thread(() -> {
 					if (window.ffmpegConfirmationImpl.checkFFmpegExistance() == false) {
-						SwingUtilities.invokeLater(() -> window.launchFFmpegDialog());
+						SwingUtilities.invokeLater(() -> window.launchDialog(new FFmpegConfirmationDialog()));
+					}
+				}).start();
+				
+				new Thread(() -> {
+					if (Util.isMacOS() && !window.pcapConfirmationImpl.checkPcapVersion()) {
+						SwingUtilities.invokeLater(() -> window.launchDialog(new PcapConfirmationDialog()));
 					}
 				}).start();
 			}
 		});
 	}
 
-	private void launchFFmpegDialog() {
-		FFmpegConfirmationDialog ffmpegDialog = new FFmpegConfirmationDialog();
-		ffmpegDialog.createDialog();
-		ffmpegDialog.pack();
-		ffmpegDialog.setSize(ffmpegDialog.getPreferredSize());
-		ffmpegDialog.validate();
-		ffmpegDialog.setModalityType(ModalityType.APPLICATION_MODAL);
-		ffmpegDialog.setVisible(true);
+	private void launchDialog(ConfirmationDialog dialog) {
+		dialog.createDialog();
+		dialog.pack();
+		dialog.setSize(dialog.getPreferredSize());
+		dialog.validate();
+		dialog.setModalityType(ModalityType.APPLICATION_MODAL);
+		dialog.setVisible(true);
 	}
 
 	/**
@@ -267,9 +277,11 @@ public class MainFrame implements SharedAttributesProcesses {
 	public void initialize() {
 		AROUIManager.init();
 		int playbackWidth = 350;
+		// int playbackHeight = 600;
 
 		createVideoOptimizerFolder();
 
+		Util.setLoggingLevel(Util.getLoggingLevel());
 		frmApplicationResourceOptimizer = new JFrame();
 		frmApplicationResourceOptimizer.setTitle(getAppTitle());
 		frmApplicationResourceOptimizer.setIconImage(Images.ICON.getImage());
@@ -291,16 +303,7 @@ public class MainFrame implements SharedAttributesProcesses {
 
 		String titleName = MessageFormat
 				.format(BUNDLE.getString("aro.title.short"), ApplicationConfig.getInstance().getAppShortName()).trim();
-		Runnable runGA = () -> {
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().applicationInfo(
-				GoogleAnalyticsUtil.getAnalyticsEvents().getTrackerID(), titleName, versionInfo.getVersion());
-		sendInstallationInfoTOGA();
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsStartSessionEvents(
-				GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(),
-				GoogleAnalyticsUtil.getAnalyticsEvents().getStartApp(), 
-				Util.OS_NAME + (Util.OS_ARCHYTECTURE.contains("64") ? " 64" : " 32"));
-		};
-		new Thread(runGA).start();
+		sendGAEvents(titleName);
 		frmApplicationResourceOptimizer.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent wEvent) {
@@ -312,6 +315,24 @@ public class MainFrame implements SharedAttributesProcesses {
 		log.info("ARO UI started");
 	}
 
+	private void sendGAEvents(String titleName) {
+		Runnable runGA = new Runnable() {
+			@Override
+			public void run() {
+				String versionStr = versionInfo.getVersion();
+				String version = StringUtils.isBlank(versionStr) ? "" : versionStr.split(" ")[0];
+				GoogleAnalyticsUtil.getGoogleAnalyticsInstance()
+						.applicationInfo(GoogleAnalyticsUtil.getAnalyticsEvents().getTrackerID(), titleName, version);
+				sendInstallationInfoTOGA();
+				GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsStartSessionEvents(
+						GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(),
+						GoogleAnalyticsUtil.getAnalyticsEvents().getStartApp(),
+						Util.OS_NAME + (Util.OS_ARCHYTECTURE.contains("64") ? " 64" : " 32"));
+			}
+		};
+		new Thread(runGA).start();
+	}
+
 	@SuppressWarnings("deprecation")
 	private void createVideoOptimizerFolder() {
 		File aroFolder = new File(Util.getAroLibrary());
@@ -321,7 +342,7 @@ public class MainFrame implements SharedAttributesProcesses {
 			try {
 				FileUtils.copyDirectory(new File(Util.getAroLibrary()), new File(Util.getVideoOptimizerLibrary()));
 			} catch (IOException e) {
-				e.printStackTrace();
+				log.error("Failed to copy file to VOLibrary", e);
 			}
 		}
 	}
@@ -385,17 +406,20 @@ public class MainFrame implements SharedAttributesProcesses {
 	}
 
 	private void onTabChanged(ChangeEvent event) {
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews(getCurrentTabComponent().getName());
 		if (getCurrentTabComponent() == bestPracticesTab) {
 			tabPanel = TabPanels.tab_panel_best_practices;
 			if (getController().getTheModel().getAnalyzerResult() != null) {
-				bestPracticesTab.update(modelObserver, getController().getTheModel());// refresh(getController().getTheModel());
+				bestPracticesTab.update(modelObserver, getController().getTheModel());
 			}
 		} else if (getCurrentTabComponent() == statisticsTab) {
 			tabPanel = TabPanels.tab_panel_statistics;
 		} else if (getCurrentTabComponent() == diagnosticsTab) {
 			tabPanel = TabPanels.tab_panel_other;
+			getDiagnosticTab().addGraphPanel();
 		} else if(getCurrentTabComponent() == videoTab){
 			tabPanel = TabPanels.tab_panel_video_tab;
+			getVideoTab().addGraphPanel();
 			if (getDiagnosticTab().getGraphPanel().getTraceData() != null) {
 				videoTab.update(modelObserver, getDiagnosticTab().getGraphPanel().getTraceData());
 			}

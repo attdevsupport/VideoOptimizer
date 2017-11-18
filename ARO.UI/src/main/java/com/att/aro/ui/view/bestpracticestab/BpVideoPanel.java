@@ -17,7 +17,6 @@ package com.att.aro.ui.view.bestpracticestab;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JPanel;
@@ -39,15 +38,17 @@ public class BpVideoPanel extends BpDetail {
 		setBackground(new Color(238,238,238));
 		int row = 0;
 
-		addPanel(row++, new BpDetailItem("videoStall"       , BestPracticeType.VIDEO_STALL        ));
-		addPanel(row++, new BpDetailItem("startUpDelay"     , BestPracticeType.STARTUP_DELAY      ));
-		addPanel(row++, new BpDetailItem("bufferOccupancy"  , BestPracticeType.BUFFER_OCCUPANCY   ));
-		addPanel(row++, new BpDetailItem("networkComparison", BestPracticeType.NETWORK_COMPARISON ));
-		addPanel(row++, new BpDetailItem("tcpConnection"    , BestPracticeType.TCP_CONNECTION     ));
-		addPanel(row++, new BpDetailItem("chunkSize"        , BestPracticeType.CHUNK_SIZE         ));
-		addPanel(row++, new BpDetailItem("chunkPacing"      , BestPracticeType.CHUNK_PACING       ));
-		addPanel(row++, new BpDetailItem("videoRedundancy"  , BestPracticeType.VIDEO_REDUNDANCY   ));
-		
+		addPanel(row++, new BpDetailItem("videoStall"       		, BestPracticeType.VIDEO_STALL,        
+				new BPVideoStallTablePanel()));
+		addPanel(row++, new BpDetailItem("startUpDelay"     		, BestPracticeType.STARTUP_DELAY      ));
+		addPanel(row++, new BpDetailItem("bufferOccupancy"  		, BestPracticeType.BUFFER_OCCUPANCY   ));
+		addPanel(row++, new BpDetailItem("networkComparison"		, BestPracticeType.NETWORK_COMPARISON ));
+		addPanel(row++, new BpDetailItem("tcpConnection"    		, BestPracticeType.TCP_CONNECTION     ));
+		addPanel(row++, new BpDetailItem("chunkSize"        		, BestPracticeType.CHUNK_SIZE         ));
+		addPanel(row++, new BpDetailItem("chunkPacing"      		, BestPracticeType.CHUNK_PACING       ));
+		addPanel(row++, new BpDetailItem("videoRedundancy"  		, BestPracticeType.VIDEO_REDUNDANCY   ));
+		addPanel(row++, new BpDetailItem("videoConcurrentSession"	, BestPracticeType.VIDEO_CONCURRENT_SESSION,
+				new BPVideoConcurrentSessionTablePanel()));
 		fullPanel.add(dataPanel, BorderLayout.CENTER);
 		fullPanel.add(detailPanel, BorderLayout.SOUTH);
 		add(fullPanel);
@@ -59,7 +60,6 @@ public class BpVideoPanel extends BpDetail {
 
 	@Override
 	public JPanel layoutDataPanel() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	

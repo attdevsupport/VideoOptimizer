@@ -19,7 +19,8 @@ package com.att.arocollector.client;
 
 import android.util.Log;
 
-
+import com.att.arocollector.attenuator.AttenuatorManager;
+import com.att.arocollector.attenuator.AttenuatorUtil;
 import com.att.arotcpcollector.IClientPacketWriter;
 import com.att.arotcpcollector.ip.IPPacketFactory;
 import com.att.arotcpcollector.ip.IPv4Header;
@@ -44,7 +45,8 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 
 	private volatile boolean shutdown = false;
 	private SocketData socketData = null;
- 	private BlockingQueue<byte[]> dataReceived;
+	private int downloadSpeedLimit = AttenuatorUtil.DEFAULT_THROTTLE_SPEED;// 100Mb = 1024Kb
+	private BlockingQueue<byte[]> dataReceived;
 	private IClientPacketWriter clientPacketWriter;
 
 	private static final Object syncObj = new Object();
@@ -90,10 +92,10 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 		boolean startFlag = true;
 		int count = 0;
 
- 		try {
+		Log.i(TAG, "Download Speed Limit : " + (AttenuatorManager.getInstance().getThrottleDL() * 1024 / 8)+ " Bytes");
+		try {
 			while (!shutdown) {
 				Log.d(TAG, "I am polling data");
-
 				packet = dataReceived.take();
 
 				if (null != packet && packet.length > 0) {
@@ -109,30 +111,40 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 						startTime = System.nanoTime();
 						totalData = 0;
 					}
-
 					int headerLength = 0;
-					UDPHeader udpHeader = null;
 					TCPHeader tcpHeader = null;
 					TCPPacketFactory tcpFactory = new TCPPacketFactory();
-					UDPPacketFactory udpFactory = new UDPPacketFactory();
 
 					try {
-						IPv4Header ipHeader = IPPacketFactory.createIPv4Header(packet, 0);
-						headerLength += ipHeader.getIPHeaderLength();
-						if (ipHeader.getProtocol() == 6) {
+						if (isTCP(packet)) {
+							IPv4Header ipHeader = IPPacketFactory.createIPv4Header(packet, 0);
+							headerLength += ipHeader.getIPHeaderLength();
 							tcpHeader = tcpFactory.createTCPHeader(packet, ipHeader.getIPHeaderLength());
 							headerLength += tcpHeader.getTCPHeaderLength();
 						} else {
-							udpHeader = udpFactory.createUDPHeader(packet, ipHeader.getIPHeaderLength());
-							headerLength += udpHeader.getLength();
+							headerLength = 28;
 						}
 					} catch (PacketHeaderException ex){
 						Log.e(TAG , "Packet Header Exception"+ ex.getMessage(),ex);
 					}
-
 					totalData += (packet.length - headerLength);
 					Log.i(TAG,"Total Data Length: "+ totalData + " Bytes");
- 					stopTime = System.nanoTime();
+
+					if (!(AttenuatorManager.getInstance().getThrottleDL() < 0) && totalData >= (AttenuatorManager.getInstance().getThrottleDL() * 1024 / 8)) {
+						try {
+
+							stopTime = System.nanoTime();
+							startFlag = true;
+							// Calculate Sleep Time
+							int sleepTime = 1000 - ((int) ((stopTime - startTime)/1000000));
+							Log.i(TAG,"Thread sleep time: "+ sleepTime);
+							Thread.sleep(sleepTime);
+						} catch (InterruptedException e) {
+							Log.d(TAG, "Failed to sleep: " + e.getMessage(),e);
+						}
+
+					}
+					stopTime = System.nanoTime();
 
 				}
 			}
@@ -141,6 +153,16 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 		}
 
 		Log.d(TAG, "Was shutdown");
+	}
+
+	private boolean isTCP(byte[] packet) {
+		if(packet.length > 9 ) {
+			byte protocol = packet[9];
+			if(protocol == 6) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -156,5 +178,14 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 		this.clientPacketWriter = clientPacketWriter;
 	}
 
+	public int getDownloadSpeedLimit() {
+		Log.i(TAG,"get Download Speed Limit: "+ downloadSpeedLimit + " kbps");
+		return downloadSpeedLimit;
+	}
 
+	//set from  CaptureVpnService.java, startCapture()
+	public void setDownloadSpeedLimit(int downloadSpeedLimit) {
+		this.downloadSpeedLimit = downloadSpeedLimit;
+		Log.i(TAG,"set Download Speed Limit: "+ downloadSpeedLimit+ " kbps");
+	}
 }

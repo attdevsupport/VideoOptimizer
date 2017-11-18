@@ -44,7 +44,14 @@ public class ByteRange {
 	public String getEndByteHex() {
 		return Integer.toHexString(endByte.intValue());
 	}
-
+	
+	/**
+	 * @return false if nulls are involved or value don't match, true is values match
+	 */
+	public boolean isValidRange() {
+		return beginByte != null ? !beginByte.equals(endByte) : false;
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(17);

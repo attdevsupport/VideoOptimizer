@@ -44,7 +44,9 @@ import com.att.aro.core.bestpractice.pojo.WeakCipherEntry;
 import com.att.aro.core.packetanalysis.pojo.CacheEntry;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.ui.model.DataTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.ui.view.overviewtab.OverviewTab;
 
@@ -81,6 +83,9 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 			diaTabRoute = isTabRoute("StartTime", tableModel);
 			if (!diaTabRoute) {
 				diaTabRoute = isTabRoute("Destination IP", tableModel);
+				if (!diaTabRoute) {
+					diaTabRoute = isTabRoute(ResourceBundleHelper.getMessageString("videoStall.table.col3"), tableModel);
+				}
 			}
 		}
 		return diaTabRoute;
@@ -187,6 +192,10 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 				
 			}
 						break;
+			case IMAGE_COMPARE: {
+				
+			}
+						break;
 			case MINIFICATION: {
 	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
 	//				if (result instanceof CombineCsJssResult) {
@@ -229,6 +238,10 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 			break;
 			
 			case SIMUL_CONN: {
+				
+			}
+			break;
+			case MULTI_SIMULCONN: {
 				
 			}
 			break;
@@ -401,6 +414,10 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 					|| routeInfo instanceof WeakCipherEntry 
 					|| routeInfo instanceof ForwardSecrecyEntry) {
 			diagnosticsTab.setHighlightedTCP(routeInfo);
+		}else if(routeInfo instanceof VideoStall){
+			double timestamp = ((VideoStall) routeInfo).getSegmentTryingToPlay().getStartTS();
+			diagnosticsTab.getGraphPanel().setGraphView(timestamp, true);
+			diagnosticsTab.getVideoPlayer().setMediaTime(timestamp);
 		}
 		else {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);

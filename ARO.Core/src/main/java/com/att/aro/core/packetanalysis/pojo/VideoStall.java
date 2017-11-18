@@ -24,6 +24,7 @@ public class VideoStall {
 	private double stallStartTimeStamp;
 	private double stallEndTimeStamp;
 	private VideoEvent segmentTryingToPlay;
+	private String stallState;
 	
 	//private double stallTriggerTime;
 	
@@ -35,6 +36,14 @@ public class VideoStall {
 	public VideoStall(double stallStartTimeStamp){
 		this.stallStartTimeStamp = stallStartTimeStamp;
 	//	this.stallEndTimeStamp = duration + stallStartTimeStamp;
+	}
+
+	public String getStallState() {
+		return stallState;
+	}
+
+	public void setStallState(String stallState) {
+		this.stallState = stallState;
 	}
 
 	public double getDuration() {
@@ -55,7 +64,6 @@ public class VideoStall {
 	}
 
 	public void setSegmentTryingToPlay(VideoEvent chunkPlaying) {
-		// TODO Auto-generated method stub
 		this.segmentTryingToPlay = chunkPlaying;
 	}
 

@@ -128,7 +128,6 @@ public  class BpDetail extends AbstractBpPanel {
 
 	@Override
 	public JPanel layoutDataPanel() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -155,7 +154,6 @@ public  class BpDetail extends AbstractBpPanel {
 
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 

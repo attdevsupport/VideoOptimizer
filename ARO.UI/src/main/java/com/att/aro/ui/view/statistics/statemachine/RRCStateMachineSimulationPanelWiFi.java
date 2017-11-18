@@ -21,8 +21,6 @@ import java.awt.Insets;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
-import com.att.aro.core.packetanalysis.pojo.RrcStateMachineLTE;
-import com.att.aro.core.packetanalysis.pojo.RrcStateMachineWiFi;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.IUITabPanelLayoutUpdate;
@@ -114,7 +112,6 @@ public class RRCStateMachineSimulationPanelWiFi extends JPanel implements IUITab
 
 	@Override
 	public void refresh(AROTraceData model) {
-		RrcStateMachineWiFi stateMachine = (RrcStateMachineWiFi)
-				model.getAnalyzerResult().getStatemachine();
+
 	}
 }

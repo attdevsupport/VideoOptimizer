@@ -120,6 +120,7 @@ public class VideoCaptureImplTest extends BaseTest{
 		videoCapture.init(device, "");
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void run_test2() throws TimeoutException, AdbCommandRejectedException, IOException {
 		videoCapture.setDevice(device);

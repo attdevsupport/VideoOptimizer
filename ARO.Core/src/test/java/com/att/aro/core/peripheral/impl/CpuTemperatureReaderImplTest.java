@@ -13,9 +13,7 @@ import org.mockito.Mockito;
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.peripheral.ICpuTemperatureReader;
-import com.att.aro.core.peripheral.IUserEventReader;
 import com.att.aro.core.peripheral.pojo.TemperatureEvent;
-import com.att.aro.core.peripheral.pojo.UserEvent;
 
 public class CpuTemperatureReaderImplTest extends BaseTest {
 

@@ -52,7 +52,6 @@ public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel imp
 
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -158,7 +157,7 @@ public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel imp
 	 * Returns the zoom button.
 	 */
 	private JButton getZoomBtn() {
-		//TODO		
+		//TODO This same method is present in multiple locations, and should be refactored
 		zoomBtn = new JButton(zoomOut);
 		zoomBtn.setEnabled(false);
 		zoomBtn.addActionListener(new ActionListener() {
@@ -229,6 +228,7 @@ public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel imp
 	}
 
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void mousePressed(MouseEvent event) {
 		if (diagnosticsOverviewRoute != null && event.getClickCount() == 2) {

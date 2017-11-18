@@ -86,15 +86,15 @@ public final class ErrorCodeRegistry {
 	public static ErrorCode getInvalidUplink() {
 		ErrorCode err = new ErrorCode();
 		err.setCode(309);
-		err.setName("Invalid uplink delay value");
-		err.setDescription("Uplink value should be a number and range from 0 to 100.");
+		err.setName("Invalid uplink throttle value");
+		err.setDescription("Uplink value should be a number and range from 64 to 100m(102400k).");
 		return err;
 	}
 	public static ErrorCode getInvalidDownlink() {
 		ErrorCode err = new ErrorCode();
 		err.setCode(310);
-		err.setName("Invalid downlink delay value");
-		err.setDescription("Downlink value should be a number and range from 0 to 2000.");
+		err.setName("Invalid downlink throttle value");
+		err.setDescription("Downlink value should be a number and range from 64 to 100m(102400k).");
 		return err;
 	}
 }

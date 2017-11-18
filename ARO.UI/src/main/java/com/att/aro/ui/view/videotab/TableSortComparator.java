@@ -19,8 +19,6 @@ package com.att.aro.ui.view.videotab;
 
 import java.util.Comparator;
 
-import javax.swing.table.TableModel;
-
 public class TableSortComparator implements Comparator<String> {
 
 	private int columnIndex = -1;

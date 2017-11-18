@@ -32,9 +32,8 @@ import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
-import com.att.aro.core.videoanalysis.PlotHelperAbstract;
-import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 
 /**
@@ -90,43 +89,42 @@ public class VideoStartUpDelayImpl implements IBestPractice{
 
 	private double startupDelay; // = 9999;
 
+	
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 
+		VideoStartUpDelayResult result = new VideoStartUpDelayResult();
+		
 		VideoUsage videoUsage = tracedata.getVideoUsage();
-		TreeMap<Double, AROManifest> videoEventList = videoUsage.getAroManifestMap(); //getVideoEventList();
-
-		double count = 0;
+		TreeMap<Double, AROManifest> manifestCollection = null;
+		
+		if (videoUsage != null) {
+			manifestCollection = videoUsage.getAroManifestMap(); // getVideoEventList();
+		}
+		
 		double definedDelay = videoPref.getVideoUsagePreference().getStartupDelay();
 		startupDelay = definedDelay;
-		
 
-		VideoStartUpDelayResult result = new VideoStartUpDelayResult();
-		result.setSelfTest(true);
+		boolean isStartupDelaySet = false;
+		// result.setSelfTest(true);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
-		result.setResultType(BPResultType.SELF_TEST);	// this VideoBestPractice is to be reported as a selftest until further notice
-		if(videoEventList.isEmpty()){
+		// this VideoBestPractice is to be reported as a selftest until further notice
+		if (manifestCollection == null || manifestCollection.isEmpty()) {
 			result.setResultText(textResultEmpty);
-		}else{
-			if(PlotHelperAbstract.chunkPlayTimeList.size() ==0){
-				result.setResultText(MessageFormat.format(textResultInit, startupDelay, startupDelay ==1 ?"":"s"));
+		} else {
+			if (tracedata.getVideoUsage() != null && tracedata.getVideoUsage().getChunkPlayTimeList().isEmpty()) {
+				result.setResultText(MessageFormat.format(textResultInit, startupDelay, startupDelay == 1 ? "" : "s"));
 			} else {
-				// if (videoEventList != null) {
-				double delay = 0;
-				for (AROManifest aroManifest : videoEventList.values()) {
+				
+				for (AROManifest aroManifest : manifestCollection.values()) {
 					if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
-						// don't count if no videos with manifest
-						// locate shortest startupDelay
-						delay += aroManifest.getDelay();
-						count++;
 						startupDelay = aroManifest.getDelay();
 					}
 				}
-
+				isStartupDelaySet=true;
 				result.setResultText(MessageFormat.format(textResults, startupDelay // 0
 						, startupDelay == 1 ? "" : "s" // 1
 						, definedDelay // 2
@@ -136,18 +134,13 @@ public class VideoStartUpDelayImpl implements IBestPractice{
 		}
 		
 		result.setStartUpDelay(startupDelay);
-
-		/*
-		 * startUpDelay.results=
-		 * Your video had {0} second{1} of startup delay, your defined delay is {2} second{3}. 
-		 * You can determine buffer occupancy and manage the user experience.. 
-		 * 
-		 * startUpDelay.pass=
-		 * Your video had {0} second{1} of startup delays and passes the test.
-		 */
-		
-		
-
+		BPResultType bpResultType= BPResultType.PASS;
+		if(isStartupDelaySet){
+			 bpResultType = Util.checkPassFailorWarning(startupDelay,
+					 Double.parseDouble(videoPref.getVideoUsagePreference().getStartUpDelayWarnVal()),
+					 Double.parseDouble(videoPref.getVideoUsagePreference().getStartUpDelayFailVal()));
+		}
+		result.setResultType(bpResultType);
 		return result;
 	}
 }// end class

@@ -19,6 +19,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -58,10 +59,11 @@ import org.apache.log4j.Logger;
 
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
-import com.att.aro.core.videoanalysis.pojo.ManifestDash;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoFormat;
+import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
@@ -97,7 +99,7 @@ public class SliderDialogBox extends JDialog {
 	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 	private JComboBox<ComboManifest> jcb;
 	private DefaultTableModel tableModel;
-	
+	private PlotHelperAbstract videoChunkPlotter = ContextAware.getAROConfigContext().getBean("videoChunkPlotterImpl",PlotHelperAbstract.class);
 	class ComboManifest {
 		AROManifest manifest;
 		String manifestName;
@@ -153,31 +155,41 @@ public class SliderDialogBox extends JDialog {
 		}
 	}
 	
-	public SliderDialogBox(GraphPanel parentPanel, double maxVideoTime, Map<Integer, VideoEvent> chunks, int indexKey,
-			List<VideoEvent> allChunks) {
+	public SliderDialogBox(GraphPanel parentPanel, double maxVideoTime, Map<Integer, VideoEvent> chunks, int indexKey, List<VideoEvent> allChunks) {
 		this.parentPanel = parentPanel;
 		DiagnosticsTab parent = parentPanel.getGraphPanelParent();
-		mainFrame = (MainFrame)parent.getAroView();
+		mainFrame = (MainFrame) parent.getAroView();
 		player = parent.getVideoPlayer();
 		vcPlot = parentPanel.getVcPlot();
 		chunkSelectionList = chunks;
-	
+
 		this.allChunks.addAll(allChunks);
 		createSliderDialog(maxVideoTime, player, vcPlot, indexKey);
-		
-		if(selectedIndex >= 0  && selectedIndex < jTable.getRowCount()) {
+
+		if (selectedIndex >= 0 && selectedIndex < jTable.getRowCount()) {
 			jTable.setRowSelectionInterval(selectedIndex, selectedIndex);
+			if (videoChunkPlotter.getVideoUsage().getChunkPlayTimeList().keySet() != null) {
+				for (VideoEvent veSegment : videoChunkPlotter.getVideoUsage().getChunkPlayTimeList().keySet()) {
+					for (int index = 0; index < listSegments.size(); index++) {
+						JTableItems item = listSegments.get(index);
+						if (item.getVideoEvent().equals(veSegment)) {
+							jTable.getModel().setValueAt(true, index, 0);
+							break;
+						}
+					}
+				}
+			}
 			jTable.scrollRectToVisible(new Rectangle(jTable.getCellRect(selectedIndex, 0, true)));
 		}
 	}
 
 	public void makeSelection(int indexKey) {
-		if(indexKey < 0 || indexKey >= chunkSelectionList.size()) {
+		if (indexKey < 0 || indexKey >= chunkSelectionList.size()) {
 			return;
 		}
 		VideoEvent segment = chunkSelectionList.get(indexKey);
-		for (int index=0;index<listSegments.size();index++) {
-			if(listSegments.get(index).getVideoEvent().equals(segment)){
+		for (int index = 0; index < listSegments.size(); index++) {
+			if (listSegments.get(index).getVideoEvent().equals(segment)) {
 				selectedIndex = index;
 				break;
 			}
@@ -197,7 +209,7 @@ public class SliderDialogBox extends JDialog {
 				listSegments.add(new JTableItems(ve));
 			}
 		}
-		
+
 		Collections.sort(listSegments, new Comparator<JTableItems>() {
 			@Override
 			public int compare(JTableItems o1, JTableItems o2) {
@@ -254,6 +266,7 @@ public class SliderDialogBox extends JDialog {
 		jcb.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				@SuppressWarnings("unchecked")
 				JComboBox<ComboManifest> comboBox = (JComboBox<ComboManifest>) e.getSource();
 		        ComboManifest comboManifest = (ComboManifest) comboBox.getSelectedItem();
 		        AROManifest manifest = comboManifest.getManifest();
@@ -375,8 +388,11 @@ public class SliderDialogBox extends JDialog {
 				if (index >= 0 && index < listSegments.size()) {
 					JTableItems itemObject = listSegments.get(index);
 					resizedThumbnail = itemObject.getVideoEvent().getImageOriginal();
-
+					
 					ImageIcon img = new ImageIcon(resizedThumbnail);// thumbnail);
+
+					img = new ImageIcon(img.getImage().getScaledInstance(-1, 300, Image.SCALE_DEFAULT));
+					
 					imgLabel.setIcon(img);// = new JLabel(img);
 					int dlTimestamp = (int) itemObject.getVideoEvent().getStartTS();
 
@@ -480,6 +496,7 @@ public class SliderDialogBox extends JDialog {
 
 							if (comboManifest.getManifest() != null) {
 								AROManifest manifest = comboManifest.getManifest();
+								updateFirstSelectedSegmentsList(manifest,selectedItem.getVideoEvent());
 								manifest.setDelay(getStartTime() - selectedItem.getVideoEvent().getEndTS());
 								for (AROManifest aroManifest : videoUsage.getManifests()) {
 									if (aroManifest.equals(manifest)) {
@@ -525,6 +542,12 @@ public class SliderDialogBox extends JDialog {
 		panel.validate();
 	}
 
+	public void updateFirstSelectedSegmentsList(AROManifest manifest, VideoEvent videoEvent) {
+		if (videoChunkPlotter.getVideoUsage() != null) {
+			videoChunkPlotter.getVideoUsage().getFirstSelectedSegment().put(manifest, videoEvent);
+		}
+	}
+	
 	public GraphPanel getGraphPanel() {
 		return this.parentPanel;
 	}

@@ -87,17 +87,6 @@ public final class ErrorCodeRegistry {
 		return err;
 	}
 	/**
-	 * multiple xcode command line tool installed mismatch
-	 * @return
-	 */
-	public static ErrorCode getXCodeCLTError(){
-		ErrorCode err = new ErrorCode();
-		err.setCode(515);
-		err.setName("Multiple Xcode Command Line Tools installed mismatch");
-		err.setDescription("You have multiple xcode versions. You will need to configure command-line tools.\nPlease use 'sudo xcode-select -s /PATH/To/Xcode.app'.");
-		return err;
-	}
-	/**
 	 * Incorrect Serial Number 
 	 * @return
 	 */
@@ -198,5 +187,136 @@ public final class ErrorCodeRegistry {
 		err.setDescription(description);
 		return err;
 	}	
-
+	/**
+	 * multiple xcode command line tool installed mismatch
+	 * @return
+	 */
+	public static ErrorCode getXCodeCLTError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(515);
+		err.setName("Multiple Xcode Command Line Tools installed mismatch");
+		err.setDescription("You have multiple xcode versions. You will need to configure command-line tools.\nPlease use 'sudo xcode-select -s /PATH/To/Xcode.app'.");
+		return err;
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getAppSavingError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(516);
+		err.setName("Failed to save app to local disk");
+		err.setDescription(defaultBundle.getString("Error.app.appsaving"));
+		return err;
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getRemoveCodeSignatureError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(517);
+		err.setName("Failed to remove _CodeSignature folder");
+		err.setDescription(defaultBundle.getString("Error.app.removecodesignature"));
+		return err;
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getCreateEntitlementsFileError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(518);
+		err.setName("Failed to create entitlements.plist for re-signing app");
+		err.setDescription(defaultBundle.getString("Error.app.createentitlements"));
+		return err;
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getRemoveEntitlementsFileError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(519);
+		err.setName("Failed to remove entitlements.plist");
+		err.setDescription(defaultBundle.getString("Error.app.removeentitlements"));
+		return err;
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getFileUpdateError(String filename){
+		ErrorCode err = new ErrorCode();
+		err.setCode(520);
+		err.setName("Error updating file");
+		err.setDescription(defaultBundle.getString("Error.app.updatefile") + " (" + filename +")");
+		return err;
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getFileSigningError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(521);
+		err.setName("Error signing file");
+		err.setDescription(defaultBundle.getString("Error.app.filesigning"));
+		return err;
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getAppDeploymentError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(522);
+		err.setName("Failed to deploy/launch app");
+		err.setDescription(defaultBundle.getString("Error.app.deploymentfailed"));
+		return err;
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getExtractProvPropertyValuesError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(523);
+		err.setName("Failed to get provisioning profile property values");
+		err.setDescription(defaultBundle.getString("Error.app.getprovpropsfailed"));
+		return err;
+	}	
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getProvProfileileExpiredError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(524);
+		err.setName("Provisioning profile expired");
+		err.setDescription(defaultBundle.getString("Error.app.provprofileexpired"));
+		return err;
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getAppUnzipError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(525);
+		err.setName("Error unzipping app");
+		err.setDescription(defaultBundle.getString("Error.app.unzipapp"));
+		return err;
+	}
+	/**
+	 * 
+	 * @return
+	 */
+	public static ErrorCode getAppTrustError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(525);
+		err.setName("App trust error");
+		err.setDescription(defaultBundle.getString("Error.app.trust"));
+		return err;
+	}
 }

@@ -54,6 +54,7 @@ import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -99,8 +100,6 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 
 	private JLabel helpLabel;
 
-	private Frame owner;
-
 	/**
 	 * Initializes a new instance of the DataCollectorStartDialog class using
 	 * the specified instance of the ApplicationResourceOptimizer, and
@@ -140,7 +139,6 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 */
 	public DataCollectorSelectNStartDialog(Frame owner, ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo) {
 		super(owner);
-		this.owner = owner;
 		initialize(deviceList, traceFolderName, collectors, recordVideo);
 	}
 
@@ -150,6 +148,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 * @return void
 	 */
 	private void initialize(ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo) {
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("StartCollectorWindow");
 		this.setModal(true);
 		this.setTitle(ResourceBundleHelper.getMessageString("dlog.collector.title"));
 		

@@ -22,5 +22,5 @@ package com.att.arotcpcollector.socket;
 public interface IReceivePcapData {
 	public void registerPcapSubscriber(IPcapSubscriber subscriber);
 	public void unregisterPcapSubscriber(IPcapSubscriber subscriber);
-	public void notifyPcapSubscriber(byte[] packet);
+	public void notifyPcapSubscriber(byte[] packet, boolean secure);
 }

@@ -28,9 +28,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.font.TextAttribute;
 import java.text.MessageFormat;
-import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.ResourceBundle;
 
@@ -39,9 +37,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.ui.commonui.BrowserLauncher;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.HyperlinkLabel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.view.images.Images;
@@ -53,17 +49,11 @@ import com.att.aro.view.images.Images;
  */
 public class AboutPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
-
 	private static final String MAJOR_VERSION_KEY = "build.majorversion";
 	private static final String BUILD_VERSION_KEY = "build.timestamp";
-
 	private static final ResourceBundle RES_BUN = ResourceBundleHelper.getDefaultBundle();
 
 	private JPanel aboutPanel = null;
-	
-
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
-	
 
 	/**
 	 * Initializes a new instance of the AboutPanel class using the specified

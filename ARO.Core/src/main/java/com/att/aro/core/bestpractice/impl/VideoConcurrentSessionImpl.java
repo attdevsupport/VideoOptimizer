@@ -16,50 +16,84 @@
 
 package com.att.aro.core.bestpractice.impl;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.springframework.beans.factory.annotation.Value;
+
+import com.att.aro.core.ApplicationConfig;
+import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
+import com.att.aro.core.bestpractice.pojo.VideoConcurrentSession;
 import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
+import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
 public class VideoConcurrentSessionImpl implements IBestPractice {
-	
+
+	@InjectLogger
+	private static ILogger logger;
+
+	@Value("${videoConcurrentSession.title}")
+	private String overviewTitle;
+
+	@Value("${videoConcurrentSession.detailedTitle}")
+	private String detailTitle;
+
+	@Value("${videoConcurrentSession.desc}")
+	private String aboutText;
+
+	@Value("${videoConcurrentSession.url}")
+	private String learnMoreUrl;
+
+	@Value("${videoConcurrentSession.results}")
+	private String textResults;
+
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
-		int maxConcurrentSessions = 0;
-		VideoUsage videoUsage = tracedata.getVideoUsage();
-		if (videoUsage != null 
-				&& videoUsage.getAroManifestMap() != null 
-				&& videoUsage.getAroManifestMap().size() > 0) {
-			maxConcurrentSessions = maxOverlapVideoSessions(videoUsage.getAroManifestMap());
-		}
-
+		int maxManifestConcurrentSessions = 0;
 		VideoConcurrentSessionResult result = new VideoConcurrentSessionResult();
-		result.setConcurrentSessions(maxConcurrentSessions);
-		result.setResultType(BPResultType.NONE);
+		result.setSelfTest(true);
+		result.setAboutText(aboutText);
+		result.setDetailTitle(detailTitle);
+		result.setOverviewTitle(overviewTitle);
+		result.setResultType(BPResultType.SELF_TEST);
+		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
+		List<VideoConcurrentSession> manifestConcurrency = new ArrayList<VideoConcurrentSession>();
+		VideoUsage videoUsage = tracedata.getVideoUsage();
+		if (videoUsage != null && videoUsage.getAroManifestMap() != null && videoUsage.getAroManifestMap().size() > 0) {
+			manifestConcurrency = manifestConcurrentSessions(videoUsage.getAroManifestMap());
+			result.setResults(manifestConcurrency);	
+			for (VideoConcurrentSession manifestSession : manifestConcurrency) {
+				if (maxManifestConcurrentSessions < manifestSession.getConcurrentSessionCount()) {
+					maxManifestConcurrentSessions = manifestSession.getConcurrentSessionCount();
+				}
+			}
+			result.setMaxConcurrentSessionsCount(maxManifestConcurrentSessions);
+
+		}
+		result.setResultText(MessageFormat.format(textResults, maxManifestConcurrentSessions));
 		return result;
 	}
 
-	public int maxOverlapVideoSessions(TreeMap<Double, AROManifest> aroManifestMap) {
-
-		int maxConcurrentSessions = 0;
-		ArrayList<Double> sessionStartTimes = new ArrayList<Double>();
-		ArrayList<Double> sessionEndTimes = new ArrayList<Double>();
-		List<Session> sessionList = new ArrayList<Session>();
-
+	public List<VideoConcurrentSession> manifestConcurrentSessions(TreeMap<Double, AROManifest> aroManifestMap) {
+		List<VideoConcurrentSession> concurrentSessionList = new ArrayList<VideoConcurrentSession>();
 		if (aroManifestMap != null && aroManifestMap.size() > 0) {
 			for (AROManifest manifest : aroManifestMap.values()) {
-				if (manifest.isSelected()) {
+				if (manifest != null && manifest.isSelected()) {
+					ArrayList<Double> sessionStartTimes = new ArrayList<Double>();
+					ArrayList<Double> sessionEndTimes = new ArrayList<Double>();
+					List<Session> sessionList = new ArrayList<Session>();
 					TreeMap<String, VideoEvent> videoEventList = manifest.getVideoEventList();
 					for (Map.Entry<String, VideoEvent> veEntry : videoEventList.entrySet()) {
 						if (!sessionList.contains(((VideoEvent) veEntry.getValue()).getSession())) {
@@ -68,29 +102,52 @@ public class VideoConcurrentSessionImpl implements IBestPractice {
 							sessionEndTimes.add(((VideoEvent) veEntry.getValue()).getSession().getSessionEndTime());
 						}
 					}
-				}
-			}
-
-			if (sessionList.size() > 0) {
-				int startTimeCounter = 0;
-				int endTimeCounter = 0;
-				int currentOverlap = 0;
-				Collections.sort(sessionStartTimes);
-				Collections.sort(sessionEndTimes);
-				int startTimePointer = sessionStartTimes.size(), endTimePointer = sessionEndTimes.size();
-				while (startTimeCounter < startTimePointer && endTimeCounter < endTimePointer) {
-					if (sessionStartTimes.get(startTimeCounter) < sessionEndTimes.get(endTimeCounter)) {
-						currentOverlap++;
-						startTimeCounter++;
-						if (currentOverlap > maxConcurrentSessions)
-							maxConcurrentSessions = currentOverlap;
-					} else {
-						currentOverlap--;
-						endTimeCounter++;
+					VideoConcurrentSession concurrency = findConcurrency(sessionStartTimes, sessionEndTimes);
+					if (concurrency != null && concurrency.getConcurrentSessionCount() > 0) {
+						concurrency.setVideoName(manifest.getVideoName());
+						concurrentSessionList.add(concurrency);
 					}
 				}
 			}
 		}
-		return maxConcurrentSessions;
+		return concurrentSessionList;
+	}
+
+	private VideoConcurrentSession findConcurrency(ArrayList<Double> sessionStartTimes,
+			ArrayList<Double> sessionEndTimes) {
+		int maxConcurrentSessions = 0;
+		VideoConcurrentSession concurrentSession = null;
+		if (sessionStartTimes.size() > 0) {
+			int startTimeCounter = 0;
+			int endTimeCounter = 0;
+			int currentOverlap = 0;
+			Collections.sort(sessionStartTimes);
+			Collections.sort(sessionEndTimes);
+			int startTimePointer = sessionStartTimes.size(), endTimePointer = sessionEndTimes.size();
+			while (startTimeCounter < startTimePointer && endTimeCounter < endTimePointer) {
+				if (sessionStartTimes.get(startTimeCounter) < sessionEndTimes.get(endTimeCounter)) {
+					Double duration = sessionEndTimes.get(endTimeCounter) - sessionStartTimes.get(startTimeCounter);
+					currentOverlap++;
+					startTimeCounter++;
+					if (maxConcurrentSessions <= currentOverlap && currentOverlap > 1) {
+						if (concurrentSession != null) {
+							if (concurrentSession.getConcurrentSessionCount() == currentOverlap) {
+								duration = duration + concurrentSession.getConcurrencyDuration();
+							}
+							concurrentSession.setCountDuration(currentOverlap, duration);
+						} else {
+							concurrentSession = new VideoConcurrentSession(currentOverlap, duration);
+						}
+					}
+					if (maxConcurrentSessions < currentOverlap) {
+						maxConcurrentSessions = currentOverlap;
+					}
+				} else {
+					currentOverlap--;
+					endTimeCounter++;
+				}
+			}
+		}
+		return concurrentSession;
 	}
 }

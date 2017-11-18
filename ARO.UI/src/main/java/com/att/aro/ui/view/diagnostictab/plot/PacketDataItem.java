@@ -20,8 +20,6 @@ import java.util.List;
 
 import org.jfree.data.xy.YIntervalDataItem;
 
-import com.att.aro.core.packetanalysis.pojo.HttpDirection;
-import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -33,7 +31,6 @@ public class PacketDataItem extends YIntervalDataItem{
 	private static final String TOOLTIP_PREFIX = ResourceBundleHelper.getMessageString("packet.tooltip.prefix");
 	private static final String PACKET_TOOLTIP = ResourceBundleHelper.getMessageString("packet.tooltip.packet");
 	private static final String SESSION_TOOLTIP = ResourceBundleHelper.getMessageString("packet.tooltip.session");
-	private static final String RR_TOOLTIP = ResourceBundleHelper.getMessageString("packet.tooltip.reqresp");
 	private static final String TOOLTIP_SUFFIX = ResourceBundleHelper.getMessageString("packet.tooltip.suffix");
 
 	private String tooltip;

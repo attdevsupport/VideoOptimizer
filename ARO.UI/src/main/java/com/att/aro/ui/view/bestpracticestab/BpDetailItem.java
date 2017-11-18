@@ -66,6 +66,7 @@ import com.att.aro.core.bestpractice.pojo.Http4xx5xxResult;
 import com.att.aro.core.bestpractice.pojo.Http4xx5xxStatusResponseCodesEntry;
 import com.att.aro.core.bestpractice.pojo.HttpCode3xxEntry;
 import com.att.aro.core.bestpractice.pojo.HttpsUsageResult;
+import com.att.aro.core.bestpractice.pojo.ImageComparatorResult;
 import com.att.aro.core.bestpractice.pojo.ImageCompressionEntry;
 import com.att.aro.core.bestpractice.pojo.ImageCompressionResult;
 import com.att.aro.core.bestpractice.pojo.ImageFormatResult;
@@ -75,6 +76,7 @@ import com.att.aro.core.bestpractice.pojo.ImageSizeEntry;
 import com.att.aro.core.bestpractice.pojo.ImageSizeResult;
 import com.att.aro.core.bestpractice.pojo.MinificationEntry;
 import com.att.aro.core.bestpractice.pojo.MinificationResult;
+import com.att.aro.core.bestpractice.pojo.MultiSimultnsConnectionResult;
 import com.att.aro.core.bestpractice.pojo.SimultnsConnectionResult;
 import com.att.aro.core.bestpractice.pojo.SpriteImageEntry;
 import com.att.aro.core.bestpractice.pojo.SpriteImageResult;
@@ -83,6 +85,8 @@ import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataResult;
 import com.att.aro.core.bestpractice.pojo.UnnecessaryConnectionEntry;
 import com.att.aro.core.bestpractice.pojo.UnnecessaryConnectionResult;
 import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionResult;
+import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
+import com.att.aro.core.bestpractice.pojo.VideoStallResult;
 import com.att.aro.core.bestpractice.pojo.WeakCipherResult;
 import com.att.aro.core.packetanalysis.pojo.CacheEntry;
 import com.att.aro.core.pojo.AROTraceData;
@@ -93,6 +97,7 @@ import com.att.aro.ui.commonui.IAROExpandable;
 import com.att.aro.ui.commonui.UIComponent;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
+import com.att.aro.ui.view.menu.file.BPSelectionPanel;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
 
 public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
@@ -112,6 +117,7 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 	private AbstractImageBpDetailTablePanel imgMdataResultsTablePanel;
 	private AbstractBpImageCompressionTablePanel imageCompressionResultsTablePanel;
 	private AbstractBpImageFormatTablePanel imageFormatResultsTablePanel;
+	private AbstractBpImageComparatorTablePanel imageComparisonResultsTablePanel;
 	private IARODiagnosticsOverviewRoute diagnosticsOverviewRoute;
 	private MainFrame aroView;
 	
@@ -230,10 +236,23 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 	
 	}
 	
-	
-	
+	public BpDetailItem(String name, BestPracticeType imageFormat,
+			BpFileImageComparisionTablePanel imageComparisionTablePanel) {
 
+		super();
+		
+		this.bpType = imageFormat;
+		imageLabel = new JLabel(loadImageIcon(null));
+		nameLabel = new JLabel();
+		aboutLabel = new JLabel();
+		resultsLabel = new JLabel();
+		nameTextLabel = new JLabel();
+		
+		this.imageComparisonResultsTablePanel = imageComparisionTablePanel;
+		
+		add(layoutPanel(name), BorderLayout.CENTER);
 	
+	}
 
 	public void addTablePanelRoute(IARODiagnosticsOverviewRoute DiagnosticsOverviewRoute) {
 		this.diagnosticsOverviewRoute = DiagnosticsOverviewRoute;
@@ -245,7 +264,9 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			imageCompressionResultsTablePanel.addTablePanelRoute(DiagnosticsOverviewRoute);;
 		}  else if (imageFormatResultsTablePanel != null) {
 			imageFormatResultsTablePanel.addTablePanelRoute(DiagnosticsOverviewRoute);;
-		} 
+		} else if (imageComparisonResultsTablePanel != null) {
+			imageComparisonResultsTablePanel.addTablePanelRoute(DiagnosticsOverviewRoute);;
+		}  
 		
 	}
 	
@@ -338,6 +359,12 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 					  openPrivateDataDialog();
 				  }
 				});
+				buttonPrivateData.setEnabled(false);
+				for (BestPracticeType bptype : BPSelectionPanel.getInstance().getCheckedBP()) {
+					if (bptype.name().equalsIgnoreCase("TRANSMISSION_PRIVATE_DATA")) {
+						buttonPrivateData.setEnabled(true);
+					}
+				}
 				scroll = new JScrollPane(buttonPrivateData);
 				scroll.setBorder(BorderFactory.createEmptyBorder());
 				removeMouseWheelListeners(scroll);
@@ -354,9 +381,11 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 				dataPanel.add(imageCompressionResultsTablePanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
 					
 			} else if(imageFormatResultsTablePanel !=null) {
-				dataPanel.add(imageFormatResultsTablePanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
+				dataPanel.add(imageFormatResultsTablePanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));			
+			} else if(imageComparisonResultsTablePanel !=null) {
+				dataPanel.add(imageComparisonResultsTablePanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
 					
-			}
+			} 
 		}
 		return dataPanel;
 	}
@@ -443,6 +472,8 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			break;
 			case IMAGE_FORMAT: learnMoreURI = ResourceBundleHelper.getMessageString("imageFormat.url");
 			break;
+			case IMAGE_COMPARE: learnMoreURI = ResourceBundleHelper.getMessageString("uiComparator.url");
+			break;
 			case MINIFICATION: learnMoreURI = ResourceBundleHelper.getMessageString("minification.url") ;
 			break;
 			case SPRITEIMAGE: learnMoreURI = ResourceBundleHelper.getMessageString("spriteimages.url");
@@ -504,6 +535,8 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			case VIDEO_REDUNDANCY : learnMoreURI = ResourceBundleHelper.getMessageString("videoRedundancy.url");
 			break;
 			case SIMUL_CONN: learnMoreURI = ResourceBundleHelper.getMessageString("connections.simultaneous.url");
+			break;
+			case MULTI_SIMULCONN: learnMoreURI = ResourceBundleHelper.getMessageString("connections.multiSimultaneous.url");
 			break;
 			default:
 			break;
@@ -625,6 +658,15 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 					((BpFileImageFormatTablePanel) imageFormatResultsTablePanel)
 							.setData((Collection<ImageMdataEntry>) ((ImageFormatResult) bpr).getResults());
 					return;
+				case IMAGE_COMPARE:
+					if (bpr.getResultType() == BPResultType.NONE) {
+						((BpFileImageComparisionTablePanel) imageComparisonResultsTablePanel)
+								.setData(Collections.emptyList());
+					} else {
+						((BpFileImageComparisionTablePanel) imageComparisonResultsTablePanel)
+								.setData((Collection<ImageMdataEntry>) ((ImageComparatorResult) bpr).getResults());
+					}
+					return;
 				case MINIFICATION:
 					if (bpr.getResultType() == BPResultType.NONE)
 						((BpFileMinificationTablePanel) resultsTablePanel).setData(Collections.emptyList());
@@ -692,11 +734,15 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 					((BpSecurityHttpsUsageTablePanel) resultsTablePanel).setData(((HttpsUsageResult) bpr).getResults());
 					return;
 				case TRANSMISSION_PRIVATE_DATA:
-					if (bpr.getResultType() == BPResultType.NONE)
-						((BpSecurityTransmissionPrivateDataTablePanel) resultsTablePanel).setData(Collections.emptyList());
-						else
-					((BpSecurityTransmissionPrivateDataTablePanel) resultsTablePanel)
-							.setData(((TransmissionPrivateDataResult) bpr).getResults());
+					if (bpr.getResultType() == BPResultType.NONE) {
+						((BpSecurityTransmissionPrivateDataTablePanel) resultsTablePanel)
+								.setData(Collections.emptyList());
+						buttonPrivateData.setEnabled(false);
+					} else {
+						((BpSecurityTransmissionPrivateDataTablePanel) resultsTablePanel)
+								.setData(((TransmissionPrivateDataResult) bpr).getResults());
+						buttonPrivateData.setEnabled(true);
+					}
 					return;
 				case UNSECURE_SSL_VERSION:
 					if (bpr.getResultType() == BPResultType.NONE)
@@ -724,6 +770,29 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 						else
 					((BPConnectionsSimultnsTablePanel) resultsTablePanel)
 							.setData(((SimultnsConnectionResult) bpr).getResults());
+					return;
+				case MULTI_SIMULCONN:
+					if (bpr.getResultType() == BPResultType.NONE)
+						((BPConnectionsSimultnsTablePanel) resultsTablePanel).setData(Collections.emptyList());
+						else
+					((BPConnectionsSimultnsTablePanel) resultsTablePanel)
+							.setData(((MultiSimultnsConnectionResult) bpr).getResults());
+					return;
+				case VIDEO_STALL:
+					if (bpr.getResultType() == BPResultType.NONE) {
+						((BPVideoStallTablePanel) resultsTablePanel).setData(Collections.emptyList());
+					} else {
+						((BPVideoStallTablePanel) resultsTablePanel)
+								.setData(((VideoStallResult) bpr).getResults());
+					}
+					return;
+				case VIDEO_CONCURRENT_SESSION:
+					if (bpr.getResultType() == BPResultType.NONE) {
+						((BPVideoConcurrentSessionTablePanel) resultsTablePanel).setData(Collections.emptyList());
+					} else {
+						((BPVideoConcurrentSessionTablePanel) resultsTablePanel)
+								.setData(((VideoConcurrentSessionResult) bpr).getResults());
+					}
 					return;
 				default:
 					return;
@@ -755,6 +824,8 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable{
 			imageCompressionResultsTablePanel.expand();
 		}else if (imageFormatResultsTablePanel!=null) {
 			imageFormatResultsTablePanel.expand();
+		} else if (imageComparisonResultsTablePanel!=null) {
+			imageComparisonResultsTablePanel.expand();
 		}
 	}
 

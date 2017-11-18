@@ -17,28 +17,17 @@ package com.att.aro.console;
 
 import org.springframework.context.ApplicationContext;
 
+import com.att.aro.console.util.ThrottleUtil;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.pojo.ErrorCode;
 
 /**
- * validate commands against arguments
- *
+ * validate commands against arguments 
+ * choose start collector or analyze ->  rest of the features 
  */
 public class Validator {
 	public ErrorCode validate(Commands cmd, ApplicationContext context) {
-		if (cmd.getStartcollector() != null) {
-			String colname = cmd.getStartcollector();
-			if (!"rooted_android".equals(colname) 
-			 && !"vpn_android".equals(colname) 
-			 && !"ios".equals(colname)) {
-				return ErrorCodeRegistry.getUnsupportedCollector();
-			}
-			if (cmd.getOutput() == null) {
-				return ErrorCodeRegistry.getOutputRequired();
-			}
-		}
 		if (cmd.getAnalyze() != null) {
-			//check something
 			if (cmd.getFormat().equals("json") && cmd.getFormat().equals("html")) {
 				return ErrorCodeRegistry.getUnsupportedFormat();
 			}
@@ -54,28 +43,42 @@ public class Validator {
 					return ErrorCodeRegistry.getFileExist();
 				}
 			}
-		}
-		if (cmd.getVideo() != null
-				&& !cmd.getVideo().equals("yes") 
-				&& !cmd.getVideo().equals("no")
-				&& !cmd.getVideo().equals("hd")
-				&& !cmd.getVideo().equals("sd")
-				&& !cmd.getVideo().equals("slow")
-				) {
-			return ErrorCodeRegistry.getInvalidVideoOption();
-		}
-		
-		ErrorCode secureErrorCode = validateSecure(cmd);
-		if (secureErrorCode != null) {
-			return secureErrorCode;
-		}
-		ErrorCode uplinkErrorCode = validateUplink(cmd);
-		if (uplinkErrorCode != null) {
-			return uplinkErrorCode;
-		}
-		ErrorCode downlinkErrorCode = validateDownlink(cmd);
-		if (downlinkErrorCode != null) {
-			return downlinkErrorCode;
+		}else{
+			if (cmd.getStartcollector() != null) {
+				String colname = cmd.getStartcollector();
+				if (!"rooted_android".equals(colname) 
+				 && !"vpn_android".equals(colname) 
+				 && !"ios".equals(colname)) {
+					return ErrorCodeRegistry.getUnsupportedCollector();
+				}
+				if (cmd.getOutput() == null) {
+					return ErrorCodeRegistry.getOutputRequired();
+				}
+			}
+
+			if (cmd.getVideo() != null
+					&& !cmd.getVideo().equals("yes") 
+					&& !cmd.getVideo().equals("no")
+					&& !cmd.getVideo().equals("hd")
+					&& !cmd.getVideo().equals("sd")
+					&& !cmd.getVideo().equals("slow")
+					) {
+				return ErrorCodeRegistry.getInvalidVideoOption();
+			}
+			
+			ErrorCode secureErrorCode = validateSecure(cmd);
+			if (secureErrorCode != null) {
+				return secureErrorCode;
+			}
+			
+			ErrorCode uplinkErrorCode = validateUplink(cmd);
+			if (uplinkErrorCode != null) {
+				return uplinkErrorCode;
+			}
+			ErrorCode downlinkErrorCode = validateDownlink(cmd);
+			if (downlinkErrorCode != null) {
+				return downlinkErrorCode;
+			}
 		}
 		return null;
 	}
@@ -91,26 +94,29 @@ public class Validator {
 	}
 	
 	private ErrorCode validateUplink(Commands cmd) {
-		if (!"vpn_android".equals(cmd.getStartcollector()) && cmd.getUplink() != 0) {
-			return ErrorCodeRegistry.getAttenuatorNotApplicable();
-		}
-		if (!isNumberInRange(cmd.getUplink(), 0, 100)) {
+ 
+		if ("vpn_android".equals(cmd.getStartcollector()) 
+				&& !isNumberInRange(cmd.getThrottleUL(), 64, 102400)) {
 			return ErrorCodeRegistry.getInvalidUplink();
+		}else if("ios".equals(cmd.getStartcollector())||"rooted_android".equals(cmd.getStartcollector())){
+			return ErrorCodeRegistry.getUnsupportedCollector();
 		}
 		return null;
 	}
 	
 	private ErrorCode validateDownlink(Commands cmd) {
-		if (!"vpn_android".equals(cmd.getStartcollector()) && cmd.getDownlink() != 0) {
-			return ErrorCodeRegistry.getAttenuatorNotApplicable();
-		}
-		if (!isNumberInRange(cmd.getDownlink(), 0, 2000)) {
+ 
+		if ( "vpn_android".equals(cmd.getStartcollector()) && !isNumberInRange(cmd.getThrottleDL(), 64, 102400) ){
 			return ErrorCodeRegistry.getInvalidDownlink();
+		}else if("ios".equals(cmd.getStartcollector())||"rooted_android".equals(cmd.getStartcollector())){
+			return ErrorCodeRegistry.getUnsupportedCollector();
 		}
 		return null;
 	}
-	
-	private boolean isNumberInRange(int number, int from, int to) {
-		return number >= from && number <= to;
+		
+	private boolean isNumberInRange(String number, int from, int to) {
+		int throughput = ThrottleUtil.getInstance().parseNumCvtUnit(number);				
+		return ThrottleUtil.getInstance().isNumberInRange(throughput, from, to);
 	}
+		
 }

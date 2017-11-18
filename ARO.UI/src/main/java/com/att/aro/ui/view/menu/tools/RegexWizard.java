@@ -71,6 +71,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.videoanalysis.IVideoAnalysisConfigHelper;
 import com.att.aro.core.videoanalysis.impl.VideoAnalysisConfigHelperImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
@@ -159,7 +160,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	}
 
 	public void init() {
-		
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("VideoParserWizard");
 		setDefaultCloseOperation(RegexWizard.DISPOSE_ON_CLOSE);
 		enableCheckBoxes(true);	
 		this.setSize(815, 800);
@@ -210,7 +211,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	}
 
 	public void setRequest(HttpRequestResponseInfo request) {
-		if (!request.getObjName().contains(".m3u8") && !request.getObjName().contains(".mpd")) {
+//		if (!request.getObjName().contains(".m3u8") && !request.getObjName().contains(".mpd")) {
 			populateURLFields(request.getObjUri().toString(), request.getAllHeaders(), request.getAssocReqResp().getAllHeaders());
 			videoConfig = voConfigHelper.findConfig(request.getObjUri().toString());
 			if (videoConfig != null) {
@@ -227,7 +228,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 				videoConfig = new VideoAnalysisConfig();
 			}
 			pack();
-		}
+//		}
 	}
 	
 	private void enableCheckBoxes(boolean state){
@@ -784,7 +785,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		}
 		VideoDataTags[] newTags = new VideoDataTags[videoDataTags.length + delta];
 		Arrays.fill(newTags, VideoDataTags.unknown);
-		
+
 		if (newTags.length != 0) {
 			int idy = 0;
 			for (int idx = 0; idx < videoDataTags.length; idx++) {
@@ -800,7 +801,9 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 					}
 					position = -1;
 				} else {
-					newTags[idy++] = videoDataTags[idx];
+					if (idy < newTags.length) {
+						newTags[idy++] = videoDataTags[idx];
+					}
 				}
 			}
 		}

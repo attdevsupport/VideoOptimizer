@@ -15,37 +15,77 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.annotation.Nonnull;
+
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
 public class VideoUsage extends AbstractBestPracticeResult {
 
 	private TreeMap<Double, AROManifest> aroManifestMap = new TreeMap<>();
-	
-	/**
-	 * key: Double flag(['+'good, '-'failed to extract}),timestamp
-	 * data: HttpRequestResponseInfo
-	 */
 	private TreeMap<Double, HttpRequestResponseInfo> requestMap = new TreeMap<>();
-	
-	/**
-	 * a Map to record requests that failed to deliver content
-	 */
-	private TreeMap<Double, String> failedRequestMap = new TreeMap<>();
-	
+	private TreeMap<Double, String> failedRequestMap = new TreeMap<>();	
 	private Map<AROManifest,Double> durationAROManifestMap = new HashMap<>();
 	private Map<AROManifest,Double> timescaleAROManifestMap = new HashMap<>();
-	
 	private String tracePath;
-
 	private VideoUsagePrefs videoUsagePrefs;
+	private Map<VideoEvent, Double> chunkPlayTimeList = new TreeMap<>();
+	private  Map<AROManifest,VideoEvent> firstSelectedSegment = new HashMap<>();
+	@Nonnull private List<VideoEvent> chunksBySegment = new ArrayList<>();
+	@Nonnull private Map<VideoEvent, AROManifest> veManifestList = new HashMap<>();
+	@Nonnull private List<VideoEvent> filteredSegments = new ArrayList<>();
+	@Nonnull private List<VideoEvent> allSegments = new ArrayList<>();
+	@Nonnull private List<VideoEvent> removeChunks = new ArrayList<>();
+	
+	public List<VideoEvent> getChunksBySegmentNumber() {
+		return chunksBySegment;
+	}
+	
+	public List<VideoEvent> getFilteredSegments() {
+		return filteredSegments;
+	}
 
+	public void setFilteredSegments(List<VideoEvent> filteredSegments) {
+		if(filteredSegments == null){
+			this.filteredSegments.clear();
+		}else{
+			this.filteredSegments = filteredSegments;
+		}
+	}
+
+	public void setChunksBySegmentNumber(List<VideoEvent> chunksBySegment) {
+		if(chunksBySegment == null){
+			this.chunksBySegment.clear();
+		}else{
+			this.chunksBySegment = chunksBySegment;
+		}
+	}
+	
+	public Map<VideoEvent, Double> getChunkPlayTimeList() {
+		return chunkPlayTimeList;
+	}
+
+	public void setChunkPlayTimeList(Map<VideoEvent, Double> chunkPlayTimeList) {
+		this.chunkPlayTimeList = chunkPlayTimeList;
+	}
+
+	public Map<AROManifest,VideoEvent> getFirstSelectedSegment() {
+		return firstSelectedSegment;
+	}
+
+	public void setFirstSelectedSegment(Map<AROManifest,VideoEvent> firstSelectedSegment) {
+		this.firstSelectedSegment = firstSelectedSegment;
+	}
+	
 	public VideoUsage(String tracePath) {
 		this.tracePath = tracePath;
 	}
@@ -77,34 +117,27 @@ public class VideoUsage extends AbstractBestPracticeResult {
 	}
 
 	public void add(double timeStamp, AROManifest aroManifest) {
-		aroManifestMap.put(timeStamp,aroManifest);
+		if (aroManifest != null) {
+			aroManifestMap.put(timeStamp, aroManifest);
+		}
 	}
 
+	/**
+	 * Find Manifest with same name and is active
+	 * @param videoName
+	 * @return
+	 */
 	public AROManifest findVideoInManifest(String videoName) {
-
-		for (AROManifest aroManifest : getAroManifestMap().values()) {
-			// FIXME - compare
-			// FNCHD.gmott.1080.mobile compare to FNCHD_gmott_1080_mobile
-			if (videoName.replaceAll("\\.", "_").contains(aroManifest.getVideoName())) {
-				return aroManifest;
+		for (AROManifest manifest : getAroManifestMap().values()) {
+			// problem here when seg from an old video comes in, hmmm??
+			if (manifest.isActiveState()) {
+				if (videoName.replaceAll("\\.", "_").equals(manifest.getVideoName())) {
+					return manifest;
+				}
 			}
 		}
 
 		return null;
-	}
-	
-	/**
-	 * <pre>
-	 * Returns a Map of AroManifest objects keyed by timestamps
-	 * 
-	 * Use getAroManifestMap() instead
-	 * Better yet, use getManifests() for a List<AROManifest>
-	 * 
-	 * @return Map of AroManifest
-	 */
-	@Deprecated
-	public TreeMap<Double, AROManifest> getVideoEventList() {
-		return aroManifestMap;
 	}
 	
 	public Collection<AROManifest> getManifests(){
@@ -130,7 +163,6 @@ public class VideoUsage extends AbstractBestPracticeResult {
 	 * @param timescaleAROManifestMap
 	 */
 	public void addDurationTimescale(Map<AROManifest, Double> durationAROManifestMap, Map<AROManifest, Double> timescaleAROManifestMap) {
-		// TODO Auto-generated method stub
 		this.durationAROManifestMap = durationAROManifestMap;
 		this.timescaleAROManifestMap = timescaleAROManifestMap;
 	}
@@ -174,5 +206,41 @@ public class VideoUsage extends AbstractBestPracticeResult {
 
 	public void addFailedRequestMap(HttpRequestResponseInfo request) {
 		this.failedRequestMap.put(request.getTimeStamp(), request.getObjUri().toString());
+	}
+
+	public Map<VideoEvent, AROManifest> getVideoEventManifestMap() {
+		return veManifestList;
+	}
+
+	public void setVideoEventManifestMap(Map<VideoEvent, AROManifest> veManifestList) {
+		if(null == veManifestList){
+			this.veManifestList.clear();
+		}else{
+			this.veManifestList = veManifestList;
+		}
+	}
+
+	public List<VideoEvent> getAllSegments() {
+		return allSegments;
+	}
+
+	public void setAllSegments(List<VideoEvent> allSegments) {
+		if(null == allSegments){
+			this.allSegments.clear();
+		}else{
+			this.allSegments = allSegments;
+		}
+	}
+
+	public List<VideoEvent> getRemoveChunks() {
+		return removeChunks;
+	}
+
+	public void setRemoveChunks(List<VideoEvent> removeChunks) {
+		if(null == removeChunks){
+			this.removeChunks.clear();
+		}else{
+			this.removeChunks = removeChunks;
+		}
 	}
 }

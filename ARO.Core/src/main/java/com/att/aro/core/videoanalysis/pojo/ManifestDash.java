@@ -30,19 +30,22 @@ import com.att.aro.core.videoanalysis.pojo.amazonvideo.SSMAmz;
 import com.att.aro.core.videoanalysis.pojo.amazonvideo.SegmentListAmz;
 import com.att.aro.core.videoanalysis.pojo.amazonvideo.SegmentURL;
 import com.att.aro.core.videoanalysis.pojo.amazonvideo.XmlManifestHelper;
-import com.att.aro.core.videoanalysis.pojo.config.VideoDataTags;
+import com.att.aro.core.videoanalysis.pojo.mpdplayerady.MPDPlayReady;
 
 public class ManifestDash extends AROManifest {
-
-	
 	private MPDAmz mpdOut;
+	@SuppressWarnings("unused")
 	private SSMAmz ssmOut;
+	@SuppressWarnings("unused")
+	private MPDPlayReady mpdPlayReadyOut;
 
 	public ManifestDash(HttpRequestResponseInfo req, byte[] content, String videoPath) {
 		super(VideoType.DASH, req, videoPath);
 		XmlManifestHelper mani = new XmlManifestHelper(content);
 		if (mani.getManifestType().equals(XmlManifestHelper.ManifestFormat.SmoothStreamingMedia)) {
 			this.ssmOut = (SSMAmz) mani.getManifest();
+		} else if (mani.getManifestType().equals(XmlManifestHelper.ManifestFormat.MPD_PlayReady)) {
+			this.mpdPlayReadyOut = (MPDPlayReady) mani.getManifest();
 		} else {
 			this.mpdOut = (MPDAmz) mani.getManifest();
 		}
@@ -57,19 +60,19 @@ public class ManifestDash extends AROManifest {
 
 	public void parseManifestData() {
 		if (mpdOut == null) {
-			duration = 2;
-			timeScale = 1;
+			duration = 2D;
+			timeScale = 1D;
 			return;
 		}
 		List<RepresentationAmz> videoRepresentationAmz = findAdaptationSet(mpdOut, "video");
 		if (videoRepresentationAmz != null) {
 			for (RepresentationAmz representationAmz : videoRepresentationAmz) {
 				if (videoName.isEmpty()) {
-					setVideoName(representationAmz.getUrl());
+					singletonSetVideoName(representationAmz.getUrl());
 					String[] str = stringParse.parse(videoName, "(.+)_([a-zA-Z_0-9\\-]*)_\\d+(\\.[a-zA-Z_0-9]*)");
-					if (str.length == 3){
+					if (str.length == 3) {
 						exten = str[2];
-						videoName = str[0];//+"_"+str[1];
+						videoName = str[0];// +"_"+str[1];
 					}
 				}
 				if (representationAmz.getEncodedSegment() != null) {
@@ -203,7 +206,6 @@ public class ManifestDash extends AROManifest {
 			if (videoRepresentationAmz != null) {
 				for (RepresentationAmz representationAmz : videoRepresentationAmz) {
 					if (representationAmz != null && representationAmz.getUrl().endsWith(fullName)) {
-						
 						if (representationAmz.getEncodedSegment() != null) {
 							String encodedSegment = representationAmz.getEncodedSegment() != null ? representationAmz.getEncodedSegment().getEncodedSegmentListValue() : "";
 							String[] byteRanges = encodedSegment.split(";");
@@ -298,21 +300,10 @@ public class ManifestDash extends AROManifest {
 	}
 	
 	@Override
-	public void setTimeScale(double timeScale) {
+	public void setTimeScale(Double timeScale) {
 		if (timeScale == 0){
-			timeScale = 1;
+			timeScale = 1D;
 		}
 		super.setTimeScale(timeScale);
 	}
-	
-	@Override
-	public Integer getSegment(String[] voValues){
-//TODO remove debugging info, but keep this for now BCN
-//		VideoDataTags[] ref = vConfig.getXref();
-//		for (VideoDataTags videoDataTags : ref) {
-//			System.out.println("videoDataTags :" + videoDataTags);
-//		}
-		return super.getSegment(voValues);
-	}
-
 }

@@ -50,7 +50,6 @@ public abstract class AbstractBpImageCompressionTablePanel extends TabPanelJPane
 
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -157,7 +156,6 @@ public abstract class AbstractBpImageCompressionTablePanel extends TabPanelJPane
 	 * Returns the zoom button.
 	 */
 	private JButton getZoomBtn() {
-		//TODO		
 		zoomBtn = new JButton(zoomOut);
 		zoomBtn.setEnabled(false);
 		zoomBtn.addActionListener(new ActionListener() {
@@ -228,6 +226,7 @@ public abstract class AbstractBpImageCompressionTablePanel extends TabPanelJPane
 	}
 
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void mousePressed(MouseEvent event) {
 		if (diagnosticsOverviewRoute != null && event.getClickCount() == 2) {

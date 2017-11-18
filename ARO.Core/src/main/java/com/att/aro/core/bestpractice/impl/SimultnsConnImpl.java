@@ -94,7 +94,7 @@ public class SimultnsConnImpl implements IBestPractice {
 		String text = "";
 		if (simultnsConnectionEntryList.isEmpty()) {
 			result.setResultType(BPResultType.PASS);
-			text = MessageFormat.format(textResultPass, simultnsConnectionEntryList.size());
+			text = textResultPass;
 			result.setResultText(text);
 		} else {
 			result.setResultType(BPResultType.FAIL);
@@ -126,7 +126,7 @@ public class SimultnsConnImpl implements IBestPractice {
 		}
 
 		for (HashMap.Entry<String, List<SessionValues>> ipEntry : ipMap.entrySet()) {
-			SimultnsConnEntry simultnsConnEntry = simultnsUtil.getTimeMap(ipEntry.getValue(), maxConnections);
+			SimultnsConnEntry simultnsConnEntry = simultnsUtil.getTimeMap(ipEntry.getValue(), maxConnections, false);
 			if(simultnsConnEntry!=null) {
 				simultnsConnectionEntryMap.put(simultnsConnEntry.getTimeStamp(), simultnsConnEntry);
 			}

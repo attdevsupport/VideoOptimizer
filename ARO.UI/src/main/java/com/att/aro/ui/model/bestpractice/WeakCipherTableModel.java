@@ -105,7 +105,6 @@ public class WeakCipherTableModel extends DataTableModel<WeakCipherEntry> {
 	
 	@Override
 	protected Object getColumnValue(WeakCipherEntry item, int columnIndex) {
-		// TODO Auto-generated method stub
 		switch (columnIndex) {
 		case COL_1:
 			return item.getDestIP();

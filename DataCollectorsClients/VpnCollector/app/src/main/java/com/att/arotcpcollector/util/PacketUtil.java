@@ -16,21 +16,20 @@
 
 package com.att.arotcpcollector.util;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.Date;
-import java.util.Enumeration;
-
 import android.util.Log;
 
 import com.att.arotcpcollector.SessionHandler;
 import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.udp.UDPHeader;
+
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Enumeration;
 
 /**
  * Helper class to perform various useful task
@@ -142,6 +141,30 @@ public class PacketUtil {
 		return value;
 	}
 
+	/**
+	 * convert array of byte to unsignedint
+	 * Java doesnt support unsigned int's and we have to handle them as longs
+	 * http://www.javamex.com/java_equivalents/unsigned_arithmetic.shtml
+	 * http://packetlife.net/blog/2010/jun/7/understanding-tcp-sequence-acknowledgment-numbers/
+	 * @param buffer
+	 * @param start
+	 * @param length
+	 * @return value of long
+	 */
+	public static long getNetworkUnsignedInt(byte[] buffer, int start, int length) {
+		long value = 0x00000000L;
+		int end = start + (length > 4 ? 4 : length);
+		if (end > buffer.length) {
+			end = buffer.length;
+		}
+		for (int i = start; i < end; i++) {
+			value |= buffer[i] & 0xFF;
+			if (i < (end - 1)) {
+				value <<= 8;
+			}
+		}
+		return value;
+	}
 	/**
 	 * validate TCP header checksum
 	 * 

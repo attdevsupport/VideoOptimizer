@@ -55,6 +55,7 @@
 		<exclude name="UseLocaleWithCaseConversions" />
 		<exclude name="AssignmentToNonFinalStatic" />
 		<exclude name="UncommentedEmptyConstructor" />
+		<exclude name="UncommentedEmptyMethod" />
 		<exclude name="UseVarargs"/>
 		<exclude name="ConfusingTernary"/>
 		<exclude name="ConstructorCallsOverridableMethod" />

@@ -34,14 +34,16 @@ public class RepresentationAmz {
 		strblr.append(bandwidth);
 		strblr.append(", url:");
 		strblr.append(url);
-		strblr.append(", EncodedSegmentListAmz :");
-		strblr.append(encodedSegment);
-//		if (segmentList != null) {
+		if (encodedSegment != null) {
+			strblr.append("\n\t\t\t\tEncodedSegmentListAmz :");
+			strblr.append(encodedSegment);
+		}
+		if (segmentList != null) {
 //			for (SegmentListAmz segment : segmentList) {
-//				strblr.append("\n\t\t\t\tSegmentListAmz :");
-//				strblr.append(segment);
+				strblr.append("\n\t\t\t\tSegmentListAmz :");
+				strblr.append(segmentList);
 //			}
-//		}
+		}
 		return strblr.toString();
 	}
 
@@ -72,15 +74,6 @@ public class RepresentationAmz {
 		this.encodedSegment = encodedSegment;
 	}
 
-//	@XmlElement(name = "SegmentList")
-//	public List<SegmentListAmz> getSegmentList() {
-//		return segmentList;
-//	}
-//
-//	public void setSegmentList(List<SegmentListAmz> segmentList) {
-//		this.segmentList = segmentList;
-//	}
-	
 	@XmlElement(name = "SegmentList")
 	public SegmentListAmz getSegmentList() {
 		return segmentList;

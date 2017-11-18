@@ -19,7 +19,6 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;
@@ -36,7 +35,6 @@ import com.att.aro.core.peripheral.pojo.ScreenStateInfo.ScreenState;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
-import com.att.aro.ui.view.diagnostictab.GraphPanel;
 
 public class ScreenStatePlot implements IPlot {
 	private ILogger logger = ContextAware.getAROConfigContext().getBean(

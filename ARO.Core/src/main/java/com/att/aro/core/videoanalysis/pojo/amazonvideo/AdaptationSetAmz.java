@@ -34,8 +34,7 @@ public class AdaptationSetAmz {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("\n\t\t contentType:");
-		strblr.append(contentType);
+		strblr.append("\n\tAdaptationSet\n\t\tcontentType:"); strblr.append(contentType);
 		int cntr = 0;
 		for (RepresentationAmz set : representation) {
 			strblr.append(cntr++ == 0 ? ": " : ", ");

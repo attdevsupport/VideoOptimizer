@@ -48,6 +48,8 @@ public class BpDetailConnectionsPanel extends BpDetail {
 		
 		addPanel(row++, new BpDetailItem("connections.simultaneous", BestPracticeType.SIMUL_CONN, new BPConnectionsSimultnsTablePanel()));
 		
+		addPanel(row++, new BpDetailItem("connections.multiSimultaneous", BestPracticeType.MULTI_SIMULCONN, new BPConnectionsSimultnsTablePanel()));
+		
 		addPanel(row++, new BpDetailItem("connections.periodic", BestPracticeType.PERIODIC_TRANSFER));
 		
 		addPanel(row++, new BpDetailItem("connections.screenRotation", BestPracticeType.SCREEN_ROTATION));
@@ -80,7 +82,6 @@ public class BpDetailConnectionsPanel extends BpDetail {
 
 	@Override
 	public JPanel layoutDataPanel() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

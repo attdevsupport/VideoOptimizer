@@ -47,7 +47,6 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		boolean nativeVideo = false;
 		String exVideoDisplayFileName = "exvideo.mov";
 		String filepath = directory + Util.FILE_SEPARATOR + exVideoDisplayFileName;
-		String[] lines = null;
 		String nativeVideoFileOnDevice = "video.mp4";
 		String nativeVideoDisplayfile = "video.mov";
 		if (filereader.fileExist(filepath) || isExternalVideoSourceFilePresent(nativeVideoFileOnDevice,nativeVideoDisplayfile,false, directory)){

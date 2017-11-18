@@ -66,10 +66,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 
 	@Override
 	public void run() {
-		String exepath = Util.getVideoOptimizerLibrary() + Util.FILE_SEPARATOR + ".drivers" + Util.FILE_SEPARATOR
-				+ "libimobiledevice" + Util.FILE_SEPARATOR + "idevicescreenshot";
-
-		log.debug("exepath :" + exepath);
+		String exepath = Util.getIdeviceScreenshot();
 		File exefile = new File(exepath);
 		if (!exefile.exists()) {
 			log.info("Not found exepath: " + exepath);
@@ -78,9 +75,15 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 		int count = 0;
 		while (isready) {
 			String img = this.imagefolder + Util.FILE_SEPARATOR + "image" + count + ".tiff";
-
-			String[] cmds = new String[] { "bash", "-c", exepath + " " + img };// 2>&1"
-																				// };
+			File file = new File(imagefolder);
+			if(!file.exists()) {
+				try {
+					file.createNewFile();
+				} catch (IOException e) {
+					log.error("Failed to create image folder", e);
+				}
+			}
+			String[] cmds = new String[] { "bash", "-c", exepath + " " + img };
 			ProcessBuilder builder = new ProcessBuilder(cmds);
 			builder.redirectErrorStream(true);
 
@@ -129,8 +132,6 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 					imgfile.delete();
 				} catch (Exception e) {
 				}
-			} else {
-				log.error("Error: image file not found => " + img);
 			}
 		} catch (IOException e) {
 			log.error("Error reading image file:" + img, e);

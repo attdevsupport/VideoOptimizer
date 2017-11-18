@@ -20,7 +20,7 @@
 			<id>central</id>
 			<name>MavenCentral Repository</name>
 			<url>http://repo1.maven.org/maven2</url>
-		</repository>	
+		</repository>
 		<repository>
 			<id>apache.snapshots</id>
 			<name>Apache Development Snapshot Repository</name>
@@ -31,21 +31,38 @@
 			<snapshots>
 				<enabled>true</enabled>
 			</snapshots>
-		</repository>
-
+		</repository>		
 		<repository>
-			<id>Typesafe</id>
-			<name>Maven Typesafe Repository</name>
-			<url>http://repo.typesafe.com/typesafe/maven-releases</url>
+			<id>sonatype</id>
+			<name>Sonatype</name>
+			<url>http://mavencentral.it.att.com:8084/nexus/content/repositories/sonatype</url>
 		</repository>
 		<repository>
-			<id>com.springsource.repository.bundles.external</id>
-			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
-			<url>http://repository.springsource.com/maven/bundles/external</url>
+			<id>sonatype-flex</id>
+			<name>Sonatype Flex</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</repository>
+		<repository>
+			<id>jboss-earlyaccess-repository</id>
+			<url>http://maven.repository.redhat.com/earlyaccess/all/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
 		</repository>
 	</repositories>
 
- 
+	<!-- pluginRepositories -->
+	<pluginRepositories>
+		<pluginRepository>
+			<id>central</id>
+			<name>MavenCentral Repository</name>
+			<url>http://repo1.maven.org/maven2</url>
+		</pluginRepository>
+	</pluginRepositories>
+
 	<!-- dependencies -->
 	<dependencies>
 		<dependency>
@@ -81,7 +98,12 @@
 			<artifactId>vpn-android-collector</artifactId>
 			<version>6.0.0-SNAPSHOT</version>
 		</dependency>
- 		<dependency>
+		<dependency>
+			<groupId>com.att.aro.datacollector</groupId>
+			<artifactId>rooted-android-collector</artifactId>
+			<version>6.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
 			<groupId>com.att.aro.datacollector</groupId>
 			<artifactId>ios-collector</artifactId>
 			<version>6.0.0-SNAPSHOT</version>
@@ -104,10 +126,7 @@
 		</dependency>
 
 	</dependencies>
-
-
-
-	<!-- build -->
+ 	<!-- build -->
 	<build>
 		<plugins>
 
@@ -125,6 +144,29 @@
 						</manifest>
 					</archive>
 				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>3.0.4</version>
+				<configuration>
+					<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
+					<effort>Max</effort>
+					<threshold>Max</threshold>
+					<maxRank>15</maxRank>
+					<xmlOutput>true</xmlOutput>
+					<findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<id>analyze-compile</id>
+						<!-- <phase>compile</phase> -->
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 
 			<!-- shade -->
@@ -171,6 +213,9 @@
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
+					<compilerArgument>-Xlint:all</compilerArgument>
+					<showWarnings>true</showWarnings>
+					<showDeprecation>true</showDeprecation>
 				</configuration>
 			</plugin>
 

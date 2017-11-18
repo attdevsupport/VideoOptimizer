@@ -23,6 +23,7 @@ import java.awt.Insets;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
+import java.util.HashMap;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -45,6 +46,7 @@ public abstract class AbstractBpPanel extends JPanel implements Observer, IUITab
 	private final TabPanelSupport tabPanelSupport;
 
 	JPanel dataPanel;
+	HashMap<String,JLabel> labelMap = new HashMap<>();
 
 	static final Font TEXT_FONT = new Font("TextFont", Font.PLAIN, 12);
 	static final Font HEADER_FONT = new Font("HeaderFont", Font.BOLD, 14);
@@ -80,6 +82,21 @@ public abstract class AbstractBpPanel extends JPanel implements Observer, IUITab
 			label = new JLabel(labelText);
 		} else {
 			label = new JLabel(ResourceBundleHelper.getMessageString(labelText));
+		}
+		label.setFont(font);
+		dataPanel.add(label, new GridBagConstraints(0, gridy, 1, 1, 0.0, 0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, insets, 0, 0));
+		dataPanel.add(infoLabel, new GridBagConstraints(1, gridy, width, 1, weightx, 0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, insets, 0, 0));
+
+	}
+	
+	protected void addLabelLineName(JLabel infoLabel, String labelText, int gridy, int width, double weightx, Insets insets, Font font){
+		JLabel label = null;
+		if (labelText.split(" ").length == 0) {
+			label = new JLabel(labelText);
+			labelMap.put(labelText,label);
+		} else {
+			label = new JLabel(ResourceBundleHelper.getMessageString(labelText));
+			labelMap.put(ResourceBundleHelper.getMessageString(labelText), label);
 		}
 		label.setFont(font);
 		dataPanel.add(label, new GridBagConstraints(0, gridy, 1, 1, 0.0, 0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, insets, 0, 0));
@@ -122,6 +139,13 @@ public abstract class AbstractBpPanel extends JPanel implements Observer, IUITab
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
 
+	}
+	public HashMap<String, JLabel> getLabelMap() {
+		return labelMap;
+	}
+
+	public void setLabelMap(HashMap<String, JLabel> labelMap) {
+		this.labelMap = labelMap;
 	}
 
 

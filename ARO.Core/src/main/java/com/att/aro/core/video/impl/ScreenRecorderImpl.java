@@ -43,11 +43,11 @@ import com.att.aro.core.video.pojo.VideoOption;
 
 public class ScreenRecorderImpl implements IScreenRecorder {
 
-	private static ILogger log;
+	private static ILogger LOGGER;
 	
 	@Autowired
 	public void setLogger(ILogger logger) {
-		this.log = logger;
+		LOGGER = logger;
 	}
 
 	@Autowired
@@ -128,7 +128,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 		String[] res = android.getShellReturn(device, "rm " + remoteVideoPath + "*");
 		for (String line : res) {
 			if (line.length() > 0) {
-				log.debug(">>" + line + "<<");
+				LOGGER.debug(">>" + line + "<<");
 			}
 		}
 
@@ -189,7 +189,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 			try {
 				filemanager.saveFile(stream, localTraceFolder + "/video_time");
 			} catch (IOException e) {
-				log.error("Failed to set video_time "+e.getMessage());
+				LOGGER.error("Failed to set video_time "+e.getMessage());
 			}
 		}
 	}
@@ -215,7 +215,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 		int vidSegment = 0;
 		for (vidSegment = 0; vidSegment < intCmds.size(); vidSegment++) {
 			try {
-				log.info(intCmds.get(vidSegment));
+				LOGGER.info(intCmds.get(vidSegment));
 				String lines = extrunner.executeCmd(intCmds.get(vidSegment));
 				if (!lines.isEmpty()) {
 					if (lines.contains("moov atom not found")) {
@@ -223,7 +223,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 						// for now skip
 						break;
 					}
-					log.info("ffmpeg error: " + lines);
+					LOGGER.info("ffmpeg error: " + lines);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -231,19 +231,19 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 		}
 
 		String concatCmd = vFiles.buildConcat(vidSegment);
-		log.info(concatCmd);
-		log.info(concatCmd);
+		LOGGER.info(concatCmd);
+		LOGGER.info(concatCmd);
 		extrunner.executeCmd(concatCmd);
 
 		String finalVidCmd = vFiles.buildFinalVideo();
-		log.info(finalVidCmd);
-		log.info(concatCmd);
+		LOGGER.info(finalVidCmd);
+		LOGGER.info(concatCmd);
 		String finalVidResults = extrunner.executeCmd(finalVidCmd);
-		log.info("Movie done:" + finalVidResults);
+		LOGGER.info("Movie done:" + finalVidResults);
 
 		renameVideos("exvideo.mov", "video.mov", "video_mov_o");
 
-		log.info("compileVideo() completed");
+		LOGGER.info("compileVideo() completed");
 	}
 
 	private void renameVideos(String srcFile, String target, String original_ext_o) {
@@ -388,7 +388,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 		String[] seg = null;
 		for (String line : response) {
 			if (line.contains(procName)) {
-				log.info(line);
+				LOGGER.info(line);
 				seg = line.split("\\s+");
 				return seg;
 			}
@@ -416,8 +416,8 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 					;
 		String line = extrunner.executeCmd(cmd);
 		
-		log.info("start screenrecord response:" + line);
-		log.info("start screenrecord response:" + line);
+		LOGGER.info("start screenrecord response:" + line);
+		LOGGER.info("start screenrecord response:" + line);
 
 	}
 	
@@ -433,7 +433,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 		String cmd = "touch " + remoteVideoPath + "cmdstop";
 		String[] response = android.getShellReturn(device, cmd);
 		for (String line : response) {
-			log.info("stop screenrecord response:" + line);
+			LOGGER.info("stop screenrecord response:" + line);
 		}
 		return true;
 	}

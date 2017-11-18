@@ -36,7 +36,7 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 	IThreadExecutor threadExecuter;
 	ProcessWorker worker = null;
 	IProcessFactory procfactory;
-
+    
 	@InjectLogger
 	private static ILogger log;
 	
@@ -65,7 +65,12 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 	 */
 	@Override
 	public String executeCmd(String cmd) {
-		
+		String result = executeCmdRunner(cmd, false, "");
+		return result;
+	}
+
+	@Override
+	public String executeCmdRunner(String cmd, boolean earlyExit, String msg) {
 		ProcessBuilder pbldr = new ProcessBuilder().redirectErrorStream(true);
 		if (!Util.isWindowsOS()) {
 			pbldr.command(new String[] { "bash", "-c", cmd });
@@ -85,6 +90,11 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 				if (line == null) {
 					break;
 				}
+				if(earlyExit && line.trim().equals(msg)) {
+					log.debug("read a line:" + line);
+					builder.append(line);
+					break;
+				}
 				log.debug("read a line:" + line);
 				builder.append(line);
 				builder.append(System.getProperty("line.separator"));
@@ -94,7 +104,6 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		}
 		return builder.toString();
 	}
-	
 
 	@Override
 	public String runCmd(String[] command) throws IOException {

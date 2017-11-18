@@ -18,11 +18,8 @@ import com.att.aro.core.peripheral.pojo.NetworkType;
 import com.att.aro.core.peripheral.pojo.NetworkTypeObject;
 
 public class NetworkTypeReaderImplTest extends BaseTest {
-
 	NetworkTypeReaderImpl networkTypeReader;
-
 	private IFileManager filereader;
-	private String traceFolder = "traceFolder";
 
 	@Before
 	public void setup() {

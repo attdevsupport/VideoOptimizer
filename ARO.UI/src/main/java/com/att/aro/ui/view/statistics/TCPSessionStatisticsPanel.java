@@ -17,22 +17,16 @@ package com.att.aro.ui.view.statistics;
 
 import java.awt.BorderLayout;
 import java.awt.Insets;
-import java.text.NumberFormat;
 
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
 import com.att.aro.core.packetanalysis.pojo.Statistic;
-import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
-import com.att.aro.core.packetanalysis.pojo.TraceResultType;
-import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.TabPanelCommon;
 import com.att.aro.ui.commonui.TabPanelCommonAttributes;
 import com.att.aro.ui.commonui.TabPanelJPanel;
-import com.att.aro.ui.utils.CommonHelper;
-import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  *
@@ -97,7 +91,6 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 				.enumKey(LabelKeys.tcpstatistics_throughput)
 			.build());
 
-
 		return dataPanel;
 	}
 
@@ -115,10 +108,6 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 					intFormatString, statistic.getTotalPackets()));
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_throughput, String.format(
 					doubleFormatString, statistic.getAverageKbps()));
-		}
-
+		} 
 	}
-
-
-
 }

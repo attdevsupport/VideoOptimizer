@@ -30,7 +30,6 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	@Override
 	public void applicationInfo(String analyticsTracker,
 			String applicationName, String applicationVersion) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -39,7 +38,6 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	 */
 	@Override
 	public void sendAnalyticsEvents(String eventCategory, String eventAction) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -49,7 +47,6 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	@Override
 	public void sendAnalyticsEvents(String eventCategory, String eventAction,
 			String eventLable) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -59,7 +56,6 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	@Override
 	public void sendAnalyticsEvents(String eventCategory, String eventAction,
 			String eventLable, String eventValue) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -69,7 +65,6 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	@Override
 	public void sendAnalyticsStartSessionEvents(String eventCategory,
 			String eventAction) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -79,7 +74,6 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	@Override
 	public void sendAnalyticsStartSessionEvents(String eventCategory,
 			String eventAction, String eventLable) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -89,7 +83,6 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	@Override
 	public void sendAnalyticsStartSessionEvents(String eventCategory,
 			String eventAction, String eventLable, String eventValue) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -99,7 +92,6 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	@Override
 	public void sendAnalyticsEndSessionEvents(String eventCategory,
 			String eventAction) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -109,7 +101,6 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	@Override
 	public void sendAnalyticsEndSessionEvents(String eventCategory,
 			String eventAction, String eventLable) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -119,7 +110,6 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	@Override
 	public void sendAnalyticsEndSessionEvents(String eventCategory,
 			String eventAction, String eventLable, String eventValue) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -128,20 +118,22 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	 */
 	@Override
 	public void close() {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void sendExceptionEvents(String exceptionDesc, String source,
 			boolean isFatal) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void sendCrashEvents(String crashDesc, String source) {
-		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public void sendViews(String screen) {
 		
 	}
 

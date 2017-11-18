@@ -41,7 +41,7 @@ public class ExternalProcessRunnerImplTest extends BaseTest {
 	String[] cmds = new String[1];
 	Runtime runtime;
 	IProcessFactory factory;
-
+    
 	@Before
 	public void setUp() {
 		externalProcessRunner = (ExternalProcessRunnerImpl) context.getBean(IExternalProcessRunner.class);

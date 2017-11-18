@@ -33,15 +33,16 @@ import java.util.stream.Collectors;
  */
 public enum BestPracticeType {
 	FILE_COMPRESSION(FILE, "Text File Compression"), DUPLICATE_CONTENT(FILE, "Duplicate Content"), USING_CACHE(FILE,
-			"Cache Control"), CACHE_CONTROL(FILE, "Content Expiration"), COMBINE_CS_JSS(FILE,
+			"Content Expiration"), CACHE_CONTROL(FILE, "Cache Control"), COMBINE_CS_JSS(FILE,
 					"Combine JS and CSS Requests"), IMAGE_SIZE(FILE, "Resize Images for Mobile"), IMAGE_MDATA(FILE,
 							"Image Metadata"), IMAGE_CMPRS(FILE, "Image Compression"), IMAGE_FORMAT(FILE,
-									"Image Format"), MINIFICATION(FILE, "Minify CSS, JS, HTML"), SPRITEIMAGE(FILE,
+									"Image Format"),IMAGE_COMPARE(FILE, "Image Comparison"), MINIFICATION(FILE, "Minify CSS, JS, HTML"), SPRITEIMAGE(FILE,
 											"Use CSS Sprites for Images"),
 
 	CONNECTION_OPENING(CONNECTIONS, "Connection opening"), UNNECESSARY_CONNECTIONS(CONNECTIONS,
 			"Unnecessary Connections - Multiple Simultaneous Connections"),SIMUL_CONN(CONNECTIONS,
-					"Unnecessary Connections - Multiple Connections to One Endpoint"), PERIODIC_TRANSFER(CONNECTIONS,
+					"Multiple Simultaneous Connections to One Endpoint"), MULTI_SIMULCONN(CONNECTIONS,
+							"Multiple Simultaneous Connections to Many Endpoints"),PERIODIC_TRANSFER(CONNECTIONS,
 					"Inefficient Connections - Periodic Transfers"), SCREEN_ROTATION(CONNECTIONS,
 							"Inefficient Connections - Screen Rotation"), CONNECTION_CLOSING(CONNECTIONS,
 									"Inefficient Connections - Connection Closing Problems"), HTTP_4XX_5XX(CONNECTIONS,

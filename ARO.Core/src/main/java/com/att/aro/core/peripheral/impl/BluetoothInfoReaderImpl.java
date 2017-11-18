@@ -77,6 +77,8 @@ public class BluetoothInfoReaderImpl extends PeripheralBase implements IBluetoot
 						prevBtState = BluetoothState.BLUETOOTH_DISCONNECTED;
 					} else if (TraceDataConst.BLUETOOTH_OFF.equals(strFieldsFirstLine[1])) {
 						prevBtState = BluetoothState.BLUETOOTH_TURNED_OFF;
+					} else if (TraceDataConst.BLUETOOTH_ON.equals(strFieldsFirstLine[1])) {
+						prevBtState = BluetoothState.BLUETOOTH_TURNED_ON;
 					} else {
 						logger.warn("Unknown bluetooth state: " + firstLine);
 						prevBtState = BluetoothState.BLUETOOTH_UNKNOWN;
@@ -106,6 +108,8 @@ public class BluetoothInfoReaderImpl extends PeripheralBase implements IBluetoot
 							btState = BluetoothState.BLUETOOTH_DISCONNECTED;
 						} else if (TraceDataConst.BLUETOOTH_OFF.equals(strFields[1])) {
 							btState = BluetoothState.BLUETOOTH_TURNED_OFF;
+						} else if (TraceDataConst.BLUETOOTH_ON.equals(strFields[1])) {
+							btState = BluetoothState.BLUETOOTH_TURNED_ON;
 						} else {
 							logger.warn("Unknown bluetooth state: " + strLineBuf);
 							btState = BluetoothState.BLUETOOTH_UNKNOWN;

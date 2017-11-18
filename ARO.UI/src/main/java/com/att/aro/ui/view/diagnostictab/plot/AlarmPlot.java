@@ -234,6 +234,7 @@ public class AlarmPlot implements IPlot {
 		for (Map.Entry<String, List<ScheduledAlarmInfo>> entry : pendingAlarms
 				.entrySet()) {
 			List<ScheduledAlarmInfo> alarms = entry.getValue();
+			@SuppressWarnings("rawtypes")
 			ListIterator itrAlarms = alarms.listIterator();
 			while (itrAlarms.hasNext()) {
 				ScheduledAlarmInfo alarm = (ScheduledAlarmInfo) itrAlarms

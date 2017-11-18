@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -49,6 +50,7 @@ import com.att.aro.core.packetreader.IPacketReader;
 import com.att.aro.core.packetreader.pojo.IPPacket;
 import com.att.aro.core.packetreader.pojo.Packet;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
+import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.peripheral.IAlarmAnalysisInfoParser;
 import com.att.aro.core.peripheral.IAlarmDumpsysTimestampReader;
 import com.att.aro.core.peripheral.IAlarmInfoReader;
@@ -63,7 +65,6 @@ import com.att.aro.core.peripheral.ICpuTemperatureReader;
 import com.att.aro.core.peripheral.IDeviceDetailReader;
 import com.att.aro.core.peripheral.IDeviceInfoReader;
 import com.att.aro.core.peripheral.IGpsInfoReader;
-import com.att.aro.core.peripheral.LocationReader;
 import com.att.aro.core.peripheral.INetworkTypeReader;
 import com.att.aro.core.peripheral.IPrivateDataReader;
 import com.att.aro.core.peripheral.IRadioInfoReader;
@@ -74,6 +75,7 @@ import com.att.aro.core.peripheral.IUserEventReader;
 import com.att.aro.core.peripheral.IVideoTimeReader;
 import com.att.aro.core.peripheral.IWakelockInfoReader;
 import com.att.aro.core.peripheral.IWifiInfoReader;
+import com.att.aro.core.peripheral.LocationReader;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisInfo;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisResult;
 import com.att.aro.core.peripheral.pojo.AlarmDumpsysTimestamp;
@@ -100,177 +102,179 @@ import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.util.Util;
-
 public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	@InjectLogger
 	private static ILogger logger;
-	
+
 	private IFileManager filereader;
-		
+
 	@Autowired
 	@Qualifier("packetReader")
 	private IPacketReader packetreader;
-	
+
 	@Autowired
 	private ICpuActivityReader cpureader;
-	
+
 	@Autowired
 	private IGpsInfoReader gpsreader;
-	
+
 	@Autowired
 	private IBluetoothInfoReader bluetoothreader;
-	
+
 	@Autowired
 	private IWifiInfoReader wifireader;
-	
+
 	@Autowired
 	private ICameraInfoReader camerareader;
-	
+
 	@Autowired
 	private IScreenStateInfoReader screenstatereader;
-	
+
 	@Autowired
 	private IAppInfoReader appinforeader;
-	
+
 	@Autowired
 	private IRadioInfoReader radioinforeader;
-	
+
 	@Autowired
 	private IAlarmAnalysisInfoParser alarmanalysisinfoparser;
-	
+
 	@Autowired
 	private IWakelockInfoReader wakelockinforeader;
-	
+
 	@Autowired
 	private IAlarmDumpsysTimestampReader alarmdumpsysreader;
-	
+
 	@Autowired
 	private IUserEventReader usereventreader;
-	
+
 	@Autowired
-    private ICpuTemperatureReader cputemperaturereader;
-	
+	private ICpuTemperatureReader cputemperaturereader;
+
 	@Autowired
-    private LocationReader locationreader;
-	
+	private LocationReader locationreader;
+
 	@Autowired
 	private IScreenRotationReader screenrotationreader;
-	
+
 	@Autowired
 	private IAlarmInfoReader alarminforeader;
-	
+
 	@Autowired
 	private IBatteryInfoReader batteryinforeader;
-	
+
 	@Autowired
 	private IVideoTimeReader videotimereader;
-	
+
 	@Autowired
 	private IPrivateDataReader privateDataReader;
-	
+
 	@Autowired
 	private ICollectOptionsReader collectOptionsReader;
-	
+
 	private ICrypto crypto;
-		
+
 	@Autowired
 	private INetworkTypeReader networktypereader;
-	
+
 	@Autowired
 	private IDeviceDetailReader devicedetailreader;
-	
+
 	@Autowired
 	private IDeviceInfoReader deviceinforeader;
-	
+
 	@Autowired
 	private IAttenuattionEventReader attnrEventReader;
-		
+
 	@Autowired
 	private ISpeedThrottleEventReader speedThrottleReader;
-	
+
 	private Set<InetAddress> localIPAddresses = null;
 	private List<PacketInfo> allPackets = null;
 	private Map<InetAddress, Integer> ipCountMap = null;
+	private boolean isSecurePcap = false;
+
 	@Autowired
-	public void setFileReader(IFileManager filereader){
+	public void setFileReader(IFileManager filereader) {
 		this.filereader = filereader;
 	}
 
 	@Autowired
-	public void setCrypto(ICrypto crypto){
+	public void setCrypto(ICrypto crypto) {
 		this.crypto = crypto;
 	}
 
-	private void init(){
+	private void init() {
 		localIPAddresses = new HashSet<InetAddress>(1);
 		allPackets = new ArrayList<PacketInfo>();
 	}
-	
+
 	/**
 	 * read all kind of trace file in a directory
-	 * @param directoryPath full path to physical directory
-	 * @throws FileNotFoundException 
+	 * 
+	 * @param directoryPath
+	 *            full path to physical directory
+	 * @throws FileNotFoundException
 	 */
-	public TraceDirectoryResult readTraceDirectory(String directoryPath) throws FileNotFoundException{
-		if(!filereader.directoryExist(directoryPath)){
-			throw new FileNotFoundException("Not found directory: "+directoryPath);
+	public TraceDirectoryResult readTraceDirectory(String directoryPath) throws FileNotFoundException {
+		if (!filereader.directoryExist(directoryPath)) {
+			throw new FileNotFoundException("Not found directory: " + directoryPath);
 		}
 		TraceDirectoryResult result = new TraceDirectoryResult();
 		result.setTraceDirectory(directoryPath);
-		
-//		readAppInfo(result);
+
+		// readAppInfo(result);
 		AppInfo app = appinforeader.readData(result.getTraceDirectory());
 		result.setAppVersionMap(app.getAppVersionMap());
 		result.setAppInfos(app.getAppInfos());
 
-		
 		// Read the time file and PCAP trace
 		try {
 			result = readTimeAndPcap(result);
 		} catch (IOException e1) {
-			logger.error("Failed to read file",e1);
-			return null;//no need to continue, everything else is useless without packet data
+			logger.error("Failed to read file", e1);
+			return null;// no need to continue, everything else is useless without packet data
 		}
-		if(result == null){
+		if (result == null) {
 			return null;
 		}
- 
-		//extract ip address from device_info file
+
+		// extract ip address from device_info file
 		result.setLocalIPAddresses(deviceinforeader.readData(directoryPath));
 		this.localIPAddresses.addAll(result.getLocalIPAddresses());
-		
-		readDeviceDetails(result);	
- 		
+
+		readDeviceDetails(result);
+
 		readFileUtil(result); // merge several methods to one method
-		
- 		readAlarmDumpsysTimestamp(result);
-		
+
+		readAlarmDumpsysTimestamp(result);
+
 		try {
- 			readAlarmAnalysisInfo(result);
+			readAlarmAnalysisInfo(result);
 		} catch (IOException e) {
 			logger.info("*** Warning: no alarm dumpsys information found ***");
 		}
-							
+
 		readWakelockInfo(result);
-				
+
 		readVideoTime(result);
-		
+
 		readSSLKeys(result);
-		
+
 		readPrivateData(result);
-		
+
 		readAttenuationEvent(result);
-		
+
 		readThrottleEvent(result);
 
 		return result;
 	}
-	
- 
 
 	/**
 	 * Read keys.ssl into an ICrypto object
-	 * @param result - the traffic data
+	 * 
+	 * @param result
+	 *            - the traffic data
 	 */
 
 	private void readSSLKeys(TraceDirectoryResult result) {
@@ -279,46 +283,49 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 			crypto.readSSLKeys(filepath);
 			result.setCrypto(crypto);
 			logger.info("crypto read:" + crypto.getSSLKeyList().size() + " records");
-		}else{
+		} else {
 			logger.info("No SSL keys");
 		}
 	}
-		
+
 	/**
 	 * Read a trace file. (ie traffic.cap)
-	 * @param traceFilePath full path to a trace file
+	 * 
+	 * @param traceFilePath
+	 *            full path to a trace file
 	 * @return TraceFileResult
 	 * @throws IOException
 	 */
-	public TraceFileResult readTraceFile(String traceFilePath) throws IOException{
-		if(!filereader.fileExist(traceFilePath)){
-			throw new FileNotFoundException("Trace file not found: "+traceFilePath);
+	public TraceFileResult readTraceFile(String traceFilePath) throws IOException {
+		if (!filereader.fileExist(traceFilePath)) {
+			throw new FileNotFoundException("Trace file not found: " + traceFilePath);
 		}
-		//read pcap file only
+		// read pcap file only
 		TraceFileResult result = new TraceFileResult();
 		String traceDirectory = filereader.getDirectory(traceFilePath);
-		if(traceDirectory == null){
+		if (traceDirectory == null) {
 			traceDirectory = "";
 		}
 		result.setTraceFile(traceFilePath);
 		result.setTraceDirectory(traceDirectory);
 		this.init();
 		this.ipCountMap = result.getIpCountMap();
-		result = (TraceFileResult)this.readPcapTraceFile(traceFilePath, null, null, result);
-		if(result == null){
+		result = (TraceFileResult) this.readPcapTraceFile(traceFilePath, null, null, result);
+		if (result == null) {
 			return null;
 		}
 		readVideoTime(result);
 		result.setAllpackets(allPackets);
-		
+
 		readPrivateData(result);
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * 
-	 * @param TraceDirectoryResult res
+	 * @param TraceDirectoryResult
+	 *            res
 	 * @return
 	 * @throws IOException
 	 */
@@ -326,23 +333,23 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		String filepath = res.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TIME_FILE;
 		String[] lines = filereader.readAllLine(filepath);
 		TraceTime result = new TraceTime();
-		
+
 		String line;
-		//ignore line 1 and start from line 2 in file
-		//array index 0 is line 1
-		
+		// ignore line 1 and start from line 2 in file
+		// array index 0 is line 1
+
 		// Second line is pcap time
-		
+
 		if (lines.length > 1) {
 			line = lines[1];
 			result.setStartTime(Double.valueOf(line));
 
 		}
-		if(lines.length > 2){
+		if (lines.length > 2) {
 			line = lines[2];
 			result.setEventTime(Double.parseDouble(line) / 1000.0);
 		}
-		if(lines.length > 3){
+		if (lines.length > 3) {
 			line = lines[3];
 			Double duration = Double.parseDouble(line) - result.getStartTime();
 			result.setDuration(duration);
@@ -350,32 +357,34 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if (lines.length > 4) {
 			line = lines[4];
 			try {
-			result.setTimezoneOffset(Integer.valueOf(line));
-			}catch (NumberFormatException e){
+				result.setTimezoneOffset(Integer.valueOf(line));
+			} catch (NumberFormatException e) {
 				logger.warn("Unable to parse Collector Timezone Offset - value: " + line);
 			}
 		}
-		
+
 		return result;
 	}
+
 	/**
 	 * Reads the application ID's from the appid trace file.
 	 * 
-	 * @param appIdFileName Name of the file containing list of application IDs.
+	 * @param appIdFileName
+	 *            Name of the file containing list of application IDs.
 	 * @return The list of app ids found in the trace data.
 	 * @throws IOException
 	 */
 	List<Integer> readAppIDs(TraceDirectoryResult res) throws IOException {
 		String filepath = res.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.APPID_FILE;
-		
+
 		if (!filereader.fileExist(filepath)) {
 			return Collections.emptyList();
 		}
 		String[] lines = filereader.readAllLine(filepath);
 		List<Integer> appIds = new ArrayList<Integer>();
-		
+
 		int appId;
-		for (String line: lines) {
+		for (String line : lines) {
 			line = line.trim();
 			if (!(line.isEmpty())) {
 				appId = Integer.valueOf(line);
@@ -387,11 +396,12 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 			} else {
 				logger.warn("appid file contains a line not well formated");
 			}
-			
+
 		}
-		
+
 		return appIds;
 	}
+
 	/**
 	 * Reads the PCAP file and the trace times from the time trace file.
 	 * 
@@ -399,8 +409,8 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	 */
 	private TraceDirectoryResult readTimeAndPcap(TraceDirectoryResult dresult) throws IOException {
 		TraceDirectoryResult result = dresult;
-		String filepath= result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TIME_FILE;
-	
+		String filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TIME_FILE;
+
 		Double startTime = null;
 		Double duration = null;
 		if (filereader.fileExist(filepath)) {
@@ -409,7 +419,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 			if (times.getEventTime() != null) {
 				result.setEventTime0(times.getEventTime());
 			}
-			if (times.getTimezoneOffset() != null){
+			if (times.getTimezoneOffset() != null) {
 				result.setCaptureOffset(times.getTimezoneOffset());
 			}
 			duration = times.getDuration();
@@ -420,36 +430,50 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		List<Integer> appIds = readAppIDs(result);
 		result.setAppIds(appIds);
 		result.setTotalNoPackets(appIds.size());
-		
-		if(dresult.getTraceFile() != null && !dresult.getTraceFile().equals("")){
+
+		if (dresult.getTraceFile() != null && !dresult.getTraceFile().equals("")) {
 			filepath = result.getTraceFile();
 		} else {
-			filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TRAFFIC + TraceDataConst.FileName.CAP_EXT;
+			filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TRAFFIC
+					+ TraceDataConst.FileName.CAP_EXT;
 		}
-		
+
 		this.init();
 		this.ipCountMap = result.getIpCountMap();
-		result = (TraceDirectoryResult)this.readPcapTraceFile(filepath, startTime, duration, result);
-		if(result == null){
+		result = (TraceDirectoryResult) this.readPcapTraceFile(filepath, startTime, duration, result);
+		if (result == null) {
 			return new TraceDirectoryResult();
 		}
-		
+
 		for (int i = 1;; i++) {
-			filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TRAFFIC + i + TraceDataConst.FileName.CAP_EXT;
+			filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TRAFFIC + i
+					+ TraceDataConst.FileName.CAP_EXT;
 			if (filereader.fileExist(filepath)) {
-				result = (TraceDirectoryResult)this.readPcapTraceFile(filepath, startTime, duration, result);
+				result = (TraceDirectoryResult) this.readPcapTraceFile(filepath, startTime, duration, result);
 			} else {
 				break;
 			}
 		}
-		if (result==null){
-			result = new TraceDirectoryResult(); 
+		if (result != null) {
+			String secureFilePath = result.getTraceDirectory() + Util.FILE_SEPARATOR
+					+ TraceDataConst.FileName.SECURE_PCAP_FILE;
+			if (filereader.fileExist(secureFilePath)) {
+				try {
+					isSecurePcap = true;
+					this.readSecurePcapTraceFile(secureFilePath, result);
+				} finally {
+					isSecurePcap = false;
+				}
+			}
+		}
+		if (result == null) {
+			result = new TraceDirectoryResult();
 		}
 		result.setAllpackets(this.allPackets);
 		this.checkExternalVideoAndTime(result, startTime, duration);
 		return result;
 	}
-	
+
 	/**
 	 * Reads a device data from the device file in trace folder.
 	 * 
@@ -457,9 +481,9 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	 */
 	private void readDeviceDetails(TraceDirectoryResult result) {
 		DeviceDetail device = devicedetailreader.readData(result.getTraceDirectory());
-		if(device != null){
+		if (device != null) {
 			result.setDeviceDetail(device);
-			if(device.getTotalLines() > 7){
+			if (device.getTotalLines() > 7) {
 				String line = device.getScreenSize();
 				if (null != line) {
 					String[] resolution = line.split("\\*");
@@ -468,62 +492,58 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 				}
 			}
 		}
-		
+
 	}
- 
-	
- 
+
 	/**
-	 * Associate app IDs with packets 
+	 * Associate app IDs with packets
 	 */
-	private String getAppNameForPacket(int packetIdx, List<Integer> appIds, List<String> appInfos){
-		
+	private String getAppNameForPacket(int packetIdx, List<Integer> appIds, List<String> appInfos) {
+
 		String appName = "Unknown";
 		int numberOfAppIds = appIds.size();
-				
+
 		if (!appIds.isEmpty() && !appInfos.isEmpty()) {
-			if (packetIdx < numberOfAppIds && packetIdx >= TraceDataConst.VALID_UNKNOWN_APP_ID ) {
-	
+			if (packetIdx < numberOfAppIds && packetIdx >= TraceDataConst.VALID_UNKNOWN_APP_ID) {
+
 				int appIdIdx = appIds.get(packetIdx);
 				if (appIdIdx >= 0) {
-					if (appIdIdx < appInfos.size())
-					{
+					if (appIdIdx < appInfos.size()) {
 						appName = appInfos.get(appIdIdx);
 					} else {
-						logger.debug("Invalid app ID "+appIdIdx+" for packet "+packetIdx);
+						logger.debug("Invalid app ID " + appIdIdx + " for packet " + packetIdx);
 					}
 				} else if (appIdIdx != TraceDataConst.VALID_UNKNOWN_APP_ID) {
-					logger.debug("Invalid app ID "+appIdIdx+" for packet "+packetIdx);
+					logger.debug("Invalid app ID " + appIdIdx + " for packet " + packetIdx);
 				}
-				
+
 			} else {
-				logger.debug("No app ID for packet "+ packetIdx);
+				logger.debug("No app ID for packet " + packetIdx);
 			}
 		}
 
 		return appName;
-		
+
 	}
- 	
-	/** 
-	 * Method to set a reference time
-	 * Use ALARM_END_FILE elapsed realtime as dumpsys batteryinfo time reference.
+
+	/**
+	 * Method to set a reference time Use ALARM_END_FILE elapsed realtime as dumpsys
+	 * batteryinfo time reference.
 	 * 
-	 * set: dumpsysEpochTimestamp
-	 * 	dumpsysElapsedTimestamp
+	 * set: dumpsysEpochTimestamp dumpsysElapsedTimestamp
 	 *
 	 */
-	private void readAlarmDumpsysTimestamp(TraceDirectoryResult result){
-		AlarmDumpsysTimestamp time = this.alarmdumpsysreader.readData(result.getTraceDirectory(), 
+	private void readAlarmDumpsysTimestamp(TraceDirectoryResult result) {
+		AlarmDumpsysTimestamp time = this.alarmdumpsysreader.readData(result.getTraceDirectory(),
 				result.getTraceDateTime(), result.getTraceDuration(), result.getOsVersion(), result.getEventTime0());
-		if(time != null){
+		if (time != null) {
 			result.setDumpsysElapsedTimestamp(time.getDumpsysElapsedTimestamp());
 			result.setDumpsysEpochTimestamp(time.getDumpsysEpochTimestamp());
 		}
 	}
 
 	/**
-	 * Create List<AlarmStatisticsInfos> of alarms triggered during the trace. 
+	 * Create List<AlarmStatisticsInfos> of alarms triggered during the trace.
 	 */
 	private void readAlarmAnalysisInfo(TraceDirectoryResult res) throws IOException {
 		String filepath = res.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.ALARM_END_FILE;
@@ -535,41 +555,47 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if (!filereader.fileExist(filepath)) {
 			return;
 		}
-		AlarmAnalysisResult result = alarmanalysisinfoparser.parse(res.getTraceDirectory(), TraceDataConst.FileName.ALARM_END_FILE, res.getOsVersion(),
-				res.getDumpsysEpochTimestamp(), res.getDumpsysElapsedTimestamp(), res.getTraceDateTime());
-		// alarmanalysisinfoparser.parse is flawed, an index can run off the end of a String[]
+		AlarmAnalysisResult result = alarmanalysisinfoparser.parse(res.getTraceDirectory(),
+				TraceDataConst.FileName.ALARM_END_FILE, res.getOsVersion(), res.getDumpsysEpochTimestamp(),
+				res.getDumpsysElapsedTimestamp(), res.getTraceDateTime());
+		// alarmanalysisinfoparser.parse is flawed, an index can run off the end of a
+		// String[]
 		if (result != null) {
 			List<AlarmAnalysisInfo> alarmStatisticsInfosEnd = result.getStatistics();
 			res.getScheduledAlarms().putAll(result.getScheduledAlarms());
 			// Collect triggered alarms summary at start of capture
-			AlarmAnalysisResult result2 = alarmanalysisinfoparser.parse(res.getTraceDirectory(), TraceDataConst.FileName.ALARM_START_FILE, res.getOsVersion(),
-					res.getDumpsysEpochTimestamp(), res.getDumpsysElapsedTimestamp(), res.getTraceDateTime());
+			AlarmAnalysisResult result2 = alarmanalysisinfoparser.parse(res.getTraceDirectory(),
+					TraceDataConst.FileName.ALARM_START_FILE, res.getOsVersion(), res.getDumpsysEpochTimestamp(),
+					res.getDumpsysElapsedTimestamp(), res.getTraceDateTime());
 			List<AlarmAnalysisInfo> alarmStatisticsInfosStart = result2.getStatistics();
 			res.getScheduledAlarms().putAll(result2.getScheduledAlarms());
 
 			// Differentiate the triggered alarms between start/end of catpure.
 			if (alarmStatisticsInfosEnd != null && alarmStatisticsInfosStart != null) {
-				List<AlarmAnalysisInfo> alarmStatisticsInfos = alarmanalysisinfoparser.compareAlarmAnalysis(alarmStatisticsInfosEnd, alarmStatisticsInfosStart);
+				List<AlarmAnalysisInfo> alarmStatisticsInfos = alarmanalysisinfoparser
+						.compareAlarmAnalysis(alarmStatisticsInfosEnd, alarmStatisticsInfosStart);
 				res.setAlarmStatisticsInfos(alarmStatisticsInfos);
 			}
 		}
 	}
-	/** 
-	 * Method to read the Wakelock data from the batteryinfo file and store it in the
-	 * wakelockInfos list.
+
+	/**
+	 * Method to read the Wakelock data from the batteryinfo file and store it in
+	 * the wakelockInfos list.
 	 *
 	 * pre: call readAlarmDumpsysTimestamp(), it requires a timestamp for alignment.
 	 *
-	 * */
+	 */
 	private void readWakelockInfo(TraceDirectoryResult result) {
-		List<WakelockInfo> wakelockInfos = wakelockinforeader.readData(result.getTraceDirectory(), result.getOsVersion(), 
-				result.getDumpsysEpochTimestamp(), result.getTraceDateTime());
+		List<WakelockInfo> wakelockInfos = wakelockinforeader.readData(result.getTraceDirectory(),
+				result.getOsVersion(), result.getDumpsysEpochTimestamp(), result.getTraceDateTime());
 		result.setWakelockInfos(wakelockInfos);
 
 	}
- 	
+
 	/**
 	 * Reads device private data from the file
+	 * 
 	 * @param result
 	 */
 	private void readPrivateData(AbstractTraceResult result) {
@@ -577,28 +603,28 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if (devicePrivateDataInfos == null || devicePrivateDataInfos.isEmpty()) {
 			return;
 		}
-		
+
 		Map<String, String> deviceKeywordInfos = new HashMap<String, String>();
-		
-		for(PrivateDataInfo info : devicePrivateDataInfos) {
+
+		for (PrivateDataInfo info : devicePrivateDataInfos) {
 			if (info.isSelected()) {
 				deviceKeywordInfos.put(info.getValue(), info.getType());
 			}
 		}
-		
+
 		result.setDeviceKeywordInfos(deviceKeywordInfos);
 	}
-	
-	private void readAttenuationEvent(TraceDirectoryResult result){
+
+	private void readAttenuationEvent(TraceDirectoryResult result) {
 		List<AttenuatorEvent> attenuatorEvents = attnrEventReader.readData(result.getTraceDirectory());
 		result.setAttenautionEvent(attenuatorEvents);
 	}
-	
-	private void readThrottleEvent(TraceDirectoryResult result){
+
+	private void readThrottleEvent(TraceDirectoryResult result) {
 		List<SpeedThrottleEvent> speedThrottleEvents = speedThrottleReader.readData(result.getTraceDirectory());
 		result.setSpeedThrottleEvent(speedThrottleEvents);
 	}
-	
+
 	/**
 	 * Method to read times from the video time trace file and store video time
 	 * variables.
@@ -606,13 +632,13 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	private void readVideoTime(AbstractTraceResult result) {
 		// Read the external video file,If available.
 		String dirParent = null;
-		if(result.getTraceResultType().equals(TraceResultType.TRACE_FILE)){
+		if (result.getTraceResultType().equals(TraceResultType.TRACE_FILE)) {
 			dirParent = filereader.getDirectory(result.getTraceDirectory());
-		}else{
+		} else {
 			dirParent = result.getTraceDirectory();
 		}
-		logger.info("dirParent: "+dirParent);
-		
+		logger.info("dirParent: " + dirParent);
+
 		VideoTime vtime = videotimereader.readData(dirParent, result.getTraceDateTime());
 		result.setVideoStartTime(vtime.getVideoStartTime());
 		result.setExVideoFound(vtime.isExVideoFound());
@@ -622,17 +648,18 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 			result.setVideoStartTime(result.getPcapTime0());
 		}
 	}
-	
-	private AbstractTraceResult readPcapTraceFile(String filepath, Double startTime, Double duration, AbstractTraceResult dresult) throws IOException {
+
+	private AbstractTraceResult readPcapTraceFile(String filepath, Double startTime, Double duration,
+			AbstractTraceResult dresult) throws IOException {
 		if (!filereader.fileExist(filepath)) {
-			if (logger != null){
+			if (logger != null) {
 				logger.error("No packet file found at: " + filepath);
 			}
 			return null;
 		}
 		AbstractTraceResult result = dresult;
 		if (this.packetreader == null) {
-			//this.packetreader = new PacketReaderImpl();
+			// this.packetreader = new PacketReaderImpl();
 			throw new NullPointerException("this.packetreader is null");
 		}
 		this.packetreader.readPacket(filepath, this);
@@ -643,14 +670,15 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if (!allPackets.isEmpty()) {
 
 			pcapTime0 = startTime != null ? startTime.doubleValue() : allPackets.get(0).getPacket().getTimeStamp();
-			traceDuration = duration != null ? duration.doubleValue() : allPackets.get(allPackets.size() - 1).getPacket().getTimeStamp() - pcapTime0;
+			traceDuration = duration != null ? duration.doubleValue()
+					: allPackets.get(allPackets.size() - 1).getPacket().getTimeStamp() - pcapTime0;
 			List<Integer> appIds = result.getAppIds();
 			if (appIds == null) {
 				appIds = Collections.emptyList();
 				result.setAppIds(appIds);
 			}
 
-			//Determine if timezone difference needs to be accounted for
+			// Determine if timezone difference needs to be accounted for
 			int tzDiff = 0;
 			int captureOffset = result.getCaptureOffset();
 			if (captureOffset != -1) {
@@ -675,10 +703,11 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 				IPPacket ipPacket = (IPPacket) packet.getPacket();
 
-				packet.setDir(determinePacketDirection(ipPacket.getSourceIPAddress(), ipPacket.getDestinationIPAddress()));
+				packet.setDir(
+						determinePacketDirection(ipPacket.getSourceIPAddress(), ipPacket.getDestinationIPAddress()));
 				packet.setTimestamp(ipPacket.getTimeStamp() - pcapTime0 - tzDiff);
 
-				//Associate application ID with the packet 
+				// Associate application ID with the packet
 				String appName = getAppNameForPacket(packetIdx, appIds, appInfos);
 				packet.setAppName(appName);
 				allAppNames.add(appName);
@@ -706,24 +735,35 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		result.setTraceDateTime(traceDateTime);
 		return result;
 	}
-	
-	void checkExternalVideoAndTime(AbstractTraceResult result, Double startTime, Double duration) throws IOException{
+
+	private AbstractTraceResult readSecurePcapTraceFile(String filepath, AbstractTraceResult result)
+			throws IOException {
+		if (!filereader.fileExist(filepath)) {
+			logger.error("Secure packet file unavailable at: " + filepath);
+			return result;
+		}
+		this.packetreader.readPacket(filepath, this);
+		return result;
+	}
+
+	void checkExternalVideoAndTime(AbstractTraceResult result, Double startTime, Double duration) throws IOException {
 		List<Integer> appIds = result.getAppIds();
 		// Only if Pcap file is loaded, execute the video sync process below.
-		if((appIds.isEmpty()) && (startTime == null) && (duration == null)){
-			
-			 boolean exVideoFound = true;
-			 boolean exVideoTimeFileNotFound = false;
-			 double videoStartTime = 0;
-			 // get the video_time file.
-			 String videotimefile = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.EXVIDEO_TIME_FILE;
-			 
-			 if (!filereader.fileExist(videotimefile)) {
-					exVideoTimeFileNotFound =true;
-					exVideoFound = false;
-			}else {
+		if ((appIds.isEmpty()) && (startTime == null) && (duration == null)) {
+
+			boolean exVideoFound = true;
+			boolean exVideoTimeFileNotFound = false;
+			double videoStartTime = 0;
+			// get the video_time file.
+			String videotimefile = result.getTraceDirectory() + Util.FILE_SEPARATOR
+					+ TraceDataConst.FileName.EXVIDEO_TIME_FILE;
+
+			if (!filereader.fileExist(videotimefile)) {
+				exVideoTimeFileNotFound = true;
+				exVideoFound = false;
+			} else {
 				String[] lines = filereader.readAllLine(videotimefile);
-					
+
 				if (lines.length > 0) {
 					String line = lines[0];
 					String[] strValues = line.split(" ");
@@ -734,22 +774,21 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 							logger.error("Cannot determine actual video start time", e);
 						}
 						if (strValues.length > 1) {
-							/* For emulator only, tcpdumpLocalStartTime is start
-							 * time started according to local pc/laptop.
-							 * getTraceDateTime is time according to emulated
-							 * device -- the tcpdumpDeviceVsLocalTimeDetal is
-							 * difference between the two and is added as an
-							 * offset to videoStartTime so that
-							 * traceEmulatorTime and videoStartTime are in sync.
+							/*
+							 * For emulator only, tcpdumpLocalStartTime is start time started according to
+							 * local pc/laptop. getTraceDateTime is time according to emulated device -- the
+							 * tcpdumpDeviceVsLocalTimeDetal is difference between the two and is added as
+							 * an offset to videoStartTime so that traceEmulatorTime and videoStartTime are
+							 * in sync.
 							 */
 							double tcpdumpLocalStartTime = Double.parseDouble(strValues[1]);
-							double tcpdumpDeviceVsLocalTimeDelta = (result.getTraceDateTime()
-									.getTime() / 1000.0) - tcpdumpLocalStartTime;
+							double tcpdumpDeviceVsLocalTimeDelta = (result.getTraceDateTime().getTime() / 1000.0)
+									- tcpdumpLocalStartTime;
 							videoStartTime += tcpdumpDeviceVsLocalTimeDelta;
 						}
 					}
 				}
-					
+
 			}
 			result.setVideoStartTime(videoStartTime);
 			result.setExVideoFound(exVideoFound);
@@ -758,8 +797,8 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	}
 
 	/**
-	 * Attempts to determine packet direction based upon source and destination
-	 * IP addresses
+	 * Attempts to determine packet direction based upon source and destination IP
+	 * addresses
 	 */
 	private PacketDirection determinePacketDirection(InetAddress source, InetAddress dest) {
 
@@ -805,23 +844,48 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public void packetArrived(String appName, Packet packet) {
-		if (packet instanceof IPPacket) { // Replaces GetPacketInfo(...)
-			IPPacket ipack = (IPPacket) packet;
+		if (isSecurePcap) {
+			updatePacket(packet);
+		} else {
+			addToAllPackets(appName, packet);
+		}
+	}
 
-			// no IP fragmentation
+	private void updatePacket(Packet packet) {
+		if (packet instanceof TCPPacket) {
+		TCPPacket ipPacket = (TCPPacket) packet;
+		for (PacketInfo info : allPackets) {
+			Packet curPacket = (Packet) info.getPacket();
+			if (curPacket instanceof TCPPacket) {
+				TCPPacket tcpPacket = (TCPPacket) curPacket;
+				if (ipPacket.getDestinationIPAddress().equals(tcpPacket.getDestinationIPAddress())
+						&& ipPacket.getSourceIPAddress().equals(tcpPacket.getSourceIPAddress())
+						&& ipPacket.getSequenceNumber() == tcpPacket.getSequenceNumber()
+						&& ipPacket.getAckNumber() == tcpPacket.getAckNumber() && packet.getData().length > 66) {
+					byte[] data = Arrays.copyOfRange(packet.getData(), 66, packet.getData().length);
+					tcpPacket.setDecrypted(true);
+					curPacket.setData(data);
+				}
+			}
+		}
+		}
+	}
+
+	private void addToAllPackets(String appName, Packet packet) {
+		if (packet instanceof IPPacket) {
+			IPPacket ipack = (IPPacket) packet;
 			if ((ipack.getIPVersion() == 4) && (ipack.getFragmentOffset() != 0)) {
 				logger.warn("226 - no IP fragmentation");
 			}
-
 			addIpCount(ipack.getSourceIPAddress());
 			addIpCount(ipack.getDestinationIPAddress());
 		}
 		allPackets.add(new PacketInfo(appName, packet));
 	}
-	
+
 	/**
 	 * Adds the IP count in ipCountMap list.
 	 * 
@@ -836,102 +900,112 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		int value = ipCount.intValue();
 		ipCountMap.put(ipAddress, ++value);
 	}
-	
+
 	/**
 	 * some of the trace files read here
 	 *
 	 * Parses the user event trace
+	 * 
 	 * @throws IOException
 	 *
-	 * Reads the screen rotations information contained in the
-	 * "screen_rotations" file found inside the trace directory and adds them to
-	 * the user events list.
+	 *             Reads the screen rotations information contained in the
+	 *             "screen_rotations" file found inside the trace directory and adds
+	 *             them to the user events list.
 	 * @throws IOException
-	 * Reads the CPU trace information from the CPU file.
-	 * 
-	 * @throws IOException
-	 * Method to read the GPS data from the trace file and store it in the
-	 * gpsInfos list. It also updates the active duration for GPS.
-	 * Method to read the Bluetooth data from the trace file and store it in the
-	 * bluetoothInfos list. It also updates the active duration for Bluetooth.
+	 *             Reads the CPU trace information from the CPU file.
 	 * 
 	 * @throws IOException
-	 * Method to read the Camera data from the trace file and store it in the
-	 * cameraInfos list. It also updates the active duration for Camera.
+	 *             Method to read the GPS data from the trace file and store it in
+	 *             the gpsInfos list. It also updates the active duration for GPS.
+	 *             Method to read the Bluetooth data from the trace file and store
+	 *             it in the bluetoothInfos list. It also updates the active
+	 *             duration for Bluetooth.
 	 * 
-	 * Method to read the WIFI data from the trace file and store it in the
-	 * wifiInfos list. It also updates the active duration for Wifi.
+	 * @throws IOException
+	 *             Method to read the Camera data from the trace file and store it
+	 *             in the cameraInfos list. It also updates the active duration for
+	 *             Camera.
 	 * 
-	 * Method to read the Screen State data from the trace file and store it in
-	 * the ScreenStateInfos list.
+	 *             Method to read the WIFI data from the trace file and store it in
+	 *             the wifiInfos list. It also updates the active duration for Wifi.
 	 * 
-	 * Method to read the Battery data from the trace file and store it in the
-	 * batteryInfos list.
+	 *             Method to read the Screen State data from the trace file and
+	 *             store it in the ScreenStateInfos list.
 	 * 
-	 * Method to read the alarm event from the trace file and store it in the
-	 * alarmInfos list.
+	 *             Method to read the Battery data from the trace file and store it
+	 *             in the batteryInfos list.
+	 * 
+	 *             Method to read the alarm event from the trace file and store it
+	 *             in the alarmInfos list.
 	 *
-	 * Reads the Radio data from the file and stores it in the RadioInfo.
+	 *             Reads the Radio data from the file and stores it in the
+	 *             RadioInfo.
 	 * @param result
 	 */
-	public void readFileUtil(TraceDirectoryResult result){
-		NetworkTypeObject obj = networktypereader.readData(result.getTraceDirectory(), result.getPcapTime0(), result.getTraceDuration());
-		if(obj != null){
+	public void readFileUtil(TraceDirectoryResult result) {
+		NetworkTypeObject obj = networktypereader.readData(result.getTraceDirectory(), result.getPcapTime0(),
+				result.getTraceDuration());
+		if (obj != null) {
 			result.setNetworkTypeInfos(obj.getNetworkTypeInfos());
 			result.setNetworkTypesList(obj.getNetworkTypesList());
-		}	
+		}
 
 		CollectOptions collectOptions = collectOptionsReader.readData(result.getTraceDirectory());
 		result.setCollectOptions(collectOptions);
-		
-		List<UserEvent> userEvents = usereventreader.readData(result.getTraceDirectory(), result.getEventTime0(), result.getPcapTime0());
+
+		List<UserEvent> userEvents = usereventreader.readData(result.getTraceDirectory(), result.getEventTime0(),
+				result.getPcapTime0());
 		result.setUserEvents(userEvents);
- 
+
 		List<UserEvent> list = this.screenrotationreader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setScreenRotationCounter(list.size());
 		result.getUserEvents().addAll(list);
-		
-		List<TemperatureEvent> temperatureEvents = cputemperaturereader.readData(result.getTraceDirectory(), result.getPcapTime0());
+
+		List<TemperatureEvent> temperatureEvents = cputemperaturereader.readData(result.getTraceDirectory(),
+				result.getPcapTime0());
 		result.setTemperatureInfos(temperatureEvents);
- 
+
 		List<LocationEvent> locationEvents = locationreader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setLocationEventInfos(locationEvents);
-		
+
 		CpuActivityList cpuActivityList = cpureader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setCpuActivityList(cpuActivityList);
- 
-		List<GpsInfo> gpsInfos = gpsreader.readData(result.getTraceDirectory(), result.getPcapTime0(), result.getTraceDuration());
+
+		List<GpsInfo> gpsInfos = gpsreader.readData(result.getTraceDirectory(), result.getPcapTime0(),
+				result.getTraceDuration());
 		result.setGpsInfos(gpsInfos);
 		result.setGpsActiveDuration(gpsreader.getGpsActiveDuration());
- 
-		List<BluetoothInfo> bluetoothInfos = bluetoothreader.readData(result.getTraceDirectory(), result.getPcapTime0(), result.getTraceDuration());
+
+		List<BluetoothInfo> bluetoothInfos = bluetoothreader.readData(result.getTraceDirectory(), result.getPcapTime0(),
+				result.getTraceDuration());
 		result.setBluetoothInfos(bluetoothInfos);
 		result.setBluetoothActiveDuration(bluetoothreader.getBluetoothActiveDuration());
 
-		List<WifiInfo> wifiInfos = wifireader.readData(result.getTraceDirectory(), result.getPcapTime0(), result.getTraceDuration());
+		List<WifiInfo> wifiInfos = wifireader.readData(result.getTraceDirectory(), result.getPcapTime0(),
+				result.getTraceDuration());
 		result.setWifiInfos(wifiInfos);
 		result.setWifiActiveDuration(wifireader.getWifiActiveDuration());
 
-		List<CameraInfo> cameraInfos = camerareader.readData(result.getTraceDirectory(),result.getPcapTime0(), result.getTraceDuration());
+		List<CameraInfo> cameraInfos = camerareader.readData(result.getTraceDirectory(), result.getPcapTime0(),
+				result.getTraceDuration());
 		result.setCameraInfos(cameraInfos);
 		result.setCameraActiveDuration(camerareader.getActiveDuration());
- 
-		List<ScreenStateInfo> screenStateInfos = screenstatereader.readData(result.getTraceDirectory(), result.getPcapTime0(), result.getTraceDuration());
+
+		List<ScreenStateInfo> screenStateInfos = screenstatereader.readData(result.getTraceDirectory(),
+				result.getPcapTime0(), result.getTraceDuration());
 		result.setScreenStateInfos(screenStateInfos);
- 
 
 		List<BatteryInfo> batteryInfos = batteryinforeader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setBatteryInfos(batteryInfos);
-		
-		//alarm info from kernel log file
-		List<AlarmInfo> alarmInfos = alarminforeader.readData(result.getTraceDirectory(), result.getDumpsysEpochTimestamp(), 
-				result.getDumpsysElapsedTimestamp(), result.getTraceDateTime());
+
+		// alarm info from kernel log file
+		List<AlarmInfo> alarmInfos = alarminforeader.readData(result.getTraceDirectory(),
+				result.getDumpsysEpochTimestamp(), result.getDumpsysElapsedTimestamp(), result.getTraceDateTime());
 		result.setAlarmInfos(alarmInfos);
- 
- 
+
 		List<RadioInfo> radioInfos = radioinforeader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setRadioInfos(radioInfos);
 
 	}
-	
-}//end class
+
+}// end class

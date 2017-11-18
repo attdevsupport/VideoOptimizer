@@ -35,16 +35,12 @@ public class ClientPacketWriterImpl implements IClientPacketWriter {
 
 	@Override
 	public void write(byte[] data) throws IOException {
-		synchronized (syncObj) {
-			clientwriter.write(data);
-		}
+        clientwriter.write(data);
 	}
 
 	@Override
 	public void write(byte[] data, int offset, int count) throws IOException {
-		synchronized (syncObj) {
-			clientwriter.write(data, offset, count);
-		}
+        clientwriter.write(data, offset, count);
 	}
 
 }

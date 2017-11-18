@@ -15,9 +15,17 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+
+import com.att.aro.core.packetanalysis.pojo.VideoStall;
+
 public class VideoStallResult extends AbstractBestPracticeResult {
 
 	private int videoStalls;
+	@Nonnull private List<VideoStall> videoStallList = new ArrayList<VideoStall>();
 	
 	@Override
 	public BestPracticeType getBestPracticeType() {
@@ -31,6 +39,16 @@ public class VideoStallResult extends AbstractBestPracticeResult {
 	public int getStallResult() {
 		return videoStalls;
 	}
-	
 
+	public List<VideoStall> getResults() {
+		return videoStallList;
+	}
+
+	public void setResults(List<VideoStall> videoStallList) {
+		if(videoStallList != null){
+			this.videoStallList = videoStallList;
+		}else{
+			this.videoStallList.clear();
+		}
+	}
 }

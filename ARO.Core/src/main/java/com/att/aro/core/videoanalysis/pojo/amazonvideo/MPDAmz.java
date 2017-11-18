@@ -22,8 +22,10 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
+//	xsi:schemaLocation="urn:mpeg:dash:schema:mpd:2011 http://standards.iso.org/ittf/PubliclyAvailableStandards/MPEG-DASH_schema_files/DASH-MPD.xsd"
+
 @XmlRootElement(name = "MPD", namespace = "urn:mpeg:dash:schema:mpd:2011")
-public class MPDAmz implements Amz{
+public class MPDAmz implements MpdBase{
 
 	List<PeriodAmz> period = new ArrayList<>();
 	String majorVersion;
@@ -112,5 +114,14 @@ public class MPDAmz implements Amz{
 		this.revision = revision;
 	}
 
+	@Override
+	public int getSize() {
+		return getPeriod().size();
+	}
 
+	@Override
+	public String getVideoName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

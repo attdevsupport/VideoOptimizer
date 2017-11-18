@@ -46,5 +46,7 @@ public interface IExternalProcessRunner {
 	 * @return stdout and stderr
 	 */
 	String executeCmd(String cmd);
-
+		
+	String executeCmdRunner(String cmd, boolean earlyExit, String msg);
+	
 }

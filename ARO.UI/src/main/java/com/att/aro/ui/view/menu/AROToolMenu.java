@@ -37,6 +37,7 @@ import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.AROMenuAdder;
 import com.att.aro.ui.commonui.ContextAware;
@@ -44,6 +45,8 @@ import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
+import com.att.aro.ui.view.menu.tools.AWSDialog;
+import com.att.aro.ui.view.menu.tools.AWSDialog.AWS;
 import com.att.aro.ui.view.menu.tools.ExportReport;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
 import com.att.aro.ui.view.menu.tools.RegexWizard;
@@ -54,11 +57,11 @@ import com.att.aro.ui.view.menu.tools.VideoAnalysisDialog;
  * This class adds the menu items under the Tools menu
  * 
  */
-public class AROToolMenu implements ActionListener{
+public class AROToolMenu implements ActionListener {
 	private static final String FILE_NAME = "Logcat_%s_%d.log";
 	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
 	private IAdbService adbservice = ContextAware.getAROConfigContext().getBean(IAdbService.class);
-
+	private AWSDialog uploadDialog;
 
 	private final AROMenuAdder menuAdder = new AROMenuAdder(this);
 	private JMenu toolMenu;
@@ -75,7 +78,9 @@ public class AROToolMenu implements ActionListener{
 		menu_tools_videoAnalysis, 
 		menu_tools_getErrorMsg, 
 		menu_tools_clearErrorMsg, 
-		menu_tools_videoParserWizard
+		menu_tools_videoParserWizard,
+		menu_tools_uploadTraceDialog,
+		menu_tools_downloadTraceDialog
 	}
 
 	public AROToolMenu(SharedAttributesProcesses parent){
@@ -103,14 +108,16 @@ public class AROToolMenu implements ActionListener{
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_clearErrorMsg));
 			}
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_videoParserWizard));
-
+			if("dev".equals(SettingsImpl.getInstance().getAttribute("env"))) {
+				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_uploadTraceDialog));
+				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_downloadTraceDialog));
+			}
 		}
 		return toolMenu;
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent aEvent) {
-
 		if(menuAdder.isMenuSelected(MenuItem.menu_tools_wireshark, aEvent)){
 			openPcapAnalysis();
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_timerangeanalysis, aEvent)){
@@ -129,16 +136,17 @@ public class AROToolMenu implements ActionListener{
 			clearErrorMessage();
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_videoParserWizard, aEvent)){
 			openRegexWizard();
+		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_uploadTraceDialog, aEvent)){
+			openAWSUploadDialog(AWS.UPLOAD);
+		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_downloadTraceDialog, aEvent)){
+			openAWSUploadDialog(AWS.DOWNLOAD);
 		}
-		
 	}
-	
-	
+
 	private void exportHtml(){
 		ExportReport exportHtml = new ExportReport(parent, false, ResourceBundleHelper.getMessageString("menu.tools.export.error"));
 		exportHtml.execute();
 	}
-	
 	
 	private void exportJson(){
 		ExportReport exportJson = new ExportReport(parent, true, ResourceBundleHelper.getMessageString("menu.tools.export.error"));
@@ -232,6 +240,14 @@ public class AROToolMenu implements ActionListener{
 		}
 	}
 	
+	private void openAWSUploadDialog(AWS awsMode) {
+  			uploadDialog = new AWSDialog(parent, awsMode); 
+			uploadDialog.setAWSMode(awsMode);
+			uploadDialog.setVisible(true);
+			uploadDialog.setAlwaysOnTop(true);	
+		  
+ 	}
+
 	private void openVideoAnalysisDialog() {
 		VideoAnalysisDialog videoAnalysisDialog = ((MainFrame) parent).getVideoAnalysisDialog();
 		if (videoAnalysisDialog == null) {
@@ -241,7 +257,6 @@ public class AROToolMenu implements ActionListener{
 			videoAnalysisDialog.setVisible(true);
 			videoAnalysisDialog.setAlwaysOnTop(true);
 		}
-		
 	}
 
 	private void openRegexWizard(){
@@ -251,7 +266,6 @@ public class AROToolMenu implements ActionListener{
 			regexWizard.setAlwaysOnTop(true);
 		}
 	}
-
 
 	private void clearErrorMessage() {
 		try {

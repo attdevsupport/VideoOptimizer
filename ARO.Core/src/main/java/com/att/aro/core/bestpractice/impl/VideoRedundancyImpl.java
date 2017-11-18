@@ -17,8 +17,8 @@
 package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
@@ -30,6 +30,8 @@ import com.att.aro.core.bestpractice.pojo.VideoRedundancyResult;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
+import com.att.aro.core.util.Util;
+import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.ManifestDash;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
@@ -81,6 +83,9 @@ public class VideoRedundancyImpl implements IBestPractice{
 
 	@Value("${videoRedundancy.results}")
 	private String textResults;
+	
+	@Autowired
+	private IVideoUsagePrefsManager videoPref;
 
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
@@ -95,40 +100,63 @@ public class VideoRedundancyImpl implements IBestPractice{
 		result.setOverviewTitle(overviewTitle);
 
 		VideoUsage videoUsage = tracedata.getVideoUsage();
-		int count = 0;
+		int countRedundant = 0;
+		int countSegment = 0;
+		double redundantPercentage = 0d;
 		if (videoUsage != null) {
 
 			// count duplicate chunks (same segment number)
 			for (AROManifest aroManifest : videoUsage.getManifests()) {
-				if (aroManifest.isSelected()) {
+				if (aroManifest != null && aroManifest.isSelected()) {
 					VideoEvent preStuff = null;
 					for (VideoEvent stuff : aroManifest.getVideoEventsBySegment()) {
+						countSegment++;
 						if (aroManifest instanceof ManifestDash && stuff.getSegment() == 0) {
 							continue;
 						}
-
 						if (preStuff != null && preStuff.getSegment() == stuff.getSegment()
 								&& !preStuff.getQuality().equals(stuff.getQuality())) {
 							log.debug("Redundant :\t" + preStuff + "\n\t\t" + stuff);
-							count++;
+							countRedundant++;
+							countSegment--;
 						}
-						preStuff = stuff;
+						preStuff = stuff;				
 					}
 				}
 			}
 
-			//  *  videoRedundancy.results=There {0} {1} {2} version{3} of the same video. The optimal number of alternative versions could improve efficiency, while reducing congestion and preparation effort.
+			redundantPercentage = calculateRedundantPercentage(countRedundant, countSegment);
+			BPResultType bpResultType = BPResultType.PASS;
 
-			result.setResultType(BPResultType.SELF_TEST); // this VideoBestPractice is to be reported as a selftest until further notice
-			result.setResultText(
-					MessageFormat.format(textResults, 
-							count == 1? "was" : "were", 
-							count,
-							count == 0? "" : "different",
-							count == 1? "" : "s"
-								));
+			bpResultType = Util.checkPassFailorWarning(redundantPercentage,
+					videoPref.getVideoUsagePreference().getSegmentRedundancyWarnVal(),
+					videoPref.getVideoUsagePreference().getSegmentRedundancyFailVal());
+			result.setResultType(bpResultType);
+
+			if (redundantPercentage != 0.0) {
+				result.setResultText(
+						MessageFormat.format(textResults, (String.format("%.0f", redundantPercentage))));
+			} else {
+				result.setResultText(MessageFormat.format(textResultPass, redundantPercentage));
+			}
+
 		}
-		result.setRedundancy(count);
+		result.setRedundantPercentage(redundantPercentage);
 		return result;
+	}
+
+	
+	/**
+	 * 
+	 * @param countRedundant - number of Redundant Segments
+	 * @param countSegment - number of non duplicate Segments
+	 * @return percentage of Redundant Segments over the non duplicate Segments
+	 */
+	private double calculateRedundantPercentage(int countRedundant, int countSegment) {
+		double redundantPercantage = 0.0d;
+		if (countRedundant != 0 && countSegment != 0) {
+			redundantPercantage = (double) countRedundant * 100 / (double) countSegment;
+		}
+		return redundantPercantage;
 	}
 }

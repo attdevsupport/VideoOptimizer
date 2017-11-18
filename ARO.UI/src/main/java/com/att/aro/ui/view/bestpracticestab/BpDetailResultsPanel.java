@@ -94,20 +94,17 @@ public class BpDetailResultsPanel extends JPanel implements Observer, IUITabPane
 
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	
 	@Override
 	public JPanel layoutDataPanel() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void refresh(AROTraceData model) {
-		// TODO Auto-generated method stub
 		// System.out.println("---------BpDetailResultsPanel.refresh(AROTraceData)");
 		overViewObservable.refreshModel(model);
 	}

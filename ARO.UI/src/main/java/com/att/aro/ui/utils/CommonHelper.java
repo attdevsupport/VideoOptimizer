@@ -15,6 +15,9 @@
 */
 package com.att.aro.ui.utils;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+
 /**
  * Utility class 
  */
@@ -42,6 +45,11 @@ public class CommonHelper {
 	    return !(argument == null);
 	}
 	
+	private String getMessage(String key) {
+		return ResourceBundleHelper.getMessageString(key);
+	}
+	
+
 	/**
 	 * This is the utility method for number of the speed setting match with the cellular networks terms
 	 * Define for Down link
@@ -142,8 +150,24 @@ public class CommonHelper {
 
 	}
 
-	private String getMessage(String key) {
-		return ResourceBundleHelper.getMessageString(key);
-	}
+    public String messageConvert(int kbps) {
+        String message = "";
+        if(kbps >= 1024 * 100) {
+            message = " None";
+        } else if (kbps > 1024) {
+            message = " " + unitConvert(kbps) + " Mbps";
+        } else {
+            message = " " + kbps + " Kbps";
+        }
+         return message;
+    }
+
+    private String unitConvert(int kbps) {
+        double mTemp = kbps / 1024;
+        DecimalFormat df = new DecimalFormat("#.##");
+        df.setRoundingMode(RoundingMode.HALF_UP);
+        return df.format(mTemp);
+
+    }
 	
 }

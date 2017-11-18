@@ -68,7 +68,6 @@ public class AsyncCheckInScriptImplTest extends BaseTest {
 			Mockito.when(reqhelper.getContentString(any(HttpRequestResponseInfo.class), any(Session.class)))
 					.thenReturn(htmlString);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		List<HttpRequestResponseInfo> value = new ArrayList<HttpRequestResponseInfo>();
@@ -102,7 +101,6 @@ public class AsyncCheckInScriptImplTest extends BaseTest {
 			Mockito.when(reqhelper.getContentString(any(HttpRequestResponseInfo.class), any(Session.class)))
 					.thenReturn(htmlString2);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		List<HttpRequestResponseInfo> value = new ArrayList<HttpRequestResponseInfo>();
@@ -150,7 +148,6 @@ public class AsyncCheckInScriptImplTest extends BaseTest {
 			Mockito.when(reqhelper.getContentString(any(HttpRequestResponseInfo.class), any(Session.class)))
 					.thenThrow(new Exception());
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

@@ -43,7 +43,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * </SmoothStreamingMedia>
  */
 @XmlRootElement(name = "SmoothStreamingMedia")
-public class SSMAmz implements Amz{
+public class SSMAmz implements MpdBase{
 
 	List<SSMStreamIndexAmz> streamIndex = new ArrayList<>();
 	String majorVersion;
@@ -107,4 +107,13 @@ public class SSMAmz implements Amz{
 		this.duration = mediaPresentationDuration;
 	}
 
+	@Override
+	public int getSize() {
+		return getStreamIndex().size();
+	}
+
+	@Override
+	public String getVideoName() {
+		return null;
+	}
 }

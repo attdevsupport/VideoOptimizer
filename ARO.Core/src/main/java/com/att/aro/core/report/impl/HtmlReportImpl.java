@@ -99,7 +99,7 @@ public class HtmlReportImpl implements IReport {
 		htmlHead.append(System.getProperty(lineSeperator()));
 		htmlHead.append("	<head>");
 		htmlHead.append(System.getProperty(lineSeperator()));
-		htmlHead.append("		<title>ARO Best Practices</title>");
+		htmlHead.append("		<title>VO Best Practices</title>");
 		htmlHead.append(System.getProperty(lineSeperator()));
 		htmlHead.append(getCss());
 		htmlHead.append(System.getProperty(lineSeperator()));
@@ -215,7 +215,7 @@ public class HtmlReportImpl implements IReport {
 				fail++;
 			} else if (result.getResultType()== BPResultType.WARNING){
 				warning++;
-			} else{
+			} else if (result.getResultType()== BPResultType.SELF_TEST){
 				selftest++;
 			}
 		}
@@ -241,7 +241,7 @@ public class HtmlReportImpl implements IReport {
 			StringBuffer temp = new StringBuffer(65);
 			temp.append(tableLIne()+"<tr><th rowspan=\"2\">" + 
 			"<a href =\""+ bpResults.get(row).getLearnMoreUrl()+"\" target=\"_blank\" >"+
-					bpResults.get(row).getBestPracticeType()
+					bpResults.get(row).getBestPracticeType().getDescription()
 					+ "<a></th>");
 			sbTemps.add(temp);
 		}

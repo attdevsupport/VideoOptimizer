@@ -42,6 +42,9 @@ public class Session {
 	private final Object syncReceive = new Object();
 	private final Object syncSend = new Object();
 
+	private final Object syncClearReceive = new Object();
+	private final Object syncClearSend = new Object();
+
 	//for increasing and decreasing sendAmountSinceLastAck
 	private final Object syncSendAmount = new Object();
 
@@ -57,14 +60,14 @@ public class Session {
 	private int sourcePort = 0;
 
 	//sequence received from client
-	private int recSequence = 0;
+	private long recSequence = 0;
 
 	//track ack we sent to client and waiting for ack back from client
-	private int sendUnack = 0;
+	private long sendUnack = 0;
 	private boolean isacked = false;//last packet was acknowledged yet?
 
 	//the next ack to send to client
-	private int sendNext = 0;
+	private long sendNext = 0;
 	private int sendWindow = 0; //window = windowSize x windowScale
 	private int sendWindowSize = 0;
 	private int sendWindowScale = 0;
@@ -83,6 +86,12 @@ public class Session {
 
 	//sending buffer for storing data from vpn client to be send to destination host
 	private final ByteArrayOutputStream sendingStream;
+
+	// Receiving buffer for storing clear content data from Secure Collector
+	private final ByteArrayOutputStream clearReceivingStream;
+
+	// Sending buffer for storing clear content data from Secure Collector
+	private final ByteArrayOutputStream clearSendingStream;
 
 	private boolean hasReceivedLastSegment = false;
 
@@ -125,10 +134,14 @@ public class Session {
 	private SelectionKey selectionKey = null;
 	private String sessionKey = null;
 
-	private boolean inContinuationMsg = false;
+ 	private boolean inContinuationMsg = false;
 	private boolean outContinuationMsg = false;
 
+	private volatile boolean printLog = false;
+
     private long lastAccessed = System.currentTimeMillis();
+
+	private boolean secureSession = false;
 
 	public boolean isOutContinuationMsg() {
 		return outContinuationMsg;
@@ -149,9 +162,13 @@ public class Session {
 		Log.d(TAG, "new Session created");
 		receivingStream = new ByteArrayOutputStream();
 		sendingStream = new ByteArrayOutputStream();
+		clearReceivingStream = new ByteArrayOutputStream();
+		clearSendingStream = new ByteArrayOutputStream();
 	}
 
+	void addSSLEngines(int destIP, int destPort, int srcIP, int srcPort){
 
+	}
 
 	/**
 	 * decrease value of sendAmountSinceLastAck so that client's window is not
@@ -159,9 +176,9 @@ public class Session {
 	 *
 	 * @param amount amount
 	 */
-	void decreaseAmountSentSinceLastAck(int amount) {
+	void decreaseAmountSentSinceLastAck(long amount) {
 		synchronized (syncSendAmount) {
-			sendAmountSinceLastAck -= amount;
+			sendAmountSinceLastAck -= (int) amount;
 			if (sendAmountSinceLastAck <= 0) {
 				sendAmountSinceLastAck = 0;
 			}
@@ -304,19 +321,19 @@ public class Session {
 		this.destPort = destPort;
 	}
 
-	public int getSendUnack() {
+	public long getSendUnack() {
 		return sendUnack;
 	}
 
-	public void setSendUnack(int sendUnack) {
+	public void setSendUnack(long sendUnack) {
 		this.sendUnack = sendUnack;
 	}
 
-	public int getSendNext() {
+	public long getSendNext() {
 		return sendNext;
 	}
 
-	public void setSendNext(int sendNext) {
+	public void setSendNext(long sendNext) {
 		this.sendNext = sendNext;
 	}
 
@@ -388,11 +405,11 @@ public class Session {
 		this.isacked = isacked;
 	}
 
-	public int getRecSequence() {
+	public long getRecSequence() {
 		return recSequence;
 	}
 
-	public void setRecSequence(int recSequence) {
+	public void setRecSequence(long recSequence) {
 		this.recSequence = recSequence;
 	}
 
@@ -473,7 +490,6 @@ public class Session {
 	}
 
 	private void destroySSLEngines(){
-
 	}
 	
 	public boolean isDataForSendingReady() {
@@ -592,4 +608,91 @@ public class Session {
     public void setLastAccessed(long lastAccessed) {
         this.lastAccessed = lastAccessed;
     }
+
+	public boolean isPrintLog() {
+		return printLog;
+	}
+
+	public void setPrintLog(boolean printLog) {
+		this.printLog = printLog;
+	}
+
+	/**
+	 * append more data
+	 *
+	 * @param data data to be added
+	 * @return success/failure
+	 */
+	public boolean addClearReceivedData(byte[] data) {
+		boolean success = true;
+		synchronized (syncClearReceive) {
+			try {
+				clearReceivingStream.write(data);
+			} catch (IOException e) {
+				success = false;
+			}
+		}
+		return success;
+	}
+
+	public void resetClearReceivedData() {
+		synchronized (syncClearReceive) {
+			clearReceivingStream.reset();
+		}
+	}
+
+	/**
+	 * get all data received in the buffer and empty it.
+	 *
+	 * @return received data
+	 */
+	public byte[] getClearReceivedData() {
+		byte[] data;
+		synchronized (syncClearReceive) {
+			data = clearReceivingStream.toByteArray();
+			clearReceivingStream.reset();
+		}
+		return data;
+	}
+
+	/**
+	 * append more data
+	 *
+	 * @param data data to be added
+	 * @return success/failure
+	 */
+	public boolean addClearSendingData(byte[] data) {
+		boolean success = true;
+		synchronized (syncClearSend) {
+			try {
+				clearSendingStream.write(data);
+			} catch (IOException e) {
+				success = false;
+			}
+		}
+		return success;
+	}
+
+	public void resetClearSendingData() {
+		synchronized (syncClearSend) {
+			clearSendingStream.reset();
+		}
+	}
+
+	public byte[] getClearSendingData() {
+		byte[] data;
+		synchronized (syncClearSend) {
+			data = clearSendingStream.toByteArray();
+			clearSendingStream.reset();
+		}
+		return data;
+	}
+
+	public boolean isSecureSession() {
+		return secureSession;
+	}
+
+	public void setSecureSession(boolean secureSession) {
+		this.secureSession = secureSession;
+	}
 }

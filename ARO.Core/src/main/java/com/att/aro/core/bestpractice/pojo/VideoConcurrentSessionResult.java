@@ -15,21 +15,37 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
-public class VideoConcurrentSessionResult extends AbstractBestPracticeResult {
+import java.util.ArrayList;
+import java.util.List;
 
-	private int concurrentSessions;
-	
+import javax.annotation.Nonnull;
+
+public class VideoConcurrentSessionResult extends AbstractBestPracticeResult {
+	private int maxConcurrentSessionsCount;
+	@Nonnull private List<VideoConcurrentSession> manifestConcurrency = new ArrayList<VideoConcurrentSession>();
+
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.VIDEO_CONCURRENT_SESSION;
 	}
-	
-	public int getConcurrentSessions() {
-		return concurrentSessions;
+
+	public int getMaxConcurrentSessionCount() {
+		return maxConcurrentSessionsCount;
 	}
 
-	public void setConcurrentSessions(int concurrentSessions) {
-		this.concurrentSessions = concurrentSessions;
+	public void setMaxConcurrentSessionsCount(int maxConcurrentSessionsCount) {
+		this.maxConcurrentSessionsCount = maxConcurrentSessionsCount;
 	}
 
+	public List<VideoConcurrentSession> getResults() {
+		return manifestConcurrency;
+	}
+
+	public void setResults(List<VideoConcurrentSession> manifestConcurrency) {
+		if (manifestConcurrency != null) {
+			this.manifestConcurrency = manifestConcurrency;
+		}else{
+			this.manifestConcurrency.clear();
+		}
+	}
 }

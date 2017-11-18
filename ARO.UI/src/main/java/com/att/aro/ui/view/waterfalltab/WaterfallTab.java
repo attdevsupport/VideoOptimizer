@@ -33,6 +33,7 @@ import com.att.aro.ui.view.AROModelObserver;
  *
  */
 public class WaterfallTab extends TabPanelJPanel{
+	private static final long serialVersionUID = 1L;
 	
 	AROModelObserver waterfallObservable;
 	private IARODiagnosticsOverviewRoute route;

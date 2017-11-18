@@ -140,8 +140,13 @@ public class DuplicateContentTablePanel extends TabPanelJPanel implements MouseL
 				public void valueChanged(ListSelectionEvent listEvent) {
 					CacheEntry entry = duplicateContentTable.getSelectedItem();
 					HttpRequestResponseInfo rrInfo = entry != null ? entry.getResponse() : null;
-					boolean enabled = rrInfo != null && rrInfo.getContentLength() > 0 && rrInfo.getDirection() == HttpDirection.RESPONSE && entry.getSession()!=null;
-					boolean bVideo = (enabled) ? ((null != rrInfo.getContentType()) ? rrInfo.getContentType().contains("video/") : false) : false;
+					boolean enabled = rrInfo != null && rrInfo.getContentLength() > 0
+							&& rrInfo.getDirection() == HttpDirection.RESPONSE && entry != null
+							&& entry.getSession() != null;
+					boolean isContentTypeVideo = (rrInfo != null && rrInfo.getContentType() != null)
+							? rrInfo.getContentType().contains("video/")
+							: false;
+					boolean bVideo = enabled ? isContentTypeVideo : false;
 					getViewBtn().setEnabled((bVideo) ? false : enabled);
 					getSaveBtn().setEnabled(enabled);
 				}
@@ -245,7 +250,6 @@ public class DuplicateContentTablePanel extends TabPanelJPanel implements MouseL
  
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -267,19 +271,16 @@ public class DuplicateContentTablePanel extends TabPanelJPanel implements MouseL
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 

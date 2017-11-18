@@ -125,6 +125,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 		if (contentOffsetLength != null) {
 			byte[] buffer = getStorageBuffer(req, session);
 			if (buffer == null) {
+				req.setExtractable(false);
 				return new byte[0];
 			}
 //			System.out.println("Byte Count:" + buffer.length);
@@ -134,8 +135,10 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 				int start = entry.getKey();
 				int size = entry.getValue();
 				if (start + size < 0) {
+					req.setExtractable(false);
 					throw new Exception("The content may be too big.");
 				} else if (buffer.length < start + size) {
+					req.setExtractable(false);
 					throw new Exception("The content may be corrupted.");
 				}
 
@@ -178,6 +181,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 			if (output != null) {
 			    return output.toByteArray();
 			} else {
+				req.setExtractable(false);
 			    return new byte[0];
 			}
 		}

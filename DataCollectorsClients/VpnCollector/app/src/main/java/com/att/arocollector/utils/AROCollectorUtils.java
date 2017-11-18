@@ -61,6 +61,9 @@ public class AROCollectorUtils {
 	/** used to close the old instance when a new one is launched from the analyzer*/
 	public static final String ANALYZER_LAUNCH_CLEANUP_INTENT = "arodatacollector.launch.cleanup";
 
+	/** used to close down the video capture */
+	public static final String VIDEO_CLOSE_CMD_INTENT = "videocaptureservice.service.close";
+
 	/** Empty String */
 	public static String EMPTY_STRING = "";
 	

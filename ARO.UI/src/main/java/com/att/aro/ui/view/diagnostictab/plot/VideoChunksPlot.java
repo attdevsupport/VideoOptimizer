@@ -44,6 +44,7 @@ import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.impl.SortSelection;
 import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
@@ -78,11 +79,16 @@ public class VideoChunksPlot implements IPlot{
 	VideoChunkPlotterImpl videoChunkPlotter;
 	Map<Integer,Double> seriesDataSets; 
 	boolean isReDraw = false;
+	private Map<Integer,AbstractBestPracticeResult> removeList = new HashMap<>();
 
 	public VideoChunksPlot(){
 		filteredChunks = new ArrayList<>();
 		segmentsToBePlayed  = new ArrayList<>();
 		videoChunkPlotter = (VideoChunkPlotterImpl) ContextAware.getAROConfigContext().getBean("videoChunkPlotterImpl",PlotHelperAbstract.class);
+	}
+
+	public VideoChunkPlotterImpl getVideoChunkPlotterReference() {
+		return videoChunkPlotter;
 	}
 
 	/**
@@ -95,23 +101,41 @@ public class VideoChunksPlot implements IPlot{
 		chunkPlayTime.put(selectedChunk, startTime);
 
 		videoChunkPlotter.setChunkPlayBackTimeList(chunkPlayTime);
+		setChunkPlayBackTimeCollection(analysis);
 		boPlot.setChunkPlayTimeList(chunkPlayTime);
 
 		populate(plot, analysis);
+		AbstractBestPracticeResult startupDelayBPResult = videoChunkPlotter.refreshStartUpDelayBP(analysis);
+		
+		if (analysis.getAnalyzerResult().getVideoUsage().getChunksBySegmentNumber().isEmpty()) {
+			return refreshBPVideoResults(analysis, startupDelayBPResult, null, null);
+		}
 		
 		boTimePlot.populate(bufferTimePlot, analysis);
 
 		boPlot.populate(bufferOccupancyPlot, analysis);
 		
 		refreshVCPlot(plot, analysis);
-		
-		AbstractBestPracticeResult startupDelayBPResult = videoChunkPlotter.refreshStartUpDelayBP(analysis);
-		AbstractBestPracticeResult stallBPResult = videoChunkPlotter.refreshVideoStallBP(analysis);
-		AbstractBestPracticeResult bufferOccupancyBPResult = videoChunkPlotter.refreshVideoBufferOccupancyBP(analysis);
 
+		AbstractBestPracticeResult stallBPResult = null;
+		AbstractBestPracticeResult bufferOccupancyBPResult = null;
+		List<BestPracticeType> bpList = SettingsUtil.retrieveBestPractices();
+		if (bpList.contains(BestPracticeType.VIDEO_STALL)) {
+			stallBPResult = videoChunkPlotter.refreshVideoStallBP(analysis);
+		}
+		if (bpList.contains(BestPracticeType.BUFFER_OCCUPANCY)) {
+			bufferOccupancyBPResult = videoChunkPlotter.refreshVideoBufferOccupancyBP(analysis);
+		}
 		return refreshBPVideoResults(analysis, startupDelayBPResult, stallBPResult, bufferOccupancyBPResult);		
 	}
-	
+
+	private void setChunkPlayBackTimeCollection(AROTraceData analysis) {
+		if (analysis != null && analysis.getAnalyzerResult().getVideoUsage() != null) {
+			VideoUsage videousage = analysis.getAnalyzerResult().getVideoUsage();
+			videousage.setChunkPlayTimeList(chunkPlayTime);
+		}
+	}
+
 	/**
 	 * This method redraws the Video Chunk plot with updated values
 	 * @param isReDraw to clear the video buffer plots
@@ -122,45 +146,43 @@ public class VideoChunksPlot implements IPlot{
 		populate(plot, analysis);		
 	}
     
+	private void updateAbstractBestPracticeParameters(AbstractBestPracticeResult bp, AbstractBestPracticeResult videoBPResult, int index){
+		bp.setAboutText(videoBPResult.getAboutText());
+		bp.setDetailTitle(videoBPResult.getDetailTitle());
+		bp.setLearnMoreUrl(videoBPResult.getLearnMoreUrl());
+		bp.setOverviewTitle(videoBPResult.getOverviewTitle());
+		bp.setResultText(videoBPResult.getResultText());
+		bp.setResultType(videoBPResult.getResultType());
+		removeList.put(index, bp);		
+	}
+	
     private AROTraceData refreshBPVideoResults(AROTraceData model,AbstractBestPracticeResult bpResult,AbstractBestPracticeResult stallBPResult,AbstractBestPracticeResult bufferOccupancyBPResult){
-		List<AbstractBestPracticeResult> removeList = new ArrayList<>();
-		AROTraceData trace = model;
+		removeList.clear();
+    	AROTraceData trace = model;
     	for(AbstractBestPracticeResult bp:model.getBestPracticeResults()){
     		if(bp.getBestPracticeType() == BestPracticeType.STARTUP_DELAY){
-    			bp.setAboutText(bpResult.getAboutText());
-    			bp.setDetailTitle(bpResult.getDetailTitle());
-    			bp.setLearnMoreUrl(bpResult.getLearnMoreUrl());
-    			bp.setOverviewTitle(bpResult.getOverviewTitle());
-    			bp.setResultText(bpResult.getResultText());
-    			bp.setResultType(bpResult.getResultType());	
-    			removeList.add(bp);		
+    			updateAbstractBestPracticeParameters(bp,bpResult,model.getBestPracticeResults().indexOf(bp));	
     		}
-    		else if(bp.getBestPracticeType() == BestPracticeType.VIDEO_STALL){
-    			bp.setAboutText(stallBPResult.getAboutText());
-    			bp.setDetailTitle(stallBPResult.getDetailTitle());
-    			bp.setLearnMoreUrl(stallBPResult.getLearnMoreUrl());
-    			bp.setOverviewTitle(stallBPResult.getOverviewTitle());
-    			bp.setResultText(stallBPResult.getResultText());
-    			bp.setResultType(stallBPResult.getResultType());
-    			removeList.add(bp);		
-    		}else if(bp.getBestPracticeType() == BestPracticeType.BUFFER_OCCUPANCY){
-    			bp.setAboutText(bufferOccupancyBPResult.getAboutText());
-    			bp.setDetailTitle(bufferOccupancyBPResult.getDetailTitle());
-    			bp.setLearnMoreUrl(bufferOccupancyBPResult.getLearnMoreUrl());
-    			bp.setOverviewTitle(bufferOccupancyBPResult.getOverviewTitle());
-    			bp.setResultText(bufferOccupancyBPResult.getResultText());
-    			bp.setResultType(bufferOccupancyBPResult.getResultType());	
-    			removeList.add(bp);		
+    		else if(stallBPResult != null && bp.getBestPracticeType() == BestPracticeType.VIDEO_STALL){
+    			updateAbstractBestPracticeParameters(bp,stallBPResult,model.getBestPracticeResults().indexOf(bp));	
+    		}else if(bufferOccupancyBPResult != null && bp.getBestPracticeType() == BestPracticeType.BUFFER_OCCUPANCY){
+    			updateAbstractBestPracticeParameters(bp,bufferOccupancyBPResult,model.getBestPracticeResults().indexOf(bp));	
     		}
     	}
 		if (!removeList.isEmpty()) {
-			for (AbstractBestPracticeResult bp : removeList) {
+			for (int index : removeList.keySet()) {
+				AbstractBestPracticeResult bp = removeList.get(index);
 				trace.getBestPracticeResults().remove(bp);
+				AbstractBestPracticeResult result = null;
+				if (bp.getBestPracticeType() == BestPracticeType.STARTUP_DELAY) {
+					result = bpResult;
+				} else if (bp.getBestPracticeType() == BestPracticeType.VIDEO_STALL) {
+					result = stallBPResult;
+				} else if (bp.getBestPracticeType() == BestPracticeType.BUFFER_OCCUPANCY) {
+					result = bufferOccupancyBPResult;
+				}
+				trace.getBestPracticeResults().add(index, result);
 			}
-			trace.getBestPracticeResults().add(bpResult);
-			trace.getBestPracticeResults().add(stallBPResult);
-			trace.getBestPracticeResults().add(bufferOccupancyBPResult);
-
 		}
     	return trace;
 	}
@@ -188,10 +210,12 @@ public class VideoChunksPlot implements IPlot{
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
 		if (analysis != null) {		
-			
+			VideoUsage videousage = analysis.getAnalyzerResult().getVideoUsage();
 			if(!isReDraw) {
 				boPlot.clearPlot(this.bufferOccupancyPlot);
 				boTimePlot.clearPlot(this.bufferTimePlot);
+				analysis.getAnalyzerResult().setBufferTimeResult(null);
+				analysis.getAnalyzerResult().setBufferOccupancyResult(null);
 			}
 			
 			videoChunksData.removeAllSeries();
@@ -210,10 +234,10 @@ public class VideoChunksPlot implements IPlot{
 			seriesDataSets = videoChunkPlotter.populateDataSet(analysis.getAnalyzerResult().getVideoUsage());
 
 			imgSeries = videoChunkPlotter.getImageSeries();
-			filteredChunks = videoChunkPlotter.getFilteredSegments();
+			filteredChunks = videousage.getFilteredSegments();
 			segmentsToBePlayed.clear();
-			if(videoChunkPlotter.getAllSegments() != null) {
-				for(VideoEvent ve: videoChunkPlotter.getAllSegments()){
+			if(videousage.getAllSegments() != null) {
+				for(VideoEvent ve: videousage.getAllSegments()){
 					segmentsToBePlayed.add(ve);
 				}
 			}
@@ -351,7 +375,8 @@ public class VideoChunksPlot implements IPlot{
 	}
 
 	class VideoChunckImageRenderer extends StandardXYItemRenderer{
-		
+		private static final long serialVersionUID = 2689805190362715164L;
+
 		public VideoChunckImageRenderer()
 		{
 			super(StandardXYItemRenderer.IMAGES, null);
@@ -363,18 +388,15 @@ public class VideoChunksPlot implements IPlot{
 
 			return chunkImage; 
 		}
-
 	}
 
 	public  BufferInSecondsPlot getBufferTimePlot() {
-		// TODO Auto-generated method stub
 		return boTimePlot;
 	}
 	
 	public List<VideoEvent> getAllChunks(){
-		return videoChunkPlotter.getAllSegments();
+		return videoChunkPlotter.getVideoUsage().getAllSegments();
 	}
-
 }
 
 

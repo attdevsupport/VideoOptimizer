@@ -30,16 +30,16 @@ public class VideoUsagePrefsManagerImpl implements IVideoUsagePrefsManager {
 	@InjectLogger
 	private static ILogger log;
 	
-	public VideoUsagePrefs getVideoUsagePreference(){
+	public VideoUsagePrefs getVideoUsagePreference() {
 		VideoUsagePrefs videoUsagePrefs = new VideoUsagePrefs();
-		
+
 		PreferenceHandlerImpl prefs = PreferenceHandlerImpl.getInstance();
 		String videoPref = prefs.getPref(VideoUsagePrefs.VIDEO_PREFERENCE);
-		if(videoPref != null){
+		if (videoPref != null && !videoPref.equals("null")) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
 				videoUsagePrefs = mapper.readValue(videoPref, VideoUsagePrefs.class);
-				
+
 			} catch (IOException e) {
 				log.error("VideoPreference Mapper Exception" + e.getMessage());
 			}

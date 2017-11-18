@@ -40,7 +40,6 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.security.KeyChain;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -49,7 +48,8 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
+import com.att.arocollector.attenuator.AttenuatorManager;
+import com.att.arocollector.attenuator.AttenuatorUtil;
 import com.att.arocollector.client.CaptureVpnService;
 import com.att.arocollector.privatedata.AROPrivateDataCollectorService;
 import com.att.arocollector.utils.AROCollectorUtils;
@@ -63,7 +63,6 @@ import com.att.arotracedata.AROCpuTraceService;
 import com.att.arotracedata.AROGpsMonitorService;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,9 +71,6 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
-import javax.security.cert.CertificateException;
-import javax.security.cert.X509Certificate;
 
 public class AROCollectorActivity extends Activity {
 
@@ -94,11 +90,8 @@ public class AROCollectorActivity extends Activity {
 	private String screenSize = "";
 	private VideoCapture videoCapture;
 	private MediaProjectionManager mediaProjectionManager;
-	private boolean secureEnable = false;//do not change the default value
-	private boolean certInstall = false;
+	private boolean printLog = false;
 	private File tempCertFile;
-	private String CERTFILE = "cacert.pem";
-	private int RSRC = R.raw.cacert;
 	private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
 	@Override
@@ -116,13 +109,35 @@ public class AROCollectorActivity extends Activity {
 		setContentView(R.layout.splash);
 		final TextView splashText = (TextView) findViewById(R.id.splash_message);
 		splashText.setText(String.format(getString(R.string.splashmessageopensource), getString(R.string.app_brand_name), getString(R.string.app_url_name)));
+		AttenuatorManager.getInstance().init();
 		Intent intent = getIntent();
+		//delay
+		int delayDl = intent.getIntExtra(BundleKeyUtil.DL_DELAY, 0);
+		int delayUl = intent.getIntExtra(BundleKeyUtil.UL_DELAY, 0);
 
-		secureEnable = intent.getBooleanExtra(BundleKeyUtil.SECURE, false);//do not change the default value
-
-		if(secureEnable) {
-			certInstall = intent.getBooleanExtra(BundleKeyUtil.CERT_INSTALL, false);
+		if(delayDl >= 0){
+			AttenuatorManager.getInstance().setDelayDl(delayDl);
+		}else{
+			Log.i(TAG,"Invalid attenuation delay value"+ delayDl + "ms");
 		}
+
+		if(delayUl >= 0){
+			AttenuatorManager.getInstance().setDelayUl(delayUl);
+		}else{
+			Log.i(TAG,"Invalid attenuation delay value"+ delayUl + "ms");
+		}
+
+		//throttle
+		int throttleDl = intent.getIntExtra(BundleKeyUtil.DL_THROTTLE, AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
+		int throttleUl = intent.getIntExtra(BundleKeyUtil.UL_THROTTLE, AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
+
+		AttenuatorManager.getInstance().setThrottleDL(throttleDl);
+		Log.d(TAG,"Download speed throttle value: "+ throttleDl + " kbps");
+
+		AttenuatorManager.getInstance().setThrottleUL(throttleUl);
+		Log.d(TAG,"Upload speed throttle value: "+ throttleUl + " kbps");
+
+		printLog = intent.getBooleanExtra(BundleKeyUtil.PRINT_LOG, false);
 
 		setVideoOption(intent);
 
@@ -132,7 +147,11 @@ public class AROCollectorActivity extends Activity {
 
 		setVideoOrient(intent);
 
-		Log.i(TAG,  " video: " + videoOption
+		Log.i(TAG, "get from intent delayTime: " + AttenuatorManager.getInstance().getDelayDl()
+				+ "get from intent delayTimeUL: " + AttenuatorManager.getInstance().getDelayUl()
+				+ "get from intent throttleDL: " + AttenuatorManager.getInstance().getThrottleDL()
+				+ "get from intnetn throttleUL: " + AttenuatorManager.getInstance().getThrottleUL()
+				+ " video: " + videoOption
 				+ " bitRate: " + bitRate + " screenSize: " + screenSize
 				+ " orientation: " + videoOrient);
 
@@ -167,6 +186,7 @@ public class AROCollectorActivity extends Activity {
 
 			String display =
 					"App Build Date: "+ appBuildDate + "\n"
+					+ AttenuatorUtil.getInstance().notificationMessage() + "\n"
 					+" Version: " + packageInfo.versionName + " (" + (valu ? "Debug" : "Production") + ")";
 
 			((TextView) findViewById(R.id.version)).setText(display);
@@ -284,13 +304,9 @@ public class AROCollectorActivity extends Activity {
 			case Config.Permission.VPN_PERMISSION_REQUEST_CODE:
 				if (resultCode == RESULT_OK) {
 
-					if (certInstall) {
-						startCertificateInstall();
-					}
-
 					captureVpnServiceIntent = new Intent(getApplicationContext(), CaptureVpnService.class);
 					captureVpnServiceIntent.putExtra("TRACE_DIR", Config.TRACE_DIR);
-					captureVpnServiceIntent.putExtra(BundleKeyUtil.SECURE, isSecureEnable());
+					captureVpnServiceIntent.putExtra(BundleKeyUtil.PRINT_LOG, printLog);
 
 					if(isExternalStorageWritable()){
 						Log.i(TAG, "TRACE_DIR: "+ Config.TRACE_DIR +"trace directory: "+
@@ -306,8 +322,6 @@ public class AROCollectorActivity extends Activity {
 
 					if (doVideoCapture()) {
 						getVideoCapturePermission();
-					} else {
-						pushAppToBackStack();
 					}
 
 				} else if (resultCode == RESULT_CANCELED) {
@@ -328,8 +342,7 @@ public class AROCollectorActivity extends Activity {
 
 				MediaProjection mediaProjection = mediaProjectionManager.getMediaProjection(
 						resultCode, data);
-				videoCapture = new VideoCapture(getWindowManager(),
-						mediaProjection, bitRate, screenSize, videoOrient);
+				videoCapture = new VideoCapture(getApplicationContext(), getWindowManager(), mediaProjection, bitRate, screenSize, videoOrient);
 				videoCapture.start();
 				break;
 
@@ -339,55 +352,15 @@ public class AROCollectorActivity extends Activity {
 						tempCertFile.delete();
 						tempCertFile = null;
 					}
+					pushAppToBackStack();
+				} else {
+					pushAppToBackStack();
 				}
 				break;
 
 			default:
 				break;
 		}
-	}
-
-	/**
-	 * Once the VPN Permission is provided, Install the Certificate
-	 * Done only if Requested.
-	 */
-	private void startCertificateInstall() {
-
-		boolean externalStoragePermEnabled = checkWritePerm();
-		if (externalStoragePermEnabled) {
-			Log.d("SecureCollector", "StartCertificateInstall");
-			String CERTFILE = "cacert.pem";
-			int RSRC = R.raw.cacert;
-
-			File path = locateARO();
-
-			tempCertFile = new File(path, CERTFILE);
-
-			boolean result = extractResource(tempCertFile, RSRC);
-
-			if (result) {
-
-				Intent intent = null;
-				try {
-					intent = KeyChain.createInstallIntent();
-					FileInputStream certIs = new FileInputStream(tempCertFile);
-					byte[] cert = new byte[(int) tempCertFile.length()];
-					certIs.read(cert);
-					X509Certificate x509 = X509Certificate.getInstance(cert);
-					intent.putExtra(KeyChain.EXTRA_CERTIFICATE, x509.getEncoded());
-					intent.putExtra(KeyChain.EXTRA_NAME, "ARO Cert");
-				} catch (IOException e) {
-					e.printStackTrace();
-				} catch (CertificateException e) {
-					e.printStackTrace();
-				}
-				this.startActivityForResult(intent, Config.Permission.CERT_INSTALL_REQUEST_CODE);
-				// this.sendBroadcast(intent);  // this doesn't install cert
-			} else {
-				Log.d(TAG, "Failed to extract");
-			}
-		}
-
 	}
 
 	/**
@@ -452,7 +425,13 @@ public class AROCollectorActivity extends Activity {
 	private void launchAROCollectorService() {
 		aroCollectorService = new Intent(getApplicationContext(), AROCollectorService.class);
 		aroCollectorService.putExtra("TRACE_DIR", Config.TRACE_DIR);
-  		aroCollectorService.putExtra(BundleKeyUtil.VIDEO_ORIENTATION, videoOrient.toString());
+		aroCollectorService.putExtra(BundleKeyUtil.DL_DELAY, AttenuatorManager.getInstance().getDelayDl());
+		aroCollectorService.putExtra(BundleKeyUtil.UL_DELAY, AttenuatorManager.getInstance().getDelayUl());
+		aroCollectorService.putExtra(BundleKeyUtil.DL_THROTTLE,AttenuatorManager.getInstance().getThrottleDL());
+		aroCollectorService.putExtra(BundleKeyUtil.UL_THROTTLE,AttenuatorManager.getInstance().getThrottleUL());
+		aroCollectorService.putExtra(BundleKeyUtil.ATTENUATION_PROFILE,getIntent().getBooleanExtra(BundleKeyUtil.ATTENUATION_PROFILE,false));
+		aroCollectorService.putExtra(BundleKeyUtil.ATTENUATION_PROFILE_NAME,getIntent().getStringExtra(BundleKeyUtil.ATTENUATION_PROFILE_NAME));
+		aroCollectorService.putExtra(BundleKeyUtil.VIDEO_ORIENTATION, videoOrient.toString());
 		aroCollectorService.addCategory(AROCollectorService.ARO_COLLECTOR_SERVICE);
 		collectorService = startService(aroCollectorService);
 	}
@@ -493,10 +472,6 @@ public class AROCollectorActivity extends Activity {
 		if (analyzerCloseCmdReceiver != null) {
 			Log.d(TAG, "calling unregisterAnalyzerCloseCmdReceiver inside onDestroy()");
 			unregisterAnalyzerCloseCmdReceiver();
-		}
-
-		if (videoCapture != null) {
-			videoCapture.stop();
 		}
 
 		super.onDestroy();
@@ -641,30 +616,13 @@ public class AROCollectorActivity extends Activity {
 		return false;
 	}
 
-
-	public void setSecureEnable(boolean secureEnable) {
-		this.secureEnable = secureEnable;
-	}
-
-	public boolean isSecureEnable() {
-		return secureEnable;
-	}
-
 	public void handleUncaughtException (Thread thread, Throwable e)  {
-		Log.e(TAG, "UNCAUGHT, Class: " + e.getClass() + " ,  Throwable Cause: " + e.getCause() + " , thread name: " + thread.getName() + "\n");
-		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[0] + "\n");
-		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[1] + "\n");
-		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[2] + "\n");
-		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[3] + "\n");
-		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[4] + "\n");
-		Log.e(TAG, "UNCAUGHT " + thread.getStackTrace()[5] + "\n");
 
 		MemoryInfo mi = new MemoryInfo();
 		ActivityManager activityManager = (ActivityManager)this.getSystemService(Activity.ACTIVITY_SERVICE);
 		activityManager.getMemoryInfo(mi);
 		long availableMegs = mi.availMem / 1048576L;
-		Log.e(TAG," ServerBuff : Available memory: "+ availableMegs + "\n\n");
-	}
+ 	}
 
 	private boolean doVideoCapture() {
 		return (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&

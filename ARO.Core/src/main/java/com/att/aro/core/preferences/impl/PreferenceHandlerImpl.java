@@ -26,6 +26,7 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 	public static final String ARO_NODE_NAME = "/com/att/aro";
 	private static PreferenceHandlerImpl instance = new PreferenceHandlerImpl();
 	private Preferences prefs;
+	
 	private ILogger logger = new LoggerImpl(PreferenceHandlerImpl.class.getName());	
 
 	public static PreferenceHandlerImpl getInstance() {
@@ -55,7 +56,7 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 	@Override
 	public void setPref(String prefKey, String prefValue) {
 		
-		if (prefKey == null || prefValue == null) {
+		if (prefKey == null || prefValue == null || prefValue.equals("null")) {
 			logger.error("Preference key and preference value cannot be null! "
 					+ "key:" + prefKey + " value:" + prefValue);
 		} else {
@@ -74,4 +75,5 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 			prefs.remove(prefKey);
 		}
 	}
+	
 }

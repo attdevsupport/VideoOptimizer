@@ -26,8 +26,7 @@ public class SegmentURL {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("SegmentURL mediaRange:");
-		strblr.append(mediaRange);
+		strblr.append("SegmentURL mediaRange:");  strblr.append(mediaRange);
 		return strblr.toString();
 	}
 

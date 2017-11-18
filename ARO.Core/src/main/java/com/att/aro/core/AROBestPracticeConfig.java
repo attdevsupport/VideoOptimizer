@@ -43,7 +43,9 @@ import com.att.aro.core.bestpractice.impl.ImageFormatImpl;
 import com.att.aro.core.bestpractice.impl.ImageMetaDataImpl;
 //import com.att.aro.core.bestpractice.impl.HttpsUsageImpl;
 import com.att.aro.core.bestpractice.impl.ImageSizeImpl;
+import com.att.aro.core.bestpractice.impl.ImageUIComparatorImpl;
 import com.att.aro.core.bestpractice.impl.MinificationImpl;
+import com.att.aro.core.bestpractice.impl.MultipleSimultnsConnImpl;
 import com.att.aro.core.bestpractice.impl.PeriodicTransferImpl;
 import com.att.aro.core.bestpractice.impl.PrefetchingImpl;
 import com.att.aro.core.bestpractice.impl.ScreenRotationImpl;
@@ -188,6 +190,11 @@ public class AROBestPracticeConfig {
 		return new SimultnsConnImpl();
 	}
 
+	@Bean(name = "multipleSimultaneous")
+	IBestPractice getMultipleSimultaneous() {
+		return new MultipleSimultnsConnImpl();
+	}
+
 	@Bean(name = "http3xx")
 	IBestPractice getHttp3xx() {
 		return new Http3xxCodeImpl();
@@ -216,7 +223,11 @@ public class AROBestPracticeConfig {
 		return new ImageFormatImpl();
 	}
 	
-
+	@Bean(name = "uiComparator")
+	IBestPractice getUIComparator() {
+		return new ImageUIComparatorImpl();
+	}
+	
 	@Bean(name = "minify")
 	IBestPractice getMinify() {
 		return new MinificationImpl();
@@ -302,8 +313,8 @@ public class AROBestPracticeConfig {
 		return new VideoRedundancyImpl();
 	}
 	
-	@Bean(name = "videoConcurrentSessions")
-	IBestPractice getVideoConcurrentSesisons() {
+	@Bean(name = "videoConcurrentSession")
+	IBestPractice getVideoConcurrentSession() {
 		return new VideoConcurrentSessionImpl();
 	}
 	//End of Video

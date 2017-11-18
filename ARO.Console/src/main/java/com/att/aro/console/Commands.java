@@ -48,14 +48,6 @@ public class Commands {
 	@Parameter(names="--sudo", description="admin password, OSX only")
 	private String sudo = "";
 	
-	public String getSudo() {
-		return sudo;
-	}
-
-	public void setSudo(String sudo) {
-		this.sudo = sudo;
-	}
-
 	@Parameter(names="--listcollectors", description="list available data collector")
 	private boolean listcollectors = false;
 
@@ -71,11 +63,12 @@ public class Commands {
 	@Parameter(names="--certInstall", description="install certificate if secure is enabled")
 	private boolean certInstall = false;
 	
-	@Parameter(names="--uplink", description="enable uplink delay (0 - 100) millisecond")
-	private int uplink = 0;
+	@Parameter(names="--throttleUL", description="enable throttle upload throughtput (64k - 100m (102400k))")
+	private String throttleUL = "-1";	
 	
-	@Parameter(names="--downlink", description="enable downlink delay (0 - 2000) millisecond")
-	private int downlink = 0;
+	@Parameter(names="--throttleDL", description="enable throttle download throughtput (64k - 100m (102400k))")
+	private String throttleDL = "-1";
+	
 	
 	public boolean isListcollector() {
 		return listcollectors;
@@ -100,6 +93,15 @@ public class Commands {
 	public void setStartcollector(String startcollector) {
 		this.startcollector = startcollector;
 	}
+	
+	public String getSudo() {
+		return sudo;
+	}
+
+	public void setSudo(String sudo) {
+		this.sudo = sudo;
+	}
+
 
 	/**
 	 * new
@@ -185,20 +187,20 @@ public class Commands {
 		this.certInstall = certInstall;
 	}
 
-	public int getUplink() {
-		return uplink;
+	public String getThrottleUL() {
+		return throttleUL;
 	}
 
-	public void setUplink(int uplink) {
-		this.uplink = uplink;
+	public void setThrottleUL(String throttleUL) {
+		this.throttleUL = throttleUL;
 	}
 
-	public int getDownlink() {
-		return downlink;
+	public String getThrottleDL() {
+		return throttleDL;
 	}
 
-	public void setDownlink(int downlink) {
-		this.downlink = downlink;
+	public void setDownlink(String throttleDL) {
+		this.throttleDL = throttleDL;
 	}
 
 	@Override
@@ -214,7 +216,7 @@ public class Commands {
 		if (format != null) {
 			sb.append(", format:" + getFormat());
 		}
-		if (output != null) {
+		if (overwrite != null) {
 			sb.append(", overwrite:" + getOverwrite());
 		}
 		if (output != null) {
@@ -247,8 +249,8 @@ public class Commands {
 		if (certInstall) {
 			sb.append(", certInstall");
 		}
-		sb.append(", uplink: " + getUplink());
-		sb.append(", downlink: " + getDownlink());
+		sb.append(", throttleUL: " + getThrottleUL());
+		sb.append(", throttleDL: " + getThrottleDL());
 		if (video != null) {
 			sb.append(", " + getVideo());
 		}

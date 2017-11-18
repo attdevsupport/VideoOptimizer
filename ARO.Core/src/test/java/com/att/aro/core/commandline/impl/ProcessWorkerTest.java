@@ -23,19 +23,13 @@ import java.util.concurrent.Executors;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
 
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.commandline.pojo.ProcessWorker;
-import com.att.aro.core.concurrent.impl.ThreadExecutorImpl;
 import com.att.aro.core.util.Util;
 
 public class ProcessWorkerTest extends BaseTest {
-
 	ProcessWorker processWorker;
-	private String result;
-
 	ExecutorService service;
 
 	@Before

@@ -61,9 +61,6 @@ public class AlarmInfoReaderImplTest extends BaseTest {
 	
 	@Test
 	public void readData_IOException() throws IOException{
-		//reader = context.getBean(AlarmInfoReaderImpl.class);
-		//IFileManager filereader = Mockito.mock(IFileManager.class);
-		String[] arr = getAlarmData();
 		Mockito.when(filereader.readAllLine(Mockito.anyString())).thenThrow(new IOException("test exception"));
 		Date traceDateTime = new Date();
 

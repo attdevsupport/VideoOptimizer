@@ -16,11 +16,8 @@ import com.att.aro.core.peripheral.IGpsInfoReader;
 import com.att.aro.core.peripheral.pojo.GpsInfo;
 
 public class GpsInfoReaderImplTest extends BaseTest {
-
 	GpsInfoReaderImpl gpsEventReader;
-
 	private IFileManager filereader;
-	private String traceFolder = "traceFolder";
 
 	@Before
 	public void setup() {
@@ -138,12 +135,8 @@ public class GpsInfoReaderImplTest extends BaseTest {
 
 		Mockito.when(filereader.readAllLine(Mockito.anyString())).thenReturn(arr);
 		gpsEventReader.setFileReader(filereader);
-		List<GpsInfo> info = gpsEventReader.readData("/", 0, 0);
-
 		double activeDuration = gpsEventReader.getGpsActiveDuration();
 		assertEquals(24.822, ((double)Math.round(activeDuration*1000.0))/1000, 0); // bcn faked
-	//	assertEquals(24.822, activeDuration, 0);
-		
 	}
 
 	@Test

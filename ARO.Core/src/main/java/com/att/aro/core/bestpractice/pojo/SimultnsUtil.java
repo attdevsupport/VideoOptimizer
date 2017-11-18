@@ -23,11 +23,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.att.aro.core.ILogger;
+import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.SessionValues;
 
 public final class SimultnsUtil {
+	
+	private static final ILogger LOGGER = new LoggerImpl(SimultnsUtil.class.getName());
 
 	public Map<String, ArrayList<Session>> getDistinctMap(List<Session> sessions) {
 		Map<String, ArrayList<Session>> distinctMap = new HashMap<String, ArrayList<Session>>();
@@ -37,20 +41,19 @@ public final class SimultnsUtil {
 				ArrayList<Session> tempList = distinctMap.get(domainName);
 				if (tempList == null) {
 					tempList = new ArrayList<Session>();
-					distinctMap.put(domainName, tempList);
 				}
 				tempList.add(session);
-				
+				distinctMap.put(domainName, tempList);
 			}
 		}
 		return distinctMap;
 	}
 
-	public SimultnsConnEntry getTimeMap(List<SessionValues> tMap, int maxCount) {
+	public SimultnsConnEntry getTimeMap(List<SessionValues> tMap, int maxCount, boolean isManyServer) {
 		String ipInside = "";
 		TreeMap<Double, Double> timeMap = new TreeMap<Double, Double>();
+		TreeMap<String, HttpRequestResponseInfo> reqRespMap = new TreeMap<String, HttpRequestResponseInfo>();
 
-		HttpRequestResponseInfo reqRespInfo = null;
 		int iterator = 0;
 		double sessionStartTime = 0.0;
 		double sessionEndTime = 0.0;
@@ -63,18 +66,37 @@ public final class SimultnsUtil {
 			start[iterator] = sessionStartTime;
 			end[iterator] = sessionEndTime;
 			ipInside = indSessionVal.getIp();
-			reqRespInfo = indSessionVal.getReqRespInfo();
+			if(indSessionVal.getReqRespInfo()!=null){
+				reqRespMap.put(ipInside,indSessionVal.getReqRespInfo());
+			} else {
+				reqRespMap.put(ipInside,new HttpRequestResponseInfo());
+			}
+			
 			iterator++;
 		}
-		return maxOverlapIntervalCount(reqRespInfo, ipInside, start, end, maxCount, timeMap);
+		return maxOverlapIntervalCount(reqRespMap, ipInside, start, end, maxCount, timeMap,isManyServer);
 	}
 
-	private SimultnsConnEntry maxOverlapIntervalCount(HttpRequestResponseInfo reqRespInfo, String ipEntry,
-			double[] start, double[] end, int maxCount, TreeMap<Double, Double> timeMap) {
+	private SimultnsConnEntry maxOverlapIntervalCount(TreeMap<String, HttpRequestResponseInfo> reqRespMap, String ipEntry,
+			double[] start, double[] end, int maxCount, TreeMap<Double, Double> timeMap, boolean isManyEndpoints) {
 
+		int startTimePointer = start.length, endTimePointer = end.length;
+		
+		if (isManyEndpoints) {
+			LOGGER.debug("Start : ");
+			for (int startCounter = 0; startCounter < start.length; startCounter++) {
+				LOGGER.debug(String.valueOf(start[startCounter]));
+			}
+
+			LOGGER.debug("End : ");
+			for (int endCounter = 0; endCounter < start.length; endCounter++) {
+				LOGGER.debug(String.valueOf(end[endCounter]));
+			}
+		}
+		
 		Arrays.sort(start);
 		Arrays.sort(end);
-
+		
 		SimultnsConnEntry simultnsConnEntry = null;
 		TreeMap<String, SimultnsConnEntry> simultnsConnectionEntryMap = new TreeMap<String, SimultnsConnEntry>();
 
@@ -83,22 +105,24 @@ public final class SimultnsUtil {
 		int maxOverlap = 0;
 		int startTimeCounter = 0;
 		int endTimeCounter = 0;
-		int startTimePointer = start.length, endTimePointer = end.length;
+		
+		
 		while (startTimeCounter < startTimePointer && endTimeCounter < endTimePointer) {
 			startTime = start[startTimeCounter];
 			if (startTime < end[endTimeCounter]) {
 				currentOverlap++;
 
-				if ((currentOverlap >= maxCount && maxOverlap < currentOverlap)
-						|| (maxCount == 12 && currentOverlap == maxCount)) {
+				if (currentOverlap >= maxCount && maxOverlap < currentOverlap) {
 					if (simultnsConnectionEntryMap.containsKey(ipEntry) && maxCount == 3) {
 						simultnsConnectionEntryMap.replace(ipEntry,
-								new SimultnsConnEntry(reqRespInfo,
+								new SimultnsConnEntry(reqRespMap.get(ipEntry),
 										ipEntry.substring(ipEntry.lastIndexOf('/') + 1, ipEntry.length()),
 										currentOverlap, startTime, timeMap.get(startTime)));
 					} else {
-						simultnsConnectionEntryMap.put(ipEntry, new SimultnsConnEntry(reqRespInfo, ipEntry,
-								currentOverlap, startTime, timeMap.get(startTime)));
+						simultnsConnectionEntryMap.put(ipEntry,
+								new SimultnsConnEntry(reqRespMap.get(ipEntry),
+										ipEntry.substring(ipEntry.lastIndexOf('/') + 1, ipEntry.length()),
+										currentOverlap, startTime, timeMap.get(startTime)));
 					}
 					if (maxOverlap < currentOverlap) {
 						maxOverlap = currentOverlap;
@@ -109,9 +133,7 @@ public final class SimultnsUtil {
 				currentOverlap--;
 				endTimeCounter++;
 			}
-
 		}
-
 		if (simultnsConnectionEntryMap.containsKey(ipEntry)) {
 			simultnsConnEntry = simultnsConnectionEntryMap.get(ipEntry);
 		}
@@ -121,15 +143,34 @@ public final class SimultnsUtil {
 	public List<SessionValues> createDomainsTCPSessions(Collection<Session> allTCPSessions) {
 		List<SessionValues> sessionValues = new ArrayList<SessionValues>();
 		Session lastSession = null;
+
 		for (Session aSession : allTCPSessions) {
 			if (aSession != null) {
-				for (HttpRequestResponseInfo req : aSession.getRequestResponseInfo()) {
-					if (!aSession.equals(lastSession)) {
-						sessionValues.add(new SessionValues(aSession, req));
+				if (!aSession.getRequestResponseInfo().isEmpty()) {
+					for (HttpRequestResponseInfo req : aSession.getRequestResponseInfo()) {
+						sessionValues = addSessionValues(sessionValues, lastSession, aSession, req);
 						lastSession = aSession;
 					}
+				} else {
+					HttpRequestResponseInfo reqResp = new HttpRequestResponseInfo();
+					if (aSession.getRemoteHostName() != null) {
+						reqResp.setHostName(aSession.getRemoteHostName());
+						reqResp.setFirstDataPacket(aSession.getPackets().get(0));
+					}
+					sessionValues = addSessionValues(sessionValues, lastSession, aSession, reqResp);
 				}
+				
 			}
+		}
+		return sessionValues;
+		
+	}
+
+	private List<SessionValues> addSessionValues(List<SessionValues> sessionValues, Session lastSession, Session aSession,
+			HttpRequestResponseInfo req) {
+		if (!aSession.equals(lastSession)) {
+			
+			sessionValues.add(new SessionValues(aSession, req));
 		}
 		return sessionValues;
 	}

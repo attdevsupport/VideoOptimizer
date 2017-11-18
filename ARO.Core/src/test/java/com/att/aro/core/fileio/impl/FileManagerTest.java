@@ -188,10 +188,8 @@ public class FileManagerTest extends BaseTest {
 
 		File origFileName = Mockito.mock(File.class);
 		File newfullfile = Mockito.mock(File.class);
-		File renameFile = Mockito.mock(File.class);
 
 		String path = "myFullPath";
-		String origFullPath = "myFullPath/o_filename";
 		String newfileName = "new";
 
 		doReturn(newfullfile).when(fileManager).createFile(path, newfileName);
@@ -213,9 +211,10 @@ public class FileManagerTest extends BaseTest {
 		PowerMockito.whenNew(File.class).withArguments(Mockito.anyString()).thenReturn(file);
 		Mockito.when(file.getParentFile()).thenReturn(targetFile);
 		Mockito.when(targetFile.exists()).thenReturn(true);
-		boolean result = fileManager.fileDirExist("parent/mockPath");
+		fileManager.fileDirExist("parent/mockPath");
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void mkDirTest() {
 		

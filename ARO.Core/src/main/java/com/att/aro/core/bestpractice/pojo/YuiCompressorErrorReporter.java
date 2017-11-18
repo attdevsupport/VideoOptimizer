@@ -30,14 +30,12 @@ public class YuiCompressorErrorReporter implements ErrorReporter {
 
 	@Override
 	public void error(String arg0, String arg1, int arg2, String arg3, int arg4) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void warning(String arg0, String arg1, int arg2, String arg3,
 			int arg4) {
-		// TODO Auto-generated method stub
 		
 	}
 

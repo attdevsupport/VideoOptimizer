@@ -47,6 +47,7 @@ public class TraceDataConst {
 
 	// Bluetooth State keywords
 	public static final String BLUETOOTH_OFF = OFF;
+	public static final String BLUETOOTH_ON = "ON";
 	public static final String BLUETOOTH_CONNECTED = "CONNECTED";
 	public static final String BLUETOOTH_DISCONNECTED = "DISCONNECTED";
 
@@ -163,6 +164,7 @@ public class TraceDataConst {
 		 * The name of the pcap file
 		 */
 		public static final String PCAP_FILE = "traffic.cap";
+		public static final String SECURE_PCAP_FILE = "secure_traffic.cap";
 
 		public static final String TRAFFIC = "traffic";
 		public static final String CAP_EXT = ".cap";

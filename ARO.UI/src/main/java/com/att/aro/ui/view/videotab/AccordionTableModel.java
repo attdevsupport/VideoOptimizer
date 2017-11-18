@@ -10,6 +10,7 @@ import javax.swing.table.AbstractTableModel;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
 public class AccordionTableModel extends AbstractTableModel {
+	private static final long serialVersionUID = 1L;
 	String[] columnNames = { "Segment No.", "DL Start Time", "DL End Time", "Quality", "Bitrate", "Total Bytes",
 			"Duration" };
 	List<VideoEvent> videoEventList;
@@ -27,19 +28,16 @@ public class AccordionTableModel extends AbstractTableModel {
 
 	@Override
 	public int getRowCount() {
-		// TODO Auto-generated method stub
 		return this.videoEventList.size();
 	}
 
 	@Override
 	public int getColumnCount() {
-		// TODO Auto-generated method stub
 		return columnNames.length;
 	}
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		// TODO Auto-generated method stub
 		Object value = "";
 		VideoEvent videoSegment = this.videoEventList.get(rowIndex);
 		switch (columnIndex) {

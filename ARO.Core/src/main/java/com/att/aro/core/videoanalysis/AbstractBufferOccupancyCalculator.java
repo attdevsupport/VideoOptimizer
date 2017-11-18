@@ -17,6 +17,8 @@ package com.att.aro.core.videoanalysis;
 
 import java.util.List;
 import java.util.Map;
+
+import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
@@ -28,7 +30,8 @@ public abstract class AbstractBufferOccupancyCalculator extends PlotHelperAbstra
 	protected double chunkPlayEndTime = -1;
 	protected VideoEvent chunkPlaying;
 	protected double chunkByteRange = 0;
-	
+	private VideoEvent previousChunk=null;
+
 	protected double firstChunkArrivalTime;
 	protected double startPoint;
 	
@@ -54,14 +57,18 @@ public abstract class AbstractBufferOccupancyCalculator extends PlotHelperAbstra
 	}
 	
 	protected void addToChunkPlayTimeList(VideoEvent chunkPlaying, double possibleStartPlayTimeAfterStall){
-		PlotHelperAbstract.chunkPlayTimeList.put(chunkPlaying, possibleStartPlayTimeAfterStall);
+		videoUsage.getChunkPlayTimeList().put(chunkPlaying, possibleStartPlayTimeAfterStall);
 	}
 	
-	protected void setNextPlayingChunk(int currentVideoSegmentIndex,List<VideoEvent> filteredChunk) {
+	protected void setNextPlayingChunk(int currentVideoSegmentIndex,List<VideoEvent> filteredChunk) {	
+		int index = currentVideoSegmentIndex;
 		chunkPlaying = filteredChunk.get(currentVideoSegmentIndex);
-		// chunkPlayStartTime = chunkPlayEndTime;
+		while(previousChunk != null && previousChunk.getSegment() == chunkPlaying.getSegment() && currentVideoSegmentIndex < filteredChunk.size()-1){
+			index= index+1;
+			chunkPlaying = filteredChunk.get(index);
+		}
+		previousChunk = chunkPlaying;
 		chunkPlayTimeDuration = getChunkPlayTimeDuration(chunkPlaying);
-		VideoEvent previousChunk = filteredChunk.get(currentVideoSegmentIndex - 1);
 		int diff = (int) (chunkPlaying.getSegment() - previousChunk.getSegment()) > 1
 				? (int) (chunkPlaying.getSegment() - previousChunk.getSegment()) : 1;
 		chunkPlayStartTime = chunkPlayEndTime + (diff - 1) * chunkPlayTimeDuration;
@@ -69,12 +76,13 @@ public abstract class AbstractBufferOccupancyCalculator extends PlotHelperAbstra
 		chunkByteRange = (chunkPlaying.getTotalBytes());
 	}
 
-	protected void runInit(Map<VideoEvent, AROManifest> veManifestList, List<VideoEvent> chunkDownload){
+	protected void runInit(VideoUsage videoUsage, Map<VideoEvent, AROManifest> veManifestList, List<VideoEvent> chunkDownload){
 		int firstChunk = 0;
 
 		for (AROManifest aroManifest : veManifestList.values()) {
 
 			if (firstChunk == 0) {
+				previousChunk = chunkDownload.get(0);
 				firstChunkArrivalTime = chunkDownload.get(0).getEndTS(); // chunkDownload.get(0).getEndTS();
 				double possiblePlayStartTime = getChunkPlayStartTime(chunkDownload.get(0)); //chunkDownload.get(0));
 				if (possiblePlayStartTime != -1){
@@ -84,6 +92,7 @@ public abstract class AbstractBufferOccupancyCalculator extends PlotHelperAbstra
 					chunkPlayStartTime = aroManifest.getDelay() + firstChunkArrivalTime;
 				}
 				chunkPlaying = chunkDownload.get(0); // chunkDownload.get(0);getChunksBySegmentNumber()
+				setVideoUsage(videoUsage);
 				chunkPlayTimeDuration = getChunkPlayTimeDuration(chunkPlaying);//, videoUsage);
 				chunkPlayEndTime = chunkPlayStartTime + chunkPlayTimeDuration;
 				firstChunk++;

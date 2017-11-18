@@ -21,6 +21,7 @@ import java.util.Map;
 
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.datacollector.ioscollector.utilities.AppSigningHelper;
 import com.att.aro.datacollector.ioscollector.utilities.IOSDeviceInfo;
 
 public class IOSDevice implements IAroDevice {
@@ -55,7 +56,7 @@ public class IOSDevice implements IAroDevice {
 		productName = profile.get("ProductName");
 		productType = profile.get("ProductType");
 		abi = profile.get("CPUArchitecture");
-
+		
 		if (productName == null) {
 			productName = "iosDevice";
 			if (productType != null) {
@@ -67,6 +68,15 @@ public class IOSDevice implements IAroDevice {
 		}
 	}
 
+	private String getProductVersion(){
+        int iosVersion = AppSigningHelper.getInstance().getIosVersion();    
+        if(iosVersion != -1){
+        	return String.valueOf(iosVersion);
+        }else{
+        	return null;
+        }
+	}
+	
 	private Map<String, String> stringToMap(String data) {
 		Map<String, String> mapped = new HashMap<String, String>();
 		String[] arr = data.split("\\r?\\n");
@@ -105,6 +115,9 @@ public class IOSDevice implements IAroDevice {
 
 	@Override
 	public String getApi() {
+		if(productVersion == null){
+			productVersion = getProductVersion();
+		}
 		return productVersion;
 	}
 

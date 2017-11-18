@@ -16,11 +16,8 @@ import com.att.aro.core.peripheral.IDeviceDetailReader;
 import com.att.aro.core.peripheral.pojo.DeviceDetail;
 
 public class DeviceDetailReaderImplTest extends BaseTest {
-	
 	DeviceDetailReaderImpl reader;
-
 	private IFileManager filereader;
-	private String traceFolder = "traceFolder";
 
 	@Before
 	public void setup() {

@@ -9,6 +9,7 @@ import javax.swing.JTextArea;
 import javax.swing.table.TableCellRenderer;
 
 class WordWrapRenderer extends JTextArea implements TableCellRenderer{	
+	private static final long serialVersionUID = 1L;
 		JEditorPane editor;
 		int rowSelected=-1;
 		

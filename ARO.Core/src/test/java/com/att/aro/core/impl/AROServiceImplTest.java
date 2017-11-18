@@ -119,8 +119,12 @@ public class AROServiceImplTest extends BaseTest {
 	IBestPractice chunkSize;
 	@Mock(name = "videoRedundancy")
 	IBestPractice videoRedundancy;
-	@Mock(name = "videoConcurrentSessions")
+	@Mock(name = "videoConcurrentSession")
 	IBestPractice videoConcurrentSessions;
+	@Mock(name = "simultaneous")
+	IBestPractice simultaneous;
+	@Mock(name = "multipleSimultaneous")
+	IBestPractice multipleSimultaneous;
 	
 	@Mock(name = "httpsUsage")
 	IBestPractice httpsUsage;
@@ -204,6 +208,7 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.ASYNC_CHECK);
 		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
 		req.add(BestPracticeType.FILE_ORDER);
+		req.add(BestPracticeType.MULTI_SIMULCONN);
 
 		req.add(BestPracticeType.VIDEO_STALL);
 		req.add(BestPracticeType.STARTUP_DELAY);
@@ -213,12 +218,12 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.CHUNK_SIZE);
 		req.add(BestPracticeType.CHUNK_PACING);
 		req.add(BestPracticeType.VIDEO_REDUNDANCY);
+		req.add(BestPracticeType.VIDEO_CONCURRENT_SESSION);
 		
 		req.add(BestPracticeType.HTTPS_USAGE);
 		req.add(BestPracticeType.TRANSMISSION_PRIVATE_DATA);
 
-		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);	
-		req.add(BestPracticeType.VIDEO_CONCURRENT_SESSION);
+		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
 
 		packetanalyzer = Mockito.mock(IPacketAnalyzer.class);
 
@@ -232,7 +237,7 @@ public class AROServiceImplTest extends BaseTest {
 		SettingsUtil.saveBestPractices(req);
 		try {
 			AROTraceData testResult = aro.analyzeFile(req, "traffic.cap");
-			assertEquals(42, testResult.getBestPracticeResults().size());
+			assertEquals(44, testResult.getBestPracticeResults().size());
 		} finally {
 			SettingsUtil.saveBestPractices(list);
 		}
@@ -300,6 +305,7 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.TRANSMISSION_PRIVATE_DATA);
 		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
 		req.add(BestPracticeType.VIDEO_CONCURRENT_SESSION);
+		req.add(BestPracticeType.MULTI_SIMULCONN);
 		
 		List<BestPracticeType> list = SettingsUtil.retrieveBestPractices();
 		SettingsUtil.saveBestPractices(req);
@@ -309,7 +315,7 @@ public class AROServiceImplTest extends BaseTest {
 		when(cacheAnalyzer.analyze(anyListOf(Session.class))).thenReturn(cacheAnalysis);
 		try {
 			AROTraceData testResult = aro.analyzeDirectory(req, Util.getCurrentRunningDir());
-			assertEquals(42,testResult.getBestPracticeResults().size());
+			assertEquals(44,testResult.getBestPracticeResults().size());
 		} finally {
 			SettingsUtil.saveBestPractices(list);
 		}		

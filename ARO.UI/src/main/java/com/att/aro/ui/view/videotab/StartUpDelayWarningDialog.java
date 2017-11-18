@@ -45,6 +45,7 @@ public class StartUpDelayWarningDialog extends JDialog {
 	IARODiagnosticsOverviewRoute diagnosticRoute;
 	private PacketAnalyzerResult currentTraceResult;
 	private JLabel warningLabel;
+	JCheckBox dontShowCheckBox;
 
 	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 
@@ -106,14 +107,14 @@ public class StartUpDelayWarningDialog extends JDialog {
 		}
 		return contentPanel;
 	}
-
-	public void setWarningMessage(String warningMessage) {
+	
+	public void setDialogInfo(String warningMessage, boolean startUpDelayReminder) {
 		warningLabel.setText(warningMessage);
+		dontShowCheckBox.setSelected(!startUpDelayReminder);
 	}
 
 	private JCheckBox getDontShowCheckBox() {
-		JCheckBox dontShowCheckBox = new JCheckBox(resourceBundle.getString("startupdelay.warning.dialog.dontshow"));
-		dontShowCheckBox.setSelected(false);
+		dontShowCheckBox = new JCheckBox(resourceBundle.getString("startupdelay.warning.dialog.dontshow"), false);
 		dontShowCheckBox.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {

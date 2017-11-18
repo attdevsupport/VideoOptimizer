@@ -134,6 +134,9 @@ public class Packet implements Serializable {
 	public void setNextPacketInSession(Packet nextPacketInSession) {
 		this.nextPacketInSession = nextPacketInSession;
 	}
-	
+
+	public void setData(byte[] data) {
+		this.data = data;
+	}
 	
 }

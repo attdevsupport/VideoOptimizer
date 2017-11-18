@@ -34,6 +34,8 @@ import javax.swing.JRadioButton;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.att.aro.core.android.AndroidApiLevel;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
@@ -41,6 +43,7 @@ import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
+import com.att.aro.datacollector.ioscollector.utilities.AppSigningHelper;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -51,12 +54,20 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private DataCollectorSelectNStartDialog parent;
 	private IAroDevice selectedDevice;
 
+//	private JCheckBox btnInstallCert;
+//	private String secureYes;
+//	private String secureNO;
+//	private JRadioButton btnSecureYes;
+//	private JRadioButton btnSecureNo;
+//	private ButtonGroup radioBtnSecure;
+
 	private String txtLREZ;
 	private String txtHDEF;
 	private String txtSDEF;
 	private String txtNONE;
 	private String txtPortrait;
 	private String txtLandscape;
+	private String rooted;
 	private String vpn;
 
 	private JRadioButton btn_lrez;
@@ -68,6 +79,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private JRadioButton btn_landscape;
 	private JPanel videoOrientRadioGrpPanel;
 
+	private JRadioButton btnRooted;
 	private JRadioButton btnVpn;
 
 	private ButtonGroup radioBtnVpnRoot;
@@ -75,6 +87,8 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private Orientation videoOrient;
 
 	private Label labelCollectorTitle;
+	private Label labelAttenuatorTitle;
+//	private Label labelSecureTitle;
 	private Label labelVideoTitle;
 	private Label labelVideoOrientTitle;
 
@@ -82,7 +96,13 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private GridBagConstraints labelConstraints;
 	private GridBagConstraints optionConstraints;
 
+	private AttnrPanel attnrGroupPanel;
+	private AttenuatorModel miniAtnr;
+
+//	private boolean secure;
+
 	private IDataCollector collector;
+	private IDataCollector rootCollector;
 	private IDataCollector vpnCollector;
 	private IDataCollector iosCollector;
 	private int api;
@@ -107,6 +127,11 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		contents.add(labelCollectorTitle, labelConstraints);
 		contents.add(getRadioGroupCollector(), optionConstraints);
 
+		contents.add(labelAttenuatorTitle, labelConstraints);
+		contents.add(getAttnrGroup(), optionConstraints);
+
+//		contents.add(labelSecureTitle, labelConstraints);
+//		contents.add(getRadioGroupSecure(), optionConstraints);
 
 		contents.add(labelVideoTitle, labelConstraints);
 		contents.add(getRadioGroupVideo(), optionConstraints);
@@ -133,10 +158,14 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 	private void setUpLabels() {
 		String collectorTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.collector.title");
+		String attenuatorTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.title");
+		String secureTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.secure.title");
 		String videoTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.video.title");
 		String videoOrientTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.video.orient.title");
 
 		labelCollectorTitle = new Label(collectorTitle);
+		labelAttenuatorTitle = new Label(attenuatorTitle);
+//		labelSecureTitle = new Label(secureTitle);
 		labelVideoTitle = new Label(videoTitle);
 		labelVideoOrientTitle = new Label(videoOrientTitle);
 	}
@@ -151,6 +180,12 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			for (int i = 0; i < collectors.size(); i++) {
 
 				switch (collectors.get(i).getType()) {
+
+				case ROOTED_ANDROID:
+					btnRooted.setVisible(true);
+					btnRooted.setEnabled(true);
+					rootCollector = collectors.get(i);
+					break;
 
 				case NON_ROOTED_ANDROID:
 					btnVpn.setVisible(true);
@@ -176,6 +211,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		showHideOptions(e);
+		setAttenuateSectionStatus();
 	}
 
 	private void showHideOptions(ActionEvent e) {
@@ -214,21 +250,95 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			videoOrient = Orientation.LANDSCAPE;
 			SettingsImpl.getInstance().setAndSaveAttribute("orientation", videoOrient.toString().toLowerCase());
 			return;
-		}// Collector
-		 else if (ac.equals(vpn)) {
+		}
+
+		// Collector
+		else if (ac.equals(rooted)) {
+			collector = rootCollector;
+			if (btnRooted.isSelected()) {
+
+//				btnSecureNo.setEnabled(false);
+//				btnSecureYes.setEnabled(false);
+//				btnInstallCert.setEnabled(false);
+//				btnInstallCert.setSelected(false);
+				enableFullVideo(false);
+			}
+			return;
+
+		} else if (ac.equals(vpn)) {
 			collector = vpnCollector;
 			if (btnVpn.isSelected()) {
-
+//				if (api >= AndroidApiLevel.K19.levelNumber()) {
+//					btnSecureNo.setEnabled(true);
+//					btnSecureYes.setEnabled(true);
+//					btnInstallCert.setVisible(true);
+//					btnInstallCert.setEnabled(true);
+//				} else {
+//					btnSecureNo.setEnabled(false);
+//					btnSecureYes.setEnabled(false);
+//					btnInstallCert.setSelected(false);
+//					btnInstallCert.setVisible(false);
+//				}
 				enableFullVideo(true);
 			}
 
 			return;
 
-		} 
-
+		} // Secure
+//		else if (ac.equals(secureYes)) {
+//			secure = true;
+//			btnInstallCert.setVisible(true);
+//			if (getApi(selectedDevice) == AndroidApiLevel.K19.levelNumber()) {
+//				btnInstallCert.setEnabled(true);
+//			}
+//			btnInstallCert.setSelected(false);
+//			return;
+//		} else if (ac.equals(secureNO)) {
+//			secure = false;
+//			btnInstallCert.setSelected(false);
+//			btnInstallCert.setVisible(false);
+//			return;
+//		}
 	}
 
+	/**
+	 * set attenuate section enabled or disabled based on the selection of
+	 * Rooted or VPN or it is a IOS device
+	 */
+	private void setAttenuateSectionStatus() {
+		if (btnVpn.isSelected()) {
+			attnrGroupPanel.setAttenuateEnable(true);
+		} else {
+			attnrGroupPanel.setAttenuateEnable(false);
+		}
+	}
 
+//	public boolean isSecure() {
+//		return secure;
+//	}
+//	public boolean isInstallCert() {
+//		return btnInstallCert.isSelected();
+//	}
+
+	public AttnrPanel getAttnrGroup() {
+		if (attnrGroupPanel == null) {
+			miniAtnr = new AttenuatorModel();
+			attnrGroupPanel = new AttnrPanel(parent, miniAtnr);
+			Border loweredetched = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+			attnrGroupPanel.setBorder(loweredetched);
+		}
+		return attnrGroupPanel;
+	}
+
+//	private JPanel getRadioGroupSecure() {
+//		loadRadioGroupSecure();
+//		JPanel btnGrp = new JPanel(new FlowLayout(FlowLayout.LEFT));
+//		btnGrp.add(btnSecureYes);
+//		btnGrp.add(btnSecureNo);
+//		btnGrp.add(btnInstallCert);
+//		btnSecureNo.setSelected(true);
+//		return btnGrp;
+//	}
 
 	private JPanel getRadioGroupVideo() {
 		loadRadioGroupVideo();
@@ -252,27 +362,55 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private JPanel getRadioGroupCollector() {
 		loadRadioGroupCollector();
 		JPanel btnGrp = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		btnGrp.add(btnRooted);
 		btnGrp.add(btnVpn);
 		return btnGrp;
 	}
 
+//	private void loadRadioGroupSecure() {
+//		secureYes = ResourceBundleHelper.getMessageString("dlog.collector.option.secure.yes");
+//		secureNO = ResourceBundleHelper.getMessageString("dlog.collector.option.secure.no");
+//		btnSecureYes = new JRadioButton(secureYes);
+//		btnSecureNo = new JRadioButton(secureNO);
+//
+//		btnSecureYes.setActionCommand(secureYes);
+//		btnSecureNo.setActionCommand(secureNO);
+//		btnSecureYes.setMnemonic(KeyEvent.VK_S);
+//		btnSecureYes.setEnabled(true);
+//		btnSecureNo.addActionListener(this);
+//		btnSecureYes.addActionListener(this);
+//		btnInstallCert = new JCheckBox(
+//				ResourceBundleHelper.getMessageString("dlog.collector.option.secure.install_cert"));
+//		btnInstallCert.setVisible(false);		// only group the rooted & vpn
+//		radioBtnSecure = new ButtonGroup();
+//		radioBtnSecure.add(btnSecureYes);
+//		radioBtnSecure.add(btnSecureNo);
+//	}
 
 	private void loadRadioGroupCollector() {
+		rooted = ResourceBundleHelper.getMessageString("dlog.collector.option.rooted");
 		vpn = ResourceBundleHelper.getMessageString("dlog.collector.option.vpn");
+		btnRooted = new JRadioButton(rooted);
 		btnVpn = new JRadioButton(vpn);
 
+		btnRooted.setActionCommand(rooted);
 		btnVpn.setActionCommand(vpn);
 
+		btnRooted.setMnemonic(KeyEvent.VK_R);
 		btnVpn.setMnemonic(KeyEvent.VK_V);
 
+		btnRooted.addActionListener(this);
 		btnVpn.addActionListener(this);
 
+		btnRooted.setEnabled(false);
 
 		btnVpn.setSelected(true);
 
 		// only group the rooted & vpn
 		radioBtnVpnRoot = new ButtonGroup();
+		radioBtnVpnRoot.add(btnRooted);
 		radioBtnVpnRoot.add(btnVpn);
+		btnRooted.setEnabled(true);
 	}
 
 	private void loadRadioGroupVideo() {
@@ -329,16 +467,33 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			setVisible(true);
 			collector = iosCollector;
 
+//			btnSecureYes.setEnabled(false);
+//			btnSecureNo.setEnabled(false);
+//			btnInstallCert.setVisible(false);
+
 			btnVpn.setEnabled(false);
+			btnRooted.setEnabled(false);
 
 			radioBtnVpnRoot.clearSelection();
-			enableFullVideo(false);
-
-			// set default video
-			btn_lrez.setSelected(true);
-			videoOption = VideoOption.LREZ;
+			String ver = selectedDevice.getApi();
+			int major = StringUtils.isBlank(ver) ? 0 : Integer.valueOf(ver.split("\\.")[0]);
+			boolean hdVideo = (major >= 11) ? true : false;
+			if (hdVideo && AppSigningHelper.isCertInfoPresent()) {
+				btn_hdef.setEnabled(true);
+				btn_sdef.setEnabled(false);
+				btn_lrez.setEnabled(false);
+				btn_hdef.setSelected(true);
+				btn_none.setEnabled(false);
+				videoOption = VideoOption.HDEF;
+			} else {
+				enableFullVideo(false);
+				// set default video
+				btn_lrez.setSelected(true);
+				videoOption = VideoOption.LREZ;
+			}
 
 			showVideoOrientation(false);
+			setAttenuateSectionStatus();
 			break;
 
 		case Android:
@@ -347,23 +502,41 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			enableFullVideo(true);
 			// set default video
 			btn_lrez.setSelected(true);
+//			btnSecureNo.setSelected(true);
 			videoOption = VideoOption.LREZ;
 
 			showVideoOrientation(false); // false because LREZ is selected by
 											// default
+//			btnSecureYes.setEnabled(true);
+//			btnSecureNo.setEnabled(true);
 
 			btnVpn.setEnabled(true);
+			btnRooted.setEnabled(true);
 
 			String abi = selectedIAroDevice.getAbi();
 			if (selectedIAroDevice.isEmulator()) {
 				if (abi.contains("x86")) {
-					setRootState(false);
-					collector = vpnCollector;
-					btnVpn.setEnabled(true);
-					btnVpn.setSelected(true);
+					setRootState(true);
+					collector = null;
+					btnRooted.setEnabled(false);
+					btnVpn.setEnabled(false);
+
+				} else {
+					setRootState(true);
+					collector = rootCollector;
+					btnRooted.setEnabled(rootCollector != null);
+					btnVpn.setEnabled(false);
+					btnRooted.setEnabled(true);
 				}
-			}else {
+			} else if (selectedIAroDevice.isRooted()) {
+				setRootState(true);
+				btnRooted.setEnabled(true);
+				btnVpn.setEnabled(true);
+				btnRooted.setSelected(true);
+				collector = rootCollector;
+			} else {
 				setRootState(false);
+				btnRooted.setEnabled(false);
 				btnVpn.setEnabled(true);
 				btnVpn.setSelected(true);
 				collector = vpnCollector;
@@ -394,6 +567,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 					enableVpnCapture(true);
 				}
 				if (selectedIAroDevice.isRooted()) {
+					btnRooted.setSelected(true);
 					enableFullVideo(false);		
 				}
 			} else {
@@ -401,7 +575,16 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				enableVpnCapture(false);
 			}
 			// disable secure collector for api lower than kitkat
-
+//			if (api < AndroidApiLevel.K19.levelNumber()) {
+//				radioBtnSecure.clearSelection();
+//				btnSecureYes.setEnabled(false);
+//				btnSecureNo.setEnabled(false);
+//				btnSecureNo.setSelected(true);
+//			} else {
+//				btnSecureYes.setEnabled(true);
+//				btnSecureNo.setEnabled(true);
+//			}
+			setAttenuateSectionStatus();
 			break;
 
 		default:
@@ -421,6 +604,13 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 		btnVpn.setEnabled(boolFlag);
 		btnVpn.setSelected(boolFlag);
+//		btnSecureYes.setEnabled(boolFlag);
+//		btnSecureNo.setEnabled(boolFlag);
+//		if (api == AndroidApiLevel.K19.levelNumber() && btnSecureYes.isSelected()) {
+//			btnInstallCert.setVisible(boolFlag);
+//		} else {
+//			btnInstallCert.setVisible(false);
+//		}
 
 	}
 
@@ -457,6 +647,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	 * @param rootedState
 	 */
 	public void setRootState(boolean rootedState) {
+		btnRooted.setSelected(rootedState);
 		btnVpn.setSelected(!rootedState);
 	}
 
@@ -479,5 +670,12 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				? Orientation.LANDSCAPE : Orientation.PORTRAIT;
 	}
 
+	public AttenuatorModel getMiniAtnr() {
+		return miniAtnr;
+	}
+
+	public void setMiniAtnr(AttenuatorModel miniAtnr) {
+		this.miniAtnr = miniAtnr;
+	}
 
 }

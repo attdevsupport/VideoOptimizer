@@ -267,7 +267,8 @@ public class JFxPlayerControl {
 	private void updateControllerBar() {		
 	    if (playTime != null && timeSlider != null) { 
 		    Platform.runLater(new Runnable() {
-		        public void run() {
+		        @SuppressWarnings("deprecation")
+				public void run() {
 		          Duration currentTime = mediaPlayer.getCurrentTime();
 		          playTime.setText(formatTime(currentTime, duration));
 		          if (duration == null) {

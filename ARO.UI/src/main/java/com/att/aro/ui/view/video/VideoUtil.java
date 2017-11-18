@@ -22,10 +22,13 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
 import javax.swing.JOptionPane;
+
+import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
-import com.att.aro.core.peripheral.impl.CollectOptionsReaderImpl;
-import com.att.aro.ui.commonui.ContextAware;
+import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
+import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -383,14 +386,29 @@ public final class VideoUtil {
 			return null;
 		}
 	}
+	/**
+	 * the method is for check video orientation so we can display video recording with landscpae mode
+	 * @param traceResult
+	 * @return
+	 */
+	public static boolean isVideoLandscape(AbstractTraceResult traceResult) {
 
-	public static boolean isVideoLandscape(String traceDirectory) {
+		String videoOrientation = "";
+		if(traceResult == null){
+			return false;
+		}else{
+	    	TraceResultType resultType = traceResult.getTraceResultType();
+			if (resultType.equals(TraceResultType.TRACE_FILE)) {
+				return false;
+	 		} else {
+				TraceDirectoryResult traceresult = (TraceDirectoryResult)traceResult;			
+				videoOrientation = traceresult.getCollectOptions().getOrientation();			 
+			}
+			return TraceDataConst.UserEvent.KEY_LANDSCAPE.equalsIgnoreCase(videoOrientation);
 
-		CollectOptionsReaderImpl collectOptionsReaderImpl = (CollectOptionsReaderImpl) ContextAware
-					.getAROConfigContext().getBean("collectOptionsReaderImpl");
-
-		return TraceDataConst.UserEvent.KEY_LANDSCAPE.equalsIgnoreCase(collectOptionsReaderImpl.readData(traceDirectory).getOrientation()); 			
-	}
+		}
+		
+ 	}
 	
 	public static boolean mp4VideoExists(String traceDirectory) {
 		if (traceDirectory == null) {

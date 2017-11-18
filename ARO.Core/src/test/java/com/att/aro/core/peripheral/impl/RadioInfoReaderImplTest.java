@@ -15,11 +15,8 @@ import com.att.aro.core.peripheral.IRadioInfoReader;
 import com.att.aro.core.peripheral.pojo.RadioInfo;
 
 public class RadioInfoReaderImplTest extends BaseTest {
-
 	RadioInfoReaderImpl radioInfoReader;
-
 	private IFileManager filereader;
-	private String traceFolder = "traceFolder";
 
 	@Before
 	public void setup() {

@@ -38,10 +38,8 @@ import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.VideoTcpConnectionResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.videoanalysis.IVideoTabHelper;
 import com.att.aro.core.videoanalysis.impl.SortSelection;
 import com.att.aro.core.videoanalysis.impl.VideoEventComparator;
-import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoBufferData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
@@ -55,7 +53,7 @@ public class VideoResultSummary {
 	private int tcpConnection;
 	private double segmentSize;
 	private double segmentPacing;
-	private int redundancy;
+	private double redundancy;
 	private int duplicate;
 
 	private int concurrentSessions;
@@ -73,9 +71,7 @@ public class VideoResultSummary {
 	private double minBufferByte;
 	private double maxBufferByte;
 	List<VideoBufferData> videoBufferDataList;
-	private boolean startupDelayStatus;
-	private IVideoTabHelper videoTabHelper = new VideoTabHelperImpl();
-	
+	private boolean startupDelayStatus;	
 	
 	public VideoResultSummary(AROTraceData trace) {
 		populateSummary(trace);
@@ -117,7 +113,7 @@ public class VideoResultSummary {
 				break;
 			case VIDEO_REDUNDANCY:
 				VideoRedundancyResult redundancyResult = (VideoRedundancyResult) bpResult;
-				redundancy = redundancyResult.getRedundancy();
+				redundancy = redundancyResult.getRedundantPercentage();
 				break;
 			case STARTUP_DELAY:
 				VideoStartUpDelayResult startupDelayResult = (VideoStartUpDelayResult) bpResult;
@@ -125,7 +121,7 @@ public class VideoResultSummary {
 				break;
 			case VIDEO_CONCURRENT_SESSION:
 				VideoConcurrentSessionResult concurrentSessionResult = (VideoConcurrentSessionResult) bpResult;
-				concurrentSessions = concurrentSessionResult.getConcurrentSessions();
+				concurrentSessions = concurrentSessionResult.getMaxConcurrentSessionCount();
 				break;
 			default:
 				break;
@@ -152,7 +148,7 @@ public class VideoResultSummary {
 		totalMBytes = calculateMBytes(selectedManifests, true);
 		duplicate = countDuplicateSegments(selectedManifests);
 		
-		if(!videoTabHelper.isStartUpDelaySet()){
+		if(trace.getAnalyzerResult().getVideoUsage().getChunkPlayTimeList().isEmpty()){
 			startupDelayStatus =false;
 		}else{
 			startupDelayStatus = true;
@@ -162,7 +158,7 @@ public class VideoResultSummary {
 	private int countDuplicateSegments(Collection<AROManifest> manifests) {
 		int segmentDuplicate = 0;
 		for (AROManifest manifest : manifests) {
-			if (manifest.isSelected() && (manifest.getVideoEventList() != null)) {
+			if (manifest != null && manifest.isSelected() && (manifest.getVideoEventList() != null)) {
 				List<VideoEvent> videoEventList = new ArrayList<>(manifest.getVideoEventList().values());
 				Collections.sort(videoEventList, new VideoEventComparator(SortSelection.SEGMENT));
 
@@ -182,7 +178,6 @@ public class VideoResultSummary {
 						qualitySubList.add(ve.getQuality());
 						prevSegment = segment;
 					}
-
 				}
 			}
 		}
@@ -200,19 +195,24 @@ public class VideoResultSummary {
 	}
 
 	private double calculateMBytes(Collection<AROManifest> manifests, boolean allMovie) {
+		
 		double sumtotalBytes = 0;
-		if (allMovie) {
-			for (AROManifest manifest : manifests) {
-				Collection<VideoEvent> videoEvents = manifest.getVideoEventList()!=null? manifest.getVideoEventList().values() : new ArrayList<>(); 
-				for (VideoEvent videoEvent : videoEvents) {
-					sumtotalBytes += videoEvent.getTotalBytes();
+		if (manifests != null && !manifests.isEmpty()) {
+			if (allMovie) {
+				for (AROManifest manifest : manifests) {
+					if (manifest != null) {
+						Collection<VideoEvent> videoEvents = manifest.getVideoEventList() != null ? manifest.getVideoEventList().values() : new ArrayList<>();
+						for (VideoEvent videoEvent : videoEvents) {
+							sumtotalBytes += videoEvent.getTotalBytes();
+						}
+					}
 				}
-			}
-		} else {
-			for (AROManifest manifest : manifests) {
-				if (manifest.isSelected() && (manifest.getVideoEventList() !=null)) {
-					for (VideoEvent videoEvent : manifest.getVideoEventList().values()) {
-						sumtotalBytes += videoEvent.getTotalBytes();
+			} else {
+				for (AROManifest manifest : manifests) {
+					if (manifest != null && manifest.isSelected() && (manifest.getVideoEventList() != null)) {
+						for (VideoEvent videoEvent : manifest.getVideoEventList().values()) {
+							sumtotalBytes += videoEvent.getTotalBytes();
+						}
 					}
 				}
 			}
@@ -233,7 +233,6 @@ public class VideoResultSummary {
 		avgBufferTime = bufferResult.getAvgBufferTime();
 		VideoBufferData timeData = new VideoBufferData("Time", avgBufferTime, minBufferTime, maxBufferTime);
 		videoBufferDataList.add(timeData);
-
 	}
 
 	public int getStalls() {
@@ -264,7 +263,7 @@ public class VideoResultSummary {
 		return segmentPacing;
 	}
 
-	public int getRedundancy() {
+	public double getRedundancy() {
 		return redundancy;
 	}
 
@@ -327,5 +326,4 @@ public class VideoResultSummary {
 	public boolean isStartupDelayStatus() {
 		return startupDelayStatus;
 	}
-
 }

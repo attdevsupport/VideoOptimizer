@@ -44,11 +44,17 @@ public class BluetoothPlot implements IPlot{
 						BluetoothState.BLUETOOTH_DISCONNECTED);
 				XYIntervalSeries bluetoothOff = new XYIntervalSeries(
 						BluetoothState.BLUETOOTH_TURNED_OFF);
-
+				XYIntervalSeries bluetoothOn = new XYIntervalSeries(
+						BluetoothState.BLUETOOTH_TURNED_ON);
+				XYIntervalSeries bluetoothUnknown = new XYIntervalSeries(
+						BluetoothState.BLUETOOTH_UNKNOWN);
+				
 				bluetoothData.addSeries(bluetoothConnected);
 				bluetoothData.addSeries(bluetoothDisconnected);
-				// bluetoothStateCollection.addSeries(bluetoothOff);
-
+				bluetoothData.addSeries(bluetoothOff);
+				bluetoothData.addSeries(bluetoothOn);
+				bluetoothData.addSeries(bluetoothUnknown);
+				
 				// Populate the data set
 				Iterator<BluetoothInfo> iter = analysis.getAnalyzerResult().getTraceresult().getBluetoothInfos().iterator();
 				XYIntervalSeries series;
@@ -56,7 +62,7 @@ public class BluetoothPlot implements IPlot{
 					while (iter.hasNext()) {
 						BluetoothInfo btEvent = iter.next();
 						if(btEvent.getBluetoothState() == null) {
-							series = bluetoothOff;
+							series = bluetoothUnknown;
 						} else {
 							switch (btEvent.getBluetoothState()) {
 							case BLUETOOTH_CONNECTED:
@@ -65,8 +71,14 @@ public class BluetoothPlot implements IPlot{
 							case BLUETOOTH_DISCONNECTED:
 								series = bluetoothDisconnected;
 								break;
-							default:
+							case BLUETOOTH_TURNED_ON:
+								series = bluetoothOn;
+								break;
+							case BLUETOOTH_TURNED_OFF:
 								series = bluetoothOff;
+								break;
+							default:
+								series = bluetoothUnknown;
 								break;
 							}
 						}
@@ -81,6 +93,12 @@ public class BluetoothPlot implements IPlot{
 						new Color(34, 177, 76));
 				renderer.setSeriesPaint(bluetoothData.indexOf(BluetoothState.BLUETOOTH_DISCONNECTED),
 						Color.YELLOW);
+				renderer.setSeriesPaint(bluetoothData.indexOf(BluetoothState.BLUETOOTH_TURNED_OFF),
+						new Color(216, 132, 138));
+				renderer.setSeriesPaint(bluetoothData.indexOf(BluetoothState.BLUETOOTH_TURNED_ON),
+						new Color(162, 226, 98));
+				renderer.setSeriesPaint(bluetoothData.indexOf(BluetoothState.BLUETOOTH_UNKNOWN),
+						new Color(154, 154, 154));
 
 				// Assign ToolTip to renderer
 				renderer.setBaseToolTipGenerator(new XYToolTipGenerator() {

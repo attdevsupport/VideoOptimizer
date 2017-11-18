@@ -17,6 +17,6 @@ package com.att.arotcpcollector.socket;
 
 public interface IPcapSubscriber {
 	
-	public void writePcap(byte[] packet);
+	public void writePcap(byte[] packet, boolean secure);
 
 }

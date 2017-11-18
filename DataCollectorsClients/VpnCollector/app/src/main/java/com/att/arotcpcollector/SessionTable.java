@@ -29,6 +29,7 @@ import java.util.Set;
 
 class SessionTable implements Map<String, Session>{
     private static final String TAG = "SessionTable";
+    private static final long IDLE_THRESHOLD = 10 * 1000; //ms
 
     private final int limit;
     private final Hashtable<String, Session> sessionTable = new Hashtable<>();
@@ -92,7 +93,7 @@ class SessionTable implements Map<String, Session>{
                 oldSession = session;
             }
         }
-        if(oldSession != null) {
+        if(oldSession != null && (System.currentTimeMillis() - oldSession.getLastAccessed()) > IDLE_THRESHOLD) {
             Log.i(TAG, "Eviction initiated:" + oldSession.getSessionKey());
             SessionManager.getInstance().closeSession(oldSession);
         } else {

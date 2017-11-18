@@ -17,7 +17,6 @@ package com.att.aro.ui.view.menu.help;
 
 import java.awt.BorderLayout;
 import java.awt.SystemColor;
-import java.awt.Window;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;

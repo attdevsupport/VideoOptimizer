@@ -26,21 +26,21 @@ import com.att.arotcpcollector.tcp.TCPHeader;
  */
 public class Packet {
 
-	private IPv4Header ipheader;
-	private TCPHeader tcpheader;
+	private IPv4Header ipHeader;
+	private TCPHeader tcpHeader;
 	private byte[] buffer;
 	
-	public IPv4Header getIpheader() {
-		return ipheader;
+	public IPv4Header getIPHeader() {
+		return ipHeader;
 	}
-	public void setIpheader(IPv4Header ipheader) {
-		this.ipheader = ipheader;
+	public void setIPHeader(IPv4Header ipheader) {
+		this.ipHeader = ipheader;
 	}
-	public TCPHeader getTcpheader() {
-		return tcpheader;
+	public TCPHeader getTCPHeader() {
+		return tcpHeader;
 	}
-	public void setTcpheader(TCPHeader tcpheader) {
-		this.tcpheader = tcpheader;
+	public void setTCPheader(TCPHeader tcpheader) {
+		this.tcpHeader = tcpheader;
 	}
 	/**
 	 * the whole packet data as an array of byte
@@ -54,7 +54,7 @@ public class Packet {
 	}
 	public int getPacketBodyLength(){
 		if(buffer != null){
-			int offset = tcpheader.getTCPHeaderLength() - ipheader.getIPHeaderLength();
+			int offset = tcpHeader.getTCPHeaderLength() - ipHeader.getIPHeaderLength();
 			int len = buffer.length - offset;
 			return len;
 		}
@@ -66,7 +66,7 @@ public class Packet {
 	 */
 	public byte[] getPacketBody(){
 		if(buffer != null){
-			int offset = tcpheader.getTCPHeaderLength() - ipheader.getIPHeaderLength();
+			int offset = tcpHeader.getTCPHeaderLength() - ipHeader.getIPHeaderLength();
 			int len = buffer.length - offset;
 			if(len > 0){
 				byte[] data = new byte[len];

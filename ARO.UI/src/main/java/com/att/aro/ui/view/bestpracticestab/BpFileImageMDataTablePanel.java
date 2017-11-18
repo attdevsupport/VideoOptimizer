@@ -68,7 +68,6 @@ public class BpFileImageMDataTablePanel extends AbstractImageBpDetailTablePanel 
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
-			//TODO Add listener
 		}
 
 		return contentTable;
@@ -76,7 +75,6 @@ public class BpFileImageMDataTablePanel extends AbstractImageBpDetailTablePanel 
 
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
-		// TODO Auto-generated method stub
 		
 	}
 

@@ -28,7 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.ILogger;
 import com.att.aro.core.impl.LoggerImpl;
-import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 
 public class IOSDeviceInfo {
@@ -48,10 +47,7 @@ public class IOSDeviceInfo {
 
 	public IOSDeviceInfo() {
 		list = new HashMap<String, String>();
-		exepath = Util.getVideoOptimizerLibrary()
-				+ Util.FILE_SEPARATOR + ".drivers" 
-				+ Util.FILE_SEPARATOR + "libimobiledevice" 
-				+ Util.FILE_SEPARATOR + "ideviceinfo";
+		exepath = "/usr/local/bin/ideviceinfo";
 		
 		log.info("set ideviceinfo path: " + exepath);
 

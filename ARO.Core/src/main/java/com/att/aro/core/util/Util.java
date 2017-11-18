@@ -31,24 +31,36 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.regex.Pattern;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
-
+import com.att.aro.core.bestpractice.pojo.BPResultType;
+import com.att.aro.core.packetanalysis.pojo.HttpDirection;
+import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.att.aro.core.settings.impl.SettingsImpl;
 
 public final class Util {
-
+	public static final String DUMPCAP = "dumpCap";
+	public static final String FFMPEG = "ffmpeg";
+	public static final String FFPROBE = "ffprobe";
+	public static final String IDEVICESCREENSHOT = "iDeviceScreenshot";
+	
 	public static final String OS_NAME = System.getProperty("os.name");
 	public static final String OS_ARCHYTECTURE = System.getProperty("os.arch");
 	public static final String FILE_SEPARATOR = System.getProperty("file.separator");
 	public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 	public static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
 	private static final double TIME_CORRECTION = 1.0E9;
+	private static Comparator<String> comparator;
+	private static Comparator<String> floatValComparator;
+	private static Comparator<Integer> intComparator;
 	
-	@InjectLogger
-	private static ILogger logger;
+	private static Logger logger = Logger.getLogger(Util.class.getName());
 	
 	public static boolean isMacOS(){
 		return Util.OS_NAME.contains("Mac OS");
@@ -310,6 +322,22 @@ public final class Util {
 	}
 
 	/**
+	 * Combine all elements of a String[] into a String
+	 * 
+	 * @param String[]
+	 * @return String
+	 */
+	public static String condenseStringArray(String[] stringArray) {
+		StringBuffer strBuf = new StringBuffer();
+		if (stringArray != null) {
+			for (String string : stringArray) {
+				strBuf.append(string);
+			}
+		}
+		return strBuf.toString();
+	}
+
+	/**
 	 * helper method for debugging info
 	 * @param bArray to generate the hex characters
 	 * @return a string of hex characters inside of a pair of square brackets
@@ -536,7 +564,27 @@ public final class Util {
 		return df.format(number);		
 	}
 	
+	public static String getDumpCap() {
+		String config = SettingsImpl.getInstance().getAttribute(DUMPCAP);
+		if(StringUtils.isNotBlank(config)) {
+			return config;
+		}
+		String dumpcap;
+		if (isWindowsOS()) {
+			dumpcap = ("dumpcap");
+		} else if (isMacOS()) {
+			dumpcap = ("/usr/local/bin/dumpcap");
+		} else {
+			dumpcap = ("/usr/bin/dumpcap");
+		}	
+		return dumpcap;
+	}
+
 	public static String getFFMPEG() {
+		String config = SettingsImpl.getInstance().getAttribute(FFMPEG);
+		if(StringUtils.isNotBlank(config)) {
+			return config;
+		}
 		String ffmpeg;
 		if (isWindowsOS()) {
 			ffmpeg = ("ffmpeg.exe");
@@ -549,6 +597,10 @@ public final class Util {
 	}
 
 	public static String getFFPROBE() {
+		String config = SettingsImpl.getInstance().getAttribute(FFPROBE);
+		if(StringUtils.isNotBlank(config)) {
+			return config;
+		}
 		String ffprobe;
 		if (isWindowsOS()) {
 			ffprobe = ("ffprobe.exe");
@@ -560,16 +612,32 @@ public final class Util {
 		return ffprobe;
 	}
 	
+	public static String getIfuse() {
+		return "/usr/local/bin/ifuse";
+	}
+	
+	public static String getEditCap() {
+		String editcap;
+		if (isWindowsOS()) {
+			editcap = ("editcap");
+		} else if (isMacOS()) {
+			editcap = ("/usr/local/bin/editcap");
+		} else {
+			editcap = ("/usr/bin/editcap");
+		} 
+		return editcap;
+	}
 	
 	public static boolean isJPG(File imgfile, String imgExtn) {
-
+		
 		boolean isJPG = false;
+		
 		if (imgfile.isFile() && imgfile.length() > 0) {
 			if ((imgExtn.equalsIgnoreCase("jpeg") || imgExtn.equalsIgnoreCase("jpg"))) {
 				try (FileInputStream fis = new FileInputStream(imgfile);
 						BufferedInputStream bis = new BufferedInputStream(fis);
 						DataInputStream inputStrm = new DataInputStream(bis)) {
-					if (inputStrm.readInt() == 0xffd8ffe0) {
+					if (inputStrm!=null &&inputStrm.readInt() == 0xffd8ffe0) {
 						isJPG = true;
 					}
 				} catch (Exception e) {
@@ -578,5 +646,170 @@ public final class Util {
 			}
 		}
 		return isJPG;
+	}
+
+	public static double doubleFileSize(double mdataSize) {
+		return Double.valueOf(new DecimalFormat("###.#").format(mdataSize/1024.00));
+	}
+
+	/**
+	 *  Extracts the object name from the request.
+	 *  @param hrri
+	 * @return object name 
+	 */
+	public static String extractFullNameFromRequest(HttpRequestResponseInfo hrri) {
+		HttpRequestResponseInfo req = hrri.getDirection().equals(HttpDirection.RESPONSE) ? hrri.getAssocReqResp()
+				: hrri;
+		String extractedName = "";
+		String objectName = "";
+		if (req != null) {
+			String fullPathName = req.getObjName();
+			objectName = fullPathName.substring(fullPathName.lastIndexOf("/") + 1);
+			int pos = objectName.lastIndexOf("/") + 1;
+			extractedName = objectName.substring(pos);
+		}
+		return extractedName;
+
+	}
+
+	/**<pre>
+	 * Sorts domain numbers and names.
+	 *  matches on ###.###.###.### where # is any number.
+	 *  then builds a double based on address to compare.
+	 *  if alpha is involved then alpha comparison is used.
+	 *  
+	 * @return
+	 */
+	public static Comparator<String> getDomainSorter() {
+		if (comparator == null) {
+			comparator = new Comparator<String>() {
+				Pattern pattern = Pattern.compile("([0-9]*)\\.([0-9]*)\\.([0-9]*)\\.([0-9]*)");
+
+				@Override
+				public int compare(String o1, String o2) {
+					if (pattern != null && pattern.matcher(o1).find() && pattern.matcher(o2).find()) {
+						return getDomainVal(o1).compareTo(getDomainVal(o2));
+					}
+					return o1.compareTo(o2);
+				}
+
+				/**
+				 * Convert xxx.xxx.xxx.xxx to a Double
+				 * 
+				 * @param domain
+				 * @return
+				 */
+				private Double getDomainVal(String domain) {
+					
+					Double val = 0D;
+					String[] temp = domain.split("\\.");
+					if (temp != null) {
+						try {
+							for (int idx = 0; idx < temp.length; idx++) {
+								val = (val * 256) + Integer.valueOf(temp[idx]);
+							}
+						} catch (NumberFormatException e) {
+							val = 0D;
+						}
+					}
+					return val;
+				}
+			};
+		}
+		return comparator;
+	}
+
+	public static Comparator<Integer> getDomainIntSorter() {
+
+		intComparator = new Comparator<Integer>() {
+			@Override
+			public int compare(Integer a, Integer b) {
+				if (a.compareTo(b) > 0)
+					return -1;
+				else if (a.compareTo(b) < 0)
+					return 1;
+				else
+					return 0;
+			}
+		};
+
+		return intComparator;
+	}
+
+	public static BPResultType checkPassFailorWarning(int resultSize, int warning, int fail) {
+
+		BPResultType bpResultType = BPResultType.PASS;
+		if (resultSize >= warning) {
+			if (resultSize >= fail) {
+				bpResultType = BPResultType.FAIL;
+			} else {
+				bpResultType = BPResultType.WARNING;
+			}
+		}
+
+		return bpResultType;
+	}
+	
+	public static BPResultType checkPassFailorWarning(double resultSize, double warning, double fail) {
+
+		BPResultType bpResultType = BPResultType.PASS;
+		if (resultSize >= warning) {
+			if (resultSize >= fail) {
+				bpResultType = BPResultType.FAIL;
+			} else {
+				bpResultType = BPResultType.WARNING;
+			}
+		}
+
+		return bpResultType;
+	}
+	
+	public static Level getLoggingLvl(String loggingLvl) {
+		Level level = Level.ERROR;
+		if (loggingLvl != null) {
+			if (loggingLvl.equalsIgnoreCase("INFO")) {
+				level = Level.INFO;
+			} else if (loggingLvl.equalsIgnoreCase("DEBUG")) {
+				level = Level.DEBUG;
+			} 
+		}
+		return level;
+	}
+	
+	public static void setLoggingLevel(String logginglevel) {
+		Logger.getRootLogger().setLevel(getLoggingLvl(logginglevel));
+	}
+
+	public static String getLoggingLevel() {
+		String logLevel = "ERROR";
+		if(SettingsImpl.getInstance().getAttribute("LOG_LEVEL")!=null){
+			logLevel = SettingsImpl.getInstance().getAttribute("LOG_LEVEL");
+		} 
+		return logLevel;
+	}
+	
+	public static boolean checkDevMode() {
+		return SettingsImpl.getInstance().checkAttributeValue("env", "dev");
+	}
+	
+	public static Comparator<String>  getFloatSorter() {
+		if (floatValComparator == null) {
+			floatValComparator = new Comparator<String>() {
+				@Override
+				public int compare(String o1, String o2) {
+					return Double.compare(Double.parseDouble(o1), Double.parseDouble(o2));
+				}
+
+			};
+		}
+		return floatValComparator;
+	}
+
+	public static String getIdeviceScreenshot() {
+		String config = SettingsImpl.getInstance().getAttribute(IDEVICESCREENSHOT);
+		if(StringUtils.isNotBlank(config)) {
+			return config;
+		}
+		return "/usr/local/bin/idevicescreenshot";
 	}
 }
