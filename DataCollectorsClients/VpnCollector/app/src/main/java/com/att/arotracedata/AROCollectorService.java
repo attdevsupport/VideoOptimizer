@@ -252,14 +252,13 @@ public class AROCollectorService extends Service {
 				int delayTimeUL = intent.getIntExtra(BundleKeyUtil.UL_DELAY, 0);
 				int throttleDL = intent.getIntExtra(BundleKeyUtil.DL_THROTTLE, AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
 				int throttleUL = intent.getIntExtra(BundleKeyUtil.UL_THROTTLE,AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
-				boolean secure = intent.getBooleanExtra(BundleKeyUtil.SECURE, false);
 				boolean atnrProfile = intent.getBooleanExtra(BundleKeyUtil.ATTENUATION_PROFILE,false);
                 String atnrProfileName = intent.getStringExtra(BundleKeyUtil.ATTENUATION_PROFILE_NAME);
 				String videoOrientation = intent.getStringExtra(BundleKeyUtil.VIDEO_ORIENTATION);
 
 				Log.i(TAG, "Wrote into file Down Stream Delay: "+delayTimeDL);
 				Log.i(TAG, "Wrote into file Up Stream Delay: "+delayTimeUL);
-				recordCollectOptions(delayTimeDL, delayTimeUL, throttleDL,throttleUL,atnrProfile, atnrProfileName, secure, videoOrientation);
+				recordCollectOptions(delayTimeDL, delayTimeUL, throttleDL,throttleUL,atnrProfile, atnrProfileName, videoOrientation);
 			}
 
 			initializeFlurryObjects();
@@ -373,17 +372,6 @@ public class AROCollectorService extends Service {
 			Log.i(TAG, "Running Task " + recentTask.baseActivity);
 		}
 
-		// Log.i(TAG, "recentApplicationsList ");
-		// for (RunningAppProcessInfo recentApplication : recentApplicationsList) {
-		// Log.i(TAG, "Running Task " + recentApplication.processName);
-		// }
-		//
-		// Log.i(TAG, "runningServiceList ");
-		// for (RunningServiceInfo runningService : runningServiceList) {
-		// //if (runningService.clientPackage != null) Log.i(TAG, "----Running Task " + runningService.clientPackage);
-		// //Log.i(TAG, "Running Task " + runningService.clientLabel);
-		// Log.i(TAG, "Running Task " + runningService.process);
-		// }
 	}
 
 	/**
@@ -421,12 +409,11 @@ public class AROCollectorService extends Service {
 
 	}
 
-	private void recordCollectOptions(int delayTimeDL, int delayTimeUL, int throttleDL, int throttleUL, boolean atnrProfile,String atnrProfileName, boolean secureable, String videoOrientation){
+	private void recordCollectOptions(int delayTimeDL, int delayTimeUL, int throttleDL, int throttleUL, boolean atnrProfile,String atnrProfileName, String videoOrientation){
 		Log.i(TAG, "set Down stream Delay Time: "+ delayTimeDL
 				+ " set Up stream Delay Time: "+delayTimeUL
                 + " set Profile: "+atnrProfile
-                + " set Profile name: "+ atnrProfileName
-				+ " set Secure Boolean: "+ secureable);
+                + " set Profile name: "+ atnrProfileName);
 		File file = new File(traceDir, COLLECT_OPTIONS);
 		Log.i(TAG, "create file:" + file.getAbsolutePath());
 		try(BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
@@ -435,7 +422,6 @@ public class AROCollectorService extends Service {
 					+ "usDelay=" + delayTimeUL + System.lineSeparator()
 					+ "throttleDL=" + throttleDL + System.lineSeparator()
 					+ "throttleUL=" + throttleUL + System.lineSeparator()
-					+ "secure=" + secureable + System.lineSeparator()
 					+ "orientation=" + videoOrientation + System.lineSeparator()
 					+ "attnrProfile="+ atnrProfile + System.lineSeparator()
                     + "attnrProfileName="+ atnrProfileName
@@ -448,36 +434,6 @@ public class AROCollectorService extends Service {
 		}
 
 	}
-	/**
-	 * Reads a device Info from the device file in trace folder.
-	 * 
-	 * @throws IOException
-	 */
-/*
-	private void readDeviceDetails() throws IOException {
-
-		File file = new File(traceDir, DEVICEDETAILS_FILE);
-		if (!file.exists()) {
-			this.missingFiles.add(DEVICEDETAILS_FILE);
-			return;
-		}
-		BufferedReader br = new BufferedReader(new FileReader(file));
-		try {
-
-			String s;
-			while ((s = br.readLine()) != null) {
-
-				// In case of IPv6 scoped address, remove scope ID
-				int i = s.indexOf('%');
-				localIPAddresses.add(InetAddress.getByName(i >= 0 ? s.substring(0, i) : s));
-			}
-
-		} finally {
-			br.close();
-		}
-	}
-*/
-	
 	@Override
 	public IBinder onBind(Intent intent) {
 		// TODO Auto-generated method stub
@@ -488,20 +444,6 @@ public class AROCollectorService extends Service {
 	 * Initializes Flurry Event objects
 	 */
 	private void initializeFlurryObjects() {
-
-		// tests need to maintain states
-		/*
-		networkTypeFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_networkType), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		networkInterfaceFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_networkInterface), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		wifiFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_wifi), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		batteryFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_battery), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		gpsFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_gps), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		cameraFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_camera), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		bluetoothFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_bluetooth), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		// log events at end; do not need states
-		backgroundAppsFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_backgroundApps), 0, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		makeModelEvent = new FlurryEvent(this.getString(R.string.flurry_makeModel), 0, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
-		*/
 	}
 
 	/** Broadcast receiver for Batter events */
