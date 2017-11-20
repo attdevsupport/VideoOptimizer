@@ -172,8 +172,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
  		int delayTimeDL = 0;
 		int throttleDL = 0;
 		int throttleUL = 0;
-//		boolean secure = false;
-//		boolean installCert = false;
 		boolean profileBoolean = false;
 		
 		String traceFolderName = "";
@@ -184,8 +182,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			device = dialog.getDevice();
 			traceFolderName = dialog.getTraceFolder();
 			device.setCollector(dialog.getCollectorOption());
-//			secure = dialog.getDeviceOptionPanel().isSecure();
-//			installCert = dialog.getDeviceOptionPanel().isInstallCert();
 			/*debug purpose*/
 			delayTimeDL = dialog.getDeviceOptionPanel().getMiniAtnr().getDelayDS();
 			dialog.getDeviceOptionPanel().getMiniAtnr().getDelayUS();
@@ -231,10 +227,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			extras.put("video_option", dialog.getRecordVideoOption());
 			extras.put("videoOrientation", dialog.getVideoOrientation());
 			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getMiniAtnr());
-//			if (secure) {
-//				extras.put("secure", secure);
-//				extras.put("installCert", installCert);
-//			}
 
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			
@@ -286,21 +278,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		IosPasswordDialog dialog = new IosPasswordDialog(((MainFrame) parent).getJFrame(), hint);
 		return dialog.getPassword();
 	}
-
-//	@Deprecated
-//	private String getIOSDevice(IDataCollector iOSCollector){
-//		String udid = null;
-//		if (iOSCollector != null){
-//			IOSCollectorImpl iOSCollectorImpl = new IOSCollectorImpl();
-//			StatusResult status = new StatusResult();
-//			String[] udids = iOSCollectorImpl.getDeviceSerialNumber(status);
-//			if (udids != null) {
-//				udid = udids[0];
-//			}
-//			
-//		}
-//		return udid; 
-//	}
 	
 	private IDataCollector findIOSCollector(List<IDataCollector> collectors) {
 		if (Util.isMacOS()) {
