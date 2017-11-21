@@ -50,11 +50,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 1.3
+#### Video Optimizer 1.2
 
-**System Requirements for Video Optimizer 1.3:**
+**System Requirements for Video Optimizer 1.2:**
 
-Before you download Video Optimizer 1.3, make sure you meet the following system requirements for your operating system.
+Before you download Video Optimizer 1.2, make sure you meet the following system requirements for your operating system.
 
 1. 2GB or more for RAM
 2. Java 8 or above (should have the latest update of Java 1.8 or above)
