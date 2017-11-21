@@ -479,14 +479,6 @@ public final class Application implements IAROView {
 		return ThrottleUtil.getInstance().parseNumCvtUnit(throttleDL);
 	}
  
-
-	private boolean getSecureOption() {
-		return cmds.isSecure();
-	}
-	
-	private boolean getCertInstallOption() {
-		return cmds.isCertInstall();
-	}
 	
 	void printError(ErrorCode error) {
 		err("Error code: " + error.getCode());
@@ -550,10 +542,6 @@ public final class Application implements IAROView {
 				Hashtable<String,Object> extras = new Hashtable<String,Object>();
 				extras.put("video_option", getVideoOption());
 				extras.put("AttenuatorModel", getAttenuateModel());
-				if (getSecureOption()) {
-					extras.put("secure", getSecureOption());
-					extras.put("installCert", getCertInstallOption());
-				}
 
 				result = runCommand(cmds, collector, password, extras);
 			} finally {

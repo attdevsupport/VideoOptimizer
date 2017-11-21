@@ -65,12 +65,7 @@ public class Validator {
 					) {
 				return ErrorCodeRegistry.getInvalidVideoOption();
 			}
-			
-			ErrorCode secureErrorCode = validateSecure(cmd);
-			if (secureErrorCode != null) {
-				return secureErrorCode;
-			}
-			
+						
 			ErrorCode uplinkErrorCode = validateUplink(cmd);
 			if (uplinkErrorCode != null) {
 				return uplinkErrorCode;
@@ -79,16 +74,6 @@ public class Validator {
 			if (downlinkErrorCode != null) {
 				return downlinkErrorCode;
 			}
-		}
-		return null;
-	}
-	
-	private ErrorCode validateSecure(Commands cmd) {
-		if (!"vpn_android".equals(cmd.getStartcollector()) && cmd.isSecure()) {
-			return ErrorCodeRegistry.getSecureNotApplicable();
-		}
-		if (!cmd.isSecure() && cmd.isCertInstall()) {
-			return ErrorCodeRegistry.getSecureEnableRequired();
 		}
 		return null;
 	}
