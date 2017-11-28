@@ -41,6 +41,7 @@ package com.att.aro.ui.model.bestpractice;
  *  OTHERS
  */
 
+@SuppressWarnings("deprecation")
 public class BestPracticeModel {
 	
 	public Summary summary;

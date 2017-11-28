@@ -61,7 +61,6 @@ public class SessionManagerImplTest extends BaseTest{
 			iAdr = InetAddress.getByAddress(new byte[]{89,10,1,1});
 			iAdr1 = InetAddress.getByAddress(new byte[]{89,10,1,1});
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	
@@ -124,7 +123,6 @@ public class SessionManagerImplTest extends BaseTest{
 			iAdr2 = InetAddress.getByAddress(new byte[]{89,10,1,1});
 			iAdr3 = InetAddress.getByAddress(new byte[]{89,10,1,1});
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -277,7 +275,7 @@ public class SessionManagerImplTest extends BaseTest{
 		packetsList.add(packetInfo6);
 		
 		List<Session> sessionsList = sessionMgr.assembleSession(packetsList);
-		assertEquals(3,sessionsList.size());
+		assertEquals(5,sessionsList.size());
 		
 		
 	}
@@ -292,7 +290,6 @@ public class SessionManagerImplTest extends BaseTest{
 			iAdr = InetAddress.getByAddress(new byte[]{89,10,1,1});
 			iAdr1 = InetAddress.getByAddress(new byte[]{89,10,1,1});
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}*/
 	
@@ -356,7 +353,6 @@ public class SessionManagerImplTest extends BaseTest{
 			iAdr2 = InetAddress.getByAddress(new byte[]{89,10,1,1});
 			iAdr3 = InetAddress.getByAddress(new byte[]{89,10,1,1});
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 */

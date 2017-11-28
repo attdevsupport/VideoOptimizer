@@ -200,7 +200,6 @@ public class NorootedAndroidCollectorImplTest{
 			Mockito.doNothing().when(videoCapture).addSubscriber(Mockito.any(IVideoImageSubscriber.class));
 			Mockito.doNothing().when(threadExecutor).execute(Mockito.any(IVideoCapture.class));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -250,13 +249,10 @@ public class NorootedAndroidCollectorImplTest{
 		try {
 			Mockito.when(device.getSyncService()).thenReturn(sycService);
 		} catch (TimeoutException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (AdbCommandRejectedException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 
@@ -269,26 +265,20 @@ public class NorootedAndroidCollectorImplTest{
 			try {
 				Mockito.when(device.getSyncService()).thenReturn(sycService);
 			} catch (TimeoutException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			} catch (AdbCommandRejectedException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		
 			try {
 				Mockito.doNothing().when(sycService).pullFile(Mockito.anyString(), Mockito.anyString(), Mockito.any(ISyncProgressMonitor.class));
 			} catch (SyncException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (TimeoutException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		
@@ -324,7 +314,6 @@ public class NorootedAndroidCollectorImplTest{
 			Mockito.doNothing().when(videoCapture).addSubscriber(Mockito.any(IVideoImageSubscriber.class));
 			Mockito.doNothing().when(threadExecutor).execute(Mockito.any(IVideoCapture.class));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -361,7 +350,6 @@ public class NorootedAndroidCollectorImplTest{
 			Mockito.doNothing().when(videoCapture).addSubscriber(Mockito.any(IVideoImageSubscriber.class));
 			Mockito.doNothing().when(threadExecutor).execute(Mockito.any(IVideoCapture.class));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		

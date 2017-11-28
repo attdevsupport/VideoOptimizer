@@ -31,7 +31,6 @@ public class ForwardSecrecyResult extends AbstractBestPracticeResult {
 
 	@Override
 	public BestPracticeType getBestPracticeType() {
-		// TODO Auto-generated method stub
 		return BestPracticeType.FORWARD_SECRECY;
 	}
 }

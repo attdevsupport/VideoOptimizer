@@ -22,10 +22,6 @@ import org.springframework.context.ApplicationContext;
 import com.att.aro.core.analytics.IAnalyticsManager;
 import com.att.aro.core.analytics.IGoogleAnalytics;
 
-/**
- * 
- *
- */
 public class GoogleAnalyticsManagerImpl implements IAnalyticsManager {
 	
 	private static IGoogleAnalytics analytics;

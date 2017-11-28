@@ -19,11 +19,8 @@ import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.util.Util;
 
 public class WakelockInfoReaderImplTest extends BaseTest {
-
 	WakelockInfoReaderImpl traceDataReader;
-
 	private IFileManager filereader;
-	private String traceFolder = "traceFolder";
 
 	@Before
 	public void setup() {

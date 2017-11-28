@@ -48,14 +48,6 @@ public class Commands {
 	@Parameter(names="--sudo", description="admin password, OSX only")
 	private String sudo = "";
 	
-	public String getSudo() {
-		return sudo;
-	}
-
-	public void setSudo(String sudo) {
-		this.sudo = sudo;
-	}
-
 	@Parameter(names="--listcollectors", description="list available data collector")
 	private boolean listcollectors = false;
 
@@ -64,18 +56,13 @@ public class Commands {
 
 	@Parameter(names="--verbose", description="verbose output - more than just the important messages")
 	private boolean verbose = false;
+		
+	@Parameter(names="--throttleUL", description="enable throttle upload throughtput (64k - 100m (102400k))")
+	private String throttleUL = "-1";	
 	
-	@Parameter(names="--secure", description="enable secure collector")
-	private boolean secure = false;
+	@Parameter(names="--throttleDL", description="enable throttle download throughtput (64k - 100m (102400k))")
+	private String throttleDL = "-1";
 	
-	@Parameter(names="--certInstall", description="install certificate if secure is enabled")
-	private boolean certInstall = false;
-	
-	@Parameter(names="--uplink", description="enable uplink delay (0 - 100) millisecond")
-	private int uplink = 0;
-	
-	@Parameter(names="--downlink", description="enable downlink delay (0 - 2000) millisecond")
-	private int downlink = 0;
 	
 	public boolean isListcollector() {
 		return listcollectors;
@@ -100,6 +87,15 @@ public class Commands {
 	public void setStartcollector(String startcollector) {
 		this.startcollector = startcollector;
 	}
+	
+	public String getSudo() {
+		return sudo;
+	}
+
+	public void setSudo(String sudo) {
+		this.sudo = sudo;
+	}
+
 
 	/**
 	 * new
@@ -168,37 +164,21 @@ public class Commands {
 	public boolean isListDevices() {
 		return listdevices;
 	}
-	
-	public boolean isSecure() {
-		return secure;
+
+	public String getThrottleUL() {
+		return throttleUL;
 	}
 
-	public void setSecure(boolean secure) {
-		this.secure = secure;
-	}
-	
-	public boolean isCertInstall() {
-		return certInstall;
+	public void setThrottleUL(String throttleUL) {
+		this.throttleUL = throttleUL;
 	}
 
-	public void setCertInstall(boolean certInstall) {
-		this.certInstall = certInstall;
+	public String getThrottleDL() {
+		return throttleDL;
 	}
 
-	public int getUplink() {
-		return uplink;
-	}
-
-	public void setUplink(int uplink) {
-		this.uplink = uplink;
-	}
-
-	public int getDownlink() {
-		return downlink;
-	}
-
-	public void setDownlink(int downlink) {
-		this.downlink = downlink;
+	public void setDownlink(String throttleDL) {
+		this.throttleDL = throttleDL;
 	}
 
 	@Override
@@ -214,7 +194,7 @@ public class Commands {
 		if (format != null) {
 			sb.append(", format:" + getFormat());
 		}
-		if (output != null) {
+		if (overwrite != null) {
 			sb.append(", overwrite:" + getOverwrite());
 		}
 		if (output != null) {
@@ -241,14 +221,8 @@ public class Commands {
 		if (verbose) {
 			sb.append(", verbose");
 		}
-		if (secure) {
-			sb.append(", secure");
-		}
-		if (certInstall) {
-			sb.append(", certInstall");
-		}
-		sb.append(", uplink: " + getUplink());
-		sb.append(", downlink: " + getDownlink());
+		sb.append(", throttleUL: " + getThrottleUL());
+		sb.append(", throttleDL: " + getThrottleDL());
 		if (video != null) {
 			sb.append(", " + getVideo());
 		}

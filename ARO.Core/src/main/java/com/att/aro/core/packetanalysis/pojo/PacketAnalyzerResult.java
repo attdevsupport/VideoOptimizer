@@ -257,7 +257,6 @@ public class PacketAnalyzerResult {
 
 	public VideoUsage getVideoUsage() {
 		return videoUsage;
-		
 	}
 
 	public void setVideoUsage(VideoUsage videoUsage) {

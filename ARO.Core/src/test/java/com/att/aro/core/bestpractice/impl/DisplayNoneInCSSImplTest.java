@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import com.att.aro.core.BaseTest;
@@ -109,7 +108,6 @@ public class DisplayNoneInCSSImplTest extends BaseTest{
 			Mockito.when(reqhelper.getContentString(any(HttpRequestResponseInfo.class),any(Session.class)))
 					.thenReturn(htmlString);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
@@ -142,7 +140,6 @@ public class DisplayNoneInCSSImplTest extends BaseTest{
 			Mockito.when(reqhelper.getContentString(any(HttpRequestResponseInfo.class),any(Session.class)))
 					.thenReturn(htmlString2);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		

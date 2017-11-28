@@ -211,11 +211,13 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"imageMetadata"						// Image: Image Metadata
 				  ,"imageCompression"					// Image: Image Compression
 				  ,"imageFormat"						// Image: Image Format
+				  ,"uiComparator"						// Image: Image Comparator
 				  ,"minification"                       //  #bp 08   File Download: Minify CSS, JS, JSON and HTML                               
 				  ,"spriteimages"                       //  #bp 09   File Download: Use CSS Sprites for Images                                  
 				  ,"connections.connectionOpening"      //  #bp 10   Connections: Connection Opening                                            
 				  ,"connections.unnecssaryConn"         //  #bp 11   Connections: Unnecessary Connections - Multiple Simultaneous Connections                               
 				  ,"connections.simultaneous"  			//  #bp      Connections: Multiple Connections to One Endpoint
+				  ,"connections.multiSimultaneous"  			//  #bp      Connections: Multiple Connections to many Servers
 				  ,"connections.periodic"               //  #bp 12   Connections: Inefficient Connections - Periodic Transfers                    
 				  ,"connections.screenRotation"         //  #bp 13   Connections: Inefficient Connections - Screen Rotation                                                 
 				  ,"connections.connClosing"            //  #bp 14   Connections: Inefficient Connections - Connection Closing Problems
@@ -246,6 +248,7 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"chunkSize"                          //  #bp
 				  ,"chunkPacing"                        //  #bp
 				  ,"videoRedundancy"                    //  #bp
+				  ,"videoConcurrentSession"				//  #bp
 				  
 				  ,"other.accessingPeripherals"         //  #bp    Other: Accessing Peripheral Applications                                     
 			//	  ,"#smallrequest"                      //  #bp    File Download: Minimize Number of Small Requests
@@ -325,7 +328,6 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 
 	@Override
 	public int print(Graphics arg0, PageFormat arg1, int arg2) throws PrinterException {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 

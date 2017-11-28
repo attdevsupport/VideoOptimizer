@@ -17,7 +17,6 @@ package com.att.aro.ui.view.diagnostictab.plot;
 
 import java.awt.Color;
 import java.util.LinkedHashMap;
-import java.util.logging.Logger;
 
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;

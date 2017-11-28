@@ -35,6 +35,7 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.pojo.AROTraceData;
@@ -65,12 +66,12 @@ public class BufferInSecondsPlot implements IPlot{
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
 		if(analysis != null){
-			
+			VideoUsage videoUsage = analysis.getAnalyzerResult().getVideoUsage();
 			bufferFillDataCollection.removeAllSeries();
 			seriesBufferFill = new XYSeries("Buffer Against Play Time");
 			seriesDataSets = new TreeMap<>();
 			
-			seriesDataSets = bufferInSecondsCalculatorImpl.populate(analysis.getAnalyzerResult().getVideoUsage(),chunkPlayTimeList);
+			seriesDataSets = bufferInSecondsCalculatorImpl.populate(videoUsage,chunkPlayTimeList);
 			//updating video stall result in packetAnalyzerResult
 			analysis.getAnalyzerResult().setVideoStalls(bufferInSecondsCalculatorImpl.getVideoStallResult());
 			
@@ -109,7 +110,7 @@ public class BufferInSecondsPlot implements IPlot{
 
 					Map<Double, Long> segmentEndTimeMap = bufferInSecondsCalculatorImpl.getSegmentEndTimeMap();
 					Map<Long, Double> segmentStartTimeMap = bufferInSecondsCalculatorImpl.getSegmentStartTimeMap();
-					double firstSegmentNo = bufferInSecondsCalculatorImpl.getChunksBySegmentNumber().get(0).getSegment();
+					double firstSegmentNo = videoUsage.getChunksBySegmentNumber().get(0).getSegment();
 
 					DecimalFormat decimalFormat = new DecimalFormat("0.##");
 					if (segmentStartTimeMap == null || segmentStartTimeMap.isEmpty()) {

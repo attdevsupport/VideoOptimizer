@@ -15,11 +15,8 @@ import com.att.aro.core.peripheral.IScreenStateInfoReader;
 import com.att.aro.core.peripheral.pojo.ScreenStateInfo;
 
 public class ScreenStateInfoReaderImplTest extends BaseTest {
-
 	ScreenStateInfoReaderImpl traceDataReader;
-
 	private IFileManager filereader;
-	private String traceFolder = "traceFolder";
 
 	@Before
 	public void setup() {

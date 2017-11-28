@@ -6,6 +6,8 @@ package com.att.aro.core.videoanalysis.pojo.config;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 
 /*
@@ -42,6 +44,7 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
  * @author Barry Nelson
  * 
  */
+@JsonIgnoreProperties(ignoreUnknown = true) // allows for changes dropping items or using older versions, but not before this ignore
 public class VideoAnalysisConfig {
 
 	public VideoType videoType;

@@ -34,18 +34,13 @@ import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.ManifestDash;
 import com.att.aro.core.videoanalysis.pojo.ManifestHLS;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs.DUPLICATE_HANDLING;
 
 public abstract class PlotHelperAbstract {
 
-	private static Map<VideoEvent, AROManifest> veManifestList;
 	private List<VideoEvent> chunkDownload;
-	public static Map<VideoEvent, Double> chunkPlayTimeList = new TreeMap<>();
-	protected static List<VideoEvent> chunksBySegment;
-	protected static List<VideoEvent> removeChunks;
-	public static List<VideoEvent> filteredSegments;
-
-	protected static List<VideoEvent> allSegments;
+	protected Map<VideoEvent, Double> chunkPlayTimeList = new TreeMap<>();
 
 	@Autowired
 	private IVideoUsagePrefsManager videoPrefManager;
@@ -53,54 +48,56 @@ public abstract class PlotHelperAbstract {
 	@InjectLogger
 	private static ILogger logger;
 
+	protected VideoUsage videoUsage;
+
+	public VideoUsage getVideoUsage(){
+		return videoUsage;
+	}
+	
+	public void setVideoUsage(VideoUsage videoUsage){
+		this.videoUsage = videoUsage;
+	}
+
 	public List<VideoEvent> filterVideoSegment(VideoUsage videoUsage) {
-
-		veManifestList = new HashMap<>();
+		this.videoUsage = videoUsage;
+		Map<VideoEvent, AROManifest> veManifestList = new HashMap<>();
 		chunkDownload = new ArrayList<>();
+		List<VideoEvent> removeChunks = new ArrayList<>();
+		List<VideoEvent> allSegments = new ArrayList<>();
 
-		removeChunks = new ArrayList<>();
-
-		allSegments = new ArrayList<>();
-
-		for (AROManifest aroManifest : videoUsage.getManifests()){
-			// don't count if no videos with manifest, or only one video
-			if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty() && aroManifest.getVideoEventList().size() > 1) {
-
-				TreeMap<String, VideoEvent> segmentEventList = aroManifest.getSegmentEventList();
-				Entry<String, VideoEvent> segmentValue = segmentEventList.higherEntry("00000000:z");
-
-				double firstSeg = segmentValue != null ? segmentValue.getValue().getSegment() : 0;
-
-				VideoEvent first = null;
-
-				for (VideoEvent videoEvent : aroManifest.getVideoEventList().values()) {
-					if (videoEvent.getSegment() == firstSeg) {
-						first = videoEvent;
-						break;
+		for (AROManifest aroManifest : videoUsage.getManifests()) {
+			if (aroManifest != null) {
+				// don't count if no videos with manifest, or only one video
+				if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty() && aroManifest.getVideoEventList().size() > 1) {
+					TreeMap<String, VideoEvent> segmentEventList = aroManifest.getSegmentEventList();
+					Entry<String, VideoEvent> segmentValue = segmentEventList.higherEntry("00000000:z");
+					double firstSeg = segmentValue != null ? segmentValue.getValue().getSegment() : 0;
+					VideoEvent first = null;
+					for (VideoEvent videoEvent : aroManifest.getVideoEventList().values()) {
+						if (videoEvent.getSegment() == firstSeg) {
+							first = videoEvent;
+							break;
+						}
 					}
-				}
 
-				for (VideoEvent videoEvent : aroManifest.getVideoEventList().values()) {
-					if (!(videoEvent.getSegment() == 0 && aroManifest instanceof ManifestDash)
-							&& (!chunkDownload.contains(videoEvent))) {
+					for (VideoEvent videoEvent : aroManifest.getVideoEventList().values()) {
+						if (!(videoEvent.getSegment() == 0 && aroManifest instanceof ManifestDash) && (!chunkDownload.contains(videoEvent))) {
 
-						for (VideoEvent video : chunkDownload) {
-							if ((videoEvent.getSegment() != firstSeg)
-									&& video.getSegment() == videoEvent.getSegment()) {
-								removeChunks.add(video);
-							}
+							for (VideoEvent video : chunkDownload) {
+								if ((videoEvent.getSegment() != firstSeg) && video.getSegment() == videoEvent.getSegment()) {
+									removeChunks.add(video);
+								}
 
-							if (videoEvent.getSegment() == firstSeg) {
-								if (!videoEvent.equals(first)) {
-									removeChunks.add(videoEvent);
+								if (videoEvent.getSegment() == firstSeg) {
+									if (!videoEvent.equals(first)) {
+										removeChunks.add(videoEvent);
+									}
 								}
 							}
-
+							veManifestList.put(videoEvent, aroManifest);
+							chunkDownload.add(videoEvent);
+							allSegments.add(videoEvent);
 						}
-						veManifestList.put(videoEvent, aroManifest);
-						chunkDownload.add(videoEvent);
-						allSegments.add(videoEvent);
-
 					}
 				}
 			}
@@ -110,81 +107,76 @@ public abstract class PlotHelperAbstract {
 			veManifestList.keySet().remove(ve);
 			chunkDownload.remove(ve);
 		}
+		
+		videoUsage.setVideoEventManifestMap(veManifestList);
+		videoUsage.setAllSegments(allSegments);
+		videoUsage.setRemoveChunks(removeChunks);
 		return chunkDownload;
 	}
 
-
 	public List<VideoEvent> filterSegmentByVideoPref(VideoUsage videoUsage) {
-		veManifestList = new HashMap<>();
+		this.videoUsage = videoUsage;
+		Map<VideoEvent, AROManifest> veManifestList = new HashMap<>();
 		chunkDownload = new ArrayList<>();
-		removeChunks = new ArrayList<>();
-
+		List<VideoEvent> removeChunks = new ArrayList<>();
+		List<VideoEvent> allSegments = new ArrayList<>();
 		DUPLICATE_HANDLING segmentFilterChoice = videoPrefManager.getVideoUsagePreference().getDuplicateHandling();
-		veManifestList = new HashMap<>();
-		chunkDownload = new ArrayList<>();
 
-		removeChunks = new ArrayList<>();
-		allSegments = new ArrayList<>();
-
-		for (AROManifest aroManifest : videoUsage.getManifests()){
+		for (AROManifest aroManifest : videoUsage.getManifests()) {
 			// don't count if no videos with manifest, or only one video
-			if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty() && aroManifest.getVideoEventList().size() > 1) {
+			if (aroManifest != null && aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty() && aroManifest.getVideoEventList().size() > 1) {
 
 				for (VideoEvent videoEvent : aroManifest.getVideoEventList().values()) {
-					if (!(videoEvent.getSegment() == 0 && aroManifest instanceof ManifestDash)
-							&& (!chunkDownload.contains(videoEvent))) {
+					if (videoEvent != null 
+							&& !(videoEvent.getSegment() == 0 && aroManifest.getVideoFormat().equals(VideoFormat.MPEG4))
+						&& (!chunkDownload.contains(videoEvent))) {
 
-					switch (segmentFilterChoice) {
+						switch (segmentFilterChoice) {
 						case FIRST:
 							filteByFirst(chunkDownload, videoEvent);
 							break;
 						case LAST:
-						    filterByLast(chunkDownload, videoEvent);
+							filterByLast(chunkDownload, videoEvent);
 							break;
 						case HIGHEST:
 							filterByHighest(chunkDownload, videoEvent);
 							break;
 						default:
 						}
-					
 
 						veManifestList.put(videoEvent, aroManifest);
 						chunkDownload.add(videoEvent);
 						allSegments.add(videoEvent);
-
 					}
 				}
 			}
 		}
 
-		if(segmentFilterChoice == DUPLICATE_HANDLING.FIRST || segmentFilterChoice == DUPLICATE_HANDLING.LAST){
+		if (segmentFilterChoice == DUPLICATE_HANDLING.FIRST || segmentFilterChoice == DUPLICATE_HANDLING.LAST) {
 			for (VideoEvent ve : removeChunks) {
 				veManifestList.keySet().remove(ve);
 				chunkDownload.remove(ve);
 			}
 		}
+		videoUsage.setVideoEventManifestMap(veManifestList);
+		videoUsage.setAllSegments(allSegments);
+		videoUsage.setRemoveChunks(removeChunks);
 		return chunkDownload;
 	}
 
 	private void filteByFirst(List<VideoEvent> chunkDownloadList, VideoEvent videoEvent) {
 		for (VideoEvent video : chunkDownloadList) {
 			if (video.getSegment() == videoEvent.getSegment()) {
-				removeChunks.add(videoEvent); // Adding the
-												// segments that
-												// came in LAST
-												// to the remove
-												// list
+				videoUsage.getRemoveChunks().add(videoEvent); // Adding the segments that came in LAST to the remove list
 			}
-
 		}
 	}
 	
 	private void filterByLast(List<VideoEvent> chunkDownloadList, VideoEvent videoEvent) {
 		for (VideoEvent video : chunkDownloadList) {
 			if (video.getSegment() == videoEvent.getSegment()) {
-				removeChunks.add(video); // Adding the segments that came in FIRST to the remove list
+				videoUsage.getRemoveChunks().add(video); // Adding the segments that came in FIRST to the remove list
 			}
-
 		}
 	}
 
@@ -195,10 +187,10 @@ public abstract class PlotHelperAbstract {
 					Integer videoQuality      = video.getQuality().isEmpty()         || video.getQuality() == null      || video.getQuality().matches(".*[A-Za-z].*")        ? 0 : Integer.parseInt(video.getQuality());     
 					Integer videoEventQuality = videoEvent.getQuality().isEmpty()    || videoEvent.getQuality() == null || videoEvent.getQuality().matches(".*[A-Za-z].*")   ? 0 : Integer.parseInt(videoEvent.getQuality());
 					if (videoQuality.compareTo(videoEventQuality) < 0){
-						removeChunks.add(video);
+						videoUsage.getRemoveChunks().add(video);
 
 					} else {
-						removeChunks.add(videoEvent);
+						videoUsage.getRemoveChunks().add(videoEvent);
 					}
 				} catch (NumberFormatException e) {
 					StackTraceElement[] stack = e.getStackTrace();
@@ -212,24 +204,19 @@ public abstract class PlotHelperAbstract {
 	}
 	
 	public List<VideoEvent> filterVideoSegmentUpdated(VideoUsage videoUsage) {
-		filteredSegments = new ArrayList<>();
+		this.videoUsage = videoUsage;
+		List<VideoEvent> filteredSegments = new ArrayList<>();
 		filterSegmentByVideoPref(videoUsage);// filterVideoSegment(videoUsage);
 		for (VideoEvent ve : chunkDownload) {
 			filteredSegments.add(ve);
 		}
-
+		videoUsage.setFilteredSegments(filteredSegments);
 		return chunkDownload;
 	}
 
-
-	public static List<VideoEvent> getAllSegments() {
-			return allSegments;
-	}
-
 	public List<VideoEvent> videoEventListBySegment(VideoUsage videoUsage) {
-
-		chunksBySegment = new ArrayList<>();
-
+		this.videoUsage = videoUsage;
+		List<VideoEvent> chunksBySegment = new ArrayList<>();
 		for (AROManifest aroManifest : videoUsage.getManifests()){
 			if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
 				for (VideoEvent videoEvent : aroManifest.getVideoEventsBySegment()) {
@@ -240,23 +227,17 @@ public abstract class PlotHelperAbstract {
 				}
 			}
 		}
-		for (VideoEvent ve : removeChunks) {
+		for (VideoEvent ve : videoUsage.getRemoveChunks()) {
 			chunksBySegment.remove(ve);
 		}
 
 		Collections.sort(chunksBySegment, new VideoEventComparator(SortSelection.SEGMENT));
+		videoUsage.setChunksBySegmentNumber(chunksBySegment);
 		return chunksBySegment;
-	}
-
-	public List<VideoEvent> getChunksBySegmentNumber() {
-		return chunksBySegment;
-	}
-
-	public List<VideoEvent> getFilteredSegments() {
-		return filteredSegments;
 	}
 
 	public double getChunkPlayTimeDuration(VideoEvent ve) {
+		Map<VideoEvent, AROManifest> veManifestList = videoUsage.getVideoEventManifestMap();
 		double duration = ve.getDuration();
 		if (duration == 0 && veManifestList != null) {
 			for (VideoEvent vEvent : veManifestList.keySet()) {
@@ -271,12 +252,11 @@ public abstract class PlotHelperAbstract {
 				}
 			}
 		}
-
 		return duration;
 	}
 
 	public void setChunkPlayBackTimeList(Map<VideoEvent, Double> chunkPlayTimeList) {
-		PlotHelperAbstract.chunkPlayTimeList = chunkPlayTimeList;
+		this.chunkPlayTimeList = chunkPlayTimeList;
 	}
 
 	public double getChunkPlayStartTime(VideoEvent chunkPlaying) {
@@ -287,9 +267,4 @@ public abstract class PlotHelperAbstract {
 		}
 		return -1;
 	}
-
-	public Map<VideoEvent, AROManifest> getVideoEventManifestMap() {
-		return veManifestList;
-	}
-
 }

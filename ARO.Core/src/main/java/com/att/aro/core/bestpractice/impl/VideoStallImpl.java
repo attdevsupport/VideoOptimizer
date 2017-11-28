@@ -18,7 +18,9 @@ package com.att.aro.core.bestpractice.impl;
 
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -31,8 +33,8 @@ import com.att.aro.core.bestpractice.pojo.VideoStallResult;
 import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
-import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 
 
 /**
@@ -56,8 +58,6 @@ public class VideoStallImpl implements IBestPractice{
 
 	@InjectLogger
 	private static ILogger log;
-	
-	private boolean done;
 
 	@Value("${videoStall.title}")
 	private String overviewTitle;
@@ -82,43 +82,79 @@ public class VideoStallImpl implements IBestPractice{
 
 	@Autowired
 	private IVideoUsagePrefsManager videoPref;
-
+	
+	private BPResultType stallState;
+	private int warningCount, passCount, failCount;
     
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 		List<VideoStall> videoStallResult = tracedata.getVideoStalls();
-		done = true;
-	
+		List<VideoStall> stallResult = new ArrayList<VideoStall>();
+		stallState = BPResultType.SELF_TEST;
+		warningCount = 0;
+		passCount = 0;
+		failCount = 0;
 		VideoStallResult result = new VideoStallResult();
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
-		
-		
-		// TODO fix this
-			double stallTriggerTime = videoPref.getVideoUsagePreference().getStallTriggerTime(); // BufferInSecondsCalculatorImpl.getStallTriggerTime();
-			int stallCount=0;
-			if(videoStallResult != null){
-				for(VideoStall stall: videoStallResult){
-					if(stall.getDuration()>=stallTriggerTime){
-						stallCount++;
-					}
+
+		double stallTriggerTime = videoPref.getVideoUsagePreference().getStallTriggerTime();
+		int stallCount = 0;
+		if (videoStallResult != null) {
+			for (VideoStall stall : videoStallResult) {
+				if (stall.getDuration() >= stallTriggerTime) {
+					stallCount++;
+					stallResult.add(updateStallResult(stall));
 				}
-			}	
+			}
+		}
 		
-		result.setResultType((stallCount == 0) ? BPResultType.PASS : BPResultType.FAIL);
-		if (PlotHelperAbstract.chunkPlayTimeList.size() == 0) {
+		int count = 0;
+		if (passCount != 0 || warningCount != 0 || failCount == 0) {
+			if (failCount > 0) {
+				stallState = BPResultType.FAIL;
+				count = failCount;
+			} else if (warningCount > 0) {
+				stallState = BPResultType.WARNING;
+				count = warningCount;
+			} else {
+				stallState = BPResultType.PASS;
+				count = passCount;
+			}
+		}
+
+		result.setResultType(stallState);
+		
+		if (tracedata.getVideoUsage() != null && tracedata.getVideoUsage().getChunkPlayTimeList().isEmpty()) {
 			// Meaning startup delay is not set yet
 			result.setResultText(MessageFormat.format(textResultInit, stallCount));
 		} else {
 			result.setResultText(MessageFormat.format(this.textResults, stallCount, stallCount == 1 ? "" : "s",
-					stallCount == 0 ? "passes the test" : "fails the test"));
+					count == 1 ? "was" : "were", count, count == 1 ? "" : "s", stallState == BPResultType.FAIL ? "fail"
+							: (stallState == BPResultType.WARNING ? "warning" : "pass")));
 		}
 		result.setVideoStallResult(stallCount);
-
+		result.setResults(stallResult);
 		return result;
+	}
+
+
+	private VideoStall updateStallResult(VideoStall stall) {
+		BPResultType bpResultType = Util.checkPassFailorWarning(stall.getDuration(),
+				Double.parseDouble(videoPref.getVideoUsagePreference().getStallDurationWarnVal()),
+				Double.parseDouble(videoPref.getVideoUsagePreference().getStallDurationFailVal()));
+		if (bpResultType == BPResultType.FAIL) {
+			failCount = failCount + 1;
+		} else if (bpResultType == BPResultType.PASS) {
+			passCount = passCount + 1;
+		} else {
+			warningCount = warningCount + 1;
+		}
+		stall.setStallState(bpResultType.toString());
+
+		return stall;
 	}
 	
 }//end class

@@ -54,8 +54,6 @@ public class ParseHeaderLineTest extends BaseTest {
 		for (String line : lines){
 			parser.parseHeaderLine(line, rrInfo);
 		}
-		
-		String[] splits = rrInfo.getAllHeaders().split("\r\n");
 
 		assertTrue((rrInfo.getAllHeaders().split("\r\n")).length == 9);
 		

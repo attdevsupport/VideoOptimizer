@@ -7,12 +7,14 @@ public class VideoEventData {
 	String cdn;
 	String name;
 	Integer segment;
+	String segmentReference;
 	String byteStart;
 	String byteEnd;
 	String quality;
 	String segmentStartTime;
 	String bitrate;
 	String mdatSize;
+	String manifestType;
 	String duration;
 	String rateCode;
 	String position;
@@ -20,7 +22,7 @@ public class VideoEventData {
 	String dateTime;
 	ByteRange byteRange = null;
 	double dtTime;
-	String extension;
+	String extension = "";
 	String contentType;
 	double contentLength;
 	double contentSize;
@@ -34,8 +36,9 @@ public class VideoEventData {
 		strblr.append("VideoEventData ");
 		if (cdn              != null) {strblr.append("\n\t cdn : ");              strblr.append(cdn                                                  );}
 		if (name             != null) {strblr.append("\n\t name : ");             strblr.append(name                                                 );}
-		if (extension        != null) {strblr.append("\n\t extension : ");        strblr.append(extension                                            );}
+		if (!extension.isEmpty()    ) {strblr.append("\n\t extension : ");        strblr.append(extension                                            );}
 		if (segment          != null) {strblr.append("\n\t segment : ");          strblr.append(segment                                              );}
+		if (segmentReference != null) {strblr.append("\n\t segmentReference : "); strblr.append(segmentReference                                     );}
 		if (byteStart        != null) {strblr.append("\n\t byteStart : ");        strblr.append(byteStart                                            );}
 		if (byteEnd          != null) {strblr.append("\n\t byteEnd : ");          strblr.append(byteEnd                                              );}
 		if (quality          != null) {strblr.append("\n\t quality : ");          strblr.append(quality                                              );}
@@ -69,7 +72,7 @@ public class VideoEventData {
 			if (byteStart != null && byteEnd != null) {
 				byteRange = new ByteRange(byteStart, byteEnd);
 			} else {
-				byteRange = new ByteRange(0, 0);
+				return new ByteRange(0, 0);
 			}
 		}
 
@@ -80,8 +83,14 @@ public class VideoEventData {
 		return cdn;
 	}
 
+	/**
+	 * Name of video
+	 * returns empty string when null
+	 * 
+	 * @return
+	 */
 	public String getId() {
-		return name;
+		return name != null ? name : "";
 	}
 
 	public String getExtension() {
@@ -94,6 +103,14 @@ public class VideoEventData {
 
 	public void setSegment(Integer segment) {
 		this.segment = segment;
+	}
+
+	public String getSegmentReference() {
+		return segmentReference;
+	}
+
+	public void setSegmentReference(String segmentReference) {
+		this.segmentReference = segmentReference;
 	}
 
 	/**
@@ -135,6 +152,14 @@ public class VideoEventData {
 
 	public String getDuration() {
 		return duration;
+	}
+	
+	public String getManifestType() {
+		return manifestType;
+	}
+
+	public void setManifestType(String manifestType) {
+		this.manifestType = manifestType;
 	}
 
 	public String getRateCode() {

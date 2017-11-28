@@ -18,7 +18,6 @@
 package com.att.aro.ui.view.menu.view;
 
 import java.awt.Color;
-import java.util.Collection;
 
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;

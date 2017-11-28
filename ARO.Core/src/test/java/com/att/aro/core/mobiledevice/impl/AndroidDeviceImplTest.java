@@ -205,10 +205,9 @@ public class AndroidDeviceImplTest extends BaseTest {
 			e1.printStackTrace();
 		}
 		
-		boolean rooted = false;
 		String reason = null;
 		try {
-			rooted = spied.isAndroidRooted(device);
+			spied.isAndroidRooted(device);
 		} catch (Exception e) {
 			reason = e.getMessage();
 		}

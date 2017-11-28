@@ -120,7 +120,8 @@ public class HelpDialog extends JDialog implements KeyListener{
 			sb.append(ResourceBundleHelper.getMessageString("collector.help.devices.ios"));
 		}
 		sb.append(ResourceBundleHelper.getMessageString("collector.help.devices.android"));
- 		textPane.setText(sb.toString());
+		sb.append(ResourceBundleHelper.getMessageString("collector.help.devices.emulator"));
+		textPane.setText(sb.toString());
 		return textPane;
 	}
 
@@ -166,19 +167,16 @@ public class HelpDialog extends JDialog implements KeyListener{
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 	

@@ -68,16 +68,16 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 
 	public Map<Integer, Double> populateDataSet(VideoUsage videoUsage) {
 		if (videoUsage != null) {
+			this.videoUsage = videoUsage;
 			key = 0;
 			imgSeries = new ArrayList<BufferedImage>();
 			seriesDataSets.clear();
 			filterVideoSegment(videoUsage);
 			filterVideoSegmentUpdated(videoUsage);
 
-			if (!chunkPlayTimeList.isEmpty()) {
+			if (!videoUsage.getChunkPlayTimeList().isEmpty()){
 				videoEventListBySegment(videoUsage);
 				updateChunkPlayStartTimes();
-
 			}
 
 			getChunkCollectionDataSet();
@@ -100,7 +100,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 
 	private void getChunkCollectionDataSet() {
 		int count = 0;
-		List<VideoEvent> allSegments2 = getAllSegments();
+		List<VideoEvent> allSegments2 = videoUsage.getAllSegments();
 		if(allSegments2 == null ) {
 			return;
 		}
@@ -118,7 +118,6 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 			seriesDataSets.put(key, ve.getDLTimeStamp());
 			key++;
 		}
-
 	}
 
 	public List<BufferedImage> getImageSeries() {
@@ -133,33 +132,36 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 		this.chunkPlayStartTimes.clear();
 		this.segmentStartTimeList.clear();
 		boolean filterAgain = false;
-		double playtime = chunkPlayTimeList.get(chunkPlayTimeList.keySet().toArray()[0]); // Apply the first startup delay set to the First segment to be played
+		double playtime = videoUsage.getChunkPlayTimeList().get(videoUsage.getChunkPlayTimeList().keySet().toArray()[0]); 
 		double possibleStartTime;
-		double duration = getChunkPlayTimeDuration(getChunksBySegmentNumber().get(0)); // filteredChunks
+		double duration = 0;
+		if (!videoUsage.getChunksBySegmentNumber().isEmpty()) {
+			duration = getChunkPlayTimeDuration(videoUsage.getChunksBySegmentNumber().get(0)); // filteredChunks
+		}
 		Map<Double, VideoEvent> playStartTimeBySegment = new TreeMap<>();
 
-		for (int index = 0; index < getChunksBySegmentNumber().size(); index++) {
-			possibleStartTime = getChunkPlayStartTime(getChunksBySegmentNumber().get(index));
+		for (int index = 0; index < videoUsage.getChunksBySegmentNumber().size(); index++) {
+			possibleStartTime = getChunkPlayStartTime(videoUsage.getChunksBySegmentNumber().get(index));
 			if (possibleStartTime != -1) {
 				playtime = possibleStartTime;
 			} else {
-				int diff = (index > 1) ? (int) (getChunksBySegmentNumber().get(index).getSegment()
-						- getChunksBySegmentNumber().get(index - 1).getSegment()) : 1;
+				int diff = (index > 1) ? (int) (videoUsage.getChunksBySegmentNumber().get(index).getSegment()
+						- videoUsage.getChunksBySegmentNumber().get(index - 1).getSegment()) : 1;
 				playtime = diff * duration + playtime;
 			}
 
-			if (getChunksBySegmentNumber().get(index).getEndTS() > playtime) { // Meaning this is not the right quality level chunk picked by the player
+			if (videoUsage.getChunksBySegmentNumber().get(index).getEndTS() > playtime) { // Meaning this is not the right quality level chunk picked by the player
 				// alter filteredChunks & chunksBySegment List
-				boolean shuffled = alterFilteredSegmentList(getChunksBySegmentNumber().get(index),playtime);
+				boolean shuffled = alterFilteredSegmentList(videoUsage.getChunksBySegmentNumber().get(index),playtime);
 				if(shuffled){
 					filterAgain = true;
 				}
 			}
-			playStartTimeBySegment.put(playtime, getChunksBySegmentNumber().get(index));
-			duration = getChunkPlayTimeDuration(getChunksBySegmentNumber().get(index));
+			playStartTimeBySegment.put(playtime, videoUsage.getChunksBySegmentNumber().get(index));
+			duration = getChunkPlayTimeDuration(videoUsage.getChunksBySegmentNumber().get(index));
 		}
 
-		for (VideoEvent ve : getFilteredSegments()) {
+		for (VideoEvent ve : videoUsage.getFilteredSegments()) {
 			for (int index = 0; index < playStartTimeBySegment.keySet().size(); index++) {
 				VideoEvent veSegment = playStartTimeBySegment.get(playStartTimeBySegment.keySet().toArray()[index]);
 				if (veSegment.getSegment() == ve.getSegment()) {
@@ -172,14 +174,14 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 		}
 		
 		if(filterAgain){
-			Collections.sort(getFilteredSegments(), new VideoEventComparator(SortSelection.START_TS));
-			for (VideoEvent ve : getFilteredSegments()) { //Originally Content of filteredSegments List and chunksBySegment List should be the same, the difference is chunksBySegment is ordered by segment number while the other is ordered by dlTime
-				if(!getChunksBySegmentNumber().contains(ve)){
-					for(VideoEvent segment:getChunksBySegmentNumber()){
+			Collections.sort(videoUsage.getFilteredSegments(), new VideoEventComparator(SortSelection.START_TS));
+			for (VideoEvent ve : videoUsage.getFilteredSegments()) { //Originally Content of filteredSegments List and chunksBySegment List should be the same, the difference is chunksBySegment is ordered by segment number while the other is ordered by dlTime
+				if(!videoUsage.getChunksBySegmentNumber().contains(ve)){
+					for(VideoEvent segment:videoUsage.getChunksBySegmentNumber()){
 						if(segment.getSegment() == ve.getSegment()){
 							//segment should be replaced by ve
-							getChunksBySegmentNumber().add(getChunksBySegmentNumber().indexOf(segment), ve);
-							getChunksBySegmentNumber().remove(segment);
+							videoUsage.getChunksBySegmentNumber().add(videoUsage.getChunksBySegmentNumber().indexOf(segment), ve);
+							videoUsage.getChunksBySegmentNumber().remove(segment);
 							break;
 						}
 					}	
@@ -190,6 +192,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 	}
 
 	public boolean alterFilteredSegmentList(VideoEvent ve,double segmentPlayTime) {
+		List<VideoEvent> removeChunks = videoUsage.getRemoveChunks();
 		if (!removeChunks.isEmpty()) {
 			//descending order sorting by download end time.
 			Collections.sort(removeChunks, new VideoEventComparator(SortSelection.END_TS_DESCENDING));
@@ -199,9 +202,9 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 				if (removedChunk.getSegment() == ve.getSegment() && removedChunk.getEndTS() <= segmentPlayTime) {
 					//This is the correct quality level of this segment played
 					//swap
-					int index = getFilteredSegments().indexOf(ve);
-					getFilteredSegments().remove(ve);
-					getFilteredSegments().add(index, removedChunk);
+					int index = videoUsage.getFilteredSegments().indexOf(ve);
+					videoUsage.getFilteredSegments().remove(ve);
+					videoUsage.getFilteredSegments().add(index, removedChunk);
 					removeChunks.add(ve);
 					removeChunks.remove(removedChunk);
 					return true;
@@ -214,9 +217,9 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 			}
 			if(swapedTheMinimum && minIndex !=-1)
 			{
-				int index = getFilteredSegments().indexOf(ve);
-				getFilteredSegments().remove(ve);	
-				getFilteredSegments().add(index, removeChunks.get(minIndex));
+				int index = videoUsage.getFilteredSegments().indexOf(ve);
+				videoUsage.getFilteredSegments().remove(ve);	
+				videoUsage.getFilteredSegments().add(index, removeChunks.get(minIndex));
 				removeChunks.add(ve);
 				removeChunks.remove(removeChunks.get(minIndex));
 				return true;
@@ -241,7 +244,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 	}
 	
 	public Map<VideoEvent, Double> getChunkPlayTimeList() {
-		return chunkPlayTimeList;
+		return videoUsage.getChunkPlayTimeList();
 	}
 
 	

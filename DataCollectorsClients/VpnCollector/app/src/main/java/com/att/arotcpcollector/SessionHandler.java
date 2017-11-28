@@ -19,6 +19,7 @@ package com.att.arotcpcollector;
 import android.content.Context;
 import android.util.Log;
 
+import com.att.arocollector.attenuator.AttenuatorManager;
 import com.att.arotcpcollector.ip.IPPacketFactory;
 import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.socket.SocketData;
@@ -49,6 +50,10 @@ public class SessionHandler {
 	private SocketData pcapData = null; // for traffic.cap
 	private String[] whitelist;
 	private Context ctx;
+
+	private boolean printLog = false;
+
+	private boolean secureEnable = false;
 
 	public static SessionHandler getInstance() {
 		if (handler == null) {
@@ -84,7 +89,6 @@ public class SessionHandler {
 	 * @param udpheader
 	 */
 	private void handleUDPPacket(byte[] clientpacketdata, IPv4Header ipheader, UDPHeader udpheader) {
-		//		FileUtil.print("Forward on a UDP packet: " , clientpacketdata);
 
 		Session session = sessionManager.getSession(ipheader.getDestinationIP(), udpheader.getDestinationPort(), 
 				ipheader.getSourceIP(), udpheader.getSourcePort());
@@ -146,8 +150,16 @@ public class SessionHandler {
 
 			// any data from client?
 			if (datalength > 0) {
-
-
+				if(AttenuatorManager.getInstance().getDelayUl() > 0) {
+					try {
+						Log.d(TAG, "-------- recv:ATTENUATE ---------");
+						Thread.sleep(AttenuatorManager.getInstance().getDelayUl());
+						Log.d(TAG, "-------- recv:ATTENUATE:done ---------");
+					} catch (InterruptedException e) {
+						Log.d(TAG, "-------- recv:ATTENUATE:interupted ---------");
+						e.printStackTrace();
+					}
+				}
 				// accumulate data from client
 				int totalAdded = sessionManager.addClientData(ipheader, tcpheader, clientpacketdata);
 				
@@ -234,7 +246,7 @@ public class SessionHandler {
 	 */
 	public void handlePacket(byte[] packet) throws PacketHeaderException {		
 		
-		pcapData.sendDataToPcap(packet);
+		pcapData.sendDataToPcap(packet, false);
 		
 		IPv4Header ipHeader = IPPacketFactory.createIPv4Header(packet, 0);
 		
@@ -295,7 +307,7 @@ public class SessionHandler {
 	void sendRstPacket(IPv4Header ip, TCPHeader tcp, int datalength) {
 		byte[] data = tcpFactory.createRstData(ip, tcp, datalength);
 		pcapData.sendDataRecieved(data);
-		pcapData.sendDataToPcap(data);
+		pcapData.sendDataToPcap(data, false);
 		Log.d(TAG, "Sent RST Packet to client with dest => " + PacketUtil.intToIPAddress(ip.getDestinationIP()) + ":" + tcp.getDestinationPort());
 	}
 
@@ -308,12 +320,12 @@ public class SessionHandler {
 	 */
 	void ackFinAck(IPv4Header ip, TCPHeader tcp, Session session) {
 		//TODO: check if client only sent FIN without ACK
-		int ack = tcp.getSequenceNumber() + 1;
-		int seq = tcp.getAckNumber();
+		long ack = tcp.getSequenceNumber() + 1;
+		long seq = tcp.getAckNumber();
 		byte[] data = tcpFactory.createFinAckData(ip, tcp, ack, seq, true, true);
 
 		pcapData.sendDataRecieved(data);
-		pcapData.sendDataToPcap(data);
+		pcapData.sendDataToPcap(data, false);
 			
 			if (session != null) {
 				session.getSelectionkey().cancel();
@@ -332,11 +344,11 @@ public class SessionHandler {
 	 * @param session
 	 */
 	void sendFinAck(IPv4Header ip, TCPHeader tcp, Session session) {
-		int ack = tcp.getSequenceNumber();
-		int seq = tcp.getAckNumber();
+		long ack = tcp.getSequenceNumber();
+		long seq = tcp.getAckNumber();
 		byte[] data = tcpFactory.createFinAckData(ip, tcp, ack, seq, true, false);
 		pcapData.sendDataRecieved(data);
-		pcapData.sendDataToPcap(data);
+		pcapData.sendDataToPcap(data, false);
 			Log.d(TAG, "00000000000 FIN-ACK packet data to vpn client 000000000000");
 			IPv4Header vpnip = null;
 			try {
@@ -394,13 +406,13 @@ public class SessionHandler {
 	 * @param session
 	 */
 	void sendAckToClient(IPv4Header ipheader, TCPHeader tcpheader, int acceptedDataLength, Session session) {
-		int acknumber = session.getRecSequence() + acceptedDataLength;
+		long acknumber = session.getRecSequence() + acceptedDataLength;
 		Log.d(TAG, "sent ack, ack# " + session.getRecSequence() + " + " + acceptedDataLength + " = " + acknumber);
 		session.setRecSequence(acknumber);
 		byte[] data = tcpFactory.createResponseAckData(ipheader, tcpheader, acknumber);
 
 			pcapData.sendDataRecieved(data);
-			pcapData.sendDataToPcap(data);
+			pcapData.sendDataToPcap(data, false);
 				/* for debugging purpose
 					Log.d(TAG,"&&&&&&&&&&&&& ACK packet data to vpn client &&&&&&&&&&&&&&");
 					IPv4Header vpnip = null;
@@ -443,7 +455,7 @@ public class SessionHandler {
 			if (tcpheader.getWindowSize() > 0) {
 				session.setSendWindowSizeAndScale(tcpheader.getWindowSize(), session.getSendWindowScale());
 			}
-			int byteReceived = tcpheader.getAckNumber() - session.getSendUnack();
+			long byteReceived = tcpheader.getAckNumber() - session.getSendUnack();
 			if (byteReceived > 0) {
 				session.decreaseAmountSentSinceLastAck(byteReceived);
 			}
@@ -489,12 +501,12 @@ public class SessionHandler {
 		ip.setIdenfication(0);
 		Packet packet = tcpFactory.createSynAckPacketData(ip, tcp);
 
-		TCPHeader tcpheader = packet.getTcpheader();
+		TCPHeader tcpheader = packet.getTCPHeader();
 
 		Session session;
 		try {
 			session = sessionManager.createNewSession(ip.getDestinationIP(), tcp.getDestinationPort(), 
-					ip.getSourceIP(), tcp.getSourcePort());
+					ip.getSourceIP(), tcp.getSourcePort(), isPrintLog());
 		} catch (SessionCreateException ex) {
 			Log.e(TAG, "Session Already Exists, Existing Session Closed. Packet Dropped." + ex.getMessage());
 			return;
@@ -502,7 +514,6 @@ public class SessionHandler {
 		
 		
 		// Secure Collector Flag Changes.
-//		FileUtil.print("SSL_"+session.getSessionKey().replace(":","_")+".txt", "SYN-ACK to Client \n");
 		
 		int windowScaleFactor = (int) Math.pow(2, tcpheader.getWindowScale());
 		session.setSendWindowSizeAndScale(tcpheader.getWindowSize(), windowScaleFactor);
@@ -513,10 +524,25 @@ public class SessionHandler {
 		session.setRecSequence(tcpheader.getAckNumber());
 
 		pcapData.sendDataRecieved(packet.getBuffer());
-		pcapData.sendDataToPcap(packet.getBuffer());
+		pcapData.sendDataToPcap(packet.getBuffer(), false);
 			Log.d(TAG, "Send SYN-ACK to client");
 
 	}
 	
+	public boolean isPrintLog() {
+		return printLog;
+	}
+
+	public void setPrintLog(boolean printLog) {
+		this.printLog = printLog;
+	}
+
+	public boolean isSecureEnable() {
+		return secureEnable;
+	}
+
+	public void setSecureEnable(boolean secureEnable) {
+		this.secureEnable = secureEnable;
+	}
 
 }//end class

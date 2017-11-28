@@ -47,6 +47,7 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
+import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
 import com.luciad.imageio.webp.WebPWriteParam;
 import com.sun.media.imageio.plugins.jpeg2000.J2KImageWriteParam;
@@ -180,7 +181,7 @@ public class ImageFormatImpl implements IBestPractice {
 				if (reqResp.getDirection() == HttpDirection.RESPONSE && reqResp.getContentType() != null
 						&& reqResp.getContentType().contains("image/")) {
 
-					originalImage = extractFullNameFromRRInfo(reqResp);
+					originalImage = ImageHelper.extractFullNameFromRRInfo(reqResp);
 					File orgImage = new File(imageFolderPath + originalImage);
 					orgImageSize = orgImage.length();
 					int pos = originalImage.lastIndexOf(".");
@@ -219,7 +220,7 @@ public class ImageFormatImpl implements IBestPractice {
 			for (final HttpRequestResponseInfo req : session.getRequestResponseInfo()) {
 				if (req.getDirection() == HttpDirection.RESPONSE && req.getContentType() != null
 						&& req.getContentType().contains("image/")) {
-					final String extractedImage = extractFullNameFromRRInfo(req);
+					final String extractedImage = ImageHelper.extractFullNameFromRRInfo(req);
 
 					File imgFile = new File(imageFolderPath + extractedImage);
 					if (imgFile.exists() && !imgFile.isDirectory()) {
@@ -284,19 +285,6 @@ public class ImageFormatImpl implements IBestPractice {
 		} catch (IOException e) {
 			logger.error("Format Image exception : ", e);
 		}
-	}
-
-	private String extractFullNameFromRRInfo(HttpRequestResponseInfo hrri) {
-		HttpRequestResponseInfo rsp = hrri.getAssocReqResp();
-		String extractedImageName = "";
-		String imageName = "";
-		if (rsp != null) {
-			String imagefromReq = rsp.getObjName();
-			imageName = imagefromReq.substring(imagefromReq.lastIndexOf(Util.FILE_SEPARATOR) + 1);
-			int pos = imageName.lastIndexOf("/") + 1;
-			extractedImageName = imageName.substring(pos);
-		}
-		return extractedImageName;
 	}
 
 }

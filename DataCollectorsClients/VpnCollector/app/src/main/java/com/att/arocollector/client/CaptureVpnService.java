@@ -38,8 +38,15 @@ import android.widget.Toast;
 
 import com.att.arocollector.Config;
 import com.att.arocollector.R;
+import com.att.arocollector.attenuator.AttenuatorDLBroadcastReceiver;
+import com.att.arocollector.attenuator.AttenuatorManager;
+import com.att.arocollector.attenuator.AttenuatorULBroadcastReceiver;
+import com.att.arocollector.attenuator.AttenuatorUtil;
+import com.att.arocollector.attenuator.ThrottleDLBroadcastReceiver;
+import com.att.arocollector.attenuator.ThrottleULBroadcastReceiver;
 import com.att.arocollector.packetRebuild.PCapFileWriter;
 import com.att.arocollector.privatedata.AROPrivateDataCollectorService;
+import com.att.arocollector.utils.BundleKeyUtil;
 import com.att.arotcpcollector.ClientPacketWriterImpl;
 import com.att.arotcpcollector.IClientPacketWriter;
 import com.att.arotcpcollector.SessionHandler;
@@ -86,7 +93,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 	public static final String SERVICE_NAME = "com.collector.client.VpnService";
 
-	public static final int MAX_PACKET_SIZE = 32767;
+	public static final int MAX_PACKET_SIZE = 65535;
 
 	private Handler mHandler;
 	private Thread mThread;
@@ -114,6 +121,11 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 	private File pcapFile; //pcap file
 	private PCapFileWriter pcapWriter;
+
+	private File securePCAPFile; //pcap file
+	private PCapFileWriter securePCAPWriter;
+
+
 	private File timeFile;//duration time File
 	private FileOutputStream timeStream;
 
@@ -127,7 +139,11 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 	private SocketData dataTransmitter = null;
 	BufferedWriter mAppNameWriter = null;
 
+	private AttenuatorDLBroadcastReceiver attenuatorDLbroadcast = new AttenuatorDLBroadcastReceiver();
+	private AttenuatorULBroadcastReceiver attenuatorULbroadcast = new AttenuatorULBroadcastReceiver();
 
+	private ThrottleDLBroadcastReceiver throttleDLBroadcast = new ThrottleDLBroadcastReceiver();
+	private ThrottleULBroadcastReceiver throttleULBroadcast = new ThrottleULBroadcastReceiver();
 	// Sets an ID for the notification, so it can be updated
 	private int notifyID = 1;
 	private Notification.Builder mBuilder;
@@ -142,6 +158,10 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 		registerReceiver(serviceCloseCmdReceiver, new IntentFilter(CaptureVpnService.SERVICE_CLOSE_CMD_INTENT));
 		//Those broadcast receiver depend on VPN exist
+		registerReceiver(attenuatorDLbroadcast, new IntentFilter(BundleKeyUtil.DELAY_DL_BROADCAST));
+		registerReceiver(attenuatorULbroadcast, new IntentFilter(BundleKeyUtil.DELAY_UL_BROADCAST));
+		registerReceiver(throttleDLBroadcast, new IntentFilter(BundleKeyUtil.THROTTLE_DL_BROADCAST));
+		registerReceiver(throttleULBroadcast, new IntentFilter(BundleKeyUtil.THROTTLE_UL_BROADCAST));
 
 		loadExtras(theIntent);
 
@@ -304,6 +324,10 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 			processApplicationNameVersion();
 			serviceValid = false;
 			unregisterAnalyzerCloseCmdReceiver();
+			unregisterReceiver(attenuatorDLbroadcast);
+			unregisterReceiver(attenuatorULbroadcast);
+			unregisterReceiver(throttleDLBroadcast);
+			unregisterReceiver(throttleULBroadcast);
 			NotificationManager mNotificationManager =
 					(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 			mNotificationManager.cancel(notifyID);
@@ -418,7 +442,8 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 	protected void stopTraceServices() {
 		Log.i(TAG, "stopping Trace Services...");
-
+		AttenuatorManager.getInstance().terminateDelayLog();
+		AttenuatorManager.getInstance().terminateThroughputLog();
 		stopAROCollectorService();
 		stopAROGpsMonitorService();
 		stopAROCameraMonitorService();
@@ -638,6 +663,12 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		String sFileName = "traffic.cap";
 		pcapFile = new File(traceDir, sFileName);
 		pcapWriter = new PCapFileWriter(pcapFile);
+
+		if(theIntent.getBooleanExtra("secure", false)){
+			sFileName = "secure_traffic.cap";
+			securePCAPFile = new File(traceDir, sFileName);
+			securePCAPWriter = new PCapFileWriter(securePCAPFile);
+		}
 	}
 
 	/**
@@ -715,6 +746,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 				.setConfigureIntent(mConfigureIntent)
 				.addDnsServer("8.8.8.8")
 				.addDnsServer("8.8.4.4")
+				.setMtu(MAX_PACKET_SIZE)
 				;
 		if (mInterface != null) {
 			try {
@@ -757,17 +789,23 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 		SessionHandler sessionHandler = SessionHandler.getInstance();
  		sessionHandler.setAndroidContext(this);
+		sessionHandler.setSecureEnable(theIntent.getBooleanExtra("secure", false));
+		sessionHandler.setPrintLog(theIntent.getBooleanExtra(BundleKeyUtil.PRINT_LOG, false));
+ 		Log.d(TAG, "Initial delayTimeDL: "+ AttenuatorManager.getInstance().getDelayDl());
 
 		//background task for non-blocking socket
 		dataService = new SocketNIODataService();
 
  		dataService.setSecureEnable(theIntent.getBooleanExtra("secure", false));
- 		dataServiceThread = new Thread(dataService, "dataServiceThread");
+		dataService.setPrintLog(theIntent.getBooleanExtra(BundleKeyUtil.PRINT_LOG, false));
+		Log.d(TAG, "Initial delayTimeUL:"+AttenuatorManager.getInstance().getDelayUl());
+		dataServiceThread = new Thread(dataService, "dataServiceThread");
 		dataServiceThread.start();
 
 		//background task for writing packet data to pcap file
 		packetBackGroundWriter = new SocketDataPublisher();
 		packetBackGroundWriter.setPcapWriter(pcapWriter);
+		packetBackGroundWriter.setSecurePCAPWriter(securePCAPWriter);
 		packetQueueThread = new Thread(packetBackGroundWriter, "packetQueueThread");
 		packetQueueThread.start();
 
@@ -785,8 +823,10 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		long stopTime = System.nanoTime();
 		boolean startFlag = true;
 
+		Log.d(TAG, "Upload Speed Limit : " + (AttenuatorManager.getInstance().getThrottleUL()*1024/8) + " Bytes");
 
-		int count = 0;
+
+		//FIXME ADDING UDP TESTING HERE ClientEcho.runUDPClient(this.getApplicationContext())
 
 		while (serviceValid) {
 
@@ -796,7 +836,6 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 			if(length > 0){
 				if(startFlag || (1000000000 <= (stopTime - startTime))) {
-//					Log.d(TAG, "Round : " + ++count);
 					startFlag = false;
 					startTime = System.nanoTime();
 					totalData = 0;
@@ -829,7 +868,20 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 				totalData += (length - headerLength);
 				packetData.clear();
 				Log.i(TAG, "totalData: "+ totalData + " Bytes");
+				if(!(AttenuatorManager.getInstance().getThrottleUL() < 0) && totalData >= (AttenuatorManager.getInstance().getThrottleUL()*1024/8)) {
+					try {
 
+						stopTime = System.nanoTime();
+						startFlag = true;
+						// Calculate Sleep Time
+						int tempTime = 1000 - ((int) ((stopTime - startTime)/1000000));
+						Log.i(TAG,"tempTime: "+ tempTime);
+						Thread.sleep(tempTime);
+					} catch (InterruptedException e) {
+						Log.d(TAG,"Failed to sleep: "+ e.getMessage());
+					}
+
+				}
 
 				stopTime = System.nanoTime();
 
@@ -867,7 +919,8 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 				.setContentTitle("Video Optimizer VPN Collector")
 				.setAutoCancel(false)
-				.setOngoing(true);
+				.setOngoing(true)
+				.setContentText(AttenuatorUtil.getInstance().notificationMessage());
 		}
 
  		NotificationManager mNotificationManager =

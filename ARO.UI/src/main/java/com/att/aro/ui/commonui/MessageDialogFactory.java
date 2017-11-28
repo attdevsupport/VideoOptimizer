@@ -363,8 +363,6 @@ public class MessageDialogFactory extends JOptionPane{
 		panel.add(chckbxCaptureVideo);
 		
 		// Buttons
-		String[] options = new String[] { "OK", "Cancel" };
-		
 		JPanel optionBtns = new JPanel();
 		optionBtns.setLayout(new GridBagLayout());
 		JButton btnOK = new JButton( "OK" );
@@ -406,8 +404,6 @@ public class MessageDialogFactory extends JOptionPane{
 			, String title
 			, String videoStatus
 			, String traceDuration){
-		
-		boolean approveOpenTrace = false;
 		
 		Font TEXT_FONT = new Font("TEXT_FONT", Font.PLAIN, 12);
 		int HEADER_DATA_SPACING = 10;
@@ -474,17 +470,9 @@ public class MessageDialogFactory extends JOptionPane{
 		emulatorSummaryDataPanel.add(summaryDataPanel);
 		
 		summaryAlligmentPanel.add(emulatorSummaryDataPanel, BorderLayout.SOUTH);
-		
-		
-		// Buttons
 		String[] options = new String[] { "Quit"};//, "Stop" };//, "Restart"};
-		
-		int opt = MessageDialogFactory.showOptionDialog(parent, summaryAlligmentPanel, "Confirm", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]); 
-		
-		String text = null; // if cancel return null else return value
-		
+		int opt = MessageDialogFactory.showOptionDialog(parent, summaryAlligmentPanel, "Confirm", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]); 		
 		return options[opt];
-		
 	}
 
 	public boolean showTraceSummary( Component parent
@@ -552,17 +540,9 @@ public class MessageDialogFactory extends JOptionPane{
 		emulatorSummaryDataPanel.add(summaryDataPanel);
 
 		summaryAlligmentPanel.add(emulatorSummaryDataPanel, BorderLayout.SOUTH);
-		
-		
-		// Buttons
 		String[] options = new String[] { "OK", "Open" };
-
 		int opt = MessageDialogFactory.showOptionDialog(parent, summaryAlligmentPanel, "Confirm", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]); 
-		
-		String text = null; // if cancel return null else return value
-
-		approveOpenTrace = (opt == 1);
-	
+		approveOpenTrace = (opt == 1);	
 		return approveOpenTrace;
 		
 	}
@@ -649,10 +629,8 @@ public class MessageDialogFactory extends JOptionPane{
 					try {
 						Desktop.getDesktop().browse(new URI("https://developer.att.com/application-resource-optimizer/get-aro/download"));
 					} catch (IOException ioExp) {
-						// TODO Auto-generated catch block - send stack trace to log file
 						ioExp.printStackTrace();
 					} catch (URISyntaxException uriExp) {
-						// TODO Auto-generated catch block - send stack trace to log file
 						uriExp.printStackTrace();
 					}
 

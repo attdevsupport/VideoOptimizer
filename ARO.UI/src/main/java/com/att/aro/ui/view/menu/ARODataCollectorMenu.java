@@ -170,11 +170,8 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		IAroDevice device = null;
 
  		int delayTimeDL = 0;
-		int delayTimeUL = 0;
 		int throttleDL = 0;
 		int throttleUL = 0;
-		boolean secure = false;
-		boolean installCert = false;
 		boolean profileBoolean = false;
 		
 		String traceFolderName = "";
@@ -185,7 +182,17 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			device = dialog.getDevice();
 			traceFolderName = dialog.getTraceFolder();
 			device.setCollector(dialog.getCollectorOption());
- 
+			/*debug purpose*/
+			delayTimeDL = dialog.getDeviceOptionPanel().getMiniAtnr().getDelayDS();
+			dialog.getDeviceOptionPanel().getMiniAtnr().getDelayUS();
+			throttleDL = dialog.getDeviceOptionPanel().getMiniAtnr().getThrottleDL();
+			throttleUL = dialog.getDeviceOptionPanel().getMiniAtnr().getThrottleUL();
+			profileLocation = dialog.getDeviceOptionPanel().getMiniAtnr().getLocalPath();
+			profileBoolean = dialog.getDeviceOptionPanel().getMiniAtnr().isLoadProfile();			
+			log.info("set U delay: "+ delayTimeDL + "set D delay: "+ delayTimeDL 
+					+ "set U throttle: "+ throttleUL + "set D throttle: "+ throttleDL 
+					+ "set profile: " + profileBoolean+ "set profileLocation: "+ profileLocation);
+			
 			if (device.isPlatform(IAroDevice.Platform.iOS)) {
 				IDataCollector iosCollector = findIOSCollector(collectors);
 				if (!checkSetSuPassword(iosCollector)) {
@@ -218,7 +225,8 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
  			Hashtable<String,Object> extras = new Hashtable<String,Object>();
 			extras.put("video_option", dialog.getRecordVideoOption());
-			extras.put("videoOrientation", dialog.getVideoOrientation());			 
+			extras.put("videoOrientation", dialog.getVideoOrientation());
+			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getMiniAtnr());
 
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			
@@ -270,21 +278,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		IosPasswordDialog dialog = new IosPasswordDialog(((MainFrame) parent).getJFrame(), hint);
 		return dialog.getPassword();
 	}
-
-//	@Deprecated
-//	private String getIOSDevice(IDataCollector iOSCollector){
-//		String udid = null;
-//		if (iOSCollector != null){
-//			IOSCollectorImpl iOSCollectorImpl = new IOSCollectorImpl();
-//			StatusResult status = new StatusResult();
-//			String[] udids = iOSCollectorImpl.getDeviceSerialNumber(status);
-//			if (udids != null) {
-//				udid = udids[0];
-//			}
-//			
-//		}
-//		return udid; 
-//	}
 	
 	private IDataCollector findIOSCollector(List<IDataCollector> collectors) {
 		if (Util.isMacOS()) {

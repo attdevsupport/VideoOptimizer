@@ -156,6 +156,7 @@ public class GpsPlot implements IPlot{
 	}
 	
 	class LocationImageRenderer extends StandardXYItemRenderer{
+		private static final long serialVersionUID = 1L;
 		public LocationImageRenderer()
 		{
 			super(StandardXYItemRenderer.IMAGES, null);

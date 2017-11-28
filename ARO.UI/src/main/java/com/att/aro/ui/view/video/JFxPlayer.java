@@ -24,8 +24,10 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.util.HashMap;
+
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
@@ -36,7 +38,9 @@ import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.view.images.Images;
+
 import javafx.animation.FadeTransition;
+import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.event.Event;
 import javafx.event.EventHandler;
@@ -45,7 +49,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
-import javafx.application.Platform;
 
 public class JFxPlayer implements IVideoPlayer {
 
@@ -85,7 +88,8 @@ public class JFxPlayer implements IVideoPlayer {
         frame.setContentPane(fxPanel);
 
         setPlayerControl() ;
-        if(playerControl != null  && VideoUtil.isVideoLandscape(traceDirectory)) {
+		
+        if(playerControl != null  && VideoUtil.isVideoLandscape(traceResult)) {
         	playerContentWidth = VideoUtil.PLAYER_CONTENT_WIDTH_LANDSCAPE;
         	playerContentHeight = VideoUtil.PLAYER_CONTENT_HEIGHT_LANDSCAPE;
         } else {
@@ -107,6 +111,7 @@ public class JFxPlayer implements IVideoPlayer {
        });
     }
 
+     
     private void initFX(JFXPanel fxPanel) {
         Scene scene = createScene();
         fxPanel.setScene(scene);
@@ -181,7 +186,6 @@ public class JFxPlayer implements IVideoPlayer {
 		
 		double videoStartTime = traceResult.getVideoStartTime();
 		videoOffset = videoStartTime > 0.0 ? videoStartTime - ((double) traceResult.getTraceDateTime().getTime() / 1000) : 0.0;
-		
 		launchFXPlayer();
 		
 		if (playerControl == null) {

@@ -28,7 +28,6 @@ public class VideoTimeReaderImplTest extends BaseTest {
 
 	@InjectMocks
 	private FileManagerImpl filereader;
-	private String traceFolder = "traceFolder";
 
 	@Before
 	public void setup() {
@@ -47,7 +46,6 @@ public class VideoTimeReaderImplTest extends BaseTest {
 	public TemporaryFolder folder = new TemporaryFolder();
 	
 	private File exVideoDisplayFileName;
-	private File nativeVideoFileOnDevice;
 	private File nativeVideoDisplayfile;
 	private File VIDEO_TIME_FILE;
 	private File EXVIDEO_TIME_FILE;
@@ -162,7 +160,7 @@ public class VideoTimeReaderImplTest extends BaseTest {
 		assertEquals(false, videoTime.isNativeVideo());
 		assertEquals(true, videoTime.isExVideoFound());
 		assertEquals(false, videoTime.isExVideoTimeFileNotFound());
-		boolean r = videoTimeReaderImpl.isExternalVideoSourceFilePresent("video.mp4", "video.mov", true, tracePath);
+		videoTimeReaderImpl.isExternalVideoSourceFilePresent("video.mp4", "video.mov", true, tracePath);
 		exVideoDisplayFileName.delete();
 		exVideoDisplayFileName = null;
 		EXVIDEO_TIME_FILE.delete();

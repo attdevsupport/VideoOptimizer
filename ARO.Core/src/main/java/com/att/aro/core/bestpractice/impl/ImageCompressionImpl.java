@@ -52,6 +52,7 @@ import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
 
 //FIXME ADD UNIT TESTS
@@ -178,9 +179,7 @@ public class ImageCompressionImpl implements IBestPractice {
 		long midQualityImgSize = 0L;
 		long orgImageSize = 0L;
 		String imgExtn = "";
-		long orgImgSize;
-		long midQualityImageSize;
-		long lowQualityImageSize;
+		
 		List<ImageCompressionEntry> entryList = new ArrayList<ImageCompressionEntry>();
 		for (Session session : packetResult.getSessionlist()) {
 			for (HttpRequestResponseInfo reqResp : session.getRequestResponseInfo()) {
@@ -188,7 +187,7 @@ public class ImageCompressionImpl implements IBestPractice {
 				if (reqResp.getDirection() == HttpDirection.RESPONSE && reqResp.getContentType() != null
 						&& reqResp.getContentType().contains("image/")) {
 
-					originalImage = extractFullNameFromRRInfo(reqResp);
+					originalImage = ImageHelper.extractFullNameFromRRInfo(reqResp);
 					int pos = originalImage.lastIndexOf(".");
 					if (pos != -1) {
 						imgExtn = originalImage.substring(pos + 1, originalImage.length());
@@ -212,13 +211,11 @@ public class ImageCompressionImpl implements IBestPractice {
 								orginalImagesSize = orginalImagesSize + orgImageSize;
 								midQualImgsSize = midQualImgsSize + midQualityImgSize;
 
-								orgImgSize = orgImageSize / 1024;
-								midQualityImageSize = midQualityImgSize / 1024;
-								lowQualityImageSize = lowQualityImgSize / 1024;
-
+								
+								
 								entryList.add(new ImageCompressionEntry(reqResp, session.getDomainName(),
-										imageFolderPath + originalImage, orgImgSize, midQualityImageSize,
-										lowQualityImageSize));
+										imageFolderPath + originalImage, Util.doubleFileSize(orgImageSize), Util.doubleFileSize(midQualityImgSize),
+										Util.doubleFileSize(lowQualityImgSize)));
 							}
 
 						}
@@ -235,7 +232,7 @@ public class ImageCompressionImpl implements IBestPractice {
 			for (final HttpRequestResponseInfo req : session.getRequestResponseInfo()) {
 				if (req.getDirection() == HttpDirection.RESPONSE && req.getContentType() != null
 						&& req.getContentType().contains("image/")) {
-					final String extractedImage = extractFullNameFromRRInfo(req);
+					final String extractedImage = ImageHelper.extractFullNameFromRRInfo(req);
 
 					File imgFile = new File(imageFolderPath + extractedImage);
 					if (imgFile.exists() && !imgFile.isDirectory()) {
@@ -293,19 +290,6 @@ public class ImageCompressionImpl implements IBestPractice {
 		} catch (IOException fileException) {
 			LOGGER.error(fileException.toString(), fileException);
 		}
-	}
-
-	private String extractFullNameFromRRInfo(HttpRequestResponseInfo hrri) {
-		HttpRequestResponseInfo rsp = hrri.getAssocReqResp();
-		String extractedImageName = "";
-		String imageName = "";
-		if (rsp != null) {
-			String imagefromReq = rsp.getObjName();
-			imageName = imagefromReq.substring(imagefromReq.lastIndexOf(Util.FILE_SEPARATOR) + 1);
-			int pos = imageName.lastIndexOf("/") + 1;
-			extractedImageName = imageName.substring(pos);
-		}
-		return extractedImageName;
 	}
 
 }

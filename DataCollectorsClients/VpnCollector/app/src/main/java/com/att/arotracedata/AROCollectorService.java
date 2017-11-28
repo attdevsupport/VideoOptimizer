@@ -38,6 +38,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.WindowManager;
 
+import com.att.arocollector.attenuator.AttenuatorUtil;
 import com.att.arocollector.utils.AROCollectorUtils;
 import com.att.arocollector.utils.BundleKeyUtil;
 
@@ -247,12 +248,21 @@ public class AROCollectorService extends Service {
 			if (receiverNetworkDetails != null) {
 				deviceInfo = new DeviceDetails();
 				setDeviceDetails();
-
+				int delayTimeDL = intent.getIntExtra(BundleKeyUtil.DL_DELAY, 0);
+				int delayTimeUL = intent.getIntExtra(BundleKeyUtil.UL_DELAY, 0);
+				int throttleDL = intent.getIntExtra(BundleKeyUtil.DL_THROTTLE, AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
+				int throttleUL = intent.getIntExtra(BundleKeyUtil.UL_THROTTLE,AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
+				boolean atnrProfile = intent.getBooleanExtra(BundleKeyUtil.ATTENUATION_PROFILE,false);
+                String atnrProfileName = intent.getStringExtra(BundleKeyUtil.ATTENUATION_PROFILE_NAME);
 				String videoOrientation = intent.getStringExtra(BundleKeyUtil.VIDEO_ORIENTATION);
 
-				recordCollectOptions(videoOrientation);
+				Log.i(TAG, "Wrote into file Down Stream Delay: "+delayTimeDL);
+				Log.i(TAG, "Wrote into file Up Stream Delay: "+delayTimeUL);
+				recordCollectOptions(delayTimeDL, delayTimeUL, throttleDL,throttleUL,atnrProfile, atnrProfileName, videoOrientation);
 			}
-			
+
+			initializeFlurryObjects();
+
 			getRunningApplications();
 		}
 		return super.onStartCommand(intent, flags, startId);
@@ -399,20 +409,22 @@ public class AROCollectorService extends Service {
 
 	}
 
-	private void recordCollectOptions(String videoOrientation){
-
+	private void recordCollectOptions(int delayTimeDL, int delayTimeUL, int throttleDL, int throttleUL, boolean atnrProfile,String atnrProfileName, String videoOrientation){
+		Log.i(TAG, "set Down stream Delay Time: "+ delayTimeDL
+				+ " set Up stream Delay Time: "+delayTimeUL
+                + " set Profile: "+atnrProfile
+                + " set Profile name: "+ atnrProfileName);
 		File file = new File(traceDir, COLLECT_OPTIONS);
 		Log.i(TAG, "create file:" + file.getAbsolutePath());
 		try(BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
 			file.createNewFile();
-			bw.write("dsDelay=" + System.lineSeparator()
-					+ "usDelay="  + System.lineSeparator()
-					+ "throttleDL="  + System.lineSeparator()
-					+ "throttleUL="  + System.lineSeparator()
-					+ "secure="  + System.lineSeparator()
+			bw.write("dsDelay=" + delayTimeDL + System.lineSeparator()
+					+ "usDelay=" + delayTimeUL + System.lineSeparator()
+					+ "throttleDL=" + throttleDL + System.lineSeparator()
+					+ "throttleUL=" + throttleUL + System.lineSeparator()
 					+ "orientation=" + videoOrientation + System.lineSeparator()
-					+ "attnrProfile="+ System.lineSeparator()
-					+ "attnrProfileName="
+					+ "attnrProfile="+ atnrProfile + System.lineSeparator()
+                    + "attnrProfileName="+ atnrProfileName
 			);
 			bw.close();
 		} catch (IOException e) {
@@ -422,42 +434,17 @@ public class AROCollectorService extends Service {
 		}
 
 	}
-	/**
-	 * Reads a device Info from the device file in trace folder.
-	 * 
-	 * @throws IOException
-	 */
-/*
-	private void readDeviceDetails() throws IOException {
-
-		File file = new File(traceDir, DEVICEDETAILS_FILE);
-		if (!file.exists()) {
-			this.missingFiles.add(DEVICEDETAILS_FILE);
-			return;
-		}
-		BufferedReader br = new BufferedReader(new FileReader(file));
-		try {
-
-			String s;
-			while ((s = br.readLine()) != null) {
-
-				// In case of IPv6 scoped address, remove scope ID
-				int i = s.indexOf('%');
-				localIPAddresses.add(InetAddress.getByName(i >= 0 ? s.substring(0, i) : s));
-			}
-
-		} finally {
-			br.close();
-		}
-	}
-*/
-	
 	@Override
 	public IBinder onBind(Intent intent) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
+	/**
+	 * Initializes Flurry Event objects
+	 */
+	private void initializeFlurryObjects() {
+	}
 
 	/** Broadcast receiver for Batter events */
 	private BroadcastReceiver mBatteryLevelReceiver;

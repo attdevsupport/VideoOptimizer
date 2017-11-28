@@ -21,6 +21,7 @@ import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
@@ -48,6 +49,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
 
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
@@ -63,6 +65,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.Range;
 import org.jfree.data.xy.XYDataset;
 
+import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.IBurstCollectionAnalysis;
 import com.att.aro.core.packetanalysis.IPacketAnalyzer;
 import com.att.aro.core.packetanalysis.IRrcStateMachineFactory;
@@ -74,15 +77,19 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.GUIPreferences;
+import com.att.aro.ui.commonui.RoundedBorder;
 import com.att.aro.ui.model.diagnostic.GraphPanelHelper;
 import com.att.aro.ui.model.diagnostic.TCPUDPFlowsTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.diagnostictab.plot.AlarmPlot;
+import com.att.aro.ui.view.diagnostictab.plot.AttenuatorPlot;
 import com.att.aro.ui.view.diagnostictab.plot.BatteryPlot;
 import com.att.aro.ui.view.diagnostictab.plot.BluetoothPlot;
 import com.att.aro.ui.view.diagnostictab.plot.BurstPlot;
@@ -94,6 +101,7 @@ import com.att.aro.ui.view.diagnostictab.plot.NetworkTypePlot;
 import com.att.aro.ui.view.diagnostictab.plot.RadioPlot;
 import com.att.aro.ui.view.diagnostictab.plot.RrcPlot;
 import com.att.aro.ui.view.diagnostictab.plot.ScreenStatePlot;
+import com.att.aro.ui.view.diagnostictab.plot.SpeedThrottlePlot;
 import com.att.aro.ui.view.diagnostictab.plot.TemperaturePlot;
 import com.att.aro.ui.view.diagnostictab.plot.ThroughputPlot;
 import com.att.aro.ui.view.diagnostictab.plot.UserEventPlot;
@@ -148,7 +156,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 	private final int UPPER_PANEL_HEIGHT = 280;// 222
 
-	// public boolean videoChunkPlotDataItem = false;
 	private Map<Integer, VideoEvent> chunkInfo = new TreeMap<>();
 
 	private JViewport portChart;
@@ -186,7 +193,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private NetworkTypePlot ntPlot;
 	private WakeLockPlot wlPlot;
 	private VideoChunksPlot vcPlot;
-
+	private AttenuatorPlot attnrPlot;
+	private SpeedThrottlePlot stPlot;
 	private CombinedDomainXYPlot combinedPlot;
 	
 	private double endTime = 0.0;
@@ -209,9 +217,9 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		this.startTime = startTime;
 	}
 
-	private GraphPanelHelper graphHelper;// = new GraphPanelHelper();
-	private GUIPreferences guiPreferences;// = UserPreferences.getInstance();
-	private CreateBarPlot barPlot;// = new CreateBarPlot();
+	private GraphPanelHelper graphHelper;
+	private GUIPreferences guiPreferences;
+	private CreateBarPlot barPlot;
 
 	public CreateBarPlot getBarPlot() {
 		return barPlot;
@@ -277,7 +285,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private double traceDuration; // GregStorys added to go back to original
 									// trace duration
 	private DiagnosticsTab parent;
-	// private IAROView aroview;
+	private Border border;
 
 	/**
 	 * Initializes a new instance of the GraphPanel class.
@@ -360,16 +368,27 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		subplotMap.put(ChartPlotOptions.BUFFER_TIME_OCCUPANCY, new GraphPanelPlotLabels(
 				ResourceBundleHelper.getMessageString("chart.bufferTime.occupancy"), getBarPlot().drawXYItemPlot(), 1));
 				
-		setLayout(new BorderLayout());
-		// setPreferredSize(new Dimension(200, 280));
-		setMinimumSize(new Dimension(300, 280));
+		subplotMap.put(ChartPlotOptions.ATTENUATION,new GraphPanelPlotLabels(
+				ResourceBundleHelper.getMessageString("chart.attenuation"),getBarPlot().drawStepChartPlot(),2));
 
+		subplotMap.put(ChartPlotOptions.SPEED_THROTTLE,new GraphPanelPlotLabels(
+				ResourceBundleHelper.getMessageString("chart.attenuation"),getBarPlot().drawStepChartPlot(),2));
+		
+		setLayout(new BorderLayout());
+		setMinimumSize(new Dimension(300, 280));
 		add(getZoomSavePanel(), BorderLayout.EAST);
 		add(getPane(), BorderLayout.CENTER);
-		// add(getLabelsPanel(),BorderLayout.WEST);
-
+		setGraphPanelBorder(true);
 		setChartOptions(guiPreferences.getChartPlotOptions());
-
+	}
+	
+	public void setGraphPanelBorder(boolean value){
+		if(true == value){
+			border = new RoundedBorder(new Insets(20, 20, 20, 20), Color.WHITE);
+		}else{
+			border = null;
+		}
+		setBorder(border);
 	}
 
 	// In 4.1.1, the method called refreshGraph()
@@ -673,6 +692,19 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					}
 					wlPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
+				case ATTENUATION:
+					if (attnrPlot == null) {
+						attnrPlot = new AttenuatorPlot();
+					}
+					attnrPlot.populate(entry.getValue().getPlot(), aroTraceData);
+					break;
+
+				case SPEED_THROTTLE:
+					if(stPlot == null){
+						stPlot = new SpeedThrottlePlot();
+					}
+					stPlot.populate(entry.getValue().getPlot(), aroTraceData);
+					break;
 					
 				case VIDEO_CHUNKS:
 					if (vcPlot == null) {
@@ -687,20 +719,45 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					// vcPlot.setFirstChunkPlayTime(0);
 					AROManifest selectedManifest=null;
 					int count=0;
-					for(AROManifest manifest: aroTraceData.getAnalyzerResult().getVideoUsage().getManifests()){
-						if(manifest.isSelected()){
-							selectedManifest = manifest;
-							count++;
+					VideoUsage videoUsage = aroTraceData.getAnalyzerResult().getVideoUsage();
+					if (videoUsage != null) {
+						for (AROManifest manifest : videoUsage.getManifests()) {
+							if (manifest != null && manifest.isSelected()) {
+								selectedManifest = manifest;
+								count++;
+							}
 						}
-					}
-					if(count==1 && selectedManifest != null && selectedManifest.getDelay() != 0){
-						VideoEvent firstSegment = (VideoEvent) selectedManifest.getVideoEventsBySegment().toArray()[0];
-						vcPlot.refreshPlot(getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot(), aroTraceData, selectedManifest.getDelay() + firstSegment.getEndTS(), firstSegment);
-					}else{
-						vcPlot.populate(entry.getValue().getPlot(), aroTraceData);
-					}
-			    	SliderDialogBox.segmentListChosen = new ArrayList<>();
+						if (count == 1 && selectedManifest != null && selectedManifest.getDelay() != 0) {
+							VideoEvent firstSegment = (VideoEvent) selectedManifest.getVideoEventsBySegment().toArray()[0];
 
+							Map<AROManifest, VideoEvent> firstSelectedSegments = null;
+							if (vcPlot.getVideoChunkPlotterReference() != null && aroTraceData.getAnalyzerResult().getVideoUsage().getChunkPlayTimeList() != null) {
+								firstSelectedSegments = aroTraceData.getAnalyzerResult().getVideoUsage().getFirstSelectedSegment();
+							}
+							if (firstSelectedSegments != null) {
+								for (AROManifest manifest : firstSelectedSegments.keySet()) {
+									if (manifest.equals(selectedManifest)) {
+										firstSegment = firstSelectedSegments.get(manifest);
+										break;
+									}
+								}
+							} else 
+								if (selectedManifest.getVideoFormat() == VideoFormat.MPEG4) {
+								for (VideoEvent video : selectedManifest.getVideoEventsBySegment()) {
+									if (video.getSegment() != 0) {
+										firstSegment = video;
+										break;
+									}
+								}
+							}
+
+							vcPlot.refreshPlot(getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot(), aroTraceData, selectedManifest.getDelay() + firstSegment.getEndTS(),
+									firstSegment);
+						} else {
+							vcPlot.populate(entry.getValue().getPlot(), aroTraceData);
+						}
+						SliderDialogBox.segmentListChosen = new ArrayList<>();
+					}
 					break;
 				/*
 				 * case BUFFER_OCCUPANCY: if(boPlot==null){ boPlot = new
@@ -1332,6 +1389,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	}
 
 	public void launchSliderDialog(int indexKey) {
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("StartupDelayDialog");
 		IVideoPlayer player = parent.getVideoPlayer();
 		double maxDuration = player.getDuration();
 		if (maxDuration != -1) {

@@ -21,11 +21,16 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 import javax.swing.SwingWorker;
 
@@ -42,29 +47,32 @@ import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
+import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.datacollector.ioscollector.IOSDevice;
 import com.att.aro.datacollector.ioscollector.IOSDeviceStatus;
 import com.att.aro.datacollector.ioscollector.ImageSubscriber;
+import com.att.aro.datacollector.ioscollector.app.IOSAppException;
 import com.att.aro.datacollector.ioscollector.reader.ExternalDeviceMonitorIOS;
 import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 import com.att.aro.datacollector.ioscollector.reader.UDIDReader;
+import com.att.aro.datacollector.ioscollector.utilities.AppSigningHelper;
 import com.att.aro.datacollector.ioscollector.utilities.ErrorCodeRegistry;
 import com.att.aro.datacollector.ioscollector.utilities.IOSDeviceInfo;
 import com.att.aro.datacollector.ioscollector.utilities.RemoteVirtualInterface;
 import com.att.aro.datacollector.ioscollector.utilities.XCodeInfo;
 import com.att.aro.datacollector.ioscollector.video.VideoCaptureMacOS;
 
-public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageSubscriber {
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageSubscriber {
+	private static final String IOSAPP_MOUNT = "iosapp_mount";
 	private IFileManager filemanager;
-	private ILogger log = new LoggerImpl("IOSCollector");// ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private ILogger log = new LoggerImpl("IOSCollector");
 	private static ResourceBundle defaultBundle = ResourceBundle.getBundle("messages");
 	private volatile boolean running = false;
-
-	/**** time file ****/
 	private File timeFile;
 	private FileOutputStream timeStream;
 
@@ -76,37 +84,22 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private VideoCaptureMacOS videoCapture;
 	private boolean hasRVI = false;
 	private List<IVideoImageSubscriber> videoImageSubscribers = new ArrayList<IVideoImageSubscriber>();
-	// private LiveScreenViewDialog liveview;
 	private IOSDeviceInfo deviceinfo;
 	private SwingWorker<String, Object> videoworker;
 	private boolean hasxCodeV = false;
-	private String sudoPassword = ""; // sudo password is required for run some
-										// commands on Mac
-
-	private String datadir; // dir to save pcap file, video, etc..
+	private String sudoPassword = "";
+	private String datadir;
 	private File videofile;
-
-	/**
-	 * Indicates local directory where trace results will be stored
-	 */
 	private File localTraceFolder;
 	private boolean isLiveViewVideo;
 	private boolean isCommandLine;
 	private boolean isCapturingVideo;
 	private VideoOption videoOption;
-
+	
 	public IOSCollectorImpl() {
 		super();
 		deviceinfo = new IOSDeviceInfo();
 	}
-
-	// /**
-	// *
-	// */
-	// private void initVideo() {
-	// liveview = new LiveScreenViewDialog();
-	// log.debug("LiveScreenViewDialog done");
-	// }
 
 	@Autowired
 	public void setFileManager(IFileManager filemanager) {
@@ -125,12 +118,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	@Override
 	public void onDisconnected() {
-		// showWaitBox();
-
 		this.isDeviceConnected = false;
-		// if (liveview != null && liveview.isVisible()) {
-		// liveview.setVisible(false);
-		// }
 		if (packetworker != null) {
 			this.stopWorkers();
 		}
@@ -141,9 +129,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				log.debug("IOException:", e);
 			}
 		}
-		// hideWaitBox();
-		// MessageDialogFactory.showErrorDialog(null, "Device disconnected.
-		// Please reconnect device.");
 	}
 
 	/**
@@ -154,7 +139,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	StatusResult stopWorkers() {
 		StatusResult status = new StatusResult();
 		if (videoCapture != null) {
-			videoCapture.signalStop();// no waiting for now
+			videoCapture.signalStop();
 		}
 
 		monitor.stopMonitoring();
@@ -176,31 +161,21 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 		if (videoCapture != null) {
 			videoCapture.stopCapture();// blocking till video capture engine
-										// fully stop
-
-			// create video timestamp file that will sync with pcap file
+										// fully stop //FIXME REMOVE THIS
 			try(BufferedWriter videoTimeStampWriter = new BufferedWriter(
 					new FileWriter(new File(localTraceFolder, TraceDataConst.FileName.VIDEO_TIME_FILE)));) {
 				log.info("Writing video time to file");
-				
-				// Writing a video time in file.
 				String timestr = Double.toString(videoCapture.getVideoStartTime().getTime() / 1000.0);
-				// append time from tcpdump
 				timestr += " " + Double.toString(rvi.getTcpdumpInitDate().getTime() / 1000.0);
 				videoTimeStampWriter.write(timestr);
-
 			} catch (IOException e) {
-				// e.printStackTrace();
 				log.info("Error writing video time to file: " + e.getMessage());
 			}
-			
 			if (videoCapture.isAlive()) {
 				videoCapture.interrupt();
 			}
-
 			videoCapture = null;
 			log.info("disposed videoCapture");
-			// closeTimeFile();
 		}
 
 		if (videoworker != null) {
@@ -208,11 +183,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			videoworker = null;
 			log.info("disposed videoworker");
 		}
-
 		running = false;
-
 		return status;
-		// mainAROAnalyzer.dataCollectorStatusCallBack(Status.READY);
 	}
 
 	private boolean isVideo() {
@@ -226,14 +198,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	@Override
 	public void addDeviceStatusSubscriber(IDeviceStatus arg0) {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void addVideoImageSubscriber(IVideoImageSubscriber subscriber) {
 		log.debug("subscribe :" + subscriber.getClass().getName());
-		// videoImageSubscribers.add(subscriber);
 		videoCapture.addSubscriber(subscriber);
 	}
 
@@ -248,25 +218,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			subscriber.receiveImage(videoimage);
 		}
 	}
-
-	// @Override
-	// public void receiveImage(BufferedImage image) {
-	// if (isLiveViewVideo && liveview.isVisible()) {
-	// BufferedImage newimg = ImageHelper.resize(image, liveview.getViewWidth(),
-	// liveview.getViewHeight());
-	// liveview.setImage(newimg);
-	//
-	// // TODO iterate through IVideo subscribers and send them the image
-	// // BufferedImage newimg = ImageHelper.resize(image,
-	// liveview.getViewWidth(),liveview.getViewHeight());
-	// // subscriber.receiveImage(image);
-	// }
-	// if (!deviceinfo.foundScreensize()) {
-	// deviceinfo.updateScreensize(image.getWidth(), image.getHeight());
-	// log.info("xxxxxxxxxxxxxx Update screen resolution => " + image.getWidth()
-	// + "x" + image.getHeight() + " xxxxxxxxxxxxxxxxxx");
-	// }
-	// }
 
 	@Override
 	public int getMajorVersion() {
@@ -302,6 +253,13 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	public StatusResult startCollector(boolean commandLine, String folderToSaveTrace, VideoOption videoOption,
 			boolean liveViewVideo, String deviceId, Hashtable<String, Object> extraParams, String password) {
 
+		Callable<StatusResult> launchAppCallable = () -> {
+			return launchApp();
+		};
+		FutureTask<StatusResult> futureTask = new FutureTask<>(launchAppCallable);
+		Thread appThread = new Thread(futureTask);
+		appThread.start();
+		
 		if (password != null) {
 			this.sudoPassword = password;
 		}
@@ -323,7 +281,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		// avoid running it twice
 		if (this.running) {
 			return status;
-		} // else keep it false until all the following checks are passed
+		}
 		if (filemanager.directoryExistAndNotEmpty(folderToSaveTrace)) {
 			status.setError(ErrorCodeRegistry.getTraceDirExist());
 			return status;
@@ -342,7 +300,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			return status;
 		}
 
-		// TODO handle multi
 		String[] deviceIds = getDeviceSerialNumber(status);
 		String udid = deviceIds != null ? deviceIds[0] : null;
 		if (udid == null || udid.length() < 2) {
@@ -397,9 +354,46 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				return status; // bad or missing sudo password
 			}
 		}
+		
+		launchCollection(trafficFilePath, serialNumber, status);		
+		
+		if (status.isSuccess()) {
+			try {
+				status = futureTask.get();
+			} catch (InterruptedException inEx) {
+				log.error("Error getting app launching result", inEx);
+			} catch (ExecutionException exEx) {
+				log.error("Error getting app launching result", exEx);
+			}
+		}	
+		
+		return status;		
+	}
 
-		launchCollection(trafficFilePath, serialNumber, status);
+	private StatusResult launchApp() {
+		String provProfile = SettingsImpl.getInstance().getAttribute("iosProv");
+		String certName = SettingsImpl.getInstance().getAttribute("iosCert");
+		StatusResult status = new StatusResult();
+		status.setSuccess(true);
+		if(AppSigningHelper.isCertInfoPresent()) {
+			try {
+				AppSigningHelper.getInstance().extractAndSign(provProfile, certName);
+				AppSigningHelper.getInstance().deployAndLaunchApp();
+			} catch (IOSAppException appEx) {
+				status.setSuccess(false);
+				status.setError(appEx.getErrorCode());
+				log.error(appEx.getMessage(), appEx);
+				stopProccesses();
+			}
+		}
 		return status;
+	}
+
+	private void stopProccesses() {
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+				GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
+				GoogleAnalyticsUtil.getAnalyticsEvents().getEndTrace());
+		this.stopWorkers();
 	}
 
 	/**
@@ -443,10 +437,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
 				GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
-				GoogleAnalyticsUtil.getAnalyticsEvents().getVideoCheck()); // GA
-																			// Request
+				GoogleAnalyticsUtil.getAnalyticsEvents().getVideoCheck());
 
-		// TODO add ScreenRecorder
 		if (videoCapture == null) {
 			final String videofilepath = datadir + Util.FILE_SEPARATOR + TraceDataConst.FileName.VIDEO_MOV_FILE;
 			videofile = new File(videofilepath);
@@ -474,7 +466,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			@Override
 			protected void done() {
 				try {
-					String res = get();
+					get();
 				} catch (Exception ex) {
 					log.info("Error thrown by videoworker: " + ex.getMessage());
 				}
@@ -499,7 +491,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			@Override
 			protected void done() {
 				try {
-					String res = get();
+					get();
 				} catch (Exception ex) {
 					log.info("Error thrown by packetworker: " + ex.getMessage());
 				}
@@ -579,7 +571,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getIncorrectSerialNumber());
 		}
-		if (!udid.isEmpty()) {
+		if (udid != null && !udid.isEmpty()) {
 			deviceIds = udid.split("\\s");
 		}
 		return deviceIds;
@@ -762,11 +754,51 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				File pcapfile = new File(
 						datadir + Util.FILE_SEPARATOR + defaultBundle.getString("datadump.trafficFile"));
 				status.setSuccess(pcapfile.exists());
+				pullFromDevice();
 			}
 		}
 		return status;
 	}
+	
+	@SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification="Findbugs false alarm")
+	private void pullFromDevice() {
+		AppSigningHelper.getInstance().relaunchApp();
+		mountDevice();
+		try {
+			File mountFolder = new File(datadir + Util.FILE_SEPARATOR + IOSAPP_MOUNT);
+			if (mountFolder != null && mountFolder.listFiles() != null) {
+				for (File file : mountFolder.listFiles()) {
+					if (file == null || file.getName().contains("DS_Store")) {
+						continue;
+					}
+					if (file.getName().toLowerCase().contains(".mp4")) {
+						Files.move(file.toPath(), Paths.get(datadir, "video.mp4"));
+					} else {
+						Files.move(file.toPath(), Paths.get(datadir, file.getName()));
+					}
+				}
+			}
+		} catch (IOException e) {
+			log.error("Error Copying files from ios device", e);
+		}
+		unmountDevice();
+	}
+	
+	private void mountDevice() {
+		File folder = new File(datadir + Util.FILE_SEPARATOR + IOSAPP_MOUNT);
+		folder.mkdir();
+		String cmd = Util.getIfuse() + " --documents " + AppSigningHelper.getInstance().getPackageName() + " " + datadir
+				+ Util.FILE_SEPARATOR + IOSAPP_MOUNT;
+		AppSigningHelper.getInstance().executeCmd(cmd);
+	}
 
+	private void unmountDevice() {
+		String mountFolder = datadir + Util.FILE_SEPARATOR + IOSAPP_MOUNT;
+		String cmd = "umount " + mountFolder;
+		AppSigningHelper.getInstance().executeCmd(cmd);
+		(new File(datadir + Util.FILE_SEPARATOR + IOSAPP_MOUNT)).delete();
+	}
+	
 	/**
 	 * check if the internal collector method is running, in this case tcpdump
 	 */
@@ -779,7 +811,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (packetworker == null || !isRunning()) {
 			return false;
 		}
-		do {// TODO
+		do {
 			log.debug("isTrafficCaptureRunning :" + packetworker.isCancelled() + " - " + packetworker.isDone());
 			tcpdumpActive = (packetworker.isCancelled() || packetworker.isDone());// checkTcpDumpRunning(device);
 			if (!tcpdumpActive) {
@@ -801,7 +833,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	@Override
 	public String[] getLog() {
-		// TODO check if ios devices has log that can be imported
 		return null;
 	}
 

@@ -106,7 +106,6 @@ public class FlashImplTest extends BaseTest {
 			Mockito.when(reqhelper.getContentString(any(HttpRequestResponseInfo.class), any(Session.class)))
 					.thenReturn(htmlString);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -155,7 +154,6 @@ public class FlashImplTest extends BaseTest {
 			Mockito.when(reqhelper.getContentString(any(HttpRequestResponseInfo.class), any(Session.class)))
 					.thenReturn(htmlString2);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

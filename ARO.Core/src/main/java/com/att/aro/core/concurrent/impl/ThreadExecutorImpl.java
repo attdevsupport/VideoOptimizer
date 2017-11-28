@@ -33,7 +33,7 @@ public class ThreadExecutorImpl implements IThreadExecutor {
 	
 	@Autowired
 	public void setLogger(ILogger logger) {
-		this.LOG = logger;
+		LOG = logger;
 	}
 	
 	ExecutorService service;

@@ -32,6 +32,7 @@ import javax.media.jai.NullOpImage;
 import javax.media.jai.OpImage;
 
 import com.android.ddmlib.RawImage;
+import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.video.pojo.QuickTimeOutputStream;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageDecoder;
@@ -127,11 +128,6 @@ public class ImageHelper {
 		if (array[0]==-119) {
 			return "png";
 		} 
-//		else if (array[0]==73 || array[0]==77) {
-//			return "tiff";
-//		} else if (array[0]==0) {
-//			return "jpg";
-//		} 
 		return "tiff";
 	}
 	public static BufferedImage convertRenderedImage(RenderedImage img) {
@@ -143,7 +139,7 @@ public class ImageHelper {
 	    int height = img.getHeight();
 	    WritableRaster raster = cm.createCompatibleWritableRaster(width, height);
 	    boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
-	    Hashtable properties = new Hashtable();
+	    Hashtable<String, Object> properties = new Hashtable<>();
 	    String[] keys = img.getPropertyNames();
 	    if (keys!=null) {
 	        for (int i = 0; i < keys.length; i++) {
@@ -205,11 +201,21 @@ public class ImageHelper {
 	 * @return Graph image.
 	 */
 	public static BufferedImage createImage(int width, int height) {
- 
 		BufferedImage bimage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
- 
 		return bimage;
 	}
 
-	
+	public static String extractFullNameFromRRInfo(HttpRequestResponseInfo hrri) {
+		HttpRequestResponseInfo rsp = hrri.getAssocReqResp();
+		String extractedImageName = "";
+		String imageName = "";
+		if (rsp != null && rsp.getObjName() != null) {
+			String imagefromReq = rsp.getObjName();
+			imageName = imagefromReq.substring(imagefromReq.lastIndexOf(Util.FILE_SEPARATOR) + 1);
+			int pos = imageName.lastIndexOf("/") + 1;
+			extractedImageName = imageName.substring(pos);
+		}
+		return extractedImageName;
+	}
+
 }

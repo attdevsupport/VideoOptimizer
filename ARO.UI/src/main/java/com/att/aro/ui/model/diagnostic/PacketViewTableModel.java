@@ -30,7 +30,6 @@ public class PacketViewTableModel extends DataTableModel<PacketInfo>  {
 
 	public PacketViewTableModel() {
 		super(columnNames);
-		// TODO Auto-generated constructor stub
 	}
 	
 	private static String[] columnNames = { 

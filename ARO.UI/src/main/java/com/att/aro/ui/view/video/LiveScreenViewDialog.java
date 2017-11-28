@@ -26,17 +26,21 @@ import java.awt.image.BufferedImage;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
 import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
+import com.att.aro.datacollector.ioscollector.utilities.AppSigningHelper;
 import com.att.aro.ui.commonui.ImagePanel;
+import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 
@@ -55,6 +59,8 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 	private long startTime;
 
 	private SharedAttributesProcesses theView;
+	
+	private IDataCollector collector;
 
 	/**
 	 * Create the dialog.
@@ -66,6 +72,7 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 	 */
 	public LiveScreenViewDialog(SharedAttributesProcesses theView, IDataCollector collector) {
 		this.theView = theView;
+		this.collector = collector;
 		setModalityType(ModalityType.MODELESS);
 		setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
 		setTitle("Live Video Screen Capture");
@@ -140,6 +147,12 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 	 */
 	void onStop() {
 		setVisible(false);
+		if (this.collector.getType().equals(DataCollectorType.IOS)
+				&& (AppSigningHelper.getInstance().getIosVersion() >= 11) && AppSigningHelper.isCertInfoPresent()) {
+			MessageDialogFactory.showMessageDialog(null,
+					ResourceBundleHelper.getMessageString("Message.stop.screenrecording"), "Stop Collection",
+					JOptionPane.INFORMATION_MESSAGE);
+		}
 		theView.stopCollector();
 	}
 

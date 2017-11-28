@@ -361,13 +361,11 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	private int getDevices(IAroDevices aroDevices, List<IDataCollector> collectors, DataCollectorType collectorType) {
 		int count = 0;
 		for (IDataCollector iDataCollector : collectors) {
-			if (iDataCollector.getType().equals(collectorType)) {
+			if (iDataCollector.getType().equals(collectorType) && aroDevices != null) {
 				if (Util.isMacOS() && iDataCollector.getType().equals(DataCollectorType.IOS)) {
 					StatusResult status = new StatusResult();
 					IAroDevice[] aroDeviceArray = iDataCollector.getDevices(status);
-					if (aroDevices != null) {
-						aroDevices.addDeviceArray(aroDeviceArray);
-					}
+					aroDevices.addDeviceArray(aroDeviceArray);
 					count = aroDeviceArray == null ? 0 : aroDeviceArray.length;
 				} else {
 					IDevice[] androidDevices = getConnectedDevices();
@@ -533,7 +531,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			return;
 		}
 		log.debug("stopCollector() check if running");
-		if (collector.isTrafficCaptureRunning(1)) {
+		if (collector.isTrafficCaptureRunning(1)) { //FIXME THINKS THE CAPTURE IS RUNNING AFTER STOP
 			StatusResult result = collector.stopCollector();
 			log.info("stopped collector, result:" + result);
 			if (result.isSuccess()) {

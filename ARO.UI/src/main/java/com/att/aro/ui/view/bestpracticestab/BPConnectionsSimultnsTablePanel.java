@@ -19,9 +19,12 @@ import java.awt.Color;
 import java.util.Collection;
 
 import javax.swing.JTable;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import com.att.aro.core.bestpractice.pojo.MinificationEntry;
 import com.att.aro.core.bestpractice.pojo.SimultnsConnEntry;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.bestpractice.SimultnsConnTableModel;
 
@@ -60,13 +63,18 @@ public class BPConnectionsSimultnsTablePanel extends AbstractBpDetailTablePanel 
 	 * Initializes and returns the RequestResponseTable.
 	 */
 	@SuppressWarnings("unchecked")
-	public DataTable<MinificationEntry> getContentTable() {
+	public DataTable<SimultnsConnEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<MinificationEntry>(tableModel);
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+			TableRowSorter<TableModel> sorter = new TableRowSorter<>(tableModel);
+			contentTable.setRowSorter(sorter);
+			sorter.setComparator(SimultnsConnTableModel.COL_2, Util.getDomainSorter());
+			sorter.setComparator(SimultnsConnTableModel.COL_3, Util.getDomainSorter());
+			sorter.toggleSortOrder(SimultnsConnTableModel.COL_1);
 		}
 		return contentTable;
 	}

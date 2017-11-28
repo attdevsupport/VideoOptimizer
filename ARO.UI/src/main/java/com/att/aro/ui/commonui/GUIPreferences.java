@@ -21,18 +21,9 @@ import com.att.aro.core.preferences.IPreferenceHandler;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.ui.view.diagnostictab.ChartPlotOptions;
 
-/*
- * TODO: There is the difference between the way we get UserPreferences 
- * (in ARO.Core) and the way we get GUIPreferences - we get UserPreferences 
- * through UserPreferencesFactory but we get GUIPreferences directly through 
- * its getInstance() method. Do we want to have a factory for GUIPreferences?
- */
 public class GUIPreferences {
-
 	private static GUIPreferences instance;
-
 	private static final String CHART_PLOT_OPTIONS = "CHART_PLOT_OPTIONS";
-
 	private IPreferenceHandler prefHandler;
 	
 	static {

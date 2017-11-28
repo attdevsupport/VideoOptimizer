@@ -18,6 +18,9 @@ package com.att.aro.core.bestpractice.pojo;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 
 public class ImageMdataEntry {
+	
+	private int imgSize; 
+	private int formatdSize;
 	private double imageSize;
 	private double timeStamp;
 	private String httpObjName = "";
@@ -44,6 +47,22 @@ public class ImageMdataEntry {
 
 	}
 
+	public ImageMdataEntry(HttpRequestResponseInfo reqRespInfo, String imagefile, int iSize,
+			int fSize, String savings) {
+
+		this.httpReqResp = reqRespInfo;
+		this.httpObjName = imagefile;
+
+		this.imgSize = iSize;
+		this.formatdSize = fSize;
+
+		this.timeStamp = reqRespInfo.getTimeStamp();
+		this.httpCode = reqRespInfo.getStatusCode();
+		this.percentSavings = savings;
+
+		assignHostAndHttpInfo(reqRespInfo,"");
+	}
+	
 	private void assignHostAndHttpInfo(HttpRequestResponseInfo reqRespInfo, String domainName) {
 		HttpRequestResponseInfo respons = reqRespInfo.getAssocReqResp();
 		if (respons != null) {
@@ -64,6 +83,22 @@ public class ImageMdataEntry {
 				this.hostName = reqRespInfo.getHostName();
 			}
 		}
+	}
+	
+	public int getImgSize() {
+		return imgSize;
+	}
+
+	public void setImgSize(int imgSize) {
+		this.imgSize = imgSize;
+	}
+
+	public int getFormatdSize() {
+		return formatdSize;
+	}
+
+	public void setFormatdSize(int formatdSize) {
+		this.formatdSize = formatdSize;
 	}
 
 	public double getImageSize() {

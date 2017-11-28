@@ -1,15 +1,22 @@
 package com.att.aro.core.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Comparator;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
-import com.att.aro.core.util.Util;
+import com.att.aro.core.bestpractice.pojo.BPResultType;
+import com.att.aro.core.settings.impl.SettingsImpl;
 
 public class UtilTest {
 	String aroJpcapLibName,aroJpcapLibFileName;
@@ -53,6 +60,39 @@ public class UtilTest {
 		boolean haswin = os.contains("Windows");
 		assertEquals(haswin, iswin);
 	}
+	
+	@Test
+	public void isWindows32OS(){
+		boolean iswin = Util.isWindows32OS();
+		String os = System.getProperty("os.name");
+		boolean haswin32 = os.contains("Windows") && !Util.isWindows64OS();
+		assertEquals(haswin32, iswin);
+	}
+	
+	@Test
+	public void isWindows64OS(){
+		boolean iswin = Util.isWindows64OS();
+		String os = System.getProperty("os.name");
+		String arch = System.getProperty("os.arch");
+		boolean haswin64 = os.contains("Windows") && arch.contains("64");
+		assertEquals(haswin64, iswin);
+	}
+	
+	@Test
+	public void isLinuxOS(){
+		boolean iswin = Util.isLinuxOS();
+		String os = System.getProperty("os.name");
+		boolean haswinLinux = os.contains("Linux");
+		assertEquals(haswinLinux, iswin);
+	}
+	
+	@Test
+	public void getAppPath(){
+		String getAppPath = Util.getAppPath();
+		String appPath = System.getProperty("user.dir");
+		assertEquals(appPath, getAppPath);
+	}
+	
 	@Test
 	public void getAROTraceDirIOS(){
 		String dirname = Util.getAROTraceDirIOS();
@@ -63,6 +103,13 @@ public class UtilTest {
 	public void getAROTraceDirAndroid(){
 		String dirname = Util.getAROTraceDirAndroid();
 		boolean hasname = dirname.contains("VideoOptimizerAndroid");
+		assertTrue(hasname);
+	}
+	
+	@Test
+	public void getVideoOptimizerLibrary(){
+		String dirname = Util.getVideoOptimizerLibrary();
+		boolean hasname = dirname.contains("VideoOptimizerLibrary");
 		assertTrue(hasname);
 	}
 	@Test
@@ -128,12 +175,74 @@ public class UtilTest {
 	}
 	
 	@Test
-	public void testFormatDecimal_PositiveMinMaxFractionDigits() {
-		
-		BigDecimal number = new BigDecimal("6.7987").setScale(3, RoundingMode.HALF_UP);
-		String formattedNumber = Util.formatDecimal(number, 3, 0);
-		
-		assertEquals("6.799", formattedNumber);
+	public void testComparator() {
+		Comparator<String> result = Util.getDomainSorter();
+		assertNotNull(result);
+		assertNotNull(result.compare("", ""));
+		assertNotEquals(0,result.compare("100.100.100.100", "100.100.100.101"));
+		assertEquals(0,result.compare("100.100.100.100", "100.100.100.100"));
+	}
+	
+	@Test
+	public void testFloatComparator() {
+		Comparator<String> result = Util.getFloatSorter();
+		assertNotNull(result);
+		assertNotEquals(0,result.compare("22.13", "1.02"));
+		assertEquals(0,result.compare("3.19", "3.19"));	
+	}
+	
+	@Test
+	public void testIntComparator() {
+		Comparator<Integer> result = Util.getDomainIntSorter();
+		assertNotNull(result);
+		assertNotEquals(0,result.compare(1, 2));
+		assertEquals(0,result.compare(1,1));	
+	}
+
+	
+	@Test
+	public void test_intCheckPassFailorWarning() {
+		BPResultType bpResultType = Util.checkPassFailorWarning(2, 1, 4);
+		assertEquals(bpResultType, BPResultType.WARNING);	
+	}
+	
+	@Test	
+	public void test_checkPassFailorWarning() {
+		BPResultType bpResultType = Util.checkPassFailorWarning(0.2, 0.1, 0.4);
+		assertEquals(bpResultType, BPResultType.WARNING);
+	}
+	
+	@Test
+	public void testGetLogLvl() {
+		assertNotNull(Util.getLoggingLvl("INFO"));
+		assertEquals(org.apache.log4j.Level.INFO, Util.getLoggingLvl("INFO"));
+	}
+	
+	@Test
+	public void testGetLoggingLvl() {
+		assertNotNull(Util.getLoggingLvl("ERROR"));
+		SettingsImpl.getInstance().setAttribute("LOG_LEVEL", "ERROR");
+		assertEquals("ERROR", Util.getLoggingLevel());
+	}
+	
+	
+	@Test
+	public void getEditCap(){
+		String editCap = Util.getEditCap();
+		assertNotNull(editCap);
+	}
+	
+	@Test
+	public void getFFPROBE(){
+		String editCap = Util.getFFPROBE();
+		assertNotNull(editCap);
+	}
+	
+	
+	@Test
+	public void getFFMPEG(){
+		String editCap = Util.getFFMPEG();
+		assertNotNull(editCap);
 	}
 	
 	@Test

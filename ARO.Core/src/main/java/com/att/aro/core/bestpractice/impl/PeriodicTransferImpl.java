@@ -145,7 +145,7 @@ public class PeriodicTransferImpl implements IBestPractice {
 			Burst burst = burstCollection.get(i);
 			if (burst.getBurstCategory() == BurstCategory.PERIODICAL) {
 				if (periodicCount != 0) {
-					double time = burst.getBeginTime() - lastPeriodicalBurst.getBeginTime();
+					double time = burst.getBeginTime() - ((lastPeriodicalBurst != null) ? lastPeriodicalBurst.getBeginTime() : 0);
 					if (time < minimumRepeatTime) {
 						minimumRepeatTime = time;
 						packetId = burst.getFirstUplinkDataPacket();

@@ -57,17 +57,22 @@ import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoAnalysisConfigHelper;
 import com.att.aro.core.videoanalysis.IVideoEventDataHelper;
 import com.att.aro.core.videoanalysis.IVideoTabHelper;
-import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.ManifestDash;
+import com.att.aro.core.videoanalysis.pojo.ManifestDashPlyReady;
 import com.att.aro.core.videoanalysis.pojo.ManifestHLS;
+import com.att.aro.core.videoanalysis.pojo.ManifestSSM;
 import com.att.aro.core.videoanalysis.pojo.VideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 import com.att.aro.core.videoanalysis.pojo.VideoEventData;
 import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
+import com.att.aro.core.videoanalysis.pojo.amazonvideo.MPDAmz;
+import com.att.aro.core.videoanalysis.pojo.amazonvideo.SSMAmz;
+import com.att.aro.core.videoanalysis.pojo.amazonvideo.XmlManifestHelper;
 import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
+import com.att.aro.core.videoanalysis.pojo.mpdplayerady.MPDPlayReady;
 
 /**
  * Video usage analysis
@@ -115,6 +120,8 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	private String imagePath;
 	
 	private boolean absTimeFlag = false;
+	
+	private String htmlPath;
 
 	private TreeMap<Double, AROManifest> aroManifestMap;
 
@@ -140,7 +147,48 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	private VideoUsage videoUsage;
 
 	private double timeScale = 1;
+
+	private String lastContentType;
+
+	private byte[] altImage;
 	
+	/**<pre>
+	 * Loads a replacement for missing thumbnails, blocked by DRM.
+	 * The default is the VO App icon image
+	 * User defined replacement needs to be a PNG image and should be in the VideoOptimizerLibrary and named broken_thumbnail.png
+	 * 
+	 * @return byte[] of a png image
+	 */
+	private byte[] loadDefaultThumbnail() {
+		
+		byte[] data = null;
+		
+		String brokenThumbnailPath = Util.getVideoOptimizerLibrary() + Util.FILE_SEPARATOR + "broken_thumbnail.png";
+		if (filemanager.fileExist(brokenThumbnailPath)) {
+			try {
+				Path path = Paths.get(brokenThumbnailPath);
+				data = Files.readAllBytes(path);
+			} catch (IOException e) {
+				log.debug("getThumnail IOException:" + e.getMessage());
+			}
+		} else {
+			String iconName = "aro_24.png";
+			String appIconPath = Util.getVideoOptimizerLibrary() + Util.FILE_SEPARATOR + iconName;
+			if (!filemanager.fileExist(appIconPath)) {
+				Util.makeLibFilesFromJar(iconName);
+			}
+			if (filemanager.fileExist(appIconPath)) {
+				try {
+					Path path = Paths.get(appIconPath);
+					data = Files.readAllBytes(path);
+				} catch (IOException e) {
+					log.debug("getIconThumnail IOException:" + e.getMessage());
+				}
+			}
+		}
+		return data;
+	}
+
 	/**
 	 * Load VideoUsage Preferences
 	 */
@@ -148,7 +196,7 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 		ObjectMapper mapper = new ObjectMapper();
 
 		String temp = prefs.getPref(VideoUsagePrefs.VIDEO_PREFERENCE);
-		if (temp != null) {
+		if (temp != null && !temp.equals("null")) {
 			try {
 				videoUsagePrefs = mapper.readValue(temp, VideoUsagePrefs.class);
 			} catch (IOException e) {
@@ -175,15 +223,14 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	
 	@Override
 	public VideoUsage clearData() {
-		if (PlotHelperAbstract.chunkPlayTimeList != null)
-			PlotHelperAbstract.chunkPlayTimeList.clear();
-		if (PlotHelperAbstract.filteredSegments != null)
-			PlotHelperAbstract.filteredSegments.clear();
-		if (PlotHelperAbstract.getAllSegments() != null)
-			PlotHelperAbstract.getAllSegments().clear();
-		
+		if (videoUsage != null && videoUsage.getFilteredSegments() != null) {
+			videoUsage.setFilteredSegments(null);
+		}
+		if (videoUsage != null && videoUsage.getAllSegments() != null) {
+			videoUsage.setAllSegments(null);
+		}
 		videoTabHelper.resetRequestMapList();
-		return new VideoUsage(""); 
+		return new VideoUsage("");
 	}
 
 	@Override
@@ -191,14 +238,29 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 
 		Level originalLevel = null;
 		if (settings.checkAttributeValue("video", "info")) {
-			originalLevel = log.setLevel(Level.DEBUG);
+			originalLevel = log.setLevel(Level.INFO);
 			log.info("Original logger level :" + originalLevel);
 		}
-
+		
 		loadPrefs();
-
+		
 		tracePath = result.getTraceDirectory() + Util.FILE_SEPARATOR;
 		log.elevatedInfo("VideoAnalysis for :" + tracePath);
+		
+		imagePath = tracePath + "Image" + Util.FILE_SEPARATOR;
+		htmlPath = tracePath + "HTML" + Util.FILE_SEPARATOR;
+		
+
+		for (final Session session : sessionlist) {
+			for (final HttpRequestResponseInfo req : session.getRequestResponseInfo()) {
+				if(req.getDirection() == HttpDirection.RESPONSE && req.getContentType() != null
+						&& req.getContentType().contains("text/html")){
+					extractHtmlContent(session, req);
+				}
+			}
+		}
+		
+		altImage = loadDefaultThumbnail();
 
 		videoPath = tracePath + fileVideoSegments + Util.FILE_SEPARATOR;
 		if (!filemanager.directoryExist(videoPath)) {
@@ -206,9 +268,7 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 		} else {
 			filemanager.directoryDeleteInnerFiles(videoPath);
 		}
-
-		imagePath = tracePath + "Image" + Util.FILE_SEPARATOR;
-
+	
 		if (!filemanager.directoryExist(imagePath)) {
 			imageExtractionRequired = true;
 			filemanager.mkDir(imagePath);
@@ -247,7 +307,7 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 
 //					aroManifest.setDelay(videoUsagePrefs.getStartupDelay());
 
-					aroManifestMap.put(keyTimestamp, aroManifest);
+					videoUsage.add(keyTimestamp, aroManifest);
 					keyTimestamp = keyTimestamp + 1000; // increment by 1ms
 					break;
 
@@ -258,7 +318,7 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 							extManifest = new ManifestHLS(null, content, videoPath);
 //							extManifest.setDelay(videoUsagePrefs.getStartupDelay());
 
-							aroManifestMap.put(keyTimestamp, extManifest);
+							videoUsage.add(keyTimestamp, extManifest);
 							keyTimestamp = keyTimestamp + 1000; // increment by 1ms
 							if (aroManifest == null) {
 								aroManifest = extManifest;
@@ -330,6 +390,9 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 			case ".ism": // Dash/MPEG
 				log.info("SSM");
 			case ".mp4": // Dash/MPEG
+			case ".m4v":
+			case ".m4i":
+			case ".dash":
 
 				fullName = extractFullNameFromRRInfo(req);
 				if (fullName.contains("_audio")) {
@@ -342,6 +405,9 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 
 				break;
 
+			case ".m4a": // audio
+				break;
+				
 			// DTV
 			case ".m3u8": // HLS-DTV Manifest
 				imgExtension = ".ts";
@@ -368,6 +434,7 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 			case ".jpeg":
 
 				if (imageExtractionRequired) {
+					fullName = extractFullNameFromRRInfo(req);
 					extractImage(req, aroManifest, fullName);
 				}
 				break;
@@ -388,29 +455,79 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 		}
 		
 		updateDuration();
-		
-		log.info(videoUsage.toString());
-		
-		TreeMap<Double, HttpRequestResponseInfo> reqm = videoUsage.getRequestMap();
-		log.info(String.format("VIDEO REQUESTS;"));
-		Double key = 0.0;
-		while (key != null) {
-			log.info(String.format("reqm.get(%s) :%s", key, reqm.get(key)));
-			key = reqm.higherKey(key);
-		}
-		
+		updateSegments();
+				
 		// Always delete the temp segment folder
 		if (!checkDevMode()) {
 			filemanager.directoryDeleteInnerFiles(videoPath);
 			filemanager.deleteFile(videoPath);
 		}
-
+		
 		if (originalLevel != null) {
 			log.setLevel(originalLevel);
 		}
+		log.elevatedInfo("Video usage scan done");
 		return identifyInvalidManifest(videoUsage);
 	}
+	
+	private void extractHtmlContent(Session session, HttpRequestResponseInfo response) {
+		if (response != null) {
+			byte[] content = null;
+			try {
+				content = reqhelper.getContent(response, session);
+				if (content != null && content.length > 0) {
+					if (!filemanager.directoryExist(htmlPath)) {
+						filemanager.mkDir(htmlPath);
+					}
 
+					filemanager.saveFile(new ByteArrayInputStream(content),
+							htmlPath + Long.toString(System.currentTimeMillis()) + ".html");
+				}
+
+			} catch (Exception e) {
+				videoUsage.addFailedRequestMap(response);
+				log.info("Failed to extract HTML " + e.getMessage());
+				return;
+			}
+		}
+	}
+
+	private void updateSegments() {
+		log.info("updateSegments()");
+		TreeMap<String, Integer> segmentList;
+		Integer segment;
+
+		if (videoUsage != null) {
+			for (AROManifest manifest : videoUsage.getManifests()) {
+				if (manifest.getDuration() > 0 || !manifest.getSegmentEventList().isEmpty()) {
+					segmentList = manifest.getSegmentList();
+					
+					if (segmentList != null && !segmentList.isEmpty()) {
+						
+						for (VideoEvent videoEvent : manifest.getVideoEventList().values()) {
+							// key = generateVideoEventKey(segment, timestamp, videoEvent.getQuality());
+							if (videoEvent.getSegment() < 0) {
+								String key = "";
+								if (videoEvent.getVed().getDateTime() != null) {
+									key = String.format("%s.%s", videoEvent.getVed().getDateTime(), videoEvent.getVed().getExtension());
+								} else if (videoEvent.getVed().getSegmentReference() != null) {
+									key = videoEvent.getVed().getSegmentReference();
+								}
+								segment = segmentList.get(key);
+								if (segment != null) {
+									videoEvent.setSegment(segment);
+								}
+							}
+							if (videoEvent.getDuration() <= 0) {
+								videoEvent.setDuration(manifest.getDuration());
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
 	/**
 	 * <pre>
 	 * Final pass to fix update values if not set already.
@@ -421,54 +538,69 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	 *  The last segment simply repeats the previous duration, this should not skew results by much.
 	 */
 	private void updateDuration() {
+		log.info("updateDuration()");
 		if (videoUsage != null) {
-			for (AROManifest manifest : videoUsage.getAroManifestMap().values()) {
-				NavigableMap<String, VideoEvent> eventMap = manifest.getSegmentEventList();
-				if (manifest instanceof ManifestDash && !eventMap.isEmpty()) {
-					int seg = 0;
+			for (AROManifest manifest : videoUsage.getManifests()) {
+				if (manifest != null) {
+					NavigableMap<String, VideoEvent> eventMap = manifest.getSegmentEventList();
+					if (manifest instanceof ManifestDash && !eventMap.isEmpty()) {
+						int seg = 0;
 
-					Entry<String, VideoEvent> lastEntry = eventMap.lastEntry();
-					double lastSeg = lastEntry != null ? lastEntry.getValue().getSegment() : 0;
+						Entry<String, VideoEvent> lastEntry = eventMap.lastEntry();
+						double lastSeg = lastEntry != null ? lastEntry.getValue().getSegment() : 0;
 
-					String key = manifest.generateVideoEventKey(0, 0, "z");
-					Entry<String, VideoEvent> val;
-					Entry<String, VideoEvent> valn;
+						String key = manifest.generateVideoEventKey(0, 0, "z");
+						Entry<String, VideoEvent> val;
+						Entry<String, VideoEvent> valn;
 
-					double duration = 0;
-					VideoEvent event;
-					for (seg = 1; seg <= lastSeg; seg++) {
-						String segNextKey = manifest.generateVideoEventKey(seg, 0, "z");
-						val = eventMap.higherEntry(key);
-						valn = eventMap.higherEntry(segNextKey);
-						if (val == null || valn == null) {
-							break;
-						}
-
-						event = val.getValue();
-						VideoEvent eventNext = valn.getValue();
-
-						duration = eventNext.getSegmentStartTime() - event.getSegmentStartTime();
-						double deltaSegment = eventNext.getSegment() - event.getSegment();
-						if (deltaSegment > 1) {
-							duration /= deltaSegment;
-						}
-
-						for (VideoEvent subEvent : eventMap.subMap(key, segNextKey).values()) {
-							if (subEvent.getDuration() <= 0) {
-								subEvent.setDuration(duration);
+						double duration = 0;
+						VideoEvent event;
+						String segNextKey = null;
+						for (seg = 1; seg <= lastSeg; seg++) {
+							segNextKey = manifest.generateVideoEventKey(seg, 0, "z");
+							val = eventMap.higherEntry(key);
+							valn = eventMap.higherEntry(segNextKey);
+							if (val == null || valn == null) {
+								break;
 							}
-						}
 
-						key = segNextKey;
-					}
-					val = eventMap.higherEntry(key);
-					if (val != null) {
-						event = val.getValue();
-						if (event.getDuration() <= 0) {
-							event.setDuration(duration);
+							event = val.getValue();
+							VideoEvent eventNext = valn.getValue();
+
+							duration = eventNext.getSegmentStartTime() - event.getSegmentStartTime();
+							double deltaSegment = eventNext.getSegment() - event.getSegment();
+							if (deltaSegment > 1) {
+								duration /= deltaSegment;
+							}
+
+							updateSegmentDuration(eventMap, key, segNextKey, duration);
+
+							key = segNextKey;
+						}
+						
+						// handle any segments at the end
+						val = eventMap.higherEntry(key);
+						if (val != null && segNextKey!=null) {
+							updateSegmentDuration(eventMap, key, segNextKey, duration);
 						}
 					}
 				}
+			}
+		}
+	}
+
+	/**
+	 * Apply duration values to all events of the same segment number.
+	 * 
+	 * @param eventMap		Map of VideoEvents
+	 * @param key			starting key
+	 * @param segNextKey	ending key
+	 * @param duration - value to be applied to all VideoEvents
+	 */
+	public void updateSegmentDuration(NavigableMap<String, VideoEvent> eventMap, String key, String segNextKey, double duration) {
+		for (VideoEvent subEvent : eventMap.subMap(key, segNextKey).values()) {
+			if (subEvent.getDuration() <= 0) {
+				subEvent.setDuration(duration);
 			}
 		}
 	}
@@ -557,12 +689,13 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	private String extractNameFromRRInfo(HttpRequestResponseInfo rrInfo) {
 		String[] results = null;
 		try {
-			results = stringParse.parse(rrInfo.getObjNameWithoutParams(), "([a-zA-Z0-9\\-]*)[_\\.]");
+			results = stringParse.parse(rrInfo.getFileName(), "([a-zA-Z0-9\\-]*)[_\\.]");
 			if (results == null || results.length == 0) {
 				String fullName = extractFullNameFromRRInfo(rrInfo);
 				int pos = fullName.indexOf('_');
 				return pos == -1 ? fullName : fullName.substring(0, pos);
 			}
+			return results[0];
 		} catch (Exception e) {
 			log.error("Exception :" + e.getMessage());
 		}
@@ -571,6 +704,8 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 			for (String part : results) {
 				name.append(part);
 			}
+		} else {
+			return "unknown";
 		}
 		return name.toString();
 	}
@@ -610,12 +745,11 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	 * 
 	 * @param request
 	 * @param session
-	 * @param aroManifest
+	 * @param vManifest
 	 * @param fileName
 	 */
-	public void extractVideo(HttpRequestResponseInfo request, AROManifest aroManifest, String fileName) {
+	public void extractVideo(HttpRequestResponseInfo request, AROManifest vManifest, String fileName) {
 		HttpRequestResponseInfo response = request.getAssocReqResp();
-		Session session = request.getSession();
 
 		log.info("-------");
 		log.info(request.getObjUri().toString());
@@ -632,49 +766,47 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 		byte[] content = null;
 		String fullpath;
 
-		String[] voValues = null;
-		vConfig = voConfigHelper.findConfig(request.getObjUri().toString());
-		VideoEventData ved = null;
-		if (vConfig != null) {
-			log.info("vConfig :" + vConfig);
-			voValues = voConfigHelper.match(vConfig, request.getObjUri().toString(), request.getAllHeaders(), request.getAssocReqResp().getAllHeaders());
-			ved = voEventDataHelper.create(vConfig, voValues);
-			log.info(ved.toString());
-		}
-
-		if (ved == null) {
-			log.info(" [[[[[[[[[[[[[[[[[[ no REGEX MATCH! ]]]]]]]]]]]]]]]]]]]");
-			ved = voEventDataHelper.create(extractNameFromRRInfo(request), extractExtensionFromName(extractFullNameFromRRInfo(request)));
+		VideoEventData ved = parseRequestResponse(request);
+		if (ved.getSegment() == null && ved.getSegmentReference() == null) {
+			log.elevatedInfo("parse failure :" + request.getObjUri().toString() + ved);
 			ved.setSegment(-4);
 		}
+		VideoFormat vFormat = findVideoFormat(ved.getExtension());
 
-		log.debug("aroManifest :" + aroManifest);
+		log.debug("aroManifest :" + vManifest);
 
-		aroManifest = matchManifest(request, aroManifest, ved, content);
-		
-		quality = ved.getQuality() == null ? "unknown":ved.getQuality();
+		try {
+			content = extractContent(request);
+			if (content.length == 0) {
+				return;
+			}
+			vManifest = matchManifest(request, vManifest, ved, vFormat);
+			vManifest.adhocSegment(ved);
+		} catch (Exception e) {
+			videoUsage.addFailedRequestMap(request);
+			log.debug("Failed to extract " + getTimeString(response) + fileName + ", range: " + ved.getByteRange() + ", error: " + e.getMessage());
+			return;
+		}
+
+		quality = ved.getQuality() == null ? "unknown" : ved.getQuality();
 		rangeList.add(ved.getByteRange());
-		segment = aroManifest.parseSegment(fullName, ved);
+		segment = ved.getSegment() != null && ved.getSegment() >= 0 ? ved.getSegment() : vManifest.parseSegment(fullName, ved);
 
-		if ((!aroManifest.getVideoName().contains("playlist")) 
-				&& ved.getId() != null 
-				&& !ved.getId().replaceAll("\\.", "_").equals(aroManifest.getVideoName())
-				) {
-			aroManifest = locateManifestForVideo(aroManifest, vConfig, ved, request);
+		// set format handled by aroManifest
+		if (VideoFormat.UNKNOWN.equals(vManifest.getVideoFormat())) {
+			vManifest.setVideoFormat(vFormat);
 		}
 		
-		// set format handled by aroManifest
-		if (ved.getExtension().equals("mp4") || ved.getExtension().equals("mpeg4")) {
-			aroManifest.setVideoFormat(VideoFormat.MPEG4);
-		} else if (ved.getExtension().equals("ts")) {
-			aroManifest.setVideoFormat(VideoFormat.TS);
-		}
-
 		double segmentStartTime = 0;
-		if (aroManifest instanceof ManifestDash) {
-			bitrate = ((ManifestDash) aroManifest).getBandwith(truncateString(fullName, "_"));
-			timeScale = aroManifest.getTimeScale();
-		} else if (aroManifest instanceof ManifestHLS) {
+		if (vManifest instanceof ManifestDash) {
+			bitrate = ((ManifestDash) vManifest).getBandwith(truncateString(fullName, "_"));
+			timeScale = vManifest.getTimeScale();
+		} else if (vManifest instanceof ManifestDashPlyReady) {
+			if (segment > 0) {
+				bitrate = vManifest.getBitrate(ved.getQuality());
+				timeScale = vManifest.getTimeScale();
+			}
+		} else if (vManifest instanceof ManifestHLS) {
 			if (ved.getDuration() != null) {
 				try {
 					duration = Double.valueOf(ved.getDuration());
@@ -684,19 +816,19 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 			}
 			if (duration == 0) {
 				try {
-					duration = Double.valueOf(aroManifest.getDuration((int) segment));
+					duration = Double.valueOf(vManifest.getDuration((int) segment));
 				} catch (NumberFormatException e) {
 					duration = 0;
 				}
 				if (duration == 0) {
-					duration = aroManifest.getDuration();
+					duration = vManifest.getDuration();
 				}
 			}
 			timeScale = 1;
 			try {
-				Double temp = aroManifest.getBitrate(quality);
+				Double temp = vManifest.getBitrate(quality);
 				if (temp == null) {
-					temp = aroManifest.getBitrate("HLS" + quality);
+					temp = vManifest.getBitrate("HLS" + quality);
 				}
 				bitrate = temp != null ? temp : 0D;
 			} catch (Exception e) {
@@ -712,46 +844,36 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 		Integer[] segmentMetaData = new Integer[2];
 
 		String segName = null;
+		
+		segmentMetaData[0] = content.length;
+		
+		if (vManifest instanceof ManifestDash) {
+			segmentMetaData = parsePayload(content);
+		} else if (vManifest instanceof ManifestHLS) {
+			segmentStartTime = 0;
+		}
 
+		if (segment < 0 && segmentMetaData[1] != null) {
+			segment = segmentMetaData[1];
+
+		}
+
+		fullpath = constructDebugName(request, ved);
+
+		log.debug(fileName + ", content.length :" + content.length);
+
+		if (segment == 0 && vManifest.isVideoType(VideoType.DASH)) {
+			VideoData vData = new VideoData(vManifest.getEventType(), quality, content);
+			vManifest.addVData(vData);
+		} else {
+			String seg = String.format("%08d", ((Double) segment).intValue());
+			segName = getDebugPath() + seg + '_' + ved.getId() + '.' + ved.getExtension();
+			thumbnail = extractThumbnail(vManifest, content, ved);
+		}
 		try {
-			content = reqhelper.getContent(response, session);
-			if (content.length == 0) {
-				videoUsage.addFailedRequestMap(request);
-				return;
-			}
-			segmentMetaData[0] = content.length;
-
-			videoUsage.addRequest(request);
-
-			if (aroManifest instanceof ManifestDash) {
-				segmentMetaData = parsePayload(content);
-			} else if (aroManifest instanceof ManifestHLS) {
-				segmentStartTime = 0;
-			}
-
-			if (segment < 0 && segmentMetaData[1] != null) {
-				segment = segmentMetaData[1];
-
-			}
-
-			fullpath = constructDebugName(request, ved);
-
-			log.debug(fileName + ", content.length :" + content.length);
-
-			if (segment == 0 && aroManifest.isVideoType(VideoType.DASH)) {
-				VideoData vData = new VideoData(aroManifest.getEventType(), quality, content);
-				aroManifest.addVData(vData);
-			} else {
-				String seg = String.format("%08d", ((Double) segment).intValue());
-				segName = getDebugPath() + seg + '_' + ved.getId() + '.' + ved.getExtension();
-				thumbnail = extractThumbnail(aroManifest, content, ved);
-			}
 			filemanager.saveFile(new ByteArrayInputStream(content), fullpath);
-
-		} catch (Exception e) {
-
-			videoUsage.addFailedRequestMap(request);
-			log.debug("Failed to extract " + getTimeString(response) + fileName + ", range: " + ved.getByteRange() + ", error: " + e.getMessage());
+		} catch (IOException e) {
+			log.error("Failed to save segment " + getTimeString(response) + fileName + ", range: " + ved.getByteRange() + ", error: " + e.getMessage());
 			return;
 		}
 
@@ -780,14 +902,51 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 
 		// a negative value indicates segment startTime
 		// later will scan over segments & set times based on next segmentStartTime
-		if (aroManifest instanceof ManifestDash || duration == 0) {
+		if (vManifest instanceof ManifestDash || duration == 0) {
 			duration -= segmentStartTime;
 		}
 		
-		VideoEvent vEvent = new VideoEvent(thumbnail, aroManifest.getEventType(), segment, quality, rangeList, bitrate, duration, segmentStartTime, segmentMetaData[0], response);
-		aroManifest.addVideoEvent(segment, response.getTimeStamp(), vEvent);
+		if (thumbnail == null) {
+			thumbnail = altImage;
+		}
+
+		VideoEvent vEvent = new VideoEvent(ved, thumbnail, vManifest, segment, quality, rangeList, bitrate, duration, segmentStartTime, segmentMetaData[0], response);
+		vManifest.addVideoEvent(segment, response.getTimeStamp(), vEvent);
+		
+		aroManifest = vManifest;
 	}
 
+	private VideoFormat findVideoFormat(String extension) {
+		if ("mp4".equals(extension) || "mpeg4".equals(extension) || extension.startsWith("m4")) {
+			return VideoFormat.MPEG4;
+		} else if ("ts".equals(extension)) {
+			return VideoFormat.TS;
+		}
+
+		return VideoFormat.UNKNOWN;
+	}
+
+	/**
+	 * @param request
+	 * @return
+	 */
+	private VideoEventData parseRequestResponse(HttpRequestResponseInfo request) {
+		String[] voValues;
+		vConfig = voConfigHelper.findConfig(request.getObjUri().toString());
+		VideoEventData ved = null;
+		if (vConfig != null) {
+			log.info("vConfig :" + vConfig.getDesc());
+			log.info("vConfig :" + vConfig);
+			voValues = voConfigHelper.match(vConfig, request.getObjUri().toString(), request.getAllHeaders(), request.getAssocReqResp().getAllHeaders());
+			ved = voEventDataHelper.create(vConfig, voValues);
+			log.info(ved.toString());
+		} else {
+			ved = voEventDataHelper.create(extractNameFromRRInfo(request), extractExtensionFromName(extractFullNameFromRRInfo(request)));
+		}
+		return ved;
+	}
+
+	@SuppressWarnings("unused")
 	private AROManifest locateManifestForVideo(AROManifest aroManifest, VideoAnalysisConfig vConfig, VideoEventData ved, HttpRequestResponseInfo request) {
 		log.debug(String.format("diff :%s != %s\n", ved.getId(), aroManifest.getVideoName()));
 		for (AROManifest manifest : aroManifestMap.values()) {
@@ -803,8 +962,8 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 		} else {
 			manifest = new ManifestHLS(request, videoPath);
 		}
-		manifest.setVideoName(ved.getId());
-		aroManifestMap.put(request.getTimeStamp(), manifest);
+		manifest.singletonSetVideoName(ved.getId());
+		videoUsage.add(request.getTimeStamp(), manifest);
 		return manifest;
 	}
 
@@ -835,7 +994,7 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	 */
 	private TreeMap<String, Double> extractMetadata(String srcpath) {
 		TreeMap<String, Double> results = new TreeMap<>();
-		String cmd = Util.getFFMPEG() + " -i " + "\'" + srcpath + "\'";
+		String cmd = Util.getFFMPEG() + " -i " + "\"" + srcpath + "\"";
 		String lines = extrunner.executeCmd(cmd);
 		if (lines.indexOf("No such file") == -1) {
 			double bitrate = getBitrate("bitrate: ", lines);
@@ -872,41 +1031,57 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	 * 
 	 * @param request
 	 * @param aroManifest
+	 * @param vFormat 
 	 * @param content 
 	 * @return correct AroManifest
 	 */
-	private AROManifest matchManifest(HttpRequestResponseInfo request, AROManifest aroManifest, VideoEventData ved, byte[] content) {
+	private AROManifest matchManifest(HttpRequestResponseInfo request, AROManifest aroManifest, VideoEventData ved, VideoFormat vFormat) {
 		HttpRequestResponseInfo response = request.getAssocReqResp();
-		
-		String objName = ved.getId();// extractFullNameFromRRInfo(request);
-		String videoName = "";
-		AROManifest manifest;
-		if (aroManifest == null) {
-			aroManifest = videoUsage.findVideoInManifest(objName);
-			if (aroManifest == null) {
 
-				if (objName.contains("_video_")) {
-					aroManifest = new ManifestDash(null, request, videoPath);
-				} else if (objName.contains(".ts")) {
-					aroManifest = new ManifestHLS(request, ved.getName(), content, videoPath);
+		String videoName = "";
+		AROManifest newManifest = null;
+		//FIXME need to update if reconstructed manifest ( not yet updated by a real manifest )
+		if (aroManifest == null) {
+			newManifest = videoUsage.findVideoInManifest(ved.getId());
+			if (newManifest == null) {
+
+				if (ved.getId().contains("_video_")) {
+					newManifest = new ManifestDash(null, request, videoPath);
+					videoUsage.add(request.getTimeStamp(), newManifest);
+				} else if (ved.getId().contains(".ts") || ved.getExtension().equalsIgnoreCase(VideoFormat.TS.toString())) {
+					newManifest = new ManifestHLS(request, ved, videoPath);
+					videoUsage.add(request.getTimeStamp(), newManifest);
 				} else {
-					aroManifest = new AROManifest(VideoType.UNKNOWN, response, videoPath);
-					ved.setSegment(0);
-					ved.setQuality("unknown");
+					// TODO - future plans - create and use class ManifestUnknown instead
+					newManifest = new AROManifest(VideoType.UNKNOWN, request, ved, videoPath);
+					videoUsage.add(request.getTimeStamp(), newManifest);
 				}
-				aroManifest.setVideoName(ved.getId());
-				videoUsage.add(request.getTimeStamp(), aroManifest);
+			} else {
+				newManifest = new AROManifest(VideoType.UNKNOWN, response, ved, videoPath);
+				videoUsage.add(request.getTimeStamp(), newManifest);
+				ved.setSegment(0);
+				ved.setQuality("unknown");
+			}
+			newManifest.singletonSetVideoName(ved.getId());
+			videoUsage.add(request.getTimeStamp(), newManifest);
+		} else {
+			newManifest = aroManifest;
+		}
+
+		videoName = newManifest.getVideoName();
+
+//		if (videoName != null && !videoName.isEmpty() && ved.getId() != null && !ved.getId().contains(videoName)) {
+		if (!ved.getId().equals(videoName)) {
+			log.info(String.format("%s -> %s", videoName, ved.getId()));
+			newManifest = videoUsage.findVideoInManifest(ved.getId());
+			if (!newManifest.getVideoFormat().equals(VideoFormat.UNKNOWN) && !newManifest.getVideoFormat().equals(vFormat)){
+				newManifest = new AROManifest(VideoType.UNKNOWN, response, videoPath);
+				ved.setSegment(0);
+				ved.setQuality("unknown");
+				videoUsage.add(request.getTimeStamp(), newManifest);
 			}
 		}
-
-		videoName = aroManifest.getVideoName();
-
-		if (videoName != null && !videoName.isEmpty() && objName != null && !objName.contains(videoName)) {
-			manifest = videoUsage.findVideoInManifest(objName);
-			aroManifest = manifest != null ? manifest : aroManifest;
-			videoName = aroManifest.getVideoName();
-		}
-		return aroManifest;
+		return newManifest;
 	}
 
 	/**
@@ -1042,8 +1217,8 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 		String thumbnail = getDebugPath() + "thumbnail.png";
 		filemanager.deleteFile(thumbnail);
 
-		String cmd = Util.getFFMPEG() + " -y -i " + "\'" + segmentName + "\'" + " -ss 00:00:00   -vframes 1 " + "\'"
-				+ thumbnail + "\'";
+		String cmd = Util.getFFMPEG() + " -y -i " + "\"" + segmentName + "\"" + " -ss 00:00:00   -vframes 1 " + "\""
+				+ thumbnail + "\"";
 		String ff_lines = extrunner.executeCmd(cmd);
 		log.debug("ff_lines :" + ff_lines);
 
@@ -1149,25 +1324,26 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	 */
 	public AROManifest extractManifestHLS(HttpRequestResponseInfo request) {
 		HttpRequestResponseInfo response = request.getAssocReqResp();
-		Session session = request.getSession();
-
-		String videoName = regexNameFromRequestHLS(request);
+		
+		VideoEventData ved = parseRequestResponse(request);
+		
+		if (ved.getName() == null) {
+			ved.setName(regexNameFromRequestHLS(request));
+		}
 
 		byte[] content = null;
 		try {
-			content = reqhelper.getContent(response, session);
+			content = extractContent(request);
 			if (content == null || content.length == 0) {
-				videoUsage.addFailedRequestMap(request);
 				return aroManifest;
 			}
-
-			videoUsage.addRequest(request);
+			
 			log.info("Manifest content.length :" + content.length);
 			StringBuffer fname = new StringBuffer(getDebugPath());
 			fname.append(getTimeString(response));
 			
 			fname.append('_');
-			fname.append(videoName);
+			fname.append(ved.getName());
 			fname.append("_ManifestHLS.m3u8");
 			filemanager.saveFile(new ByteArrayInputStream(content), fname.toString());
 
@@ -1176,45 +1352,69 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 			log.error("Failed to get content from DTV Manifest; response: " + e.getMessage());
 		}
 
-		String getName = request.getObjNameWithoutParams();
+		String reqName = request.getObjNameWithoutParams();
 		
-
+		// return if identical content, don't parse it again
 		if (aroManifest != null && !aroManifest.checkContent(content)) {
 			return aroManifest;
 		}
 		
-		log.info(getName);
-		String namen = getName.replaceAll("\\.", "_");
+		log.info(reqName);
+		String sanityName = reqName.replaceAll("\\.", "_");
 		if (aroManifest == null 
-			    || (!videoName.equals(aroManifest.getVideoName()))
-			    || (getName.contains("channel") && !getName.replaceAll("\\.", "_").contains(aroManifest.getVideoName()))
-				|| (getName.contains("livetv") && getName.contains("latest"))
-				|| (getName.contains("NFL") && getName.contains("latest"))		// /NFL/10/000573/03/latest.m3u8
-				|| (getName.contains("NFL") && !getName.contains("_") && !getName.contains("playlist.m3u8")) // /NFL/10/000573/03/playlist.m3u8
+				|| (!"playlist".equals(ved.getName()) && !ved.getName().equals(aroManifest.getVideoName()))
+			    || (!sanityName.contains(aroManifest.getVideoName()) && !ved.getName().equals(aroManifest.getVideoName()))
+			    || (reqName.contains("channel") && !sanityName.contains(aroManifest.getVideoName()))
+				|| (reqName.contains("livetv") && reqName.contains("latest"))
+				|| (reqName.contains("NFL") && reqName.contains("latest"))		// /NFL/10/000573/03/latest.m3u8
+				|| (reqName.contains("NFL") && !reqName.contains("_") && !reqName.contains("playlist.m3u8")) // /NFL/10/000573/03/playlist.m3u8
 			) {
+			// NFL - to this point
 			ManifestHLS manifest = null;
 			try {
-				manifest = new ManifestHLS(response, videoName, content, videoPath);
+				manifest = new ManifestHLS(response, ved, content, videoPath);
 //				manifest.setDelay(videoUsagePrefs.getStartupDelay());
 				log.info("aroManifest :" + aroManifest);
 
-				aroManifestMap.put(request.getTimeStamp(), manifest);
+				videoUsage.add(request.getTimeStamp(), manifest);
 				return manifest;
 
 			} catch (Exception e) {
-				log.error("Failed to parse manifest data, absTimeStamp:" + request.getAbsTimeStamp().getTime() + ", Name:" + getName);
+				log.error("Failed to parse manifest data, absTimeStamp:" + request.getAbsTimeStamp().getTime() + ", Name:" + reqName);
 			}
 
 		} else {
 			try {
 				((ManifestHLS) aroManifest).parseManifestData(content);
-				log.info("aroManifest parsed in data:" + aroManifest);
+				log.elevatedInfo("aroManifest parsed in data:" + aroManifest);
 			} catch (Exception e) {
 				log.error("Failed to parse manifest data into ManifestHLS:" + e.getMessage());
 			}
 		}
 
 		return aroManifest;
+	}
+
+	/**
+	 * @param request
+	 * @param response
+	 * @param session
+	 * @return
+	 * @throws Exception
+	 */
+	private byte[] extractContent(HttpRequestResponseInfo request) throws Exception {
+		byte[] content;
+		try {
+			content = reqhelper.getContent(request.getAssocReqResp(), request.getSession());
+		} catch (Exception e) {
+			content = null;
+		}
+		if (content == null || content.length == 0) {
+			videoUsage.addFailedRequestMap(request);
+		} //else {
+			videoUsage.addRequest(request);
+//		}
+		return content;
 	}
 
 	private String regexNameFromRequestHLS(HttpRequestResponseInfo request) {
@@ -1264,13 +1464,14 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	 */
 	public AROManifest extractManifestDash(HttpRequestResponseInfo request) {
 		HttpRequestResponseInfo response = request.getAssocReqResp();
-		Session session = request.getSession();
+		
+		VideoEventData ved = parseRequestResponse(request);
+		
 		byte[] content = null;
 
 		try {
-			content = reqhelper.getContent(response, session);
-			if (content.length == 0) {
-				videoUsage.addFailedRequestMap(request);
+			content = extractContent(request);
+			if (content == null || content.length == 0) {
 				return aroManifest;
 			}
 
@@ -1278,7 +1479,7 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 			log.info("Manifest content.length :" + content.length);
 		
 			// debug - save to debug folder
-			saveManifestFile(request, content);
+			saveManifestFile(request, ved, content);
 
 		} catch (Exception e) {
 			videoUsage.addFailedRequestMap(request);
@@ -1287,22 +1488,42 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 
 		AROManifest manifest = null;
 		try {
-			manifest = new ManifestDash(response, content, videoPath);
-//			manifest.setDelay(videoUsagePrefs.getStartupDelay());
-			log.info("aroManifest :" + aroManifest);
+			XmlManifestHelper mani = new XmlManifestHelper(content);
 			
-			for (AROManifest checkManifest : videoUsage.getAroManifestMap().values()) {
-				if (checkManifest.getVideoName().equals(manifest.getVideoName())) {
-					// don't create duplicates
-					return checkManifest;
+			if (mani.getManifestType().equals(XmlManifestHelper.ManifestFormat.MPD_PlayReady)) {
+				if (aroManifest != null 
+						&& ((lastContentType != null && lastContentType.equals(ved.getContentType())) 
+						   || ved.getName().equals(aroManifest.getVideoName())
+						   )
+					){
+					aroManifest.updateManifest(mani.getManifest());
+					log.info("created new manifest :" + manifest);
+					return aroManifest;
+				} else {
+					lastContentType = ved.getContentType();
+					manifest = new ManifestDashPlyReady((MPDPlayReady) mani.getManifest(), response, videoPath);
 				}
+				
+			} else if (mani.getManifestType().equals(XmlManifestHelper.ManifestFormat.SmoothStreamingMedia)) {
+				manifest = new ManifestSSM((SSMAmz) mani.getManifest(), response, videoPath);
+				
+			} else {
+				if (aroManifest != null && aroManifest.getVideoName().equals(ved.getName())) {
+					log.info("Deactivate :" + aroManifest);
+					aroManifest.setActiveState(false);
+				}
+				manifest = new ManifestDash((MPDAmz) mani.getManifest(), response, videoPath);
+				log.info("created new manifest :" + manifest);
 			}
 
 		} catch (Exception e) {
-			log.error("Failed to parse manifest data:"+e.getMessage());
+			log.error("Failed to parse manifest data:", e);
+			return null;
 		}
 
-		aroManifestMap.put(request.getTimeStamp(), manifest);
+		if (manifest != null) {
+			videoUsage.add(request.getTimeStamp(), manifest);
+		}
 
 		return manifest;
 	}
@@ -1311,21 +1532,25 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 	 * Saves byte[] to a file
 	 * 
 	 * @param request
+	 * @param ved 
 	 * @param content
 	 * @throws IOException
 	 */
-	private void saveManifestFile(HttpRequestResponseInfo request, byte[] content) throws IOException {
-		StringBuffer fname = new StringBuffer(getDebugPath());
-		String temp = extractNameFromRRInfo(request);
-		fname.append(temp.equals("manifest") ? "_SSM_manifest" : temp);
-		fname.append("__");
-		fname.append(getTimeString(request.getAssocReqResp()));
-		if (request.getObjNameWithoutParams().endsWith("manifest")) {
-			fname.append("_SSMedia.xml");
-		} else {
-			fname.append("_ManifestDash.mpd");
-		}
-		filemanager.saveFile(new ByteArrayInputStream(content), fname.toString());
+	private void saveManifestFile(HttpRequestResponseInfo request, VideoEventData ved, byte[] content) throws IOException {
+//		StringBuffer fname = new StringBuffer(getDebugPath());
+//		String temp = ved.getManifestType() != null ? ved.getManifestType() : extractNameFromRRInfo(request);
+//		fname.append(temp.equals("manifest") ? "_SSM_manifest" : temp);
+//		fname.append("__");
+//		fname.append(getTimeString(request.getAssocReqResp()));
+//		if (request.getObjNameWithoutParams().endsWith("manifest")) {
+//			fname.append("_SSMedia.xml");
+//		} else {
+//			fname.append("_ManifestDash.mpd");
+//		}
+//		
+		String path = String.format("%s%s_%s", getDebugPath(), getTimeString(request.getAssocReqResp()), request.getFileName());
+//		log.elevatedInfo(path);
+		filemanager.saveFile(new ByteArrayInputStream(content), path);
 	}
 	
 	private byte[] fileToByteArray(File file) {
@@ -1371,19 +1596,25 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 		return reqMap;
 	}
 
+	/**
+	 * Iterate videoUsage, flagging manifest as invalid if no segments or segment number is less than 0
+	 * @param videoUsage
+	 * @return
+	 */
 	public VideoUsage identifyInvalidManifest(VideoUsage videoUsage) {
 		if(videoUsage != null){
 			for(AROManifest manifest :videoUsage.getManifests()){
-				boolean selected = manifest.getVideoEventsBySegment() != null ? true : false;
-				if (!selected) {
-					manifest.setSelected(false);
-					continue;
+				if (manifest != null) {
+					boolean selected = manifest.getVideoEventsBySegment() != null ? true : false;
+					if (!selected) {
+						manifest.setSelected(false);
+						continue;
+					}
+					if (manifest.getVideoEventsBySegment().isEmpty() 
+							|| ((VideoEvent) manifest.getVideoEventsBySegment().toArray()[0]).getSegment() < 0) {
+						manifest.setSelected(false);
+					}
 				}
-				if (manifest.getVideoEventsBySegment().isEmpty()
-						|| ((VideoEvent) manifest.getVideoEventsBySegment().toArray()[0]).getSegment() < 0) {
-					manifest.setSelected(false);
-				}
-
 			}
 		}
 		return videoUsage;

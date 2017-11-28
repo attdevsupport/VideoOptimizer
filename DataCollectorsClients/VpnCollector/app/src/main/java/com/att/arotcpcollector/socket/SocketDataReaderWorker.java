@@ -17,10 +17,11 @@ package com.att.arotcpcollector.socket;
 
 import android.util.Log;
 
+import com.att.arocollector.attenuator.AttenuatorManager;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
+import com.att.arotcpcollector.ip.IPPacketFactory;
 import com.att.arotcpcollector.ip.IPv4Header;
-
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
@@ -47,6 +48,7 @@ public class SocketDataReaderWorker implements Runnable {
 	private String sessionKey = "";
 	private SocketData pcapData; // for traffic.cap
  	private boolean secureEnable = false;
+	private boolean printLog = false;
 
 	public SocketDataReaderWorker() {
 		sessionManager = SessionManager.getInstance();
@@ -83,8 +85,6 @@ public class SocketDataReaderWorker implements Runnable {
 
 			if (session.isAbortingConnection()) {
 				Log.d(TAG, "removing aborted connection -> " + session.getSessionKey());
-				//								+ PacketUtil.intToIPAddress(sess.getDestAddress()) + ":" + sess.getDestPort() + "-"
-				//								+ PacketUtil.intToIPAddress(sess.getSourceIp()) + ":" + sess.getSourcePort());
 				session.getSelectionkey().cancel();
 
 				if (session.getSocketchannel() != null && session.getSocketchannel().isConnected()) {
@@ -129,25 +129,39 @@ public class SocketDataReaderWorker implements Runnable {
 				if (!session.isClientWindowFull()) {
 					len = channel.read(buffer);
 					if (len > 0) { // -1 indicates end of stream
-						// Log.d(TAG, "SocketDataService received " + len + " from remote server: " + name);
 						// send packet to client app
-						//***************
+						session.setLastAccessed(System.currentTimeMillis());
 						if (isSecureEnable()) {
+							byte[] packet = new byte[buffer.position()];
+							buffer.flip();
+							buffer.get(packet);
 
+							if (session.isSecureSession()) {
+								if (session.isInContinuationMsg()) {
+ 								}
+						        // FileUtil.print(session.getSessionKey(),  "\n\nEntering HandleServerInput, Bytes: "+ SSLEngines.getBytes(packet), isPrintLog());
+
+								// FileUtil.print(session.getSessionKey(),  " Leaving HandleServerInput, Response Packet: " + SSLEngines.getBytes(packet), isPrintLog());
+								len = packet.length;
+							}
+							buffer.clear();
+							if (packet.length>DataConst.MAX_RECEIVE_BUFFER_SIZE){
+								buffer = ByteBuffer.allocate(packet.length);
+							}
+							buffer.put(packet);
 						}
 						//***************
 						sendToRequester(buffer, channel, len, session);
 						buffer.clear();
+
+						if (buffer.capacity() > DataConst.MAX_RECEIVE_BUFFER_SIZE){
+							buffer = ByteBuffer.allocate(DataConst.MAX_RECEIVE_BUFFER_SIZE);
+						}
 					} else if (len == -1) {
 						sendFin(session);
 						session.setAbortingConnection(true);
 					} 
 				} else {
-
-//					Log.e(TAG, "*** client window is full, now pause for " + sess.getSessionName());
-					//									+ PacketUtil.intToIPAddress(sess.getDestAddress()) + ":" + sess.getDestPort() 
-					//									+ "-"
-					//									+ PacketUtil.intToIPAddress(sess.getSourceIp()) + ":" + sess.getSourcePort());
 					break;
 				}
 
@@ -155,7 +169,7 @@ public class SocketDataReaderWorker implements Runnable {
 
 		} catch (NotYetConnectedException ex2) {
 			Log.e(TAG, "socket not connected");
-			session.setAbortingConnection(true);
+ 			session.setAbortingConnection(true);
 		} catch (ClosedByInterruptException cex) {
 			Log.e(TAG, "ClosedByInterruptException reading socketchannel: " + cex.getMessage());
 			session.setAbortingConnection(true);
@@ -164,7 +178,7 @@ public class SocketDataReaderWorker implements Runnable {
 			session.setAbortingConnection(true);
 		} catch (IOException e) {
 			Log.e(TAG, "Error reading data from socketchannel: " + e.getMessage());
-			session.setAbortingConnection(true);
+ 			session.setAbortingConnection(true);
 		} catch (Exception ex) {
 			Log.e("Secure Collector", "We are catching an Exception: " + ex.getMessage());
 		}
@@ -234,8 +248,8 @@ public class SocketDataReaderWorker implements Runnable {
 		byte[] packetbody = session.getReceivedData(max);
 		if (packetbody != null && packetbody.length > 0) {
 			byte[] data = null;
-			int unack = session.getSendNext();
-			int nextUnack = session.getSendNext() + packetbody.length;
+			long unack = session.getSendNext();
+			long nextUnack = session.getSendNext() + packetbody.length;
 
 			//Log.d(TAG,"sending vpn client body len: "+packetbody.length+", current seq: "+unack+", next seq: "+nextUnack);
 			session.setSendNext(nextUnack);
@@ -245,11 +259,30 @@ public class SocketDataReaderWorker implements Runnable {
 
 			data = tcpFactory.createResponsePacketData(ipheader, tcpheader, packetbody, session.hasReceivedLastSegment(), session.getRecSequence(), unack,
 					session.getTimestampSender(), session.getTimestampReplyto());
+			if (AttenuatorManager.getInstance().getDelayDl() > 0) {
+				try {
+					Log.d(TAG, "-------- recv:ATTENUATE ---------");
+					Thread.sleep(AttenuatorManager.getInstance().getDelayDl());
+					Log.d(TAG, "-------- recv:ATTENUATE:done ---------");
+				} catch (InterruptedException e) {
+					Log.d(TAG, "-------- recv:ATTENUATE:interupted ---------");
+					e.printStackTrace();
+				}
+			}
 
+			byte[] clearData = session.getClearReceivedData();
+			if(session.isSecureSession() && null != clearData) {
+				try {
+					IPv4Header ipHeader = IPPacketFactory.createIPv4Header(data, 0);
+					TCPHeader tcpHeader = tcpFactory.createTCPHeader(data, ipHeader.getIPHeaderLength());
+					clearData = tcpFactory.createPacketData(ipHeader, tcpHeader, clearData);
+					pcapData.sendDataToPcap(clearData, true);
+				} catch (Exception ex) {
 
-				pcapData.sendDataRecieved(data); // send packet back to client
-				pcapData.sendDataToPcap(data); // send packet off to be recorded in traffic.cap
-
+				}
+			}
+			pcapData.sendDataRecieved(data); // send packet back to client
+			pcapData.sendDataToPcap(data, false); // send packet off to be recorded in traffic.cap
 
 			return true;
 		}
@@ -265,31 +298,9 @@ public class SocketDataReaderWorker implements Runnable {
 	private void sendFin(Session session) {
 		IPv4Header ipheader = session.getLastIPheader();
 		TCPHeader tcpheader = session.getLastTCPheader();
-		byte[] data = tcpFactory.createFinData(ipheader, tcpheader, session.getSendNext(), session.getRecSequence(), session.getTimestampSender(), session.getTimestampReplyto());
+		byte[] data = tcpFactory.createFinData(ipheader, tcpheader, session.getRecSequence(), session.getSendNext(), session.getTimestampSender(), session.getTimestampReplyto());
 		pcapData.sendDataRecieved(data); // send packet back to client
-			pcapData.sendDataToPcap(data); // send packet off to be recorded in traffic.cap
-
-			// for debugging purpose
-			//	Log.d(TAG, "========> BG: FIN packet data to vpn client++++++++");
-			//	IPv4Header vpnip = null;
-			//	try {
-			//		vpnip = factory.createIPv4Header(data, 0);
-			//	} catch (PacketHeaderException e) {
-			//		e.printStackTrace();
-			//	}
-			//	TCPHeader vpntcp = null;
-			//	try {
-			//		vpntcp = factory.createTCPHeader(data, vpnip.getIPHeaderLength());
-			//	} catch (PacketHeaderException e) {
-			//		e.printStackTrace();
-			//	}
-			//	if (vpnip != null && vpntcp != null) {
-			//		String sout = PacketUtil.getOutput(vpnip, vpntcp, data);
-			//		Log.d(TAG, sout);
-			//	}
-			//
-			//	Log.d(TAG, "=======> BG: finished sending FIN packet to vpn client ========");
-
+		pcapData.sendDataToPcap(data, false); // send packet off to be recorded in traffic.cap
 
 	}
 
@@ -299,39 +310,34 @@ public class SocketDataReaderWorker implements Runnable {
 		int len = 0;
 		try {
 			do {
+
 				if (session.isAbortingConnection()) {
 					break;
 				}
 				len = channel.read(buffer);
 				if (len > 0) {
- 
+
 					buffer.limit(len);
 					buffer.flip();
 					//create UDP packet
 					byte[] data = new byte[len];
 					System.arraycopy(buffer.array(), 0, data, 0, len);
-					byte[] packetdata = udpFactory.createResponsePacket(session.getLastIPheader(), session.getLastUDPheader(), data);
+					final byte[] packetdata = udpFactory.createResponsePacket(session.getLastIPheader(), session.getLastUDPheader(), data);
 					//write to client
-
-
+					if (AttenuatorManager.getInstance().getDelayDl() > 0) {
+						try {
+							Log.d(TAG, "-------- recv:ATTENUATE ---------");
+							Thread.sleep(AttenuatorManager.getInstance().getDelayDl());
+							Log.d(TAG, "-------- recv:ATTENUATE:done ---------");
+						} catch (InterruptedException e) {
+							Log.d(TAG, "-------- recv:ATTENUATE:interupted ---------");
+							e.printStackTrace();
+						}
+					}
 					pcapData.sendDataRecieved(packetdata); // send packet back to client
-
-					//publish to packet subscriber
-					pcapData.sendDataToPcap(packetdata); // send packet off to be recorded in traffic.cap
+					pcapData.sendDataToPcap(packetdata, false); // send packet off to be recorded in traffic.cap
 					Log.d(TAG, "SDR: sent " + len + " bytes to UDP client, packetdata.length: " + packetdata.length + " Data: "+ new String(data));
 					buffer.clear();
-
-//					try {
-//						IPv4Header ip = IPPacketFactory.createIPv4Header(packetdata, 0);
-//						UDPHeader udp = udpfactory.createUDPHeader(packetdata, ip.getIPHeaderLength());
-//						String str = PacketUtil.getUDPoutput(ip, udp);
-//						Log.d(TAG, "++++++ SD: packet sending to client ++++++++");
-//						Log.i(TAG, "got response time: " + restime);
-//						Log.d(TAG, str);
-//						Log.d(TAG, "++++++ SD: end sending packet to client ++++");
-//					} catch (PacketHeaderException e) {
-//						e.printStackTrace();
-//					}
 				}
 			} while (len > 0);
 		} catch (NotYetConnectedException ex) {
@@ -355,9 +361,16 @@ public class SocketDataReaderWorker implements Runnable {
 	public void setSecureEnable(boolean Secure){
 		this.secureEnable = Secure;
 	}
-	
+
 	public boolean isSecureEnable() {
 		return secureEnable;
 	}
 
+	public boolean isPrintLog() {
+		return printLog;
+	}
+
+	public void setPrintLog(boolean printLog) {
+		this.printLog = printLog;
+	}
 }

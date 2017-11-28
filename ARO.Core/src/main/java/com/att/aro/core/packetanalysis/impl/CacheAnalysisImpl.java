@@ -110,7 +110,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis{
 				continue;
 			}
 
-			if (statusCode != 200 && statusCode != 206 && statusCode != 304) {
+			if (statusCode != 200 && statusCode != 206) {
 				diagnosisResults.add(new CacheEntry(null, response,
 						Diagnosis.CACHING_DIAG_INVALID_REQUEST, 0, 
 						firstPacket));

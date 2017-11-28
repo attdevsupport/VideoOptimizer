@@ -25,7 +25,7 @@ public class TCPHeader{
 	
 	private int sourcePort;
 	private int destinationPort;
-	private int sequenceNumber;
+	private long sequenceNumber;
 	private int dataOffset;
 
 	private int tcpFlags;
@@ -44,7 +44,7 @@ public class TCPHeader{
 	private int checksum;
 	private int urgentPointer;
 	private byte[] options;
-	private int ackNumber;
+	private long ackNumber;
 
 	// vars below need to be set via setters when copying
 	private int maxSegmentSize = 0;
@@ -55,9 +55,9 @@ public class TCPHeader{
  
 	public TCPHeader() {}
 
-	public TCPHeader(int sourcePort, int destinationPort, int sequenceNumber, 
+	public TCPHeader(int sourcePort, int destinationPort, long sequenceNumber,
 			int dataOffset, boolean isNS, int tcpFlags, int windowSize, int checksum, int urgentPointer,
-			byte[] options, int ackNumber) {
+			byte[] options, long ackNumber) {
 
 		this.sourcePort = sourcePort;
 		this.destinationPort = destinationPort;
@@ -267,11 +267,11 @@ public class TCPHeader{
 		this.destinationPort = destinationPort;
 	}
 
-	public int getSequenceNumber() {
+	public long getSequenceNumber() {
 		return sequenceNumber;
 	}
 
-	public void setSequenceNumber(int sequenceNumber) {
+	public void setSequenceNumber(long sequenceNumber) {
 		this.sequenceNumber = sequenceNumber;
 	}
 
@@ -323,11 +323,11 @@ public class TCPHeader{
 		this.options = options;
 	}
 
-	public int getAckNumber() {
+	public long getAckNumber() {
 		return ackNumber;
 	}
 
-	public void setAckNumber(int ackNumber) {
+	public void setAckNumber(long ackNumber) {
 		this.ackNumber = ackNumber;
 	}
 

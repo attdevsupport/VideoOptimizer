@@ -31,12 +31,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
-import javax.swing.RowSorter;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import com.att.aro.core.ILogger;
@@ -49,15 +49,16 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfoWithSession;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.Util;
 import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.ContextAware;
+import com.att.aro.ui.commonui.GUIPreferences;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.diagnostic.PacketViewTableModel;
 import com.att.aro.ui.model.diagnostic.TCPUDPFlowsTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
-import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.overviewtab.DeviceNetworkProfilePanel;
 import com.att.aro.ui.view.video.IVideoPlayer;
 
@@ -80,24 +81,21 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	private JLabel tcpFlowsLabel;
 
 	private DataTable<PacketInfo> jPacketViewTable;
-	
+
 	private RequestResponseDetailsPanel jHttpReqResPanel;
 	private TCPFlowsDataTable<Session> tcpflowsTable;
-	
-	//Model
+
+	// Model
 	private TCPUDPFlowsTableModel jTcpUdpFlowsModel = new TCPUDPFlowsTableModel();
 	private PacketViewTableModel jPacketViewTableModel = new PacketViewTableModel();
-	private List<HttpRequestResponseInfoWithSession> requestResponseWithSession =
-			new ArrayList<HttpRequestResponseInfoWithSession>();
+	private List<HttpRequestResponseInfoWithSession> requestResponseWithSession = new ArrayList<HttpRequestResponseInfoWithSession>();
 	private AROTraceData analyzerResult;
-
 
 	public List<HttpRequestResponseInfoWithSession> getRequestResponseWithSession() {
 		return requestResponseWithSession;
 	}
 
-	public void setRequestResponseWithSession(
-			List<HttpRequestResponseInfoWithSession> requestResponseWithSession) {
+	public void setRequestResponseWithSession(List<HttpRequestResponseInfoWithSession> requestResponseWithSession) {
 		this.requestResponseWithSession = requestResponseWithSession;
 	}
 
@@ -110,7 +108,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 
 	// Packet view
 	private JScrollPane jPacketViewTapScrollPane;
-	
+
 	// Content view
 	private ContentViewJPanel jContentViewPanel; // Content View
 
@@ -121,13 +119,13 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	public IVideoPlayer getVideoPlayer() {
 		return videoPlayer;
 	}
-	
+
 	public void setVideoPlayer(IVideoPlayer videoPlayer) {
 		this.videoPlayer = videoPlayer;
 	}
 
 	private AROTraceData aroTraceData;
-	
+
 	public AROTraceData getAroTraceData() {
 		return aroTraceData;
 	}
@@ -135,17 +133,17 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	public void setAroTraceData(AROTraceData aroTraceData) {
 		this.aroTraceData = aroTraceData;
 	}
-	
+
 	private boolean graphPanelClicked = false;
 	private boolean bTCPPacketFound = false;
 
 	private IAROView aroview;
 	private IARODiagnosticsOverviewRoute diagnosticRoute;
-	
-	public IAROView getAroView(){
+
+	public IAROView getAroView() {
 		return this.aroview;
 	}
-	
+
 	public AROTraceData getAnalyzerResult() {
 		return analyzerResult;
 	}
@@ -153,92 +151,99 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	public void setAnalyzerResult(AROTraceData analyzerResult) {
 		this.analyzerResult = analyzerResult;
 	}
+	
+	JPanel chartAndTablePanel;
+	GUIPreferences guiPreferences;
+
 	public DiagnosticsTab(IAROView aroview, IARODiagnosticsOverviewRoute diagnosticRoute) {
 		super(true);
 		this.aroview = aroview;
 		this.diagnosticRoute = diagnosticRoute;
 		setLayout(new BorderLayout());
 		add(getDeviceNetworkProfilePanel().layoutDataPanel(), BorderLayout.NORTH);
-		JPanel chartAndTablePanel = new JPanel();
+		chartAndTablePanel = new JPanel();
 		chartAndTablePanel.setLayout(new BorderLayout());
 		// Add chart
 		chartAndTablePanel.add(getGraphPanel(), BorderLayout.NORTH);
 		// Add TCP flows split pane
 		chartAndTablePanel.add(getOrientationPanel(), BorderLayout.CENTER);
 		chartAndTablePanel.add(getDiagnosticsPanel(), BorderLayout.CENTER);
-		add(chartAndTablePanel, BorderLayout.CENTER);				
-
+		add(chartAndTablePanel, BorderLayout.CENTER);			
 	}
 
 	public IARODiagnosticsOverviewRoute getDiagnosticRoute() {
 		return diagnosticRoute;
 	}
 
+	public void addGraphPanel() {
+		if (chartAndTablePanel != null & diagnosticsPanel != null) {
+			GraphPanel graphPanel = getGraphPanel();
+			graphPanel.setGraphPanelBorder(false);
+			chartAndTablePanel.add(graphPanel, BorderLayout.NORTH);
+			diagnosticsPanel.setTopComponent(graphPanel);
+			add(chartAndTablePanel, BorderLayout.CENTER);
+		}
+		if (guiPreferences == null) {
+			guiPreferences = GUIPreferences.getInstance();
+		}
+		setChartOptions(guiPreferences.getChartPlotOptions());
+	}
+
 	/**
 	 * Returns the Panel that contains the graph.
 	 */
 	public GraphPanel getGraphPanel() {
-		if ( graphPanel == null) {
-			 graphPanel = new GraphPanel(aroview,this);
-				graphPanel.setZoomFactor(2);
-				graphPanel.setMaxZoom(MAX_ZOOM);
-				graphPanel.addGraphPanelListener(new GraphPanelListener() {
-					@Override
-					public void graphPanelClicked(double timeStamp) {
-//						logger.info("graphclicked: " + timeStamp);
-							setTimeLineToTable(timeStamp);
-						if (getVideoPlayer() != null) {
-							graphPanelClicked = true;
-//							logger.info("enter getGraphPanel() ");
-							getVideoPlayer().setMediaTime(timeStamp);
-//							logger.info("leave getGraphPanel() ");
-
-						}
+		if (graphPanel == null) {
+			graphPanel = new GraphPanel(aroview, this);
+			graphPanel.setZoomFactor(2);
+			graphPanel.setMaxZoom(MAX_ZOOM);
+			graphPanel.addGraphPanelListener(new GraphPanelListener() {
+				@Override
+				public void graphPanelClicked(double timeStamp) {
+					setTimeLineToTable(timeStamp);
+					if (getVideoPlayer() != null) {
+						graphPanelClicked = true;
+						getVideoPlayer().setMediaTime(timeStamp);
+					}
 				}
-				});
+			});
 		}
-		return  graphPanel;
+		return graphPanel;
 	}
 
 	private JSplitPane getOrientationPanel() {
 		if (internalPanel == null) {
-			
-			internalPanel = new JSplitPane(
-					JSplitPane.VERTICAL_SPLIT, getJTCPFlowsPanel(), getJTCPFlowsContentTabbedPane());
+			internalPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, getJTCPFlowsPanel(),
+					getJTCPFlowsContentTabbedPane());
 			internalPanel.setOneTouchExpandable(true);
 			internalPanel.setContinuousLayout(true);
 			internalPanel.setResizeWeight(0.5);
 			internalPanel.setDividerLocation(0.5);
-			
 		}
 		return internalPanel;
 	}
 
 	private JSplitPane getDiagnosticsPanel() {
 		if (diagnosticsPanel == null) {
-			
-			diagnosticsPanel = new JSplitPane(
-					JSplitPane.VERTICAL_SPLIT, getGraphPanel(), getOrientationPanel());
+			diagnosticsPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, getGraphPanel(), getOrientationPanel());
 			diagnosticsPanel.setOneTouchExpandable(true);
 			diagnosticsPanel.setContinuousLayout(true);
 			diagnosticsPanel.setResizeWeight(0.5);
 			diagnosticsPanel.setDividerLocation(0.5);
 
-			diagnosticsPanel.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, 
+			diagnosticsPanel.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
 					new PropertyChangeListener() {
-						
+
 						@Override
 						public void propertyChange(PropertyChangeEvent evt) {
 							SwingUtilities.invokeLater(new Runnable() {
 								@Override
 								public void run() {
 									getGraphPanel().layoutGraphLabels();
-
 								}
 							});
 						}
 					});
-			
 		}
 		return diagnosticsPanel;
 	}
@@ -249,10 +254,13 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	private JTabbedPane getJTCPFlowsContentTabbedPane() {
 		if (jTCPFlowsContentTabbedPane == null) {
 			jTCPFlowsContentTabbedPane = new JTabbedPane();
-			jTCPFlowsContentTabbedPane.addTab(ResourceBundleHelper.getMessageString("tcp.tab.reqResp"), null, getJHttpReqResPanel(), null);
-			jTCPFlowsContentTabbedPane.addTab(ResourceBundleHelper.getMessageString("tcp.tab.packet"),  null, getJPacketViewTapScrollPane(), null);
-			jTCPFlowsContentTabbedPane.addTab(ResourceBundleHelper.getMessageString("tcp.tab.content"), null, getJContentViewPanel(), null);
-//			jTCPFlowsPanel.setPreferredSize(new Dimension(400, 110));
+			jTCPFlowsContentTabbedPane.addTab(ResourceBundleHelper.getMessageString("tcp.tab.reqResp"), null,
+					getJHttpReqResPanel(), null);
+			jTCPFlowsContentTabbedPane.addTab(ResourceBundleHelper.getMessageString("tcp.tab.packet"), null,
+					getJPacketViewTapScrollPane(), null);
+			jTCPFlowsContentTabbedPane.addTab(ResourceBundleHelper.getMessageString("tcp.tab.content"), null,
+					getJContentViewPanel(), null);
+			// jTCPFlowsPanel.setPreferredSize(new Dimension(400, 110));
 			jTCPFlowsPanel.setMinimumSize(new Dimension(400, 110));
 		}
 		return jTCPFlowsContentTabbedPane;
@@ -267,6 +275,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		}
 		return jPacketViewTapScrollPane;
 	}
+
 	/**
 	 * Initializes and returns the Packet View Table.
 	 */
@@ -275,47 +284,41 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			jPacketViewTable = new DataTable<PacketInfo>(jPacketViewTableModel);
 			jPacketViewTable.setAutoCreateRowSorter(true);
 			jPacketViewTable.setGridColor(Color.LIGHT_GRAY);
-			jPacketViewTable.getSelectionModel().addListSelectionListener(
-					new ListSelectionListener() {
-						PacketInfo packetInfo;
-						@Override
-						public void valueChanged(
-								ListSelectionEvent arg0) {
-							PacketInfo packetInfo = jPacketViewTable
-									.getSelectedItem();
-							if (packetInfo != null
-									&& packetInfo != this.packetInfo) {
-								double crossHairValue = packetInfo.getTimeStamp();
-								boolean centerGraph = !(crossHairValue <= graphPanel
-										.getViewportUpperBound() && crossHairValue >= graphPanel
-										.getViewportLowerBound());
-								graphPanel.setGraphView(crossHairValue,
-										centerGraph); //crossHairValue+103
-//								getJHttpReqResPanel().select(
-//										packetInfo.getRequestResponseInfo());
-								
-								if (videoPlayer != null) {
-//									logger.info("enter getJPacketViewTable()");	
-									videoPlayer.setMediaTime(graphPanel
-													.getCrosshair());
-//									logger.info("leave  getJPacketViewTable()");	
+			jPacketViewTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+				PacketInfo packetInfo;
 
-								}
-							}
-							this.packetInfo = packetInfo;
+				@Override
+				public void valueChanged(ListSelectionEvent arg0) {
+					PacketInfo packetInfo = jPacketViewTable.getSelectedItem();
+					if (packetInfo != null && packetInfo != this.packetInfo) {
+						double crossHairValue = packetInfo.getTimeStamp();
+						boolean centerGraph = !(crossHairValue <= graphPanel.getViewportUpperBound()
+								&& crossHairValue >= graphPanel.getViewportLowerBound());
+						graphPanel.setGraphView(crossHairValue, centerGraph); // crossHairValue+103
+						// getJHttpReqResPanel().select(
+						// packetInfo.getRequestResponseInfo());
+
+						if (videoPlayer != null) {
+							// logger.info("enter getJPacketViewTable()");
+							videoPlayer.setMediaTime(graphPanel.getCrosshair());
+							// logger.info("leave getJPacketViewTable()");
+
 						}
-					});
+					}
+					this.packetInfo = packetInfo;
+				}
+			});
 
 		}
 		return jPacketViewTable;
 	}
+
 	/**
-	 * Initializes and returns the Panel for the Content View tab at the
-	 * bottom.
+	 * Initializes and returns the Panel for the Content View tab at the bottom.
 	 */
 	private ContentViewJPanel getJContentViewPanel() {
 		if (jContentViewPanel == null) {
-			jContentViewPanel = new ContentViewJPanel( );
+			jContentViewPanel = new ContentViewJPanel();
 		}
 		return jContentViewPanel;
 	}
@@ -329,6 +332,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		}
 		return deviceNetworkProfilePanel;
 	}
+
 	/**
 	 * Initializes jTCPFlowsPanel
 	 * 
@@ -340,11 +344,12 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			jTCPFlowsPanel.setLayout(new BorderLayout());
 			jTCPFlowsPanel.add(getTcpFlowsHeadingPanel(), BorderLayout.NORTH);
 			jTCPFlowsPanel.add(getJTCPFlowsScrollPane(), BorderLayout.CENTER);
-//			jTCPFlowsPanel.setPreferredSize(new Dimension(400, 200));
+			// jTCPFlowsPanel.setPreferredSize(new Dimension(400, 200));
 			jTCPFlowsPanel.setMinimumSize(new Dimension(400, 200));
 		}
 		return jTCPFlowsPanel;
 	}
+
 	/**
 	 * Creates the TCP Flows heading panel.
 	 */
@@ -357,7 +362,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		}
 		return tcpFlowsHeadingPanel;
 	}
-	
+
 	/**
 	 * Returns the TCP flows label.
 	 */
@@ -367,41 +372,46 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		}
 		return tcpFlowsLabel;
 	}
+
 	/**
 	 * Initializes and returns the TCPFlowsScrollPane.
 	 */
 	private JScrollPane getJTCPFlowsScrollPane() {
 
-			jTCPFlowsScrollPane = new JScrollPane(getJTCPFlowsTable());
-			jTCPFlowsScrollPane.setPreferredSize(new Dimension(100, 200));
+		jTCPFlowsScrollPane = new JScrollPane(getJTCPFlowsTable());
+		jTCPFlowsScrollPane.setPreferredSize(new Dimension(100, 200));
 
 		return jTCPFlowsScrollPane;
 	}
+
 	/**
 	 * Initializes and returns the Scroll Pane for the TCP flows table.
 	 */
-	
 	public TCPFlowsDataTable<Session> getJTCPFlowsTable(){
 		if (tcpflowsTable == null) {
 			tcpflowsTable = new TCPFlowsDataTable<Session>(jTcpUdpFlowsModel);
 			tcpflowsTable.setAutoCreateRowSorter(true);
 			tcpflowsTable.setGridColor(Color.LIGHT_GRAY);
 			tcpflowsTable.getSelectionModel().addListSelectionListener(this);
-			//Adding the table listner for getting the check box changes //greg story 
+			// Adding the table listener for getting the check box changes
 			tcpflowsTable.getModel().addTableModelListener(new TableModelListener() {				
 				@Override
 				public void tableChanged(TableModelEvent arg0) {
-					graphPanel.setTraceAnalysis();								
-
+					graphPanel.setTraceAnalysis();
 				}
-			});	
+			});
+			TableRowSorter<TableModel> sorter = new TableRowSorter<>(tcpflowsTable.getModel());
+			tcpflowsTable.setRowSorter(sorter);
+			sorter.setComparator(TCPUDPFlowsTableModel.REMOTEIP_COL, Util.getDomainSorter());
+			sorter.setComparator(TCPUDPFlowsTableModel.DOMAIN_COL, Util.getDomainSorter());
+			sorter.toggleSortOrder(TCPUDPFlowsTableModel.TIME_COL);
 		}
 		return tcpflowsTable;
-		
 	}
 
 	/**
 	 * Returns RequestResponseDetailsPanel.
+	 * 
 	 * @return the jHttpReqResPanel
 	 */
 	public RequestResponseDetailsPanel getJHttpReqResPanel() {
@@ -411,209 +421,193 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		return jHttpReqResPanel;
 	}
 
-	//get update info from core model
+	// get update info from core model
 	@Override
-	public void refresh(AROTraceData AnalyzerResult) {	
+	public void refresh(AROTraceData AnalyzerResult) {
 		analyzerResult = AnalyzerResult;
 		setAroTraceData(analyzerResult);
 		getDeviceNetworkProfilePanel().refresh(analyzerResult);
 		jTcpUdpFlowsModel.refresh(analyzerResult);
-		RowSorter<TCPUDPFlowsTableModel> sorter = new TableRowSorter<TCPUDPFlowsTableModel>(jTcpUdpFlowsModel);
-		getJTCPFlowsTable().setRowSorter(sorter);
-
 		sessionsSortedByTimestamp = analyzerResult.getAnalyzerResult().getSessionlist();
-		setRequestResponseWithSession(buildHttpRequestResponseWithSession(
-				analyzerResult.getAnalyzerResult().getSessionlist()));
+		setRequestResponseWithSession(
+				buildHttpRequestResponseWithSession(analyzerResult.getAnalyzerResult().getSessionlist()));
 		getGraphPanel().refresh(analyzerResult);
-		//clear table
+		// clear table
 		jPacketViewTableModel.removeAllRows();
 		getJHttpReqResPanel().getjRequestResponseTableModel().removeAllRows();
 		getJContentViewPanel().getJContentTextArea().setText("");
-		
+
 	}
-	
+
 	public void setChartOptions(List<ChartPlotOptions> optionsSelected) {
-		 getGraphPanel().setChartOptions(optionsSelected);
+		getGraphPanel().setChartOptions(optionsSelected);
 	}
-	
+
 	/**
 	 * Hide the Charts Panel on the Diagnostic tab
 	 */
 	public void hideChartOptions() {
-		 getGraphPanel().hideChartOptions();
+		getGraphPanel().hideChartOptions();
 	}
-	
+
 	/**
 	 * Show the Charts Panel on the Diagnostic tab
 	 */
 	public void showChartOptions() {
-		 getGraphPanel().showChartOptions();
+		getGraphPanel().showChartOptions();
 	}
 
-	//get update info from tcp/udp flow table
+	// get update info from tcp/udp flow table
 	@Override
 	public void valueChanged(ListSelectionEvent evt) {
 
-		if(evt.getSource() instanceof ListSelectionModel){
-			ListSelectionModel lsm = (ListSelectionModel)evt.getSource();
-			if(lsm.getMinSelectionIndex() !=-1){
+		if (evt.getSource() instanceof ListSelectionModel) {
+			ListSelectionModel lsm = (ListSelectionModel) evt.getSource();
+			if (lsm.getMinSelectionIndex() != -1) {
 				Session session = getJTCPFlowsTable().getSelectedItem();
-				if(session==null){
+				if (session == null) {
 					jPacketViewTableModel.removeAllRows();
 					getJHttpReqResPanel().getjRequestResponseTableModel().removeAllRows();
 					getJContentViewPanel().getJContentTextArea().setText("");
 
-				}else{
-	  				if(session.isUDP()){
-	  					jPacketViewTableModel.setData(session.getUDPPackets());
-	  					getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
+				} else {
+					if (session.isUDP()) {
+						jPacketViewTableModel.setData(session.getUDPPackets());
+						getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
 						if (!session.getUDPPackets().isEmpty()) {
-							getJPacketViewTable().getSelectionModel()
-									.setSelectionInterval(0, 0);
+							getJPacketViewTable().getSelectionModel().setSelectionInterval(0, 0);
 						}
-						if (jTCPFlowsContentTabbedPane
-								.getSelectedComponent() == getJContentViewPanel()) {
+						if (jTCPFlowsContentTabbedPane.getSelectedComponent() == getJContentViewPanel()) {
 							getJContentViewPanel().updateContext(session);
 						}
 						getJContentViewPanel().getJContentTextArea().setCaretPosition(0);
 						getJHttpReqResPanel().updateTable(session);
-	 				}else{
-	 					jPacketViewTableModel.setData(session.getPackets());
-	 					getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
-	 					if(!session.getPackets().isEmpty()){
-	 						getJPacketViewTable().getSelectionModel().setSelectionInterval(0, 0);
-	 					}
-	 					getJContentViewPanel().updateContext(session);
+					} else {
+						jPacketViewTableModel.setData(session.getPackets());
+						getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
+						if (!session.getPackets().isEmpty()) {
+							getJPacketViewTable().getSelectionModel().setSelectionInterval(0, 0);
+						}
+						getJContentViewPanel().updateContext(session);
 						getJContentViewPanel().getJContentTextArea().setCaretPosition(0);
-	  					getJHttpReqResPanel().updateTable(session);
-	 				}
+						getJHttpReqResPanel().updateTable(session);
+					}
 				}
- 			}
+			}
 		}
 	}
-	
-	public HttpRequestResponseInfo getRrAssoSession(Session session){
-		HttpRequestResponseInfo reqInfo = null; 
+
+	public HttpRequestResponseInfo getRrAssoSession(Session session) {
+		HttpRequestResponseInfo reqInfo = null;
 		for (HttpRequestResponseInfoWithSession reqResSession : requestResponseWithSession) {
 			if (reqResSession.getSession().equals(session)) {
-				reqInfo =  reqResSession.getInfo() ;
-  				break; 
+				reqInfo = reqResSession.getInfo();
+				break;
 			}
 		}
 		return reqInfo;
- 	}
-	
+	}
+
 	/**
-	 * TODO:  This belongs in core!  As a matter of fact, it's mostly copied and pasted from
-	 * internal code in CacheAnalysisImpl
+	 * TODO: This belongs in core! As a matter of fact, it's mostly copied and
+	 * pasted from internal code in CacheAnalysisImpl
 	 * 
 	 * @param sessions
 	 * @return
 	 */
-	private List<HttpRequestResponseInfoWithSession> buildHttpRequestResponseWithSession(
-			List<Session> sessions) {
-		List<HttpRequestResponseInfoWithSession> returnList =
-				new ArrayList<HttpRequestResponseInfoWithSession>();
+	private List<HttpRequestResponseInfoWithSession> buildHttpRequestResponseWithSession(List<Session> sessions) {
+		List<HttpRequestResponseInfoWithSession> returnList = new ArrayList<HttpRequestResponseInfoWithSession>();
 		for (Session session : sessions) {
-			if(!session.isUDP()){
-				for(HttpRequestResponseInfo item: session.getRequestResponseInfo()){
-					HttpRequestResponseInfoWithSession itemsession =
-							new HttpRequestResponseInfoWithSession();
+			if (!session.isUDP()) {
+				for (HttpRequestResponseInfo item : session.getRequestResponseInfo()) {
+					HttpRequestResponseInfoWithSession itemsession = new HttpRequestResponseInfoWithSession();
 					itemsession.setInfo(item);
 					itemsession.setSession(session);
 					returnList.add(itemsession);
 				}
-			} 
+			}
 		}
 		Collections.sort(returnList);
 		return Collections.unmodifiableList(returnList);
 	}
 
-	private void setHighlightedPacket(Session session) {
-//		requestResponseWithSession.contains(session);
-		for (HttpRequestResponseInfoWithSession reqResSession : requestResponseWithSession) {
-			if (reqResSession.getSession().equals(session)) {
-				getJPacketViewTable().selectItem(reqResSession.getInfo().getFirstDataPacket());
-				break;
+	public void setTimeLineLinkedComponents(double timeStamp, boolean isReset) {
+		if (getAroTraceData() != null) {
+			if (timeStamp < 0.0) {
+				timeStamp = 0.0;
+			}
+			double traceDuration = getAroTraceData().getAnalyzerResult().getTraceresult().getTraceDuration();
+			if (timeStamp > traceDuration) {
+				timeStamp = traceDuration;
+			}
+			getGraphPanel().setGraphView(timeStamp, isReset);
+		}
+
+	}
+
+	// old analyzer method name is setTimeLineLinkedComponents(double
+	// timeStamp,double dTimeRangeInterval)
+	public void setTimeLineToTable(double timeStamp) {
+		// logger.info("enter setTimeLineTable()");
+		if (getAroTraceData() == null) {
+			logger.info("no analyze traces data");
+		} else {
+
+			boolean bTCPTimeStampFound = false;
+			boolean bExactMatch = false;
+
+			// Attempt to find corresponding packet for time.
+			double packetTimeStamp = 0.0;
+			double packetTimeStampDiff = 0.0;
+			double previousPacketTimeStampDiff = 9999.0;
+			Session bestMatchingTcpSession = null;
+			PacketInfo bestMatchingPacketInfo = null;
+			// logger.info("enter sesionlist for loop");
+			for (Session tcpSess : getAroTraceData().getAnalyzerResult().getSessionlist()) {
+				PacketInfo packetInfo = diagHelper.getBestMatchingPacketInTcpSession(tcpSess, bExactMatch, timeStamp,
+						MATCH_SECONDS_RANGE);
+				if (packetInfo != null) {
+					packetTimeStamp = packetInfo.getTimeStamp();
+					packetTimeStampDiff = timeStamp - packetTimeStamp;
+					if (packetTimeStampDiff < 0.0) {
+						packetTimeStampDiff *= -1.0;
+					}
+					if (packetTimeStampDiff < previousPacketTimeStampDiff) {
+						bestMatchingTcpSession = tcpSess;
+						bestMatchingPacketInfo = packetInfo;
+						bTCPTimeStampFound = true;
+					}
+				}
+			}
+			// logger.info("leave sesionlist for loop");
+
+			if (bTCPTimeStampFound) {
+				getJTCPFlowsTable().selectItem(bestMatchingTcpSession);
+				getJPacketViewTable().selectItem(bestMatchingPacketInfo);
+				getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
+
+			} else {
+				getJTCPFlowsTable().selectItem(null);
+				getJPacketViewTable().selectItem(null);
+				// if (videoPlayer != null) {
+				// bTCPPacketFound = false;
+				// videoPlayer.setMediaDisplayTime(graphPanel
+				// .getCrosshair());
+				// }
+				// }
 			}
 		}
+		// logger.info("leave setTimeLineTable()");
 	}
 
-	public  void setTimeLineLinkedComponents(double timeStamp,boolean isReset) {
-			if (getAroTraceData() != null) {
-				if (timeStamp < 0.0) {
-					timeStamp = 0.0;
-				}
-				double traceDuration = getAroTraceData().getAnalyzerResult().getTraceresult().getTraceDuration();
-				if (timeStamp > traceDuration) {
-					timeStamp = traceDuration;
-				}
-				getGraphPanel().setGraphView(timeStamp,isReset);
-			}
-		
-	}
-	
-	//old analyzer method name is setTimeLineLinkedComponents(double timeStamp,double dTimeRangeInterval)
-	public void setTimeLineToTable(double timeStamp){
-//		logger.info("enter setTimeLineTable()");
-				if (getAroTraceData() == null) {
-					logger.info("no analyze traces data");
-				}else{
-					
-			 		boolean bTCPTimeStampFound = false;
-					boolean bExactMatch = false;
-			
-					// Attempt to find corresponding packet for time.
-					double packetTimeStamp = 0.0;
-					double packetTimeStampDiff = 0.0;
-					double previousPacketTimeStampDiff = 9999.0;
-					Session bestMatchingTcpSession = null;
-					PacketInfo bestMatchingPacketInfo = null;
-//					logger.info("enter sesionlist for loop");
-					for (Session tcpSess : getAroTraceData().getAnalyzerResult().getSessionlist()) {
-						PacketInfo packetInfo = diagHelper.getBestMatchingPacketInTcpSession(
-								tcpSess, bExactMatch, timeStamp, MATCH_SECONDS_RANGE);
-						if (packetInfo != null) {
-							packetTimeStamp = packetInfo.getTimeStamp();
-							packetTimeStampDiff = timeStamp - packetTimeStamp;
-							if (packetTimeStampDiff < 0.0) {
-								packetTimeStampDiff *= -1.0;
-							}
-							if (packetTimeStampDiff < previousPacketTimeStampDiff) {
-								bestMatchingTcpSession = tcpSess;
-								bestMatchingPacketInfo = packetInfo;
-								bTCPTimeStampFound = true;
-							}
-						}
-					}
-//					logger.info("leave sesionlist for loop");
-
-					if (bTCPTimeStampFound) {
-						getJTCPFlowsTable().selectItem(bestMatchingTcpSession);
-						getJPacketViewTable().selectItem(bestMatchingPacketInfo);
-						getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
-		 
-					} else {
-						getJTCPFlowsTable().selectItem(null);
-						getJPacketViewTable().selectItem(null);						
-	//					if (videoPlayer != null) {
-	//						bTCPPacketFound = false;
-	//						videoPlayer.setMediaDisplayTime(graphPanel
-	//								.getCrosshair());
-	//					}
-	//				}					
-					}			
-		}		
-//		logger.info("leave setTimeLineTable()");
-	}
-	public boolean getTCPPacketFoundStatus(){
+	public boolean getTCPPacketFoundStatus() {
 		return bTCPPacketFound;
 	}
-	
-	public void reSetTCPPacketFoundStatus(boolean val){
+
+	public void reSetTCPPacketFoundStatus(boolean val) {
 		bTCPPacketFound = val;
 	}
-	
+
 	/**
 	 * Highlights the specified TCP session in the TCP flows table.
 	 * 
@@ -621,24 +615,24 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	 *            - The TCPSession object to be highlighted.
 	 */
 	public void setHighlightedTCP(Session tcpSession) {
-		
-		getJTCPFlowsTable().selectItem(tcpSession);		
-	
- 	}
+
+		getJTCPFlowsTable().selectItem(tcpSession);
+		getJTCPFlowsTable().showHighlightedSession(getJTCPFlowsTable().getSelectedRow());
+	}
 
 	public void setHighlightedTCP(HttpRequestResponseInfo reqResInfo) {
 		for (HttpRequestResponseInfoWithSession reqResSession : requestResponseWithSession) {
 			if (reqResSession.getInfo().equals(reqResInfo)) {
 				Session sessionTemp = reqResSession.getSession();
-				logger.info("local port = "+ sessionTemp.getLocalPort());
+				logger.info("local port = " + sessionTemp.getLocalPort());
 				setHighlightedTCP(reqResSession.getSession());
 				jHttpReqResPanel.setHighlightedRequestResponse(reqResInfo);
 				break;
 			}
 		}
 	}
-	
-	//only UnnecessaryConnectionEntry table use this method 
+
+	// only UnnecessaryConnectionEntry table use this method
 	public void setHighlightedTCP(Double timestampParm) {
 		if (timestampParm != null) {
 			double timestamp = timestampParm.doubleValue();
@@ -647,8 +641,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			Session foundSession = null;
 			for (Session tcpSess : sessionsSortedByTimestamp) {
 				if (tcpSess != null) {
-					double currentTimestampDiff = Math.abs(tcpSess.getSessionStartTime() -
-							timestamp);
+					double currentTimestampDiff = Math.abs(tcpSess.getSessionStartTime() - timestamp);
 					if (currentTimestampDiff < timestampDiff) {
 						timestampDiff = currentTimestampDiff;
 						foundSession = tcpSess;
@@ -661,24 +654,21 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 				}
 			}
 			if (foundSession != null) {
-				//setHighlightedTCP(foundSession, timestamp);
+				// setHighlightedTCP(foundSession, timestamp);
 				setHighlightedTCP(foundSession);
+			} else {
+				logger.warn("No session found to route to Diagnostic Tab for timestamp " + timestamp);
 			}
-			else {
-				logger.warn("No session found to route to Diagnostic Tab for timestamp " +
-						timestamp);
-			}
-		}
-		else {
+		} else {
 			logger.warn("No timestamp for Diagnostic Tab routing");
 		}
 	}
-	
-	public void launchSliderDialog(){
-		if(null != getGraphPanel())
+
+	public void launchSliderDialog() {
+		if (null != getGraphPanel())
 			getGraphPanel().launchSliderDialog(0);
 	}
-	
+
 	// only for security best practice table route
 	public void setHighlightedTCP(Object routeInfo) {
 		double timestamp = -1;
@@ -700,26 +690,26 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			timestamp = entry.getSessionStartTime();
 			destIP = entry.getDestIP();
 		}
-		
+
 		if (timestamp == -1 || destIP == null) {
 			logger.warn("invalid route information");
 			return;
 		}
-		
-		for(Session session : sessionsSortedByTimestamp) {
+
+		for (Session session : sessionsSortedByTimestamp) {
 			if (session != null && session.getRemoteIP() != null) {
-				if (session.getSessionStartTime() == timestamp && destIP.equals(session.getRemoteIP().getHostAddress())) {
+				if (session.getSessionStartTime() == timestamp
+						&& destIP.equals(session.getRemoteIP().getHostAddress())) {
 					setHighlightedTCP(session);
 					return;
 				}
 			}
 		}
-		logger.warn("No session found to route to Diagnostic Tab for timestamp " +
-				timestamp);
+		logger.warn("No session found to route to Diagnostic Tab for timestamp " + timestamp);
 	}
 
 	@Override
-	public JPanel layoutDataPanel() {				
+	public JPanel layoutDataPanel() {
 		return null;
 	}
 
@@ -728,18 +718,18 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	 * 
 	 * @return boolean value.
 	 */
-	public boolean IsGraphPanelClicked(){
+	public boolean IsGraphPanelClicked() {
 		return graphPanelClicked;
 	}
-	
+
 	/**
 	 * Set the graph panel clicked status
 	 */
-	public void setGraphPanelClicked(boolean val){
-		 graphPanelClicked = val;
+	public void setGraphPanelClicked(boolean val) {
+		graphPanelClicked = val;
 	}
 
-	public void updateTcpTable(){
-		
+	public void updateTcpTable() {
+
 	}
 }

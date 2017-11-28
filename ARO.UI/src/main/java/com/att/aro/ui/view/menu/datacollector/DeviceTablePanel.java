@@ -32,8 +32,6 @@ import javax.swing.table.TableColumnModel;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
-import com.att.aro.core.mobiledevice.pojo.IAroDevice.AroDeviceState;
-import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.model.DataTable;
@@ -93,6 +91,7 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 	private JPanel getContentPanel() {
 		if (this.contentPanel == null) {
 			this.contentPanel = new JPanel(new BorderLayout()) {
+				private static final long serialVersionUID = 1L;
 
 				@Override
 				public void setSize(Dimension d) {

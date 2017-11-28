@@ -54,7 +54,6 @@ public class PeriodicTransferImplTest extends BaseTest {
 		try {
 			remoteIP = InetAddress.getLocalHost();
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		int remotePort = 80;
@@ -119,14 +118,12 @@ public class PeriodicTransferImplTest extends BaseTest {
 		try {
 			remoteIP = InetAddress.getLocalHost();
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		InetAddress remoteIP01 = null;
 		try {
 			remoteIP01 = InetAddress.getByName("google.com");
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

@@ -209,7 +209,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			totaltemp += byteCountSession.getBytesTransferred();
 		}
 		Statistic stat = this.getStatistic(filteredPacketsNoDNSUDP);
-		if (stat.getAppName() != null && stat.getAppName().size() == 1 && stat.getAppName().contains("Unknown")){
+		if (result != null && stat.getAppName() != null && stat.getAppName().size() == 1 && stat.getAppName().contains("Unknown")){
 			stat.setAppName(new HashSet<String>(result.getAppInfos()));
 		}
 		
@@ -234,6 +234,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				imgVidBP.add(BestPracticeType.IMAGE_MDATA);
 				imgVidBP.add(BestPracticeType.IMAGE_CMPRS);
 				imgVidBP.add(BestPracticeType.IMAGE_FORMAT);
+				imgVidBP.add(BestPracticeType.IMAGE_COMPARE);
 				if (CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), imgVidBP)) {
 					videoUsageAnalyzer.clearData();
 					data.setVideoUsage(videoUsageAnalyzer.analyze(result, sessionlist));

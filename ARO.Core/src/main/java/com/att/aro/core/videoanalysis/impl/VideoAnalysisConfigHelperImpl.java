@@ -48,8 +48,8 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 			return vaConfig;
 		} else {
 			for (VideoAnalysisConfig tempConfig : vaConfigMap.values()) {
-				log.info(tempConfig.getDesc());
 				if (tempConfig.isValidated() && tempConfig.patternFind(target)) {
+					log.info(tempConfig.getDesc());
 					vaConfig = tempConfig;
 					return vaConfig;
 				}
@@ -229,11 +229,11 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 		} catch (PatternSyntaxException e) {
 			error = String.format("Invalid regex pattern :%s", e.getMessage());
 		} catch (JsonParseException e) {
-			error = String.format("VideoAnalysisConfig failed to de-serialize :%s", e.getMessage());
+			error = String.format("VideoAnalysisConfig failed to de-serialize %s :%s", file, e.getMessage());
 		} catch (JsonMappingException e) {
-			error = String.format("VideoAnalysisConfig failed to de-serialize :%s", e.getMessage());
+			error = String.format("VideoAnalysisConfig failed to de-serialize %s :%s", file, e.getMessage());
 		} catch (IOException e) {
-			error = String.format("VideoAnalysisConfig failed to load :%s", e.getMessage());
+			error = String.format("VideoAnalysisConfig failed to load %s :%s", file, e.getMessage());
 		}
 
 		// TODO hand this problem back to user
@@ -299,7 +299,6 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 		return temp;
 	}
 
-	@SuppressWarnings("null")
 	@Override
 	public String[] match(VideoAnalysisConfig vConfig, String requestStr, String headerStr, String responseStr) {
 
@@ -338,17 +337,17 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 			temp = new String[cntHdr + cntResp + cntReq];
 			if (temp != null) {
 				int ptr = 0;
-				if (cntReq > 0) {
+				if (cntReq > 0 && matcher != null) {
 					for (int index = 0; index < matcher.groupCount();) {
 						temp[ptr++] = matcher.group(++index);
 					}
 				}
-				if (cntHdr > 0) {
+				if (cntHdr > 0 && matcherHdr != null) {
 					for (int index = 0; index < matcherHdr.groupCount();) {
 						temp[ptr++] = matcherHdr.group(++index);
 					}
 				}
-				if (cntResp > 0) {
+				if (cntResp > 0 && matcherResp != null) {
 					for (int index = 0; index < matcherResp.groupCount();) {
 						temp[ptr++] = matcherResp.group(++index);
 					}

@@ -142,6 +142,7 @@ public class AdbServiceImplTest extends BaseTest {
 		assertTrue(success);
 	}
 
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void fail_pullFile() throws Exception {
 		SyncService syncservice = Mockito.mock(SyncService.class);

@@ -30,17 +30,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.Session;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class ContentViewJPanel extends JPanel {
 	
 	private static final long serialVersionUID = 1L;
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
-
-	// Content view
 	private JScrollPane jContentViewScrollPane; // Content View
 	private JPanel buttonsPanel; // Content View
 	private JTextArea jContentTextArea; // session content  text
@@ -49,7 +44,6 @@ public class ContentViewJPanel extends JPanel {
 	private JTextArea searchableTextArea;
 
 	private JButton searchNext;
-	private static final int TXT_FIELD_SIZE = 10;
  	
 	
 	private Session session;

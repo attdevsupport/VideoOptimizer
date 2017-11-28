@@ -17,7 +17,6 @@ package com.att.aro.ui.view.bestpracticestab;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JPanel;
@@ -70,6 +69,8 @@ public class BpDetailDownloadPanel extends BpDetail {
 		addPanel(row++, new BpDetailItem("imageCompression", BestPracticeType.IMAGE_CMPRS, new BpFileImageCompressionTablePanel()));
 		
 		addPanel(row++, new BpDetailItem("imageFormat", BestPracticeType.IMAGE_FORMAT, new BpFileImageFormatTablePanel()));
+
+		addPanel(row++, new BpDetailItem("uiComparator", BestPracticeType.IMAGE_COMPARE, new BpFileImageComparisionTablePanel()));
 		
 		// Minify CSS, JS, JSON and HTML
 		addPanel(row++, new BpDetailItem("minification", BestPracticeType.MINIFICATION, new BpFileMinificationTablePanel()));
@@ -87,7 +88,6 @@ public class BpDetailDownloadPanel extends BpDetail {
 
 	@Override
 	public JPanel layoutDataPanel() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	

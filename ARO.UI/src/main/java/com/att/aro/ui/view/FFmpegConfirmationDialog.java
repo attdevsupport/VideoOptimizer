@@ -14,22 +14,20 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import com.att.aro.core.ILogger;
 import com.att.aro.core.model.InjectLogger;
-import com.att.aro.core.videoanalysis.impl.FFmpegConfirmationImpl;
+import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-public class FFmpegConfirmationDialog extends JDialog {
-
-	private JPanel panel;
+public class FFmpegConfirmationDialog extends ConfirmationDialog {
+	private static final long serialVersionUID = 1L;
+	
 	private JLabel ffmpegMsgLabel;
 	private JCheckBox dontShowAgainCheckBox;
-	private JButton okBtn;
 
 	@InjectLogger
 	private static ILogger log;
@@ -40,7 +38,7 @@ public class FFmpegConfirmationDialog extends JDialog {
 
 	public void createDialog() {
 		setUndecorated(false);
-		setDefaultCloseOperation(this.DISPOSE_ON_CLOSE);
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setTitle(resourceBundle.getString("ffmpeg.dialog.title"));
 		setResizable(false);
 		setBounds(400, 300, 400, 150);

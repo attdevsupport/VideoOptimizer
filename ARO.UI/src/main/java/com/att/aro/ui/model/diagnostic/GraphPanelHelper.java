@@ -96,6 +96,8 @@ public class GraphPanelHelper{
 		plotOrder.add(ChartPlotOptions.WIFI);
 		plotOrder.add(ChartPlotOptions.ALARM);
 		plotOrder.add(ChartPlotOptions.NETWORK_TYPE);		
+		plotOrder.add(ChartPlotOptions.ATTENUATION);
+		plotOrder.add(ChartPlotOptions.SPEED_THROTTLE);
 		plotOrder.add(ChartPlotOptions.THROUGHPUT);
 		plotOrder.add(ChartPlotOptions.UL_PACKETS);
 		plotOrder.add(ChartPlotOptions.DL_PACKETS);
@@ -205,7 +207,7 @@ public class GraphPanelHelper{
 					}
 					if (bAttemptToWriteToFile) {
 						try {
-							if (fileType.equalsIgnoreCase(fileTypesPng[0])) {
+							if (fileType != null && fileType.equalsIgnoreCase(fileTypesPng[0])) {
 								BufferedImage bufImage = ImageHelper.createImage(pane.getBounds().width,pane.getBounds().height);
 								Graphics2D g = bufImage.createGraphics();
 								pane.paint(g);

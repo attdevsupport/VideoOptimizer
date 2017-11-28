@@ -17,19 +17,21 @@ package com.att.aro.core.bestpractice.pojo;
 
 public class VideoRedundancyResult extends AbstractBestPracticeResult {
 
-	private int redundancy;
+	private double redundantPercentage;
 	
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.VIDEO_REDUNDANCY;
 	}
 
-	public int getRedundancy() {
-		return redundancy;
+	public double getRedundantPercentage() {
+		return redundantPercentage;
 	}
 
-	public void setRedundancy(int redundancy) {
-		this.redundancy = redundancy;
+	public void setRedundantPercentage(double redundantPercentage) {
+		this.redundantPercentage = redundantPercentage;
 	}
+
+	
 
 }

@@ -53,7 +53,6 @@ public class VideoAnalysisDialog extends JDialog {
 
 	private static final long serialVersionUID = 1L;
 	private static int MAXBUFFER = 5000;
-	private static int MAXSTARTUPDELAY = 50;
 	private static int MAXSTALLTRIGGERTIME = 10;
 	private static int MAXSTALLRECOVERY = 10;
 	
@@ -69,7 +68,6 @@ public class VideoAnalysisDialog extends JDialog {
 	private JButton okButton;
 	private JButton cancelButton;
 	private VideoUsagePrefs videoUsagePrefs;
-	private JTextField startupDelayEdit;
 	private ObjectMapper mapper;
 	private PreferenceHandlerImpl prefs;
 	private JTextField stallTriggerTimeEdit;
@@ -88,7 +86,7 @@ public class VideoAnalysisDialog extends JDialog {
 		prefs = PreferenceHandlerImpl.getInstance();
 		
 		String temp = prefs.getPref(VideoUsagePrefs.VIDEO_PREFERENCE);
-		if (temp != null) {
+		if (temp != null && !temp.equals("null")) {
 			try {
 				videoUsagePrefs = mapper.readValue(temp, VideoUsagePrefs.class);
 			} catch (IOException e) {
@@ -139,7 +137,6 @@ public class VideoAnalysisDialog extends JDialog {
 	
 	private Component getPrefencesPanel() {
 
-		Label startupDelayLabel      = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.startupDelay"));
 		Label stallTriggerTimeLabel  = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallTriggerTime"));
 		Label maxBufferLabel         = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.maxBuffer"));
 		Label duplicateHandlingLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.duplicateHandling"));
@@ -147,13 +144,11 @@ public class VideoAnalysisDialog extends JDialog {
 		Label stallRecoveryLabel	 = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallRecovery"));
 		Label startupDelayReminderLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.startupDelayReminder"));
 
-		startupDelayEdit      = new JTextField(String.format("%.3f", videoUsagePrefs.getStartupDelay())     ,5); 
 		stallTriggerTimeEdit  = new JTextField(String.format("%.3f", videoUsagePrefs.getStallTriggerTime()) ,5); 
 		maxBufferEdit         = new JTextField(String.format("%.2f", videoUsagePrefs.getMaxBuffer())        ,5); 
 		stallPausePointEdit   = new JTextField(String.format("%.4f", videoUsagePrefs.getStallPausePoint())  ,5);
 		stallRecoveryEdit     = new JTextField(String.format("%.4f", videoUsagePrefs.getStallRecovery())    ,5);
 		
-		startupDelayEdit	.setInputVerifier(new NumericInputVerifier(MAXSTARTUPDELAY, 0, 3));
 		stallTriggerTimeEdit.setInputVerifier(new NumericInputVerifier(MAXSTALLTRIGGERTIME, 0.01, 3));
 		maxBufferEdit		.setInputVerifier(new NumericInputVerifier(MAXBUFFER, 0, 2));
 		stallPausePointEdit .setInputVerifier(new NumericInputVerifier(MAXSTALLRECOVERY, 0, 4));
@@ -169,7 +164,6 @@ public class VideoAnalysisDialog extends JDialog {
 		int idx = 0;
 		JPanel panel = new JPanel(new GridBagLayout());
 
-		idx = addLine(startupDelayLabel    , startupDelayEdit    , idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		idx = addLine(stallTriggerTimeLabel, stallTriggerTimeEdit, idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		idx = addLine(stallPausePointLabel , stallPausePointEdit , idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		idx = addLine(stallRecoveryLabel   , stallRecoveryEdit   , idx, panel  ,new Label(ResourceBundleHelper.getMessageString("units.seconds")));
@@ -237,7 +231,7 @@ public class VideoAnalysisDialog extends JDialog {
 				
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					if (preSaveCheck(startupDelayEdit, maxBufferEdit, stallTriggerTimeEdit, stallPausePointEdit, stallRecoveryEdit)) {
+					if (preSaveCheck(maxBufferEdit, stallTriggerTimeEdit, stallPausePointEdit, stallRecoveryEdit)) {
 						executeOkButton();
 					}
 				}
@@ -261,21 +255,22 @@ public class VideoAnalysisDialog extends JDialog {
 	 */
 	private boolean savePreference() {
 
-		videoUsagePrefs.setStartupDelay(Double.valueOf(startupDelayEdit.getText()));
 		videoUsagePrefs.setMaxBuffer(Double.valueOf(maxBufferEdit.getText()));
 		videoUsagePrefs.setStallTriggerTime(Double.valueOf(stallTriggerTimeEdit.getText()));
 		videoUsagePrefs.setDuplicateHandling((DUPLICATE_HANDLING) duplicateHandlingEditCombo.getSelectedItem());
 		videoUsagePrefs.setStallPausePoint(Double.valueOf(stallPausePointEdit.getText()));
 		videoUsagePrefs.setStallRecovery(Double.valueOf(stallRecoveryEdit.getText()));
 		videoUsagePrefs.setStartupDelayReminder(startupDelayReminder.isSelected());
-		
+
 		String temp;
 		try {
 			temp = mapper.writeValueAsString(videoUsagePrefs);
 		} catch (IOException e) {
 			return false;
 		}
-		prefs.setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
+		if (temp != null && !temp.equals("null")) {
+			prefs.setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
+		}
 		return true;
 
 	}

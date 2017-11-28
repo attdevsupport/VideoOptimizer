@@ -57,7 +57,7 @@ public class AlarmDumpsysTimestampReaderImplTest extends BaseTest {
 		AlarmDumpsysTimestamp alarmDumpsysTimestamp = traceDataReader.readData(traceFolder, new Date((long) 1.269821752138E9 * 1000), 0, "2.1", 65524.92);
 
 		double x = alarmDumpsysTimestamp.getDumpsysEpochTimestamp();
-		double y = alarmDumpsysTimestamp.getDumpsysElapsedTimestamp();
+		alarmDumpsysTimestamp.getDumpsysElapsedTimestamp();
 		assertEquals(1.269821813284E12, x, 0);
 		assertEquals(1.0930327E7, alarmDumpsysTimestamp.getDumpsysElapsedTimestamp(), 0);
 		

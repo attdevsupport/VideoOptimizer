@@ -30,6 +30,7 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
+import com.att.aro.core.videoanalysis.pojo.amazonvideo.MpdBase;
 import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
 
 public class AROManifest {
@@ -40,20 +41,20 @@ public class AROManifest {
 	IStringParse stringParse = context.getBean(IStringParse.class);
 	
 	IHttpRequestResponseHelper reqhelper = (IHttpRequestResponseHelper) context.getBean("httpRequestResponseHelper");
-	Session session;                // session that manifest arrived on
+	Session session;                					// session that manifest arrived on
 	VideoFormat videoFormat = VideoFormat.UNKNOWN;
 	VideoType videoType = VideoType.UNKNOWN;            // DASH, HLS, Unknown
-	String videoName = "";          //
+	String videoName = "";
 	String exten = "";
-	double duration = 0D;
-	double timeScale = 0D;
+	Double duration = 0D;
+	Double timeScale = 0D;
 	TreeMap<String, Double> bitrateMap = new TreeMap<>();
-	double timeLength;		        // in milliseconds
-	double beginTime;		        // timestamp of manifest request
-	double endTime;			        // timestamp of manifest session end ?why
-	URI uri;				        // URI of GET request
+	double timeLength;		                           // in milliseconds                        
+	double beginTime;		                           // timestamp of manifest request          
+	double endTime;			                           // timestamp of manifest session end ?why 
+	URI uri;				                           // URI of GET request                     
 	String uriStr = "";
-	double segmentCount;			// segments range from 0 to segmentCount
+	private double segmentCount;			           // segments range from 0 to segmentCount
 	String encryption = "";
 	
 	/** <pre>
@@ -85,6 +86,8 @@ public class AROManifest {
 	VideoAnalysisConfig vConfig;
 
 	private boolean selected = false;
+	private boolean activeState = true;
+	private VideoEventData ved;
 
 	/**
 	 * Initializes an instance of the VideoEvent class, using the specified event type, 
@@ -95,16 +98,37 @@ public class AROManifest {
 	 * @param releaseTime The time at which the chunk finished downloading.
 	 */
 	public AROManifest(VideoType videoType, HttpRequestResponseInfo req, String videoPath) {
+		this( videoType,  req, null, videoPath);
+	}
+	
+	/**
+	 * Initializes an instance of the VideoEvent class, using the specified event type, 
+	 * press time, and release time.
+	 * 
+	 * @param videoType The event type. One of the values of the VideoEventType enumeration.
+	 * @param ved - VideoEventData object
+	 * @param manifestTime The time at which the event was initiated (such as a key being pressed down).
+	 * @param releaseTime The time at which the chunk finished downloading.
+	 */
+	public AROManifest(VideoType videoType, HttpRequestResponseInfo req, VideoEventData ved, String videoPath) {
 
 		this.videoType = videoType;
 		this.endTime = 0;
 		this.timeLength = 0;
 		this.videoPath = videoPath;
+		this.ved = ved;
+		if (ved != null) {
+			setVideoName(ved.getName());
+		}
 		if (req != null) {
 			this.beginTime = req.getTimeStamp();
 			this.session = req.getSession();
 			this.uri = req.getAssocReqResp().getObjUri();
 		}
+	}
+
+	public void updateManifest(MpdBase manifest) {
+		// do nothing here
 	}
 
 	@Override
@@ -114,10 +138,13 @@ public class AROManifest {
 		strblr.append(", Name :");		   strblr.append(getVideoName());
 		strblr.append(", Encryption :");   strblr.append(getEncryption());
 		strblr.append(", URIs :");         strblr.append(uri != null ? uri.getRawPath() : "null");
-		strblr.append(", segmentList  :"); strblr.append(segmentList.size());
-		strblr.append(", segmentCount :"); strblr.append(getSegmentCount());
+		if (!segmentList.isEmpty()){
+			strblr.append("\n\t, segmentList  :");  strblr.append(segmentList.size());  strblr.append(segmentList);
+			strblr.append("\n\t, durationList  :"); strblr.append(durationList.size()); strblr.append(durationList);
+		}
+		strblr.append("\n\t, segmentCount :"); strblr.append(getSegmentCount());
 		strblr.append(", duration :")    ; strblr.append(getDuration());
-		strblr.append(", \n\tbitrates :"); strblr.append(bitrateMap);
+		strblr.append("\n\t, bitrates :"); strblr.append(bitrateMap);
 		
 		strblr.append(", \n\tvideoEvents [\n\t ");
 		if (!videoEventList.isEmpty()) {
@@ -150,7 +177,7 @@ public class AROManifest {
 	
 	public boolean checkContent(byte[] data) {
 		// FIXME - this needs a real comparison for the two byte arrays instead of through String comparison
-		return !(content == null || (Arrays.equals(content, data)));//new String(content)).equals(new String(data)));
+		return !(Arrays.equals(content, data));//new String(content)).equals(new String(data)));
 	}
 		
 	/**
@@ -271,10 +298,23 @@ public class AROManifest {
 	public String getVideoName() {
 		return videoName;
 	}
-
+	
+	/**
+	 * Warning, don't overwrite name unless absolutely certain of what you are doing.
+	 * 
+	 * @param videoName
+	 */
 	public void setVideoName(String videoName) {
-		if (videoName != null) {
-			this.videoName = videoName;
+		this.videoName = videoName;
+	}
+	
+	/**
+	 * Uses singleton pattern. First to assign name that is no null wins.
+	 * @param videoName
+	 */
+	public void singletonSetVideoName(String newVideoName) {
+		if (newVideoName != null && this.videoName.isEmpty()) {
+			this.videoName = newVideoName;
 		}
 	}
 
@@ -293,7 +333,13 @@ public class AROManifest {
 	 * @return bitrate
 	 */
 	public Double getBitrate(String key) {
-		return bitrateMap.get(key.toUpperCase());
+		Double rate;
+		try {
+			rate = bitrateMap.get(key.toUpperCase());
+		} catch (Exception e) {
+			rate = 0D;
+		}
+		return rate;
 	}
 
 	public TreeMap<String, Double> getBitrateMap() {
@@ -360,8 +406,17 @@ public class AROManifest {
 		}
 		return null;
 	}
+	
 	public String getTimeScale(String videoName) {
 		return "";
+	}
+
+	public TreeMap<String, Integer> getSegmentList() {
+		return segmentList;
+	}
+
+	public TreeMap<Integer, String> getDurationList() {
+		return durationList;
 	}
 
 	public String getDuration(String segment) {
@@ -392,11 +447,11 @@ public class AROManifest {
 		this.duration = duration;
 	}
 
-	public double getTimeScale() {
+	public Double getTimeScale() {
 		return timeScale;
 	}
 
-	public void setTimeScale(double timeScale) {
+	public void setTimeScale(Double timeScale) {
 		this.timeScale = timeScale;
 	}
 
@@ -477,4 +532,29 @@ public class AROManifest {
 		
 		return result;
 	}
+
+	public void adhocSegment(VideoEventData ved) {
+		// do nothing here
+	}
+
+	public Integer getSegment(VideoEventData ved) {
+		return ved.getSegment() == null ? -1 : ved.getSegment();
+	}
+
+	public boolean isActiveState() {
+		return activeState;
+	}
+
+	public void setActiveState(boolean activeState) {
+		this.activeState = activeState;
+	}
+
+	public VideoEventData getVed() {
+		return ved;
+	}
+
+	public void setVed(VideoEventData ved) {
+		this.ved = ved;
+	}
+
 }

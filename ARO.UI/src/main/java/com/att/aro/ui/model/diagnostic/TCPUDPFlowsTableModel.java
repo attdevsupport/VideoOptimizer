@@ -34,20 +34,20 @@ import com.att.aro.ui.commonui.CheckBoxRenderer;
 import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-
 public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 	private static final long serialVersionUID = 3691872179254714817L;
 	
-	private static final int TIME_COL = 0;
-	private static final int CHECKBOX_COL = 1;
-	private static final int APP_COL = 2;
-	private static final int DOMAIN_COL = 3;
-	private static final int LOCALPORT_COL = 4;
-	private static final int REMOTEIP_COL = 5;
-	private static final int REMOTEPORT_COL = 6;
-	private static final int BYTE_COUNT_COL = 7;
-	private static final int PACKETCOUNT_COL = 8;
-	private static final int TCP_UDP_COL = 9;
+	public static final int TIME_COL 		= 0;
+	public static final int CHECKBOX_COL 	= 1;
+	public static final int APP_COL 		= 2;
+	public static final int DOMAIN_COL 		= 3;
+	public static final int LOCALPORT_COL 	= 4;
+	public static final int REMOTEIP_COL 	= 5;
+	public static final int REMOTEPORT_COL 	= 6;
+	public static final int BYTE_COUNT_COL 	= 7;
+	public static final int PACKETCOUNT_COL = 8;
+	public static final int TCP_UDP_COL 	= 9;
+	
 	private static final String HOSTPORTSEPERATOR = ResourceBundleHelper.getMessageString("tcp.hostPortSeparator");
 	private static final String STRINGLISTSEPARATOR = ResourceBundleHelper.getMessageString("stringListSeparator");
 
@@ -91,6 +91,7 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 				}
 			}
 		});
+		
 
 	}
 	
@@ -136,14 +137,15 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 		switch (columnIndex) {
 		case TIME_COL:
 			return Double.class;
-		case PACKETCOUNT_COL:
-			return Integer.class;
 		case CHECKBOX_COL:
 			return Boolean.class;
 		case REMOTEPORT_COL:
-			return Integer.class;
 		case BYTE_COUNT_COL:
+		case PACKETCOUNT_COL:
 			return Integer.class;
+		case REMOTEIP_COL:
+		case DOMAIN_COL:
+			return String.class;
 		default:
 			return super.getColumnClass(columnIndex);
 		}
@@ -236,7 +238,7 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 					return ResourceBundleHelper.getMessageString("aro.unknownApp");
 				}
 	
-				//not pretty, but intended to dynamically determine how
+				// intended to dynamically determine how
 				// many characters will fit in a cell based on column width in
 				// pixels, then substring app name and prefix with ...
 				// start with 16% and add another .5% for each 70 pixels
@@ -301,7 +303,13 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 			}
 		case TCP_UDP_COL:
 			if(item.isUDP()){
-				return ResourceBundleHelper.getMessageString("tcp.udp");
+				if(53==item.getLocalPort()||53==item.getRemotePort()){
+					return ResourceBundleHelper.getMessageString("tcp.dns");
+				}else if(443==item.getLocalPort()||443==item.getRemotePort()||80==item.getLocalPort()||80==item.getRemotePort()){
+					return ResourceBundleHelper.getMessageString("tcp.quic");
+				}else{
+					return ResourceBundleHelper.getMessageString("tcp.udp");
+				}				
 			}else{
 				return ResourceBundleHelper.getMessageString("tcp.tcp");
 			}
@@ -311,23 +319,23 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 		}
 	}
 	/**
-	 * updata the datamodel with data 
+	 * update the datamodel with data 
 	 */
 	public void setValueAt(Object value, int row, int col) {
-		if(col == CHECKBOX_COL){
+		if (col == CHECKBOX_COL) {
 			Session item = getValueAt(row);
-			if(value instanceof Boolean){
+			if (value instanceof Boolean) {
 				boolean checkBoxValue = (Boolean) value;
 				String sessionKey = getSessionKey(item);
-				if(sessionMap.containsKey(sessionKey) && checkboxMap.containsKey(sessionKey)) {
+				if (sessionMap.containsKey(sessionKey) && checkboxMap.containsKey(sessionKey)) {
 					sessionMap.put(sessionKey, item);
 					checkboxMap.put(sessionKey, checkBoxValue);
 				}
 			}
-			
+
 			fireTableCellUpdated(row, col);
-		}	
-       
-    }
+		}
+
+	}
 
 }

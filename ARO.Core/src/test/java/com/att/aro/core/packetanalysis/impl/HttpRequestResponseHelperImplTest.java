@@ -2,6 +2,7 @@ package com.att.aro.core.packetanalysis.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -71,7 +72,6 @@ public class HttpRequestResponseHelperImplTest extends BaseTest {
 			gzipped_data = byteOutput.toByteArray();
 
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 
@@ -86,15 +86,13 @@ public class HttpRequestResponseHelperImplTest extends BaseTest {
 
 		try {
 			assertEquals(stringData, httpRequestResponseHelper.getContentString(req, session));
-
 			Mockito.when(session.getStorageDl()).thenReturn(data);
-			String thisWillFail = httpRequestResponseHelper.getContentString(req, session);
-
 		} catch (Exception e) {
 			assertEquals("The content may be corrupted.", e.getMessage());
 		}
 
 		// bad gzip data
+		assertNotNull(gzipped_data);
 		gzipped_data[20] = 42;
 		Mockito.when(session.getStorageDl()).thenReturn(gzipped_data);
 		Mockito.when(session.getStorageUl()).thenReturn(gzipped_data);
@@ -165,7 +163,6 @@ public class HttpRequestResponseHelperImplTest extends BaseTest {
 		HttpRequestResponseInfo reqLeft = mock(HttpRequestResponseInfo.class);
 		HttpRequestResponseInfo reqRight = mock(HttpRequestResponseInfo.class);
 
-		long lv = (long) left.length();
 		SortedMap<Integer, Integer> contentOffsetTreeMap = new TreeMap<Integer, Integer>();
 		contentOffsetTreeMap.put(1, 2);
 

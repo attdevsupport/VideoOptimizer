@@ -19,7 +19,8 @@ import android.util.Log;
 
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
-
+import com.att.arotcpcollector.ip.IPv4Header;
+import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
 import com.att.arotcpcollector.util.PacketUtil;
@@ -39,7 +40,8 @@ public class SocketDataWriterWorker implements Runnable {
 	private String sessionKey = "";
 	private SocketData pcapData; // for traffic.cap
 	private boolean secureEnable = false;
-	
+	private boolean printLog = false;
+
 	public SocketDataWriterWorker(TCPPacketFactory tcpFactory, UDPPacketFactory udpFactory) {
 		sessionMngr = SessionManager.getInstance();
 		pcapData = SocketData.getInstance();
@@ -140,34 +142,33 @@ public class SocketDataWriterWorker implements Runnable {
 		SocketChannel channel = session.getSocketchannel();
 
 		byte[] data = session.getSendingData();
-		if (data != null && data.length>0){
-			Log.i("SSL", "data more than zero, data length: " + data.length);
-		}
-		// ******************************** SSL *************************************
-		if (isSecureEnable()){
 
-		}
-		// ******************************** SSL *************************************
 		ByteBuffer buffer = ByteBuffer.allocate(data.length);
 		buffer.put(data);
 		buffer.flip();
 		
 		try {
-			//Log.d(TAG, "writing TCP data to: " + name);
 			// Make sure that the buffer was fully drained
 			while (buffer.hasRemaining()) {
 				channel.write(buffer);
 			}
-		} catch (NotYetConnectedException ex) {
-			Log.e(TAG, "failed to write to unconnected socket: " + ex.getMessage());
-		} catch (IOException e) {
-			Log.e(TAG, "Error writing to server: " + e.getMessage());
 
+			byte[] clearData = session.getClearSendingData();
+
+			if(session.isSecureSession() && null != clearData) {
+				IPv4Header ipHeader = session.getLastIPheader();
+				TCPHeader tcpHeader = session.getLastTCPheader();
+				clearData = tcpFactory.createPacketData(ipHeader,tcpHeader, clearData);
+				pcapData.sendDataToPcap(clearData, true);
+			}
+		} catch (NotYetConnectedException ex) {
+			Log.e(TAG, "socket not connected");
+		} catch (IOException e) {
 			//close connection with vpn client
 			byte[] rstdata = tcpFactory.createRstData(session.getLastIPheader(), session.getLastTCPheader(), 0);
 			Log.i("TCPTRACK"+session.getDestPort(), "<RST");
 			pcapData.sendDataRecieved(rstdata);
-			pcapData.sendDataToPcap(rstdata);
+			pcapData.sendDataToPcap(rstdata, false);
 			//remove session
 			Log.e(TAG, "failed to write to remote socket, aborting connection");
 			session.setAbortingConnection(true);
@@ -182,6 +183,14 @@ public class SocketDataWriterWorker implements Runnable {
 	
 	public boolean isSecureEnable() {
 		return secureEnable;
+	}
+
+	public boolean isPrintLog() {
+		return printLog;
+	}
+
+	public void setPrintLog(boolean printLog) {
+		this.printLog = printLog;
 	}
 
 }

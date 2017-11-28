@@ -174,10 +174,8 @@ public class MinificationImpl implements IBestPractice {
 					minificationEntryList.add(future.get());
 				}
 			}
-		} catch(InterruptedException ie){
-			logger.error(ie.getMessage());
-		} catch(ExecutionException ee){
-			logger.error(ee.getMessage());
+		} catch(InterruptedException | ExecutionException ee){
+			logger.error(ee.getMessage(), ee);
 		}
 		executorService.shutdown();
 		
@@ -249,8 +247,9 @@ public class MinificationImpl implements IBestPractice {
 			String minicontent = null;
 			try {
 				minicontent = minifyCss(content);
-			} catch (IOException ex) {
+			} catch (IOException | IllegalArgumentException ex) {
 				logger.error(ex.getMessage());
+				logger.debug(ex.getMessage(), ex);
 			}
 			if (minicontent != null) {
 				return minSavingEntry(minicontent.length(), content.length(), req, lastRequestObj, session);

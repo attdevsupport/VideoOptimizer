@@ -94,7 +94,6 @@ public class AndroidImplTest extends BaseTest {
 		try {
 			when(device.getSyncService()).thenReturn(service);
 		} catch (AdbCommandRejectedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		doNothing().when(service).pushFile(any(String.class), any(String.class), any(ISyncProgressMonitor.class));
@@ -119,7 +118,6 @@ public class AndroidImplTest extends BaseTest {
 		try {
 			when(device.getSyncService()).thenReturn(null);
 		} catch (AdbCommandRejectedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		assertFalse(androidImpl.pushFile(device, "", ""));

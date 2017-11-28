@@ -71,7 +71,6 @@ public class BpHtmlDisplayNoneInCSSTablePanel extends AbstractBpDetailTablePanel
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
-			//TODO Add listener
 		}
 
 		return contentTable;

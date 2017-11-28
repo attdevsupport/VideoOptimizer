@@ -104,13 +104,11 @@ public class ExportReport extends AROUIWorker<Void, Void> {
 						ResourceBundleHelper.getMessageString("menu.tools.export.warning"));
 				if (res != JOptionPane.YES_OPTION) {
 					return;
+				} else if(res == JOptionPane.YES_OPTION) {
+					printReport();
 				}
 			} else {
-				if (json) {
-					((MainFrame) parent).getController().printReport(true, exportPath.getAbsolutePath());
-				} else {
-					((MainFrame) parent).getController().printReport(false, exportPath.getAbsolutePath());
-				}
+				printReport();
 			}
 
 			if (exportPath.getName().contains(".html") || exportPath.getName().contains(".json")) {
@@ -129,6 +127,14 @@ public class ExportReport extends AROUIWorker<Void, Void> {
 					}
 				}
 			}
+		}
+	}
+
+	private void printReport() {
+		if (json) {
+			((MainFrame) parent).getController().printReport(true, exportPath.getAbsolutePath());
+		} else {
+			((MainFrame) parent).getController().printReport(false, exportPath.getAbsolutePath());
 		}
 	}
 

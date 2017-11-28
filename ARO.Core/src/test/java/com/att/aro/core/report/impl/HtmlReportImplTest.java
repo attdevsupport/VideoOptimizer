@@ -1,15 +1,14 @@
 package com.att.aro.core.report.impl;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Matchers.any;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -26,16 +25,13 @@ import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.AccessingPeripheralResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.CacheControlResult;
-import com.att.aro.core.bestpractice.pojo.ConnectionOpeningResult;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.EnergyModel;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.report.IReport;
-import com.att.aro.core.util.Util;
 
 public class HtmlReportImplTest extends BaseTest{
 

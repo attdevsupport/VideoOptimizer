@@ -17,7 +17,6 @@ package com.att.aro.ui.view.bestpracticestab;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.JPanel;
@@ -60,7 +59,6 @@ public class BpDetailHtmlPanel extends BpDetail {
 
 	@Override
 	public JPanel layoutDataPanel() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	

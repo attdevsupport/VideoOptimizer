@@ -76,7 +76,6 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 	 */
 	@Override
 	public StatusResult stopCollector() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -89,7 +88,6 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 	 */
 	@Override
 	public void addVideoImageSubscriber(IVideoImageSubscriber subscriber) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -103,7 +101,6 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 	 */
 	@Override
 	public void addDeviceStatusSubscriber(IDeviceStatus subscriber) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -125,7 +122,6 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 	 */
 	@Override
 	public StatusResult startCollector(boolean isCommandLine, String folderToSaveTrace, VideoOption videoOption, boolean isLiveViewVideo, String deviceId, Hashtable<String, Object> extraParams, String password) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -136,7 +132,6 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 	 */
 	@Override
 	public boolean isRunning() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
@@ -150,8 +145,7 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 //	 */
 //	@Override
 //	public StatusResult startCollector(String folderToSaveTrace) {
-//		// TODO Auto-generated method stub
-//		return null;
+////		return null;
 //	}
 //
 	/**
@@ -166,13 +160,11 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 	 */
 	@Override
 	public StatusResult startCollector(boolean isCommandLine, String folderToSaveTrace, VideoOption videoOption, String password) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public boolean isTrafficCaptureRunning(int milliSecondsForTimeOut) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 

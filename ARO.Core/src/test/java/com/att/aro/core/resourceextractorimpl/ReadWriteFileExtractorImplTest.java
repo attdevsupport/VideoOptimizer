@@ -11,9 +11,7 @@ import java.io.InputStream;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -21,10 +19,6 @@ import com.att.aro.core.BaseTest;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
 
-/**
- * 
- *
- */
 public class ReadWriteFileExtractorImplTest extends BaseTest{
 	
 	ReadWriteFileExtractorImpl rwFileExtractor;
@@ -40,6 +34,7 @@ public class ReadWriteFileExtractorImplTest extends BaseTest{
 		
 	}
 	
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void exctactFilesFailTest() throws IOException{
 		Mockito.doAnswer(new Answer(){
@@ -61,6 +56,7 @@ public class ReadWriteFileExtractorImplTest extends BaseTest{
 		
 		assertEquals(false, fileCreation);
 	}
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void exctactFilesPassTest() throws IOException{
 		Mockito.doAnswer(new Answer(){
@@ -82,6 +78,7 @@ public class ReadWriteFileExtractorImplTest extends BaseTest{
 		
 		assertEquals(true, fileCreation);
 	}
+	@SuppressWarnings("rawtypes")
 	@Test
 	public void exctactFilesWithExceptionTest() throws IOException{
 		Mockito.doAnswer(new Answer(){

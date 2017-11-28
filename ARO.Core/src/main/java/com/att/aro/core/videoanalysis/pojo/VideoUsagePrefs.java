@@ -43,6 +43,16 @@ public class VideoUsagePrefs {
 	private double stallRecovery= 0.0D;
 	private boolean startupDelayReminder = true;
 	
+	private String startUpDelayWarnVal = "2.0000";
+	private String startUpDelayFailVal= "3.0000";
+
+	private String stallDurationWarnVal = "0.5000";
+	private String stallDurationFailVal = "1.0000";
+
+	private int segmentRedundancyWarnVal = 15;
+	private int segmentRedundancyFailVal = 25;
+
+
 	/**
 	 * Determine which segment should be used when there are duplicate segments
 	 *
@@ -61,6 +71,12 @@ public class VideoUsagePrefs {
 		strblr.append(", startupDelay = ");		strblr.append(getStartupDelay());
 		strblr.append(", maxBuffer = ");		strblr.append(getMaxBuffer());
 		strblr.append(", stallTriggerTime = ");	strblr.append(getStallTriggerTime());
+		strblr.append(", startUpDelayWarnVal = ");	strblr.append(getStartUpDelayWarnVal());
+		strblr.append(", startUpDelayFail = ");	strblr.append(getStartUpDelayFailVal());
+		strblr.append(", stallDurationWarnVal = ");	strblr.append(getStallDurationWarnVal());
+		strblr.append(", stallDurationFailVal = ");	strblr.append(getStallDurationFailVal());
+		strblr.append(", segmentRedundancyWarnVal = ");	strblr.append(getSegmentRedundancyWarnVal());
+		strblr.append(", segmentRedundancyFailVal = ");	strblr.append(getSegmentRedundancyFailVal());
 		return strblr.toString();
 	}
 
@@ -131,5 +147,55 @@ public class VideoUsagePrefs {
 	public void setStartupDelayReminder(boolean startupDelayReminder) {
 		this.startupDelayReminder = startupDelayReminder;
 	}
+
+	public String getStartUpDelayWarnVal() {
+		return startUpDelayWarnVal;
+	}
+
+	public void setStartUpDelayWarnVal(String startUpDelayWarnVal) {
+		this.startUpDelayWarnVal = startUpDelayWarnVal;
+	}
+
 	
+
+	public String getStartUpDelayFailVal() {
+		return startUpDelayFailVal;
+	}
+
+	public void setStartUpDelayFailVal(String startUpDelayFailVal) {
+		this.startUpDelayFailVal = startUpDelayFailVal;
+	}
+
+	public int getSegmentRedundancyWarnVal() {
+		return segmentRedundancyWarnVal;
+	}
+
+	public void setSegmentRedundancyWarnVal(int segmentRedundancyWarnVal) {
+		this.segmentRedundancyWarnVal = segmentRedundancyWarnVal;
+	}
+
+	public int getSegmentRedundancyFailVal() {
+		return segmentRedundancyFailVal;
+	}
+
+	public void setSegmentRedundancyFailVal(int segmentRedundancyFailVal) {
+		this.segmentRedundancyFailVal = segmentRedundancyFailVal;
+	}
+
+	public String getStallDurationWarnVal() {
+		return stallDurationWarnVal;
+	}
+
+	public void setStallDurationWarnVal(String stallDurationWarnVal) {
+		this.stallDurationWarnVal = stallDurationWarnVal;
+	}
+
+	public String getStallDurationFailVal() {
+		return stallDurationFailVal;
+	}
+
+	public void setStallDurationFailVal(String stallDurationFailVal) {
+		this.stallDurationFailVal = stallDurationFailVal;
+	}
+
 }

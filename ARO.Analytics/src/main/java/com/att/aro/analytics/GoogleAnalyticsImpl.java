@@ -1,18 +1,27 @@
-/**
- * 
- */
+/*
+ *  Copyright 2017 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.analytics;
 
 import java.util.logging.Logger;
 
+import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.analytics.IGoogleAnalytics;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.util.AnalyticsCommon;
 
-/**
- *
- *
- */
 public class GoogleAnalyticsImpl implements IGoogleAnalytics {
 	private static final Logger LOGGER = Logger.getLogger(GoogleAnalyticsImpl.class.getName());
 	public static String appName= "";
@@ -20,17 +29,13 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
 	public static String gaTracker= "";
 	
 	private GoogleAnalyticsTracker gat; //Main class where analytics will push the events 
-    private FocusPoint gaFocusPoint;
+    private GAEntry gaFocusPoint;
     
     public GoogleAnalyticsImpl(){
     	 this.gat = new GoogleAnalyticsTracker(appName, appVersion, AnalyticsCommon.GA_TRACK_ID, AnalyticsCommon.GA_CAPACITY);
-         this.gaFocusPoint = new FocusPoint(appName);
+         this.gaFocusPoint = new GAEntry(appName);
     }
 
-	/* (non-Javadoc)
-	 * @see com.att.aro.analytics.IGoogleAnalytics#applicationInfo(java.lang.String, java.lang.String)
-	 */
-//	@Override
 	public void applicationInfo(String analyticsTracker, String applicationName, String applicationVersion){
 		LOGGER.info("applicationInfo called");
 
@@ -50,24 +55,16 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
 		initializeGATracker();
 	}
 	
-    /* (non-Javadoc)
-	 * @see com.att.aro.analytics.IGoogleAnalytics#sendAnalyticsEvents(java.lang.String, java.lang.String)
-	 */
-//	@Override
 	public void sendAnalyticsEvents(String eventCategory, String eventAction){
     
         this.gaFocusPoint.resetParams();
-        this.gaFocusPoint.setEventCategory(eventCategory);
-        this.gaFocusPoint.setEventAction(eventAction);
+        this.gaFocusPoint.setCategory(eventCategory);
+        this.gaFocusPoint.setAction(eventAction);
 
         this.pushEventToCloud(this.gaFocusPoint); 
     }
 	
 	
-    /* (non-Javadoc)
-	 * @see com.att.aro.analytics.IGoogleAnalytics#sendAnalyticsEvents(java.lang.String, java.lang.String)
-	 */
-//	@Override
 	public void sendExceptionEvents(String exceptionDesc, String source, boolean isFatal){
     
         this.gaFocusPoint.resetParams();
@@ -78,10 +75,6 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
         this.pushEventToCloud(this.gaFocusPoint); 
     }
 	
-    /* (non-Javadoc)
-	 * @see com.att.aro.analytics.IGoogleAnalytics#sendAnalyticsEvents(java.lang.String, java.lang.String)
-	 */
-//	@Override
 	public void sendCrashEvents(String crashDesc, String source){
     
         this.gaFocusPoint.resetParams();
@@ -92,68 +85,61 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
         this.pushEventToCloud(this.gaFocusPoint); 
     }
     
-    /* (non-Javadoc)
-	 * @see com.att.aro.analytics.IGoogleAnalytics#sendAnalyticsEvents(java.lang.String, java.lang.String, java.lang.String)
-	 */
-//	@Override
+	public void sendViews(String screen){
+        this.pushEventToCloud(new GAEntry(ApplicationConfig.getInstance().getAppShortName(), screen, HitType.SCREEN_VIEW)); 
+    }
+
 	public void sendAnalyticsEvents(String eventCategory, String eventAction, String eventLable){
         
         this.gaFocusPoint.resetParams();
-        this.gaFocusPoint.setEventCategory(eventCategory);
-        this.gaFocusPoint.setEventAction(eventAction);
-        this.gaFocusPoint.setEventLabel(eventLable);
+        this.gaFocusPoint.setCategory(eventCategory);
+        this.gaFocusPoint.setAction(eventAction);
+        this.gaFocusPoint.setLabel(eventLable);
 
         this.pushEventToCloud(this.gaFocusPoint); 
     }
 
-    /* (non-Javadoc)
-	 * @see com.att.aro.analytics.IGoogleAnalytics#sendAnalyticsEvents(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-	 */
-//	@Override
 	public void sendAnalyticsEvents(String eventCategory, String eventAction, String eventLable, String eventValue){
         
         this.gaFocusPoint.resetParams();
-        this.gaFocusPoint.setEventCategory(eventCategory);
-        this.gaFocusPoint.setEventAction(eventAction);
-        this.gaFocusPoint.setEventLabel(eventLable);
-        this.gaFocusPoint.setEventLabel(eventValue);
+        this.gaFocusPoint.setCategory(eventCategory);
+        this.gaFocusPoint.setAction(eventAction);
+        this.gaFocusPoint.setLabel(eventLable);
+        this.gaFocusPoint.setLabel(eventValue);
 
         this.pushEventToCloud(this.gaFocusPoint); 
     }
 	 
-//    @Override
 	public void sendAnalyticsStartSessionEvents(String eventCategory,
 			String eventAction) {
         this.gaFocusPoint.resetParams();
         this.gaFocusPoint.setSession(GASessionValue.start.param());
-        this.gaFocusPoint.setEventCategory(eventCategory);
-        this.gaFocusPoint.setEventAction(eventAction);
+        this.gaFocusPoint.setCategory(eventCategory);
+        this.gaFocusPoint.setAction(eventAction);
 
         this.pushEventToCloud(this.gaFocusPoint); 
 	}
 
-//	@Override
 	public void sendAnalyticsStartSessionEvents(String eventCategory,
 			String eventAction, String eventLable) {
 		this.gaFocusPoint.resetParams();
 		this.gaFocusPoint.setSession(GASessionValue.start.param());
-        this.gaFocusPoint.setEventCategory(eventCategory);
-        this.gaFocusPoint.setEventAction(eventAction);
-        this.gaFocusPoint.setEventLabel(eventLable);
+        this.gaFocusPoint.setCategory(eventCategory);
+        this.gaFocusPoint.setAction(eventAction);
+        this.gaFocusPoint.setLabel(eventLable);
 
         this.pushEventToCloud(this.gaFocusPoint); 
 		
 	}
 
-//	@Override
 	public void sendAnalyticsStartSessionEvents(String eventCategory,
 			String eventAction, String eventLable, String eventValue) {
         this.gaFocusPoint.resetParams();
         this.gaFocusPoint.setSession(GASessionValue.start.param());
-        this.gaFocusPoint.setEventCategory(eventCategory);
-        this.gaFocusPoint.setEventAction(eventAction);
-        this.gaFocusPoint.setEventLabel(eventLable);
-        this.gaFocusPoint.setEventLabel(eventValue);
+        this.gaFocusPoint.setCategory(eventCategory);
+        this.gaFocusPoint.setAction(eventAction);
+        this.gaFocusPoint.setLabel(eventLable);
+        this.gaFocusPoint.setLabel(eventValue);
 
         this.pushEventToCloud(this.gaFocusPoint); 
 	}
@@ -162,8 +148,8 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
 	public void sendAnalyticsEndSessionEvents(String eventCategory, String eventAction) {
 		this.gaFocusPoint.resetParams();
         this.gaFocusPoint.setSession(GASessionValue.end.param());
-        this.gaFocusPoint.setEventCategory(eventCategory);
-        this.gaFocusPoint.setEventAction(eventAction);
+        this.gaFocusPoint.setCategory(eventCategory);
+        this.gaFocusPoint.setAction(eventAction);
 
         this.pushEventToCloud(this.gaFocusPoint); 
 		
@@ -174,9 +160,9 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
 			String eventAction, String eventLable) {
 		this.gaFocusPoint.resetParams();
 		this.gaFocusPoint.setSession(GASessionValue.end.param());
-        this.gaFocusPoint.setEventCategory(eventCategory);
-        this.gaFocusPoint.setEventAction(eventAction);
-        this.gaFocusPoint.setEventLabel(eventLable);
+        this.gaFocusPoint.setCategory(eventCategory);
+        this.gaFocusPoint.setAction(eventAction);
+        this.gaFocusPoint.setLabel(eventLable);
 
         this.pushEventToCloud(this.gaFocusPoint); 
 		
@@ -187,10 +173,10 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
 			String eventAction, String eventLable, String eventValue) {
         this.gaFocusPoint.resetParams();
         this.gaFocusPoint.setSession(GASessionValue.end.param());
-        this.gaFocusPoint.setEventCategory(eventCategory);
-        this.gaFocusPoint.setEventAction(eventAction);
-        this.gaFocusPoint.setEventLabel(eventLable);
-        this.gaFocusPoint.setEventLabel(eventValue);
+        this.gaFocusPoint.setCategory(eventCategory);
+        this.gaFocusPoint.setAction(eventAction);
+        this.gaFocusPoint.setLabel(eventLable);
+        this.gaFocusPoint.setLabel(eventValue);
 
         this.pushEventToCloud(this.gaFocusPoint); 
 	}
@@ -199,12 +185,12 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
      * 
      * @param aFocusPoint
      */
-	 private void pushEventToCloud(FocusPoint aFocusPoint){
+	 private void pushEventToCloud(GAEntry aFocusPoint){
 		 if(this.gat == null){
 			 initializeGATracker();
 		 }
 	    if(AnalyticsCommon.GA_SENDFLAG){
-		        if((aFocusPoint.getEventAction()!=null && aFocusPoint.getEventAction().equals(AnalyticsCommon.GA_ENDAPP))
+		        if((aFocusPoint.getAction()!=null && aFocusPoint.getAction().equals(AnalyticsCommon.GA_ENDAPP))
 		        		|| (aFocusPoint.getExceptionDesc()!=null)){
 		        	
 		            gat.pushToCloud(aFocusPoint, true);
@@ -219,7 +205,7 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
 	 private void initializeGATracker(){
 		 LOGGER.info("initializeGATracker called");
 	     this.gat = new GoogleAnalyticsTracker(appName, appVersion, gaTracker, AnalyticsCommon.GA_CAPACITY);
-	     this.gaFocusPoint = new FocusPoint(appName);
+	     this.gaFocusPoint = new GAEntry(appName);
 	 }
 
 //	@Override

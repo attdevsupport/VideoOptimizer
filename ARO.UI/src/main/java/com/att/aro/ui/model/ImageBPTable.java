@@ -88,10 +88,8 @@ public class ImageBPTable<T> extends JTable {
 			try {
 				ContentViewer.getInstance().viewImageMetadataContent(getEXIF(getValueAt(row, 1).toString()));
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 

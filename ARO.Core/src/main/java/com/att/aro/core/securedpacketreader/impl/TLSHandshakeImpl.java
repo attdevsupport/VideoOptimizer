@@ -196,7 +196,7 @@ public class TLSHandshakeImpl implements ITLSHandshake {
 			case TLS_HANDSHAKE_SERVER_KEY_EXCHANGE:
 			case TLS_HANDSHAKE_CERTIFICATE_REQUEST:
 			case TLS_HANDSHAKE_CERTIFICATE_VERIFY:
-				//TODO: not support now
+				//Currently Not Supported
 				logger.warn("30017 - TLS_HANDSHAKE_SERVER_KEY_EXCHANGE/TLS_HANDSHAKE_CERTIFICATE_REQUEST/TLS_HANDSHAKE_CERTIFICATE_VERIFY not support now");
 				break;
 

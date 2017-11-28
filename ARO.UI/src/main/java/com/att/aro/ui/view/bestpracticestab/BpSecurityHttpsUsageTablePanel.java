@@ -19,8 +19,11 @@ import java.awt.Color;
 import java.util.Collection;
 
 import javax.swing.JTable;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import com.att.aro.core.bestpractice.pojo.HttpsUsageEntry;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.bestpractice.HttpsUsageTableModel;
 
@@ -37,7 +40,6 @@ public class BpSecurityHttpsUsageTablePanel extends AbstractBpDetailTablePanel {
 
 	@Override
 	void initTableModel() {
-		// TODO Auto-generated method stub
 		tableModel = new HttpsUsageTableModel();
 	}
 	
@@ -56,13 +58,15 @@ public class BpSecurityHttpsUsageTablePanel extends AbstractBpDetailTablePanel {
 	@SuppressWarnings("unchecked")
 	@Override
 	public DataTable<HttpsUsageEntry> getContentTable() {
-		// TODO Auto-generated method stub
 		if(contentTable == null) {
 			contentTable = new DataTable<HttpsUsageEntry>(tableModel);
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+			TableRowSorter<TableModel> sorter = new TableRowSorter<>(tableModel);
+			contentTable.setRowSorter(sorter);
+			sorter.setComparator(0, Util.getDomainSorter());
 		}
 		
 		return contentTable;

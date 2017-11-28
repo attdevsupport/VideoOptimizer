@@ -33,6 +33,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.preferences.UserPreferencesFactory;
+import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -50,6 +51,9 @@ public class DataTablePopupMenu extends JPopupMenu {
 	
 	private JMenuItem exportMenuItem;
 
+	private File exportPath = UserPreferencesFactory.getInstance().create().getLastExportDirectory();
+	private String titleDialog = ResourceBundleHelper.getMessageString("fileChooser.Title");
+	
 	/**
 	 * Initializes a new instance of the DataTablePopupMenu class using the
 	 * specified DataTable object.
@@ -61,7 +65,28 @@ public class DataTablePopupMenu extends JPopupMenu {
 		this.table = table;
 		initialize();
 	}
+
+	public void setExportPath(File exportPath) {
+		this.exportPath = exportPath;
+	}
 	
+	private File getVideoRequestExportDriectory() {
+		String tracePath = PreferenceHandlerImpl.getInstance().getPref("TRACE_PATH");
+		File exportPathDirectory = UserPreferencesFactory.getInstance().create().getLastExportDirectory();
+		if (tracePath != null) {
+			tracePath = tracePath + "/exports";
+			File exportPath = new File(tracePath);
+			if (!exportPath.isDirectory()) {
+				exportPath.mkdirs();
+			}
+			exportPathDirectory = exportPath;
+		}
+		return exportPathDirectory;
+	}
+
+	public void setTitleDialog(String titleDialog) {
+		this.titleDialog = titleDialog;
+	}
 
 	/**
 	 * Method to put the Export menu item in table.
@@ -82,18 +107,33 @@ public class DataTablePopupMenu extends JPopupMenu {
 
 				@Override
 				public void actionPerformed(ActionEvent aEvent) {
-					JFileChooser chooser = new JFileChooser(UserPreferencesFactory.getInstance().create()
-							.getLastExportDirectory());
+					File defaultFile=null;
+					if(table == null) {
+						return;
+					}
+					if ("VideoRequestTable".equals(table.getName())) {
+						setExportPath(getVideoRequestExportDriectory());
+						String defaultFileName = exportPath.getAbsolutePath() + "/VideoRequestTable.csv";
+						defaultFile = new File(defaultFileName);
+					}
+					JFileChooser chooser = new JFileChooser(exportPath);
+					if(defaultFile != null){
+						chooser.setSelectedFile(defaultFile);
+					}
+					chooser.setDialogTitle(titleDialog);
 					FileNameExtensionFilter filter = new FileNameExtensionFilter(
 							ResourceBundleHelper.getMessageString("fileChooser.desc.csv"), 
 							ResourceBundleHelper.getMessageString("fileChooser.contentType.csv"));
 					chooser.setFileFilter(filter);
 					chooser.addChoosableFileFilter(null);
-					chooser.setDialogTitle(ResourceBundleHelper.getMessageString("fileChooser.Title"));
 					chooser.setApproveButtonText(ResourceBundleHelper.getMessageString("fileChooser.Save"));
 					chooser.setMultiSelectionEnabled(false);
 					try {
 						saveFile(chooser);
+						if ("VideoRequestTable".equals(table.getName())
+								&& chooser.getCurrentDirectory() != exportPath) {
+							exportPath.delete();
+						}
 					} catch (Exception exp) {
 						String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("exportall.errorFileOpen"), 
 																ApplicationConfig.getInstance().getAppShortName());
@@ -101,7 +141,6 @@ public class DataTablePopupMenu extends JPopupMenu {
 								errorMsg + exp.getMessage());
 					}
 				}
-
 			});
 		}
 		return exportMenuItem;

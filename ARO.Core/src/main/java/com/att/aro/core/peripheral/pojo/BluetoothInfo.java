@@ -52,6 +52,10 @@ public class BluetoothInfo {
 		 * The Bluetooth peripheral is switched off. 
 		 */
 		BLUETOOTH_TURNED_OFF,
+		/**
+		 * The Bluetooth peripheral is switched on. 
+		 */
+		BLUETOOTH_TURNED_ON,
 	}
 
 	/**

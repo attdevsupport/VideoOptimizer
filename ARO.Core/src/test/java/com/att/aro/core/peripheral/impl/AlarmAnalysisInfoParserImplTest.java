@@ -1,11 +1,11 @@
 package com.att.aro.core.peripheral.impl;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -15,13 +15,12 @@ import com.att.aro.core.peripheral.IAlarmAnalysisInfoParser;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisInfo;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisResult;
 
-import static org.junit.Assert.*;
-
 public class AlarmAnalysisInfoParserImplTest extends BaseTest {
 	
 	AlarmAnalysisInfoParserImpl parser;	
 
 
+	@SuppressWarnings("deprecation")
 	@Test  
 	public void readData() throws IOException{
 		parser = (AlarmAnalysisInfoParserImpl) context.getBean(IAlarmAnalysisInfoParser.class);
@@ -59,6 +58,7 @@ public class AlarmAnalysisInfoParserImplTest extends BaseTest {
 		String[] startarr2 = getDataStart2();
 		Mockito.when(filereader.readAllLine(Mockito.anyString())).thenReturn(startarr2);
 		parser.setFileReader(filereader);
+		@SuppressWarnings("deprecation")
 		Date date = new Date(2014,01,06,12,0,30); 
 		AlarmAnalysisResult result4 = null;
 		boolean hasdata = false;

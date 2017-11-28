@@ -38,7 +38,7 @@ public class AROMenuAdder {
 
 	public JMenuItem getMenuItemInstance(Enum<?> menuItemKey) {
 		String item = ResourceBundleHelper.getMessageString(menuItemKey);
-		JMenuItem helpMenuItem = new JMenuItem(ResourceBundleHelper.getMessageString(menuItemKey));
+		JMenuItem helpMenuItem = new JMenuItem(item);
 		helpMenuItem.addActionListener(listener);
 		return helpMenuItem;
 	}

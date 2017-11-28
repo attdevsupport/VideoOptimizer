@@ -15,11 +15,8 @@ import com.att.aro.core.peripheral.IScreenRotationReader;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 
 public class ScreenRotationReaderImplTest extends BaseTest {
-
 	ScreenRotationReaderImpl screenRotationReader;
-
 	private IFileManager filereader;
-	private String traceFolder = "traceFolder";
 
 	@Before
 	public void setup() {

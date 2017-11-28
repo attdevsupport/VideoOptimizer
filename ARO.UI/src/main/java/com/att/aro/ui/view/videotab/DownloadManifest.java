@@ -33,7 +33,8 @@ import javax.swing.JPanel;
 import com.att.aro.mvc.IAROView;
 
 public class DownloadManifest extends JDialog implements ActionListener{
-
+	private static final long serialVersionUID = 1L;
+	
 	private JButton selectBtn;
 	private JButton loadBtn;
 	private JLabel nameLbl;
@@ -44,7 +45,7 @@ public class DownloadManifest extends JDialog implements ActionListener{
 	public DownloadManifest(IAROView aroview){
 		this.aroView = aroview;
 		setUndecorated(false);
-		setDefaultCloseOperation(this.DISPOSE_ON_CLOSE);
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setBounds(300, 200, 1000, 1000);
 		
 		mainPanel = getMainPanel();

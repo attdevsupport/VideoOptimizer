@@ -15,14 +15,11 @@
 */
 package com.att.aro.ui.model.bestpractice;
 
-import java.text.DecimalFormat;
-
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import com.att.aro.core.packetanalysis.pojo.CacheEntry;
 import com.att.aro.ui.model.DataTableModel;
-import com.att.aro.ui.model.NumberFormatRenderer;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class FileDuplicateContentTableModel extends DataTableModel<CacheEntry>{

@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2017 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.db;
 
 
@@ -77,59 +92,49 @@ public class AROObjectDao implements IARODatabaseObject{
     	}
     }
 
-    /**
-     *
-     * @param iPojoClass
-     * @param <T>
-     * @return
-     */
-//    @Override
-    public synchronized <T> List<T> get(T iPojoClass) {
+	@SuppressWarnings("unchecked")
+	public synchronized <T> List<T> get(T iPojoClass) {
 
-       List<T> returnObectList = new ArrayList<T>();
-       if(aroDB != null){
-	       ODatabaseObject objectDB = aroDB.getObjectDB();
-	       
-	       try{
-		        objectDB.getEntityManager().registerEntityClass(iPojoClass.getClass());
-		    
-		    //    if(numberOfrecords > 0){
-		            for(Object returnObj :  objectDB.browseClass(iPojoClass.getClass())){
-		            	objectDB.setDirty(returnObj);
-		                returnObectList.add((T)returnObj);
-		            }
-		     //   }
-	       }catch (Exception ex){
-	    	 //Log the Error 
-	       } finally{
-	    	   objectDB.close();
-	       }
-       }
-        return returnObectList;
-    }
+		List<T> returnObectList = new ArrayList<T>();
+		if (aroDB != null) {
+			ODatabaseObject objectDB = aroDB.getObjectDB();
+			try {
+				objectDB.getEntityManager().registerEntityClass(iPojoClass.getClass());
+				for (Object returnObj : objectDB.browseClass(iPojoClass.getClass())) {
+					objectDB.setDirty(returnObj);
+					returnObectList.add((T) returnObj);
+				}
+			} catch (Exception ex) {
+				
+			} finally {
+				objectDB.close();
+			}
+		}
+		return returnObectList;
+	}
     
     /**
      * 
      * @param iPojoClass
      * @return
      */
-    public synchronized <T> long recordCount(T iPojoClass){
-    	long numberOfrecords = 0;
-    	if(aroDB != null){
-	    	ODatabaseObject objectDB = aroDB.getObjectDB();
-	    	
-	    	try{
-		        objectDB.getEntityManager().registerEntityClass(iPojoClass.getClass());
-		        numberOfrecords = objectDB.countClass(iPojoClass.getClass().getSimpleName());
-		
-		   }catch (Exception ex){
-	    	 //Log the Error 
-	       } finally{
-	    	   objectDB.close();
-	       }
-    	}
-       return numberOfrecords;
-    }
+	public synchronized <T> long recordCount(T iPojoClass) {
+		long numberOfrecords = 0;
+		if (aroDB != null) {
+			ODatabaseObject objectDB = aroDB.getObjectDB();
+
+			try {
+				objectDB.getEntityManager().registerEntityClass(iPojoClass.getClass());
+				numberOfrecords = objectDB.countClass(iPojoClass.getClass().getSimpleName());
+
+			} catch (Exception ex) {
+				// Log the Error
+			} finally {
+				objectDB.close();
+			}
+		}
+		return numberOfrecords;
+	}
 
     /**
      * properly close database
@@ -147,7 +152,7 @@ public class AROObjectDao implements IARODatabaseObject{
 //    @Override
     public <T> T getDataBase(){
     	//ODatabaseObject objectDB = CreateARODB.getObjectDB();
-        return (T) null;
+        return null;
     	//return (T) CreateARODB.getObjectDB();
     }
 }

@@ -1,18 +1,19 @@
 package com.att.aro.core.packetreader.impl;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 
-import org.junit.Test;
 import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
-import static org.junit.Assert.*;
 
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.packetreader.IPacketService;
 import com.att.aro.core.packetreader.IPcapngHelper;
-import com.att.aro.core.packetreader.pojo.IPPacket;
 import com.att.aro.core.packetreader.pojo.Packet;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;

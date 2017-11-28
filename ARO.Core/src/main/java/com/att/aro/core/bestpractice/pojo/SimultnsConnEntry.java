@@ -24,6 +24,7 @@ public class SimultnsConnEntry {
 	private int concurrentSessions;
 	private String httpReqObjName = "";
 	private String hostName = "";
+	private String ipValue= "";
 	private HttpRequestResponseInfo httpReqRespInfo;
 	
 	public SimultnsConnEntry(HttpRequestResponseInfo httpReqRespInfo, String domainName,int concurrentSessions, double start, double end) {
@@ -34,6 +35,7 @@ public class SimultnsConnEntry {
 		this.endTimeStamp = Math.round (end * 1000.0) / 1000.0;
 		this.httpStatusCode = httpReqRespInfo.getStatusCode();
 		this.concurrentSessions=concurrentSessions;
+		this.ipValue=domainName;
 		
 		assignHostAndHttpInfo(httpReqRespInfo,domainName);
 	}
@@ -140,6 +142,12 @@ public class SimultnsConnEntry {
 
 	public void setHttpReqObjName(String httpReqObjName) {
 		this.httpReqObjName = httpReqObjName;
+	}
+
+
+
+	public String getIpValue() {
+		return ipValue;
 	}
 	
 	

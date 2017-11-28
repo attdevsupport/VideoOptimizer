@@ -36,7 +36,6 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -63,7 +62,6 @@ public class RequestResponseDetailsPanel extends  JPanel {
 	private JButton viewBtn;
 	private JButton saveBtn;
 	private IHttpRequestResponseHelper httpHelper = ContextAware.getAROConfigContext().getBean(IHttpRequestResponseHelper.class);
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
 
 	private Session session;
 	
@@ -123,7 +121,9 @@ public class RequestResponseDetailsPanel extends  JPanel {
 									&& httpRRInfo.getContentLength() > 0
 									&& httpRRInfo.getDirection() == HttpDirection.RESPONSE
 									&& httpRRInfo.getStatusCode() != 0;
-							boolean bVideo = (enabled) ? ((null != httpRRInfo.getContentType()) ? httpRRInfo.getContentType().contains("video/") : false) : false;
+							boolean bVideo = (enabled) ? ((httpRRInfo != null && httpRRInfo.getContentType() != null)
+									? httpRRInfo.getContentType().contains("video/")
+									: false) : false;
 							getViewBtn().setEnabled((bVideo) ? false : enabled);
 							getSaveBtn().setEnabled(enabled);
 						}

@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
@@ -55,6 +54,7 @@ import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
+import com.att.aro.core.util.AttnScriptUtil;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.StringParse;
 import com.att.aro.core.util.Util;
@@ -84,13 +84,17 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	// local directory in user machine to pull trace from device to
 	private String localTraceFolder;
 	private static final int MILLISECONDSFORTIMEOUT = 300;
-	private static String APK_FILE_NAME = "VPNCollector-1.2.%s.apk";
+	private static String APK_FILE_NAME = "VPNCollector-1.3.%s.apk";
 	private static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 
 	private IAndroid android;
 	private boolean usingScreenRecorder = false;
+
+	//private static final String[] WIN_RUNTIME = { "cmd.exe", "/C" };
+	//private static final String[] OS_LINUX_RUNTIME = { "/bin/bash", "-l", "-c" };
 	
 	private static final int RETRY_TIME = 3;
+	private boolean attnrScriptRun = false;
 	
 
 	// files to pull from device
@@ -98,7 +102,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			"active_process", "battery_events", "bluetooth_events", "camera_events", "device_details", "device_info",
 			"gps_events", "network_details", "prop", "radio_events", "screen_events", "screen_rotations",
 			"user_input_log_events", "alarm_info_start", "alarm_info_end", "batteryinfo_dump", "dmesg", "video_time",
-			"wifi_events", "traffic.cap", "collect_options", "location_events" };
+			"wifi_events", "traffic.cap", "collect_options", "location_events","attenuation_logs" };
  	
 	@Autowired
 	public void setLog(ILogger log) {
@@ -140,10 +144,11 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	private IScreenRecorder screenRecorder;
 
 	private CpuTraceCollector cpuTraceCollector;
-	
-	private CpuTemperatureCollector cpuTemperatureCollector;
-	
+		
+	private UIXmlCollector uiXmlCollector;
+
 	private UserInputTraceCollector userInputTraceCollector;
+	private AttenuationScriptExcuable attnr;
 
 	@Autowired
 	public void setThreadExecutor(IThreadExecutor thread) {
@@ -162,7 +167,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 	@Override
 	public void addDeviceStatusSubscriber(IDeviceStatus subscriber) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -373,15 +377,12 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		}
 
 		AttenuatorModel atnr = new AttenuatorModel();
-		int delayTimeDL = 0;
-		int delayTimeUL = 0;
 		int throttleDL = -1;
 		int throttleUL = -1;
 		boolean atnrProfile = false;
 		boolean secure = false;
 		boolean installCert = false;
 		String location = "";
-		String profileName = "";
 		Orientation videoOrientation = Orientation.PORTRAIT;
 		
 		if (extraParams != null) {
@@ -456,14 +457,45 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		// to be sure it is not in memory
 		this.haltCollectorInDevice();
 		new LogcatCollector(adbService, device.getSerialNumber()).clearLogcat();
+		atnrProfile = atnr.isLoadProfile();
+		if(atnrProfile){
+			int apiNumber = AndroidApiLevel.K19.levelNumber();// default 
+			try {
+				apiNumber = Integer.parseInt(aroDevice.getApi());
+			} catch (Exception e) {
+				log.error("unknown device api number");
+			}
+ 			location = (String) atnr.getLocalPath();
+			AttnScriptUtil util = new AttnScriptUtil(apiNumber);
+			boolean scriptResult =  util.scriptGenerator(location);
+			if(!scriptResult){
+				result.setError(ErrorCodeRegistry.getScriptAdapterError(location));
+				result.setSuccess(false);
+				return result;
+			}
+			this.attnrScriptRun = true;
+
+		}else if (atnr.isConstantThrottle()) {
+//			delayTimeDL = atnr.getDelayDS();
+//			delayTimeUL = atnr.getDelayUS();
+			if(atnr.isThrottleDLEnable()){
+				throttleDL = atnr.getThrottleDL();
+			}
+			if(atnr.isThrottleULEnable()){
+				throttleUL = atnr.getThrottleUL();
+			}
+		}
 	
 		if (pushApk(this.device)) {
 			String cmd;
 			cmd = "am start -n com.att.arocollector/com.att.arocollector.AROCollectorActivity" 
-					+ " --es video "+ videoOption.toString() 
+//					+ " --ei delayDL " + delayTimeDL + " --ei delayUL " + delayTimeUL
+					+ " --ei throttleDL " + throttleDL + " --ei throttleUL " + throttleUL
+					+ (atnrProfile ? (" --ez profile " + atnrProfile + " --es profilename '" + location + "'") : "")
+					+ " --ez secure " + secure + " --es video "+ videoOption.toString() 
 					+ " --ei bitRate " + bitRate + " --es screenSize " + screenSize 
 					+ " --es videoOrientation " + videoOrientation.toString() 
-					;
+					+ " --ez certInstall " + installCert;
 			log.info(cmd);
 			if (!android.runApkInDevice(this.device, cmd)) {
 				result.setError(ErrorCodeRegistry.getFaildedToRunVpnApk());
@@ -481,22 +513,27 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			result.setSuccess(false);
 			return result;
 		}
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
-				GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
-				GoogleAnalyticsUtil.getAnalyticsEvents().getStartTrace(),
-				aroDevice != null && aroDevice.getApi() != null ? aroDevice.getApi() : "Unknown"); // GA
-		if (isAndroidVersionNougatOrHigher(this.device) == true) {
-			startCpuTraceCapture();
-		}
-		
-		if (isVideo()) {
+		new Thread(() -> {
+			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+					GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
+					GoogleAnalyticsUtil.getAnalyticsEvents().getStartTrace(),
+					aroDevice != null && aroDevice.getApi() != null ? aroDevice.getApi() : "Unknown");
 			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
 					GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
 					GoogleAnalyticsUtil.getAnalyticsEvents().getVideoCheck(),
-					videoOption != null ? videoOption.name() : "Unknown"); // GA
+					videoOption != null ? videoOption.name() : "Unknown");
+		}).start();
+		if (isAndroidVersionNougatOrHigher(this.device) == true) {
+			startCpuTraceCapture();
+		}
+		if (isVideo()) {
 			startVideoCapture();
 		}
 		startUserInputCapture();
+		startUiXmlCapture();
+		if(atnrProfile){
+			startAttnrProfile(location);// wait for vpn collection start		
+		}
 		result.setSuccess(true);
 		this.running = true;
 		return result;
@@ -527,22 +564,28 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			log.error(e.getMessage());
 		}
 	}
-
 	
-	@Deprecated
-	void startCpuTemperatureCapture() {
-		cpuTemperatureCollector = new CpuTemperatureCollector();
-		cpuTemperatureCollector.setAdbFileMgrLogExtProc(this.adbService, this.filemanager, this.log, this.extrunner);
+	void startAttnrProfile(String location){
+  			attnr = new AttenuationScriptExcuable();
+			attnr.setAdbFileMgrLogExtProc(this.aroDevice, this.adbService, this.filemanager, this.log, this.extrunner);
+			
+			location = (String)Util.getVideoOptimizerLibrary()+System.getProperty("file.separator")+"ScriptFile.sh";
+			attnr.init(android, aroDevice, this.localTraceFolder,location);
+ 			threadexecutor.execute(attnr);
+		
+	}
+	
+	void startUiXmlCapture() {
+		uiXmlCollector = new UIXmlCollector(this.adbService, this.filemanager, this.extrunner);
 		try {
-			if (CpuTemperatureCollector.State.Initialized == cpuTemperatureCollector.init(android, aroDevice, this.localTraceFolder)) {
+			if (UIXmlCollector.State.INITIALISED == uiXmlCollector.init(android, aroDevice, this.localTraceFolder)) {
 				log.debug("execute cpucapture Thread");
-				threadexecutor.execute(cpuTemperatureCollector);
+				threadexecutor.execute(uiXmlCollector);
 			}
 		} catch (Exception e) {
 			log.error(e.getMessage());
 		}
 	}
-
 	
 	void startUserInputCapture(){
 		userInputTraceCollector = new UserInputTraceCollector();
@@ -609,16 +652,12 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			api = Integer.valueOf(api_str);
 		} catch (NumberFormatException e1) {
 			log.error("unable to obtain api:" + e1.getMessage() + " defaulting to N-Preview api-23");
-			// TODO failure in N-Preview
 		}
 		return api;
 	}
 
 	private boolean captureVideoUsingScreenRecorder() {
-
-		// TODO VideoOption control here
 		Integer api = getDeviceApi();
-		
 		return isVideo() && !videoOption.equals(VideoOption.LREZ)
 				&& (api >= 19 && api < 21);
 	}
@@ -681,23 +720,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		}
 	}
 
-	private boolean waitForVpn() {
-		boolean success = true;
-		int counter = 0;
-		do {
-			counter++;
-			log.debug("waitForVpn() iteration:" + counter);
-			success = isVpnActivated();
-			if (!success) {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-				}
-			}
-		} while (counter < 150 && !success);
-		return success;
-	}
-
 	/**
 	 * check if the internal traffic capture is running, in this case VPN
 	 */
@@ -746,9 +768,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	 * @return
 	 */
 	boolean pushApk(IDevice device) {
-		//FIXME FIND A BETTER WAY OF LOOKING UP APK IN NOROOT COLLECTION 
 		ClassLoader loader = NorootedAndroidCollectorImpl.class.getClassLoader();
-		long x = System.nanoTime();
 		for(int i = 0; i < 500; i++) {
 			String tempFile = String.format(APK_FILE_NAME, i);
 			if(loader.getResource(tempFile) != null) {
@@ -799,11 +819,10 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		installationRequired = !(Objects.equals(deviceAPKVersion, newAPKVersion));
 		// result.length is "0", means ARO not installed in the device.
 		// Uninstall only if the APK is already installed on device and the new APK to be installed.
-		if (installationRequired == true && result.length > 0) {
+		if (installationRequired == true && result != null && result.length > 0) {
 			try {
 				device.uninstallPackage(ARO_PACKAGE_NAME);
 			} catch (InstallException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		}
@@ -833,6 +852,9 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			this.stopCaptureVideo();
 		}
 		
+		if(this.attnrScriptRun){
+			attnr.stopAtenuationScript(this.device);
+		}
 		
 		log.debug("pulling trace to local dir");
 		new LogcatCollector(adbService, device.getSerialNumber()).collectLogcat(localTraceFolder, "Logcat.log");
@@ -930,15 +952,23 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	 * send stop capture command send, stop captureVPNService and home activity
 	 */
 	private void sendStopCommand() {
-		String cmdclosevpn = "am broadcast -a arovpndatacollector.service.close"; // stop capture
-		String cmdcloseapp = "am broadcast -a arodatacollector.home.activity.close"; // hides VPN app
+		sendShellCommand("am broadcast -a arovpndatacollector.service.close"   ,0);	// CaptureVpnService#serviceCloseCmdReceiver
+		sendShellCommand("am broadcast -a arodatacollector.home.activity.close",0);	// AROCollectorActivity#broadcastReceiver
+		sendShellCommand("am broadcast -a videocaptureservice.service.close"   ,0);	// VideoCapture#broadcastReceiver
+	}
 
-		android.getShellReturn(this.device, cmdclosevpn);
-		try {
-			Thread.sleep(500);
-		} catch (InterruptedException e) {
+	private String sendShellCommand(String shellCommand, int sleepForMilliseconds) {
+		String[] response = android.getShellReturn(this.device, shellCommand);
+		if (sleepForMilliseconds > 0) {
+			try {
+				Thread.sleep(sleepForMilliseconds);
+			} catch (InterruptedException e) {
+				// Do not care if interrupted
+			}
 		}
-		android.getShellReturn(this.device, cmdcloseapp);
+		String result = Util.condenseStringArray(response);
+		log.elevatedInfo(String.format("%s :%s", shellCommand, result));
+		return result;
 	}
 
 	private StatusResult pullTrace(String[] files) {
@@ -997,12 +1027,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			e1.printStackTrace();
 		}
 		return commandFailed;
-	}
-
-	private <T> T[] concat(T[] first, T[] second) {
-		T[] result = Arrays.copyOf(first, first.length + second.length);
-		System.arraycopy(second, 0, result, first.length, second.length);
-		return result;
 	}
 
 	private SyncService getSyncService() {

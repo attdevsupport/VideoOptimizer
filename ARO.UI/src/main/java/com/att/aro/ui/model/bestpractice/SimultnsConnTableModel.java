@@ -38,17 +38,22 @@ public class SimultnsConnTableModel extends DataTableModel<SimultnsConnEntry> {
 	private static final int COL2_PREF = 50;
 	
 	private static final int COL3_MIN = 90;
-	private static final int COL3_MAX = 600;
-	private static final int COL3_PREF = 350;
+	private static final int COL3_MAX = 200;
+	private static final int COL3_PREF = 50;
 
-	private static final int COL_1 = 0;
-	private static final int COL_2 = 1;
-	private static final int COL_3 = 2;
+	private static final int COL4_MIN = 90;
+	private static final int COL4_PREF = 350;
+
+	public static final int COL_1 = 0;
+	public static final int COL_2 = 1;
+	public static final int COL_3 = 2;
+	private static final int COL_4 = 3;
 	
 	private static final String[] COLUMNS = {
 			ResourceBundleHelper.getMessageString("connections.simultaneous.table.col1"),
 			ResourceBundleHelper.getMessageString("connections.simultaneous.table.col2"),
 			ResourceBundleHelper.getMessageString("connections.simultaneous.table.col3"),
+			ResourceBundleHelper.getMessageString("connections.simultaneous.table.col4"),
 			
 	};
 	
@@ -76,6 +81,10 @@ public class SimultnsConnTableModel extends DataTableModel<SimultnsConnEntry> {
 		col.setPreferredWidth(COL3_PREF);
 		col.setMaxWidth(COL3_MAX);
 		
+		col = cols.getColumn(COL_4);
+		col.setMinWidth(COL4_MIN);
+		col.setPreferredWidth(COL4_PREF);
+		
 		return cols;
 	}
 	
@@ -85,8 +94,8 @@ public class SimultnsConnTableModel extends DataTableModel<SimultnsConnEntry> {
 		case COL_1:
 			return Double.class;
 		case COL_2:
-			return String.class;
 		case COL_3:
+		case COL_4:
 			return int.class;
 		default:
 			return super.getColumnClass(columnIndex);
@@ -99,8 +108,10 @@ public class SimultnsConnTableModel extends DataTableModel<SimultnsConnEntry> {
 		case COL_1:
 			return item.getTimeStamp();
 		case COL_2:
-			return item.getHostName();
+			return item.getIpValue();
 		case COL_3:
+			return item.getHostName();
+		case COL_4:
 			return item.getConcurrentSessions();
 	
 		default:

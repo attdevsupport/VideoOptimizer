@@ -18,6 +18,7 @@ package com.att.aro.ui.view.menu.view;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -38,6 +39,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.TitledBorder;
 
@@ -46,6 +48,7 @@ import com.att.aro.ui.commonui.GUIPreferences;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.diagnostictab.ChartPlotOptions;
+import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 
 /**
  * Represents the chart plot options dialog.
@@ -87,7 +90,9 @@ public class ChartPlotOptionsDialog extends JDialog {
 	private JCheckBox jVideoVideoChunksCheckBox;
 	private JCheckBox jVideoBufferTimeOccupancyCheckBox;
 	private JCheckBox jTemperatureStateCheckBox;
- 
+//	private JCheckBox jAttenuationCheckBox;
+	private JCheckBox jSpeedThrottleCheckBox;
+
 	private List<ChartPlotOptions> currentCheckedOptionList;
 	private List<ChartPlotOptions> selectedOptions;
 	private List<ChartPlotOptions> defaultOptions;
@@ -107,7 +112,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 		chart_options_dialog_userinput, chart_options_dialog_rrc, chart_options_dialog_radio, chart_options_dialog_bluetooth, 
 		chart_options_dialog_camera, chart_options_dialog_battery, chart_options_dialog_screen, 
 		chart_options_dialog_throughput, chart_options_dialog_bufferTime_occupancy, chart_options_dialog_video, 
-		chart_options_dialog_temperature
+		chart_options_dialog_temperature,chart_options_dialog_attenation,chart_options_dialog_speedthrottle
 	}
 
 	/**
@@ -157,7 +162,8 @@ public class ChartPlotOptionsDialog extends JDialog {
 		jVideoBufferOccupancyCheckBox.setEnabled(enabled);
 		jVideoVideoChunksCheckBox.setEnabled(enabled);
 		jVideoBufferTimeOccupancyCheckBox.setEnabled(enabled);
- 	}
+		jSpeedThrottleCheckBox.setEnabled(enabled);
+	}
 
 	/**
 	 * Initializes the dialog.
@@ -246,16 +252,31 @@ public class ChartPlotOptionsDialog extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					currentCheckedOptionList = getCheckedOptions();
+					if(!validatePlotOptions(currentCheckedOptionList)) {
+						return;
+					}
 					guiPreferences.setChartPlotOptions(currentCheckedOptionList);
-					parent.updateChartSelection(currentCheckedOptionList);
+					Component currentTab = parent.getCurrentTabComponent();
+					if(currentTab != null && currentTab instanceof DiagnosticsTab){
+						parent.updateChartSelection(currentCheckedOptionList);
+					}
 					setVisible(false);
 					callerMenuItem.setEnabled(true);
 				}
+
 			});
 		}
 		return okButton;
 	}
 
+	private boolean validatePlotOptions(List<ChartPlotOptions> currentCheckedOptionList) {
+		if(currentCheckedOptionList.size() > 12) {
+			JOptionPane.showMessageDialog(this, "Please select no more than 12 items.");
+			return false;
+		}
+		return true;
+	}
+	
 	private void executeCancelButton() {
 		guiPreferences.setChartPlotOptions(currentCheckedOptionList);
 		updateFromUserPreferences();
@@ -357,7 +378,11 @@ public class ChartPlotOptionsDialog extends JDialog {
 					getGridBagConstraints(16));
 			jAdvancedOptionsPanel.add(jTemperatureStateCheckBox = getJCheckBox(jTemperatureStateCheckBox, DialogItem.chart_options_dialog_temperature, ChartPlotOptions.TEMPERATURE),
 					getGridBagConstraints(20));
- 
+//			jAdvancedOptionsPanel.add(jAttenuationCheckBox = getJCheckBox(jAttenuationCheckBox, DialogItem.chart_options_dialog_attenation, ChartPlotOptions.ATTENUATION),
+//					getGridBagConstraints(21));
+			jAdvancedOptionsPanel.add(jSpeedThrottleCheckBox = getJCheckBox(jSpeedThrottleCheckBox, DialogItem.chart_options_dialog_attenation, ChartPlotOptions.SPEED_THROTTLE),
+					getGridBagConstraints(21));
+
 
 		}
 		return jAdvancedOptionsPanel;
@@ -382,7 +407,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 
 	private JCheckBox getJCheckBox(JCheckBox jCheckboxParm, DialogItem dialogItem, ChartPlotOptions chartPlotOption) {
 		boolean thisOnesNew = jCheckboxParm == null;
-		JCheckBox jCheckbox = thisOnesNew ? new JCheckBox() : jCheckboxParm;
+		JCheckBox jCheckbox = (thisOnesNew|| jCheckboxParm == null) ? new JCheckBox() : jCheckboxParm;
 		if (thisOnesNew) {
 			jCheckbox.setText(ResourceBundleHelper.getMessageString(dialogItem));
 			jCheckbox.setSelected(isUserPrefsSelected(chartPlotOption));

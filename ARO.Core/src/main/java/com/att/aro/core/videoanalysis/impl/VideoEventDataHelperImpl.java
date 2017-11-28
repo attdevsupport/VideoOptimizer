@@ -56,6 +56,11 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 				break;
 			}
 
+			case ManifestType:{
+				ved.setManifestType(strData[i]);
+				break;
+			}
+			
 			case Extension: {
 				ved.setExtension(strData[i]);
 				break;
@@ -83,10 +88,22 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 
 			case Segment: {
 				try {
-					ved.setSegment(Integer.valueOf(strData[i]));
+					if ("init".equals(strData[i])) {
+						ved.setSegment(0);
+					} else {
+						ved.setSegment(Integer.valueOf(strData[i]));
+					}
 				} catch (NumberFormatException e) {
 					ved.setSegment(-3);
 					ved.setFailure(ved.getFailure() + ",segment :" + strData[i]);
+				}
+				break;
+			}
+			
+			case SegmentReference: {
+				ved.setSegmentReference(strData[i]);
+				if ("init".equals(strData[i])){
+					ved.setSegment(0);
 				}
 				break;
 			}

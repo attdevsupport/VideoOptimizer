@@ -17,7 +17,6 @@ package com.att.aro.ui.view.diagnostictab.plot;
 
 import java.text.MessageFormat;
 import java.util.List;
-import java.util.logging.Logger;
 
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;

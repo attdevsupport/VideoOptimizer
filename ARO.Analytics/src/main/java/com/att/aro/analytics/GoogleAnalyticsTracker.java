@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2017 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.analytics;
 
 import java.util.List;
@@ -16,7 +31,7 @@ import com.att.aro.db.AROObjectDao;
 public class GoogleAnalyticsTracker {
 
 	private static final Logger LOGGER = Logger.getLogger(GoogleAnalyticsTracker.class.getName());
-    private URLBuildingStrategy urlBuildingStrategy = null;
+    private GAUrlBuilder urlBuildingStrategy = null;
     private HTTPGetMethod httpRequest = new HTTPGetMethod();
     private AROObjectDao aroDAO = null;
     private GoogleAnalyticsTracker gaTracker;
@@ -32,8 +47,8 @@ public class GoogleAnalyticsTracker {
      * @param googleAnalyticsTrackingCode
      */
     public GoogleAnalyticsTracker(String appName, String appVersion, String googleAnalyticsTrackingCode, int maxDBRecords){ //ARO, version Name, UA-48887240-1
-    	this.urlBuildingStrategy = new GAURLBuildingStrategy(appName, appVersion, googleAnalyticsTrackingCode);
-        this.httpRequest.setApplicationName(appName);
+    	this.urlBuildingStrategy = new GAUrlBuilder(appName, appVersion, googleAnalyticsTrackingCode);
+        HTTPGetMethod.setApplicationName(appName);
         this.maxDBRecords = maxDBRecords;
         this.gaTracker = this;
         inetChecker();
@@ -48,7 +63,7 @@ public class GoogleAnalyticsTracker {
      * Setter injection for URLBuildingStrategy incase if you want to use a different url building logic.
      * @param urlBuildingStrategy implemented instance of URLBuildingStrategy
      */
-    public void setUrlBuildingStrategy(URLBuildingStrategy urlBuildingStrategy) {
+    public void setUrlBuildingStrategy(GAUrlBuilder urlBuildingStrategy) {
         this.urlBuildingStrategy = urlBuildingStrategy;
     }
     
@@ -75,7 +90,7 @@ public class GoogleAnalyticsTracker {
      * @param focusPoint
      * @param appCloseEvent
      */
-	public void pushToCloud(FocusPoint focusPoint, boolean appCloseEvent){
+	public void pushToCloud(GAEntry focusPoint, boolean appCloseEvent){
 		//LOGGER.info("Max Number records stored : " + this.maxDBRecords);
 		//LOGGER.info("Number of records in DB : " + this.aroDAO.recordCount(focusPoint));
     	if(httpRequest.isValidIConnection()){ //Check for Internet
@@ -84,40 +99,30 @@ public class GoogleAnalyticsTracker {
     			if(!pushReqFlag){
     				if(this.aroDAO.recordCount(focusPoint) < maxDBRecords){ // add not to save more than Max number of records
 	    				//focusPoint.setEventLabel("offline");
-    					focusPoint.setEventValue("1");
+    					focusPoint.setValue("1");
 	    				focusPoint.resetSession();
 	    				this.aroDAO.put(focusPoint);
     				}
     			}
     		}else{ // send Async req
     			trackAsynchronously(focusPoint); // Send GA req..Send separate thread
-    			  			
-    			if(this.aroDAO.recordCount(focusPoint) > 0){ // Invoke DB thread
-        			
+    			if(this.aroDAO.recordCount(focusPoint) > 0){ // Invoke DB thread        			
         			if(!runninDBThreadTracker){ // Check for db records Thread running. On separate thread push all the db records to cloud
         				runninDBThreadTracker = true;
         				new TrackDBRecordsThread(this.aroDAO.get(focusPoint)).start();
-        				
-        				//GARecordPojo testRecord = new GARecordPojo();
-    
-        				
         			}
-        			
-        		} 
-    			 
+        		}
     		}
     		
     	} else { //Since No internet save the record to DB and check again for internet
     		if(this.aroDAO.recordCount(focusPoint) < maxDBRecords){ // add not to save more than Max number of records
-	    		//focusPoint.setEventLabel("offline");
-    			focusPoint.setEventValue("1");
-	    		focusPoint.resetSession();
-	    		this.aroDAO.put(focusPoint);
-    		}
-    		
-     	   inetChecker(); //Check for internet connection since no internet.
+		    		//focusPoint.setEventLabel("offline");
+	    			focusPoint.setValue("1");
+		    		focusPoint.resetSession();
+		    		this.aroDAO.put(focusPoint);
+    			}
+    			inetChecker(); //Check for internet connection since no internet.
         }
-    	
     }
 
     /**
@@ -127,7 +132,7 @@ public class GoogleAnalyticsTracker {
      *
      * @param focusPoint Focus point of the application like application load, application module load, user actions, error events etc.
      */
-    public boolean trackSynchronously(FocusPoint focusPoint) {
+    public boolean trackSynchronously(GAEntry focusPoint) {
     		boolean pushNotifyFlag = httpRequest.request(urlBuildingStrategy.buildURL(focusPoint));
     		return pushNotifyFlag;
      }
@@ -138,7 +143,7 @@ public class GoogleAnalyticsTracker {
      *
      * @param focusPoint Focus point of the application like application load, application module load, user actions, error events etc.
      */
-    public void trackAsynchronously(FocusPoint focusPoint) {
+    public void trackAsynchronously(GAEntry focusPoint) {
     	   new TrackingThread(focusPoint).start();
     }
 
@@ -148,32 +153,29 @@ public class GoogleAnalyticsTracker {
      *
      */
     private class TrackingThread extends Thread {
-        private FocusPoint focusPointObj;
-       //private IARODatabaseObject aDAOThread = AROObjectDao.getInstance();
+        private GAEntry focusPointObj;
 
-        public TrackingThread(FocusPoint focusPoint) {
+        public TrackingThread(GAEntry focusPoint) {
             this.focusPointObj = focusPoint;
             this.setPriority(Thread.MIN_PRIORITY);
         }
 
         public void run() {
-        	String url = "";
-        	if (this.focusPointObj.getExceptionDesc()==null) {
-        		url = urlBuildingStrategy.buildURL(this.focusPointObj);
-        	} 
-            boolean pushCloudFlag = httpRequest.request(url);
-            
-            //If fails...Update Internet Flag. 
-            //send record to DB.
-            if(!pushCloudFlag){
-            	httpRequest.setIsValidIConnection(false);
-	            	if(gaTracker.aroDAO.recordCount(this.focusPointObj) < gaTracker.maxDBRecords){
-		            	//focusPointObj.setEventLabel("offline");
-	            		focusPointObj.setEventValue("1");
-		            	focusPointObj.resetSession();
-		            	gaTracker.aroDAO.put(focusPointObj);
-		           	}
-            }
+			String url = "";
+			if (this.focusPointObj.getExceptionDesc() == null) {
+				url = urlBuildingStrategy.buildURL(this.focusPointObj);
+			}
+			boolean pushCloudFlag = httpRequest.request(url);
+			// If fails...Update Internet Flag send record to DB.
+			if (!pushCloudFlag) {
+				httpRequest.setIsValidIConnection(false);
+				if (gaTracker.aroDAO.recordCount(this.focusPointObj) < gaTracker.maxDBRecords) {
+					// focusPointObj.setEventLabel("offline");
+					focusPointObj.setValue("1");
+					focusPointObj.resetSession();
+					gaTracker.aroDAO.put(focusPointObj);
+				}
+			}
          }
     }
     
@@ -182,32 +184,28 @@ public class GoogleAnalyticsTracker {
      *
      *
      */
-    private class TrackDBRecordsThread extends Thread{
-        //private FocusPoint focusPoint;
-        private List<FocusPoint> dbObjList;
-    	
-    	public TrackDBRecordsThread(List<FocusPoint> dbList){
-    		this.dbObjList = dbList;
-    		this.setPriority(Thread.MIN_PRIORITY);
-    	}
-    	
-    	public void run(){
-    		for (FocusPoint focusPointObj : dbObjList){  // Push all the off-line records to cloud when internet is up.
-    			boolean pushCloudFlag = httpRequest.request(urlBuildingStrategy.buildURL(focusPointObj));
-    
-    			if(pushCloudFlag){
-    				gaTracker.aroDAO.delete(focusPointObj);
-    			} else {
-    				
-    				httpRequest.setIsValidIConnection(false);
-    				break;
-    			}
-    		}
-    		
-    		GoogleAnalyticsTracker.setRunninDBThreadTracker(false);
-			
-    	}
-    }
+	private class TrackDBRecordsThread extends Thread {
+		// private FocusPoint focusPoint;
+		private List<GAEntry> dbObjList;
+
+		public TrackDBRecordsThread(List<GAEntry> dbList) {
+			this.dbObjList = dbList;
+			this.setPriority(Thread.MIN_PRIORITY);
+		}
+
+		public void run() {
+			for (GAEntry focusPointObj : dbObjList) { // Push all the off-line records to cloud when internet is up.
+				boolean pushCloudFlag = httpRequest.request(urlBuildingStrategy.buildURL(focusPointObj));
+				if (pushCloudFlag) {
+					gaTracker.aroDAO.delete(focusPointObj);
+				} else {
+					httpRequest.setIsValidIConnection(false);
+					break;
+				}
+			}
+			GoogleAnalyticsTracker.setRunninDBThreadTracker(false);
+		}
+	}
 
     /**
      * properly close database

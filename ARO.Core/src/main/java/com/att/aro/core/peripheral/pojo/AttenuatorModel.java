@@ -14,7 +14,9 @@ public class AttenuatorModel {
 		private String atnrProfileName = "";
 		private boolean loadProfile;
 		private boolean freeThrottle;
-		private boolean constantThrottle;		
+		private boolean constantThrottle;
+		private boolean throttleDLEnable;
+		private boolean throttleULEnable;
 		
 		public boolean isConstantThrottle() {
 			return constantThrottle;
@@ -69,6 +71,23 @@ public class AttenuatorModel {
 		}
 		public void setFreeThrottle(boolean freeThrottle) {
 			this.freeThrottle = freeThrottle;
+		}
+		
+		/**
+		 * The method is used for recording the user's choice for throttle check box
+		 * @return boolean
+		 */
+		public boolean isThrottleDLEnable() {
+			return throttleDLEnable;
+		}
+		public void setThrottleDLEnable(boolean throttleDLEnable) {
+			this.throttleDLEnable = throttleDLEnable;
+		}
+		public boolean isThrottleULEnable() {
+			return throttleULEnable;
+		}
+		public void setThrottleULEnable(boolean throttleULEnable) {
+			this.throttleULEnable = throttleULEnable;
 		}
 		 
 }

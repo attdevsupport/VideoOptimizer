@@ -31,11 +31,14 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.CacheEntry;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.model.DataTable;
@@ -147,6 +150,8 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 		expandedDomainsPanel.setLayout(new BorderLayout());
 		expandedDomainsPanel.add(getJLabelAccessedExpandedDomains(), BorderLayout.NORTH);
 		expandedDomainsPanel.add(getjAccessedDomainsExpandedPanel(), BorderLayout.CENTER);
+		
+		
 	
 		return expandedDomainsPanel;
 	}
@@ -166,9 +171,7 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 	 * Initializes and returns the Domain TCP Sessions Panel.
 	 */
 	private JScrollPane getjAccessedDomainsPanel() {
-		//TODO
-		JScrollPane accessedDomainsPanel = new JScrollPane(getAccessedDomainContentTable());
-		
+		JScrollPane accessedDomainsPanel = new JScrollPane(getAccessedDomainContentTable());		
 		return accessedDomainsPanel;
 	}
 	
@@ -181,11 +184,13 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 			accessedDataTable.setAutoCreateRowSorter(true);
 			accessedDataTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			accessedDataTable.setGridColor(Color.LIGHT_GRAY);
+			TableRowSorter<TableModel> sorter = new TableRowSorter<>(accessDomainModel);
+			accessedDataTable.setRowSorter(sorter);
+			sorter.setComparator(0, Util.getDomainSorter());
 			accessedDataTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 				
 				@Override
 				public void valueChanged(ListSelectionEvent arg0) {
-					// TODO Auto-generated method stub
 					DomainsTCPSessions aTCpSession = accessedDataTable.getSelectedItem();
 					if(null != aTCpSession){
 						expandedDomainModel.setData(aTCpSession.getTcpSessions());
@@ -195,7 +200,6 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 					
 				}
 			});
-			//TODO Add listener
 		}
 		
 		return accessedDataTable;
@@ -215,7 +219,6 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 	 * Initializes and returns the Accessed Domains panel.
 	 */
 	private JScrollPane getjAccessedDomainsExpandedPanel() {
-		//TODO
 		JScrollPane jAccessedDomainsExpandedPanel = new JScrollPane(getExpandedDomainContentTable());
 		return jAccessedDomainsExpandedPanel;
 	}
@@ -230,8 +233,11 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 			expandedDataTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			expandedDataTable.setGridColor(Color.LIGHT_GRAY);
 			expandedDataTable.addMouseListener(this);
+			
+			TableRowSorter<TableModel> sorter = new TableRowSorter<>(expandedDomainModel);
+			expandedDataTable.setRowSorter(sorter);
+			sorter.setComparator(1, Util.getDomainSorter());
 //			expandedDataTable.getSelectionModel().addListSelectionListener(this);			
-			//TODO Add listener
 		}
 		
 		return expandedDataTable;
@@ -264,7 +270,6 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
  
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -285,19 +290,16 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 

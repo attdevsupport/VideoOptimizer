@@ -25,7 +25,8 @@ public class UserInputTraceCollector implements Runnable {
 		, Undefined
 	}
 
-	private static ILogger log;
+	private static ILogger LOGGER;
+	
 	private IAroDevice aroDevice;
 	private IExternalProcessRunner extrunner;
 	private IAndroid android;
@@ -44,7 +45,7 @@ public class UserInputTraceCollector implements Runnable {
 	public void setAdbFileMgrLogExtProc(IAdbService adbservice, IFileManager fileManager, ILogger logger, IExternalProcessRunner runner){
 		this.adbservice = adbservice;
 		this.filemanager = fileManager;
-		this.log = logger;
+		LOGGER = logger;
 		this.extrunner = runner;
 	}
 	
@@ -78,7 +79,7 @@ public class UserInputTraceCollector implements Runnable {
 		
 		String line = extrunner.executeCmd(cmd);
 		
-		log.info("start process userinput mon script response:" + line);
+		LOGGER.info("start process userinput mon script response:" + line);
 	}
 	
 	/**
@@ -94,14 +95,14 @@ public class UserInputTraceCollector implements Runnable {
 		String[] response = android.getShellReturn(device, command);
 		for (String line : response) {
 			if (line.length() > 0) {
-				log.debug(">>" + line + "<<");
+				LOGGER.debug(">>" + line + "<<");
 			}
 		}
 		response = null;
 		response = android.getShellReturn(device, "rm " + remoteExecutable);
 		for (String line : response) {
 			if (line.length() > 0) {
-				log.debug(">>" + line + "<<");
+				LOGGER.debug(">>" + line + "<<");
 			}
 		}
 		response = null;
@@ -125,14 +126,14 @@ public class UserInputTraceCollector implements Runnable {
 		String[] res = android.getShellReturn(device, "rm " + remoteUserInputFilesPath + userEventLogFile);
 		for (String line : res) {
 			if (line.length() > 0) {
-				log.debug(">>" + line + "<<");
+				LOGGER.debug(">>" + line + "<<");
 			}
 		}
 		this.filemanager.mkDir(localTraceFolder);
 		String[] response;
 		response = android.getShellReturn(device, "mkdir " + "/sdcard/ARO");
 		for (String line : response) {
-			log.info("stop userinput trace response:" + line);
+			LOGGER.info("stop userinput trace response:" + line);
 		}
 		traceActive = this.adbservice.installPayloadFile(aroDevice, localTraceFolder, payloadFileName, remoteExecutable);
 		if (traceActive) {

@@ -146,7 +146,6 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 			remotePort = 80;
 			localPort = 48449;
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -228,7 +227,6 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 			remotePort = 1234;
 			localPort = 4321;
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -266,7 +264,6 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 			remotePort = 8080;
 			localPort = 4321;
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -312,7 +309,6 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 
 		Mockito.when(session.isUDP()).thenReturn(false);
 
-		List<HttpRequestResponseInfo> info = null;
 		TreeMap<Integer, PacketInfo> dlPacketOffsets = new TreeMap<Integer, PacketInfo>();
 		TreeMap<Integer, PacketInfo> ulPacketOffsets = new TreeMap<Integer, PacketInfo>();
 		dlPacketOffsets.put(14, pi1);
@@ -353,8 +349,8 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 		Mockito.when(session.getDnsResponsePacket()).thenReturn(pi2);
 		Mockito.when(session.getPackets()).thenReturn(packets);
 		Mockito.when(session.getLastSslHandshakePacket()).thenReturn(pi1);
-				
-		List<HttpRequestResponseInfo> aResult = rrBuilder.createRequestResponseInfo(session);
+
+		rrBuilder.createRequestResponseInfo(session);
 		rrBuilder.extractHttpRequestResponseInfo(PacketDirection.DOWNLINK);
 		List<HttpRequestResponseInfo> bResult = rrBuilder.getResult();
 		assertTrue(bResult.size() == 4);

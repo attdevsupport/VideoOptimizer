@@ -31,6 +31,9 @@ import javax.swing.UIManager;
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.RrcStateMachineType;
+import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
+import com.att.aro.core.packetanalysis.pojo.TraceResultType;
+import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.AROUIManager;
@@ -42,6 +45,8 @@ import com.att.aro.ui.commonui.UIComponent;
 import com.att.aro.ui.exception.AROUIPanelException;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.menu.tools.ExportReport;
+import com.att.aro.ui.view.statistics.attenuation.AttenuationConstantPanel;
+import com.att.aro.ui.view.statistics.attenuation.AttenuationProfilePanel;
 import com.att.aro.ui.view.statistics.burstanalysis.BurstAnalysisPanel;
 import com.att.aro.ui.view.statistics.endpointsummary.EndPointSummaryPanel;
 import com.att.aro.ui.view.statistics.energy.EnergyModelStatistics3GPanel;
@@ -58,6 +63,8 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 	private JPanel mainPanel;
 	private DateTraceAppDetailPanel dateTraceAppDetailPanel;
 	private TCPSessionStatisticsPanel tcpSessionStatistics;
+	private AttenuationConstantPanel attenuationConstantPanel;
+	private AttenuationProfilePanel attenuationProfilePanel;
 	private EndPointSummaryPanel endPointSummaryPanel;
 	private RRCStateMachineSimulationPanel3G rrcStateMachineSimulationPanel3G;
 	private RRCStateMachineSimulationPanelLTE rrcStateMachineSimulationPanelLTE;
@@ -147,14 +154,14 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 					1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
 						insets, 0, 0));
 			layoutDivider(++gridy, insets);
+			
+			attenuationConstantPanel = new AttenuationConstantPanel();
+			mainPanel.add(attenuationConstantPanel,new GridBagConstraints(0, ++gridy,
+					1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+						insets, 0, 0));
+			layoutDivider(++gridy, insets);
 
-//			//Trace Score
-//			traceScorePanel = new TraceScorePanel();
-//			mainPanel.add(traceScorePanel, new GridBagConstraints(0, ++gridy,
-//					1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
-//						insets, 0, 0));
-//			layoutDivider(++gridy, insets);
-			++gridy; ++gridy;
+ 			++gridy;
 			
 			//End Point Summary
 			endPointSummaryPanel = new EndPointSummaryPanel();
@@ -183,10 +190,7 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 			mainPanel.add(energyModelStatisticsLTEPanel, new GridBagConstraints(0, ++gridy, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 			rrcStateMachineType = RrcStateMachineType.LTE;
 			
-//			mainPanel.add(energyModelStatistics3GPanel, new GridBagConstraints(
-//					0, 7, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
-//						GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
-
+ 
 		}
 		return mainPanel;
 	}
@@ -347,31 +351,39 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 				break;
 			default:
 				throw new AROUIPanelException("Energy render implementation not available.");
-//			case Type3G:
-//				energyEfficiencySimulation3G = new EnergyEfficiencySimulation3G();
-//				if (energyEfficiencySimulationLTE != null) {
-//					mainPanel.remove(energyEfficiencySimulationLTE);
-//				}
-//				energyEfficiencySimulationLTE = null;
-//				mainPanel.add(energyEfficiencySimulation3G, new GridBagConstraints(
-//					0, 7, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
-//						GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
-//				break;
-//			case LTE:
-//				energyEfficiencySimulationLTE = new EnergyEfficiencySimulationLTE();
-//				if (energyEfficiencySimulation3G != null) {
-//					mainPanel.remove(energyEfficiencySimulation3G);
-//				}
-//				energyEfficiencySimulation3G = null;
-//				mainPanel.add(energyEfficiencySimulationLTE, new GridBagConstraints(
-//						0, 7, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
-//							GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
-//				break;
-//			case WiFi:
-//				// do nothing
-//			default:
-//				throw new AROUIPanelException("Energy render implementation not available.");
-				
+ 				
+		}
+	}
+	
+	// hard coded the location of the panel
+	private void layoutAttenuation(AROTraceData model){
+		TraceDirectoryResult traceResult = (TraceDirectoryResult) model.getAnalyzerResult().getTraceresult();
+		CollectOptions collectOptions = traceResult.getCollectOptions();
+
+		if (collectOptions.isAttnrProfile()) {
+			if (attenuationProfilePanel == null) {
+				attenuationProfilePanel = new AttenuationProfilePanel();
+			}
+			if(attenuationConstantPanel!=null){
+				mainPanel.remove(attenuationConstantPanel);
+			}
+			attenuationConstantPanel = null;
+			mainPanel.add(attenuationProfilePanel, new GridBagConstraints(
+					0, 4, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
+			attenuationProfilePanel.refresh(model);
+		}else{
+			if(attenuationConstantPanel==null){
+				attenuationConstantPanel = new AttenuationConstantPanel();
+			}
+			if(attenuationProfilePanel!=null){
+				mainPanel.remove(attenuationProfilePanel);
+			}
+			attenuationProfilePanel = null;
+			mainPanel.add(attenuationConstantPanel, new GridBagConstraints(
+					0, 4, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+						GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
+			attenuationConstantPanel.refresh(model);
 		}
 	}
 
@@ -383,10 +395,25 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 			layoutRrcStateMachineSimulator(rrcStateMachineType);
 			layoutEnergyEffecencySimulation(rrcStateMachineType);
 		}
-
+		
 		dateTraceAppDetailPanel.refresh(model);
 		tcpSessionStatistics.refresh(model);
-//		traceScorePanel.refresh(model);
+		if (model.getAnalyzerResult().getTraceresult().getTraceResultType().equals(TraceResultType.TRACE_DIRECTORY)) {
+			TraceDirectoryResult traceResult = (TraceDirectoryResult) model.getAnalyzerResult().getTraceresult();
+			CollectOptions collectOptions = traceResult.getCollectOptions();
+			if (collectOptions != null) {
+				layoutAttenuation(model);
+ 			}
+		} else {
+			if(attenuationConstantPanel!=null){
+				attenuationConstantPanel.resetPanelData();
+			}
+			if(attenuationProfilePanel!=null){
+				attenuationProfilePanel.resetPanelData();
+			}
+
+  		}
+	
 		endPointSummaryPanel.refresh(model);
 		burstAnalysisPanel.refresh(model);
 		httpCacheStatistics.refresh(model);
@@ -419,7 +446,6 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 
 	@Override
 	public void setScrollLocationMap() {
-		// TODO Auto-generated method stub
 		// statistics tab is also a scroll panel, leave this function for future use
 	}
 

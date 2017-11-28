@@ -15,7 +15,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-import com.android.ddmlib.RawImage;
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.video.IVideoWriter;
 import com.att.aro.core.video.pojo.QuickTimeOutputStream;

@@ -87,7 +87,7 @@ public class VideoChunkPacingImpl implements IBestPractice{
 		if (videoUsage != null && videoUsage.getAroManifestMap() != null) {
 
 			for (AROManifest aroManifest : videoUsage.getAroManifestMap().values()) {
-				if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
+				if (aroManifest != null && aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
 					for (VideoEvent videoEvent : aroManifest.getVideoEventsBySegment()) {
 
 						if (ManifestDash.class.isInstance(aroManifest) && videoEvent.getSegment() == 0) {

@@ -104,7 +104,7 @@ public final class UserPreferences {
 
 	public void setLastProfile(Profile profile) {
 		String name = profile != null ? profile.getName() : null;
-		if (name != null) {
+		if (name != null && profile != null) {
 			prefHandler.setPref(PROFILE, name);
 			if (profile.getProfileType().equals(ProfileType.T3G)) {
 				prefHandler.setPref(PROFILE_3G, name);

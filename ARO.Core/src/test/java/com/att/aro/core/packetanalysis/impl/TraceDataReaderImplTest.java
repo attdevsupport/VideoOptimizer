@@ -100,7 +100,6 @@ public class TraceDataReaderImplTest extends BaseTest {
 					address2 = InetAddress.getByName("78.46.84.177");
 					address1 = InetAddress.getByName("78.46.84.171");
 				} catch (UnknownHostException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -174,7 +173,6 @@ public class TraceDataReaderImplTest extends BaseTest {
 					address2 = InetAddress.getByName("78.46.84.177");
 					address1 = InetAddress.getByName("78.46.84.171");
 				} catch (UnknownHostException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -248,7 +246,6 @@ public class TraceDataReaderImplTest extends BaseTest {
 					address2 = InetAddress.getByName("78.46.84.177");
 					address1 = InetAddress.getByName("78.46.84.171");
 				} catch (UnknownHostException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				

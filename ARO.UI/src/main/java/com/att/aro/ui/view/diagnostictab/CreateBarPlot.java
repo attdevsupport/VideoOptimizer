@@ -30,7 +30,6 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.entity.EntityCollection;
 import org.jfree.chart.entity.XYItemEntity;
-import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.CrosshairState;
 import org.jfree.chart.plot.PlotOrientation;
@@ -170,7 +169,7 @@ public class CreateBarPlot{
 				g2.draw(line);
 
 				// add an entity for the item...
-				if (entities != null) {
+				if (entities != null && line != null) {
 					if (entityArea == null) {
 						entityArea = line.getBounds();
 					}

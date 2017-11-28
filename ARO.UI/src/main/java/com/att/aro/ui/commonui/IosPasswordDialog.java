@@ -26,8 +26,6 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -53,8 +51,6 @@ public class IosPasswordDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 	
 	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
-	
-	private static final int TRACE_FOLDER_ALLOWED_LENGTH = 50;
 	
 	private JPanel jContentPane;
 	private JPanel buttonPanel;
@@ -301,24 +297,6 @@ public class IosPasswordDialog extends JDialog {
 			jPasswordField = new JPasswordField(25);
 		}
 		return jPasswordField;
-	}
-
-	private boolean isContainsSpecialCharacterorSpace(String tracefolername) {
-		boolean isContainsSC = false;
-		if (tracefolername != null && !tracefolername.equals("")) {
-			// Pattern to include alphanumeric with "-"
-			Matcher m = Pattern.compile("[^a-zA-Z0-9-]").matcher(tracefolername);
-			if (m.find()) {
-				isContainsSC = true;
-			} else {
-				isContainsSC = false;
-			}
-		} else {
-			isContainsSC = true;
-		}
-
-		return isContainsSC;
-
 	}
 
 	/**

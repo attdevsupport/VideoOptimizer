@@ -83,7 +83,7 @@ public class VideoChunkSizeImpl implements IBestPractice{
 		if (videoUsage != null && videoUsage.getAroManifestMap() != null) {
 
 			for (AROManifest aroManifest : videoUsage.getAroManifestMap().values()) {
-				if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
+				if (aroManifest != null && aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
 
 					for (VideoEvent videoEvent : aroManifest.getVideoEventsBySegment()) {
 

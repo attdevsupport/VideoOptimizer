@@ -121,6 +121,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice imageMetadata;
 	private IBestPractice imageCompression;
 	private IBestPractice imageFormat;
+	private IBestPractice uiComparator;
 	private IBestPractice minify;
 	private IBestPractice emptyUrl;
 	private IBestPractice flash;
@@ -135,7 +136,8 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice weakCipher;
 	private IBestPractice forwardSecrecy;
 	private IBestPractice simultaneous;
-
+	private IBestPractice multipleSimultaneous;
+	
 	// ARO 6.0 VideoBp
 	private IBestPractice videoStall;
 	private IBestPractice startupDelay;
@@ -145,7 +147,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice chunkSize;
 	private IBestPractice chunkPacing;
 	private IBestPractice videoRedundancy;
-	private IBestPractice videoConcurrentSessions;
+	private IBestPractice videoConcurrentSession;
 
 	@Autowired
 	public void setPacketAnalyzer(IPacketAnalyzer packetanalyzer) {
@@ -236,6 +238,12 @@ public class AROServiceImpl implements IAROService {
 	}
 
 	@Autowired
+	@Qualifier("multipleSimultaneous")
+	public void setMultipleSimultaneous(IBestPractice multipleSimultaneous) {
+		this.multipleSimultaneous = multipleSimultaneous;
+	}
+	
+	@Autowired
 	@Qualifier("http3xx")
 	public void setHttp3xx(IBestPractice http3xx) {
 		this.http3xx = http3xx;
@@ -271,6 +279,13 @@ public class AROServiceImpl implements IAROService {
 	public void setImageFormat(IBestPractice imageFormat) {
 		this.imageFormat = imageFormat;
 	}
+	
+	@Autowired
+	@Qualifier("uiComparator")
+	public void setUIComparator(IBestPractice uiComparator) {
+		this.uiComparator = uiComparator;
+	}
+	
 	@Autowired
 	@Qualifier("minify")
 	public void setMinify(IBestPractice minify) {
@@ -370,9 +385,9 @@ public class AROServiceImpl implements IAROService {
 	}
 	
 	@Autowired
-	@Qualifier("videoConcurrentSessions")
-	public void setVideoConcurrentSessionImpl(IBestPractice videoConcurrentSessions) {
-		this.videoConcurrentSessions = videoConcurrentSessions;
+	@Qualifier("videoConcurrentSession")
+	public void setVideoConcurrentSessionImpl(IBestPractice videoConcurrentSession) {
+		this.videoConcurrentSession = videoConcurrentSession;
 	}
 
 	@Autowired
@@ -670,6 +685,9 @@ public class AROServiceImpl implements IAROService {
 			case IMAGE_FORMAT:
 				workers.add(imageFormat);
 				break;
+			case IMAGE_COMPARE:
+				workers.add(uiComparator);
+				break;
 			case MINIFICATION:
 				workers.add(minify);
 				break;
@@ -681,6 +699,9 @@ public class AROServiceImpl implements IAROService {
 				break;
 			case SIMUL_CONN:
 				workers.add(simultaneous);
+				break;
+			case MULTI_SIMULCONN:
+				workers.add(multipleSimultaneous);
 				break;
 			case SPRITEIMAGE:
 				workers.add(spriteImage);
@@ -717,7 +738,7 @@ public class AROServiceImpl implements IAROService {
 				workers.add(videoRedundancy);
 				break;
 			case VIDEO_CONCURRENT_SESSION:
-				workers.add(videoConcurrentSessions);
+				workers.add(videoConcurrentSession);
 				break;
 
 			case HTTPS_USAGE:

@@ -70,8 +70,8 @@ public class SocketData implements IReceivePcapData, IReceiveDataToBeTransmitted
 		notifyDataReceivedSubscribers(packet);
 	}
 
-	public void sendDataToPcap(byte[] packet) {
-		notifyPcapSubscriber(packet);
+	public void sendDataToPcap(byte[] packet, boolean secure) {
+		notifyPcapSubscriber(packet, secure);
 	}
 	
 	@Override
@@ -124,17 +124,17 @@ public class SocketData implements IReceivePcapData, IReceiveDataToBeTransmitted
 	
 
 	@Override
-	public void notifyPcapSubscriber(byte[] packet) {
+	public void notifyPcapSubscriber(byte[] packet, boolean secure) {
 		// Cycle through the subscribers and notify them
-		for(IPcapSubscriber pcapSubscriber: pcapSubscribers){
-			if(pcapSubscribers.size() > 1) {
-				pcapSubscriber.writePcap(Arrays.copyOf(packet,packet.length));
+		for (IPcapSubscriber pcapSubscriber : pcapSubscribers) {
+			if (pcapSubscribers.size() > 1) {
+				pcapSubscriber.writePcap(Arrays.copyOf(packet, packet.length), secure);
 			} else {
-				pcapSubscriber.writePcap(packet);
+				pcapSubscriber.writePcap(packet, secure);
 			}
 		}
-		
 	}
+
 
 	@Override
 	public void registerDataReceivedSubscribers(IDataReceivedSubscriber subscriber) {

@@ -15,69 +15,66 @@
 */
 package com.att.aro.core.util;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import com.att.aro.core.AROConfig;
+import org.springframework.context.ApplicationContext;
+
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.analytics.AnalyticsEvents;
 import com.att.aro.core.analytics.IAnalyticsManager;
 import com.att.aro.core.analytics.IGoogleAnalytics;
 import com.att.aro.core.settings.Settings;
 
-/**
- * 
- *
- */
-public class GoogleAnalyticsUtil {
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-	private static GoogleAnalyticsUtil gauInstance = null;
-	
-    ApplicationContext configContext = SpringContextUtil.getInstance().getContext();
-	
-    private static IGoogleAnalytics sendAnalytics;
-	
-    private static AnalyticsEvents  allEvents;
-    
-    private static Settings aroConfigSetting;
-		
-	private GoogleAnalyticsUtil(){
+@SuppressFBWarnings("LI_LAZY_INIT_STATIC")
+public class GoogleAnalyticsUtil {
+	private static GoogleAnalyticsUtil GA_UTIL_INSTANCE = null;
+	private static IGoogleAnalytics sendAnalytics;
+	private static AnalyticsEvents ANALYTICS_EVENTS;
+	private static Settings aroConfigSetting;
+
+	ApplicationContext configContext = SpringContextUtil.getInstance().getContext();
+	AtomicInteger numTraces = new AtomicInteger(0);
+
+	private GoogleAnalyticsUtil() {
 		sendAnalytics = getAvailableAnalyticsImplementor();
-		
 	}
-	
+
 	private IGoogleAnalytics getAvailableAnalyticsImplementor() {
 		IAnalyticsManager colmg = configContext.getBean(IAnalyticsManager.class);
 		return colmg.getAvailableAnalytics(configContext);
 	}
-	
-	public static IGoogleAnalytics getGoogleAnalyticsInstance(){
-		if(gauInstance == null){
-			gauInstance = new GoogleAnalyticsUtil();
+
+	public static IGoogleAnalytics getGoogleAnalyticsInstance() {
+		if (GA_UTIL_INSTANCE == null) {
+			GA_UTIL_INSTANCE = new GoogleAnalyticsUtil();
 		}
 		return sendAnalytics;
 	}
-	
-	public static AnalyticsEvents getAnalyticsEvents(){
-		if(allEvents == null){
-			//allEvents = new AnalyticsEvents();
-			if(gauInstance == null){
-				gauInstance = new GoogleAnalyticsUtil();
+
+	public static synchronized AnalyticsEvents getAnalyticsEvents() {
+		if (ANALYTICS_EVENTS == null) {
+			if (GA_UTIL_INSTANCE == null) {
+				GA_UTIL_INSTANCE = new GoogleAnalyticsUtil();
 			}
-			allEvents = gauInstance.configContext.getBean(AnalyticsEvents.class);
+			ANALYTICS_EVENTS = GA_UTIL_INSTANCE.configContext.getBean(AnalyticsEvents.class);
 		}
-		return allEvents;
+		return ANALYTICS_EVENTS;
 	}
-	
-	public static Settings getConfigSetting(){
-		if(aroConfigSetting == null){
-			if(gauInstance == null){
-				gauInstance = new GoogleAnalyticsUtil();
+
+	public static Settings getConfigSetting() {
+		if (aroConfigSetting == null) {
+			if (GA_UTIL_INSTANCE == null) {
+				GA_UTIL_INSTANCE = new GoogleAnalyticsUtil();
 			}
-			aroConfigSetting = gauInstance.configContext.getBean(Settings.class);
+			aroConfigSetting = GA_UTIL_INSTANCE.configContext.getBean(Settings.class);
 		}
 		return aroConfigSetting;
 	}
 	
+	public int getAndIncrementTraceCounter() {
+		return numTraces.getAndIncrement();
+	}
 
 }

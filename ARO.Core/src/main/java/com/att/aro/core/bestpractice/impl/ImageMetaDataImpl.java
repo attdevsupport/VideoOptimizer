@@ -44,6 +44,7 @@ import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
 
 public class ImageMetaDataImpl implements IBestPractice {
@@ -91,7 +92,7 @@ public class ImageMetaDataImpl implements IBestPractice {
 					String imagePath = tracePath + "Image" + System.getProperty("file.separator");
 					String imgFile = "";
 
-					String extractedImageName = extractFullNameFromRRInfo(req);
+					String extractedImageName = ImageHelper.extractFullNameFromRRInfo(req);
 					int pos = extractedImageName.lastIndexOf('.') + 1;
 
 					// List<String> imageList = new ArrayList<String>();
@@ -153,9 +154,6 @@ public class ImageMetaDataImpl implements IBestPractice {
 				byte[] mdata = null;
 				long mSize = 0;
 
-				double imgFileSize;
-				double mdataSize;
-
 				try {
 					mdata = imgP.getExifRawData(new ByteSourceFile(getImage));
 					mSize = mdata.length;
@@ -165,14 +163,11 @@ public class ImageMetaDataImpl implements IBestPractice {
 				imageList.add(imgFile);
 
 				long iSize = getImage.length();
-
-				imgFileSize = iSize / 1024;
-				mdataSize = mSize / 1024;
-
+ 
 				double savings = (mSize * 100) / iSize;
 
-				if (savings >= 1.00) {
-					entrylist.add(new ImageMdataEntry(req, session.getDomainName(), imgFile, imgFileSize, mdataSize,
+				if (savings >= 15.00) {
+					entrylist.add(new ImageMdataEntry(req, session.getDomainName(), imgFile, Util.doubleFileSize(iSize), Util.doubleFileSize(mSize),
 							String.valueOf(new DecimalFormat("##.##").format(savings)) + "%"));
 				}
 				isMetaDataPresent = false;
@@ -205,18 +200,4 @@ public class ImageMetaDataImpl implements IBestPractice {
 		}
 
 	}
-
-	private String extractFullNameFromRRInfo(HttpRequestResponseInfo hrri) {
-		HttpRequestResponseInfo rsp = hrri.getAssocReqResp();
-		String extractedImageName = "";
-		String imageName = "";
-		if (rsp != null) {
-			String imagefromReq = rsp.getObjName();
-			imageName = imagefromReq.substring(imagefromReq.lastIndexOf(Util.FILE_SEPARATOR) + 1);
-			int pos = imageName.lastIndexOf("/") + 1;
-			extractedImageName = imageName.substring(pos);
-		}
-		return extractedImageName;
-	}
-
-}// end class
+}

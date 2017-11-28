@@ -18,17 +18,17 @@ package com.att.aro.core.bestpractice.pojo;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 
 public class ImageCompressionEntry {
-	private long orgImageSize;
+	private double orgImageSize;
 	private double imgTimeStamp;
 	private String httpObjtName = "";
 	private String serverHostName = "";
 	private int imgHttpCode;
 	private HttpRequestResponseInfo httpReqRes;
-	private long sizeE;
-	private long sizeS;
+	private double sizeE;
+	private double sizeS;
 
-	public ImageCompressionEntry(HttpRequestResponseInfo reqResInf, String domainName, String imagefile, long iSize,
-			long sizeE, long sizeS) {
+	public ImageCompressionEntry(HttpRequestResponseInfo reqResInf, String domainName, String imagefile, double iSize,
+			double sizeE, double sizeS) {
 
 		this.httpReqRes = reqResInf;
 		this.httpObjtName = imagefile;
@@ -67,25 +67,23 @@ public class ImageCompressionEntry {
 		}
 	}
 	
-
-	public long getOrgImageSize() {
+	
+	public double getOrgImageSize() {
 		return orgImageSize;
 	}
+
 
 	public void setOrgImageSize(long orgImageSize) {
 		this.orgImageSize = orgImageSize;
 	
 	}
 
-	public long getSizeE() {
+
+	public double getSizeE() {
 		return sizeE;
 	}
 
-	public void setSizeE(long sizeE) {
-		this.sizeE = sizeE;
-	}
-
-	public long getSizeS() {
+	public double getSizeS() {
 		return sizeS;
 	}
 

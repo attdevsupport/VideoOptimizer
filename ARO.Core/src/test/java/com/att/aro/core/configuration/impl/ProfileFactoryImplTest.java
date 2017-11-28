@@ -12,7 +12,6 @@ import java.util.Properties;
 
 import org.junit.Test;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import com.att.aro.core.BaseTest;
@@ -22,7 +21,6 @@ import com.att.aro.core.configuration.pojo.Profile3G;
 import com.att.aro.core.configuration.pojo.ProfileLTE;
 import com.att.aro.core.configuration.pojo.ProfileType;
 import com.att.aro.core.configuration.pojo.ProfileWiFi;
-import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.RRCState;
 

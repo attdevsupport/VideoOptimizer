@@ -60,29 +60,10 @@ public class Session implements Serializable, Comparable<Session> {
 	private double tsTLSHandshakeEnd = -1;
 	
 	
-	/**
-	 * The remote IP address.
-	 */
 	private InetAddress remoteIP;
-
-	/**
-	 * The remote host domain name.
-	 */
 	private String remoteHostName;
-
-	/**
-	 * A dns Request Packet
-	 */
 	private PacketInfo dnsRequestPacket;
-
-	/**
-	 * A dns Response Packet
-	 */
 	private PacketInfo dnsResponsePacket;
-
-	/**
-	 * The last SSL handshake packet
-	 */
 	private PacketInfo lastSslHandshakePacket;
 
 	/**
@@ -103,14 +84,7 @@ public class Session implements Serializable, Comparable<Session> {
 	 */
 	private long bytesTransferred;
 
-	/**
-	 * The remote port.
-	 */
 	private int remotePort;
-
-	/**
-	 * The local port.
-	 */
 	private int localPort;
 
 	/**
@@ -234,6 +208,16 @@ public class Session implements Serializable, Comparable<Session> {
 	 * unused, has been refactored out of this class
 	 */
 	private ByteArrayOutputStream pStorageBothDCPT = new ByteArrayOutputStream();
+	
+	private boolean decrypted;
+
+	public boolean isDecrypted() {
+		return decrypted;
+	}
+
+	public void setDecrypted(boolean decrypted) {
+		this.decrypted = decrypted;
+	}
 
 	/**
 	 * Initializes an instance of the TCPSession class, using the specified

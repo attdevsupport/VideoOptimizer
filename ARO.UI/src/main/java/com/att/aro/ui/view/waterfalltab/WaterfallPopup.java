@@ -204,7 +204,6 @@ public class WaterfallPopup extends JDialog{
 			}
 			//urlValueLabel.setText(req.getObjUri() != null ? req.getObjUri().toString() : req.getObjName());
 			hostValueLabel.setText(req.getHostName());
-			//TODO
 			//ipValueLabel.setText(req.getSession().getRemoteIP().getHostAddress());
 			ipValueLabel.setText(req.getFirstDataPacket().getRemoteIPAddress().getHostAddress());
 			if(resp.getStatusLine() == null){

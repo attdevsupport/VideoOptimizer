@@ -19,8 +19,11 @@ import java.awt.Color;
 import java.util.Collection;
 
 import javax.swing.JTable;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import com.att.aro.core.bestpractice.pojo.ForwardSecrecyEntry;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.bestpractice.ForwardSecrecyTableModel;
 
@@ -56,6 +59,9 @@ public class BpSecurityForwardSecrecyTablePanel extends AbstractBpDetailTablePan
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+			TableRowSorter<TableModel> sorter = new TableRowSorter<>(tableModel);
+			contentTable.setRowSorter(sorter);
+			sorter.setComparator(0, Util.getDomainSorter());
 		}
 		
 		return contentTable;

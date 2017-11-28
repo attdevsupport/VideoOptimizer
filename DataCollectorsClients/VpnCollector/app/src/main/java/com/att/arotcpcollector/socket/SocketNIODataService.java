@@ -66,6 +66,9 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 	//is this a secure collector session?
 	private boolean secureEnable;
 
+	//Do we print Session Logs
+	private boolean printLog;
+
 	public SocketNIODataService() {
 		tcpFactory = new TCPPacketFactory();
 		udpFactory = new UDPPacketFactory();
@@ -106,16 +109,15 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 
  		while (!shutdown) {
 
-			byte[] packetdata;
+			byte[] packetData;
 
 			synchronized (syncTransmittedData) {
-				packetdata = dataToBeTransmitted.poll();
+				packetData = dataToBeTransmitted.poll();
 			}
 
-			if (packetdata != null) {
+			if (packetData != null) {
 				try {
-					Log.d(TAG, "Step 1");
-					sessionHandler.handlePacket(packetdata);
+					sessionHandler.handlePacket(packetData);
 				} catch (PacketHeaderException e) {
 					Log.e(TAG, "Packet Header Exception Thrown: " + e.getMessage());
 					e.printStackTrace();
@@ -123,8 +125,12 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 			}
 
 			try {
+				int selectedChannels;
 				synchronized (syncSelectorForSelection) {
-					selector.select();
+					selectedChannels = selector.select();
+				}
+				if(selectedChannels == 0){
+					Thread.sleep(1000);
 				}
 			} catch (IOException e) {
 				Log.e(TAG, "Error in Selector.select(): " + e.getMessage());
@@ -134,8 +140,9 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 					Log.d(TAG, "Selector Thread Sleep " + e.getMessage());
 				}
 				continue;
+			} catch (InterruptedException e) {
+				Log.e(TAG, "Selector Thread Interrupted: " + e.getMessage());
 			}
-
 			if (shutdown) {
 				Log.d(TAG, "Selector is in shutdown...");
 				break;
@@ -144,7 +151,7 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 			synchronized (syncSelectorForUse) {
 				Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
 				while (iter.hasNext()) {
-					SelectionKey key = (SelectionKey) iter.next();
+					SelectionKey key = iter.next();
 					if (key.isValid()) {// adding this check to avoid java.nio.channels.CancelledKeyException
 						if (key.attachment() == null) {
 							try {
@@ -185,7 +192,6 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 			int port = session.getDestPort();
 			SocketAddress addr = new InetSocketAddress(ips, port);
 			try {
-//				Log.d(TAG, "selector: connecting to remote UDP server: " + ips + ":" + port);
  				channel = channel.connect(addr);
 				session.setUdpChannel(channel);
 				session.setConnected(channel.isConnected());
@@ -267,20 +273,22 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 						
 		if(key.isValid() && key.isWritable() && !session.isBusyWrite()){
 			if(session.hasDataToSend() && session.isDataForSendingReady()){
- 					session.setBusyWrite(true);
-					SocketDataWriterWorker worker = new SocketDataWriterWorker(tcpFactory, udpFactory);
-					worker.setSessionKey(sessionKey);
-					worker.setSecureEnable(isSecureEnable());
-					workerPool.execute(worker);
+				session.setBusyWrite(true);
+				SocketDataWriterWorker worker = new SocketDataWriterWorker(tcpFactory, udpFactory);
+				worker.setSessionKey(sessionKey);
+				worker.setSecureEnable(isSecureEnable());
+				worker.setPrintLog(printLog);
+				workerPool.execute(worker);
 			}	 
 		}
 		
 		if(key.isValid() && key.isReadable() && !session.isBusyRead()){
- 				session.setBusyRead(true);
-				SocketDataReaderWorker worker = new SocketDataReaderWorker(tcpFactory, udpFactory);
-				worker.setSessionKey(sessionKey);
-				worker.setSecureEnable(isSecureEnable());
-				workerPool.execute(worker);
+			session.setBusyRead(true);
+			SocketDataReaderWorker worker = new SocketDataReaderWorker(tcpFactory, udpFactory);
+			worker.setSessionKey(sessionKey);
+			worker.setSecureEnable(isSecureEnable());
+			worker.setPrintLog(printLog);
+			workerPool.execute(worker);
 		} 
 		
 
@@ -293,6 +301,14 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 	
 	public boolean isSecureEnable() {
 		return secureEnable;
+	}
+
+	public boolean isPrintLog() {
+		return printLog;
+	}
+
+	public void setPrintLog(boolean printLog) {
+		this.printLog = printLog;
 	}
 
 	@Override

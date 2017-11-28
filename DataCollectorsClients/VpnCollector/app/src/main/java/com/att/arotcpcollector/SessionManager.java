@@ -43,7 +43,7 @@ import java.util.Iterator;
  * @author Borey Sao Date: May 20, 2014
  */
 public class SessionManager {
-	private static final int SESSION_LIMIT = 25;
+	private static final int SESSION_LIMIT = 50;
 	public static final String TAG = "SessionManager";
 
 	private static Object syncObj = new Object();
@@ -415,7 +415,7 @@ public class SessionManager {
 	 * @return
 	 * @throws SessionCreateException 
 	 */
-	public Session createNewSession(int ip, int port, int srcIp, int srcPort) throws SessionCreateException {
+	public Session createNewSession(int ip, int port, int srcIp, int srcPort, boolean printLog) throws SessionCreateException {
 		String sessionKey = createKey(ip, port, srcIp, srcPort);
 		boolean found = false;
 		synchronized (syncTable) {
@@ -434,6 +434,8 @@ public class SessionManager {
 		session.setSourcePort(srcPort);
 		session.setConnected(false);
 		session.setSessionKey(sessionKey);
+		session.setPrintLog(printLog);
+		session.addSSLEngines(ip, port, srcIp, srcPort);
 
 		SocketChannel channel = null;
 		try {

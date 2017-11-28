@@ -66,7 +66,7 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 		accordionList.clear();
 		if (analyzerResult != null && analyzerResult.getAnalyzerResult() != null && analyzerResult.getAnalyzerResult().getVideoUsage() != null) {
 			for (AROManifest aroManifest : analyzerResult.getAnalyzerResult().getVideoUsage().getManifests()) {
-				if (!aroManifest.getVideoEventList().isEmpty()) {
+				if (aroManifest != null && aroManifest.getVideoEventList() != null && !aroManifest.getVideoEventList().isEmpty()) {
 					AccordionComponent component = new AccordionComponent(aroManifest, this.overviewRoute, analyzerResult, aroView);
 					component.setVisible(false);
 					accordionList.add(component);

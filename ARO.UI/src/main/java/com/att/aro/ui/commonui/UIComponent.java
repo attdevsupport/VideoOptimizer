@@ -18,7 +18,6 @@ package com.att.aro.ui.commonui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.text.MessageFormat;
 import java.util.Hashtable;
 
 import javax.swing.BorderFactory;
@@ -28,7 +27,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.view.images.Images;
 

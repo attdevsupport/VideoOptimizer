@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -322,14 +321,13 @@ public class WifiInfoReaderImplTest extends BaseTest {
 	@Test
 	public void getWifiActiveDuration() throws IOException {
 		
-		List<WifiInfo> wifiInfos = null;
 		Mockito.when(filereader.fileExist(wifi_events)).thenReturn(true);
 		Mockito.when(filereader.readAllLine(Mockito.anyString())).thenReturn(
 				new String[] {
 				 "1.41142116305E9 CONNECTED 84:db:2f:0b:fe:f0 -74 Elevate-FEF0"
 				,"1.412421163196E9 CONNECTED 00:24:36:a7:08:5a -47 The Rabbit Hole 5GHz"});
 		traceDataReader.setFileReader(filereader);
-		wifiInfos = traceDataReader.readData("", 1.412361724E12, 1412361675045.0);
+		traceDataReader.readData("", 1.412361724E12, 1412361675045.0);
 
 		double activeDuration = traceDataReader.getWifiActiveDuration();
 

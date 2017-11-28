@@ -95,6 +95,7 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	private int rrStart;
 	private int rawSize; // Includes headers
 	private boolean ssl;
+	private boolean extractable = true;
 
 	// Map of the content offset/
 	private SortedMap<Integer, Integer> contentOffsetLength;
@@ -498,6 +499,14 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 		this.ssl = ssl;
 	}
 
+	public boolean isExtractable() {
+		return extractable;
+	}
+
+	public void setExtractable(boolean extractable) {
+		this.extractable = extractable;
+	}
+
 	public SortedMap<Integer, Integer> getContentOffsetLength() {
 		return contentOffsetLength;
 	}
@@ -860,10 +869,12 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	public boolean equals(Object obj) {
 		if (obj instanceof HttpRequestResponseInfo) {
 			HttpRequestResponseInfo oHttp = (HttpRequestResponseInfo) obj;
-			return getTimeStamp() == oHttp.getTimeStamp();
-		} else {
-			return false;
+			if (getTimeStamp() == oHttp.getTimeStamp() && getHostName().equals(oHttp.getHostName())
+					&& getContentLength() == oHttp.getContentLength()) {
+				return true;
+			}
 		}
+		return false;
 	}
 
 	/*
@@ -873,7 +884,13 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	 */
 	@Override
 	public int hashCode() {
-		return (int) Double.doubleToLongBits(getTimeStamp());
+		int result = 1;
+		int prime = 31;
+		result = prime * result + (int) Double.doubleToLongBits(getTimeStamp());
+		result = prime * result + ((getHostName() != null) ? getHostName().hashCode() : 0);
+		result = prime * result + getContentLength();
+
+		return result;
 	}
 
 	public void setSession(Session session) {

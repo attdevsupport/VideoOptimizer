@@ -10,25 +10,32 @@
 
 	<repositories>
 		<repository>
-			<id>com.springsource.repository.bundles.external</id>
-			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
-			<url>http://repository.springsource.com/maven/bundles/external</url>
+			<id>central</id>
+			<name>MavenCentral Repository</name>
+			<url>http://repo1.maven.org/maven2</url>
+		</repository>
+		<repository>
+			<id>apache-snapshots</id>
+			<name>Apache Snapshot</name>
+			<url>https://repository.apache.org/content/repositories/snapshots/</url>
+		</repository>
+		<repository>
+			<id>sonatype-public</id>
+			<name>Sonatype Public</name>
+			<url>http://repository.sonatype.org/content/groups/public</url>
 		</repository>
 		<repository>
 			<id>sonatype-flex</id>
 			<name>Sonatype Flex</name>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</repository>
-
 	</repositories>
-	
 	<pluginRepositories>
 		<pluginRepository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
 			<url>http://repo1.maven.org/maven2</url>
 		</pluginRepository>
- 
 	</pluginRepositories>
 
 	<!-- dependencies -->
@@ -38,11 +45,6 @@
 			<artifactId>aro-core</artifactId>
 			<version>6.0.0-SNAPSHOT</version>
 		</dependency>
-		<dependency>
-		    <groupId>org.codehaus.mojo</groupId>
-		    <artifactId>findbugs-maven-plugin</artifactId>
-		    <version>3.0.4</version>
- 		</dependency>			
 		<dependency>
 			<groupId>com.orientechnologies</groupId>
 			<artifactId>orientdb-core</artifactId>
@@ -69,19 +71,19 @@
 			<version>4.0.3.RELEASE</version>
 			<scope>test</scope>
 		</dependency>
-<!--Please download the source code from the web site and compile it and publish to your own local repository-->
-<!-- mvn install:install-file -Dfile=proxy-vole_20131209.jar -DgroupId=com.proxy \-DartifactId=proxy-vole -Dversion=1.0 -Dpackaging=jar -->
-		
+
 		<dependency>
 			<groupId>com.proxy</groupId>
 			<artifactId>proxy-vole</artifactId>
 			<version>1.0</version>
-			
-			<!-- <scope>system</scope> <systemPath>${project.basedir}/lib/proxy-vole_20131209.jar</systemPath> -->
 		</dependency>
- 	</dependencies>
-
-	<!-- build -->
+		<dependency>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>findbugs-maven-plugin</artifactId>
+			<version>3.0.4</version>
+		</dependency>
+	</dependencies>
+ 	<!-- build -->
 	<build>
 		<plugins>
 

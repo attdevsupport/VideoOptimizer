@@ -15,6 +15,7 @@
 */
 package com.att.aro.ui.view.diagnostictab;
 
+import java.awt.Rectangle;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.MouseAdapter;
@@ -66,7 +67,10 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 		
 	}
 	
-
+	public void showHighlightedSession(int row){
+		table.getSelectionModel().setSelectionInterval(row, row);
+		table.scrollRectToVisible(new Rectangle(0,row*table.getRowHeight(),table.getWidth(),table.getHeight())); 
+	}
 	/**
 	 * USing Item listner for the Header check box for select ALL and deselect ALL
 	 *
@@ -114,24 +118,7 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 		return selectedRows;
 	}
 	
-	/**
-	 * Returns header check box component
-	 * 
-	 * @param value
-	 * @return
-	 */
-	private JCheckBox getComponent(boolean value) {
-		return (JCheckBox) table.getTableHeader().getColumnModel().getColumn(1)
-				.getHeaderRenderer().getTableCellRendererComponent(table,
-						value, false, false, -1, 1);
-	}
-	
-	/**
-	 * select and de-select all the rows 
-	 *
-	 *
-	 */
-	  class MyMouseListener extends MouseAdapter{  
+	class MyMouseListener extends MouseAdapter{  
 	      public void mouseClicked(MouseEvent mouseEvent) {  
 	          int checkedCount = 0;  
 	          

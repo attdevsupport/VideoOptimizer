@@ -42,6 +42,7 @@ import com.att.aro.core.model.InjectLogger;
  * image data format, but all frames must use the same format. When the JPG
  * format is used, each frame can have an individual encoding quality.
  */
+@SuppressWarnings("resource") //TODO POSSIBLE RESOURCE LEAKS
 public class QuickTimeOutputStream {
 
 	@InjectLogger

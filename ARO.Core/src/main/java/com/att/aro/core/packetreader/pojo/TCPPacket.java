@@ -53,6 +53,7 @@ public class TCPPacket extends IPPacket implements Serializable {
 	private int payloadLen;
 	
 	private boolean ssl;
+	private boolean decrypted;
 	private boolean sslHandshake;
 	private boolean sslApplicationData;
 	private Set<String> unsecureSSLVersions;
@@ -535,5 +536,13 @@ public class TCPPacket extends IPPacket implements Serializable {
 	 */
 	public boolean containsSSLRecord() {
 		return ssl || unsecureSSLVersions.size() > 0; 
+	}
+
+	public boolean isDecrypted() {
+		return decrypted;
+	}
+
+	public void setDecrypted(boolean decrypted) {
+		this.decrypted = decrypted;
 	}
 }

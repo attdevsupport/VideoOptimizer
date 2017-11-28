@@ -12,20 +12,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
+import javax.swing.JSplitPane;
 import javax.swing.border.TitledBorder;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
-import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
-import com.att.aro.core.settings.SettingsUtil;;
+import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;;
 
 /**
  * This provides a panel with all the best practices
@@ -38,6 +36,8 @@ public class BPSelectionPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private static Component panel;
 	private static BPSelectionPanel instance;
+	int noOfBestPractices = 0;
+	
 
 	Map<String, JCheckBox> map = new HashMap<>();
 	List<JCheckBox> selectAllList = new ArrayList<>();
@@ -61,34 +61,42 @@ public class BPSelectionPanel extends JPanel {
 	}
 
 	private BPSelectionPanel() {
-		this.setLayout(new BoxLayout(this, BoxLayout.LINE_AXIS));
-		JPanel line1 = new JPanel();
-		JPanel line2 = new JPanel();
-		this.add(line1);
-		this.add(line2);
-		line1.setLayout(new BoxLayout(line1, BoxLayout.PAGE_AXIS));
-		line2.setLayout(new BoxLayout(line2, BoxLayout.PAGE_AXIS));
-		line1.add(getGroupedBPPanel(Category.VIDEO), BorderLayout.NORTH);
-		line1.add(getGroupedBPPanel(Category.FILE), BorderLayout.NORTH);
-		line1.add(getGroupedBPPanel(Category.OTHER), BorderLayout.NORTH);
-		line2.add(getGroupedBPPanel(Category.HTML), BorderLayout.NORTH);
-		line2.add(getGroupedBPPanel(Category.CONNECTIONS), BorderLayout.NORTH);
-		line2.add(getGroupedBPPanel(Category.SECURITY), BorderLayout.NORTH);
+		JSplitPane bottomSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, getLine1(), getLine2());
+		bottomSplitPane.setDividerLocation(0.5);
+		this.add(bottomSplitPane);
+
 		setSelectedBoxes();
 	}
 
-	private Component getGroupedBPPanel(Category category) {
-		// TODO remember to change  allBpItems to bpItems when adding VIDEO_CONCURRENT_SESSION to BPTab
-		List<BestPracticeType> allBpItems = BestPracticeType.getByCategory(category);
-//		List<BestPracticeType> bpItems = BestPracticeType.getByCategory(category); // original
+	private JPanel getLine2() {
+		noOfBestPractices = 0;
+		JPanel line2 = new JPanel();
+		line2.add(getGroupedBPPanel(Category.HTML), BorderLayout.NORTH);
+		line2.add(getGroupedBPPanel(Category.SECURITY), BorderLayout.NORTH);
+		line2.add(getGroupedBPPanel(Category.VIDEO), BorderLayout.NORTH);
+		line2.add(getGroupedBPPanel(Category.OTHER), BorderLayout.NORTH);
+		line2.setPreferredSize(new Dimension(350,90 + 23 * noOfBestPractices));
+		return line2;
+	}
 
-		// TODO remember to remove this when added to BPTab 
-		List<BestPracticeType> bpItems = allBpItems.stream().filter((i) -> (i != BestPracticeType.VIDEO_CONCURRENT_SESSION)).collect(Collectors.toList());
+	private JPanel getLine1() {
+		noOfBestPractices = 0;
+		JPanel line1 = new JPanel();
+		line1.add(getGroupedBPPanel(Category.FILE), BorderLayout.NORTH);
+		line1.add(getGroupedBPPanel(Category.CONNECTIONS), BorderLayout.NORTH);
+		line1.setPreferredSize(new Dimension(350,205 + 23 * noOfBestPractices));
+		return line1;
+	}
+
+	private Component getGroupedBPPanel(Category category) {
+		List<BestPracticeType> bpItems = BestPracticeType.getByCategory(category);
 		JPanel panel = new JPanel();
+		noOfBestPractices = noOfBestPractices+bpItems.size();
+		Dimension sectionDimention = new Dimension(350, 45 + 23 * bpItems.size());
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
-		panel.setPreferredSize(new Dimension(350, 45 + 23 * bpItems.size()));
-		panel.setMinimumSize(new Dimension(350, 45 + 23 * bpItems.size()));
-		panel.setMaximumSize(new Dimension(350, 45 + 23 * bpItems.size()));
+		panel.setPreferredSize(sectionDimention);
+		panel.setMinimumSize(sectionDimention);
+		panel.setMaximumSize(sectionDimention);
 		final JCheckBox toggleAll = new JCheckBox("Select All");
 		toggleAll.setForeground(Color.BLUE);
 		toggleAll.addActionListener((e) -> setSelectedBoxes(bpItems, toggleAll.isSelected()));
@@ -113,15 +121,6 @@ public class BPSelectionPanel extends JPanel {
 				selected.add(BestPracticeType.valueOf(entry.getKey()));
 			}
 		}
-		//TODO REMOVE THIS BLOCK AFTER 1.2 RELEASE
-		List<BestPracticeType> selectableVBP = BestPracticeType.getByCategory(BestPracticeType.Category.VIDEO);
-		selectableVBP.remove(BestPracticeType.VIDEO_CONCURRENT_SESSION);
-		if (CollectionUtils.containsAny(selected, selectableVBP)) {
-			selected.add(BestPracticeType.VIDEO_CONCURRENT_SESSION);
-		} else {
-			selected.remove(BestPracticeType.VIDEO_CONCURRENT_SESSION);
-		}
-		//END OF HACK
 		return selected;
 	}
 
@@ -139,8 +138,6 @@ public class BPSelectionPanel extends JPanel {
 
 	private void setSelectedBoxes(List<BestPracticeType> selected, boolean state) {
 		for (BestPracticeType type : selected) {
-			// TODO remember to remove this when added to BPTab 
-			if(type == BestPracticeType.VIDEO_CONCURRENT_SESSION) continue;
 			map.get(type.name()).setSelected(state);
 		}
 	}

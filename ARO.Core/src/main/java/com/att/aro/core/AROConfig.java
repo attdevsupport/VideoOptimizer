@@ -32,9 +32,11 @@ import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.android.impl.AndroidImpl;
 import com.att.aro.core.commandline.IExternalProcessReader;
 import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.commandline.ILLDBProcessRunner;
 import com.att.aro.core.commandline.IProcessFactory;
 import com.att.aro.core.commandline.impl.ExternalProcessReaderImpl;
 import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
+import com.att.aro.core.commandline.impl.LLDBProcessRunnerImpl;
 import com.att.aro.core.commandline.impl.ProcessFactoryImpl;
 import com.att.aro.core.concurrent.IThreadExecutor;
 import com.att.aro.core.concurrent.impl.ThreadExecutorImpl;
@@ -162,7 +164,9 @@ import com.att.aro.core.securedpacketreader.impl.TLSHandshakeImpl;
 import com.att.aro.core.securedpacketreader.impl.TLSSessionInfoImpl;
 import com.att.aro.core.settings.Settings;
 import com.att.aro.core.settings.impl.SettingsImpl;
+import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.core.util.IStringParse;
+import com.att.aro.core.util.PcapConfirmationImpl;
 import com.att.aro.core.util.StringParse;
 import com.att.aro.core.video.IScreenRecorder;
 import com.att.aro.core.video.IVideoCapture;
@@ -177,7 +181,6 @@ import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.impl.BufferInSecondsCalculatorImpl;
 import com.att.aro.core.videoanalysis.impl.BufferOccupancyCalculatorImpl;
-import com.att.aro.core.videoanalysis.impl.FFmpegConfirmationImpl;
 import com.att.aro.core.videoanalysis.impl.VideoAnalysisConfigHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoBestPractices;
 import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
@@ -191,6 +194,7 @@ import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
  * reports.
  *
  */
+@SuppressWarnings("deprecation")
 @Configuration
 @Lazy
 @ComponentScan("com.att.aro")
@@ -509,6 +513,11 @@ public class AROConfig {
 		return new ExternalProcessRunnerImpl();
 	}
 
+	@Bean(name = "lldbProcessRunnerImpl")
+	public ILLDBProcessRunner getLLDBProcessRunnerImpl() {
+		return new LLDBProcessRunnerImpl();
+	}
+	
 	@Bean(name = "jsongenerate")
 	public IReport getJSonGanarate() {
 		return new JSonReportImpl();
@@ -614,6 +623,11 @@ public class AROConfig {
 	@Bean(name = "ffmpegConfirmationImpl")
 	public FFmpegConfirmationImpl getFfmpegConfirmationImpl() {
 		return new FFmpegConfirmationImpl();
+	}
+	
+	@Bean(name = "pcapConfirmationImpl")
+	public PcapConfirmationImpl getPcapConfirmationImpl() {
+		return new PcapConfirmationImpl();
 	}
 	
 	@Bean(name="videoTabHelperImpl")
