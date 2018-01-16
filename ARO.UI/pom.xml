@@ -33,9 +33,9 @@
 			</snapshots>
 		</repository>		
 		<repository>
-			<id>sonatype</id>
-			<name>Sonatype</name>
-			<url>http://mavencentral.it.att.com:8084/nexus/content/repositories/sonatype</url>
+			<id>sonatype-public</id>
+			<name>Sonatype Public</name>
+			<url>http://repository.sonatype.org/content/groups/public</url>
 		</repository>
 		<repository>
 			<id>sonatype-flex</id>
