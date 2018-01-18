@@ -63,6 +63,9 @@ public class Commands {
 	@Parameter(names="--throttleDL", description="enable throttle download throughtput (64k - 100m (102400k))")
 	private String throttleDL = "-1";
 	
+	@Parameter(names="--profile", description="provide profile location")
+	private String attenuationprofile = null;	
+ 	
 	
 	public boolean isListcollector() {
 		return listcollectors;
@@ -96,11 +99,6 @@ public class Commands {
 		this.sudo = sudo;
 	}
 
-
-	/**
-	 * new
-	 * @return
-	 */
 	public String getAsk() {
 		return ask;
 	}
@@ -164,6 +162,7 @@ public class Commands {
 	public boolean isListDevices() {
 		return listdevices;
 	}
+	
 
 	public String getThrottleUL() {
 		return throttleUL;
@@ -180,6 +179,16 @@ public class Commands {
 	public void setDownlink(String throttleDL) {
 		this.throttleDL = throttleDL;
 	}
+	
+	public String getAttenuationprofile() {
+		return attenuationprofile;
+	}
+
+	public void setAttenuationprofile(String attenuationprofile) {
+		this.attenuationprofile = attenuationprofile;
+	}
+
+
 
 	@Override
 	public String toString() {
@@ -199,7 +208,7 @@ public class Commands {
 		}
 		if (output != null) {
 			sb.append(", output:" + getOutput());
-		}
+		}		
 		if (ask != null) {
 			sb.append(", ask:" + getAsk());
 		}
@@ -221,12 +230,20 @@ public class Commands {
 		if (verbose) {
 			sb.append(", verbose");
 		}
-		sb.append(", throttleUL: " + getThrottleUL());
-		sb.append(", throttleDL: " + getThrottleDL());
+		if (attenuationprofile != null) {
+			sb.append(", attenuationprofile:" + getAttenuationprofile());
+		}
+		if(!throttleDL.isEmpty()) {
+			sb.append(", throttleUL: " + getThrottleUL());
+		}
+		if(!throttleUL.isEmpty()) {
+			sb.append(", throttleDL: " + getThrottleDL());
+		}
 		if (video != null) {
 			sb.append(", " + getVideo());
 		}
 		
+
 		return sb.toString();
 	}
 

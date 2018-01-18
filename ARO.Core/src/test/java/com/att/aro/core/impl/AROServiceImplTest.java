@@ -40,18 +40,16 @@ import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.util.Util;
 
 public class AROServiceImplTest extends BaseTest {
-
 	@InjectMocks
 	AROServiceImpl aro;
 	@Mock
-	IPacketAnalyzer packetanalyzer;	
+	IPacketAnalyzer packetanalyzer;
 	@Mock
 	ICacheAnalysis cacheAnalyzer;
 	@Mock
 	IBestPractice worker;
 	@Mock
 	transient VersionInfo info;
-
 	@Mock(name = "periodicTransfer")
 	IBestPractice periodicTransfer;
 	@Mock(name = "unnecessaryConnection")
@@ -102,7 +100,6 @@ public class AROServiceImplTest extends BaseTest {
 	IBestPractice displaynoneincss;
 	@Mock(name = "fileorder")
 	IBestPractice fileorder;
-
 	@Mock(name = "videoStall")
 	IBestPractice videoStall;
 	@Mock(name = "networkComparison")
@@ -125,34 +122,35 @@ public class AROServiceImplTest extends BaseTest {
 	IBestPractice simultaneous;
 	@Mock(name = "multipleSimultaneous")
 	IBestPractice multipleSimultaneous;
-	
+	/*@Mock(name = "adAnalytics")
+	IBestPractice adAnalytics;*/
 	@Mock(name = "httpsUsage")
 	IBestPractice httpsUsage;
 	@Mock(name = "transmissionPrivateData")
 	IBestPractice transmissionPrivateData;
-	
+
 	@Before
-	public void setup(){
+	public void setup() {
 		aro = new AROServiceImpl();
 		MockitoAnnotations.initMocks(this);
-		
 	}
-	
+
 	@After
-	public void reset(){
+	public void reset() {
 		Mockito.reset(packetanalyzer);
 		Mockito.reset(cacheAnalyzer);
 		Mockito.reset(worker);
 	}
+
 	@Test
-	public void getNameTest(){
+	public void getNameTest() {
 		when(info.getName()).thenReturn("ARO");
 		String name = aro.getName();
 		assertNotNull(name);
 	}
-	
+
 	@Test
-	public void getVersionTest(){
+	public void getVersionTest() {
 		when(info.getVersion()).thenReturn("5.0");
 		String version = aro.getVersion();
 		assertNotNull(version);
@@ -167,14 +165,10 @@ public class AROServiceImplTest extends BaseTest {
 		analyze.setTraceresult(traceresult);
 		List<BestPracticeType> req = new ArrayList<BestPracticeType>();
 		req.add(BestPracticeType.UNNECESSARY_CONNECTIONS);
-
 		AROTraceData testResult = aro.analyzeFile(req, "traffic.cap");
-
 		assertEquals(null, testResult.getBestPracticeResults());
-
 	}
 
-		
 	@Test
 	public void analyzeFileTest() throws IOException {
 		PacketAnalyzerResult analyze = new PacketAnalyzerResult();
@@ -209,7 +203,6 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
 		req.add(BestPracticeType.FILE_ORDER);
 		req.add(BestPracticeType.MULTI_SIMULCONN);
-
 		req.add(BestPracticeType.VIDEO_STALL);
 		req.add(BestPracticeType.STARTUP_DELAY);
 		req.add(BestPracticeType.BUFFER_OCCUPANCY);
@@ -219,19 +212,13 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.CHUNK_PACING);
 		req.add(BestPracticeType.VIDEO_REDUNDANCY);
 		req.add(BestPracticeType.VIDEO_CONCURRENT_SESSION);
-		
 		req.add(BestPracticeType.HTTPS_USAGE);
 		req.add(BestPracticeType.TRANSMISSION_PRIVATE_DATA);
-
 		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
-
 		packetanalyzer = Mockito.mock(IPacketAnalyzer.class);
-
 		aro.setPacketAnalyzer(packetanalyzer);
-
 		when(packetanalyzer.analyzeTraceFile(any(String.class), any(Profile.class), any(AnalysisFilter.class)))
 				.thenReturn(analyze);
-
 		when(worker.runTest(any(PacketAnalyzerResult.class))).thenReturn(periodicTransferResult);
 		List<BestPracticeType> list = SettingsUtil.retrieveBestPractices();
 		SettingsUtil.saveBestPractices(req);
@@ -242,24 +229,19 @@ public class AROServiceImplTest extends BaseTest {
 			SettingsUtil.saveBestPractices(list);
 		}
 	}
-	 
-	@Test
-	public void analyzeFileTest_resultIsNull()throws IOException{
-		when(packetanalyzer.analyzeTraceFile(
-				any(String.class)
-				, any(Profile.class)
-				, any(AnalysisFilter.class)))
-		.thenReturn(null);
-		List<BestPracticeType> req = new ArrayList<BestPracticeType>();		
 
-		AROTraceData testResult	= aro.analyzeFile(req, "traffic.cap");		
-		assertEquals(104,testResult.getError().getCode());
+	@Test
+	public void analyzeFileTest_resultIsNull() throws IOException {
+		when(packetanalyzer.analyzeTraceFile(any(String.class), any(Profile.class), any(AnalysisFilter.class)))
+				.thenReturn(null);
+		List<BestPracticeType> req = new ArrayList<BestPracticeType>();
+		AROTraceData testResult = aro.analyzeFile(req, "traffic.cap");
+		assertEquals(104, testResult.getError().getCode());
 		assertFalse(testResult.isSuccess());
-
 	}
-	
+
 	@Test
-	public void analyzeDirectoryTest()throws IOException{
+	public void analyzeDirectoryTest() throws IOException {
 		TraceDirectoryResult traceresult = new TraceDirectoryResult();
 		List<PacketInfo> allpackets = new ArrayList<PacketInfo>();
 		allpackets.add(new PacketInfo(new Packet(0, 0, 0, 0, null)));
@@ -267,7 +249,6 @@ public class AROServiceImplTest extends BaseTest {
 		PacketAnalyzerResult analyze = new PacketAnalyzerResult();
 		analyze.setTraceresult(traceresult);
 		CacheAnalysis cacheAnalysis = new CacheAnalysis();
-		
 		PeriodicTransferResult periodicTransferResult = new PeriodicTransferResult();
 		List<BestPracticeType> req = new ArrayList<BestPracticeType>();
 		req.add(BestPracticeType.UNNECESSARY_CONNECTIONS);
@@ -287,7 +268,7 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.IMAGE_SIZE);
 		req.add(BestPracticeType.MINIFICATION);
 		req.add(BestPracticeType.EMPTY_URL);
-		req.add(BestPracticeType.FLASH); 
+		req.add(BestPracticeType.FLASH);
 		req.add(BestPracticeType.SPRITEIMAGE);
 		req.add(BestPracticeType.SCRIPTS_URL);
 		req.add(BestPracticeType.ASYNC_CHECK);
@@ -306,7 +287,6 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
 		req.add(BestPracticeType.VIDEO_CONCURRENT_SESSION);
 		req.add(BestPracticeType.MULTI_SIMULCONN);
-		
 		List<BestPracticeType> list = SettingsUtil.retrieveBestPractices();
 		SettingsUtil.saveBestPractices(req);
 		when(packetanalyzer.analyzeTraceDirectory(any(String.class), any(Profile.class), any(AnalysisFilter.class)))
@@ -315,21 +295,19 @@ public class AROServiceImplTest extends BaseTest {
 		when(cacheAnalyzer.analyze(anyListOf(Session.class))).thenReturn(cacheAnalysis);
 		try {
 			AROTraceData testResult = aro.analyzeDirectory(req, Util.getCurrentRunningDir());
-			assertEquals(44,testResult.getBestPracticeResults().size());
+			assertEquals(44, testResult.getBestPracticeResults().size());
 		} finally {
 			SettingsUtil.saveBestPractices(list);
-		}		
+		}
 	}
-	
+
 	@Test
-	public void analyzeDirectoryTest_resultIsNull()throws IOException{
+	public void analyzeDirectoryTest_resultIsNull() throws IOException {
 		List<BestPracticeType> req = new ArrayList<BestPracticeType>();
 		when(packetanalyzer.analyzeTraceDirectory(any(String.class), any(Profile.class), any(AnalysisFilter.class)))
-		.thenReturn(null);
-		AROTraceData testResult 
-		= aro.analyzeDirectory(req,  Util.getCurrentRunningDir());		
-		assertEquals(103,testResult.getError().getCode());
+				.thenReturn(null);
+		AROTraceData testResult = aro.analyzeDirectory(req, Util.getCurrentRunningDir());
+		assertEquals(103, testResult.getError().getCode());
 		assertFalse(testResult.isSuccess());
-
 	}
 }

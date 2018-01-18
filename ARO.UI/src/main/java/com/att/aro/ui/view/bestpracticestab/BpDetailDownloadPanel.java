@@ -48,11 +48,11 @@ public class BpDetailDownloadPanel extends BpDetail {
 		// Duplicate Content
 		addPanel(row++, new BpDetailItem("caching.duplicateContent", BestPracticeType.DUPLICATE_CONTENT, new BpFileDuplicateContentTablePanel()));
 		
-		// Content Expiration
-		addPanel(row++, new BpDetailItem("caching.usingCache", BestPracticeType.CACHE_CONTROL));
-		
 		// Cache Control
-		addPanel(row++, new BpDetailItem("caching.cacheControl", BestPracticeType.USING_CACHE));
+		addPanel(row++, new BpDetailItem("caching.usingCache", BestPracticeType.USING_CACHE));
+				
+		// Content Expiration
+		addPanel(row++, new BpDetailItem("caching.cacheControl", BestPracticeType.CACHE_CONTROL));
 
 		// Content Pre-fetching
 //		disabled until further notice, or decision on how to conduct bp test

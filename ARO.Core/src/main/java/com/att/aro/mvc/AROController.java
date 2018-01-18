@@ -144,6 +144,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 				}
 			} catch(OutOfMemoryError err) {
 				log.error(err.getMessage(), err);
+				results = new AROTraceData();
 				results.setSuccess(false);
 				results.setError(ErrorCodeRegistry.getOutOfMemoryError());
 			}

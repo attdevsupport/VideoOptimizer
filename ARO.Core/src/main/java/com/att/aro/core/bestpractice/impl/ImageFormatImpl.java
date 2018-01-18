@@ -182,6 +182,11 @@ public class ImageFormatImpl implements IBestPractice {
 						&& reqResp.getContentType().contains("image/")) {
 
 					originalImage = ImageHelper.extractFullNameFromRRInfo(reqResp);
+					if ((!originalImage.isEmpty()
+							&& !(originalImage.contains(".jpeg") || originalImage.contains(".jpg")))
+							&& reqResp.getContentType().contains("jpeg")) {
+						originalImage = Util.parseImageName(originalImage, reqResp);
+					}
 					File orgImage = new File(imageFolderPath + originalImage);
 					orgImageSize = orgImage.length();
 					int pos = originalImage.lastIndexOf(".");
@@ -220,7 +225,12 @@ public class ImageFormatImpl implements IBestPractice {
 			for (final HttpRequestResponseInfo req : session.getRequestResponseInfo()) {
 				if (req.getDirection() == HttpDirection.RESPONSE && req.getContentType() != null
 						&& req.getContentType().contains("image/")) {
-					final String extractedImage = ImageHelper.extractFullNameFromRRInfo(req);
+					String extractedImage = ImageHelper.extractFullNameFromRRInfo(req);
+					if ((!extractedImage.isEmpty()
+							&& !(extractedImage.contains(".jpeg") || extractedImage.contains(".jpg")))
+							&& req.getContentType().contains("jpeg")) {
+						extractedImage = Util.parseImageName(extractedImage, req);
+					}
 
 					File imgFile = new File(imageFolderPath + extractedImage);
 					if (imgFile.exists() && !imgFile.isDirectory()) {
@@ -279,7 +289,7 @@ public class ImageFormatImpl implements IBestPractice {
 					jp2Writer.dispose();
 
 				}
-			}	
+			}
 			imageOutputStream.close();
 		
 		} catch (IOException e) {

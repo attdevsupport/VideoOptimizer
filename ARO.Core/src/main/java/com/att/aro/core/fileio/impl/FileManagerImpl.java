@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
+
 import com.att.aro.core.ILogger;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.model.InjectLogger;
@@ -67,7 +69,7 @@ public class FileManagerImpl implements IFileManager {
 		} catch (IOException e) {
 			logger.error("error reading data from BufferedReader", e);
 		}
-		String[] arrlist = (String[]) list.toArray(new String[list.size()]);
+		String[] arrlist = list.toArray(new String[list.size()]);
 
 		return arrlist;
 	}
@@ -123,33 +125,42 @@ public class FileManagerImpl implements IFileManager {
 		}
 		return false;
 	}
+	
+	@Override
+	public boolean deleteFolderContents(String folderPath) {
 
+		String[] files = list(folderPath, null);
+		boolean delResult = true;
+		for (String file : files) {
+			String filepath = folderPath + Util.FILE_SEPARATOR + file;
+			if (directoryExistAndNotEmpty(filepath)) {
+				deleteFolderContents(filepath);
+			}
+			boolean tempResult = deleteFile(filepath);
+			delResult = delResult && tempResult;
+			logger.debug("delete :" + file + (tempResult ? " deleted" : " failed"));
+		}
+		return delResult;
+	}
+
+	
 	@Override
 	public boolean directoryDeleteInnerFiles(String directoryPath) {
-		if ((Util.isWindowsOS() 
-				&& ("C:\\".equals(directoryPath) 
-						|| "C:".equals(directoryPath)))
+		if ((Util.isWindowsOS() && ("C:\\".equals(directoryPath) || "C:".equals(directoryPath)))
 				|| "/".equals(directoryPath)) {
 			logger.error("Illegal attempt to delete files in " + directoryPath);
 			return false;
 		}
-		return directoryDeleteInnerFiles(createFile(directoryPath));
-	}
-	
-	private boolean directoryDeleteInnerFiles(File directory) {
-		boolean success = true;
-		if (directory.exists() && directory.isDirectory()) {
-			String[] innerList = directory.list();
-			if(innerList != null && innerList.length != 0) {
-				for (String file : innerList) {
-					String filePath = directory + "/" + file;
-					if (!deleteFile(filePath)){
-						success = false;
-					}
-				}
+		try {
+			File directory = new File(directoryPath);
+			if (!directory.exists()) {
+				return false;
 			}
+			FileUtils.cleanDirectory(directory);
+		} catch (IOException ex) {
+			return false;
 		}
-		return success;
+		return true;
 	}
 	
 	@Override

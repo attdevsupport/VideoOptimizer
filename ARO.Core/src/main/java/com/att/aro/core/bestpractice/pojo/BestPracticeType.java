@@ -32,8 +32,8 @@ import java.util.stream.Collectors;
  *
  */
 public enum BestPracticeType {
-	FILE_COMPRESSION(FILE, "Text File Compression"), DUPLICATE_CONTENT(FILE, "Duplicate Content"), USING_CACHE(FILE,
-			"Content Expiration"), CACHE_CONTROL(FILE, "Cache Control"), COMBINE_CS_JSS(FILE,
+	FILE_COMPRESSION(FILE, "Text File Compression"), DUPLICATE_CONTENT(FILE, "Duplicate Content"), 
+	USING_CACHE(FILE, "Cache Control"), CACHE_CONTROL(FILE, "Content Expiration"), COMBINE_CS_JSS(FILE,
 					"Combine JS and CSS Requests"), IMAGE_SIZE(FILE, "Resize Images for Mobile"), IMAGE_MDATA(FILE,
 							"Image Metadata"), IMAGE_CMPRS(FILE, "Image Compression"), IMAGE_FORMAT(FILE,
 									"Image Format"),IMAGE_COMPARE(FILE, "Image Comparison"), MINIFICATION(FILE, "Minify CSS, JS, HTML"), SPRITEIMAGE(FILE,
@@ -42,8 +42,8 @@ public enum BestPracticeType {
 	CONNECTION_OPENING(CONNECTIONS, "Connection opening"), UNNECESSARY_CONNECTIONS(CONNECTIONS,
 			"Unnecessary Connections - Multiple Simultaneous Connections"),SIMUL_CONN(CONNECTIONS,
 					"Multiple Simultaneous Connections to One Endpoint"), MULTI_SIMULCONN(CONNECTIONS,
-							"Multiple Simultaneous Connections to Many Endpoints"),PERIODIC_TRANSFER(CONNECTIONS,
-					"Inefficient Connections - Periodic Transfers"), SCREEN_ROTATION(CONNECTIONS,
+							"Multiple Simultaneous Connections to Many Endpoints"), PERIODIC_TRANSFER(CONNECTIONS,
+										"Inefficient Connections - Periodic Transfers"), SCREEN_ROTATION(CONNECTIONS,
 							"Inefficient Connections - Screen Rotation"), CONNECTION_CLOSING(CONNECTIONS,
 									"Inefficient Connections - Connection Closing Problems"), HTTP_4XX_5XX(CONNECTIONS,
 											"400, 500 HTTP Status Response Codes"), HTTP_3XX_CODE(CONNECTIONS,
@@ -61,7 +61,7 @@ public enum BestPracticeType {
 	VIDEO_STALL(VIDEO, "Stalls"), STARTUP_DELAY(VIDEO, "Start-up Delay"), BUFFER_OCCUPANCY(VIDEO,
 			"Buffer Occupancy"), NETWORK_COMPARISON(VIDEO, "Network Comparison"), TCP_CONNECTION(VIDEO,
 					"TCP Connection"), CHUNK_SIZE(VIDEO, "Segment Size"), CHUNK_PACING(VIDEO,
-							"Segment Pacing"), VIDEO_REDUNDANCY(VIDEO, "Redundancy"), 
+							"Segment Pacing"), VIDEO_REDUNDANCY(VIDEO, "Redundancy"),
 							VIDEO_CONCURRENT_SESSION(VIDEO, "Concurrent Session"),
 
 	ACCESSING_PERIPHERALS(OTHER, "Accessing Peripheral Applications"),
@@ -101,6 +101,15 @@ public enum BestPracticeType {
 	public static List<BestPracticeType> getByCategory(Category category) {
 		return Arrays.asList(BestPracticeType.values()).stream().filter((a) -> a.category.equals(category))
 				.collect(Collectors.toList());
+	}
+	
+	public static boolean isValid(String name) {
+		for(BestPracticeType bp : BestPracticeType.values()) {
+			if(bp.name().equals(name)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public static BestPracticeType getByDescription(String description) {

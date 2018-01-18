@@ -48,7 +48,7 @@ public interface IFileManager {
 	boolean directoryExistAndNotEmpty(String directoryPath);
 
 	boolean directoryDeleteInnerFiles(String directoryPath);
-
+	boolean deleteFolderContents(String folderPath);
 	boolean fileDirExist(String filepath);
 
 	String[] list(String directoryPath, FilenameFilter filter);

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.att.aro.core.impl;
 
 import java.io.FileNotFoundException;
@@ -50,12 +49,12 @@ import com.att.aro.core.settings.SettingsUtil;
 /**
  * This class provides access to ARO.Core functionality for analyzing and
  * generating reports.
- * 
+ *
  * <pre>
  * To analyze a trace use analyzeDirectory or analyzeFile. These will generate an AROTraceData object.
  * Html and Json formatted reports can be generated once the analysis has been performed.
  * </pre>
- * 
+ *
  * <pre>
  * Example:
  *   IAROService serv = context.getBean(IAROService.class);
@@ -63,30 +62,26 @@ import com.att.aro.core.settings.SettingsUtil;
  *   listOfBestPractices.add(BestPracticeType.UNNECESSARY_CONNECTIONS);
  *   listOfBestPractices.add(BestPracticeType.SCREEN_ROTATION);
  *   AROTraceData data = serv.analyzeFile(listOfBestPractices, "/yourTracePath/AROTraceAndroid/trace1");
- *   
+ *
  *   // generate json report
  *   serv.getJSonReport("/yourPath/output.json", data);
- *   
+ *
  *   // generate html report
  *   serv.getHtmlReport("/yourPath/output.html", data);
  * </pre>
+ *
  * Date: March 27, 2014
- * 
+ *
  */
 public class AROServiceImpl implements IAROService {
-
 	@InjectLogger
 	private ILogger logger;
-
 	private IPacketAnalyzer packetanalyzer;
 	private ICacheAnalysis cacheAnalyzer;
-
 	@Autowired
 	private transient VersionInfo info;
-
 	@Autowired
 	private IFileManager filemanager;
-
 	private IReport jsonreport;
 
 	@Autowired
@@ -137,7 +132,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice forwardSecrecy;
 	private IBestPractice simultaneous;
 	private IBestPractice multipleSimultaneous;
-	
+	//private IBestPractice adAnalytics;
 	// ARO 6.0 VideoBp
 	private IBestPractice videoStall;
 	private IBestPractice startupDelay;
@@ -242,7 +237,13 @@ public class AROServiceImpl implements IAROService {
 	public void setMultipleSimultaneous(IBestPractice multipleSimultaneous) {
 		this.multipleSimultaneous = multipleSimultaneous;
 	}
-	
+
+	/*@Autowired
+	@Qualifier("adAnalytics")
+	public void setAdAnalytics(IBestPractice adAnalytics) {
+		this.adAnalytics = adAnalytics;
+	}*/
+
 	@Autowired
 	@Qualifier("http3xx")
 	public void setHttp3xx(IBestPractice http3xx) {
@@ -260,32 +261,31 @@ public class AROServiceImpl implements IAROService {
 	public void setImageSize(IBestPractice imageSize) {
 		this.imageSize = imageSize;
 	}
-	
-	
+
 	@Autowired
 	@Qualifier("imageMetadata")
 	public void setImageMdata(IBestPractice imageMetadata) {
 		this.imageMetadata = imageMetadata;
 	}
-	
+
 	@Autowired
 	@Qualifier("imageCompression")
 	public void setImageCompression(IBestPractice imageCompression) {
 		this.imageCompression = imageCompression;
 	}
-	
+
 	@Autowired
 	@Qualifier("imageFormat")
 	public void setImageFormat(IBestPractice imageFormat) {
 		this.imageFormat = imageFormat;
 	}
-	
+
 	@Autowired
 	@Qualifier("uiComparator")
 	public void setUIComparator(IBestPractice uiComparator) {
 		this.uiComparator = uiComparator;
 	}
-	
+
 	@Autowired
 	@Qualifier("minify")
 	public void setMinify(IBestPractice minify) {
@@ -333,9 +333,8 @@ public class AROServiceImpl implements IAROService {
 	public void setFileOrder(IBestPractice fileorder) {
 		this.fileorder = fileorder;
 	}
-	
-	// ARO 6.0 VideoBp
 
+	// ARO 6.0 VideoBp
 	@Autowired
 	@Qualifier("videoStall")
 	public void setVideoStallImpl(IBestPractice videoStall) {
@@ -383,7 +382,7 @@ public class AROServiceImpl implements IAROService {
 	public void setVideoredundancyImpl(IBestPractice videoredundancy) {
 		this.videoRedundancy = videoredundancy;
 	}
-	
+
 	@Autowired
 	@Qualifier("videoConcurrentSession")
 	public void setVideoConcurrentSessionImpl(IBestPractice videoConcurrentSession) {
@@ -401,13 +400,13 @@ public class AROServiceImpl implements IAROService {
 	public void setTransmissionPrivateData(IBestPractice transmissionPrivateData) {
 		this.transmissionPrivateData = transmissionPrivateData;
 	}
-	
+
 	@Autowired
 	@Qualifier("unsecureSSLVersion")
 	public void setUnsecureSSLVersion(IBestPractice unsecureSSLVersion) {
 		this.unsecureSSLVersion = unsecureSSLVersion;
 	}
-	
+
 	@Autowired
 	@Qualifier("weakCipher")
 	public void setWeakCipher(IBestPractice weakCipher) {
@@ -422,7 +421,7 @@ public class AROServiceImpl implements IAROService {
 
 	/**
 	 * Returns the name of the Application
-	 * 
+	 *
 	 * @return name of Application
 	 */
 	@Override
@@ -432,17 +431,17 @@ public class AROServiceImpl implements IAROService {
 
 	/**
 	 * Returns the version of the Application
-	 * 
+	 *
 	 * @return Application version
 	 */
 	@Override
 	public String getVersion() {
 		return info.getVersion();
 	}
-	
+
 	/**
 	 * Returns the Packet Analyzer used
-	 * 
+	 *
 	 * @return the Packet Analyzer
 	 */
 	@Override
@@ -453,7 +452,7 @@ public class AROServiceImpl implements IAROService {
 	/**
 	 * Launches an analysis of a traceFile with the results populating an
 	 * AROTraceData object
-	 * 
+	 *
 	 * @param requests
 	 *            list of BestPracticeType bestPractices to analyze
 	 * @param traceFile
@@ -470,31 +469,35 @@ public class AROServiceImpl implements IAROService {
 	/**
 	 * Launches an analysis of a traceFile with the results populating an
 	 * AROTraceData object
-	 * 
+	 *
 	 * @param requests
 	 *            list of BestPracticeType bestPractices to analyze
 	 * @param traceFile
 	 *            path to a pcap trace file, usually traffic.cap
 	 * @param profile
-	 * 			  device profile used as a model of the device when analyzing trace data
+	 *            device profile used as a model of the device when analyzing
+	 *            trace data
 	 * @param filter
-	 * 			  used for filtering information from a trace analysis based on a specified time range and set of ApplicationSelection objects.
+	 *            used for filtering information from a trace analysis based on
+	 *            a specified time range and set of ApplicationSelection
+	 *            objects.
 	 * @return AROTraceData object
 	 * @throws IOException
 	 *             if trace file not found
 	 */
 	@Override
-	public AROTraceData analyzeFile(List<BestPracticeType> requests, String traceFile, Profile profile, AnalysisFilter filter) throws IOException {
+	public AROTraceData analyzeFile(List<BestPracticeType> requests, String traceFile, Profile profile,
+			AnalysisFilter filter) throws IOException {
 		AROTraceData data = new AROTraceData();
 		PacketAnalyzerResult result = packetanalyzer.analyzeTraceFile(traceFile, profile, filter);
 		if (result == null) {
-			data.setError(ErrorCodeRegistry.getTraceFileNotAnalyzed());			
+			data.setError(ErrorCodeRegistry.getTraceFileNotAnalyzed());
 		} else {
-			if (result.getTraceresult().getAllpackets().size()==0){
-				//we set on purpose 
+			if (result.getTraceresult().getAllpackets().size() == 0) {
+				// we set on purpose
 				data.setError(ErrorCodeRegistry.getUnRecognizedPackets());
 				data.setSuccess(false);
-			} else{
+			} else {
 				List<AbstractBestPracticeResult> bestPractices = analyze(result, requests);
 				bestPractices.addAll(createEmptyResults());
 				data.setAnalyzerResult(result);
@@ -512,7 +515,7 @@ public class AROServiceImpl implements IAROService {
 	 * Other trace files depend on capture method, platform and version of
 	 * device.
 	 * </p>
-	 * 
+	 *
 	 * @param requests
 	 *            list of BestPracticeType bestPractices to analyze
 	 * @param traceDirectory
@@ -525,7 +528,7 @@ public class AROServiceImpl implements IAROService {
 	public AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory) throws IOException {
 		return analyzeDirectory(requests, traceDirectory, null, null);
 	}
-	
+
 	/**
 	 * Launches an analysis of a trace directory with the results populating an
 	 * AROTraceData object.
@@ -533,21 +536,25 @@ public class AROServiceImpl implements IAROService {
 	 * Other trace files depend on capture method, platform and version of
 	 * device.
 	 * </p>
-	 * 
+	 *
 	 * @param requests
 	 *            list of BestPracticeType bestPractices to analyze
 	 * @param traceDirectory
 	 *            path to a trace directory, usually contains traffic.cap
 	 * @param profile
-	 * 			  device profile used as a model of the device when analyzing trace data
+	 *            device profile used as a model of the device when analyzing
+	 *            trace data
 	 * @param filter
-	 * 			  used for filtering information from a trace analysis based on a specified time range and set of ApplicationSelection objects.
+	 *            used for filtering information from a trace analysis based on
+	 *            a specified time range and set of ApplicationSelection
+	 *            objects.
 	 * @return AROTraceData object
 	 * @throws IOException
 	 *             if trace file not found
 	 */
 	@Override
-	public AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory, Profile profile, AnalysisFilter filter) throws IOException {
+	public AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory, Profile profile,
+			AnalysisFilter filter) throws IOException {
 		AROTraceData data = new AROTraceData();
 		PacketAnalyzerResult result = null;
 		try {
@@ -556,19 +563,19 @@ public class AROServiceImpl implements IAROService {
 			data.setError(ErrorCodeRegistry.getTraceDirNotFound());
 			return data;
 		}
- 
 		if (result == null) {
 			data.setError(ErrorCodeRegistry.getTraceDirectoryNotAnalyzed());
 			data.setSuccess(false);
 		} else {
 			if (result.getTraceresult() == null) {
-				// we set this on purpose 
+				// we set this on purpose
 				data.setError(ErrorCodeRegistry.getUnRecognizedPackets());
-			} else if(result.getTraceresult().getAllpackets() == null || result.getTraceresult().getAllpackets().size() == 0) {
+			} else if (result.getTraceresult().getAllpackets() == null
+					|| result.getTraceresult().getAllpackets().size() == 0) {
 				data.setError(ErrorCodeRegistry.getTrafficFileNotFound());
-			} else{
+			} else {
 				List<AbstractBestPracticeResult> bestPractices = analyze(result, requests);
-				bestPractices.addAll(createEmptyResults());				
+				bestPractices.addAll(createEmptyResults());
 				data.setAnalyzerResult(result);
 				data.setBestPracticeResults(bestPractices);
 				data.setSuccess(true);
@@ -602,21 +609,21 @@ public class AROServiceImpl implements IAROService {
 	 * Performs BestPractice tests identified in the requests
 	 * List&lt;BestPracticeType&gt; requests.<br>
 	 * Test results are added to a resultList, ArrayList&lt;IBestPractice&gt;
-	 * 
-	 * 
+	 *
+	 *
 	 * @param result
 	 *            a PacketAnalyzerResult object
 	 * @param requests
 	 *            a List of BestPracticeType
 	 * @return ArrayList&lt;IBestPractice&gt; or null if result was null
 	 */
+	@Override
 	public List<AbstractBestPracticeResult> analyze(PacketAnalyzerResult result, List<BestPracticeType> requests) {
 		if (result == null) {
 			return null;
 		}
 		List<AbstractBestPracticeResult> resultlist = new ArrayList<AbstractBestPracticeResult>();
 		List<IBestPractice> workers = new ArrayList<IBestPractice>();
-
 		for (BestPracticeType type : requests) {
 			switch (type) {
 			case PERIODIC_TRANSFER:
@@ -632,7 +639,7 @@ public class AROServiceImpl implements IAROService {
 				workers.add(async);
 				break;
 			case CACHE_CONTROL:
-				//analyze cache if not yet done
+				// analyze cache if not yet done
 				this.createCacheAnalysis(result);
 				workers.add(cacheControl);
 				break;
@@ -703,15 +710,17 @@ public class AROServiceImpl implements IAROService {
 			case MULTI_SIMULCONN:
 				workers.add(multipleSimultaneous);
 				break;
+			/*case AD_ANALYTICS:
+				workers.add(adAnalytics);
+				break;*/
 			case SPRITEIMAGE:
 				workers.add(spriteImage);
 				break;
 			case USING_CACHE:
-				//analyze cache if not yet done
+				// analyze cache if not yet done
 				this.createCacheAnalysis(result);
 				workers.add(usingCache);
 				break;
-				
 			// ARO 6.0 release
 			case VIDEO_STALL:
 				workers.add(videoStall);
@@ -740,7 +749,6 @@ public class AROServiceImpl implements IAROService {
 			case VIDEO_CONCURRENT_SESSION:
 				workers.add(videoConcurrentSession);
 				break;
-
 			case HTTPS_USAGE:
 				workers.add(httpsUsage);
 				break;
@@ -764,7 +772,7 @@ public class AROServiceImpl implements IAROService {
 			try {
 				AbstractBestPracticeResult testresult = worker.runTest(result);
 				resultlist.add(testresult);
-			} catch(Exception | Error ex) {
+			} catch (Exception | Error ex) {
 				logger.error("Error running best practice:", ex);
 			}
 		}
@@ -774,7 +782,7 @@ public class AROServiceImpl implements IAROService {
 	/**
 	 * Launch an ICacheAnalysis.analyze(...) storing the result in
 	 * PacketAnalyzerResult via setCacheAnalysis
-	 * 
+	 *
 	 * @param result
 	 */
 	private void createCacheAnalysis(PacketAnalyzerResult result) {
@@ -785,7 +793,7 @@ public class AROServiceImpl implements IAROService {
 
 	/**
 	 * Indicates if this file represents a file on the underlying file system.
-	 * 
+	 *
 	 * @param path
 	 *            of file to examine
 	 * @return true is file is a file, false if not
@@ -797,7 +805,7 @@ public class AROServiceImpl implements IAROService {
 
 	/**
 	 * Indicates if file exists
-	 * 
+	 *
 	 * @param path
 	 *            of file, to include file name
 	 * @return true if file exists, false otherwise
@@ -809,7 +817,7 @@ public class AROServiceImpl implements IAROService {
 
 	/**
 	 * Indicates if folder/directory exists
-	 * 
+	 *
 	 * @param path
 	 *            of folder/directory
 	 * @return true if exists, false if not
@@ -821,7 +829,7 @@ public class AROServiceImpl implements IAROService {
 
 	/**
 	 * Generate Packet Analysis Report in HTML format
-	 * 
+	 *
 	 * @param resultFilePath
 	 *            the path for the output report
 	 * @param results
@@ -836,7 +844,7 @@ public class AROServiceImpl implements IAROService {
 
 	/**
 	 * Generate Packet Analysis Report in JSON format
-	 * 
+	 *
 	 * @param resultFilePath
 	 *            the path for the output report
 	 * @param results
@@ -852,7 +860,7 @@ public class AROServiceImpl implements IAROService {
 	/**
 	 * Determine if path is to a file or directory. Returns the parent directory
 	 * if a file
-	 * 
+	 *
 	 * @param path
 	 *            to examine
 	 * @return path or parent directory if a file or null if path does not exist
@@ -864,15 +872,13 @@ public class AROServiceImpl implements IAROService {
 
 	/**
 	 * Determine if parent directory of file exists
-	 * 
+	 *
 	 * @param path
 	 *            of file
 	 * @return true if parent directory exists, false otherwise
 	 */
 	@Override
 	public boolean isFileDirExist(String path) {
-
 		return filemanager.fileDirExist(path);
 	}
-
 }

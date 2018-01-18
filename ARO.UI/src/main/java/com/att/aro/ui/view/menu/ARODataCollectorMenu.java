@@ -172,6 +172,8 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
  		int delayTimeDL = 0;
 		int throttleDL = 0;
 		int throttleUL = 0;
+		boolean secure = false;
+		boolean installCert = false;
 		boolean profileBoolean = false;
 		
 		String traceFolderName = "";
@@ -182,7 +184,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			device = dialog.getDevice();
 			traceFolderName = dialog.getTraceFolder();
 			device.setCollector(dialog.getCollectorOption());
-			/*debug purpose*/
+ 			/*debug purpose*/
 			delayTimeDL = dialog.getDeviceOptionPanel().getMiniAtnr().getDelayDS();
 			dialog.getDeviceOptionPanel().getMiniAtnr().getDelayUS();
 			throttleDL = dialog.getDeviceOptionPanel().getMiniAtnr().getThrottleDL();
@@ -217,7 +219,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
 						return null;
 					}
-					deleteFolderContents(traceFolderPath);
+					fileManager.deleteFolderContents(traceFolderPath);
 				} else {
 					return null;
 				}
@@ -227,6 +229,10 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			extras.put("video_option", dialog.getRecordVideoOption());
 			extras.put("videoOrientation", dialog.getVideoOrientation());
 			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getMiniAtnr());
+			if (secure) {
+				extras.put("secure", secure);
+				extras.put("installCert", installCert);
+			}
 
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			
@@ -288,24 +294,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			}
 		}
 		return null;
-	}
-	
-	/**
-	 * Delete all items from a folder
-	 * 
-	 * @param folderPath
-	 */
-	private void deleteFolderContents(String folderPath) {
-
-		String[] files = fileManager.list(folderPath, null);
-		for (String file : files) {
-			String filepath = folderPath + Util.FILE_SEPARATOR + file;
-			if (fileManager.directoryExistAndNotEmpty(filepath)) {
-				deleteFolderContents(filepath);
-			}
-			boolean delResult = fileManager.deleteFile(filepath);
-			Log.info("delete :" + file + (delResult ? " deleted" : " failed"));
-		}
 	}
 	
 	/**

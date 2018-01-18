@@ -31,6 +31,7 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.ContentViewer;
 
 public class ImageCompressionDataTable<T> extends JTable {
@@ -127,6 +128,9 @@ public class ImageCompressionDataTable<T> extends JTable {
 			String title = "Original Image";
 			int pos = iVal.lastIndexOf("/") + 1;
 			imgName = iVal.substring(pos);
+			if ((!imgName.isEmpty() && !(imgName.contains(".jpeg") || imgName.contains(".jpg")))) {
+				imgName = Util.extractFullNameFromLink(imgName) + ".jpeg";
+			}
 			StringBuffer imageFile = new StringBuffer();
 			imageFile.append(tracePath + "Image" + System.getProperty("file.separator"));
 			if (column != 1 && column != 2) {

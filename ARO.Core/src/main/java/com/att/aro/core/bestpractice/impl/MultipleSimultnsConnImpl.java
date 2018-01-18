@@ -31,7 +31,7 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.MultiSimultnsConnectionResult;
-import com.att.aro.core.bestpractice.pojo.SimultnsConnEntry;
+import com.att.aro.core.bestpractice.pojo.MultipleConnectionsEntry;
 import com.att.aro.core.bestpractice.pojo.SimultnsUtil;
 import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -39,54 +39,39 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.SessionValues;
 
 public class MultipleSimultnsConnImpl implements IBestPractice {
-
 	@InjectLogger
 	private static ILogger logger;
-
 	@Value("${connections.multiSimultaneous.title}")
 	private String overviewTitle;
-
 	@Value("${connections.multiSimultaneous.detailedTitle}")
 	private String detailTitle;
-
 	@Value("${connections.multiSimultaneous.desc}")
 	private String aboutText;
-
 	@Value("${connections.multiSimultaneous.url}")
 	private String learnMoreUrl;
-
 	@Value("${connections.multiSimultaneous.pass}")
 	private String textResultPass;
-
 	@Value("${connections.multiSimultaneous.results}")
 	private String textResults;
-
 	int maxConnections = 12;
-
 	private PacketAnalyzerResult traceDataResult = null;
-
-	private List<SimultnsConnEntry> simultnsConnectionAllServersEntryList;
-
-	private SortedMap<Double, SimultnsConnEntry> simultnsConnectionAllServersEntryMap;
-	
+	private List<MultipleConnectionsEntry> simultnsConnectionAllServersEntryList;
+	private SortedMap<Double, MultipleConnectionsEntry> simultnsConnectionAllServersEntryMap;
 	SimultnsUtil simultnsUtil = new SimultnsUtil();
 
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult traceData) {
 		traceDataResult = traceData;
 		MultiSimultnsConnectionResult result = new MultiSimultnsConnectionResult();
-		simultnsConnectionAllServersEntryList = new ArrayList<SimultnsConnEntry>();
-		simultnsConnectionAllServersEntryMap = new TreeMap<Double, SimultnsConnEntry>();
-
+		simultnsConnectionAllServersEntryList = new ArrayList<MultipleConnectionsEntry>();
+		simultnsConnectionAllServersEntryMap = new TreeMap<Double, MultipleConnectionsEntry>();
 		populateAllSimultConnList();
-
-		for (Map.Entry<Double, SimultnsConnEntry> simultnsConnAllServersEntryMap : simultnsConnectionAllServersEntryMap
+		for (Map.Entry<Double, MultipleConnectionsEntry> simultnsConnAllServersEntryMap : simultnsConnectionAllServersEntryMap
 				.entrySet()) {
 			if (simultnsConnAllServersEntryMap.getValue() != null) {
 				simultnsConnectionAllServersEntryList.add(simultnsConnAllServersEntryMap.getValue());
 			}
 		}
-
 		result.setResults(simultnsConnectionAllServersEntryList);
 		String text = "";
 		if (simultnsConnectionAllServersEntryList.isEmpty()) {
@@ -106,7 +91,6 @@ public class MultipleSimultnsConnImpl implements IBestPractice {
 
 	private void populateAllSimultConnList() {
 		List<Session> sessions = traceDataResult.getSessionlist();
-
 		if (sessions == null || sessions.size() <= 0) {
 			simultnsConnectionAllServersEntryList = Collections.emptyList();
 			return;
@@ -119,9 +103,8 @@ public class MultipleSimultnsConnImpl implements IBestPractice {
 				tempSessionList.add(tempList.get(iterator));
 			}
 		}
-		
 		List<SessionValues> sessionValuesList = simultnsUtil.createDomainsTCPSessions(tempSessionList);
-		SimultnsConnEntry simultnsConnEntry = simultnsUtil.getTimeMap(sessionValuesList, maxConnections, true);
+		MultipleConnectionsEntry simultnsConnEntry = simultnsUtil.getTimeMap(sessionValuesList, maxConnections, true);
 		if (simultnsConnEntry != null) {
 			simultnsConnectionAllServersEntryMap.put(simultnsConnEntry.getTimeStamp(), simultnsConnEntry);
 		}

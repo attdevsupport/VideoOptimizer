@@ -1,4 +1,5 @@
 outfile="/sdcard/ARO/UIComparator/"
+echo "kill -s HUP" $$ > $1"killuidump.sh"
 sleeptime=4
 mkdir $outfile
 while true

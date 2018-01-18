@@ -91,6 +91,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private AttnrPanel attnrGroupPanel;
 	private AttenuatorModel miniAtnr;
 
+
 	private IDataCollector collector;
 	private IDataCollector rootCollector;
 	private IDataCollector vpnCollector;
@@ -120,6 +121,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		contents.add(labelAttenuatorTitle, labelConstraints);
 		contents.add(getAttnrGroup(), optionConstraints);
 
+ 
 		contents.add(labelVideoTitle, labelConstraints);
 		contents.add(getRadioGroupVideo(), optionConstraints);
 
@@ -242,19 +244,20 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		else if (ac.equals(rooted)) {
 			collector = rootCollector;
 			if (btnRooted.isSelected()) {
-				enableFullVideo(false);
+
+ 				enableFullVideo(false);
 			}
 			return;
 
 		} else if (ac.equals(vpn)) {
 			collector = vpnCollector;
 			if (btnVpn.isSelected()) {
-				enableFullVideo(true);
+ 				enableFullVideo(true);
 			}
 
 			return;
 
-		} // Secure
+		}  
 	}
 
 	/**
@@ -269,7 +272,8 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		}
 	}
 
-
+ 
+ 
 	public AttnrPanel getAttnrGroup() {
 		if (attnrGroupPanel == null) {
 			miniAtnr = new AttenuatorModel();
@@ -280,7 +284,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		return attnrGroupPanel;
 	}
 
-
+ 
 	private JPanel getRadioGroupVideo() {
 		loadRadioGroupVideo();
 		JPanel btnGrp = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -308,7 +312,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		return btnGrp;
 	}
 
-
+ 
 	private void loadRadioGroupCollector() {
 		rooted = ResourceBundleHelper.getMessageString("dlog.collector.option.rooted");
 		vpn = ResourceBundleHelper.getMessageString("dlog.collector.option.vpn");
@@ -389,7 +393,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			setVisible(true);
 			collector = iosCollector;
 
-			btnVpn.setEnabled(false);
+ 			btnVpn.setEnabled(false);
 			btnRooted.setEnabled(false);
 
 			radioBtnVpnRoot.clearSelection();
@@ -420,11 +424,11 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			enableFullVideo(true);
 			// set default video
 			btn_lrez.setSelected(true);
-			videoOption = VideoOption.LREZ;
+ 			videoOption = VideoOption.LREZ;
 
 			showVideoOrientation(false); // false because LREZ is selected by
 											// default
-			btnVpn.setEnabled(true);
+ 			btnVpn.setEnabled(true);
 			btnRooted.setEnabled(true);
 
 			String abi = selectedIAroDevice.getAbi();
@@ -488,7 +492,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				enableFullVideo(false);
 				enableVpnCapture(false);
 			}
-			// disable secure collector for api lower than kitkat
+ 
 			setAttenuateSectionStatus();
 			break;
 
@@ -509,6 +513,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 		btnVpn.setEnabled(boolFlag);
 		btnVpn.setSelected(boolFlag);
+ 
 
 	}
 

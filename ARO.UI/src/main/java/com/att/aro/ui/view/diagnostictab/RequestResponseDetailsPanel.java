@@ -117,15 +117,19 @@ public class RequestResponseDetailsPanel extends  JPanel {
 							// Enable view and save as buttons appropriately
 							HttpRequestResponseInfo httpRRInfo = jRequestResponseTable
 									.getSelectedItem();
-							boolean enabled = httpRRInfo != null
+							boolean validResponse = httpRRInfo != null
 									&& httpRRInfo.getContentLength() > 0
 									&& httpRRInfo.getDirection() == HttpDirection.RESPONSE
 									&& httpRRInfo.getStatusCode() != 0;
-							boolean bVideo = (enabled) ? ((httpRRInfo != null && httpRRInfo.getContentType() != null)
+							boolean isVideo = (validResponse)
+									? ((httpRRInfo != null && httpRRInfo.getContentType() != null)
 									? httpRRInfo.getContentType().contains("video/")
 									: false) : false;
-							getViewBtn().setEnabled((bVideo) ? false : enabled);
-							getSaveBtn().setEnabled(enabled);
+
+							boolean isApplicationZip = httpRRInfo != null && httpRRInfo.getContentType() != null
+									&& httpRRInfo.getContentType().contains("application/zip");
+							getViewBtn().setEnabled(!isApplicationZip && !isVideo && validResponse);
+							getSaveBtn().setEnabled(!isApplicationZip && validResponse);
 						}
 					});
 			jRequestResponseTable.addMouseListener(new MouseAdapter() {
@@ -144,8 +148,6 @@ public class RequestResponseDetailsPanel extends  JPanel {
 		}
 		return jRequestResponseTable;
 	}
-	
- 
 	
 	/**
 	 * Initializes and returns the JPanel that contains the View and Save As
@@ -239,6 +241,4 @@ public class RequestResponseDetailsPanel extends  JPanel {
 					ResourceBundleHelper.getMessageString("Error.videofile"), rrInfo.getContentType()));
 		}
 	}
-	
-
 }

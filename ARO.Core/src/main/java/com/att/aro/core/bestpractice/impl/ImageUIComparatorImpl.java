@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +24,7 @@ import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +40,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.jsoup.Jsoup;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.w3c.dom.Document;
@@ -61,58 +64,39 @@ import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.Util;
+import com.sun.istack.NotNull;
 
 public class ImageUIComparatorImpl implements IBestPractice {
-
-	@InjectLogger
-	private  ILogger logger;
-	
-	
 	@Autowired
 	private IFileManager filemanager;
-
 	@Autowired
 	private IStringParse iStringParse;
-	
 	@InjectLogger
 	private static ILogger log;
-	
 	@Value("${uiComparator.title}")
 	private String overviewTitle;
-
 	@Value("${uiComparator.detailedTitle}")
 	private String detailTitle;
-
 	@Value("${uiComparator.desc}")
 	private String aboutText;
-
 	@Value("${uiComparator.url}")
 	private String learnMoreUrl;
-
 	@Value("${uiComparator.pass}")
 	private String textResultPass;
-
 	@Value("${uiComparator.results}")
 	private String textResults;
-	
 	@Value("${exportall.csvNumberOfUIComparatorImages}")
 	private String numberOfImages;
-
 	long orginalImagesSize = 0L;
 	long convImgsSize = 0L;
 	PacketAnalyzerResult tracedataResult = null;
-
-	 String uiComparatorFolderPath = "";
-	 String convExtn = "";
-	 String imageFolderPath = "";
-	 String htmlFolderPath = "";
-	 
-	 Pattern boundsPattern = Pattern.compile("\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]");
-
-	
-	 Map<String, Integer> originalImageDimensionMap = new TreeMap<String, Integer>();
-	 Map<String, HttpRequestResponseInfo> reqRespMap = new TreeMap<String, HttpRequestResponseInfo>();
-	 List<ImageMdataEntry> entrylist = new ArrayList<ImageMdataEntry>();
+	String uiComparatorFolderPath = "";
+	String convExtn = "";
+	String imageFolderPath = "";
+	Pattern boundsPattern = Pattern.compile("\\[(\\d+),(\\d+)\\]\\[(\\d+),(\\d+)\\]");
+	Map<String, Integer> originalImageDimensionMap = new TreeMap<String, Integer>();
+	Map<String, HttpRequestResponseInfo> reqRespMap = new TreeMap<String, HttpRequestResponseInfo>();
+	List<ImageMdataEntry> entrylist = new ArrayList<ImageMdataEntry>();
 
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
@@ -122,27 +106,22 @@ public class ImageUIComparatorImpl implements IBestPractice {
 		String tracePath = tracedata.getTraceresult().getTraceDirectory() + System.getProperty("file.separator");
 		uiComparatorFolderPath = tracePath + "UIComparator" + System.getProperty("file.separator");
 		imageFolderPath = tracePath + "Image" + System.getProperty("file.separator");
-		htmlFolderPath = tracePath + "HTML" + System.getProperty("file.separator");
-
 		File uiComparatorFolder = new File(uiComparatorFolderPath);
-
 		String windowsCompFolderPath = tracePath + "ARO" + System.getProperty("file.separator") + "UIComparator"
 				+ System.getProperty("file.separator");
 		if (new File(windowsCompFolderPath).exists()) {
-			moveUIXmlFolder(new File(windowsCompFolderPath), uiComparatorFolder);
+			moveUIXmlFolder(new File(windowsCompFolderPath), uiComparatorFolder,tracePath + "ARO" + System.getProperty("file.separator"));
 		}
 		entrylist = new ArrayList<ImageMdataEntry>();
 		if (new File(imageFolderPath).exists()) {
 			if (uiComparatorFolder.exists() && uiComparatorFolder.isDirectory()) {
 				getImageList();
-				// createOriginalImageMap();
 				Map<String, Integer> xmlUIMap = getUIXmlMap(filemanager.createFile(uiComparatorFolderPath));
-				Map<String, String> imageNameMap = parseImageNames(htmlFolderPath);
+				Map<String, String> imageNameMap = parseImageNames(tracePath);
 				Map<String, Integer> imageDimensionMap = updateImageDimensionMap(imageNameMap);
 				compareImages(imageDimensionMap, xmlUIMap, imageNameMap);
 			}
 		}
-
 		result.setResults(entrylist);
 		String text = "";
 		if (entrylist.isEmpty()) {
@@ -159,38 +138,32 @@ public class ImageUIComparatorImpl implements IBestPractice {
 		result.setDetailTitle(detailTitle);
 		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
-
 		return result;
 	}
 
 	private void getImageList() {
 		String originalImage = "";
-
 		long orgImageSize = 0L;
 		String imgExtn = "";
-
 		for (Session session : tracedataResult.getSessionlist()) {
 			for (HttpRequestResponseInfo reqResp : session.getRequestResponseInfo()) {
-
 				if (reqResp.getDirection() == HttpDirection.RESPONSE && reqResp.getContentType() != null
 						&& reqResp.getContentType().contains("image/")) {
-
 					originalImage = Util.extractFullNameFromRequest(reqResp);
 					File orgImage = new File(imageFolderPath + originalImage);
 					orgImageSize = orgImage.length();
 					int pos = originalImage.lastIndexOf(".");
 					imgExtn = originalImage.substring(pos + 1, originalImage.length());
-
 					if (orgImageSize > 0 && Util.isJPG(orgImage, imgExtn)) {
-						getOriginalImageDimensionMap(originalImage, imgExtn, pos, reqResp);
+						updateOriginalImageDimensionMap(originalImage, imgExtn, pos, reqResp);
 					}
 				}
 			}
 		}
 	}
 
-	private  void getOriginalImageDimensionMap(String orgImage, String imgExtn, int pos, HttpRequestResponseInfo reqResp) {
-
+	private void updateOriginalImageDimensionMap(String orgImage, String imgExtn, int pos,
+			HttpRequestResponseInfo reqResp) {
 		Iterator<ImageReader> iter = ImageIO.getImageReadersBySuffix(imgExtn);
 		if (iter.hasNext()) {
 			ImageReader reader = iter.next();
@@ -201,22 +174,18 @@ public class ImageUIComparatorImpl implements IBestPractice {
 				int height = reader.getHeight(reader.getMinIndex());
 				String imgName = orgImage.substring(0, pos);
 				originalImageDimensionMap.put(imgName, width * height);
-
 				reqRespMap.put(imgName, reqResp);
-
 			} catch (IOException e) {
-				logger.info("No reader found for given format: " + imgExtn);
+				log.info("No reader found for given format: " + imgExtn);
 			} finally {
 				reader.dispose();
 			}
 		} else {
-			logger.info("No reader found for given format: " + imgExtn);
+			log.info("No reader found for given format: " + imgExtn);
 		}
-
 	}
 
 	private Map<String, Integer> getUIXmlMap(File uiComparatorFolder) {
-
 		File[] listOfFiles = uiComparatorFolder.listFiles();
 		String emptyBounds = "[0,0][0,0]";
 		Map<String, Integer> uiXmlMap = new TreeMap<String, Integer>();
@@ -226,36 +195,26 @@ public class ImageUIComparatorImpl implements IBestPractice {
 				if (uiXMLFile.isFile() && isXmLFile(uiXMLFile.getPath())) {
 					try {
 						File fXmlFile = filemanager.createFile(uiComparatorFolderPath + uiXMLFile.getName());
-
 						DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 						DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 						Document doc = dBuilder.parse(fXmlFile);
-
 						doc.getDocumentElement().normalize();
-
 						NodeList nList = doc.getElementsByTagName("node");
-
 						for (int temp = 0; temp < nList.getLength(); temp++) {
-
 							Node nNode = nList.item(temp);
-
 							if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-
 								Element eElement = (Element) nNode;
-
 								if (!eElement.getAttribute("content-desc").isEmpty()
 										&& !emptyBounds.equalsIgnoreCase(eElement.getAttribute("bounds"))) {
-
 									int imageDimension = getXYPoints(eElement.getAttribute("bounds"));
 									if (imageDimension > 0) {
-										if(Util.checkDevMode() ){
-											log.debug("XML : " + uiXMLFile.getName()+ " IMG : "+eElement.getAttribute("content-desc"));
+										if (Util.checkDevMode()) {
+											log.debug("XML : " + uiXMLFile.getName() + " IMG : "
+													+ eElement.getAttribute("content-desc"));
 										}
 										uiXmlMap.put(eElement.getAttribute("content-desc"), imageDimension);
 									}
-
 								}
-
 							}
 						}
 					} catch (IOException | ParserConfigurationException | SAXException e) {
@@ -267,7 +226,7 @@ public class ImageUIComparatorImpl implements IBestPractice {
 		return uiXmlMap;
 	}
 
-	private  boolean isXmLFile(String name) {
+	private boolean isXmLFile(String name) {
 		boolean isXML = false;
 		if (name != null && name.substring(name.lastIndexOf('.')).equalsIgnoreCase(".xml")) {
 			isXML = true;
@@ -275,11 +234,8 @@ public class ImageUIComparatorImpl implements IBestPractice {
 		return isXML;
 	}
 
-	
 	private int getXYPoints(String bounds) {
-
 		int imagePixelSize = 0;
-
 		String[] parsed = iStringParse.parse(bounds, boundsPattern);
 		if (parsed != null && parsed.length == 4) {
 			int xWidth = Integer.parseInt(parsed[2]) - Integer.parseInt(parsed[0]);
@@ -288,7 +244,6 @@ public class ImageUIComparatorImpl implements IBestPractice {
 				imagePixelSize = xWidth * yHeight;
 			}
 		}
-
 		return imagePixelSize;
 	}
 
@@ -302,76 +257,74 @@ public class ImageUIComparatorImpl implements IBestPractice {
 				if (imgSize > uiBoundsSize) {
 					int dimenstionRatio = (imgSize - uiBoundsSize) * 100 / imgSize;
 					if (dimenstionRatio >= 50) {
-						getOriginalImageName(imageDimensionEntry.getKey(), uiBoundsSize, imageNameMap, imgSize,
-								dimenstionRatio);
+						addEntry(imageDimensionEntry.getKey(), uiBoundsSize, imageNameMap, imgSize, dimenstionRatio);
 					}
 				}
 			}
 		}
 	}
 
-	private  void getOriginalImageName(String imageName, int boundsSize, Map<String, String> imageNameMap, int orgImageSize, int dimenstionRatio) {
-		for (Map.Entry<String, String> entry : imageNameMap.entrySet()) {
-			if (entry.getValue().equalsIgnoreCase(imageName)) {
-				HttpRequestResponseInfo reqResponseInfo = reqRespMap.get(entry.getKey());
-				if (reqResponseInfo != null) {
-					entrylist.add(new ImageMdataEntry(reqResponseInfo, entry.getKey(), orgImageSize, boundsSize,
-							String.valueOf(new DecimalFormat("##.##").format(dimenstionRatio)) + "%"));
-				}
-
-			}
+	private void addEntry(String imageName, int boundsSize, @NotNull Map<String, String> imageNameMap, int orgImageSize,
+			int dimenstionRatio) {
+		HttpRequestResponseInfo reqResponseInfo = reqRespMap.get(imageNameMap.get(imageName));
+		if (reqResponseInfo != null) {
+			entrylist.add(new ImageMdataEntry(reqResponseInfo, imageName, orgImageSize, boundsSize,
+					String.valueOf(new DecimalFormat("##.##").format(dimenstionRatio)) + "%"));
 		}
 	}
 
-	private  Map <String, Integer>  updateImageDimensionMap(Map<String, String> imageNameMap) {
-		
-		Map <String, Integer> imageDimensionMap = new TreeMap <String, Integer>();
+	private Map<String, Integer> updateImageDimensionMap(Map<String, String> imageNameMap) {
+		Map<String, Integer> imageDimensionMap = new TreeMap<String, Integer>();
 		for (Map.Entry<String, String> entry : imageNameMap.entrySet()) {
-			if(entry!=null){
-				imageDimensionMap.put(entry.getValue(), originalImageDimensionMap.get(entry.getKey()));
-			}		
-		}		
+			if (entry != null) {
+				imageDimensionMap.put(entry.getKey(), originalImageDimensionMap.get(entry.getValue()));
+			}
+		}
 		return imageDimensionMap;
 	}
-	
-	public static Map<String, String> parseImageNames(String htmlFolderPath) {
-		File[] listOfFiles = new File(htmlFolderPath).listFiles();
-		Map<String, String> imageNameMap = new TreeMap<String, String>();
-		String imageDowloadName = "";
+
+	public static Map<String, String> parseImageNames(String tracePath) {
+		String htmlFolder = tracePath + "HTML" + System.getProperty("file.separator");
+		File[] listOfFiles = new File(htmlFolder).listFiles();
+		Map<String, String> imageNameMap = new HashMap<String, String>();
+		String imageDownloadName = "";
 		String imageUIName = "";
 		if (listOfFiles != null) {
 			for (int i = 0; i < listOfFiles.length; i++) {
 				File htmlFile = listOfFiles[i];
 				if (htmlFile.isFile()) {
 					try {
-						org.jsoup.nodes.Document doc = Jsoup.parse(new File(htmlFolderPath + htmlFile.getName()), "utf-8");
-						org.jsoup.select.Elements links = doc.select("img[src]");
+						org.jsoup.nodes.Document doc = Jsoup.parse(new File(htmlFolder + htmlFile.getName()), "utf-8");
+						Elements links = doc.select("img[src]");
 						for (org.jsoup.nodes.Element link : links) {
-							if (!link.attr("src").isEmpty() && !link.attr("alt").isEmpty()) {
-								imageDowloadName = link.attr("src");
+							if (!link.attr("src").isEmpty() && !link.attr("alt").isEmpty()
+									&& link.attr("src").lastIndexOf('.') > 0) {
+								imageDownloadName = link.attr("src").substring(link.attr("src").lastIndexOf('/') + 1,
+										link.attr("src").lastIndexOf('.'));
 								imageUIName = link.attr("alt");
-								imageNameMap.put(imageDowloadName.substring(imageDowloadName.lastIndexOf('/') + 1,
-										imageDowloadName.lastIndexOf('.')), imageUIName);
+								if (!imageNameMap.containsValue(imageUIName)
+										&& !imageNameMap.containsKey(imageDownloadName)) {
+									imageNameMap.put(imageUIName, imageDownloadName);
+								}
 							}
 						}
-
 					} catch (IOException e) {
 						log.error(e.toString());
 					}
-
 				}
 			}
 		}
 		return imageNameMap;
 	}
-	
-	private void moveUIXmlFolder(File sourceFolder, File destFolder) {
+
+	private void moveUIXmlFolder(File sourceFolder, File destFolder, String cleanPath) {
 		if (sourceFolder.isDirectory()) {
 			try {
 				Files.move(Paths.get(sourceFolder.getPath()), Paths.get(destFolder.getPath()),
 						StandardCopyOption.REPLACE_EXISTING);
+				Files.deleteIfExists(Paths.get(cleanPath));
 			} catch (IOException e) {
-				logger.info("Error moving UIComparator folder");
+				log.info("Error moving UIComparator folder");
 			}
 		}
 	}

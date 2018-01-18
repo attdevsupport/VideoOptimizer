@@ -84,7 +84,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	// local directory in user machine to pull trace from device to
 	private String localTraceFolder;
 	private static final int MILLISECONDSFORTIMEOUT = 300;
-	private static String APK_FILE_NAME = "VPNCollector-1.3.%s.apk";
+	private static String APK_FILE_NAME = "VPNCollector-1.4.%s.apk";
 	private static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 
 	private IAndroid android;
@@ -193,7 +193,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 	@Override
 	public String getMinorVersion() {
-		return "0.0.1";
+		return "4.0";
 	}
 
 	@Override
@@ -476,8 +476,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			this.attnrScriptRun = true;
 
 		}else if (atnr.isConstantThrottle()) {
-//			delayTimeDL = atnr.getDelayDS();
-//			delayTimeUL = atnr.getDelayUS();
 			if(atnr.isThrottleDLEnable()){
 				throttleDL = atnr.getThrottleDL();
 			}
@@ -855,7 +853,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		if(this.attnrScriptRun){
 			attnr.stopAtenuationScript(this.device);
 		}
-		
+		uiXmlCollector.stopUiXmlCapture(this.device);
 		log.debug("pulling trace to local dir");
 		new LogcatCollector(adbService, device.getSerialNumber()).collectLogcat(localTraceFolder, "Logcat.log");
 		result = pullTrace(this.mDataDeviceCollectortraceFileNames);
@@ -996,6 +994,9 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			if (!commandFailure) {
 				setCommand = "rd " + localTraceFolder + "\\ARO";
 				runCommand(setCommand);
+			}
+			if(!commandFailure) {
+				setCommand = "rmdir /S /Q " + localTraceFolder + "\\ARO";
 			}
 		} else {
 

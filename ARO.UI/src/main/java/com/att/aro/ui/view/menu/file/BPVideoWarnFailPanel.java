@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2018 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.ui.view.menu.file;
 
 import java.awt.Color;
@@ -6,11 +21,13 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.ScrollPane;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -18,57 +35,41 @@ import javax.swing.JTextField;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
 /**
  * This dialog provides options to configure that the video best practices
  * should be gauged against
- * 
+ *
  * @author Dinesh
- * 
+ *
  */
-public class BPVideoPassFailPanel extends JPanel {
+public class BPVideoWarnFailPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private JTable table;
 	private ObjectMapper mapper;
-	private static Component panel;
 	private PreferenceHandlerImpl prefs;
 	private VideoUsagePrefs videoUsagePrefs;
-	private static BPVideoPassFailPanel instance;
-	public static final Logger LOGGER = Logger.getLogger(BPVideoPassFailPanel.class.getName());
-	
+	public static final Logger LOGGER = Logger.getLogger(BPVideoWarnFailPanel.class.getName());
 	private JTextField compileResultsField = new JTextField();
-	StringBuilder sbError = new StringBuilder();
-	
-	public static synchronized Component getBPPanel() {
-		panel = new ScrollPane();
-		((ScrollPane) panel).add(getInstance());
-		return panel;
-	}
+	String sError = "";
+	private VideoPreferenceTableModel model;
 
-	public static synchronized BPVideoPassFailPanel getInstance() {
-		if(instance==null){
-			instance = new BPVideoPassFailPanel();
-		}
-		return instance;
-	}
-	
-	public static synchronized void dropInstance() {
-		instance = null;
-		}
-
-	private BPVideoPassFailPanel() {
+	public BPVideoWarnFailPanel() {
 		JPanel mainPanel = new JPanel();
 		this.add(mainPanel);
 		mainPanel.setLayout(new GridBagLayout());
-		GridBagConstraints constraint = new GridBagConstraints();	
-		mainPanel.add(getGridPanel(),constraint);
+		GridBagConstraints constraint = new GridBagConstraints();
+		mainPanel.add(getGridPanel(), constraint);
+		mainPanel.add(getDefaultButton("Default", (ActionEvent arg) -> setDefault()), constraint);
 		compileResultsField.setEditable(false);
-		if(sbError.toString().isEmpty()) {
+		if (sError.isEmpty()) {
 			compileResultsField.setBackground(mainPanel.getBackground());
 			compileResultsField.setForeground(Color.red);
 			compileResultsField.setFont(compileResultsField.getFont().deriveFont(Font.BOLD));
@@ -77,28 +78,46 @@ public class BPVideoPassFailPanel extends JPanel {
 		} else {
 			compileResultsField.setVisible(true);
 			compileResultsField.setForeground(Color.red);
-			compileResultsField.setText(String.format("ERRORS: %s" ,sbError.toString()));
+			compileResultsField.setText(String.format("ERRORS: %s", sError));
 		}
-		constraint.anchor= GridBagConstraints.FIRST_LINE_START;
+		constraint.anchor = GridBagConstraints.FIRST_LINE_START;
 		constraint.gridy = 300;
-		mainPanel.add(compileResultsField,constraint);
+		constraint.gridwidth = 2;
+		mainPanel.add(compileResultsField, constraint);
+	}
+
+	public String getSbError() {
+		return sError;
+	}
+
+	private void setDefault() {
+		model.setDefault();
+		compileResultsField.setVisible(false);
+	}
+
+	private JButton getDefaultButton(String text, ActionListener al) {
+		JButton button = new JButton();
+		button.setText(text);
+		button.addActionListener(al);
+		return button;
 	}
 
 	private Component getGridPanel() {
-
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setViewportView(getTable());
-		scrollPane.setPreferredSize(new Dimension(500, 70));
+		int height = 70;
+		if (Util.isWindowsOS()) {
+			height = 78;
+		}
+		scrollPane.setPreferredSize(new Dimension(550, height));
 		return scrollPane;
 	}
-
-	VideoPreferenceTableModel model;
 
 	private JTable getTable() {
 		if (table == null) {
 			model = new VideoPreferenceTableModel(loadPrefs());
-			table = new JTable(model); 
-			table.setGridColor(Color.LIGHT_GRAY);		
+			table = new JTable(model);
+			table.setGridColor(Color.LIGHT_GRAY);
 			table.setFocusable(false);
 			table.setRowSelectionAllowed(false);
 			table.setShowGrid(true);
@@ -107,35 +126,30 @@ public class BPVideoPassFailPanel extends JPanel {
 			table.getColumnModel().getColumn(0).setPreferredWidth(225);
 			table.getColumnModel().getColumn(1).setPreferredWidth(50);
 			table.getColumnModel().getColumn(2).setPreferredWidth(50);
-		
 			table.getModel().addTableModelListener(new TableModelListener() {
-
 				@Override
 				public void tableChanged(TableModelEvent e) {
-					sbError = model.getValidationError();
-					if (!sbError.toString().isEmpty()) {
+					sError = model.getValidationError();
+					if (!sError.toString().isEmpty()) {
 						compileResultsField.setVisible(true);
 						compileResultsField.setForeground(Color.red);
-						compileResultsField.setText(String.format("ERROR : %s", sbError.toString()));
+						compileResultsField.setText(String.format("ERROR : %s", sError.toString()));
 					} else {
 						compileResultsField.setText("");
 						compileResultsField.setVisible(false);
 					}
 				}
 			});
-
 		} else {
 			model.setData(loadPrefs());
 			table.setModel(model);
 		}
-		
 		return table;
 	}
 
 	private List<VideoPreferenceInfo> loadPrefs() {
 		mapper = new ObjectMapper();
 		prefs = PreferenceHandlerImpl.getInstance();
-
 		String temp = prefs.getPref(VideoUsagePrefs.VIDEO_PREFERENCE);
 		if (temp != null && !temp.isEmpty() && !temp.contains("null")) {
 			try {
@@ -152,10 +166,9 @@ public class BPVideoPassFailPanel extends JPanel {
 				LOGGER.error("VideoUsagePrefs failed to serialize :" + e.getMessage());
 			}
 		}
-
 		List<VideoPreferenceInfo> videoPreferenceList = new ArrayList<VideoPreferenceInfo>();
-		VideoPreferenceInfo vp = new VideoPreferenceInfo("Startup Delay (seconds)", videoUsagePrefs.getStartUpDelayWarnVal(),
-				videoUsagePrefs.getStartUpDelayFailVal());
+		VideoPreferenceInfo vp = new VideoPreferenceInfo("Startup Delay (seconds)",
+				videoUsagePrefs.getStartUpDelayWarnVal(), videoUsagePrefs.getStartUpDelayFailVal());
 		videoPreferenceList.add(vp);
 		vp = new VideoPreferenceInfo("Stall Duration (seconds)", videoUsagePrefs.getStallDurationWarnVal(),
 				videoUsagePrefs.getStallDurationFailVal());
@@ -164,22 +177,26 @@ public class BPVideoPassFailPanel extends JPanel {
 				videoUsagePrefs.getSegmentRedundancyFailVal());
 		videoPreferenceList.add(vp);
 		return videoPreferenceList;
-	}	
-	
+	}
 
 	public void saveWarnFail() {
 		PreferenceHandlerImpl prefs = PreferenceHandlerImpl.getInstance();
-		if (model != null && model.getVideoUsagePrefs() != null) {
-			String temp = "";
-			try {
-				temp = mapper.writeValueAsString(model.getVideoUsagePrefs());
-				if (temp != null && !temp.equals("null")) {
-					prefs.setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
-				} else {
-					LOGGER.error("Saving Video Preference failed : model data was null");
+		if (model != null) {
+			if (StringUtils.isNotBlank(model.getValidationError().toString())) {
+				throw new IllegalArgumentException(model.getValidationError().toString());
+			}
+			if (model.getVideoUsagePrefs() != null) {
+				String temp = "";
+				try {
+					temp = mapper.writeValueAsString(model.getVideoUsagePrefs());
+					if (temp != null && !temp.equals("null")) {
+						prefs.setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
+					} else {
+						LOGGER.error("Saving Video Preference failed : model data was null");
+					}
+				} catch (IOException e) {
+					LOGGER.error("Saving Video Preference failed :" + e.getMessage());
 				}
-			} catch (IOException e) {
-				LOGGER.error("Saving Video Preference failed :" + e.getMessage());
 			}
 		}
 	}

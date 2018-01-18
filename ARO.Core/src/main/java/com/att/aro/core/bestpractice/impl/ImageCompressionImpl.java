@@ -188,6 +188,11 @@ public class ImageCompressionImpl implements IBestPractice {
 						&& reqResp.getContentType().contains("image/")) {
 
 					originalImage = ImageHelper.extractFullNameFromRRInfo(reqResp);
+					if ((!originalImage.isEmpty()
+							&& !(originalImage.contains(".jpeg") || originalImage.contains(".jpg")))
+							&& reqResp.getContentType().contains("jpeg")) {
+						originalImage = Util.parseImageName(originalImage, reqResp);
+					}
 					int pos = originalImage.lastIndexOf(".");
 					if (pos != -1) {
 						imgExtn = originalImage.substring(pos + 1, originalImage.length());
@@ -232,17 +237,23 @@ public class ImageCompressionImpl implements IBestPractice {
 			for (final HttpRequestResponseInfo req : session.getRequestResponseInfo()) {
 				if (req.getDirection() == HttpDirection.RESPONSE && req.getContentType() != null
 						&& req.getContentType().contains("image/")) {
-					final String extractedImage = ImageHelper.extractFullNameFromRRInfo(req);
+					String extractedImage = ImageHelper.extractFullNameFromRRInfo(req);
+					if ((!extractedImage.isEmpty()
+							&& !(extractedImage.contains(".jpeg") || extractedImage.contains(".jpg")))
+							&& req.getContentType().contains("jpeg")) {
+						extractedImage = Util.parseImageName(extractedImage, req);
+					}
 
 					File imgFile = new File(imageFolderPath + extractedImage);
 					if (imgFile.exists() && !imgFile.isDirectory()) {
 						int posExtn = extractedImage.lastIndexOf(".");
 						String imgExtn = extractedImage.substring(posExtn + 1, extractedImage.length());
 						if (Util.isJPG(imgFile, imgExtn)) {
+							final String imageFile = extractedImage;
 							exec.submit(new Runnable() {
 								@Override
 								public void run() {
-									compressImage(imageFolderPath, extractedImage);
+									compressImage(imageFolderPath, imageFile);
 								}
 							});
 						}
@@ -275,11 +286,11 @@ public class ImageCompressionImpl implements IBestPractice {
 
 					Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(
 							imgfile.substring(imgfile.lastIndexOf(".") + 1, imgfile.length()));
-					writer = (ImageWriter) writers.next();
+					writer = writers.next();
 					writer.setOutput(imgOutputStrm);
 					ImageWriteParam param = writer.getDefaultWriteParam();
 					param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-					param.setCompressionQuality((float) qual.getFraction());
+					param.setCompressionQuality(qual.getFraction());
 					writer.write(null, new IIOImage(buffImage, null, null), param);
 				} finally {
 					if (writer != null) {

@@ -268,8 +268,6 @@ public class PktAnazlyzerTimeRangeImpl implements IPktAnazlyzerTimeRangeUtil {
 			}
 		}
 		result.setCameraActiveDuration(tempCameraActiveDuration);
-		result.setCameraActiveDuration(tempCameraActiveDuration);
-		// return filteredCameraInfos;
 	}
 
 	/**

@@ -20,101 +20,110 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
 /**
- * ApplicationConfig contains all the application related information such as application name, 
- * brand name etc. for future dynamic usage.
+ * ApplicationConfig contains all the application related information such as
+ * application name, brand name etc. for future dynamic usage.
  *
  */
 @Configuration
-@PropertySource({"classpath:application.properties"})
+@PropertySource({ "classpath:application.properties" })
 public class ApplicationConfig {
-	
 	private static ApplicationConfig appConfig;
-
 	@Value("${app.brand.name}")
 	private String appBrandName;
-	
 	@Value("${app.name}")
 	private String appName;
-	
 	@Value("${app.short.name}")
 	private String appShortName;
-	
 	@Value("${app.combined.name}")
 	private String appCombinedName;
-	
 	@Value("${app.url.base}")
 	private String appUrlBase;
-	
+	@Value("${app.url.base.new}")
+	private String appUrlBaseNew;
 	@Value("${app.url.base.vanity}")
 	private String vanityUrlBase;
-	
 	@Value("${app.url.download}")
 	private String appUrlDownload;
-	
 	@Value("${vpn.collector.name}")
 	private String vpnCollectorName;
-	
+
 	protected ApplicationConfig() {
 		appConfig = this;
 	}
-	
+
 	public static ApplicationConfig getInstance() {
 		return appConfig;
 	}
-	
+
 	/**
 	 * get application brand name
+	 *
 	 * @return
 	 */
 	public String getAppBrandName() {
 		return appBrandName;
 	}
-	
+
 	/**
 	 * get application full name, e.g. Application Name
+	 *
 	 * @return
 	 */
 	public String getAppName() {
 		return appName;
 	}
-	
+
 	/**
 	 * get application short name, e.g. AN
+	 *
 	 * @return
 	 */
 	public String getAppShortName() {
 		return appShortName;
 	}
-	
+
 	/**
 	 * get application combined name, e.g. Application Name (AN)
+	 *
 	 * @return
 	 */
 	public String getAppCombinedName() {
 		return appCombinedName;
 	}
-	
+
 	/**
-	 * url base path, which will be changed based on application name
-	 * sample: https://www.att.com/{0}/bestpractices
-	 * {0} could be ARO
+	 * url base path, which will be changed based on application name sample:
+	 * https://www.att.com/{0}/bestpractices {0} could be ARO
+	 *
 	 * @return
 	 */
 	public String getAppUrlBase() {
 		return appUrlBase;
 	}
-	
+
 	/**
-	 * download url, which will be changed based on application name
-	 * sample in application.properties file
+	 * url base path, which will be changed based on application name sample:
+	 * https://www.att.com/{0}/bestpractices {0} could be VO
+	 *
+	 * @return
+	 */
+	public String getAppUrlBaseNew() {
+		return appUrlBaseNew;
+	}
+
+	/**
+	 * download url, which will be changed based on application name sample in
+	 * application.properties file
+	 *
 	 * @return
 	 */
 	public String getAppUrlDownload() {
 		return appUrlDownload;
 	}
-	
+
 	/**
 	 * get vpn apk collector name
+	 *
 	 * @return
 	 */
 	public String getVPNCollectorName() {
@@ -129,7 +138,8 @@ public class ApplicationConfig {
 	}
 
 	/**
-	 * @param vanityUrlBase the vanityUrlBase to set
+	 * @param vanityUrlBase
+	 *            the vanityUrlBase to set
 	 */
 	public void setVanityUrlBase(String vanityUrlBase) {
 		this.vanityUrlBase = vanityUrlBase;

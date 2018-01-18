@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 AT&T
+ *  Copyright 2018 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
 */
 package com.att.aro.db;
-
 
 import java.io.File;
 import com.orientechnologies.orient.core.db.object.ODatabaseObject;

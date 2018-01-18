@@ -30,12 +30,12 @@ import com.att.aro.core.videoanalysis.pojo.mpdplayerady.RepresentationPR;
 import com.att.aro.core.videoanalysis.pojo.mpdplayerady.SegmentPR;
 import com.att.aro.core.videoanalysis.pojo.mpdplayerady.SegmentTemplatePR;
 
-public class ManifestDashPlyReady extends AROManifest {
+public class ManifestDashPlayReady extends AROManifest {
 	
 	private MPDPlayReady mpd;
 
-	public ManifestDashPlyReady(MPDPlayReady mpd, HttpRequestResponseInfo req, String videoPath) {
-		super(VideoType.DASH, req, null, videoPath);
+	public ManifestDashPlayReady(MPDPlayReady mpd, HttpRequestResponseInfo resp, String videoPath) {
+		super(VideoType.DASH, resp, null, videoPath);
 		this.mpd = mpd;
 		parseManifestData();
 	}
@@ -98,13 +98,14 @@ public class ManifestDashPlyReady extends AROManifest {
 
 				// <S t="3252609360000" d="60060000" r="13" />
 				for (SegmentPR segmentPR : segmentTemplate.getSegmentTimeline().getSegmentList()) {
+//					Double repeat = simpleStringToDouble(segmentPR.getRepeat());
 					if (duration == 0) {
 						duration = simpleStringToDouble(segmentPR.getDuration()) / getTimeScale();
 					}
 
-					Double segTimeLine = simpleStringToDouble(segmentPR.getTimeline());
+					Double segTimeLine = simpleStringToDouble(segmentPR.getStartTime());
 					Double segment = segTimeLine / duration / getTimeScale();
-					addSegment(segmentPR.getTimeline(), segment.intValue(), segmentPR.getDuration());
+					addSegment(segmentPR.getStartTime(), segment.intValue(), segmentPR.getDuration());
 					log.info(String.format("base> %s :%s", videoName, timeScale));
 				}
 			}

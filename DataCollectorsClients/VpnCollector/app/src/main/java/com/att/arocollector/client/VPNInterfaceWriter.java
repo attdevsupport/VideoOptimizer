@@ -29,8 +29,6 @@ import com.att.arotcpcollector.socket.SocketData;
 import com.att.arotcpcollector.tcp.PacketHeaderException;
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
-import com.att.arotcpcollector.udp.UDPHeader;
-import com.att.arotcpcollector.udp.UDPPacketFactory;
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
@@ -48,8 +46,6 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 	private int downloadSpeedLimit = AttenuatorUtil.DEFAULT_THROTTLE_SPEED;// 100Mb = 1024Kb
 	private BlockingQueue<byte[]> dataReceived;
 	private IClientPacketWriter clientPacketWriter;
-
-	private static final Object syncObj = new Object();
 
 	private VPNInterfaceWriter() {
 		socketData = SocketData.getInstance();
@@ -86,11 +82,10 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 	void runTask() {
 
 		byte[] packet;
-		int totalData = 0;
-		long startTime = System.nanoTime();
-		long stopTime = System.nanoTime();
-		boolean startFlag = true;
-		int count = 0;
+
+		long maxBucketSize = AttenuatorManager.getInstance().getThrottleDL() * 1024 / 8;
+		long lastPacketTime = System.nanoTime();
+		double currentNumberOfTokens = maxBucketSize;
 
 		Log.i(TAG, "Download Speed Limit : " + (AttenuatorManager.getInstance().getThrottleDL() * 1024 / 8)+ " Bytes");
 		try {
@@ -104,48 +99,42 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 					} catch (IOException e) {
 						Log.e(TAG, "Failed to write packet: " + e.getMessage(),e);
 					}
-
-					if (startFlag || (1000000000 <= (stopTime - startTime))) {
-//						Log.d(TAG, "Round : " + ++count);
-						startFlag = false;
-						startTime = System.nanoTime();
-						totalData = 0;
-					}
-					int headerLength = 0;
-					TCPHeader tcpHeader = null;
-					TCPPacketFactory tcpFactory = new TCPPacketFactory();
-
-					try {
-						if (isTCP(packet)) {
-							IPv4Header ipHeader = IPPacketFactory.createIPv4Header(packet, 0);
-							headerLength += ipHeader.getIPHeaderLength();
-							tcpHeader = tcpFactory.createTCPHeader(packet, ipHeader.getIPHeaderLength());
-							headerLength += tcpHeader.getTCPHeaderLength();
-						} else {
-							headerLength = 28;
-						}
-					} catch (PacketHeaderException ex){
-						Log.e(TAG , "Packet Header Exception"+ ex.getMessage(),ex);
-					}
-					totalData += (packet.length - headerLength);
-					Log.i(TAG,"Total Data Length: "+ totalData + " Bytes");
-
-					if (!(AttenuatorManager.getInstance().getThrottleDL() < 0) && totalData >= (AttenuatorManager.getInstance().getThrottleDL() * 1024 / 8)) {
+					if (!(AttenuatorManager.getInstance().getThrottleDL() < 0)) {
+						int headerLength = 0;
+						TCPHeader tcpHeader = null;
+						TCPPacketFactory tcpFactory = new TCPPacketFactory();
 						try {
-
-							stopTime = System.nanoTime();
-							startFlag = true;
-							// Calculate Sleep Time
-							int sleepTime = 1000 - ((int) ((stopTime - startTime)/1000000));
-							Log.i(TAG,"Thread sleep time: "+ sleepTime);
-							Thread.sleep(sleepTime);
-						} catch (InterruptedException e) {
-							Log.d(TAG, "Failed to sleep: " + e.getMessage(),e);
+							if (isTCP(packet)) {
+								IPv4Header ipHeader = IPPacketFactory.createIPv4Header(packet, 0);
+								headerLength += ipHeader.getIPHeaderLength();
+								tcpHeader = tcpFactory.createTCPHeader(packet, ipHeader.getIPHeaderLength());
+								headerLength += tcpHeader.getTCPHeaderLength();
+							} else {
+								headerLength = 28;
+							}
+						} catch (PacketHeaderException ex){
+							Log.e(TAG , "Packet Header Exception"+ ex.getMessage(),ex);
 						}
-
+						int consumedTokens = packet.length - headerLength;
+						long currentTime = System.nanoTime();
+						double generatedToken = (currentTime-lastPacketTime)*AttenuatorManager.getInstance().getThrottleDL() * 1024/ 8 /1000000/1000;
+						currentNumberOfTokens += generatedToken;
+						if (currentNumberOfTokens > maxBucketSize) {
+							currentNumberOfTokens = maxBucketSize;
+						}
+						lastPacketTime = currentTime;
+						currentNumberOfTokens -= consumedTokens;
+						if (currentNumberOfTokens < 0){
+							try{
+								int sleepTime = (int)(-1 * currentNumberOfTokens  * 8  * 1000 / AttenuatorManager.getInstance().getThrottleDL() / 1024);
+								if (sleepTime > 0) {
+									Thread.sleep(sleepTime);
+								}
+							} catch (InterruptedException e) {
+								Log.d(TAG, "Failed to sleep: " + e.getMessage(),e);
+							}
+						}
 					}
-					stopTime = System.nanoTime();
-
 				}
 			}
 		} catch (Exception ex) {

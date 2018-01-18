@@ -154,7 +154,7 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 	}
 
 	@Override
-	public void refresh(AROTraceData model) {	
+	public void refresh(AROTraceData model) {
 
 		bpResults = model.getBestPracticeResults();
 
@@ -198,41 +198,42 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 	}
 	
 	private void addNullSummary() {
-		String[] bpSections = {	                        //  in the original Analyzer order                                                 
-				   "textFileCompression"                //  #bp 01   File Download: Text File Compression                                                                                  
-				  ,"caching.duplicateContent"           //  #bp 02   File Download: Duplicate Content                                           
-				  ,"caching.usingCache"                 //  #bp 03   File Download: Cache Control                                                                           
-				  ,"caching.cacheControl"               //  #bp 04   File Download: Content Expiration                                                                      
+		String[] bpSections = {	                        //  in the original Analyzer order
+				   "textFileCompression"                //  #bp 01   File Download: Text File Compression
+				  ,"caching.duplicateContent"           //  #bp 02   File Download: Duplicate Content
+				  ,"caching.usingCache"                 //  #bp 03   File Download: Cache Control
+				  ,"caching.cacheControl"               //  #bp 04   File Download: Content Expiration
 				/*
 				 * ,"caching.prefetching" // #bp 05 File Download: Content Pre-fetching
-				 */                                                          
-				  ,"combinejscss"                       //  #bp 06   File Download: Combine JS and CSS Requests                                       
-				  ,"imageSize"                          //  #bp 07   File Download: Resize Images for Mobile                                    
+				 */
+				  ,"combinejscss"                       //  #bp 06   File Download: Combine JS and CSS Requests
+				  ,"imageSize"                          //  #bp 07   File Download: Resize Images for Mobile
 				  ,"imageMetadata"						// Image: Image Metadata
 				  ,"imageCompression"					// Image: Image Compression
 				  ,"imageFormat"						// Image: Image Format
 				  ,"uiComparator"						// Image: Image Comparator
-				  ,"minification"                       //  #bp 08   File Download: Minify CSS, JS, JSON and HTML                               
-				  ,"spriteimages"                       //  #bp 09   File Download: Use CSS Sprites for Images                                  
-				  ,"connections.connectionOpening"      //  #bp 10   Connections: Connection Opening                                            
-				  ,"connections.unnecssaryConn"         //  #bp 11   Connections: Unnecessary Connections - Multiple Simultaneous Connections                               
+				  ,"minification"                       //  #bp 08   File Download: Minify CSS, JS, JSON and HTML
+				  ,"spriteimages"                       //  #bp 09   File Download: Use CSS Sprites for Images
+				  ,"connections.connectionOpening"      //  #bp 10   Connections: Connection Opening
+				  ,"connections.unnecssaryConn"         //  #bp 11   Connections: Unnecessary Connections - Multiple Simultaneous Connections
 				  ,"connections.simultaneous"  			//  #bp      Connections: Multiple Connections to One Endpoint
 				  ,"connections.multiSimultaneous"  			//  #bp      Connections: Multiple Connections to many Servers
-				  ,"connections.periodic"               //  #bp 12   Connections: Inefficient Connections - Periodic Transfers                    
-				  ,"connections.screenRotation"         //  #bp 13   Connections: Inefficient Connections - Screen Rotation                                                 
+				// ,"connections.adAnalytics"
+				  ,"connections.periodic"               //  #bp 12   Connections: Inefficient Connections - Periodic Transfers
+				  ,"connections.screenRotation"         //  #bp 13   Connections: Inefficient Connections - Screen Rotation
 				  ,"connections.connClosing"            //  #bp 14   Connections: Inefficient Connections - Connection Closing Problems
 				 /*
 				 * ,"connections.offloadingToWifi" // #bp 15 Connections: Inefficient Connections - Offloading to WiFi when Possible
-				 */                  
-				  ,"connections.http4xx5xx"             //  #bp 16   Connections: 400, 500 HTTP Status Response Codes                           
-				  ,"connections.http3xx"                //  #bp 17   Connections: 301, 302 HTTP Status Response Codes                                                       
-				  ,"3rd.party.scripts"         	        //  #bp 18   Connections: 3rd Party Scripts                                                                               
-				  ,"html.asyncload"                     //  #bp 19   HTML: Asynchronous Load of JavaScript in HTML                              
-				  ,"html.httpUsage"                     //  #bp 20   HTML: HTTP 1.0 Usage                                                       
-				  ,"html.fileorder"                     //  #bp 11   HTML: File Order                                                                                  
-				  ,"empty.url"                          //  #bp 12   HTML: Empty Source and Link Attributes                                       
-				  ,"flash"                              //  #bp 13   HTML: FLASH                                                                                            
-				  ,"html.displaynoneincss"              //  #bp 14   HTML: "display:none" in CSS 
+				 */
+				  ,"connections.http4xx5xx"             //  #bp 16   Connections: 400, 500 HTTP Status Response Codes
+				  ,"connections.http3xx"                //  #bp 17   Connections: 301, 302 HTTP Status Response Codes
+				  ,"3rd.party.scripts"         	        //  #bp 18   Connections: 3rd Party Scripts
+				  ,"html.asyncload"                     //  #bp 19   HTML: Asynchronous Load of JavaScript in HTML
+				  ,"html.httpUsage"                     //  #bp 20   HTML: HTTP 1.0 Usage
+				  ,"html.fileorder"                     //  #bp 11   HTML: File Order
+				  ,"empty.url"                          //  #bp 12   HTML: Empty Source and Link Attributes
+				  ,"flash"                              //  #bp 13   HTML: FLASH
+				  ,"html.displaynoneincss"              //  #bp 14   HTML: "display:none" in CSS
 				  
 				  ,"security.httpsUsage"				// 	#bp 15	 Security: HTTPS Usage
 				  ,"security.transmissionPrivateData"	//  #bp 16	 Security: Transmission of Personal Information
@@ -250,9 +251,9 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"videoRedundancy"                    //  #bp
 				  ,"videoConcurrentSession"				//  #bp
 				  
-				  ,"other.accessingPeripherals"         //  #bp    Other: Accessing Peripheral Applications                                     
+				  ,"other.accessingPeripherals"         //  #bp    Other: Accessing Peripheral Applications
 			//	  ,"#smallrequest"                      //  #bp    File Download: Minimize Number of Small Requests
-			};                                                    
+			};
 
 		ImageIcon icon = UIComponent.getInstance().getIconByKey("Image.naGray");
 		

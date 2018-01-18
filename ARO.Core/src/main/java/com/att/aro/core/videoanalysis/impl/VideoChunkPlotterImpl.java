@@ -192,26 +192,26 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 	}
 
 	public boolean alterFilteredSegmentList(VideoEvent ve,double segmentPlayTime) {
-		List<VideoEvent> removeChunks = videoUsage.getRemoveChunks();
-		if (!removeChunks.isEmpty()) {
+		List<VideoEvent> duplicateChunks = videoUsage.getDuplicateChunks();
+		if (!duplicateChunks.isEmpty()) {
 			//descending order sorting by download end time.
-			Collections.sort(removeChunks, new VideoEventComparator(SortSelection.END_TS_DESCENDING));
+			Collections.sort(duplicateChunks, new VideoEventComparator(SortSelection.END_TS_DESCENDING));
 			boolean swapedTheMinimum=false;
 			int minIndex=-1;
-			for (VideoEvent removedChunk : removeChunks) {
+			for (VideoEvent removedChunk : duplicateChunks) {
 				if (removedChunk.getSegment() == ve.getSegment() && removedChunk.getEndTS() <= segmentPlayTime) {
 					//This is the correct quality level of this segment played
 					//swap
 					int index = videoUsage.getFilteredSegments().indexOf(ve);
 					videoUsage.getFilteredSegments().remove(ve);
 					videoUsage.getFilteredSegments().add(index, removedChunk);
-					removeChunks.add(ve);
-					removeChunks.remove(removedChunk);
+					duplicateChunks.add(ve);
+					duplicateChunks.remove(removedChunk);
 					return true;
 				}
 				else if(ve.getEndTS() > removedChunk.getEndTS() && removedChunk.getSegment() == ve.getSegment()){
 					//swap the closest		
-					minIndex = removeChunks.indexOf(removedChunk);
+					minIndex = duplicateChunks.indexOf(removedChunk);
 					swapedTheMinimum=true;
 				}
 			}
@@ -219,9 +219,9 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 			{
 				int index = videoUsage.getFilteredSegments().indexOf(ve);
 				videoUsage.getFilteredSegments().remove(ve);	
-				videoUsage.getFilteredSegments().add(index, removeChunks.get(minIndex));
-				removeChunks.add(ve);
-				removeChunks.remove(removeChunks.get(minIndex));
+				videoUsage.getFilteredSegments().add(index, duplicateChunks.get(minIndex));
+				duplicateChunks.add(ve);
+				duplicateChunks.remove(duplicateChunks.get(minIndex));
 				return true;
 			}
 		}

@@ -114,27 +114,6 @@ public class FileManagerTest extends BaseTest {
 	}
 
 	@Test
-	public void directoryDeleteInnerFilesTest() throws Exception {
-		
-		String path = "myTestFolder";
-		File file = Mockito.mock(File.class);
-		File directory = Mockito.mock(File.class);
-		String[] fileList = { "one", "two", "three" };
-		PowerMockito.whenNew(File.class).withArguments(Mockito.anyString()).thenReturn(directory);
-		Mockito.when(file.getParentFile()).thenReturn(directory);
-		Mockito.when(directory.exists()).thenReturn(true);
-		Mockito.when(directory.isDirectory()).thenReturn(true);
-		Mockito.when(directory.list()).thenReturn(fileList);
-		Mockito.when(directory.toString()).thenReturn(path);
-
-		doReturn(directory).when(fileManager).createFile(path);
-		doReturn(true).when(fileManager).deleteFile(Mockito.anyString());
-
-		boolean result = fileManager.directoryDeleteInnerFiles(path);
-		assertTrue(result);
-	}
-
-	@Test
 	public void failed_directoryDeleteInnerFilesTest() throws Exception {
 		
 		String path = "myTestFolder";

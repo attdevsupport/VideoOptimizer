@@ -27,6 +27,7 @@ import com.att.aro.core.AROConfig;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
@@ -49,6 +50,7 @@ public class AROManifest {
 	Double duration = 0D;
 	Double timeScale = 0D;
 	TreeMap<String, Double> bitrateMap = new TreeMap<>();
+	double requestTime;
 	double timeLength;		                           // in milliseconds                        
 	double beginTime;		                           // timestamp of manifest request          
 	double endTime;			                           // timestamp of manifest session end ?why 
@@ -79,6 +81,8 @@ public class AROManifest {
 	
 	double delay;
 
+	boolean valid = true;
+	
 	private TreeMap<String, VideoData> videoDataMap;
 	byte[] content;
 	private String videoPath;
@@ -97,8 +101,8 @@ public class AROManifest {
 	 * @param manifestTime The time at which the event was initiated (such as a key being pressed down).
 	 * @param releaseTime The time at which the chunk finished downloading.
 	 */
-	public AROManifest(VideoType videoType, HttpRequestResponseInfo req, String videoPath) {
-		this( videoType,  req, null, videoPath);
+	public AROManifest(VideoType videoType, HttpRequestResponseInfo resp, String videoPath) {
+		this( videoType,  resp, null, videoPath);
 	}
 	
 	/**
@@ -110,7 +114,7 @@ public class AROManifest {
 	 * @param manifestTime The time at which the event was initiated (such as a key being pressed down).
 	 * @param releaseTime The time at which the chunk finished downloading.
 	 */
-	public AROManifest(VideoType videoType, HttpRequestResponseInfo req, VideoEventData ved, String videoPath) {
+	public AROManifest(VideoType videoType, HttpRequestResponseInfo resp, VideoEventData ved, String videoPath) {
 
 		this.videoType = videoType;
 		this.endTime = 0;
@@ -120,10 +124,12 @@ public class AROManifest {
 		if (ved != null) {
 			setVideoName(ved.getName());
 		}
-		if (req != null) {
-			this.beginTime = req.getTimeStamp();
-			this.session = req.getSession();
-			this.uri = req.getAssocReqResp().getObjUri();
+		if (resp != null) {
+			PacketInfo fdp = resp.getAssocReqResp().getFirstDataPacket();
+			this.requestTime = fdp != null ? fdp.getPacket().getTimeStamp() : 0;
+			this.beginTime = resp.getTimeStamp();
+			this.session = resp.getSession();
+			this.uri = resp.getAssocReqResp().getObjUri();
 		}
 	}
 
@@ -248,6 +254,10 @@ public class AROManifest {
 
 	public void setEventType(VideoType eventType) {
 		this.videoType = eventType;
+	}
+
+	public double getRequestTime() {
+		return requestTime;
 	}
 
 	public double getBeginTime() {
@@ -547,6 +557,14 @@ public class AROManifest {
 
 	public void setActiveState(boolean activeState) {
 		this.activeState = activeState;
+	}
+
+	public boolean isValid() {
+		return valid;
+	}
+
+	public void setValid(boolean valid) {
+		this.valid = valid;
 	}
 
 	public VideoEventData getVed() {

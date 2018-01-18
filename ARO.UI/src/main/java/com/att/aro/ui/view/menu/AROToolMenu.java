@@ -241,7 +241,7 @@ public class AROToolMenu implements ActionListener {
 	}
 	
 	private void openAWSUploadDialog(AWS awsMode) {
-  			uploadDialog = new AWSDialog(parent, awsMode); 
+  			uploadDialog = new AWSDialog(awsMode); 
 			uploadDialog.setAWSMode(awsMode);
 			uploadDialog.setVisible(true);
 			uploadDialog.setAlwaysOnTop(true);	
