@@ -18,13 +18,13 @@ public class SegmentTemplatePR {
 
 	@Override
 	public String toString() {
-		StringBuilder strblr = new StringBuilder(167);
-		strblr.append("\n\t\t\tSegmentTemplate\n\t\t\t\ttimescale:              "); strblr.append(timescale);
-		strblr.append("\n\t\t\t\tpresentationTimeOffset: "); strblr.append(presentationTimeOffset);
-		strblr.append("\n\t\t\t\tmedia:                  "); strblr.append(media);
-		strblr.append("\n\t\t\t\tinitialization:         "); strblr.append(initialization);
-		strblr.append(segmentTimeline);
-		strblr.append("\n\t\t\t");
+		StringBuilder strblr = new StringBuilder(167)
+		.append("\n\t\t\tSegmentTemplate\n\t\t\t\ttimescale:              ").append(timescale)
+		.append("\n\t\t\t\tpresentationTimeOffset: ").append(presentationTimeOffset)
+		.append("\n\t\t\t\tmedia:                  ").append(media)
+		.append("\n\t\t\t\tinitialization:         ").append(initialization)
+		.append(segmentTimeline)
+		.append("\n\t\t\t");
 		return strblr.toString();
 	}
 

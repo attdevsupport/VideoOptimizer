@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2017 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.att.aro.ui.view.menu.tools;
 
 import java.awt.BorderLayout;
@@ -25,9 +40,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.TitledBorder;
 
-import org.apache.log4j.Logger;
-import org.jfree.util.Log;
-
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.att.aro.core.cloud.State;
@@ -40,15 +52,12 @@ import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.AROProgressDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
-import com.att.aro.ui.view.menu.datacollector.DeviceTablePanel;
 
 public class AWSDialog extends JDialog {
 
 	private static final long serialVersionUID = 1L;
 	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
-	@SuppressWarnings("unused")
-	private static final Logger logger = Logger.getLogger(DeviceTablePanel.class.getName());
-
+ 
 	private enum DialogItem {
 		upload_trace_dialog_button_ok, upload_trace_dialog_button_cancel, upload_trace_dialog_button_legend,
 	}
@@ -83,9 +92,8 @@ public class AWSDialog extends JDialog {
  	private String errorMessage = "AUTHENTICATION";
 
 
-	public AWSDialog(IAROView parent, AWS awsMode) {
-		this.parent = parent;
-		this.mode = awsMode;
+	public AWSDialog(AWS awsMode) {
+ 		this.mode = awsMode;
 		this.setSize(550, 370);
 		this.setResizable(false);
 		this.setModal(true);
@@ -175,7 +183,6 @@ public class AWSDialog extends JDialog {
 	}
 	
 	public ClientConfiguration getProxySetting(){		 
-		Log.info(config.getProxyHost());
 		return config;
 	}
 	

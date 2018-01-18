@@ -23,47 +23,43 @@ import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 import com.att.aro.core.bestpractice.pojo.MinificationEntry;
-import com.att.aro.core.bestpractice.pojo.SimultnsConnEntry;
+import com.att.aro.core.bestpractice.pojo.MultipleConnectionsEntry;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.bestpractice.SimultnsConnTableModel;
 
 public class BPConnectionsSimultnsTablePanel extends AbstractBpDetailTablePanel {
-
 	private static final long serialVersionUID = 1L;
-
 	int noOfRecords;
-	
+
 	public BPConnectionsSimultnsTablePanel() {
 		super();
-		
 	}
-	
+
 	@Override
 	void initTableModel() {
 		tableModel = new SimultnsConnTableModel();
 	}
-	
+
 	/**
 	 * Sets the data for the Duplicate Content table.
-	 * 
+	 *
 	 * @param data
 	 *            - The data to be displayed in the Duplicate Content table.
 	 */
-	public void setData(Collection<SimultnsConnEntry> data) {
-
+	public void setData(Collection<MultipleConnectionsEntry> data) {
 		setVisible(!data.isEmpty());
-
 		setScrollSize(MINIMUM_ROWS);
-		((SimultnsConnTableModel)tableModel).setData(data);
+		((SimultnsConnTableModel) tableModel).setData(data);
 		autoSetZoomBtn();
 	}
 
 	/**
 	 * Initializes and returns the RequestResponseTable.
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
-	public DataTable<SimultnsConnEntry> getContentTable() {
+	public DataTable<MultipleConnectionsEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<MinificationEntry>(tableModel);
 			contentTable.setAutoCreateRowSorter(true);
@@ -74,9 +70,9 @@ public class BPConnectionsSimultnsTablePanel extends AbstractBpDetailTablePanel 
 			contentTable.setRowSorter(sorter);
 			sorter.setComparator(SimultnsConnTableModel.COL_2, Util.getDomainSorter());
 			sorter.setComparator(SimultnsConnTableModel.COL_3, Util.getDomainSorter());
+			sorter.setComparator(SimultnsConnTableModel.COL_4, Util.getDomainIntSorter());
 			sorter.toggleSortOrder(SimultnsConnTableModel.COL_1);
 		}
 		return contentTable;
 	}
-
 }

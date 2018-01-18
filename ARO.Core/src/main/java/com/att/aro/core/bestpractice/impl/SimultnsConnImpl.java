@@ -31,7 +31,7 @@ import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
-import com.att.aro.core.bestpractice.pojo.SimultnsConnEntry;
+import com.att.aro.core.bestpractice.pojo.MultipleConnectionsEntry;
 import com.att.aro.core.bestpractice.pojo.SimultnsConnectionResult;
 import com.att.aro.core.bestpractice.pojo.SimultnsUtil;
 import com.att.aro.core.model.InjectLogger;
@@ -39,57 +39,39 @@ import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.SessionValues;
 
-
 public class SimultnsConnImpl implements IBestPractice {
-
 	@InjectLogger
 	private static ILogger logger;
-
 	@Value("${connections.simultaneous.title}")
 	private String overviewTitle;
-
 	@Value("${connections.simultaneous.detailedTitle}")
 	private String detailTitle;
-
 	@Value("${connections.simultaneous.desc}")
 	private String aboutText;
-
 	@Value("${connections.simultaneous.url}")
 	private String learnMoreUrl;
-
 	@Value("${connections.simultaneous.pass}")
 	private String textResultPass;
-
 	@Value("${connections.simultaneous.results}")
 	private String textResults;
-	
 	int maxConnections = 3;
-
 	private PacketAnalyzerResult traceDataResult = null;
-
-	private List<SimultnsConnEntry> simultnsConnectionEntryList;
-	
-	private SortedMap<Double, SimultnsConnEntry> simultnsConnectionEntryMap;
-	
+	private List<MultipleConnectionsEntry> simultnsConnectionEntryList;
+	private SortedMap<Double, MultipleConnectionsEntry> simultnsConnectionEntryMap;
 	SimultnsUtil simultnsUtil = new SimultnsUtil();
 
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult traceData) {
 		traceDataResult = traceData;
 		SimultnsConnectionResult result = new SimultnsConnectionResult();
-		simultnsConnectionEntryList = new ArrayList<SimultnsConnEntry>();
-		simultnsConnectionEntryMap = new TreeMap<Double, SimultnsConnEntry>();
-
-
+		simultnsConnectionEntryList = new ArrayList<MultipleConnectionsEntry>();
+		simultnsConnectionEntryMap = new TreeMap<Double, MultipleConnectionsEntry>();
 		populateSimultConnList();
-		
-		for(Map.Entry<Double, SimultnsConnEntry> simultnsConnEntryMap : simultnsConnectionEntryMap.entrySet()) {
-			if(simultnsConnEntryMap.getValue()!=null) {
+		for (Map.Entry<Double, MultipleConnectionsEntry> simultnsConnEntryMap : simultnsConnectionEntryMap.entrySet()) {
+			if (simultnsConnEntryMap.getValue() != null) {
 				simultnsConnectionEntryList.add(simultnsConnEntryMap.getValue());
 			}
-			
 		}
-
 		result.setResults(simultnsConnectionEntryList);
 		String text = "";
 		if (simultnsConnectionEntryList.isEmpty()) {
@@ -98,7 +80,6 @@ public class SimultnsConnImpl implements IBestPractice {
 			result.setResultText(text);
 		} else {
 			result.setResultType(BPResultType.FAIL);
-
 			result.setResultText(textResults);
 		}
 		result.setAboutText(aboutText);
@@ -110,28 +91,24 @@ public class SimultnsConnImpl implements IBestPractice {
 
 	private void populateSimultConnList() {
 		List<Session> sessions = traceDataResult.getSessionlist();
-
 		if (sessions == null || sessions.size() <= 0) {
 			simultnsConnectionEntryList = Collections.emptyList();
 			return;
 		}
 		Map<String, ArrayList<Session>> distinctMap = simultnsUtil.getDistinctMap(sessions);
 		HashMap<String, List<SessionValues>> ipMap = new HashMap<String, List<SessionValues>>();
-
 		for (Map.Entry<String, ArrayList<Session>> entry : distinctMap.entrySet()) {
 			ArrayList<Session> tempList = entry.getValue();
 			tempList.trimToSize();
 			List<SessionValues> timeMap = simultnsUtil.createDomainsTCPSessions(tempList);
 			ipMap.put(entry.getKey(), timeMap);
 		}
-
 		for (HashMap.Entry<String, List<SessionValues>> ipEntry : ipMap.entrySet()) {
-			SimultnsConnEntry simultnsConnEntry = simultnsUtil.getTimeMap(ipEntry.getValue(), maxConnections, false);
-			if(simultnsConnEntry!=null) {
+			MultipleConnectionsEntry simultnsConnEntry = simultnsUtil.getTimeMap(ipEntry.getValue(), maxConnections,
+					false);
+			if (simultnsConnEntry != null) {
 				simultnsConnectionEntryMap.put(simultnsConnEntry.getTimeStamp(), simultnsConnEntry);
 			}
-			
 		}
-
 	}
 }

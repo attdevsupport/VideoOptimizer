@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-
 package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
@@ -40,22 +39,16 @@ import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
 public class VideoConcurrentSessionImpl implements IBestPractice {
-
 	@InjectLogger
 	private static ILogger logger;
-
 	@Value("${videoConcurrentSession.title}")
 	private String overviewTitle;
-
 	@Value("${videoConcurrentSession.detailedTitle}")
 	private String detailTitle;
-
 	@Value("${videoConcurrentSession.desc}")
 	private String aboutText;
-
 	@Value("${videoConcurrentSession.url}")
 	private String learnMoreUrl;
-
 	@Value("${videoConcurrentSession.results}")
 	private String textResults;
 
@@ -68,19 +61,18 @@ public class VideoConcurrentSessionImpl implements IBestPractice {
 		result.setDetailTitle(detailTitle);
 		result.setOverviewTitle(overviewTitle);
 		result.setResultType(BPResultType.SELF_TEST);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBaseNew())); // http://developer.att.com/ARO/BestPractices/VideoConcurrentSession
 		List<VideoConcurrentSession> manifestConcurrency = new ArrayList<VideoConcurrentSession>();
 		VideoUsage videoUsage = tracedata.getVideoUsage();
 		if (videoUsage != null && videoUsage.getAroManifestMap() != null && videoUsage.getAroManifestMap().size() > 0) {
 			manifestConcurrency = manifestConcurrentSessions(videoUsage.getAroManifestMap());
-			result.setResults(manifestConcurrency);	
+			result.setResults(manifestConcurrency);
 			for (VideoConcurrentSession manifestSession : manifestConcurrency) {
 				if (maxManifestConcurrentSessions < manifestSession.getConcurrentSessionCount()) {
 					maxManifestConcurrentSessions = manifestSession.getConcurrentSessionCount();
 				}
 			}
 			result.setMaxConcurrentSessionsCount(maxManifestConcurrentSessions);
-
 		}
 		result.setResultText(MessageFormat.format(textResults, maxManifestConcurrentSessions));
 		return result;
@@ -96,10 +88,10 @@ public class VideoConcurrentSessionImpl implements IBestPractice {
 					List<Session> sessionList = new ArrayList<Session>();
 					TreeMap<String, VideoEvent> videoEventList = manifest.getVideoEventList();
 					for (Map.Entry<String, VideoEvent> veEntry : videoEventList.entrySet()) {
-						if (!sessionList.contains(((VideoEvent) veEntry.getValue()).getSession())) {
-							sessionList.add(((VideoEvent) veEntry.getValue()).getSession());
-							sessionStartTimes.add(((VideoEvent) veEntry.getValue()).getSession().getSessionStartTime());
-							sessionEndTimes.add(((VideoEvent) veEntry.getValue()).getSession().getSessionEndTime());
+						if (!sessionList.contains(veEntry.getValue().getSession())) {
+							sessionList.add(veEntry.getValue().getSession());
+							sessionStartTimes.add(veEntry.getValue().getSession().getSessionStartTime());
+							sessionEndTimes.add(veEntry.getValue().getSession().getSessionEndTime());
 						}
 					}
 					VideoConcurrentSession concurrency = findConcurrency(sessionStartTimes, sessionEndTimes);

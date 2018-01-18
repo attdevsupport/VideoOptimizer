@@ -171,6 +171,7 @@ import com.att.aro.core.util.StringParse;
 import com.att.aro.core.video.IScreenRecorder;
 import com.att.aro.core.video.IVideoCapture;
 import com.att.aro.core.video.IVideoWriter;
+import com.att.aro.core.video.amvots.ImageBoundsGrabber;
 import com.att.aro.core.video.impl.ScreenRecorderImpl;
 import com.att.aro.core.video.impl.VideoCaptureImpl;
 import com.att.aro.core.video.impl.VideoWriterImpl;
@@ -265,7 +266,7 @@ public class AROConfig {
 		return new DomainNameParserImpl();
 	}
 
-	@Bean
+	@Bean(name="fileManager")
 	public IFileManager getReadFile() {
 		return new FileManagerImpl();
 	}
@@ -645,9 +646,13 @@ public class AROConfig {
 		return new VideoEventDataHelperImpl();
 	}
 	
-	@Bean
+	@Bean(name="stringParser")
 	public IStringParse getStringParse(){
 		return new StringParse();
 	}
 	
+	@Bean(name = "imageBoundsGrabber")
+	public ImageBoundsGrabber getImageBoundsGrabber() {
+		return new ImageBoundsGrabber();
+	}
 }

@@ -30,6 +30,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -40,6 +42,7 @@ import java.util.function.Supplier;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -51,6 +54,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -69,13 +73,14 @@ import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
+import com.att.aro.ui.view.menu.datacollector.HelpDialog;
 
 /**
  * This generates a dialog to view/update the system configuration used for
  * video optimizer.
- * 
+ *
  * @author Bharath Kesireddy
- * 
+ *
  */
 public class PreferencesDialog extends JDialog {
 	private static final int BORDER_HEIGHT = 80;
@@ -92,15 +97,16 @@ public class PreferencesDialog extends JDialog {
 	private final JMenuItem callerMenuItem;
 	private Map<Config, String> updates = new HashMap<>();
 	String logginglevel = "ERROR";
-
 	private Settings settings = SettingsImpl.getInstance();
-	
+	private JLabel helpLabel;
+	BPVideoWarnFailPanel bpVideoWarnFailPanel;
+
 	/**
 	 * Type of configuration This is used to provide appropriate method for
 	 * displaying configuration
 	 */
 	enum ConfigType {
-		TEXT, NUMBER, FILE,COMBO
+		TEXT, NUMBER, FILE, COMBO
 	}
 
 	/**
@@ -115,11 +121,10 @@ public class PreferencesDialog extends JDialog {
 				Util.isMacOS(), null, () -> Util.getIdeviceScreenshot()),
 		FFMPEG("ffmpeg", "FFMpeg Path", FILE, SettingsImpl.getInstance(), true, null, () -> Util.getFFMPEG()),
 		FFPROBE("ffprobe", "FFProbe Path", FILE, SettingsImpl.getInstance(), true, null, () -> Util.getFFPROBE()),
-		IOS_PROV("iosProv", "iOS Provisioning Profile", FILE, SettingsImpl.getInstance(), isEnvDev() & Util.isMacOS()),
-		IOS_CERT("iosCert", "iOS Certificate", TEXT, SettingsImpl.getInstance(), isEnvDev() & Util.isMacOS(), 
+		IOS_PROV("iosProv", "iOS Provisioning Profile", FILE, SettingsImpl.getInstance(), Util.isMacOS()),
+		IOS_CERT("iosCert", "iOS Certificate", TEXT, SettingsImpl.getInstance(), Util.isMacOS(), 
 				ResourceBundleHelper.getMessageString("preferences.iosCert.textField.hint"), null),
 		LOG_LVL("logging", "Logging Level", COMBO, SettingsImpl.getInstance(),true,ResourceBundleHelper.getMessageString("preferences.logging.dropdown.values"));
-		
 
 		private String name;
 		private String desc;
@@ -130,7 +135,8 @@ public class PreferencesDialog extends JDialog {
 		private Supplier<String> defValue;
 		private String comboValues;
 
-		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled, String hint, Supplier<String> defValue) {
+		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled, String hint,
+				Supplier<String> defValue) {
 			this(name, desc, type, settings, enabled);
 			this.hint = hint;
 			this.defValue = defValue;
@@ -143,10 +149,11 @@ public class PreferencesDialog extends JDialog {
 			this.settings = settings;
 			this.enabled = enabled;
 		}
-		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled, String comboValues) {
+
+		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled,
+				String comboValues) {
 			this(name, desc, type, settings, enabled);
 			this.comboValues = comboValues;
-			
 		}
 
 		public String getName() {
@@ -168,11 +175,11 @@ public class PreferencesDialog extends JDialog {
 		public Boolean isEnabled() {
 			return enabled;
 		}
-		
+
 		public String getHint() {
 			return hint;
 		}
-			
+
 		public String getDefValue() {
 			return defValue != null ? defValue.get() : null;
 		}
@@ -183,15 +190,11 @@ public class PreferencesDialog extends JDialog {
 
 		private static boolean isHeapEnabled() {
 			boolean isLinuxOrWin32 = Util.isWindows32OS() || Util.isLinuxOS();
-			boolean isMoreThan4GB = ((JvmSettings)JvmSettings.getInstance()).getSystemMemory() > 4096;
+			boolean isMoreThan4GB = ((JvmSettings) JvmSettings.getInstance()).getSystemMemory() > 4096;
 			return !isLinuxOrWin32 && isMoreThan4GB;
 		}
-		
-		private static boolean isEnvDev() {
-			return SettingsImpl.getInstance().checkAttributeValue("env", "dev");
-		}
 	}
-	
+
 	public PreferencesDialog(SharedAttributesProcesses parent, JMenuItem callerMenuItem) {
 		super(parent.getFrame());
 		this.parent = parent;
@@ -223,11 +226,13 @@ public class PreferencesDialog extends JDialog {
 			jContentPane = new JPanel();
 			jContentPane.setPreferredSize(new Dimension(750, 500));
 			jContentPane.setLayout(new BorderLayout());
-
+			bpVideoWarnFailPanel = new BPVideoWarnFailPanel();
 			JTabbedPane tabbedPane = new JTabbedPane();
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.general.tabtile"), getGeneralTab());
-			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.bestpractice.tabtile"), BPSelectionPanel.getBPPanel());
-			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.video.tabtitle"), BPVideoPassFailPanel.getBPPanel());
+			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.bestpractice.tabtile"),
+					BPSelectionPanel.getBPPanel());
+			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.video.tabtitle"),
+					bpVideoWarnFailPanel);
 			this.addComponentListener(new ComponentListener() {
 				@Override
 				public void componentResized(ComponentEvent e) {
@@ -256,7 +261,9 @@ public class PreferencesDialog extends JDialog {
 
 	private JPanel getGeneralTab() {
 		JPanel general = new JPanel();
+		general.add(getEmptyPanel(), BorderLayout.WEST);
 		general.add(getConfigPanel(), BorderLayout.CENTER);
+		general.add(getHelpPanel(), BorderLayout.EAST);
 		return general;
 	}
 
@@ -294,14 +301,12 @@ public class PreferencesDialog extends JDialog {
 		if (optionsPanel == null) {
 			optionsPanel = new JPanel();
 			optionsPanel.setLayout(new BoxLayout(optionsPanel, BoxLayout.PAGE_AXIS));
-			optionsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 			Arrays.asList(Config.values()).stream().filter(config -> config.isEnabled())
-			.forEach(config -> optionsPanel.add(getConfigCombo(config)));
+					.forEach(config -> optionsPanel.add(getConfigCombo(config)));
 		}
 		return optionsPanel;
 	}
 
-	
 	/* Gets a combination of label and update/set a configuration value */
 	private Component getConfigCombo(final Config config) {
 		JPanel configCombo = new JPanel();
@@ -342,8 +347,8 @@ public class PreferencesDialog extends JDialog {
 
 	private String[] getComboValue(Config config) {
 		String[] value = new String[0];
-		if(config.getComboValues() != null) {
-			value =config.getComboValues().split(",");
+		if (config.getComboValues() != null) {
+			value = config.getComboValues().split(",");
 		}
 		return value;
 	}
@@ -376,7 +381,7 @@ public class PreferencesDialog extends JDialog {
 		JTextField value = new JTextField(config.getSettings().getAttribute(config.getName()), 5);
 		setSize(value, size);
 		setToolTip(config, value);
-		if(config.getDefValue() != null) {
+		if (config.getDefValue() != null) {
 			value.setText(config.getDefValue());
 		}
 		value.getDocument().addDocumentListener(new DocumentListener() {
@@ -407,33 +412,30 @@ public class PreferencesDialog extends JDialog {
 		return value;
 	}
 
-	private void setToolTip(Config config, JTextField textField) {	
+	private void setToolTip(Config config, JTextField textField) {
 		String toolTipText = config.getHint();
 		if (toolTipText != null) {
 			textField.setToolTipText(toolTipText);
 		}
 	}
-	
+
 	private void saveAndClose() {
 		try {
 			saveGenTabValues();
 			saveBPSelection();
-			saveWarnFail();
+			bpVideoWarnFailPanel.saveWarnFail();
 			SettingsImpl.getInstance().setAndSaveAttribute("LOG_LEVEL", logginglevel);
 			Util.setLoggingLevel(logginglevel);
 			dispose();
+		} catch (IllegalArgumentException iae) {
+			LOGGER.error("Failed to save preferences due to failure on video bp panel");
+			this.repaint();
 		} catch (Exception e) {
 			LOGGER.error("Failed to save preferences", e);
 			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
 					"Error occurred while trying to save Preferences", "Error saving preferences",
 					JOptionPane.ERROR_MESSAGE);
 		}
-	}
-
-	
-	
-	private void saveWarnFail() {
-		 BPVideoPassFailPanel.getInstance().saveWarnFail();	
 	}
 
 	private void saveGenTabValues() {
@@ -453,8 +455,34 @@ public class PreferencesDialog extends JDialog {
 	@Override
 	public void dispose() {
 		callerMenuItem.setEnabled(true);
-		BPVideoPassFailPanel.dropInstance();
 		super.dispose();
 	}
-	
+
+	private JPanel getHelpPanel() {
+		JPanel p = new JPanel();
+		p.setPreferredSize(new Dimension(125, 175));
+		p.add(getHelpLabel(), BorderLayout.EAST);
+		return p;
+	}
+
+	private JPanel getEmptyPanel() {
+		JPanel p = new JPanel();
+		p.setPreferredSize(new Dimension(125, 175));
+		return p;
+	}
+
+	private JLabel getHelpLabel() {
+		String resourceName = ResourceBundleHelper.getImageString("ImageBasePath")
+				+ ResourceBundleHelper.getImageString("Image.bpHelpDark");
+		ImageIcon imgIcon = new ImageIcon(getClass().getResource(resourceName));
+		helpLabel = new JLabel(imgIcon, SwingConstants.RIGHT);
+		helpLabel.setPreferredSize(new Dimension(125, 20));
+		helpLabel.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				new HelpDialog(PreferencesDialog.this, "Preferences");
+			}
+		});
+		return helpLabel;
+	}
 }

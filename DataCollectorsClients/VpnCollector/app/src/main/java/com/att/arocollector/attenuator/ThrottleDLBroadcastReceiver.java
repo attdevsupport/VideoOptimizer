@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 AT&T
+ *  Copyright 2018 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,10 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.att.arocollector.R;
+
+/**
+ * Created by Lindsay on 6/5/17.
+ */
 
 public class ThrottleDLBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = ThrottleDLBroadcastReceiver.class.getSimpleName();

@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2018 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.ui.view.menu.file;
 
 import java.io.IOException;
@@ -12,15 +27,16 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class VideoPreferenceTableModel extends AbstractTableModel {
 	private static final long serialVersionUID = 1L;
 	private VideoUsagePrefs videoUsagePrefs;
 	private ObjectMapper mapper;
 	private PreferenceHandlerImpl prefs;
-	public StringBuilder validationError = new StringBuilder();
+	public String validationError = "";
 	public boolean isDisable = true;
-	public static final Logger LOGGER = Logger.getLogger(BPVideoPassFailPanel.class.getName());
+	public static final Logger LOGGER = Logger.getLogger(BPVideoWarnFailPanel.class.getName());
 	public static final int BP_NAME_COLUMN = 0;
 	public static final int WARNING_COLUMN = 1;
 	public static final int FAILURE_COLUMN = 2;
@@ -28,17 +44,26 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 	public static final int STALL_DURATION_ROW = 1;
 	public static final int SEGMENT_REDUNDANCY_ROW = 2;
 	private static final int DECIMAL_POS = 4;
-	String[] columnNames = { "Best Practice", "Warning", "Fail"};
+	String[] columnNames = { "Best Practice", "Warning", "Fail" };
 	List<VideoPreferenceInfo> videoPreferenceList = new ArrayList<>();
 	private static int MAXSTARTUPDELAY = 50;
 	private static int MAXSTALLDURATION = 10;
 	private static int MAXREDUNDANCY = 100;
-	
+	String segmentRedundancyWarnVal = ResourceBundleHelper
+			.getMessageString("preferences.video.defaultSegmentRedundancyWarnVal");
+	String startUpDelayWarnVal = ResourceBundleHelper.getMessageString("preferences.video.defaultStartUpDelayWarnVal");
+	String stallDurationWarnVal = ResourceBundleHelper
+			.getMessageString("preferences.video.defaultStallDurationWarnVal");
+	String startUpDelayFailVal = ResourceBundleHelper.getMessageString("preferences.video.defaultStartUpDelayFailVal");
+	String stallDurationFailVal = ResourceBundleHelper
+			.getMessageString("preferences.video.defaultStallDurationFailVal");
+	String segmentRedundancyFailVal = ResourceBundleHelper
+			.getMessageString("preferences.video.defaultSegmentRedundancyFailVal");
+
 	VideoPreferenceTableModel(Collection<VideoPreferenceInfo> videoPreferences) {
-		
 		setData(videoPreferences);
 	}
-	
+
 	public void setData(Collection<VideoPreferenceInfo> videoPreferences) {
 		for (VideoPreferenceInfo vp : videoPreferences) {
 			this.videoPreferenceList.add(vp);
@@ -96,6 +121,7 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 		return columnNames[columnIndex];
 	}
 
+	@Override
 	public boolean isCellEditable(int row, int col) {
 		boolean isCellEditable = false;
 		if (col != 0) {
@@ -104,6 +130,7 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 		return isCellEditable;
 	}
 
+	@Override
 	public void setValueAt(Object value, int row, int col) {
 		VideoPreferenceInfo videoPref = videoPreferenceList.get(row);
 		boolean isValid = validateInput(value, row, col, videoPref);
@@ -111,10 +138,10 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 			if (row != SEGMENT_REDUNDANCY_ROW) {
 				switch (col) {
 				case WARNING_COLUMN:
-					videoPref.setWarningCriteria((formatValue((String) value, row,col, DECIMAL_POS)));
+					videoPref.setWarningCriteria((formatValue((String) value, row, col, DECIMAL_POS)));
 					break;
 				case FAILURE_COLUMN:
-					videoPref.setFailCriteria((formatValue((String) value, row,col, DECIMAL_POS)));
+					videoPref.setFailCriteria((formatValue((String) value, row, col, DECIMAL_POS)));
 					break;
 				}
 			} else {
@@ -128,23 +155,19 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 				}
 			}
 			updatePreferenceAndTable(row, videoPref);
-			
 		}
 		fireTableRowsUpdated(row, row);
 	}
 
-	private String formatValue(String value, int row,int col, int defaultValue) {
+	private String formatValue(String value, int row, int col, int defaultValue) {
 		String formattedValue = value;
-		int afterDecimalDigits = value.length() - value.indexOf('.')-1;
-
+		int afterDecimalDigits = value.length() - value.indexOf('.') - 1;
 		if (afterDecimalDigits > defaultValue) {
-			StringBuilder sBuilder = new StringBuilder();
-			sBuilder.append(getCellInfo(row,col));
-			sBuilder.append("is limited to 4 decimal positions");
-			setError(sBuilder);
-			formattedValue = value.substring(0,(value.indexOf('.')+defaultValue+1));
-		} 
-		return String.format("%.04f",Double.parseDouble(formattedValue));
+			String sError = getCellInfo(row, col) + "is limited to 4 decimal positions";
+			setValidationError(sError);
+			formattedValue = value.substring(0, (value.indexOf('.') + defaultValue + 1));
+		}
+		return String.format("%.04f", Double.parseDouble(formattedValue));
 	}
 
 	private String getCellInfo(int row, int col) {
@@ -173,116 +196,116 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 
 	private boolean validateInput(Object value, int row, int col, VideoPreferenceInfo videoPref) {
 		boolean isValid = true;
-		
+		setValidationError("");
 		if (col == WARNING_COLUMN || col == FAILURE_COLUMN) {
 			isValid = isNumeric(value, row, col);
+			if (isValid) {
+				isValid = isPositive(value, row, col);
+			}
 			if (isValid) {
 				isValid = isMax(value, row, col);
 			}
 			if (isValid) {
 				isValid = (row != SEGMENT_REDUNDANCY_ROW) ? checkWarnFailValidation(value, row, col, videoPref)
-						: checkWarnFailIntValidation(value,row, col, videoPref);
-			}		
-		} 
+						: checkWarnFailIntValidation(value, row, col, videoPref);
+			}
+		}
 		return isValid;
 	}
 
-	
+	private boolean isPositive(Object value, int row, int col) {
+		boolean isPositive = true;
+		if (Double.parseDouble((String) value) < 0) {
+			isPositive = false;
+		}
+		if (isPositive) {
+			setValidationError("");
+		} else {
+			setValidationError(getCellInfo(row, col) + "should contain only positive values");
+		}
+		return isPositive;
+	}
+
 	public boolean getDisableStatus() {
 		return isDisable;
 	}
 
 	private boolean isMax(Object value, int row, int col) {
-		
-		StringBuilder sBuilder = new StringBuilder();
-		
+		String maxError = "";
 		boolean isLessthanMax = true;
-		
 		if (row == STARTUP_DELAY_ROW) {
 			if (Double.parseDouble((String) value) > MAXSTARTUPDELAY) {
 				isLessthanMax = false;
-				sBuilder.append(getCellInfo(row, col));
-				sBuilder.append(String.valueOf(MAXSTARTUPDELAY));
+				maxError = getCellInfo(row, col) + String.valueOf(MAXSTARTUPDELAY);
 			}
 		} else if (row == STALL_DURATION_ROW) {
 			if (Double.parseDouble((String) value) > MAXSTALLDURATION) {
 				isLessthanMax = false;
-				sBuilder.append(getCellInfo(row, col));
-				sBuilder.append(String.valueOf(MAXSTALLDURATION));
+				maxError = getCellInfo(row, col) + String.valueOf(MAXSTALLDURATION);
 			}
-		}else if (row == SEGMENT_REDUNDANCY_ROW) {
+		} else if (row == SEGMENT_REDUNDANCY_ROW) {
 			if (Integer.parseInt((String) value) > MAXREDUNDANCY) {
 				isLessthanMax = false;
-				sBuilder.append(getCellInfo(row, col));
-				sBuilder.append(String.valueOf(MAXREDUNDANCY));
+				maxError = getCellInfo(row, col) + String.valueOf(MAXREDUNDANCY);
 			}
 		}
-		if(isLessthanMax){
-			setError(new StringBuilder());
+		if (isLessthanMax) {
+			setValidationError("");
 		} else {
-			setError(sBuilder);
+			setValidationError(maxError);
 		}
 		return isLessthanMax;
 	}
 
 	private boolean checkWarnFailValidation(Object value, int row, int col, VideoPreferenceInfo videoPref) {
-		StringBuilder sBuilder = new StringBuilder();
+		String valError = "";
 		boolean isValid = true;
-
 		if (col == WARNING_COLUMN) {
 			if (Double.parseDouble(videoPref.getFailCriteria()) <= Double.parseDouble((String) value)) {
-				sBuilder.append(getCellInfo(row, col));
-				sBuilder.append("should be less than failure value ");
-				sBuilder.append(videoPref.getFailCriteria());
+				valError = getCellInfo(row, col) + "should be less than failure value " + videoPref.getFailCriteria();
 				isValid = false;
 			}
 		} else if (col == FAILURE_COLUMN) {
 			if (Double.parseDouble(videoPref.getWarningCriteria()) >= Double.parseDouble((String) value)) {
-				sBuilder.append(getCellInfo(row, col));
-				sBuilder.append("should be greater than warning value ");
-				sBuilder.append(videoPref.getWarningCriteria());
+				valError = getCellInfo(row, col) + "should be greater than warning value "
+						+ videoPref.getWarningCriteria();
 				isValid = false;
 			}
 		}
-		
 		if (isValid) {
-			setError(new StringBuilder());
+			setValidationError("");
 		} else {
-			setError(sBuilder);
+			setValidationError(valError);
 		}
 		return isValid;
 	}
-	
+
 	private boolean checkWarnFailIntValidation(Object value, int row, int col, VideoPreferenceInfo videoPref) {
-		StringBuilder sBuilder = new StringBuilder();
+		String intValError = "";
 		boolean isValid = true;
-		
 		if (col == WARNING_COLUMN) {
 			if (videoPref.getFailCriteriaInt() <= Integer.parseInt((String) value)) {
-				sBuilder.append(getCellInfo(row, col));
-				sBuilder.append("should be less than failure value ");
-				sBuilder.append(Integer.toString(videoPref.getFailCriteriaInt()));
+				intValError = getCellInfo(row, col) + "should be less than failure value "
+						+ Integer.toString(videoPref.getFailCriteriaInt());
 				isValid = false;
 			}
 		} else if (col == FAILURE_COLUMN) {
 			if (videoPref.getWarningCriteriaInt() >= Integer.parseInt((String) value)) {
-				sBuilder.append(getCellInfo(row, col));
-				sBuilder.append("should be greater than warning value ");
-				sBuilder.append(Integer.toString(videoPref.getWarningCriteriaInt()));
+				intValError = getCellInfo(row, col) + "should be greater than warning value "
+						+ Integer.toString(videoPref.getWarningCriteriaInt());
 				isValid = false;
 			}
 		}
-		if(isValid){
-			setError(new StringBuilder());
+		if (isValid) {
+			setValidationError("");
 		} else {
-			setError(sBuilder);
+			setValidationError(intValError);
 		}
 		return isValid;
 	}
 
 	private boolean isNumeric(Object value, int row, int col) {
-		
-		boolean isNumeric = true; 
+		boolean isNumeric = true;
 		if (row != SEGMENT_REDUNDANCY_ROW) {
 			try {
 				Double.parseDouble((String) value);
@@ -297,23 +320,18 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 			}
 		}
 		if (!isNumeric) {
-			StringBuilder sBuilder = new StringBuilder();
-			sBuilder.append(getCellInfo(row, col));
+			String numericError = "";
+			numericError = getCellInfo(row, col);
 			if (row != SEGMENT_REDUNDANCY_ROW) {
-				sBuilder.append("should contain only numeric floating values");
+				numericError = numericError + "should contain only numeric floating values";
 			} else {
-				sBuilder.append("should contain only numeric integer values");
+				numericError = numericError + "should contain only numeric integer values";
 			}
-			setError(sBuilder);
+			setValidationError(numericError);
 		} else {
-			setError(new StringBuilder());
+			setValidationError("");
 		}
 		return isNumeric;
-	}
-	
-    private void setError(StringBuilder sBuilder) {
-    	setValidationError(sBuilder);
-		
 	}
 
 	private boolean updatePreferenceAndTable(int row, VideoPreferenceInfo videoPref) {
@@ -338,7 +356,6 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 				}
 			}
 		}
-
 		switch (row) {
 		case STARTUP_DELAY_ROW: // StartUp DeSTARTUP_DELAY_ROWay
 			videoUsagePrefs.setStartUpDelayWarnVal(videoPref.getWarningCriteria());
@@ -353,22 +370,66 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 			videoUsagePrefs.setSegmentRedundancyFailVal(videoPref.getFailCriteriaInt());
 			break;
 		}
-
 		// prefs.setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
 		videoPreferenceList.set(row, videoPref);
 		return true;
 	}
 
-	
 	public VideoUsagePrefs getVideoUsagePrefs() {
 		return videoUsagePrefs;
 	}
 
-	public StringBuilder getValidationError() {
+	public String getValidationError() {
 		return validationError;
 	}
 
-	public void setValidationError(StringBuilder validationError) {
+	public void setValidationError(String validationError) {
 		this.validationError = validationError;
-	}  
+	}
+
+	public void setDefault() {
+		setValidationError("");
+		for (int row = STARTUP_DELAY_ROW; row <= SEGMENT_REDUNDANCY_ROW; row++) {
+			VideoPreferenceInfo videoPref = videoPreferenceList.get(row);
+			if (row != SEGMENT_REDUNDANCY_ROW) {
+				videoPref.setWarningCriteria(getValue(row, WARNING_COLUMN));
+				videoPref.setFailCriteria(getValue(row, FAILURE_COLUMN));
+			} else {
+				videoPref.setWarningCriteriaInt(Integer.parseInt(getValue(row, WARNING_COLUMN)));
+				videoPref.setFailCriteriaInt(Integer.parseInt(getValue(row, FAILURE_COLUMN)));
+			}
+			updatePreferenceAndTable(row, videoPref);
+			fireTableRowsUpdated(row, row);
+		}
+	}
+
+	private String getValue(int row, int column) {
+		String value = "";
+		if (column == WARNING_COLUMN) {
+			switch (row) {
+			case STARTUP_DELAY_ROW: // StartUp DeSTARTUP_DELAY_ROWay
+				value = startUpDelayWarnVal;
+				break;
+			case STALL_DURATION_ROW: // Stall Duration
+				value = stallDurationWarnVal;
+				break;
+			case SEGMENT_REDUNDANCY_ROW: // Segment Redundancy
+				value = segmentRedundancyWarnVal;
+				break;
+			}
+		} else if (column == FAILURE_COLUMN) {
+			switch (row) {
+			case STARTUP_DELAY_ROW: // StartUp DeSTARTUP_DELAY_ROWay
+				value = startUpDelayFailVal;
+				break;
+			case STALL_DURATION_ROW: // Stall Duration
+				value = stallDurationFailVal;
+				break;
+			case SEGMENT_REDUNDANCY_ROW: // Segment Redundancy
+				value = segmentRedundancyFailVal;
+				break;
+			}
+		}
+		return value;
+	}
 }

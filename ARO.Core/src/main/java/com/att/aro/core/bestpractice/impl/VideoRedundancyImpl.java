@@ -95,14 +95,13 @@ public class VideoRedundancyImpl implements IBestPractice{
 		result.setSelfTest(true);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase())); // http://developer.att.com/ARO/BestPractices/Redundancy
 		result.setOverviewTitle(overviewTitle);
 
 		VideoUsage videoUsage = tracedata.getVideoUsage();
 		int countRedundant = 0;
 		int countSegment = 0;
-		double redundantPercentage = 0d;
+		int redundantPercentage = 0;
 		if (videoUsage != null) {
 
 			// count duplicate chunks (same segment number)
@@ -124,7 +123,7 @@ public class VideoRedundancyImpl implements IBestPractice{
 					}
 				}
 			}
-
+			
 			redundantPercentage = calculateRedundantPercentage(countRedundant, countSegment);
 			BPResultType bpResultType = BPResultType.PASS;
 
@@ -135,7 +134,7 @@ public class VideoRedundancyImpl implements IBestPractice{
 
 			if (redundantPercentage != 0.0) {
 				result.setResultText(
-						MessageFormat.format(textResults, (String.format("%.0f", redundantPercentage))));
+						MessageFormat.format(textResults, (String.format("%d", redundantPercentage))));
 			} else {
 				result.setResultText(MessageFormat.format(textResultPass, redundantPercentage));
 			}
@@ -152,11 +151,11 @@ public class VideoRedundancyImpl implements IBestPractice{
 	 * @param countSegment - number of non duplicate Segments
 	 * @return percentage of Redundant Segments over the non duplicate Segments
 	 */
-	private double calculateRedundantPercentage(int countRedundant, int countSegment) {
+	private int calculateRedundantPercentage(int countRedundant, int countSegment) {
 		double redundantPercantage = 0.0d;
 		if (countRedundant != 0 && countSegment != 0) {
 			redundantPercantage = (double) countRedundant * 100 / (double) countSegment;
 		}
-		return redundantPercantage;
+		return (int) Math.round(redundantPercantage);
 	}
 }

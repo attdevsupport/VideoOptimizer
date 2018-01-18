@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Lazy;
 
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.impl.AccessingPeripheralImpl;
+//import com.att.aro.core.bestpractice.impl.AdAnalyticsImpl;
 import com.att.aro.core.bestpractice.impl.AsyncCheckInScriptImpl;
 import com.att.aro.core.bestpractice.impl.CacheControlImpl;
 import com.att.aro.core.bestpractice.impl.CombineCsJssImpl;
@@ -71,50 +72,50 @@ import com.att.aro.core.bestpractice.impl.WiFiOffloadingImpl;
 
 /**
  * Spring configuration for all best practices.
+ * 
  * <pre>
  * BestPractice Beans:
- *   * accessingPeripheral  
- *   * async                
- *   * cacheControl         
- *   * combineCsJss         
- *   * connectionClosing    
- *   * connectionOpening    
+ *   * accessingPeripheral
+ *   * async
+ *   * cacheControl
+ *   * combineCsJss
+ *   * connectionClosing
+ *   * connectionOpening
  *   * displaynoneincss       Checks for display:none in CSS embedded in HTML
- *   * duplicateContent     
- *   * emptyUrl             
- *   * fileorder            
- *   * flash                
- *   * http10Usage          
- *   * http3xx              
- *   * http4xx5xx           
- *   * imageSize            
- *   * iperiodicTransfer     
- *   * minify               
- *   * prefetching          
- *   * screenRotation       
- *   * scripts              
- *   * spriteImage          
- *   * textFileCompression  
+ *   * duplicateContent
+ *   * emptyUrl
+ *   * fileorder
+ *   * flash
+ *   * http10Usage
+ *   * http3xx
+ *   * http4xx5xx
+ *   * imageSize
+ *   * iperiodicTransfer
+ *   * minify
+ *   * prefetching
+ *   * screenRotation
+ *   * scripts
+ *   * spriteImage
+ *   * textFileCompression
  *   * unnecessaryConnection
- *   * usingCache           
+ *   * usingCache
  *   * wifiOffloading
  *   * httpsUsage
  *   * transmissionPrivateData
- *   * unsecureSSLVersion    
+ *   * unsecureSSLVersion
  *   * weakCipher
  *   * forward secrecy
  * </pre>
- * 
+ *
  * Date: November 12, 2014
  */
 @Configuration
 @Lazy
 @ComponentScan("com.att.aro.core.bestpractice")
 public class AROBestPracticeConfig {
-	
 	static final String VIDEOUSAGE = "videoUsage";
 
-	//bad performance => need redesign
+	// bad performance => need redesign
 	@Bean(name = "periodicTransfer")
 	IBestPractice getPeriodicTransfer() {
 		return new PeriodicTransferImpl();
@@ -184,7 +185,7 @@ public class AROBestPracticeConfig {
 	IBestPractice getHttp4xx5xx() {
 		return new Http4xx5xxImpl();
 	}
-	
+
 	@Bean(name = "simultaneous")
 	IBestPractice getSimultaneous() {
 		return new SimultnsConnImpl();
@@ -194,6 +195,11 @@ public class AROBestPracticeConfig {
 	IBestPractice getMultipleSimultaneous() {
 		return new MultipleSimultnsConnImpl();
 	}
+
+	/*@Bean(name = "adAnalytics")
+	IBestPractice getAdAnalytics() {
+		return new AdAnalyticsImpl();
+	}*/
 
 	@Bean(name = "http3xx")
 	IBestPractice getHttp3xx() {
@@ -209,25 +215,27 @@ public class AROBestPracticeConfig {
 	IBestPractice getImageSize() {
 		return new ImageSizeImpl();
 	}
-	
+
 	@Bean(name = "imageCompression")
 	IBestPractice getImageCompression() {
 		return new ImageCompressionImpl();
 	}
+
 	@Bean(name = "imageMetadata")
 	IBestPractice getImageMdata() {
 		return new ImageMetaDataImpl();
 	}
+
 	@Bean(name = "imageFormat")
 	IBestPractice getImageFormat() {
 		return new ImageFormatImpl();
 	}
-	
+
 	@Bean(name = "uiComparator")
 	IBestPractice getUIComparator() {
 		return new ImageUIComparatorImpl();
 	}
-	
+
 	@Bean(name = "minify")
 	IBestPractice getMinify() {
 		return new MinificationImpl();
@@ -260,6 +268,7 @@ public class AROBestPracticeConfig {
 
 	/**
 	 * Checks for display:none in CSS embedded in HTML
+	 * 
 	 * @return new DisplayNoneInCSSImpl()
 	 */
 	@Bean(name = "displaynoneincss")
@@ -277,7 +286,7 @@ public class AROBestPracticeConfig {
 	IBestPractice getVideoStall() {
 		return new VideoStallImpl();
 	}
-	
+
 	@Bean(name = "startupDelay")
 	IBestPractice getStartupDelay() {
 		return new VideoStartUpDelayImpl();
@@ -312,12 +321,12 @@ public class AROBestPracticeConfig {
 	IBestPractice getVideoRedundancy() {
 		return new VideoRedundancyImpl();
 	}
-	
+
 	@Bean(name = "videoConcurrentSession")
 	IBestPractice getVideoConcurrentSession() {
 		return new VideoConcurrentSessionImpl();
 	}
-	//End of Video
+	// End of Video
 
 	@Bean(name = "httpsUsage")
 	IBestPractice getHttpsUsage() {
@@ -328,17 +337,17 @@ public class AROBestPracticeConfig {
 	IBestPractice getTransmissionPrivateData() {
 		return new TransmissionPrivateDataImpl();
 	}
-	
+
 	@Bean(name = "unsecureSSLVersion")
 	IBestPractice getUnsecureSSLVersion() {
 		return new UnsecureSSLVersionImpl();
 	}
-	
+
 	@Bean(name = "weakCipher")
 	IBestPractice getWeakCipher() {
 		return new WeakCipherImpl();
 	}
-	
+
 	@Bean(name = "forwardSecrecy")
 	IBestPractice getForwardSecrecy() {
 		return new ForwardSecrecyImpl();

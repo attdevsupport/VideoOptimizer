@@ -18,18 +18,18 @@ package com.att.aro.core.bestpractice.pojo;
 import java.util.List;
 
 public class SimultnsConnectionResult extends AbstractBestPracticeResult {
-	private List<SimultnsConnEntry> results = null;
+	private List<MultipleConnectionsEntry> results = null;
 
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.SIMUL_CONN;
 	}
 
-	public List<SimultnsConnEntry> getResults() {
+	public List<MultipleConnectionsEntry> getResults() {
 		return results;
 	}
 
-	public void setResults(List<SimultnsConnEntry> results) {
+	public void setResults(List<MultipleConnectionsEntry> results) {
 		this.results = results;
 	}
 }

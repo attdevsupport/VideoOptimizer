@@ -23,46 +23,42 @@ import javax.swing.JTable;
 import com.att.aro.core.packetanalysis.pojo.CacheEntry;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.DataTable;
-import com.att.aro.ui.model.bestpractice.FileDuplicateContentTableModel;
+import com.att.aro.ui.model.bestpractice.BPDuplicateContentTableModel;
 
 /**
  *
  *
  */
 public class BpFileDuplicateContentTablePanel extends AbstractBpDetailTablePanel {
-
 	private static final long serialVersionUID = 1L;
-
 	int noOfRecords;
-	
+
 	public BpFileDuplicateContentTablePanel() {
 		super();
-		
 	}
-	
+
 	@Override
 	void initTableModel() {
-		tableModel = new FileDuplicateContentTableModel();
+		tableModel = new BPDuplicateContentTableModel();
 	}
-	
+
 	/**
 	 * Sets the data for the Duplicate Content table.
-	 * 
+	 *
 	 * @param data
 	 *            - The data to be displayed in the Duplicate Content table.
 	 */
 	public void setData(Collection<CacheEntry> data) {
-		
 		setVisible(!data.isEmpty());
-
 		setScrollSize(MINIMUM_ROWS);
-		((FileDuplicateContentTableModel)tableModel).setData(data);
+		((BPDuplicateContentTableModel) tableModel).setData(data);
 		autoSetZoomBtn();
 	}
 
 	/**
 	 * Initializes and returns the RequestResponseTable.
 	 */
+	@Override
 	@SuppressWarnings("unchecked")
 	public DataTable<CacheEntry> getContentTable() {
 		if (contentTable == null) {
@@ -72,13 +68,10 @@ public class BpFileDuplicateContentTablePanel extends AbstractBpDetailTablePanel
 			contentTable.setRowHeight(ROW_HEIGHT);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
 		}
-
 		return contentTable;
 	}
 
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
-		
 	}
-
 }

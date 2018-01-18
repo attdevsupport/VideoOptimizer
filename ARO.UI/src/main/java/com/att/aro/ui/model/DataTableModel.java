@@ -71,7 +71,9 @@ public abstract class DataTableModel<T> extends AbstractTableModel {
 	 * @return The data object.
 	 */
 	public T getValueAt(int rowIndex) {
-		return this.data.get(rowIndex);
+		if (data.size() > rowIndex)
+			return this.data.get(rowIndex);
+		return null;
 	}
 
 	/**
@@ -122,7 +124,8 @@ public abstract class DataTableModel<T> extends AbstractTableModel {
 	 */
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		return getColumnValue(getValueAt(rowIndex), columnIndex);
+		T val = getValueAt(rowIndex);
+		return getColumnValue(val, val == null ? -1 : columnIndex);
 	}
 
 	/**

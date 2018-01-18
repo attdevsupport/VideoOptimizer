@@ -99,10 +99,10 @@ public final class Application implements IAROView {
 		}
 
 		// command sanity check, if fails then reverts to help
-		if (cmds.isHelp() 
-				|| !((cmds.isListcollector() || cmds.isListDevices()) 
-						|| !(cmds.getAnalyze() == null 
-							&& cmds.getStartcollector() == null 
+		if (cmds.isHelp()
+				|| !((cmds.isListcollector() || cmds.isListDevices())
+						|| !(cmds.getAnalyze() == null
+							&& cmds.getStartcollector() == null
 							&& cmds.getAsk() == null
 							))) {
 			usageHelp();
@@ -114,7 +114,7 @@ public final class Application implements IAROView {
 			outln("Error: There are no collectors installed!");
 			restoreSystemOut(outSave);
 			System.exit(1);
-		}		
+		}
 
 		if (cmds.isListcollector()) {
 			showCollector(context, cmds);
@@ -457,16 +457,27 @@ public final class Application implements IAROView {
 	}
 	
 	private VideoOption getVideoOption() {
-
+		VideoOption option = VideoOption.NONE;
 		switch (cmds.getVideo()) {
-		case "yes":		// default to original 
-		case "slow":    return VideoOption.LREZ;
-		case "hd":      return VideoOption.HDEF;
-		case "sd":      return VideoOption.SDEF;
-		case "no":      return VideoOption.NONE;
+		case "yes":
+		case "slow": 
+			option = VideoOption.LREZ; break;
+		case "hd":
+			option = VideoOption.HDEF; break;
+		case "sd":
+			option = VideoOption.SDEF; break;
+		case "no": 
+			option = VideoOption.NONE; break;
 		default:
-			return VideoOption.NONE;
+			break;
 		}
+		boolean isRootedColl = "rooted_android".equals(cmds.getStartcollector());
+		if(isRootedColl) {
+			boolean isHdVideo = option == VideoOption.SDEF || option == VideoOption.HDEF;
+			outln("HD/SD Video is not supported on rooted collector: Setting video to low resolution");
+			return isHdVideo ? VideoOption.LREZ : option;
+		}
+		return option;
 	}
 	
 	private int getThrottleUL() {
@@ -478,8 +489,7 @@ public final class Application implements IAROView {
 		String throttleDL = cmds.getThrottleDL();
 		return ThrottleUtil.getInstance().parseNumCvtUnit(throttleDL);
 	}
- 
-	
+ 	
 	void printError(ErrorCode error) {
 		err("Error code: " + error.getCode());
 		err(", Error name: " + error.getName());
@@ -532,17 +542,18 @@ public final class Application implements IAROView {
 				printError(ErrorCodeRegistry.getCollectorNotfound());
 				System.exit(1);
 			}
+			
 			if (cmds.getOverwrite().equalsIgnoreCase("yes")) {
 				String traceName = cmds.getOutput();
 				IFileManager filemanager = context.getBean(IFileManager.class);
 				filemanager.directoryDeleteInnerFiles(traceName);
 			}
 			OutSave outSave = prepareSystemOut();
-			try {			
+			try {
 				Hashtable<String,Object> extras = new Hashtable<String,Object>();
 				extras.put("video_option", getVideoOption());
-				extras.put("AttenuatorModel", getAttenuateModel());
-
+				extras.put("AttenuatorModel", getAttenuateModel(cmds));
+ 
 				result = runCommand(cmds, collector, password, extras);
 			} finally {
 				restoreSystemOut(outSave);
@@ -596,15 +607,11 @@ public final class Application implements IAROView {
 		return result;
 	}
 	
-	private AttenuatorModel getAttenuateModel() {
-		return getConstantThrottleAttenuateModel();
-	}
-	
 	/**
 	 * if the user set throttle number, VO CLI will enable the throttle option
 	 * @return
 	 */
-	private AttenuatorModel getConstantThrottleAttenuateModel() {
+	private AttenuatorModel getAttenuateModel(Commands cmds) {
 		AttenuatorModel model = new AttenuatorModel();
 		model.setConstantThrottle(true);
 		model.setThrottleUL(getThrottleUL());
@@ -615,9 +622,22 @@ public final class Application implements IAROView {
 		if(model.getThrottleUL() > -1){
 			model.setThrottleULEnable(true);
 		}
+		if(cmds.getAttenuationprofile()!=null){
+			if((model.isThrottleDLEnable())
+					||(model.isThrottleULEnable())){
+				printError(ErrorCodeRegistry.getInvalidProfileThrottleInput() );
+				System.exit(1);
+			}else {
+				String localPath = cmds.getAttenuationprofile();
+				model.setLoadProfile(true);
+				model.setLocalPath(localPath);
+				model.setAtnrProfileName(localPath);
+			}
+		}
+		
 		return model;
-	}
-
+ 	}
+ 
 	/**
 	 * Provides for user input
 	 * 
@@ -669,40 +689,37 @@ public final class Application implements IAROView {
 				.append("\n  --startcollector [rooted_android|vpn_android|ios]: run a collector.")
 				.append("\n  --ask [auto|rooted_android|vpn_android|ios]: asks for a device then runs the collector.")
 				.append("\n  --output [fullpath including filename] : output to a file or trace folder")
-				.append("\n  --overwrite [yes/no] : overwrite a trace folder")
+				.append("\n  --overwrite [yes/no] : overwrite a trace folder - optional - will default to no if not specified")
 				.append("\n  --deviceid [device id]: optional device id of Android or Serial Number for IOS.")
-				.append("\n    If not delcared first device found is used.")
+				.append("\n    If not declared first device found is used.")
 				.append("\n  --format [json|html]: optional type of report to generate. Default: json.")
 				.append(
 						(Util.isMacOS())
 						?"\n  --video [hd|sd|slow|no]: optional command to record video when running collector. Default: no."
 						:"\n  --video [yes|no]: optional command to record video when running collector. Default: no."
 						)
-				.append("\n  --secure: optional command to enable secure collector.")
-				.append("\n  --certInstall: optional command to install certificate if secure collector is enabled.")
 				.append("\n  --throttleUL [number in kbps/mbps]: optional command for throttle uplink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --throttleDL [number in kbps/mbps]: optional command for throttle downlink throughput, range from 64k - 100m (102400k).")
+				.append("\n  --profile [file_path]: optional command that provides a file with attenuation sequence")
 				.append("\n  --listcollectors: optional command to list available data collector.")
-				.append("\n  --verbose:  optional command to enables detailed messages for '--analyze' and '--startcollector'")
+				.append("\n  --verbose:  optional command to enable detailed messages for '--analyze' and '--startcollector'")
 				.append("\n  --help,-h,-?: show help menu.")
 				.append("\n\nUsage examples: ")
 				.append("\n=============")
 				.append("\nRun Android collector to capture trace with video:")
-				.append("\n    trace will not be overwritten if it exits: ")
 				.append("\n    slow video is 1-2 frames per second: ")
 				.append("\n  --startcollector rooted_android --output /User/documents/test --video slow")
-				
-				.append("\nRun Non-rooted Android collector to capture trace with video using secure collector:")
-				.append("\n    --certInstall option requires --secure option to be enabled")
-				.append("\n  --startcollector vpn_android --output /User/documents/test --video slow --secure --certInstall")
-				
+								
 				.append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation applied:")
 				.append("\n    throttle uplink throughput can accept 64k - 100m (102400k)")
 				.append("\n    throttle downlink throughput can accept 64k - 100m (102400k)")
 				.append("\n  --startcollector vpn_android --output /User/documents/test --video slow --throttleUL 2m --throttleDL 64k")
 				
+				.append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation using profile:")
+				.append("\n  --startcollector vpn_android --output /User/documents/test --video slow --profile /Users/{user}/config/attn_profile.txt")
+				
 				.append("\nRun iOS collector to capture trace with video: ")
-				.append("\n    trace will be overwritten if it exits: ")
+				.append("\n    trace will be overwritten if it exists: ")
 				.append("\n  --startcollector ios --overwrite yes --output /Users/{user}/tracefolder --video hd --sudo password")
 				
 				.append("\nAsk user for device and Run Android collector to capture trace with video: ")

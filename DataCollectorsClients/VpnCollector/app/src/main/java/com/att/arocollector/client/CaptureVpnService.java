@@ -147,6 +147,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 	// Sets an ID for the notification, so it can be updated
 	private int notifyID = 1;
 	private Notification.Builder mBuilder;
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 
@@ -182,7 +183,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		if (mThread != null) {
 			mThread.interrupt();
 			int reps = 0;
-			while(mThread.isAlive()){
+			while (mThread.isAlive()) {
 				Log.i(TAG, "Waiting to exit " + ++reps);
 				try {
 					Thread.sleep(1000);
@@ -210,7 +211,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		launchARORadioMonitorService();
 	}
 
-	private void stopServices(){
+	private void stopServices() {
 		//	stopAROCollectorService();
 		//	stopAROGpsMonitorService();
 		stopAROCameraMonitorService();
@@ -363,7 +364,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		}
 	}
 
-	private boolean isVPNEnabled(){
+	private boolean isVPNEnabled() {
 		boolean isVPNEnabled = false;
 		List<String> networkList = new ArrayList<>();
 		try {
@@ -390,7 +391,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 			try {
 				ApplicationInfo ai = packageManager.getApplicationInfo(packageName, 0);
 				// " " using space as a delimiter for appname & version number separation
-				String sAppNameVersion = (String) ((ai != null) ? ((String)(packageManager.getApplicationLabel(ai))).replaceAll("\\s+","") + " "
+				String sAppNameVersion = (String) ((ai != null) ? ((String) (packageManager.getApplicationLabel(ai))).replaceAll("\\s+", "") + " "
 						+ packageManager.getPackageInfo(packageName, 0).versionName : packageName);
 				mAppNameWriter.write(sAppNameVersion + System.getProperty("line.separator"));
 				mAppNameWriter.flush();
@@ -553,14 +554,14 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 		//	closeTraceFiles();
 
-		if(dataServiceThread != null){
+		if (dataServiceThread != null) {
 			dataServiceThread.interrupt();
 		}
-		if(packetQueueThread != null){
+		if (packetQueueThread != null) {
 			packetQueueThread.interrupt();
 		}
 
-		if(writerServiceThread != null){
+		if (writerServiceThread != null) {
 			writerServiceThread.interrupt();
 		}
 
@@ -570,14 +571,14 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		if (mThread != null) {
 			mThread.interrupt();
 			int reps = 0;
-			while(mThread.isAlive()){
+			while (mThread.isAlive()) {
 				Log.i(TAG, "Waiting to exit " + ++reps);
 				try {
 					Thread.sleep(1000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				if(reps > 5){
+				if (reps > 5) {
 					break;
 				}
 			}
@@ -604,19 +605,19 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		try {
 			success = startVpnService();
 		} catch (IOException e) {
-			Log.e(TAG,"startVpnService() failed: "+ e.getMessage(),e);
+			Log.e(TAG, "startVpnService() failed: " + e.getMessage(), e);
 		}
 
-		if(success){
+		if (success) {
 			try {
 				startNotification();
 				startCapture();
 				Log.i(TAG, "Capture completed");
 			} catch (IOException e) {
-				Log.e(TAG,e.getMessage(),e);
+				Log.e(TAG, e.getMessage(), e);
 			}
-		}else{
-			Log.e(TAG,"Failed to start VPN Service!");
+		} else {
+			Log.e(TAG, "Failed to start VPN Service!");
 		}
 
 		Log.i(TAG, "Closing Capture files");
@@ -630,7 +631,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 	/**
 	 * create, open, initialize trace files
 	 */
-	private void initTraceFiles() throws IOException{
+	private void initTraceFiles() throws IOException {
 		Log.i(TAG, "initTraceFiles()");
 		instanciatePcapFile();
 		instanciateTimeFile();
@@ -651,6 +652,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 	/**
 	 * Create and leave open, the pcap file
+	 *
 	 * @throws IOException
 	 */
 	private void instanciatePcapFile() throws IOException {
@@ -664,7 +666,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		pcapFile = new File(traceDir, sFileName);
 		pcapWriter = new PCapFileWriter(pcapFile);
 
-		if(theIntent.getBooleanExtra("secure", false)){
+		if (theIntent.getBooleanExtra("secure", false)) {
 			sFileName = "secure_traffic.cap";
 			securePCAPFile = new File(traceDir, sFileName);
 			securePCAPWriter = new PCapFileWriter(securePCAPFile);
@@ -675,9 +677,9 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 	 * Create and leave open, the time file
 	 * time file format
 	 * line 1: header
-	 * line 2: pcap start time 
+	 * line 2: pcap start time
 	 * line 3: eventtime or uptime (doesn't appear to be used)
-	 * line 4: pcap stop time 
+	 * line 4: pcap stop time
 	 * line 5: time zone offset
 	 */
 	private void instanciateTimeFile() throws IOException {
@@ -693,7 +695,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 		String str = String.format("%s\n%.3f\n%d\n"
 				, "Synchronized timestamps"
-				, ((double)System.currentTimeMillis())/1000.0
+				, ((double) System.currentTimeMillis()) / 1000.0
 				, SystemClock.uptimeMillis()
 		);
 
@@ -727,10 +729,11 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 	/**
 	 * setup VPN interface.
+	 *
 	 * @return
 	 * @throws IOException
 	 */
-	boolean startVpnService() throws IOException{
+	boolean startVpnService() throws IOException {
 		// If the old interface has exactly the same parameters, use it!
 		if (mInterface != null) {
 			Log.i(TAG, "Using the previous interface");
@@ -746,8 +749,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 				.setConfigureIntent(mConfigureIntent)
 				.addDnsServer("8.8.8.8")
 				.addDnsServer("8.8.4.4")
-				.setMtu(MAX_PACKET_SIZE)
-				;
+				.setMtu(MAX_PACKET_SIZE);
 		if (mInterface != null) {
 			try {
 				mInterface.close();
@@ -758,20 +760,21 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		Log.i(TAG, "startVpnServide=> builder.establish()");
 		mInterface = builder.establish();
 
-		if(mInterface != null){
+		if (mInterface != null) {
 			Log.i(TAG, "\n\\\n  VPN Established:interface = " + mInterface.getFd() + "\n/\n");
 			return true;
-		}else{
-			Log.d(TAG,"mInterface is null");
+		} else {
+			Log.d(TAG, "mInterface is null");
 			return false;
 		}
 	}
 
 	/**
 	 * Start background thread to handle client's socket, handle incoming and outgoing packet from VPN interface
+	 *
 	 * @throws IOException
 	 */
-	void startCapture() throws IOException{
+	void startCapture() throws IOException {
 
 		Log.i(TAG, "startCapture() :capture starting");
 
@@ -788,17 +791,17 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		IClientPacketWriter clientPacketWriter = new ClientPacketWriterImpl(vpnInterfaceWriter);
 
 		SessionHandler sessionHandler = SessionHandler.getInstance();
- 		sessionHandler.setAndroidContext(this);
+		sessionHandler.setAndroidContext(this);
 		sessionHandler.setSecureEnable(theIntent.getBooleanExtra("secure", false));
 		sessionHandler.setPrintLog(theIntent.getBooleanExtra(BundleKeyUtil.PRINT_LOG, false));
- 		Log.d(TAG, "Initial delayTimeDL: "+ AttenuatorManager.getInstance().getDelayDl());
+		Log.d(TAG, "Initial delayTimeDL: " + AttenuatorManager.getInstance().getDelayDl());
 
 		//background task for non-blocking socket
 		dataService = new SocketNIODataService();
 
- 		dataService.setSecureEnable(theIntent.getBooleanExtra("secure", false));
+		dataService.setSecureEnable(theIntent.getBooleanExtra("secure", false));
 		dataService.setPrintLog(theIntent.getBooleanExtra(BundleKeyUtil.PRINT_LOG, false));
-		Log.d(TAG, "Initial delayTimeUL:"+AttenuatorManager.getInstance().getDelayUl());
+		Log.d(TAG, "Initial delayTimeUL:" + AttenuatorManager.getInstance().getDelayUl());
 		dataServiceThread = new Thread(dataService, "dataServiceThread");
 		dataServiceThread.start();
 
@@ -814,16 +817,15 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		writerServiceThread = new Thread(writerService, "VPNWriter");//writer for pcap file
 		writerServiceThread.start();
 
- 		int length;
+		int length;
 
 		serviceValid = true;
 
-		int totalData = 0;
-		long startTime = System.nanoTime();
-		long stopTime = System.nanoTime();
-		boolean startFlag = true;
+		long maxBucketSize = AttenuatorManager.getInstance().getThrottleUL() * 1024 / 8;
+		long lastPacketTime = System.nanoTime();
+		double currentNumberOfTokens = maxBucketSize;
 
-		Log.d(TAG, "Upload Speed Limit : " + (AttenuatorManager.getInstance().getThrottleUL()*1024/8) + " Bytes");
+		Log.d(TAG, "Upload Speed Limit : " + (AttenuatorManager.getInstance().getThrottleUL() * 1024 / 8) + " Bytes");
 
 
 		//FIXME ADDING UDP TESTING HERE ClientEcho.runUDPClient(this.getApplicationContext())
@@ -834,16 +836,11 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 			length = vpnInterfaceReader.read(packetData.array());
 			packetData.position(length);
 
-			if(length > 0){
-				if(startFlag || (1000000000 <= (stopTime - startTime))) {
-					startFlag = false;
-					startTime = System.nanoTime();
-					totalData = 0;
-				}
+			if (length > 0) {
 
 				Log.d(TAG, "Received packet from vpn client: " + length);
 
-				byte[] clientPacketData = Arrays.copyOf(packetData.array(),length);
+				byte[] clientPacketData = Arrays.copyOf(packetData.array(), length);
 				dataTransmitter.sendDataToBeTransmitted(clientPacketData);
 
 				int headerLength = 0;
@@ -862,36 +859,37 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 						udpHeader = udpFactory.createUDPHeader(packetData.array(), ipHeader.getIPHeaderLength());
 						headerLength += udpHeader.getLength();
 					}
-				} catch (PacketHeaderException ex){
-					Log.e(TAG , ex.getMessage(), ex);
+				} catch (PacketHeaderException ex) {
+					Log.e(TAG, ex.getMessage(), ex);
 				}
-				totalData += (length - headerLength);
-				packetData.clear();
-				Log.i(TAG, "totalData: "+ totalData + " Bytes");
-				if(!(AttenuatorManager.getInstance().getThrottleUL() < 0) && totalData >= (AttenuatorManager.getInstance().getThrottleUL()*1024/8)) {
+
+				int consumedTokens = clientPacketData.length - headerLength;
+				long currentTime = System.nanoTime();
+				double generatedToken = (currentTime - lastPacketTime) * AttenuatorManager.getInstance().getThrottleUL() * 1024 / 8 / 1000000 / 1000;
+				currentNumberOfTokens += generatedToken;
+				if (currentNumberOfTokens > maxBucketSize) {
+					currentNumberOfTokens = maxBucketSize;
+				}
+				lastPacketTime = currentTime;
+				currentNumberOfTokens -= consumedTokens;
+				if (currentNumberOfTokens < 0) {
 					try {
-
-						stopTime = System.nanoTime();
-						startFlag = true;
-						// Calculate Sleep Time
-						int tempTime = 1000 - ((int) ((stopTime - startTime)/1000000));
-						Log.i(TAG,"tempTime: "+ tempTime);
-						Thread.sleep(tempTime);
+						int sleepTime = (int) (-1 * currentNumberOfTokens * 8 * 1000 / AttenuatorManager.getInstance().getThrottleUL() / 1024);
+						if (sleepTime > 0) {
+							Thread.sleep(sleepTime);
+						}
 					} catch (InterruptedException e) {
-						Log.d(TAG,"Failed to sleep: "+ e.getMessage());
+						Log.d(TAG, "Failed to sleep: " + e.getMessage(), e);
 					}
-
 				}
 
-				stopTime = System.nanoTime();
-
- 			} else{
+			} else {
 				try {
 					// If we are idle or waiting for the network
 					// Sleep a little, to avoid busy looping.
 					Thread.sleep(100);
- 				} catch (InterruptedException e) {
-					Log.d(TAG,"Failed to sleep: "+ e.getMessage());
+				} catch (InterruptedException e) {
+					Log.d(TAG, "Failed to sleep: " + e.getMessage());
 				}
 			}
 		}
@@ -899,7 +897,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		vpnInterfaceReader.close();
 		vpnInterfaceWriter.close();
 
-		Log.i(TAG, "capture finished: serviceValid = "+serviceValid);
+		Log.i(TAG, "capture finished: serviceValid = " + serviceValid);
 	}
 
 	@Override
@@ -911,21 +909,21 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		return true;
 	}
 
-	public void startNotification(){
+	public void startNotification() {
 
-		if(mBuilder==null){
-		mBuilder = new Notification.Builder(this)
-				.setSmallIcon(R.drawable.icon)
+		if (mBuilder == null) {
+			mBuilder = new Notification.Builder(this)
+					.setSmallIcon(R.drawable.icon)
 
-				.setContentTitle("Video Optimizer VPN Collector")
-				.setAutoCancel(false)
-				.setOngoing(true)
-				.setContentText(AttenuatorUtil.getInstance().notificationMessage());
+					.setContentTitle("Video Optimizer VPN Collector")
+					.setAutoCancel(false)
+					.setOngoing(true)
+					.setContentText(AttenuatorUtil.getInstance().notificationMessage());
 		}
 
- 		NotificationManager mNotificationManager =
+		NotificationManager mNotificationManager =
 				(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
- 		mNotificationManager.notify(notifyID, mBuilder.build());
+		mNotificationManager.notify(notifyID, mBuilder.build());
 	}
 
 }

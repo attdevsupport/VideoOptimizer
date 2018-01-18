@@ -97,4 +97,13 @@ public final class ErrorCodeRegistry {
 		err.setDescription("Downlink value should be a number and range from 64 to 100m(102400k).");
 		return err;
 	}
+	public static ErrorCode getInvalidProfileThrottleInput() {
+		ErrorCode err = new ErrorCode();
+		err.setCode(311);
+		err.setName("Unable to accept profile and throttle at the same time");
+		err.setDescription("Unable to accept profile and throttle at the same time, it is one feature at the time.");
+		return err;
+
+	}
+	
 }

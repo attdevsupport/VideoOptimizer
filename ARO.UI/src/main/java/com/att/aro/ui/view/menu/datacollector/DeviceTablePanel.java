@@ -149,7 +149,7 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 			setVisible(true);
 		}
 
-		((DeviceTableModel) tableModel).setData(data);
+		tableModel.setData(data);
 		setScrollSize(tableModel.getRowCount());
 	}
 
@@ -179,9 +179,7 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 	}
 
 	public void autoSelect() {
-		if (tableModel.getRowCount() == 1) {
 			setSelectedDevice(tableModel.getValueAt(0));
-		}
 	}
 
 	/**

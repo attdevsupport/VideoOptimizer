@@ -62,7 +62,7 @@ public abstract class PlotHelperAbstract {
 		this.videoUsage = videoUsage;
 		Map<VideoEvent, AROManifest> veManifestList = new HashMap<>();
 		chunkDownload = new ArrayList<>();
-		List<VideoEvent> removeChunks = new ArrayList<>();
+		List<VideoEvent> duplicateChunks = new ArrayList<>();
 		List<VideoEvent> allSegments = new ArrayList<>();
 
 		for (AROManifest aroManifest : videoUsage.getManifests()) {
@@ -85,12 +85,12 @@ public abstract class PlotHelperAbstract {
 
 							for (VideoEvent video : chunkDownload) {
 								if ((videoEvent.getSegment() != firstSeg) && video.getSegment() == videoEvent.getSegment()) {
-									removeChunks.add(video);
+									duplicateChunks.add(video);
 								}
 
 								if (videoEvent.getSegment() == firstSeg) {
 									if (!videoEvent.equals(first)) {
-										removeChunks.add(videoEvent);
+										duplicateChunks.add(videoEvent);
 									}
 								}
 							}
@@ -103,14 +103,14 @@ public abstract class PlotHelperAbstract {
 			}
 		}
 
-		for (VideoEvent ve : removeChunks) {
+		for (VideoEvent ve : duplicateChunks) {
 			veManifestList.keySet().remove(ve);
 			chunkDownload.remove(ve);
 		}
 		
 		videoUsage.setVideoEventManifestMap(veManifestList);
 		videoUsage.setAllSegments(allSegments);
-		videoUsage.setRemoveChunks(removeChunks);
+		videoUsage.setDuplicateChunks(duplicateChunks);
 		return chunkDownload;
 	}
 
@@ -118,8 +118,8 @@ public abstract class PlotHelperAbstract {
 		this.videoUsage = videoUsage;
 		Map<VideoEvent, AROManifest> veManifestList = new HashMap<>();
 		chunkDownload = new ArrayList<>();
-		List<VideoEvent> removeChunks = new ArrayList<>();
 		List<VideoEvent> allSegments = new ArrayList<>();
+		videoUsage.setDuplicateChunks(null);
 		DUPLICATE_HANDLING segmentFilterChoice = videoPrefManager.getVideoUsagePreference().getDuplicateHandling();
 
 		for (AROManifest aroManifest : videoUsage.getManifests()) {
@@ -153,21 +153,20 @@ public abstract class PlotHelperAbstract {
 		}
 
 		if (segmentFilterChoice == DUPLICATE_HANDLING.FIRST || segmentFilterChoice == DUPLICATE_HANDLING.LAST) {
-			for (VideoEvent ve : removeChunks) {
+			for (VideoEvent ve : videoUsage.getDuplicateChunks()){
 				veManifestList.keySet().remove(ve);
 				chunkDownload.remove(ve);
 			}
 		}
 		videoUsage.setVideoEventManifestMap(veManifestList);
 		videoUsage.setAllSegments(allSegments);
-		videoUsage.setRemoveChunks(removeChunks);
 		return chunkDownload;
 	}
 
 	private void filteByFirst(List<VideoEvent> chunkDownloadList, VideoEvent videoEvent) {
 		for (VideoEvent video : chunkDownloadList) {
 			if (video.getSegment() == videoEvent.getSegment()) {
-				videoUsage.getRemoveChunks().add(videoEvent); // Adding the segments that came in LAST to the remove list
+				videoUsage.getDuplicateChunks().add(videoEvent); // Adding the segments that came in LAST to the remove list
 			}
 		}
 	}
@@ -175,7 +174,7 @@ public abstract class PlotHelperAbstract {
 	private void filterByLast(List<VideoEvent> chunkDownloadList, VideoEvent videoEvent) {
 		for (VideoEvent video : chunkDownloadList) {
 			if (video.getSegment() == videoEvent.getSegment()) {
-				videoUsage.getRemoveChunks().add(video); // Adding the segments that came in FIRST to the remove list
+				videoUsage.getDuplicateChunks().add(video); // Adding the segments that came in FIRST to the remove list
 			}
 		}
 	}
@@ -187,10 +186,10 @@ public abstract class PlotHelperAbstract {
 					Integer videoQuality      = video.getQuality().isEmpty()         || video.getQuality() == null      || video.getQuality().matches(".*[A-Za-z].*")        ? 0 : Integer.parseInt(video.getQuality());     
 					Integer videoEventQuality = videoEvent.getQuality().isEmpty()    || videoEvent.getQuality() == null || videoEvent.getQuality().matches(".*[A-Za-z].*")   ? 0 : Integer.parseInt(videoEvent.getQuality());
 					if (videoQuality.compareTo(videoEventQuality) < 0){
-						videoUsage.getRemoveChunks().add(video);
+						videoUsage.getDuplicateChunks().add(video);
 
 					} else {
-						videoUsage.getRemoveChunks().add(videoEvent);
+						videoUsage.getDuplicateChunks().add(videoEvent);
 					}
 				} catch (NumberFormatException e) {
 					StackTraceElement[] stack = e.getStackTrace();
@@ -227,7 +226,7 @@ public abstract class PlotHelperAbstract {
 				}
 			}
 		}
-		for (VideoEvent ve : videoUsage.getRemoveChunks()) {
+		for (VideoEvent ve : videoUsage.getDuplicateChunks()) {
 			chunksBySegment.remove(ve);
 		}
 

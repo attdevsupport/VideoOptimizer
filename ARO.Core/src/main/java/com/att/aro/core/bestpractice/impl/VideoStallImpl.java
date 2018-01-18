@@ -112,29 +112,30 @@ public class VideoStallImpl implements IBestPractice{
 		}
 		
 		int count = 0;
-		if (passCount != 0 || warningCount != 0 || failCount == 0) {
+		if (warningCount != 0 || failCount != 0) {
 			if (failCount > 0) {
 				stallState = BPResultType.FAIL;
 				count = failCount;
 			} else if (warningCount > 0) {
 				stallState = BPResultType.WARNING;
 				count = warningCount;
-			} else {
-				stallState = BPResultType.PASS;
-				count = passCount;
-			}
+			} 
+		}else{
+			stallState = BPResultType.PASS;
+			count = passCount;
 		}
 
-		result.setResultType(stallState);
 		
 		if (tracedata.getVideoUsage() != null && tracedata.getVideoUsage().getChunkPlayTimeList().isEmpty()) {
 			// Meaning startup delay is not set yet
 			result.setResultText(MessageFormat.format(textResultInit, stallCount));
+			stallState = BPResultType.SELF_TEST;
 		} else {
 			result.setResultText(MessageFormat.format(this.textResults, stallCount, stallCount == 1 ? "" : "s",
 					count == 1 ? "was" : "were", count, count == 1 ? "" : "s", stallState == BPResultType.FAIL ? "fail"
 							: (stallState == BPResultType.WARNING ? "warning" : "pass")));
 		}
+		result.setResultType(stallState);
 		result.setVideoStallResult(stallCount);
 		result.setResults(stallResult);
 		return result;

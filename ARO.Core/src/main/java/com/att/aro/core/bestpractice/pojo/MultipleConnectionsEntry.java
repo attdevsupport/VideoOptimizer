@@ -17,30 +17,39 @@ package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 
-public class SimultnsConnEntry {
+public class MultipleConnectionsEntry {
 	private double startTimeStamp;
 	private double endTimeStamp;
 	private int httpStatusCode;
 	private int concurrentSessions;
+	private double byteCount;
 	private String httpReqObjName = "";
 	private String hostName = "";
-	private String ipValue= "";
+	private String ipValue = "";
 	private HttpRequestResponseInfo httpReqRespInfo;
-	
-	public SimultnsConnEntry(HttpRequestResponseInfo httpReqRespInfo, String domainName,int concurrentSessions, double start, double end) {
 
+	public MultipleConnectionsEntry(HttpRequestResponseInfo httpReqRespInfo, String domainName, int concurrentSessions,
+			double start, double end, String ipInside) {
 		this.httpReqRespInfo = httpReqRespInfo;
 		this.httpReqObjName = domainName;
-		this.startTimeStamp = Math.round (start * 1000.0) / 1000.0;
-		this.endTimeStamp = Math.round (end * 1000.0) / 1000.0;
+		this.startTimeStamp = Math.round(start * 1000.0) / 1000.0;
+		this.endTimeStamp = Math.round(end * 1000.0) / 1000.0;
 		this.httpStatusCode = httpReqRespInfo.getStatusCode();
-		this.concurrentSessions=concurrentSessions;
-		this.ipValue=domainName;
-		
-		assignHostAndHttpInfo(httpReqRespInfo,domainName);
+		this.concurrentSessions = concurrentSessions;
+		this.ipValue = ipInside;
+		assignHostAndHttpInfo(httpReqRespInfo, domainName);
 	}
 
-	
+	public MultipleConnectionsEntry(HttpRequestResponseInfo httpReqRespInfo, String domainName, double start,
+			double byteCount, String ipInside) {
+		this.httpReqRespInfo = httpReqRespInfo;
+		this.httpReqObjName = domainName;
+		this.startTimeStamp = Math.round(start * 1000.0) / 1000.0;
+		this.httpStatusCode = httpReqRespInfo.getStatusCode();
+		this.byteCount = byteCount;
+		this.ipValue = ipInside;
+		assignHostAndHttpInfo(httpReqRespInfo, domainName);
+	}
 
 	private void assignHostAndHttpInfo(HttpRequestResponseInfo httpReqResp, String hostName) {
 		HttpRequestResponseInfo respons = httpReqResp.getAssocReqResp();
@@ -63,12 +72,10 @@ public class SimultnsConnEntry {
 			}
 		}
 		String hostNameObj = this.hostName;
-		if(hostNameObj.contains("/")) {
-			this.hostName= hostNameObj.substring(hostNameObj.lastIndexOf('/') + 1, hostNameObj.length());		
+		if (hostNameObj.contains("/")) {
+			this.hostName = hostNameObj.substring(hostNameObj.lastIndexOf('/') + 1, hostNameObj.length());
 		}
 	}
-	
-	
 
 	public double getStartTimeStamp() {
 		return startTimeStamp;
@@ -110,7 +117,6 @@ public class SimultnsConnEntry {
 		this.hostName = hostName;
 	}
 
-
 	public int getConcurrentSessions() {
 		return concurrentSessions;
 	}
@@ -127,7 +133,6 @@ public class SimultnsConnEntry {
 		this.httpStatusCode = httpStatusCode;
 	}
 
-
 	public HttpRequestResponseInfo getHttpReqRespInfo() {
 		return httpReqRespInfo;
 	}
@@ -135,7 +140,7 @@ public class SimultnsConnEntry {
 	public void setHttpReqRespInfo(HttpRequestResponseInfo httpReqRespInfo) {
 		this.httpReqRespInfo = httpReqRespInfo;
 	}
-	
+
 	public String getHttpReqObjName() {
 		return httpReqObjName;
 	}
@@ -144,11 +149,11 @@ public class SimultnsConnEntry {
 		this.httpReqObjName = httpReqObjName;
 	}
 
-
-
 	public String getIpValue() {
 		return ipValue;
 	}
-	
-	
+
+	public double getByteCount() {
+		return byteCount;
+	}
 }

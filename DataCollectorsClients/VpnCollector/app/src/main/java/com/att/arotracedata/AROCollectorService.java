@@ -88,20 +88,6 @@ public class AROCollectorService extends Service {
 	/** ARO Data Collector utilities class object */
 	private AROCollectorUtils mAroUtils;
 
-	/** Event names, counters, maps, states for displaying and storing on Flurry Analytics */
-	/*
-	public static FlurryEvent bluetoothFlurryEvent = null;
-	public static FlurryEvent networkTypeFlurryEvent = null;
-	public static FlurryEvent networkInterfaceFlurryEvent = null;
-	public static FlurryEvent wifiFlurryEvent = null;
-	public static FlurryEvent batteryFlurryEvent = null;
-	public static FlurryEvent gpsFlurryEvent = null;
-	public static FlurryEvent cameraFlurryEvent = null;
-
-	public static FlurryEvent backgroundAppsFlurryEvent = null; // log Flurry event at end of trace
-	public static FlurryEvent makeModelEvent = null; // log Flurry event at end of trace
-*/
- 
 	// Output stream and Buffer Writer for peripherals traces files 
 	private OutputStream mActiveProcessOutputFile;
 	private BufferedWriter mActiveProcessTraceWriter;;
@@ -372,6 +358,17 @@ public class AROCollectorService extends Service {
 			Log.i(TAG, "Running Task " + recentTask.baseActivity);
 		}
 
+		// Log.i(TAG, "recentApplicationsList ");
+		// for (RunningAppProcessInfo recentApplication : recentApplicationsList) {
+		// Log.i(TAG, "Running Task " + recentApplication.processName);
+		// }
+		//
+		// Log.i(TAG, "runningServiceList ");
+		// for (RunningServiceInfo runningService : runningServiceList) {
+		// //if (runningService.clientPackage != null) Log.i(TAG, "----Running Task " + runningService.clientPackage);
+		// //Log.i(TAG, "Running Task " + runningService.clientLabel);
+		// Log.i(TAG, "Running Task " + runningService.process);
+		// }
 	}
 
 	/**
@@ -412,8 +409,8 @@ public class AROCollectorService extends Service {
 	private void recordCollectOptions(int delayTimeDL, int delayTimeUL, int throttleDL, int throttleUL, boolean atnrProfile,String atnrProfileName, String videoOrientation){
 		Log.i(TAG, "set Down stream Delay Time: "+ delayTimeDL
 				+ " set Up stream Delay Time: "+delayTimeUL
-                + " set Profile: "+atnrProfile
-                + " set Profile name: "+ atnrProfileName);
+				+ " set Profile: "+atnrProfile
+				+ " set Profile name: "+ atnrProfileName);
 		File file = new File(traceDir, COLLECT_OPTIONS);
 		Log.i(TAG, "create file:" + file.getAbsolutePath());
 		try(BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
@@ -424,7 +421,7 @@ public class AROCollectorService extends Service {
 					+ "throttleUL=" + throttleUL + System.lineSeparator()
 					+ "orientation=" + videoOrientation + System.lineSeparator()
 					+ "attnrProfile="+ atnrProfile + System.lineSeparator()
-                    + "attnrProfileName="+ atnrProfileName
+					+ "attnrProfileName="+ atnrProfileName
 			);
 			bw.close();
 		} catch (IOException e) {
@@ -433,7 +430,36 @@ public class AROCollectorService extends Service {
 			return;
 		}
 
+	}	/**
+	 * Reads a device Info from the device file in trace folder.
+	 * 
+	 * @throws IOException
+	 */
+/*
+	private void readDeviceDetails() throws IOException {
+
+		File file = new File(traceDir, DEVICEDETAILS_FILE);
+		if (!file.exists()) {
+			this.missingFiles.add(DEVICEDETAILS_FILE);
+			return;
+		}
+		BufferedReader br = new BufferedReader(new FileReader(file));
+		try {
+
+			String s;
+			while ((s = br.readLine()) != null) {
+
+				// In case of IPv6 scoped address, remove scope ID
+				int i = s.indexOf('%');
+				localIPAddresses.add(InetAddress.getByName(i >= 0 ? s.substring(0, i) : s));
+			}
+
+		} finally {
+			br.close();
+		}
 	}
+*/
+	
 	@Override
 	public IBinder onBind(Intent intent) {
 		// TODO Auto-generated method stub
@@ -444,6 +470,20 @@ public class AROCollectorService extends Service {
 	 * Initializes Flurry Event objects
 	 */
 	private void initializeFlurryObjects() {
+
+		// tests need to maintain states
+		/*
+		networkTypeFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_networkType), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
+		networkInterfaceFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_networkInterface), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
+		wifiFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_wifi), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
+		batteryFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_battery), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
+		gpsFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_gps), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
+		cameraFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_camera), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
+		bluetoothFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_bluetooth), -1, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
+		// log events at end; do not need states
+		backgroundAppsFlurryEvent = new FlurryEvent(this.getString(R.string.flurry_backgroundApps), 0, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
+		makeModelEvent = new FlurryEvent(this.getString(R.string.flurry_makeModel), 0, new HashMap<String, String>(), AROCollectorUtils.EMPTY_STRING);
+		*/
 	}
 
 	/** Broadcast receiver for Batter events */

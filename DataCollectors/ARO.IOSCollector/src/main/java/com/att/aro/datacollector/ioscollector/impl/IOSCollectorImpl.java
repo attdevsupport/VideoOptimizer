@@ -226,7 +226,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	@Override
 	public String getMinorVersion() {
-		return "0.1";
+		return "4.0";
 	}
 
 	@Override
@@ -763,8 +763,9 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	@SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification="Findbugs false alarm")
 	private void pullFromDevice() {
 		AppSigningHelper.getInstance().relaunchApp();
-		mountDevice();
 		try {
+			Thread.sleep(5*1000);
+			mountDevice();
 			File mountFolder = new File(datadir + Util.FILE_SEPARATOR + IOSAPP_MOUNT);
 			if (mountFolder != null && mountFolder.listFiles() != null) {
 				for (File file : mountFolder.listFiles()) {
@@ -778,7 +779,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 					}
 				}
 			}
-		} catch (IOException e) {
+		} catch (IOException | InterruptedException e) {
 			log.error("Error Copying files from ios device", e);
 		}
 		unmountDevice();

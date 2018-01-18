@@ -37,21 +37,18 @@ import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.menu.file.PreferencesDialog;
 
 /**
  * Display help for MultiDevice selector Dialog
- * 
+ *
  *
  */
-public class HelpDialog extends JDialog implements KeyListener{
-
+public class HelpDialog extends JDialog implements KeyListener {
 	private static final long serialVersionUID = 1L;
-	
 	private JPanel contentPanel;
 	private JScrollPane scrollPane;
-
 	private JButton startButton;
-
 	private JPanel jButtonGrid;
 
 	/**
@@ -62,34 +59,44 @@ public class HelpDialog extends JDialog implements KeyListener{
 		setTitle(ResourceBundleHelper.getMessageString("collector.help.title"));
 		setModal(true);
 		setAlwaysOnTop(true);
-		
 		// offset from parent dialog
 		Point loc = dataCollectorSelectNStartDialog.getLocationOnScreen();
-		loc.x *= 2;
-		loc.y /= 4;
+		loc.x += 665;
 		setLocation(loc);
-		
 		getContentPane().setLayout(new BorderLayout());
-
 		setSize(new Dimension(800, 370));
-		getContentPane().add(layoutDataPanel(), BorderLayout.CENTER);
+		getContentPane().add(layoutDataPanel("Collector"), BorderLayout.CENTER);
 		setBackground(UIManager.getColor("List.selectionInactiveBackground"));
 		setVisible(true);
 	}
 
-	public JPanel layoutDataPanel() {
+	public HelpDialog(PreferencesDialog preferencesDialog, String window) {
+		super(preferencesDialog);
+		setTitle(ResourceBundleHelper.getMessageString("preferences.general.help.title"));
+		setModal(true);
+		setAlwaysOnTop(true);
+		// offset from parent dialog
+		Point loc = preferencesDialog.getLocationOnScreen();
+		loc.x += 665;
+		setLocation(loc);
+		getContentPane().setLayout(new BorderLayout());
+		setSize(new Dimension(550, 270));
+		getContentPane().add(layoutDataPanel(window), BorderLayout.CENTER);
+		setBackground(UIManager.getColor("List.selectionInactiveBackground"));
+		setVisible(true);
+	}
 
+	public JPanel layoutDataPanel(String window) {
 		JPanel layout = new JPanel(new BorderLayout());
-		layout.add(getContentPanel(),BorderLayout.CENTER);
-		layout.add(getJButtonGrid(),BorderLayout.SOUTH);
-
+		layout.add(getContentPanel(window), BorderLayout.CENTER);
+		layout.add(getJButtonGrid(), BorderLayout.SOUTH);
 		return layout;
 	}
 
-	private JPanel getContentPanel() {
+	private JPanel getContentPanel(String window) {
 		if (this.contentPanel == null) {
 			this.contentPanel = new JPanel(new BorderLayout());
-			this.contentPanel.add(getScrollPane(), BorderLayout.CENTER);
+			this.contentPanel.add(getScrollPane(window), BorderLayout.CENTER);
 			this.contentPanel.setBackground(UIManager.getColor("List.selectionInactiveBackground"));
 		}
 		return this.contentPanel;
@@ -97,37 +104,60 @@ public class HelpDialog extends JDialog implements KeyListener{
 
 	/**
 	 * Returns the Scroll Pane for the FileCompressionTable.
+	 *
+	 * @param window
 	 */
-	private JScrollPane getScrollPane() {
+	private JScrollPane getScrollPane(String window) {
 		if (scrollPane == null) {
-			scrollPane = new JScrollPane(getTextArea());
+			scrollPane = new JScrollPane(getTextArea(window));
 		}
 		return scrollPane;
 	}
-	
+
 	/**
+	 * @param window
 	 * @return the textArea
 	 */
-	public JTextPane getTextArea() {
+	public JTextPane getTextArea(String window) {
 		JTextPane textPane = new JTextPane();
+		textPane.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
 		textPane.setContentType("text/html");
 		textPane.setEditable(false);
+		StringBuffer sb = window.equalsIgnoreCase("Collector") ? getCollectorWindowContent()
+				: getPrefernceWindowContent();
+		textPane.setText(sb.toString());
+		return textPane;
+	}
+
+	private StringBuffer getCollectorWindowContent() {
 		StringBuffer sb = new StringBuffer();
-		sb.append(MessageFormat.format(ResourceBundleHelper.getMessageString("collector.help.content"), 
-										ApplicationConfig.getInstance().getAppShortName()));
+		sb.append(MessageFormat.format(ResourceBundleHelper.getMessageString("collector.help.content"),
+				ApplicationConfig.getInstance().getAppShortName()));
 		sb.append(ResourceBundleHelper.getMessageString("collector.help.devices"));
 		if (Util.isMacOS()) {
 			sb.append(ResourceBundleHelper.getMessageString("collector.help.devices.ios"));
 		}
 		sb.append(ResourceBundleHelper.getMessageString("collector.help.devices.android"));
 		sb.append(ResourceBundleHelper.getMessageString("collector.help.devices.emulator"));
-		textPane.setText(sb.toString());
-		return textPane;
+		return sb;
+	}
+
+	/**
+	 * @return the textArea
+	 */
+	public StringBuffer getPrefernceWindowContent() {
+		StringBuffer sb = new StringBuffer();
+		sb.append(ResourceBundleHelper.getMessageString("preferences.general.help"));
+		sb.append(ResourceBundleHelper.getMessageString("preferences.general.help.install"));
+		if (Util.isMacOS()) {
+			sb.append(ResourceBundleHelper.getMessageString("preferences.general.help.osx"));
+		}
+		return sb;
 	}
 
 	/**
 	 * This method initializes jButtonGrid
-	 * 
+	 *
 	 * @return javax.swing.JPanel
 	 */
 	private JPanel getJButtonGrid() {
@@ -145,8 +175,9 @@ public class HelpDialog extends JDialog implements KeyListener{
 
 	/**
 	 * This method initializes okButton
-	 * @param buttonStr 
-	 * 
+	 *
+	 * @param buttonStr
+	 *
 	 * @return javax.swing.JButton
 	 */
 	private JButton getStartButton(String buttonStr) {
@@ -154,30 +185,24 @@ public class HelpDialog extends JDialog implements KeyListener{
 			startButton = new JButton();
 			startButton.setText(ResourceBundleHelper.getMessageString(buttonStr));
 			startButton.addActionListener(new ActionListener() {
-
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					setVisible(false);
 				}
 			});
-			
 		}
 		return startButton;
 	}
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		
 	}
 
 	@Override
 	public void keyPressed(KeyEvent e) {
-		
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		
 	}
-	
 }

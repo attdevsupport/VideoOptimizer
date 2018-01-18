@@ -23,16 +23,19 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class SegmentPR {
 
 	String duration = "";
-	String timeline = "";
-	String rVal = "";
+	String startTime = "";
+	String repeat = "";
 
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("\n\t\t\t\t\t\t\t\tSegment duration:");   strblr.append(duration);
-		strblr.append(", timescale:"); strblr.append(timeline);
-		if (!rVal.isEmpty()) {
-			strblr.append(", r:"); strblr.append(rVal);
+		strblr.append("\n\t\t\t\t\t\t\t\tSegment");
+		if (!startTime.isEmpty()) {
+			strblr.append(" startTime:"); strblr.append(startTime);
+		}
+		strblr.append(" duration:"); strblr.append(duration);
+		if (!repeat.isEmpty()) {
+			strblr.append(" repeat:"); strblr.append(repeat);
 		}
 		return strblr.toString();
 	}
@@ -46,22 +49,22 @@ public class SegmentPR {
 		this.duration = duration;
 	}
 
-	public String getTimeline() {
-		return timeline;
+	public String getStartTime() {
+		return startTime;
 	}
 
 	@XmlAttribute(name = "t")
-	public void setTimeline(String timescale) {
-		this.timeline = timescale;
+	public void setStartTime(String startTime) {
+		this.startTime = startTime;
 	}
 
-	public String getRVal() {
-		return rVal;
+	public String getRepeat() {
+		return repeat;
 	}
 	
 	@XmlAttribute(name = "r")
-	public void setRVal(String rVal) {
-		this.rVal = rVal;
+	public void setRepeat(String repeat) {
+		this.repeat = repeat;
 	}
 
 	

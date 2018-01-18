@@ -34,44 +34,33 @@ import com.att.aro.core.packetanalysis.pojo.CacheEntry;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 
 /**
- * best practice for Duplicate Content
- * Date: November 25, 2014
+ * best practice for Duplicate Content Date: November 25, 2014
  */
-public class DuplicateContentImpl implements IBestPractice{
+public class DuplicateContentImpl implements IBestPractice {
 	private static final int DUPLICATE_CONTENT_DENOMINATOR = 1048576;
-	
 	@Value("${caching.duplicateContent.title}")
 	private String overviewTitle;
-	
 	@Value("${caching.duplicateContent.detailedTitle}")
 	private String detailTitle;
-	
 	@Value("${caching.duplicateContent.desc}")
 	private String aboutText;
-	
 	@Value("${caching.duplicateContent.url}")
 	private String learnMoreUrl;
-	
 	@Value("${caching.duplicateContent.pass}")
 	private String textResultPass;
-	
 	@Value("${caching.duplicateContent.results}")
 	private String textResults;
-	
 	@Value("${exportall.csvPct}")
 	private String exportAllPct;
-	
 	@Value("${exportall.csvFiles}")
 	private String exportAllFiles;
-	
 	@Value("${statics.csvUnits.mbytes}")
 	private String staticsUnitsMbytes;
-	
+
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 		DuplicateContentResult result = new DuplicateContentResult();
 		CacheAnalysis cacheAnalysis = tracedata.getCacheAnalysis();
-		
 		result.setDuplicateContentBytes(cacheAnalysis.getDuplicateContentBytes());
 		result.setDuplicateContentBytesRatio(cacheAnalysis.getDuplicateContentBytesRatio());
 		int duplicateContentsize = cacheAnalysis.getDuplicateContent().size();
@@ -81,48 +70,44 @@ public class DuplicateContentImpl implements IBestPractice{
 		result.setDuplicateContentList(caUResult);
 		int duplicateContentSizeOfUniqueItems = caUResult.size();
 		result.setDuplicateContentSizeOfUniqueItems(duplicateContentSizeOfUniqueItems);
-		if(duplicateContentsize <= 3){
+		if (duplicateContentsize <= 3) {
 			result.setResultType(BPResultType.PASS);
 			result.setResultText(textResultPass);
-		}else{
+		} else {
 			result.setResultType(BPResultType.FAIL);
 			NumberFormat numf = NumberFormat.getInstance();
 			numf.setMaximumFractionDigits(1);
 			NumberFormat numf2 = NumberFormat.getInstance();
 			numf2.setMaximumFractionDigits(3);
-			String text = MessageFormat.format(textResults, 
-					numf.format(result.getDuplicateContentBytesRatio() * 100.0),
+			String text = MessageFormat.format(textResults, numf.format(result.getDuplicateContentBytesRatio() * 100.0),
 					result.getDuplicateContentSizeOfUniqueItems(),
-					numf2.format(((double) result.getDuplicateContentBytes())
-							/ DUPLICATE_CONTENT_DENOMINATOR),
-					numf2.format(((double) result.getTotalContentBytes())
-							/ DUPLICATE_CONTENT_DENOMINATOR));
+					numf2.format(((double) result.getDuplicateContentBytes()) / DUPLICATE_CONTENT_DENOMINATOR),
+					numf2.format(((double) result.getTotalContentBytes()) / DUPLICATE_CONTENT_DENOMINATOR));
 			result.setResultText(text);
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAllFiles(exportAllFiles);
 		result.setExportAllPct(exportAllPct);
 		result.setStaticsUnitsMbytes(staticsUnitsMbytes);
-		
 		return result;
 	}
+
 	/**
-	 * 
+	 *
 	 * Createa unique item list.
-	 * 
+	 *
 	 * @param caResult
 	 */
 	private List<CacheEntry> createUniqueItemList(List<CacheEntry> caResult) {
 		List<CacheEntry> caUResult = new ArrayList<CacheEntry>();
 		Set<String> set = new HashSet<String>();
-		for(int i=0; i<caResult.size(); i++) {
+		for (int i = 0; i < caResult.size(); i++) {
 			CacheEntry cEntry = caResult.get(i);
-			String key  = Integer.toString(cEntry.getCacheHitCount()) + cEntry.getHostName() + cEntry.getHttpObjectName();
-			if(!set.contains(key)) {
+			String key = Integer.toString(cEntry.getHitCount()) + cEntry.getHostName() + cEntry.getHttpObjectName();
+			if (!set.contains(key)) {
 				caUResult.add(cEntry);
 			}
 			set.add(key);

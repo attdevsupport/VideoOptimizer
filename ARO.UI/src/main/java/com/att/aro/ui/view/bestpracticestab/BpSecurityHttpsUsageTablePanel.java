@@ -28,12 +28,11 @@ import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.bestpractice.HttpsUsageTableModel;
 
 public class BpSecurityHttpsUsageTablePanel extends AbstractBpDetailTablePanel {
-
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1L;
-	
+
 	public BpSecurityHttpsUsageTablePanel() {
 		super();
 	}
@@ -42,14 +41,13 @@ public class BpSecurityHttpsUsageTablePanel extends AbstractBpDetailTablePanel {
 	void initTableModel() {
 		tableModel = new HttpsUsageTableModel();
 	}
-	
+
 	public void setData(Collection<HttpsUsageEntry> data) {
 		if (!data.isEmpty()) {
 			setVisible(true);
 		} else {
 			setVisible(false);
 		}
-		
 		setScrollSize(MINIMUM_ROWS);
 		((HttpsUsageTableModel) tableModel).setData(data);
 		autoSetZoomBtn();
@@ -58,7 +56,7 @@ public class BpSecurityHttpsUsageTablePanel extends AbstractBpDetailTablePanel {
 	@SuppressWarnings("unchecked")
 	@Override
 	public DataTable<HttpsUsageEntry> getContentTable() {
-		if(contentTable == null) {
+		if (contentTable == null) {
 			contentTable = new DataTable<HttpsUsageEntry>(tableModel);
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
@@ -67,9 +65,12 @@ public class BpSecurityHttpsUsageTablePanel extends AbstractBpDetailTablePanel {
 			TableRowSorter<TableModel> sorter = new TableRowSorter<>(tableModel);
 			contentTable.setRowSorter(sorter);
 			sorter.setComparator(0, Util.getDomainSorter());
+			sorter.setComparator(7, Util.getDomainIntSorter());
+			sorter.setComparator(4, Util.getDomainIntSorter());
+			sorter.setComparator(5, Util.getFloatSorter());
+			sorter.setComparator(6, Util.getFloatSorter());
+			sorter.setComparator(1, Util.getDomainSorter());
 		}
-		
 		return contentTable;
 	}
-
 }

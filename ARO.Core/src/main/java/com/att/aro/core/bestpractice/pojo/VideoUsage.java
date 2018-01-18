@@ -44,7 +44,7 @@ public class VideoUsage extends AbstractBestPracticeResult {
 	@Nonnull private Map<VideoEvent, AROManifest> veManifestList = new HashMap<>();
 	@Nonnull private List<VideoEvent> filteredSegments = new ArrayList<>();
 	@Nonnull private List<VideoEvent> allSegments = new ArrayList<>();
-	@Nonnull private List<VideoEvent> removeChunks = new ArrayList<>();
+	@Nonnull private List<VideoEvent> duplicateChunks = new ArrayList<>();
 	
 	public List<VideoEvent> getChunksBySegmentNumber() {
 		return chunksBySegment;
@@ -232,15 +232,15 @@ public class VideoUsage extends AbstractBestPracticeResult {
 		}
 	}
 
-	public List<VideoEvent> getRemoveChunks() {
-		return removeChunks;
+	public List<VideoEvent> getDuplicateChunks() {
+		return duplicateChunks;
 	}
 
-	public void setRemoveChunks(List<VideoEvent> removeChunks) {
-		if(null == removeChunks){
-			this.removeChunks.clear();
+	public void setDuplicateChunks(List<VideoEvent> duplicateChunks) {
+		if(null == duplicateChunks){
+			this.duplicateChunks.clear();
 		}else{
-			this.removeChunks = removeChunks;
+			this.duplicateChunks = duplicateChunks;
 		}
 	}
 }

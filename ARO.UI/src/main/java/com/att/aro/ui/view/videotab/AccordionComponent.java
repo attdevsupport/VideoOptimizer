@@ -61,8 +61,7 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
 public class AccordionComponent extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
-	
-	private JPanel hiddenPanel;
+ 	private JPanel hiddenPanel;
 	private AROManifest aroManifest;
 	private JTable jTable;
 	private BasicArrowButton arrowButton;
@@ -81,11 +80,9 @@ public class AccordionComponent extends JPanel implements ActionListener {
 	private int tableHeight = HEIGHT_MAC;
 	
 	public AccordionComponent(AROManifest aroManifest, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute, AROTraceData analyzerResult, SharedAttributesProcesses aroView) {
-		this(true, aroView, aroManifest);
+		this(true, aroView, aroManifest, analyzerResult);
 
 		this.diagnosticsOverviewRoute = diagnosticsOverviewRoute;
-		this.aroManifest = aroManifest;
-		this.analyzerResult = analyzerResult;
 		updateHiddenPanelContent(true);
 	}
 	
@@ -95,10 +92,11 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		hiddenPanel.setSize(width, hiddenPanel.getHeight());
 	}
 	
-	public AccordionComponent(boolean manifestFlag, SharedAttributesProcesses aroView, AROManifest aroManifest) {
+	public AccordionComponent(boolean manifestFlag, SharedAttributesProcesses aroView, AROManifest aroManifest, AROTraceData analyzerResult) {
 
 		this.aroView = aroView;
 		this.aroManifest = aroManifest;
+		this.analyzerResult = analyzerResult;
 		setLayout(new BorderLayout());
 		
 		add(getTitleButton(),BorderLayout.NORTH);
@@ -111,6 +109,10 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		updateHiddenPanelContent(false);
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	private Component getTitleButton() {
 
 		titlePanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
@@ -123,8 +125,10 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		
 		enableCheckBox = new JCheckBox();
 		boolean selected = aroManifest.getVideoEventList() != null? true:false;
-		if ((!selected) || aroManifest.getVideoEventList().isEmpty()
-				|| ((VideoEvent) aroManifest.getVideoEventList().values().toArray()[0]).getSegment() < 0) {
+		if (!selected 
+				|| aroManifest.getVideoEventList().isEmpty()
+				|| ((VideoEvent) aroManifest.getVideoEventList().values().toArray()[0]).getSegment() < 0
+				) {
 			enableCheckBox.setEnabled(false);
 		} else {
 			enableCheckBox.setSelected(aroManifest.isSelected());
@@ -144,9 +148,9 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		titlePanel.add(enableCheckBox);
 		titlePanel.add(arrowButton);
 		titlePanel.add(lbl);
-		return titlePanel;
+ 		return titlePanel;
 	}
-	
+
 	public void updateTitleButton(AROTraceData traceData) {
 		if (titlePanel != null) {
 			analyzerResult = traceData;
@@ -181,13 +185,9 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		}
 		if (manifestFlag) {
 			if (aroManifest.getVideoEventsBySegment() != null) {
-				text = (aroManifest.getVideoEventsBySegment().isEmpty()
-						|| ((VideoEvent) aroManifest.getVideoEventList().values().toArray()[0]).getSegment() < 0)
-								? MessageFormat.format(
-										ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"),
-										aroManifest.getVideoName())
-								: MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.manifest.name"),
-										aroManifest.getVideoName());
+				text = (!aroManifest.isValid())
+						? MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"), aroManifest.getVideoName())
+						: MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.manifest.name"), aroManifest.getVideoName());
 			} else {
 				text = MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"),
 						aroManifest.getVideoName());

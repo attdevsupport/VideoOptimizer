@@ -31,9 +31,9 @@ import com.att.aro.core.bestpractice.pojo.Http10UsageResult;
 import com.att.aro.core.bestpractice.pojo.HttpEntry;
 import com.att.aro.core.bestpractice.pojo.ImageCompressionEntry;
 import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
+import com.att.aro.core.bestpractice.pojo.MultipleConnectionsEntry;
 import com.att.aro.core.bestpractice.pojo.PeriodicTransferResult;
 import com.att.aro.core.bestpractice.pojo.ScriptsResult;
-import com.att.aro.core.bestpractice.pojo.SimultnsConnEntry;
 import com.att.aro.core.bestpractice.pojo.SpriteImageEntry;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
 import com.att.aro.core.bestpractice.pojo.UnnecessaryConnectionEntry;
@@ -56,7 +56,6 @@ import com.att.aro.ui.view.overviewtab.OverviewTab;
 public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewRoute {
 	private final ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
 	private final JTabbedPane jtabbedPane;
-
 	private static final int OVERVIEW_INDEX = 1;
 	private static final int DIAGNOSTIC_INDEX = 2;
 
@@ -64,8 +63,7 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		this.jtabbedPane = jtabbedPane;
 	}
 
-	private boolean isTabRoute(String headerColumnMarker,
-			DataTableModel<? extends AbstractTableModel> tableModel) {
+	private boolean isTabRoute(String headerColumnMarker, DataTableModel<? extends AbstractTableModel> tableModel) {
 		boolean tabRoute = false;
 		for (int index = 0; index < tableModel.getColumnCount(); ++index) {
 			if (headerColumnMarker.equals(tableModel.getColumnName(index))) {
@@ -76,358 +74,356 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		return tabRoute;
 	}
 
-	private boolean isDiagnosticsTabRoute(
-			DataTableModel<? extends AbstractTableModel> tableModel) {
+	private boolean isDiagnosticsTabRoute(DataTableModel<? extends AbstractTableModel> tableModel) {
 		boolean diaTabRoute = isTabRoute("Time", tableModel);
-		if(!diaTabRoute){
+		if (!diaTabRoute) {
 			diaTabRoute = isTabRoute("StartTime", tableModel);
 			if (!diaTabRoute) {
 				diaTabRoute = isTabRoute("Destination IP", tableModel);
 				if (!diaTabRoute) {
-					diaTabRoute = isTabRoute(ResourceBundleHelper.getMessageString("videoStall.table.col3"), tableModel);
+					diaTabRoute = isTabRoute(ResourceBundleHelper.getMessageString("videoStall.table.col3"),
+							tableModel);
 				}
 			}
 		}
 		return diaTabRoute;
 	}
 
-	private boolean isOverviewTabRoute(
-			DataTableModel<? extends AbstractTableModel> tableModel) {
+	private boolean isOverviewTabRoute(DataTableModel<? extends AbstractTableModel> tableModel) {
 		return isTabRoute("File Size", tableModel);
 	}
 
 	@Override
-	public int getRoutedJTabbedPaneIndex(
-			DataTableModel<? extends DataTableModel<?>> tableModel) {
+	public int getRoutedJTabbedPaneIndex(DataTableModel<? extends DataTableModel<?>> tableModel) {
 		int routedJTabbedPandIndex = -1;
 		if (isDiagnosticsTabRoute(tableModel)) {
 			routedJTabbedPandIndex = DIAGNOSTIC_INDEX;
-		}
-		else if (isOverviewTabRoute(tableModel)) {
+		} else if (isOverviewTabRoute(tableModel)) {
 			routedJTabbedPandIndex = OVERVIEW_INDEX;
 		}
 		return routedJTabbedPandIndex;
 	}
 
 	@Override
-	public int route(DataTableModel<? extends DataTableModel<?>> tableModel,
-			Object routeInfo) {
-		int routedIndex = routeInfo != null ?
-				getRoutedJTabbedPaneIndex(tableModel) : -1;
+	public int route(DataTableModel<? extends DataTableModel<?>> tableModel, Object routeInfo) {
+		int routedIndex = routeInfo != null ? getRoutedJTabbedPaneIndex(tableModel) : -1;
 		if (routedIndex == DIAGNOSTIC_INDEX) {
 			updateDiagnosticsTab(routeInfo);
-		}
-		else if (routedIndex == OVERVIEW_INDEX) {
+		} else if (routedIndex == OVERVIEW_INDEX) {
 			updateOverviewTab(routeInfo);
 		}
 		return routedIndex;
 	}
-	
+
 	@Override
 	public void routeHyperlink(BestPracticeType bpType) {
-		if(bpType.equals(BestPracticeType.DUPLICATE_CONTENT)){
+		if (bpType.equals(BestPracticeType.DUPLICATE_CONTENT)) {
 			jtabbedPane.setSelectedIndex(OVERVIEW_INDEX);
-		}else{
+		} else {
 			jtabbedPane.setSelectedIndex(DIAGNOSTIC_INDEX);
 			DiagnosticsTab diagnosticsTab = (DiagnosticsTab) jtabbedPane.getSelectedComponent();
 			switch (bpType) {
 			case FILE_COMPRESSION: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof FileCompressionResult) {
-	//					diagnosticsTab.setHighlightedTCP(((FileCompressionResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof FileCompressionResult) {
+				// diagnosticsTab.setHighlightedTCP(((FileCompressionResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break;
-//			case DUPLICATE_CONTENT: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof DuplicateContentResult) {
-	//					diagnosticsTab.setHighlightedTCP(((DuplicateContentResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
-//			}
-//			break;
+				break;
+			// case DUPLICATE_CONTENT: {
+			// for (AbstractBestPracticeResult result :
+			// diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
+			// if (result instanceof DuplicateContentResult) {
+			// diagnosticsTab.setHighlightedTCP(((DuplicateContentResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+			// break;
+			// }
+			// }
+			// }
+			// break;
 			case USING_CACHE: {// done
 				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
 					if (result instanceof UsingCacheResult) {
-						diagnosticsTab.setHighlightedTCP(((UsingCacheResult)result).getNoCacheHeaderFirstPacket().getTimeStamp());
+						diagnosticsTab.setHighlightedTCP(
+								((UsingCacheResult) result).getNoCacheHeaderFirstPacket().getTimeStamp());
 						break;
 					}
 				}
 			}
-			break;
-			case CACHE_CONTROL: {// cant not find cache control start time in CacheControlResult
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof CacheControlResult) {
-	//					diagnosticsTab.setHighlightedTCP(((CacheControlResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				break;
+			case CACHE_CONTROL: {// cant not find cache control start time in
+									// CacheControlResult
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof CacheControlResult) {
+				// diagnosticsTab.setHighlightedTCP(((CacheControlResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break;
+				break;
 			case COMBINE_CS_JSS: {// done
 				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
 					if (result instanceof CombineCsJssResult) {
-						diagnosticsTab.setHighlightedTCP(((CombineCsJssResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+						diagnosticsTab.setHighlightedTCP(
+								((CombineCsJssResult) result).getConsecutiveCssJsFirstPacket().getTimeStamp());
 						break;
 					}
 				}
 			}
-			break;
+				break;
 			case IMAGE_SIZE: {
-	
 			}
-			break;
+				break;
 			case IMAGE_MDATA: {
-				
 			}
-						break;
+				break;
 			case IMAGE_CMPRS: {
-				
 			}
-						break;
+				break;
 			case IMAGE_FORMAT: {
-				
 			}
-						break;
+				break;
 			case IMAGE_COMPARE: {
-				
 			}
-						break;
+				break;
 			case MINIFICATION: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof CombineCsJssResult) {
-	//					diagnosticsTab.setHighlightedTCP(((MinificationResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof CombineCsJssResult) {
+				// diagnosticsTab.setHighlightedTCP(((MinificationResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break;
+				break;
 			case SPRITEIMAGE: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof SpriteImageResult) {
-	//					diagnosticsTab.setHighlightedTCP(((SpriteImageResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof SpriteImageResult) {
+				// diagnosticsTab.setHighlightedTCP(((SpriteImageResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break;
+				break;
 			case UNNECESSARY_CONNECTIONS: {// to test
 				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
 					if (result instanceof UnnecessaryConnectionResult) {
-						diagnosticsTab.setHighlightedTCP(((UnnecessaryConnectionResult)result).getTightlyCoupledBurstTime());
+						diagnosticsTab
+								.setHighlightedTCP(((UnnecessaryConnectionResult) result).getTightlyCoupledBurstTime());
 						break;
 					}
 				}
 			}
-			break;
+				break;
 			case SCRIPTS_URL: {// done
 				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
 					if (result instanceof ScriptsResult) {
-						diagnosticsTab.setHighlightedTCP(((ScriptsResult)result).getFirstFailedHtml());
+						diagnosticsTab.setHighlightedTCP(((ScriptsResult) result).getFirstFailedHtml());
 						break;
 					}
 				}
 			}
-			break;
+				break;
 			case SCREEN_ROTATION: {
-				
 			}
-			break;
-			
+				break;
 			case SIMUL_CONN: {
-				
 			}
-			break;
+				break;
 			case MULTI_SIMULCONN: {
-				
 			}
-			break;
-			case PERIODIC_TRANSFER: {//done
+				break;
+			case PERIODIC_TRANSFER: {// done
 				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
 					if (result instanceof PeriodicTransferResult) {
-						diagnosticsTab.setHighlightedTCP(((PeriodicTransferResult)result).getMinimumPeriodicRepeatTime());
+						diagnosticsTab
+								.setHighlightedTCP(((PeriodicTransferResult) result).getMinimumPeriodicRepeatTime());
 						break;
 					}
 				}
 			}
-			break; 
+				break;
 			case HTTP_4XX_5XX: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof Http4xx5xxResult) {
-	//					diagnosticsTab.setHighlightedTCP(((Http4xx5xxResult)result).getHttpResCodelist()ConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof Http4xx5xxResult) {
+				// diagnosticsTab.setHighlightedTCP(((Http4xx5xxResult)result).getHttpResCodelist()ConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break; 
+				break;
 			case HTTP_3XX_CODE: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof Http3xxCodeResult) {
-	//					diagnosticsTab.setHighlightedTCP(((Http3xxCodeResult)result).getFirstResMap()ConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof Http3xxCodeResult) {
+				// diagnosticsTab.setHighlightedTCP(((Http3xxCodeResult)result).getFirstResMap()ConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break; 
+				break;
 			case HTTP_1_0_USAGE: {// done
 				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
 					if (result instanceof Http10UsageResult) {
-						diagnosticsTab.setHighlightedTCP(((Http10UsageResult)result).getHttp10Session());
+						diagnosticsTab.setHighlightedTCP(((Http10UsageResult) result).getHttp10Session());
 						break;
 					}
 				}
 			}
-			break; 
+				break;
 			case FLASH: {// done
 				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
 					if (result instanceof FlashResult) {
-						diagnosticsTab.setHighlightedTCP(((FlashResult)result).getFirstFlash());
+						diagnosticsTab.setHighlightedTCP(((FlashResult) result).getFirstFlash());
 						break;
 					}
 				}
 			}
-			break; 
+				break;
 			case FILE_ORDER: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof FileOrderResult) {
-	//					diagnosticsTab.setHighlightedTCP(((FileOrderResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof FileOrderResult) {
+				// diagnosticsTab.setHighlightedTCP(((FileOrderResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break; 
+				break;
 			case EMPTY_URL: {// done
 				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
 					if (result instanceof EmptyUrlResult) {
-						diagnosticsTab.setHighlightedTCP(((EmptyUrlResult)result).getFirstFailedHtml());
+						diagnosticsTab.setHighlightedTCP(((EmptyUrlResult) result).getFirstFailedHtml());
 						break;
 					}
 				}
 			}
-			break;
+				break;
 			case DISPLAY_NONE_IN_CSS: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof DisplayNoneInCSSResult) {
-	//					diagnosticsTab.setHighlightedTCP(((DisplayNoneInCSSResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof DisplayNoneInCSSResult) {
+				// diagnosticsTab.setHighlightedTCP(((DisplayNoneInCSSResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break;
+				break;
 			case CONNECTION_OPENING: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof ConnectionOpeningResult) {
-	//					diagnosticsTab.setHighlightedTCP(((ConnectionOpeningResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof ConnectionOpeningResult) {
+				// diagnosticsTab.setHighlightedTCP(((ConnectionOpeningResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break;
+				break;
 			case CONNECTION_CLOSING: {// done
 				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
 					if (result instanceof ConnectionClosingResult) {
-						diagnosticsTab.setHighlightedTCP(((ConnectionClosingResult)result).getLargestEnergyTime());
+						diagnosticsTab.setHighlightedTCP(((ConnectionClosingResult) result).getLargestEnergyTime());
 						break;
 					}
 				}
 			}
-			break;
+				break;
 			case ASYNC_CHECK: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof AsyncCheckInScriptResult) {
-	//					diagnosticsTab.setHighlightedTCP(((AsyncCheckInScriptResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof AsyncCheckInScriptResult) {
+				// diagnosticsTab.setHighlightedTCP(((AsyncCheckInScriptResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break;
+				break;
 			case ACCESSING_PERIPHERALS: {
-	//			for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-	//				if (result instanceof AccessingPeripheralResult) {
-	//					diagnosticsTab.setHighlightedTCP(((AccessingPeripheralResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
-	//					break;
-	//				}
-	//			}
+				// for (AbstractBestPracticeResult result :
+				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
+				// {
+				// if (result instanceof AccessingPeripheralResult) {
+				// diagnosticsTab.setHighlightedTCP(((AccessingPeripheralResult)result).getConsecutiveCssJsFirstPacket().getTimeStamp());
+				// break;
+				// }
+				// }
 			}
-			break;
+				break;
 			case DUPLICATE_CONTENT:
 				break;
 			default:
 				break;
-			}//switch	
+			}// switch
 		}
 	}
+
 	@Override
 	public void updateDiagnosticsTab(Object routeInfo) {
- 		
 		int oldPanelIndex = jtabbedPane.getSelectedIndex();
 		jtabbedPane.setSelectedIndex(DIAGNOSTIC_INDEX);
 		DiagnosticsTab diagnosticsTab = (DiagnosticsTab) jtabbedPane.getSelectedComponent();
-
-		if(routeInfo == null) {
+		if (routeInfo == null) {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
 			log.error("Diagnostics Tab needs a type for updating");
 			return;
 		}
-		
-		log.debug("Type used to route to Diagnostics Tab: " +
-				routeInfo.getClass().getSimpleName());
-
-		if(routeInfo instanceof  CacheEntry){
+		log.debug("Type used to route to Diagnostics Tab: " + routeInfo.getClass().getSimpleName());
+		if (routeInfo instanceof CacheEntry) {
 			diagnosticsTab.setHighlightedTCP(((CacheEntry) routeInfo).getHttpRequestResponse());
-		}else if (routeInfo instanceof Session) {
+		} else if (routeInfo instanceof Session) {
 			diagnosticsTab.setHighlightedTCP(((Session) routeInfo));
-		}else if (routeInfo instanceof HttpRequestResponseInfo){
+		} else if (routeInfo instanceof HttpRequestResponseInfo) {
 			diagnosticsTab.setHighlightedTCP((HttpRequestResponseInfo) routeInfo);
-		}
-		else if (routeInfo instanceof HttpEntry) {
+		} else if (routeInfo instanceof HttpEntry) {
 			diagnosticsTab.setHighlightedTCP(((HttpEntry) routeInfo).getHttpRequestResponse());
-		}
-		else if (routeInfo instanceof DisplayNoneInCSSEntry) {
-			diagnosticsTab.setHighlightedTCP(((DisplayNoneInCSSEntry) routeInfo)
-					.getHttpRequestResponse());
-		}
-		else if (routeInfo instanceof ImageMdataEntry) {
-			diagnosticsTab.setHighlightedTCP(((ImageMdataEntry) routeInfo)
-					.getHttpRequestResponse());
-		}
-		else if (routeInfo instanceof ImageCompressionEntry) {
-			diagnosticsTab.setHighlightedTCP(((ImageCompressionEntry) routeInfo)
-					.getHttpRequestResponse());
-		}else if (routeInfo instanceof SimultnsConnEntry) {
-			diagnosticsTab.setHighlightedTCP(((SimultnsConnEntry) routeInfo)
-					.getHttpReqRespInfo());
-		}
-		else if (routeInfo instanceof SpriteImageEntry) {
-			diagnosticsTab.setHighlightedTCP(((SpriteImageEntry) routeInfo)
-					.getHttpRequestResponse());
-		}
-		else if (routeInfo instanceof UnnecessaryConnectionEntry) {
+		} else if (routeInfo instanceof DisplayNoneInCSSEntry) {
+			diagnosticsTab.setHighlightedTCP(((DisplayNoneInCSSEntry) routeInfo).getHttpRequestResponse());
+		} else if (routeInfo instanceof ImageMdataEntry) {
+			diagnosticsTab.setHighlightedTCP(((ImageMdataEntry) routeInfo).getHttpRequestResponse());
+		} else if (routeInfo instanceof ImageCompressionEntry) {
+			diagnosticsTab.setHighlightedTCP(((ImageCompressionEntry) routeInfo).getHttpRequestResponse());
+		} else if (routeInfo instanceof MultipleConnectionsEntry) {
+			if (((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo().getSession() != null) {
+				diagnosticsTab.setHighlightedSessionTCP(((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo());
+			} else {
+				diagnosticsTab.setHighlightedTCP(((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo());
+			}
+		} else if (routeInfo instanceof SpriteImageEntry) {
+			diagnosticsTab.setHighlightedTCP(((SpriteImageEntry) routeInfo).getHttpRequestResponse());
+		} else if (routeInfo instanceof UnnecessaryConnectionEntry) {
 			UnnecessaryConnectionEntry unConnectionEntry = (UnnecessaryConnectionEntry) routeInfo;
-			diagnosticsTab.setHighlightedTCP((Double) unConnectionEntry.getLowTime());
-		}
-		else if (routeInfo instanceof TransmissionPrivateDataEntry 
-					|| routeInfo instanceof UnsecureSSLVersionEntry
-					|| routeInfo instanceof WeakCipherEntry 
-					|| routeInfo instanceof ForwardSecrecyEntry) {
+			diagnosticsTab.setHighlightedTCP(unConnectionEntry.getLowTime());
+		} else if (routeInfo instanceof TransmissionPrivateDataEntry || routeInfo instanceof UnsecureSSLVersionEntry
+				|| routeInfo instanceof WeakCipherEntry || routeInfo instanceof ForwardSecrecyEntry) {
 			diagnosticsTab.setHighlightedTCP(routeInfo);
-		}else if(routeInfo instanceof VideoStall){
+		} else if (routeInfo instanceof VideoStall) {
 			double timestamp = ((VideoStall) routeInfo).getSegmentTryingToPlay().getStartTS();
 			diagnosticsTab.getGraphPanel().setGraphView(timestamp, true);
 			diagnosticsTab.getVideoPlayer().setMediaTime(timestamp);
-		}
-		else {
+		} else {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
-			log.error("Diagnostics Tab cannot handle a type of " +
-					routeInfo.getClass().getSimpleName() + " for updating");
+			log.error("Diagnostics Tab cannot handle a type of " + routeInfo.getClass().getSimpleName()
+					+ " for updating");
 		}
-		
 	}
-	
-	public void launchSliderDialogFromDiagnosticTab(){
+
+	@Override
+	public void launchSliderDialogFromDiagnosticTab() {
 		jtabbedPane.setSelectedIndex(DIAGNOSTIC_INDEX);
 		DiagnosticsTab diagnosticTab = (DiagnosticsTab) jtabbedPane.getSelectedComponent();
 		diagnosticTab.launchSliderDialog();
@@ -437,24 +433,17 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		int oldPanelIndex = jtabbedPane.getSelectedIndex();
 		jtabbedPane.setSelectedIndex(OVERVIEW_INDEX);
 		OverviewTab overviewTab = (OverviewTab) jtabbedPane.getSelectedComponent();
-		
-		if(routeInfo == null) {
+		if (routeInfo == null) {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
 			log.error("Overview Tab needs a type for updating");
 			return;
 		}
-
 		log.debug("Type used to route to Overview Tab: " + routeInfo.getClass().getSimpleName());
-
-		if(routeInfo instanceof  CacheEntry){
+		if (routeInfo instanceof CacheEntry) {
 			overviewTab.setHighlightedDuplicate((CacheEntry) routeInfo);
-		}
-		else {
+		} else {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
-			log.error("Overview Tab cannot handle a type of " +
-					routeInfo.getClass().getSimpleName() + " for updating");
+			log.error("Overview Tab cannot handle a type of " + routeInfo.getClass().getSimpleName() + " for updating");
 		}
-
 	}
-
 }

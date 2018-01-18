@@ -29,6 +29,7 @@ import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
+import com.att.aro.core.util.Util;
 
 /**
  * best practice for accessing Bluetooth, Camera and GPS
@@ -104,19 +105,18 @@ public class AccessingPeripheralImpl implements IBestPractice {
 		result.setActiveCameraDuration(cameraActiveDuration);
 		result.setActiveGPSDuration(gpsActiveDuration);
 		
-		if(activeGPSRatio > PERIPHERAL_ACTIVE_LIMIT || activeBluetoothRatio > PERIPHERAL_ACTIVE_LIMIT || 
+		if(activeGPSRatio > PERIPHERAL_ACTIVE_LIMIT || activeBluetoothRatio > PERIPHERAL_ACTIVE_LIMIT ||
 				activeCameraRatio > PERIPHERAL_ACTIVE_LIMIT){
 			accessingPeripherals = false;
 		}
-		String cameraPer;
+		String cameraPer = "0";
 		NumberFormat nfor = NumberFormat.getIntegerInstance();
-		NumberFormat numFor = NumberFormat.getPercentInstance();
-		if(activeCameraRatio < 1.0){
-			cameraPer = numFor.format(activeCameraRatio);
-			int per = cameraPer.lastIndexOf('%');
-			 cameraPer = cameraPer.substring(0,per);
-		}else{
-			cameraPer = nfor.format(activeCameraRatio);
+		if (cameraActiveDuration != 0.0) {
+			if (activeCameraRatio < 1.0) {
+				cameraPer = Util.percentageFormat(activeCameraRatio);
+			} else {
+				cameraPer = nfor.format(activeCameraRatio);
+			}
 		}
 		String key = "";
 		if(accessingPeripherals){
@@ -127,10 +127,10 @@ public class AccessingPeripheralImpl implements IBestPractice {
 			key = this.textResults;
 		}
 		String text = MessageFormat.format(key, activeGPSRatio, activeBluetoothRatio, cameraPer);
-		result.setResultText(text);		
+		result.setResultText(text);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
+		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl,
 													ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAllBTDesc(exportAllBTDesc);

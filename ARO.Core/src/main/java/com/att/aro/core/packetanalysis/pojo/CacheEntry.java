@@ -20,13 +20,13 @@ import java.io.Serializable;
 import org.codehaus.jackson.annotate.JsonIgnore;
 
 /**
- * A bean class that contains one cache entry, and provides methods for returning the 
- * information from that entry.
+ * A bean class that contains one cache entry, and provides methods for
+ * returning the information from that entry.
  */
 public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	private static final long serialVersionUID = 1L;
-
 	private CacheEntry cacheHit;
+	private int hitCount;
 	private HttpRequestResponseInfo request;
 	private HttpRequestResponseInfo response;
 	private Diagnosis diagnosis;
@@ -34,17 +34,15 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	private long bytesInCache;
 	private long bytesNotInCache;
 	private PacketInfo sessionFirstPacket;
-	private int cacheCount=0;
+	private int cacheCount = 0;
 	private String hostName;
-
 	private long contentLength;
 	private Double timeStamp;
 	private HttpRequestResponseInfo httpRequestResponse;
 	private String httpObjectName;
-	
 	@JsonIgnore
 	private Session session;
-	
+
 	@JsonIgnore
 	public Session getSession() {
 		return session;
@@ -69,52 +67,55 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	 * 
 	 * @param sessionFirstPacket The first packet of session.
 	 */
-	public CacheEntry(HttpRequestResponseInfo request, HttpRequestResponseInfo response,
-			Diagnosis diagnosis, PacketInfo sessionFirstPacket) {
+	public CacheEntry(HttpRequestResponseInfo request, HttpRequestResponseInfo response, Diagnosis diagnosis,
+			PacketInfo sessionFirstPacket) {
 		this(request, response, diagnosis, Long.MAX_VALUE, sessionFirstPacket);
 	}
 
 	/**
-	 * Initializes an instance of the CacheEntry class using the specified HTTP request 
-	 * and response information, cache diagnosis value, and number of bytes in the cache.
-	 * 
-	 * @param request An HttpRequestResponseInfo object containing the request. This parameter 
-	 * can be null if the response is not matched to the request.
-	 * 
-	 * @param response An HttpRequestResponseInfo object containing the response. This 
-	 * parameter cannot be null 
-	 * 
-	 * @param diagnosis A CacheEntry.Diagnosis enumeration value that identifies the 
-	 * diagnosis (or category) of this cache entry.
-	 * 
-	 * @param bytesInCache The number of bytes in the cache. This parameter is used for 
-	 * responses with data partially in the cache.
-	 * 
-	 * @param sessionFirstPacket The first packet of session.
+	 * Initializes an instance of the CacheEntry class using the specified HTTP
+	 * request and response information, cache diagnosis value, and number of
+	 * bytes in the cache.
+	 *
+	 * @param request
+	 *            An HttpRequestResponseInfo object containing the request. This
+	 *            parameter can be null if the response is not matched to the
+	 *            request.
+	 *
+	 * @param response
+	 *            An HttpRequestResponseInfo object containing the response.
+	 *            This parameter cannot be null
+	 *
+	 * @param diagnosis
+	 *            A CacheEntry.Diagnosis enumeration value that identifies the
+	 *            diagnosis (or category) of this cache entry.
+	 *
+	 * @param bytesInCache
+	 *            The number of bytes in the cache. This parameter is used for
+	 *            responses with data partially in the cache.
+	 *
+	 * @param sessionFirstPacket
+	 *            The first packet of session.
 	 */
-	public CacheEntry(HttpRequestResponseInfo request, HttpRequestResponseInfo response,
-			Diagnosis diagnosis, long bytesInCache, PacketInfo sessionFirstPacket) {
+	public CacheEntry(HttpRequestResponseInfo request, HttpRequestResponseInfo response, Diagnosis diagnosis,
+			long bytesInCache, PacketInfo sessionFirstPacket) {
 		if (request != null) {
 			this.request = request;
 			this.rawBytes += request.getRawSize();
 		}
-		
 		if (request != null) {
-		    this.timeStamp=0.0;//request.getTimeStamp();
+			this.timeStamp = 0.0;// request.getTimeStamp();
 			this.httpObjectName = request.getObjName();
 			this.hostName = request.getHostName();
-			httpRequestResponse=request.getAssocReqResp();
+			httpRequestResponse = request.getAssocReqResp();
 		} else {
 			this.httpObjectName = "";
 			this.hostName = "";
 		}
-		
-		
 		// Response cannot be null
 		this.response = response;
 		this.rawBytes += response.getRawSize();
-		
-	    this.contentLength =	getResponse().getContentLength();
+		this.contentLength = getResponse().getContentLength();
 		this.diagnosis = diagnosis;
 		this.bytesInCache = Math.min(bytesInCache, rawBytes);
 		this.bytesNotInCache = Math.max(0, rawBytes - bytesInCache);
@@ -122,9 +123,9 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	}
 
 	/**
-	 * Compares the specified CacheEntry object to this CacheEntry object are returns a 
-	 * value that indicates if they are the same.
-	 * 
+	 * Compares the specified CacheEntry object to this CacheEntry object are
+	 * returns a value that indicates if they are the same.
+	 *
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
 	@Override
@@ -133,8 +134,8 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	}
 
 	/**
-	 * Returns the HTTP request information. 
-	 * 
+	 * Returns the HTTP request information.
+	 *
 	 * @return An HTTPRrequestResponseInformation object containing the request.
 	 */
 	public HttpRequestResponseInfo getRequest() {
@@ -142,26 +143,28 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	}
 
 	/**
-	 * Returns the HTTP response information. 
-	 * 
-	 * @return An HTTPRrequestResponseInformation object containing the response.
+	 * Returns the HTTP response information.
+	 *
+	 * @return An HTTPRrequestResponseInformation object containing the
+	 *         response.
 	 */
 	public HttpRequestResponseInfo getResponse() {
 		return response;
 	}
 
 	/**
-	 * Returns the cache diagnosis. 
-	 * 
-	 * @return A CacheEntry.Diagnosis enumeration value that specifies the cache category.
+	 * Returns the cache diagnosis.
+	 *
+	 * @return A CacheEntry.Diagnosis enumeration value that specifies the cache
+	 *         category.
 	 */
 	public Diagnosis getDiagnosis() {
 		return diagnosis;
 	}
 
 	/**
-	 * Returns the number of raw bytes in the  HTTP request/response. 
-	 * 
+	 * Returns the number of raw bytes in the HTTP request/response.
+	 *
 	 * @return The number of raw bytes.
 	 */
 	public long getRawBytes() {
@@ -169,8 +172,8 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	}
 
 	/**
-	 * Returns the number of bytes in the cache of the HTTP request/response. 
-	 * 
+	 * Returns the number of bytes in the cache of the HTTP request/response.
+	 *
 	 * @return The number of bytes in the cache.
 	 */
 	public long getBytesInCache() {
@@ -178,8 +181,9 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	}
 
 	/**
-	 * Returns the number of bytes that are not in cache of the HTTP request/response. 
-	 * 
+	 * Returns the number of bytes that are not in cache of the HTTP
+	 * request/response.
+	 *
 	 * @return The number of bytes that are not in the cache.
 	 */
 	public long getBytesNotInCache() {
@@ -187,17 +191,17 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	}
 
 	/**
-	 * Returns the cache hit of the HTTP request/response. 
-	 * 
+	 * Returns the cache hit of the HTTP request/response.
+	 *
 	 * @return A CacheEntry object containing the cache hit.
 	 */
 	public CacheEntry getCacheHit() {
 		return cacheHit;
 	}
-	
+
 	/**
-	 * Returns the first packet of session. 
-	 * 
+	 * Returns the first packet of session.
+	 *
 	 * @return first packet of session.
 	 */
 	public PacketInfo getSessionFirstPacket() {
@@ -206,77 +210,82 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 
 	/**
 	 * Sets the HTTP cacheHit to the specified cacheHit.
-	 * 
-	 * @param cacheHit A CacheEntry object containing the cacheHit to set.
+	 *
+	 * @param cacheHit
+	 *            A CacheEntry object containing the cacheHit to set.
 	 */
 	public void setCacheHit(CacheEntry cacheHit) {
 		this.cacheHit = cacheHit;
 	}
 
 	/**
-	 * Returns a value that indicates whether the HTTP request/response has cache headers. 
-	 * 
-	 * @return A boolean value that is true if the HTTP request/response has cache 
-	 * headers, and is  false if it does not.
+	 * Returns a value that indicates whether the HTTP request/response has
+	 * cache headers.
+	 *
+	 * @return A boolean value that is true if the HTTP request/response has
+	 *         cache headers, and is false if it does not.
 	 */
 	public boolean hasCacheHeaders() {
 		return response.isHasCacheHeaders() || (request != null && request.isHasCacheHeaders());
 	}
-	
+
 	/**
-	 * Returns a value that indicates whether the HTTP request/response . 
-	 * 
-	 * @return HttpRequestResponse 
-	 *.
+	 * Returns a value that indicates whether the HTTP request/response .
+	 *
+	 * @return HttpRequestResponse .
 	 */
 	public HttpRequestResponseInfo getHttpRequestResponse() {
 		return httpRequestResponse;
 	}
 
 	/**
-	 * Returns timeStamp of duplicate content . 
-	 * 
-	 * @return timeStamp 
-	 *.
+	 * Returns timeStamp of duplicate content .
+	 *
+	 * @return timeStamp .
 	 */
 	public Double getTimeStamp() {
 		return timeStamp;
 	}
 
 	/**
-	 * Returns content of duplicate content . 
-	 * 
-	 * @return contentLength 
-	 *.
+	 * Returns content of duplicate content .
+	 *
+	 * @return contentLength .
 	 */
 	public long getContentLength() {
 		return contentLength;
 	}
 
 	/**
-	 * Returns hostName of duplicate content . 
-	 * 
-	 * @return hostName 
-	 *.
+	 * Returns hostName of duplicate content .
+	 *
+	 * @return hostName .
 	 */
-	
 	public String getHostName() {
 		return hostName;
 	}
 
-	
 	public String getHttpObjectName() {
 		return httpObjectName;
 	}
+
 	@JsonIgnore
 	public int getCacheHitCount() {
 		return cacheHit.getCacheCount();
 	}
-	
-	public void setCacheHitCount(int cacheCount){
-		
+
+	public void setCacheHitCount(int cacheCount) {
 		cacheHit.setCacheCount(cacheCount);
 	}
+
+	public int getHitCount() {
+		return hitCount;
+	}
+
+	public void setHitCount(int hitCount) {
+		this.hitCount = hitCount;
+	}
+
 	public int getCacheCount() {
 		return cacheCount;
 	}

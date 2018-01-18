@@ -22,6 +22,8 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.collections.CollectionUtils;
 
+import com.amazonaws.services.s3.transfer.Transfer.TransferState;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
@@ -43,9 +45,14 @@ public class TraceManager {
  	public State upload(String trace) {
 		clean(trace);
 		String zipFile = compress(trace);
-		repository.put(zipFile);
-		removeZip(zipFile);
-		return State.COMPLETE;
+		File file = new File(zipFile);
+		TransferState state = repository.put(file);
+		if(state ==TransferState.Completed) {
+			removeZip(zipFile);
+			return State.COMPLETE;	
+		}else {
+			return State.FAILURE;
+		}
  	}
 
 	private String compress(String trace) {
@@ -83,13 +90,16 @@ public class TraceManager {
 		return trace + FILE_SEPARATOR + zipFileName + ".zip";
 	}
 
-	public State download(String trace, String saveTo) {
+	public State download(String remoteSelectedTrace, String saveTo) {
 
- 		String path = repository.get(trace, saveTo);
+ 		String path = repository.get(remoteSelectedTrace, saveTo);
+ 		if(path == null) {
+ 			return State.FAILURE;
+ 		}
  		String folderName = "RemoteTrace";
- 		if(trace!=null && trace.length()>4) {
- 			folderName = trace.substring(0,trace.length()-4);			
- 		}		
+ 		if(remoteSelectedTrace!=null && remoteSelectedTrace.length()>4) {
+ 			folderName = remoteSelectedTrace.substring(0,remoteSelectedTrace.length()-4);	// .zip 
+ 		}
 		unZip(path,folderName);
 		removeZip(path);
 		return State.COMPLETE;
