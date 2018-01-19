@@ -78,7 +78,7 @@ Before you download Video Optimizer 1.4, make sure you meet the following system
 #### • Command Line improvements to support Dynamic attenuation
 
 
-### What are the known issues in Release 1.3?
+### What are the known issues in Release 1.4?
 
 #### •	iOS setting
 + Blank screen is displayed when you take the first trace using an iOS collector. User should stop and take a new trace to continue.
