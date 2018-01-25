@@ -69,8 +69,6 @@ Before you download Video Optimizer 1.4, make sure you meet the following system
 
 #### Video Optimizer 1.4 Features
 
-#### • Improvements to stability and performance of the Secure Collector
-
 #### • Diagnostic tab improvements to ensure the listing on the graph is aligned with the options selection from the menu (view).
 
 #### • Help button will provide more information about Dumpcap path, FFMPEG, FFPROBE path in the preferences window.
