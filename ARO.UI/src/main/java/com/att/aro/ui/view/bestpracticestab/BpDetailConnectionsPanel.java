@@ -49,6 +49,7 @@ public class BpDetailConnectionsPanel extends BpDetail {
 		addPanel(row++, new BpDetailItem("connections.simultaneous", BestPracticeType.SIMUL_CONN, new BPConnectionsSimultnsTablePanel()));
 		
 		addPanel(row++, new BpDetailItem("connections.multiSimultaneous", BestPracticeType.MULTI_SIMULCONN, new BPConnectionsSimultnsTablePanel()));
+		//addPanel(row++, new BpDetailItem("connections.adAnalytics", BestPracticeType.AD_ANALYTICS, new BpConnectionsAdAnalyticsTablePanel()));
 		
 		addPanel(row++, new BpDetailItem("connections.periodic", BestPracticeType.PERIODIC_TRANSFER));
 		

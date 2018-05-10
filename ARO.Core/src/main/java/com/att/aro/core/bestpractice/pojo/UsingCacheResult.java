@@ -53,7 +53,7 @@ public class UsingCacheResult extends AbstractBestPracticeResult {
 
 	@Override
 	public BestPracticeType getBestPracticeType() {
-		return BestPracticeType.CACHE_CONTROL;//name is confusing, using cache-> cache control, ref. bestpractice.properties
+		return BestPracticeType.USING_CACHE;//name is confusing, using cache-> cache control, ref. bestpractice.properties
 	}
 
 }

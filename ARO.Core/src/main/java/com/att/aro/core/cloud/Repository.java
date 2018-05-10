@@ -15,7 +15,10 @@
  */
 package com.att.aro.core.cloud;
 
+import java.io.File;
 import java.util.List;
+
+import com.amazonaws.services.s3.transfer.Transfer.TransferState;
 
 
 @SuppressWarnings("PMD")
@@ -32,6 +35,12 @@ public abstract class Repository {
 	 *            Absolute path of the trace on disk
 	 */
 	public abstract void put(String trace);
+	
+	/**
+	 * Uploads the trace from disk to cloud repository, the return value is TransferState from API
+	 * @param file
+	 */
+	public abstract TransferState put(File file);
 
 	/**
 	 * Downloads the trace from a cloud repository to local folder.
@@ -41,6 +50,8 @@ public abstract class Repository {
 	 * @return Location of the retrieved file on disk.
 	 */
 	public abstract String get(String from, String to);
+
+//	public abstract TransferState get(String from, String to);
 
 	/**
 	 * Lists all the traces available in the cloud repository.

@@ -29,6 +29,10 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
+import com.att.aro.core.packetanalysis.pojo.CacheEntry;
+import com.att.aro.core.packetanalysis.pojo.Diagnosis;
+import com.att.aro.ui.model.overview.DuplicateContentTableModel;
+
 /**
  *
  *
@@ -37,12 +41,9 @@ import javax.swing.table.TableModel;
  */
 public class DataTable<T> extends JTable {
 	private static final long serialVersionUID = 1L;
-
 	private JPopupMenu popup;
-
 	// Listener to handle the events on table.
 	private MouseListener mouseListener = new MouseAdapter() {
-
 		@Override
 		public void mousePressed(MouseEvent mEvent) {
 			showPopup(mEvent);
@@ -72,7 +73,7 @@ public class DataTable<T> extends JTable {
 	/**
 	 * Initializes a new instance of the DataTable class using the specified
 	 * table model.
-	 * 
+	 *
 	 * @param dtm
 	 *            The table model.
 	 */
@@ -84,7 +85,7 @@ public class DataTable<T> extends JTable {
 	/**
 	 * Initializes a new instance of the DataTable class using the specified
 	 * table model and table column model.
-	 * 
+	 *
 	 * @param dtm
 	 *            The table model.
 	 * @param tcm
@@ -102,7 +103,7 @@ public class DataTable<T> extends JTable {
 
 	/**
 	 * Sets a data table model.
-	 * 
+	 *
 	 * @param dataModel
 	 *            The new DataTableModel.
 	 */
@@ -115,7 +116,7 @@ public class DataTable<T> extends JTable {
 
 	/**
 	 * Returns a default table header for the DataTable.
-	 * 
+	 *
 	 * @return A JTableHeader object with default properties.
 	 */
 	@Override
@@ -126,7 +127,6 @@ public class DataTable<T> extends JTable {
 			@Override
 			public String getToolTipText(MouseEvent mEvent) {
 				int column = columnAtPoint(mEvent.getPoint());
-
 				// Locate the renderer under the event location
 				if (column != -1) {
 					TableColumn aColumn = columnModel.getColumn(column);
@@ -143,12 +143,11 @@ public class DataTable<T> extends JTable {
 	/**
 	 * Returns the list of items currently selected in the table. This
 	 * convenience method is for tables that use a multiple selection model.
-	 * 
+	 *
 	 * @return A java.util.List object containing the list of selected items.
 	 */
 	public List<T> getSelectedItems() {
 		int[] selectedRows = getSelectedRows();
-
 		List<T> result = new ArrayList<T>(selectedRows.length);
 		DataTableModel<T> dataModel = getDataTableModel();
 		for (int row : selectedRows) {
@@ -160,7 +159,7 @@ public class DataTable<T> extends JTable {
 	/**
 	 * Returns the first selected item in the table. This convenience method is
 	 * for tables that use a single selection model.
-	 * 
+	 *
 	 * @return The item.
 	 */
 	public T getSelectedItem() {
@@ -176,15 +175,14 @@ public class DataTable<T> extends JTable {
 	 * Returns the data item at the specified row index. The row index is the
 	 * table view index which may not be the same index as in the data table
 	 * model.
-	 * 
+	 *
 	 * @param row
 	 *            An int value that is the row index in the table view.
 	 * @return The data item.
 	 */
 	public T getItemAtRow(int row) {
 		try {
-			return row >= 0 ? getDataTableModel().getValueAt(
-					convertRowIndexToModel(row)) : null;
+			return row >= 0 ? getDataTableModel().getValueAt(convertRowIndexToModel(row)) : null;
 		} catch (IndexOutOfBoundsException ie) {
 			return null;
 		}
@@ -192,8 +190,11 @@ public class DataTable<T> extends JTable {
 
 	@Override
 	/**
-	 * Sets the column model for the DataTable to the specified TableColumnModel.
-	 * @param columnModel - The new TableColumnModel.
+	 * Sets the column model for the DataTable to the specified
+	 * TableColumnModel.
+	 *
+	 * @param columnModel
+	 *            - The new TableColumnModel.
 	 */
 	public void setColumnModel(TableColumnModel columnModel) {
 		super.setColumnModel(columnModel);
@@ -201,7 +202,7 @@ public class DataTable<T> extends JTable {
 
 	/**
 	 * Returns the DataTableModel encapsulated by this class.
-	 * 
+	 *
 	 * @return The DataTableModel object.
 	 * @see javax.swing.JTable#getModel()
 	 */
@@ -213,7 +214,9 @@ public class DataTable<T> extends JTable {
 	@Override
 	/**
 	 * Sets the data model for the table.
-	 * @param dataModel A TableModel object that is the new data model.
+	 *
+	 * @param dataModel
+	 *            A TableModel object that is the new data model.
 	 */
 	public void setModel(TableModel dataModel) {
 		super.setModel(dataModel);
@@ -223,7 +226,7 @@ public class DataTable<T> extends JTable {
 	 * Marks the specified item in the table as selected, if it exists.If the
 	 * item exists in the table and is already marked as selected, the the
 	 * selection is cleared.
-	 * 
+	 *
 	 * @param item
 	 *            The item in the table to mark as selected.
 	 * @return A boolean value that is true if the specified item was found and
@@ -231,23 +234,46 @@ public class DataTable<T> extends JTable {
 	 */
 	public boolean selectItem(T item) {
 		int index;
-		if (item != null && (index = getDataTableModel().indexOf(item)) >= 0) {
-			index = convertRowIndexToView(index);
-			ListSelectionModel selectionModel = getSelectionModel();
-			if (selectionModel != null) {
-				selectionModel.setSelectionInterval(index, index);
-				scrollRectToVisible(getCellRect(index, 0, true));
-				return true;
+		if (getDataTableModel().getClass() != DuplicateContentTableModel.class) {
+			if (item != null && (index = getDataTableModel().indexOf(item)) >= 0) {
+				return isSelected(index);
+			} else {
+				clearSelection();
 			}
 		} else {
+			if (item != null) {
+				CacheEntry cacheEntry;
+				CacheEntry cacheItem = (CacheEntry) item;
+				for (int rowIndex = 0; rowIndex < getDataTableModel().getRowCount(); rowIndex++) {
+					cacheEntry = ((CacheEntry) getDataTableModel().getValueAt(rowIndex));
+					if (cacheEntry.getDiagnosis().toString()
+							.equalsIgnoreCase(Diagnosis.CACHING_DIAG_CACHE_MISSED.toString())) {
+						if (cacheItem.getHttpObjectName().equalsIgnoreCase(cacheEntry.getHttpObjectName())) {
+							return isSelected(rowIndex);
+						}
+					}
+				}
+			}
 			clearSelection();
 		}
 		return false;
 	}
 
+	private boolean isSelected(int index) {
+		boolean isSelected = false;
+		index = convertRowIndexToView(index);
+		ListSelectionModel selectionModel = getSelectionModel();
+		if (selectionModel != null) {
+			selectionModel.setSelectionInterval(index, index);
+			scrollRectToVisible(getCellRect(index, 0, true));
+			isSelected = true;
+		}
+		return isSelected;
+	}
+
 	/**
 	 * Returns a popup menu.
-	 * 
+	 *
 	 * @return A JPopupMenu object that is the popup menu.
 	 */
 	public JPopupMenu getPopup() {
@@ -256,12 +282,11 @@ public class DataTable<T> extends JTable {
 
 	/**
 	 * Sets the popup menu for the DataTable.
-	 * 
+	 *
 	 * @param popup
 	 *            A JPopupMenu object that is the new popup .
 	 */
 	public void setPopup(JPopupMenu popup) {
 		this.popup = popup;
 	}
-
 }

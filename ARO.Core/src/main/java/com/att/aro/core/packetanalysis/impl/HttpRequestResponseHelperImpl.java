@@ -139,7 +139,12 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 					throw new Exception("The content may be too big.");
 				} else if (buffer.length < start + size) {
 					req.setExtractable(false);
-					throw new Exception("The content may be corrupted.");
+					if(req.getContentType().contains("text/html")){
+						log.error("The content may be corrupted.");
+						continue;
+					}else{
+						throw new Exception("The content may be corrupted.");
+					}				
 				}
 
 				for (int i = start; i < start + size; ++i) {

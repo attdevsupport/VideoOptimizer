@@ -22,8 +22,8 @@ import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.pojo.ErrorCode;
 
 /**
- * validate commands against arguments 
- * choose start collector or analyze ->  rest of the features 
+ * validate commands against arguments
+ * choose start collector or analyze ->  rest of the features
  */
 public class Validator {
 	public ErrorCode validate(Commands cmd, ApplicationContext context) {
@@ -46,8 +46,8 @@ public class Validator {
 		}else{
 			if (cmd.getStartcollector() != null) {
 				String colname = cmd.getStartcollector();
-				if (!"rooted_android".equals(colname) 
-				 && !"vpn_android".equals(colname) 
+				if (!"rooted_android".equals(colname)
+				 && !"vpn_android".equals(colname)
 				 && !"ios".equals(colname)) {
 					return ErrorCodeRegistry.getUnsupportedCollector();
 				}
@@ -57,7 +57,7 @@ public class Validator {
 			}
 
 			if (cmd.getVideo() != null
-					&& !cmd.getVideo().equals("yes") 
+					&& !cmd.getVideo().equals("yes")
 					&& !cmd.getVideo().equals("no")
 					&& !cmd.getVideo().equals("hd")
 					&& !cmd.getVideo().equals("sd")
@@ -65,7 +65,7 @@ public class Validator {
 					) {
 				return ErrorCodeRegistry.getInvalidVideoOption();
 			}
-						
+			
 			ErrorCode uplinkErrorCode = validateUplink(cmd);
 			if (uplinkErrorCode != null) {
 				return uplinkErrorCode;
@@ -78,29 +78,31 @@ public class Validator {
 		return null;
 	}
 	
+ 	
 	private ErrorCode validateUplink(Commands cmd) {
- 
-		if ("vpn_android".equals(cmd.getStartcollector()) 
-				&& !isNumberInRange(cmd.getThrottleUL(), 64, 102400)) {
-			return ErrorCodeRegistry.getInvalidUplink();
-		}else if("ios".equals(cmd.getStartcollector())||"rooted_android".equals(cmd.getStartcollector())){
-			return ErrorCodeRegistry.getUnsupportedCollector();
+		if (cmd.getThrottleUL() != "-1") {
+			if ("vpn_android".equals(cmd.getStartcollector()) && !isNumberInRange(cmd.getThrottleUL(), 64, 102400)) {
+				return ErrorCodeRegistry.getInvalidUplink();
+			} else if ("ios".equals(cmd.getStartcollector()) || "rooted_android".equals(cmd.getStartcollector())) {
+				return ErrorCodeRegistry.getUnsupportedCollector();
+			}
 		}
 		return null;
 	}
 	
 	private ErrorCode validateDownlink(Commands cmd) {
- 
-		if ( "vpn_android".equals(cmd.getStartcollector()) && !isNumberInRange(cmd.getThrottleDL(), 64, 102400) ){
-			return ErrorCodeRegistry.getInvalidDownlink();
-		}else if("ios".equals(cmd.getStartcollector())||"rooted_android".equals(cmd.getStartcollector())){
-			return ErrorCodeRegistry.getUnsupportedCollector();
+		if (cmd.getThrottleDL() != "-1") {
+			if ("vpn_android".equals(cmd.getStartcollector()) && !isNumberInRange(cmd.getThrottleDL(), 64, 102400)) {
+				return ErrorCodeRegistry.getInvalidDownlink();
+			} else if ("ios".equals(cmd.getStartcollector()) || "rooted_android".equals(cmd.getStartcollector())) {
+				return ErrorCodeRegistry.getUnsupportedCollector();
+			}
 		}
 		return null;
 	}
 		
 	private boolean isNumberInRange(String number, int from, int to) {
-		int throughput = ThrottleUtil.getInstance().parseNumCvtUnit(number);				
+		int throughput = ThrottleUtil.getInstance().parseNumCvtUnit(number);
 		return ThrottleUtil.getInstance().isNumberInRange(throughput, from, to);
 	}
 		

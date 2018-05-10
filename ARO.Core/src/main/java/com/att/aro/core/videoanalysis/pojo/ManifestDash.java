@@ -39,8 +39,8 @@ public class ManifestDash extends AROManifest {
 	@SuppressWarnings("unused")
 	private MPDPlayReady mpdPlayReadyOut;
 
-	public ManifestDash(HttpRequestResponseInfo req, byte[] content, String videoPath) {
-		super(VideoType.DASH, req, videoPath);
+	public ManifestDash(HttpRequestResponseInfo resp, byte[] content, String videoPath) {
+		super(VideoType.DASH, resp, videoPath);
 		XmlManifestHelper mani = new XmlManifestHelper(content);
 		if (mani.getManifestType().equals(XmlManifestHelper.ManifestFormat.SmoothStreamingMedia)) {
 			this.ssmOut = (SSMAmz) mani.getManifest();
@@ -52,8 +52,8 @@ public class ManifestDash extends AROManifest {
 		parseManifestData();
 	}
 
-	public ManifestDash(MPDAmz mpdOut, HttpRequestResponseInfo req, String videoPath) {
-		super(VideoType.DASH, req, videoPath);
+	public ManifestDash(MPDAmz mpdOut, HttpRequestResponseInfo resp, String videoPath) {
+		super(VideoType.DASH, resp, videoPath);
 		this.mpdOut = mpdOut;
 		parseManifestData();
 	}

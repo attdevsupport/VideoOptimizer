@@ -36,6 +36,7 @@ import com.att.aro.core.bestpractice.pojo.VideoRedundancyResult;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.VideoTcpConnectionResult;
+import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.impl.SortSelection;
@@ -143,7 +144,11 @@ public class VideoResultSummary {
 		ipAddress = ipSessionsMap.keySet().size();
 		ipSessions = allSessions.size();
 
-		Collection<AROManifest> selectedManifests = trace.getAnalyzerResult().getVideoUsage().getManifests();
+		VideoUsage videoUsage = trace.getAnalyzerResult().getVideoUsage();
+		if(videoUsage == null) { 
+			return;
+		}
+		Collection<AROManifest> selectedManifests = videoUsage.getManifests();
 		movieMBytes = calculateMBytes(selectedManifests, false);
 		totalMBytes = calculateMBytes(selectedManifests, true);
 		duplicate = countDuplicateSegments(selectedManifests);

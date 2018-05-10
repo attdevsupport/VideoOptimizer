@@ -65,7 +65,6 @@ import com.att.aro.ui.view.video.IVideoPlayer;
 public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListener {
 	private static final long serialVersionUID = 1L;
 	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
-
 	private static final int MAX_ZOOM = 4;
 	private static final Double MATCH_SECONDS_RANGE = 0.5;
 	// network profile panel
@@ -75,16 +74,12 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	// Split pane for TCP flow data
 	private JSplitPane internalPanel;
 	private JSplitPane diagnosticsPanel;
-
 	// TCP Flows header
 	private JPanel tcpFlowsHeadingPanel;
 	private JLabel tcpFlowsLabel;
-
 	private DataTable<PacketInfo> jPacketViewTable;
-
 	private RequestResponseDetailsPanel jHttpReqResPanel;
 	private TCPFlowsDataTable<Session> tcpflowsTable;
-
 	// Model
 	private TCPUDPFlowsTableModel jTcpUdpFlowsModel = new TCPUDPFlowsTableModel();
 	private PacketViewTableModel jPacketViewTableModel = new PacketViewTableModel();
@@ -102,16 +97,12 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	// Components for TCP Flows scroll table
 	private JPanel jTCPFlowsPanel;
 	private JScrollPane jTCPFlowsScrollPane;
-
 	// TCP flow detail tabbed pane
 	private JTabbedPane jTCPFlowsContentTabbedPane;
-
 	// Packet view
 	private JScrollPane jPacketViewTapScrollPane;
-
 	// Content view
 	private ContentViewJPanel jContentViewPanel; // Content View
-
 	private DiagnosticTabHelper diagHelper = new DiagnosticTabHelper();
 	private IVideoPlayer videoPlayer;
 	private List<Session> sessionsSortedByTimestamp = new ArrayList<Session>();
@@ -136,7 +127,6 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 
 	private boolean graphPanelClicked = false;
 	private boolean bTCPPacketFound = false;
-
 	private IAROView aroview;
 	private IARODiagnosticsOverviewRoute diagnosticRoute;
 
@@ -151,7 +141,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	public void setAnalyzerResult(AROTraceData analyzerResult) {
 		this.analyzerResult = analyzerResult;
 	}
-	
+
 	JPanel chartAndTablePanel;
 	GUIPreferences guiPreferences;
 
@@ -168,7 +158,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		// Add TCP flows split pane
 		chartAndTablePanel.add(getOrientationPanel(), BorderLayout.CENTER);
 		chartAndTablePanel.add(getDiagnosticsPanel(), BorderLayout.CENTER);
-		add(chartAndTablePanel, BorderLayout.CENTER);			
+		add(chartAndTablePanel, BorderLayout.CENTER);
 	}
 
 	public IARODiagnosticsOverviewRoute getDiagnosticRoute() {
@@ -230,10 +220,8 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			diagnosticsPanel.setContinuousLayout(true);
 			diagnosticsPanel.setResizeWeight(0.5);
 			diagnosticsPanel.setDividerLocation(0.5);
-
 			diagnosticsPanel.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
 					new PropertyChangeListener() {
-
 						@Override
 						public void propertyChange(PropertyChangeEvent evt) {
 							SwingUtilities.invokeLater(new Runnable() {
@@ -297,18 +285,15 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 						graphPanel.setGraphView(crossHairValue, centerGraph); // crossHairValue+103
 						// getJHttpReqResPanel().select(
 						// packetInfo.getRequestResponseInfo());
-
 						if (videoPlayer != null) {
 							// logger.info("enter getJPacketViewTable()");
 							videoPlayer.setMediaTime(graphPanel.getCrosshair());
 							// logger.info("leave getJPacketViewTable()");
-
 						}
 					}
 					this.packetInfo = packetInfo;
 				}
 			});
-
 		}
 		return jPacketViewTable;
 	}
@@ -335,7 +320,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 
 	/**
 	 * Initializes jTCPFlowsPanel
-	 * 
+	 *
 	 * @return javax.swing.JPanel
 	 */
 	private JPanel getJTCPFlowsPanel() {
@@ -377,24 +362,22 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	 * Initializes and returns the TCPFlowsScrollPane.
 	 */
 	private JScrollPane getJTCPFlowsScrollPane() {
-
 		jTCPFlowsScrollPane = new JScrollPane(getJTCPFlowsTable());
 		jTCPFlowsScrollPane.setPreferredSize(new Dimension(100, 200));
-
 		return jTCPFlowsScrollPane;
 	}
 
 	/**
 	 * Initializes and returns the Scroll Pane for the TCP flows table.
 	 */
-	public TCPFlowsDataTable<Session> getJTCPFlowsTable(){
+	public TCPFlowsDataTable<Session> getJTCPFlowsTable() {
 		if (tcpflowsTable == null) {
 			tcpflowsTable = new TCPFlowsDataTable<Session>(jTcpUdpFlowsModel);
 			tcpflowsTable.setAutoCreateRowSorter(true);
 			tcpflowsTable.setGridColor(Color.LIGHT_GRAY);
 			tcpflowsTable.getSelectionModel().addListSelectionListener(this);
 			// Adding the table listener for getting the check box changes
-			tcpflowsTable.getModel().addTableModelListener(new TableModelListener() {				
+			tcpflowsTable.getModel().addTableModelListener(new TableModelListener() {
 				@Override
 				public void tableChanged(TableModelEvent arg0) {
 					graphPanel.setTraceAnalysis();
@@ -411,7 +394,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 
 	/**
 	 * Returns RequestResponseDetailsPanel.
-	 * 
+	 *
 	 * @return the jHttpReqResPanel
 	 */
 	public RequestResponseDetailsPanel getJHttpReqResPanel() {
@@ -436,7 +419,6 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		jPacketViewTableModel.removeAllRows();
 		getJHttpReqResPanel().getjRequestResponseTableModel().removeAllRows();
 		getJContentViewPanel().getJContentTextArea().setText("");
-
 	}
 
 	public void setChartOptions(List<ChartPlotOptions> optionsSelected) {
@@ -460,7 +442,6 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	// get update info from tcp/udp flow table
 	@Override
 	public void valueChanged(ListSelectionEvent evt) {
-
 		if (evt.getSource() instanceof ListSelectionModel) {
 			ListSelectionModel lsm = (ListSelectionModel) evt.getSource();
 			if (lsm.getMinSelectionIndex() != -1) {
@@ -469,7 +450,6 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 					jPacketViewTableModel.removeAllRows();
 					getJHttpReqResPanel().getjRequestResponseTableModel().removeAllRows();
 					getJContentViewPanel().getJContentTextArea().setText("");
-
 				} else {
 					if (session.isUDP()) {
 						jPacketViewTableModel.setData(session.getUDPPackets());
@@ -511,7 +491,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	/**
 	 * TODO: This belongs in core! As a matter of fact, it's mostly copied and
 	 * pasted from internal code in CacheAnalysisImpl
-	 * 
+	 *
 	 * @param sessions
 	 * @return
 	 */
@@ -542,7 +522,6 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			}
 			getGraphPanel().setGraphView(timeStamp, isReset);
 		}
-
 	}
 
 	// old analyzer method name is setTimeLineLinkedComponents(double
@@ -552,10 +531,8 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		if (getAroTraceData() == null) {
 			logger.info("no analyze traces data");
 		} else {
-
 			boolean bTCPTimeStampFound = false;
 			boolean bExactMatch = false;
-
 			// Attempt to find corresponding packet for time.
 			double packetTimeStamp = 0.0;
 			double packetTimeStampDiff = 0.0;
@@ -580,12 +557,10 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 				}
 			}
 			// logger.info("leave sesionlist for loop");
-
 			if (bTCPTimeStampFound) {
 				getJTCPFlowsTable().selectItem(bestMatchingTcpSession);
 				getJPacketViewTable().selectItem(bestMatchingPacketInfo);
 				getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
-
 			} else {
 				getJTCPFlowsTable().selectItem(null);
 				getJPacketViewTable().selectItem(null);
@@ -610,12 +585,11 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 
 	/**
 	 * Highlights the specified TCP session in the TCP flows table.
-	 * 
+	 *
 	 * @param tcpSession
 	 *            - The TCPSession object to be highlighted.
 	 */
 	public void setHighlightedTCP(Session tcpSession) {
-
 		getJTCPFlowsTable().selectItem(tcpSession);
 		getJTCPFlowsTable().showHighlightedSession(getJTCPFlowsTable().getSelectedRow());
 	}
@@ -628,6 +602,19 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 				setHighlightedTCP(reqResSession.getSession());
 				jHttpReqResPanel.setHighlightedRequestResponse(reqResInfo);
 				break;
+			}
+		}
+	}
+
+	public void setHighlightedSessionTCP(HttpRequestResponseInfo reqResInfo) {
+		setHighlightedTCP(reqResInfo.getSession());
+		for (HttpRequestResponseInfoWithSession reqResSession : requestResponseWithSession) {
+			if (reqResInfo.getHostName() != null) {
+				if (reqResSession.getInfo().equals(reqResInfo)) {
+					logger.info("local port = " + reqResSession.getSession().getLocalPort());
+				jHttpReqResPanel.setHighlightedRequestResponse(reqResInfo);
+					break;
+				}
 			}
 		}
 	}
@@ -646,7 +633,6 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 						timestampDiff = currentTimestampDiff;
 						foundSession = tcpSess;
 					}
-
 					if (currentTimestampDiff > lastTimestampDiff) {
 						break;
 					}
@@ -690,12 +676,10 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			timestamp = entry.getSessionStartTime();
 			destIP = entry.getDestIP();
 		}
-
 		if (timestamp == -1 || destIP == null) {
 			logger.warn("invalid route information");
 			return;
 		}
-
 		for (Session session : sessionsSortedByTimestamp) {
 			if (session != null && session.getRemoteIP() != null) {
 				if (session.getSessionStartTime() == timestamp
@@ -715,7 +699,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 
 	/**
 	 * Returns the graph panel clicked status
-	 * 
+	 *
 	 * @return boolean value.
 	 */
 	public boolean IsGraphPanelClicked() {
@@ -730,6 +714,5 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	}
 
 	public void updateTcpTable() {
-
 	}
 }

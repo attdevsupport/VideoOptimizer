@@ -16,29 +16,37 @@
 package com.att.aro.core.packetanalysis.pojo;
 
 public final class SessionValues {
-
 	public String ipDomain;
 	public Double endTime;
 	public Double startTime;
 	public HttpRequestResponseInfo reqRespInfo;
+	public Session indSession;
 
 	public SessionValues(Session indSession, HttpRequestResponseInfo reqRespInfo) {
 		this.ipDomain = indSession.getRemoteIP().toString();
 		this.endTime = indSession.getSessionEndTime();
 		this.startTime = indSession.getSessionStartTime();
 		this.reqRespInfo = reqRespInfo;
+		this.indSession = indSession;
 	}
 
 	public String getIp() {
 		return ipDomain;
 	}
+
 	public Double getEndTime() {
 		return endTime;
 	}
+
 	public Double getStartTime() {
 		return startTime;
 	}
+
 	public HttpRequestResponseInfo getReqRespInfo() {
 		return reqRespInfo;
-	}	
+	}
+
+	public Session getIndSession() {
+		return indSession;
+	}
 }

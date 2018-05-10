@@ -56,7 +56,7 @@ public class CacheControlResult extends AbstractBestPracticeResult{
 
 	@Override
 	public BestPracticeType getBestPracticeType() {
-		return BestPracticeType.USING_CACHE;//cache control-> using cache(content expired) ref. bestpractice.properties
+		return BestPracticeType.CACHE_CONTROL;//cache control-> using cache(content expired) ref. bestpractice.properties
 	}
 
 }

@@ -20,20 +20,20 @@ public class ManifestHLS extends AROManifest {
 		return segCount++;
 	}
 
-	public ManifestHLS(HttpRequestResponseInfo req, String videoPath) {
-		super(VideoType.HLS, req, videoPath);
+	public ManifestHLS(HttpRequestResponseInfo resp, String videoPath) {
+		super(VideoType.HLS, resp, videoPath);
 	}
 	
-	public ManifestHLS(HttpRequestResponseInfo req, byte[] data, String videoPath) {
-		super(VideoType.HLS, req, videoPath);
+	public ManifestHLS(HttpRequestResponseInfo resp, byte[] data, String videoPath) {
+		super(VideoType.HLS, resp, videoPath);
 
 		content = data;
 		exten = EXTEN_TS; // default for HLS
 		parseManifestData(data);
 	}
 
-	public ManifestHLS(HttpRequestResponseInfo req, VideoEventData ved, byte[] data, String videoPath) {
-		super(VideoType.HLS, req, videoPath);
+	public ManifestHLS(HttpRequestResponseInfo resp, VideoEventData ved, byte[] data, String videoPath) {
+		super(VideoType.HLS, resp, videoPath);
 
 		content = data;
 		exten = EXTEN_TS; // default for HLS
@@ -46,12 +46,12 @@ public class ManifestHLS extends AROManifest {
 	/**
 	 * makeup an ManifestHLS only from the video request information
 	 * 
-	 * @param req
+	 * @param resp
 	 * @param ved from video request
 	 * @param videoPath
 	 */
-	public ManifestHLS(HttpRequestResponseInfo req, VideoEventData ved, String videoPath) {
-		super(VideoType.HLS, req, ved, videoPath);
+	public ManifestHLS(HttpRequestResponseInfo resp, VideoEventData ved, String videoPath) {
+		super(VideoType.HLS, resp, ved, videoPath);
 
 		exten = EXTEN_TS; // default for HLS
 

@@ -71,6 +71,7 @@ import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.PcapConfirmationImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.VideoOption;
+import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.mvc.AROController;
 import com.att.aro.ui.collection.AROCollectorSwingWorker;
 import com.att.aro.ui.commonui.ARODiagnosticsOverviewRouteImpl;
@@ -775,4 +776,5 @@ public class MainFrame implements SharedAttributesProcesses {
 	public VideoTab getVideoTab(){
 		return videoTab;
 	}
+
 }

@@ -139,4 +139,12 @@ public final class ErrorCodeRegistry {
 		return err;
 	}
 
+	public static ErrorCode getPostError(String message){
+		ErrorCode err = new ErrorCode();
+		err.setCode(140);
+		err.setName("REST:POST failure");
+		err.setDescription(message);
+		return err;
+	}
+
 }

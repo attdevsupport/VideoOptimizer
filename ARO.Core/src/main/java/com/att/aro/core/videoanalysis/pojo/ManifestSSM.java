@@ -9,14 +9,14 @@ public class ManifestSSM extends AROManifest {
 
 	private SSMAmz manifest;
 
-	public ManifestSSM(SSMAmz manifest, HttpRequestResponseInfo req, String videoPath) {
-		super(VideoType.SSM, req, videoPath);
+	public ManifestSSM(SSMAmz manifest, HttpRequestResponseInfo resp, String videoPath) {
+		super(VideoType.SSM, resp, videoPath);
 		this.manifest = manifest;
 		parseManifestData();
 	}
 	
-	public ManifestSSM(HttpRequestResponseInfo req, byte[] content, String videoPath) {
-		super(VideoType.SSM, req, videoPath);
+	public ManifestSSM(HttpRequestResponseInfo resp, byte[] content, String videoPath) {
+		super(VideoType.SSM, resp, videoPath);
 		XmlManifestHelper mani = new XmlManifestHelper(content);
 		if (!mani.getManifestType().equals(XmlManifestHelper.ManifestFormat.SmoothStreamingMedia)) {
 			this.manifest = (SSMAmz) mani.getManifest();
@@ -25,15 +25,15 @@ public class ManifestSSM extends AROManifest {
 	}
 
 
-	public ManifestSSM(HttpRequestResponseInfo req, String videoPath) {
-		super(VideoType.SSM, req, videoPath);	
+	public ManifestSSM(HttpRequestResponseInfo resp, String videoPath) {
+		super(VideoType.SSM, resp, videoPath);	
 		try {
 			//TODO verify
-			content = reqhelper.getContent(req, session);
+			content = reqhelper.getContent(resp, session);
 		} catch (Exception e) {
 			log.error("Failed to parse manifest data, absTimeStamp:"
-					+ req.getAbsTimeStamp().getTime() 
-					+ ", Name:" + req.getObjNameWithoutParams());
+					+ resp.getAbsTimeStamp().getTime() 
+					+ ", Name:" + resp.getObjNameWithoutParams());
 			return;
 		}
 		XmlManifestHelper mani = new XmlManifestHelper(content);

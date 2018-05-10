@@ -136,14 +136,7 @@ public class SocketDataReaderWorker implements Runnable {
 							buffer.flip();
 							buffer.get(packet);
 
-							if (session.isSecureSession()) {
-								if (session.isInContinuationMsg()) {
- 								}
-						        // FileUtil.print(session.getSessionKey(),  "\n\nEntering HandleServerInput, Bytes: "+ SSLEngines.getBytes(packet), isPrintLog());
 
-								// FileUtil.print(session.getSessionKey(),  " Leaving HandleServerInput, Response Packet: " + SSLEngines.getBytes(packet), isPrintLog());
-								len = packet.length;
-							}
 							buffer.clear();
 							if (packet.length>DataConst.MAX_RECEIVE_BUFFER_SIZE){
 								buffer = ByteBuffer.allocate(packet.length);
@@ -169,7 +162,7 @@ public class SocketDataReaderWorker implements Runnable {
 
 		} catch (NotYetConnectedException ex2) {
 			Log.e(TAG, "socket not connected");
- 			session.setAbortingConnection(true);
+			session.setAbortingConnection(true);
 		} catch (ClosedByInterruptException cex) {
 			Log.e(TAG, "ClosedByInterruptException reading socketchannel: " + cex.getMessage());
 			session.setAbortingConnection(true);
@@ -178,7 +171,7 @@ public class SocketDataReaderWorker implements Runnable {
 			session.setAbortingConnection(true);
 		} catch (IOException e) {
 			Log.e(TAG, "Error reading data from socketchannel: " + e.getMessage());
- 			session.setAbortingConnection(true);
+			session.setAbortingConnection(true);
 		} catch (Exception ex) {
 			Log.e("Secure Collector", "We are catching an Exception: " + ex.getMessage());
 		}
@@ -279,6 +272,14 @@ public class SocketDataReaderWorker implements Runnable {
 					pcapData.sendDataToPcap(clearData, true);
 				} catch (Exception ex) {
 
+				}
+			}
+
+			while(session.isClientWindowFull()) {
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
 			pcapData.sendDataRecieved(data); // send packet back to client

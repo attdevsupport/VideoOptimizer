@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.att.aro.core.cloud.aws;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
@@ -37,15 +35,24 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.transfer.Download;
+import com.amazonaws.services.s3.transfer.Transfer.TransferState;
+import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
+import com.amazonaws.services.s3.transfer.Upload;
 import com.att.aro.core.cloud.Repository;
 
+/**
+ * Amazon S3 Repository management
+ * TransferManager and client objects may pool connections and threads. 
+ * Reuse TransferManager and client objects and share them throughout applications.
+ */
 public class AwsRepository extends Repository {
 	private static final Logger LOGGER = Logger.getLogger(AwsRepository.class.getName());
 
 	private AmazonS3 s3Client = null;
+	private TransferManager transferMgr;
 	private String bucketName = null;
 
 	public AwsRepository(Map<AWSInfoCredentials, String> credentials, ClientConfiguration config) {
@@ -62,9 +69,8 @@ public class AwsRepository extends Repository {
 	private void constructRepo(String accessId, String secretKey, String region, String bucketName, ClientConfiguration config) {
 		System.setProperty("java.net.useSystemProxies", "true");
 		if (isNotBlank(accessId) && isNotBlank(secretKey) && isNotBlank(region) && isNotBlank(bucketName)) {
-			AWSCredentials creds = new BasicAWSCredentials(accessId, secretKey);
-			 
 			try {
+				AWSCredentials creds = new BasicAWSCredentials(accessId, secretKey);
 				Regions regions = Regions.fromName(region);
 				this.bucketName = bucketName;
 				s3Client = AmazonS3ClientBuilder.standard()
@@ -72,26 +78,31 @@ public class AwsRepository extends Repository {
 						.withRegion(regions)
 						.withClientConfiguration(config)
 						.build();
-			} catch (IllegalArgumentException e) {
-				LOGGER.error("Region value parameter is wrong");
-			} catch (Exception e) {
-				LOGGER.error(e.getMessage());
+				transferMgr = TransferManagerBuilder.standard()
+			            .withS3Client(s3Client)
+			            .build();
+			} catch (IllegalArgumentException ille) {
+				LOGGER.error(ille.getMessage(),ille);
+			} catch (Exception exp) {
+				LOGGER.error(exp.getMessage(),exp);
 			}
 		}
-	}
-
+	}	
+	
 	@Override
-	public void put(String tracePath) {
-		if (s3Client != null) {
-			try {
-				File file = new File(tracePath);
-				s3Client.putObject(new PutObjectRequest(bucketName, file.getName(), file));
-			}catch (AmazonServiceException ase) {
-				LOGGER.error(ase.getMessage(), ase);
-			}catch (Exception exception) {
-				LOGGER.error(exception.getMessage(), exception);
-			}
-		}
+	public TransferState put(File file) {
+		try {
+			PutObjectRequest req = new PutObjectRequest(bucketName, file.getName(), file);
+			Upload myUpload = transferMgr.upload(req);
+			myUpload.waitForCompletion();
+			transferMgr.shutdownNow();
+			return myUpload.getState();
+		}catch (AmazonServiceException ase) {
+			LOGGER.error("Error Message:  " + ase.getMessage());
+  		}catch (Exception exception) {
+			LOGGER.error(exception.getMessage(), exception);
+ 		}
+		return null;
 	}
 
 	@Override
@@ -101,32 +112,33 @@ public class AwsRepository extends Repository {
 				&& (remotePath != null && remotePath.length() > 0)) {
 			downloadedFilePath = localPath + "/" + remotePath;
 			try {
-				S3Object object = s3Client.getObject(new GetObjectRequest(bucketName, remotePath));
-				S3ObjectInputStream s3is = object.getObjectContent();
-				FileOutputStream fos = new FileOutputStream(new File(downloadedFilePath));
-				byte[] readBuf = new byte[1024];
-				int readLen = 0;
-				while ((readLen = s3is.read(readBuf)) > 0) {
-					fos.write(readBuf, 0, readLen);
-				}
-				s3is.close();
-				fos.close();
-			} catch (AmazonServiceException | IOException e) {
-				LOGGER.error(e.getMessage(), e);
-			}
+ 				File downloadTarget = new File(downloadedFilePath);
+				Download myDownload = transferMgr.download(new GetObjectRequest(bucketName, remotePath), downloadTarget);
+				myDownload.waitForCompletion();
+				transferMgr.shutdownNow();
+			} catch (AmazonClientException  ace) {
+				LOGGER.error("Error Message:    " + ace.getMessage());
+			} catch (InterruptedException ire) {
+				LOGGER.error(ire.getMessage());
+			} catch (Exception exception) {
+				LOGGER.error(exception.getMessage(), exception);
+	 		}
 		}
 		return downloadedFilePath;
 	}
 
-	
 	public List<S3ObjectSummary> getlist() {
 		List<S3ObjectSummary> objects = null;
 		if (s3Client != null) {
+			ObjectListing objectListing = null;
 			try {
-				ObjectListing objectListing = s3Client.listObjects(bucketName);
+				objectListing = s3Client.listObjects(bucketName);
 				objects = objectListing.getObjectSummaries();
-			} catch (Exception e) {
-				LOGGER.error(e.getMessage(), e);
+				for (S3ObjectSummary objectSummary : objects) {
+					LOGGER.debug(" - " + objectSummary.getKey() + "  " + "(size = " + objectSummary.getSize() + ")");
+				}
+			} catch (Exception exc) {
+				LOGGER.error("Error Message: " + exc.getMessage());
 			}
 			return objects;
 		}
@@ -141,5 +153,10 @@ public class AwsRepository extends Repository {
 	public List<String> list() {
 		// Really required???
 		return null;
+	}
+
+	@Override
+	public void put(String trace) {
+		// TODO Auto-generated method stub		
 	}
 }

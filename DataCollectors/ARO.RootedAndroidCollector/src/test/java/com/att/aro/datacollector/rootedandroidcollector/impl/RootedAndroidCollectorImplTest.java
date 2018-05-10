@@ -213,13 +213,13 @@ public class RootedAndroidCollectorImplTest {
 	@Test
 	public void testgetMajorVersion_returnIsCorrect() {
 		int testResult = rootedAndroidCollectorImpl.getMajorVersion();
-		assertEquals(3, testResult);
+		assertEquals(1, testResult);
 	}
 
 	@Test
 	public void testgetMinorVersion_returnIsCorrect() {
 		String testResult = rootedAndroidCollectorImpl.getMinorVersion();
-		assertEquals("1.1.11", testResult);
+		assertEquals("0.0", testResult);
 	}
 
 	@Test

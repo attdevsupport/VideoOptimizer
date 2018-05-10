@@ -26,6 +26,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(propOrder = { "segmentTemplate", "representation" })
 public class AdaptationSetPR {
 
+	String contentType;
 	String mimeType;
 	List<RepresentationPR> representation;
 	SegmentTemplatePR segmenttemplate;
@@ -33,7 +34,8 @@ public class AdaptationSetPR {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("\n\t\tAdaptationSet\n\t\t\tcontentType:"); strblr.append(mimeType);
+		strblr.append("\n\t\tAdaptationSet\n\t\t\tmimeType:"); strblr.append(mimeType);
+		strblr.append("\n\t\t\tcontentType:"); strblr.append(contentType);
 		int cntr = 0;
 //		strblr.append("\n\t\t SegmentTemplatePR :"); 
 		strblr.append(segmenttemplate);
@@ -51,6 +53,15 @@ public class AdaptationSetPR {
 	@XmlAttribute(name = "mimeType")
 	public void setMimeType(String mimeType) {
 		this.mimeType = mimeType;
+	}
+
+	public String getContentType() {
+		return contentType;
+	}
+
+	@XmlAttribute(name = "contentType")
+	public void setContentTypeType(String contentType) {
+		this.contentType = contentType;
 	}
 
 	public List<RepresentationPR> getRepresentation() {
