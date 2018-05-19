@@ -23,6 +23,10 @@ public class VideoPreferenceInfo {
 	int warningCriteriaInt;
 	int failCriteriaInt;
 	
+	public VideoPreferenceInfo(String bestPractice) {
+		this.bestPractice = bestPractice;
+	}
+	
 	public VideoPreferenceInfo(String bestPractice, String warningCriteria,
 			String failCriteria) {
 		this.bestPractice = bestPractice;

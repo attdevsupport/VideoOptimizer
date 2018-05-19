@@ -15,14 +15,15 @@
 */
 package com.att.aro.datacollector.norootedandroidcollector.impl;
 
+
+import org.apache.log4j.Logger;
+
 import com.android.ddmlib.IDevice;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
-import com.att.aro.core.model.InjectLogger;
 
 /**
  * Initiates uidump.sh & parse the output file
@@ -32,8 +33,7 @@ public class UIXmlCollector implements Runnable {
 		INITIALISED, CAPTURING, STOPPING, DONE, ERROR, UNDEFINED
 	}
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger logger = Logger.getLogger(UIXmlCollector.class.getName());
 	private IAroDevice aroDevice;
 	private IExternalProcessRunner extrunner;
 	private IAndroid android;
@@ -52,7 +52,7 @@ public class UIXmlCollector implements Runnable {
 		this.adbservice = adbservice;
 		this.filemanager = fileManager;
 		this.extrunner = runner;
-	}
+ 	}
 
 	public State getCurrentState() {
 		return currentState;
@@ -100,7 +100,7 @@ public class UIXmlCollector implements Runnable {
 		String command = "sh " + remoteFilesPath + killUiXmlPayload;
 		String[] response = android.getShellReturn(device, command);
 		for (String line : response) {
-			if (line.length() > 0) {
+			if (line.length() > 0) {			
 				logger.debug(">>" + line + "<<");
 			}
 		}

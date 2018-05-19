@@ -1,7 +1,7 @@
 package com.att.aro.core.util;
 
 import java.io.IOException;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.commandline.IExternalProcessRunner;
@@ -10,7 +10,7 @@ import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
 public class FFmpegConfirmationImpl {
-
+	@Autowired
 	private VideoUsagePrefs videoUsagePrefs;
 
 	@Autowired

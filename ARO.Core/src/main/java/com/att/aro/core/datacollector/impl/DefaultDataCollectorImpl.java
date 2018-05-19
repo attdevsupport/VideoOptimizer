@@ -220,5 +220,9 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 		return new IAroDevice[0];
 	}
 
+	@Override
+	public boolean isDeviceDataPulledStatus() {
+		return true;
+	}
 	
 }

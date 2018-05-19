@@ -74,6 +74,7 @@ public class BufferInSecondsPlot implements IPlot{
 			seriesDataSets = bufferInSecondsCalculatorImpl.populate(videoUsage,chunkPlayTimeList);
 			//updating video stall result in packetAnalyzerResult
 			analysis.getAnalyzerResult().setVideoStalls(bufferInSecondsCalculatorImpl.getVideoStallResult());
+			analysis.getAnalyzerResult().setNearStalls(bufferInSecondsCalculatorImpl.getVideoNearStallResult());
 			
 			bufferTimeList.clear();
 			double xCoordinate,yCoordinate;

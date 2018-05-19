@@ -28,7 +28,6 @@ import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
-import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.border.Border;
@@ -62,6 +61,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private String txtLandscape;
 	private String rooted;
 	private String vpn;
+	private String ios;
 
 	private JRadioButton btn_lrez;
 	private JRadioButton btn_hdef;
@@ -74,6 +74,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 	private JRadioButton btnRooted;
 	private JRadioButton btnVpn;
+	private JRadioButton btniOS;
 
 	private ButtonGroup radioBtnVpnRoot;
 	private VideoOption videoOption;
@@ -91,6 +92,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private AttnrPanel attnrGroupPanel;
 	private AttenuatorModel miniAtnr;
 
+	private boolean secure;
 
 	private IDataCollector collector;
 	private IDataCollector rootCollector;
@@ -148,7 +150,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private void setUpLabels() {
 		String collectorTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.collector.title");
 		String attenuatorTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.title");
-		String secureTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.secure.title");
 		String videoTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.video.title");
 		String videoOrientTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.video.orient.title");
 
@@ -171,7 +172,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 				case ROOTED_ANDROID:
 					btnRooted.setVisible(true);
-					btnRooted.setEnabled(true);
+					btnRooted.setEnabled(true);					
 					rootCollector = collectors.get(i);
 					break;
 
@@ -182,6 +183,8 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 					break;
 
 				case IOS:
+					btniOS.setVisible(true);
+					btniOS.setEnabled(true);
 					iosCollector = collectors.get(i);
 					break;
 
@@ -199,7 +202,9 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		showHideOptions(e);
-		setAttenuateSectionStatus();
+		if(e.getActionCommand().equals(vpn) || e.getActionCommand().equals(ios) || e.getActionCommand().equals(rooted)) {
+			setAttenuateSectionStatus();
+		}
 	}
 
 	private void showHideOptions(ActionEvent e) {
@@ -238,26 +243,26 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			videoOrient = Orientation.LANDSCAPE;
 			SettingsImpl.getInstance().setAndSaveAttribute("orientation", videoOrient.toString().toLowerCase());
 			return;
-		}
-
-		// Collector
+		}// Collector
 		else if (ac.equals(rooted)) {
 			collector = rootCollector;
 			if (btnRooted.isSelected()) {
-
- 				enableFullVideo(false);
+ 
+				enableFullVideo(false);
 			}
 			return;
 
 		} else if (ac.equals(vpn)) {
 			collector = vpnCollector;
 			if (btnVpn.isSelected()) {
- 				enableFullVideo(true);
+
+				enableFullVideo(true);
 			}
 
 			return;
 
-		}  
+		}
+ 
 	}
 
 	/**
@@ -265,26 +270,35 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	 * Rooted or VPN or it is a IOS device
 	 */
 	private void setAttenuateSectionStatus() {
-		if (btnVpn.isSelected()) {
+		if (btnVpn.isSelected()||btniOS.isSelected()) {
+			attnrGroupPanel.getAttnrRadioGP().reset();
 			attnrGroupPanel.setAttenuateEnable(true);
+			if(btniOS.isSelected()) {
+				attnrGroupPanel.getAttnrRadioGP().setRbAtnrLoadFileEnable(false);
+			}
 		} else {
 			attnrGroupPanel.setAttenuateEnable(false);
 		}
 	}
 
+	public boolean isSecure() {
+		return secure;
+	}
  
- 
+
 	public AttnrPanel getAttnrGroup() {
 		if (attnrGroupPanel == null) {
 			miniAtnr = new AttenuatorModel();
-			attnrGroupPanel = new AttnrPanel(parent, miniAtnr);
+			
+			attnrGroupPanel = new AttnrPanel(this,parent, miniAtnr);
 			Border loweredetched = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
 			attnrGroupPanel.setBorder(loweredetched);
 		}
 		return attnrGroupPanel;
 	}
 
- 
+
+
 	private JPanel getRadioGroupVideo() {
 		loadRadioGroupVideo();
 		JPanel btnGrp = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -309,34 +323,40 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		JPanel btnGrp = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		btnGrp.add(btnRooted);
 		btnGrp.add(btnVpn);
+		btnGrp.add(btniOS);
 		return btnGrp;
 	}
-
  
+
 	private void loadRadioGroupCollector() {
 		rooted = ResourceBundleHelper.getMessageString("dlog.collector.option.rooted");
 		vpn = ResourceBundleHelper.getMessageString("dlog.collector.option.vpn");
+		ios =  ResourceBundleHelper.getMessageString("dlog.collector.option.ios");
+		
 		btnRooted = new JRadioButton(rooted);
 		btnVpn = new JRadioButton(vpn);
+		btniOS = new JRadioButton(ios);
 
 		btnRooted.setActionCommand(rooted);
 		btnVpn.setActionCommand(vpn);
+		btniOS.setActionCommand(ios);
 
 		btnRooted.setMnemonic(KeyEvent.VK_R);
 		btnVpn.setMnemonic(KeyEvent.VK_V);
+		btniOS.setMnemonic(KeyEvent.VK_W);
 
 		btnRooted.addActionListener(this);
 		btnVpn.addActionListener(this);
+		btniOS.addActionListener(this);
 
-		btnRooted.setEnabled(false);
-
-		btnVpn.setSelected(true);
-
+ 		btnVpn.setSelected(true);
+ 
 		// only group the rooted & vpn
 		radioBtnVpnRoot = new ButtonGroup();
 		radioBtnVpnRoot.add(btnRooted);
 		radioBtnVpnRoot.add(btnVpn);
-		btnRooted.setEnabled(true);
+		radioBtnVpnRoot.add(btniOS);		
+		
 	}
 
 	private void loadRadioGroupVideo() {
@@ -393,10 +413,11 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			setVisible(true);
 			collector = iosCollector;
 
- 			btnVpn.setEnabled(false);
+			btniOS.setEnabled(true);			
+			btniOS.setSelected(true);
+			btnVpn.setEnabled(false);
 			btnRooted.setEnabled(false);
-
-			radioBtnVpnRoot.clearSelection();
+			
 			String ver = selectedDevice.getApi();
 			int major = StringUtils.isBlank(ver) ? 0 : Integer.valueOf(ver.split("\\.")[0]);
 			boolean hdVideo = (major >= 11) ? true : false;
@@ -424,13 +445,15 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			enableFullVideo(true);
 			// set default video
 			btn_lrez.setSelected(true);
- 			videoOption = VideoOption.LREZ;
+			videoOption = VideoOption.LREZ;
 
 			showVideoOrientation(false); // false because LREZ is selected by
 											// default
- 			btnVpn.setEnabled(true);
-			btnRooted.setEnabled(true);
 
+			btniOS.setEnabled(false);
+			btnVpn.setEnabled(true);
+			btnRooted.setEnabled(true);
+			
 			String abi = selectedIAroDevice.getAbi();
 			if (selectedIAroDevice.isEmulator()) {
 				if (abi.contains("x86")) {
@@ -513,7 +536,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 		btnVpn.setEnabled(boolFlag);
 		btnVpn.setSelected(boolFlag);
- 
+		
 
 	}
 
@@ -576,7 +599,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	public AttenuatorModel getMiniAtnr() {
 		return miniAtnr;
 	}
-
 	public void setMiniAtnr(AttenuatorModel miniAtnr) {
 		this.miniAtnr = miniAtnr;
 	}

@@ -158,12 +158,7 @@ public class NorootedAndroidCollectorImplTest{
 		Mockito.when(android.getShellReturn(Mockito.any(IDevice.class), Mockito.anyString())).thenReturn(str1);
 //		Mockito.doNothing().when(android).getShellReturn(Mockito.any(IDevice.class), Mockito.anyString());
 	
-		try {
-			//Mockito.when(aDevice1.installPackage(Mockito.anyString(), Mockito.anyBoolean()).;
-			Mockito.when(aDevice1.installPackage(Mockito.anyString(), Mockito.anyBoolean())).thenReturn("some thing");
-		} catch (InstallException iExp) {
-			iExp.printStackTrace();
-		}
+		
 		Mockito.when(fileManager.fileExist(Mockito.anyString())).thenReturn(true);
 		Mockito.when(android.runApkInDevice(Mockito.any(IDevice.class),Mockito.anyString())).thenReturn(false);
 		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, "device1", extranalParams, null);

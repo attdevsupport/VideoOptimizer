@@ -163,7 +163,8 @@ public class CommonHelper {
     }
 
     private String unitConvert(int kbps) {
-        double mTemp = kbps / 1024;
+    		Double kbpsDouble = new Double(kbps);
+        double mTemp = kbpsDouble / 1024;
         DecimalFormat df = new DecimalFormat("#.##");
         df.setRoundingMode(RoundingMode.HALF_UP);
         return df.format(mTemp);

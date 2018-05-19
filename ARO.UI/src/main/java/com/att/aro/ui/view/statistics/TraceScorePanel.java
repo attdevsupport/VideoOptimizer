@@ -164,7 +164,7 @@ public class TraceScorePanel extends TabPanelJPanel {
 	public void refresh(AROTraceData model) {
 		ApplicationScoreDerived derived =
 				new ApplicationScoreDerived(model, ApplicationSampling.getInstance());
-		model.getAnalyzerResult().getBurstcollectionAnalysisData();
+		model.getAnalyzerResult().getBurstCollectionAnalysisData();
 
 		setTraceScoreDataEntry(LabelKeys.appscore_causes_cacheControl,
 				derived.getCacheHeaderControlScore(), "75");

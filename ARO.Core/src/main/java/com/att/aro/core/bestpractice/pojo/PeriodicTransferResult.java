@@ -15,12 +15,17 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class PeriodicTransferResult extends AbstractBestPracticeResult {
 	private int periodicCount = 0;
 	private int diffPeriodicCount = 0;
 	private double minimumPeriodicRepeatTime = 0.0;
+	@JsonIgnore
 	private String exportAllIneffConnDesc;
+	@JsonIgnore
 	private String exportAllIneffConnRptDesc;
+	@JsonIgnore
 	private String exportAllIneffConnTimeDesc;
 	
 	public PeriodicTransferResult(){

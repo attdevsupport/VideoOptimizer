@@ -15,6 +15,7 @@
 */
 package com.att.aro.core.bestpractice.impl;
 
+import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -65,7 +66,11 @@ public class DuplicateContentImpl implements IBestPractice {
 		result.setDuplicateContentBytesRatio(cacheAnalysis.getDuplicateContentBytesRatio());
 		int duplicateContentsize = cacheAnalysis.getDuplicateContent().size();
 		result.setDuplicateContentsize(duplicateContentsize);
-		result.setTotalContentBytes(cacheAnalysis.getTotalBytesDownloaded());
+		int totalTCPBytes = 0;
+		if (tracedata.getStatistic() != null) {
+			totalTCPBytes = tracedata.getStatistic().getTotalTCPBytes();
+		}
+		result.setTotalContentBytes(totalTCPBytes);
 		List<CacheEntry> caUResult = createUniqueItemList(cacheAnalysis.getDuplicateContent());
 		result.setDuplicateContentList(caUResult);
 		int duplicateContentSizeOfUniqueItems = caUResult.size();
@@ -75,11 +80,11 @@ public class DuplicateContentImpl implements IBestPractice {
 			result.setResultText(textResultPass);
 		} else {
 			result.setResultType(BPResultType.FAIL);
-			NumberFormat numf = NumberFormat.getInstance();
-			numf.setMaximumFractionDigits(1);
+			DecimalFormat numf = new DecimalFormat(".##");
 			NumberFormat numf2 = NumberFormat.getInstance();
 			numf2.setMaximumFractionDigits(3);
-			String text = MessageFormat.format(textResults, numf.format(result.getDuplicateContentBytesRatio() * 100.0),
+			String text = MessageFormat.format(textResults,
+					numf.format(result.getDuplicateContentBytes() * 100.0 / result.getTotalContentBytes()),
 					result.getDuplicateContentSizeOfUniqueItems(),
 					numf2.format(((double) result.getDuplicateContentBytes()) / DUPLICATE_CONTENT_DENOMINATOR),
 					numf2.format(((double) result.getTotalContentBytes()) / DUPLICATE_CONTENT_DENOMINATOR));

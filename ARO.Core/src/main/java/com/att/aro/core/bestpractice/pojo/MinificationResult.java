@@ -17,10 +17,13 @@ package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class MinificationResult extends AbstractBestPracticeResult {
 	private List<MinificationEntry> minificationEntryList = null;
 	private int totalSavingsInByte = 0;
 	private long totalSavingsInKb = 0L;
+	@JsonIgnore
 	private String exportAllNumberOfMinifyFiles;
 	
 	@Override
@@ -65,6 +68,10 @@ public class MinificationResult extends AbstractBestPracticeResult {
 
 	public void setExportAllNumberOfMinifyFiles(String exportAllNumberOfMinifyFiles) {
 		this.exportAllNumberOfMinifyFiles = exportAllNumberOfMinifyFiles;
+	}
+	
+	public int getErrorCount() {
+		return minificationEntryList != null ? minificationEntryList.size() : 0;
 	}
 	
 }

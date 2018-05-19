@@ -16,12 +16,15 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class SpriteImageEntry {
+	@JsonIgnore
 	private double timeStamp;
 	private int fileSize;
 	private String hostName;
 	private String httpObjectName;
+	@JsonIgnore
 	private HttpRequestResponseInfo httpRequestResponse;
 	
 	public SpriteImageEntry(HttpRequestResponseInfo hrri) {

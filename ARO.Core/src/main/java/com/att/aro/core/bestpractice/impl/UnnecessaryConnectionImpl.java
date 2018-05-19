@@ -67,7 +67,7 @@ public class UnnecessaryConnectionImpl implements IBestPractice {
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 		UnnecessaryConnectionResult result = new UnnecessaryConnectionResult();
 		ucEntryList = new ArrayList<UnnecessaryConnectionEntry>();
-		validateUnnecessaryConnections(tracedata.getBurstcollectionAnalysisData().getBurstCollection());
+		validateUnnecessaryConnections(tracedata.getBurstCollectionAnalysisData().getBurstCollection());
 		if(tightlyCoupledBurstCount < 4){
 			result.setResultType(BPResultType.PASS);
 			result.setResultText(textResultPass);

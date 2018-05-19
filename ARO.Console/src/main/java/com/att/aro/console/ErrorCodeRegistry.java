@@ -62,20 +62,7 @@ public final class ErrorCodeRegistry {
 		err.setDescription("Data collector specified cannot be found. Make sure data collector is installed.");
 		return err;
 	}
-	public static ErrorCode getSecureEnableRequired() {
-		ErrorCode err = new ErrorCode();
-		err.setCode(306);
-		err.setName("Secure not enabled");
-		err.setDescription("Certificate installation requires enable secure collector using '--secure' option.");
-		return err;
-	}
-	public static ErrorCode getSecureNotApplicable() {
-		ErrorCode err = new ErrorCode();
-		err.setCode(307);
-		err.setName("Secure not applicable");
-		err.setDescription("--secure option is not applicable for ios and rooted android device.");
-		return err;
-	}
+
 	public static ErrorCode getAttenuatorNotApplicable() {
 		ErrorCode err = new ErrorCode();
 		err.setCode(308);
@@ -105,5 +92,15 @@ public final class ErrorCodeRegistry {
 		return err;
 
 	}
+	public static ErrorCode getNetworkNotActivatedError() {
+		ErrorCode err = new ErrorCode();
+		err.setCode(312);
+		err.setName("No Sharing Internet detected");
+		err.setDescription("Please turn on the WIFI sharing!");
+		return err;
+
+	}
+
+	
 	
 }

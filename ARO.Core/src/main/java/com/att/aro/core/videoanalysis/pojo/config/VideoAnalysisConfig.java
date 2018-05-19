@@ -3,11 +3,13 @@ package com.att.aro.core.videoanalysis.pojo.config;
  * put copyright here
  */
 
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.att.aro.core.videoanalysis.impl.RegexMatchLbl;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 
 /*
@@ -58,7 +60,7 @@ public class VideoAnalysisConfig {
 	private Pattern headerPattern;
 	private Pattern responsePattern;
 	private boolean validated = false;
-
+	private Map<RegexMatchLbl, VideoDataTags[]> xrefMap;
 	public VideoAnalysisConfig() {
 		// dummy constructor to make json happy
 	}
@@ -71,6 +73,19 @@ public class VideoAnalysisConfig {
 		setHeaderRegex(headerRegex != null ? headerRegex : "");
 		setResponseRegex(responseRegex != null ? responseRegex : "");
 		setXref(xref);
+	}
+
+	public VideoAnalysisConfig(VideoType videoType, String desc, String type, String regex, String headerRegex,
+			String responseRegex, VideoDataTags[] xref, Map<RegexMatchLbl, VideoDataTags[]> xrefMap)
+			throws PatternSyntaxException {
+		setVideoType(videoType);
+		setDesc(desc);
+		setType(type);
+		setRegex(regex != null ? regex : "");
+		setHeaderRegex(headerRegex != null ? headerRegex : "");
+		setResponseRegex(responseRegex != null ? responseRegex : "");
+		setXref(xref);
+		setXrefMap(xrefMap);
 	}
 
 	public VideoType getVideoType() {
@@ -218,4 +233,12 @@ public class VideoAnalysisConfig {
 		return validated;
 	}
 
+	@JsonProperty("xrefMap")
+	public Map<RegexMatchLbl, VideoDataTags[]> getXrefMap() {
+		return xrefMap;
+	}
+
+	public void setXrefMap(Map<RegexMatchLbl, VideoDataTags[]> xrefMap) {
+		this.xrefMap = xrefMap;
+	}
 }

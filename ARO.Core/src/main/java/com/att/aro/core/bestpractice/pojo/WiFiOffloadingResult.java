@@ -15,11 +15,15 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class WiFiOffloadingResult extends AbstractBestPracticeResult {
 	int longBurstCount = 0;
+	@JsonIgnore
 	private String exportAllOffWifiDesc;
 	double largestBurstBeginTime = 0.0;
 	double largestBurstDuration = 0.0;
+
 	public String getExportAllOffWifiDesc() {
 		return exportAllOffWifiDesc;
 	}

@@ -1,5 +1,7 @@
 package com.att.aro.core.peripheral.pojo;
 
+import com.att.aro.core.datacollector.DataCollectorType;
+
 /*
  * Model to hold the attributes of the attenuation collections
  */
@@ -17,6 +19,15 @@ public class AttenuatorModel {
 		private boolean constantThrottle;
 		private boolean throttleDLEnable;
 		private boolean throttleULEnable;
+		private DataCollectorType deviceType;
+		
+		public DataCollectorType getDeviceType() {
+			return deviceType;
+		}
+		
+		public void setDeviceType(DataCollectorType deviceType) {
+			this.deviceType = deviceType;
+		}
 		
 		public boolean isConstantThrottle() {
 			return constantThrottle;

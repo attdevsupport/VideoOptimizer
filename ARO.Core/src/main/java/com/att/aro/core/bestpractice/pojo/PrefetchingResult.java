@@ -15,9 +15,12 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class PrefetchingResult extends AbstractBestPracticeResult {
 	private int userInputBurstCount = 0;
 	private int burstCategoryCount = 0;
+	@JsonIgnore
 	private String exportAllPrefetchDesc;
 	
 	public int getUserInputBurstCount() {

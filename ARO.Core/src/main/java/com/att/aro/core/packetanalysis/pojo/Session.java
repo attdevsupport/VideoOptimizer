@@ -1040,20 +1040,23 @@ public class Session implements Serializable, Comparable<Session> {
 	public String getDataText() {
 		// trim the buffer size, most of the contents are not available for use string presented
 		// 1000 according to the average packet size 1500
-		StringBuffer buf = new StringBuffer(storageUl.length + storageDl.length);
-		if (buf.length() > 10000) {
-			buf.append(new String(Arrays.copyOf(storageUl, 1000)));
-			buf.append('\n');
-			buf.append(new String(Arrays.copyOf(storageDl, 1000)) + "...");
+		StringBuffer buffer;
+		int totalBufferLength = storageUl.length + storageDl.length;
+		if(totalBufferLength > 20000) {
+			buffer = new StringBuffer(20050);
+			buffer.append("\n--UPLINK--\n");
+			buffer.append(Util.byteArrayToString(Arrays.copyOf(storageUl, 10000)) + "...");
+			buffer.append('\n');
+			buffer.append("\n--DOWNLINK--\n");
+			buffer.append(Util.byteArrayToString(Arrays.copyOf(storageDl, 10000)) + "...");
 		} else {
-			buf.append("\n--UPLINK--\n");
-			buf.append(Util.byteArrayToString(storageUl));
-			// buf.append(new String(storageUl));
-			buf.append("\n--DOWNLINK--\n");
-			// buf.append(new String(storageDl));
-			buf.append(Util.byteArrayToString(storageDl));
+			buffer = new StringBuffer(storageUl.length + storageDl.length);
+			buffer.append("\n--UPLINK--\n");
+			buffer.append(Util.byteArrayToString(storageUl));
+			buffer.append("\n--DOWNLINK--\n");
+			buffer.append(Util.byteArrayToString(storageDl));
 		}
-		return buf.toString();
+		return buffer.toString();
 	}
 
 	/**

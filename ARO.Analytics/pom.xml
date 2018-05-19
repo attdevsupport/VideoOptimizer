@@ -29,17 +29,18 @@
 			<name>Sonatype Flex</name>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</repository>
+
 	</repositories>
 	<pluginRepositories>
 		<pluginRepository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
 			<url>http://repo1.maven.org/maven2</url>
-		</pluginRepository>
+		</pluginRepository>	
 	</pluginRepositories>
 
 	<!-- dependencies -->
-	<dependencies>
+	<dependencies>	
 		<dependency>
 			<groupId>com.att.aro</groupId>
 			<artifactId>aro-core</artifactId>
@@ -83,7 +84,9 @@
 			<version>3.0.4</version>
 		</dependency>
 	</dependencies>
- 	<!-- build -->
+ 
+
+	<!-- build -->
 	<build>
 		<plugins>
 
@@ -102,42 +105,42 @@
 					</archive>
 				</configuration>
 			</plugin>
+          <plugin>
+              <artifactId>maven-dependency-plugin</artifactId>
+                  <executions>
+                      <execution>
+                          <phase>install</phase>
+                          <goals>
+                              <goal>copy-dependencies</goal>
+                          </goals>
+                          <configuration>
+                              <outputDirectory>${basedir}/libs</outputDirectory>
+                          </configuration>
+                      </execution>
+                  </executions>
+          </plugin>
 			<plugin>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>install</phase>
-						<goals>
-							<goal>copy-dependencies</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${basedir}/libs</outputDirectory>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>3.0.4</version>
-				<configuration>
-					<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
-					<effort>Max</effort>
-					<threshold>Max</threshold>
-					<xmlOutput>true</xmlOutput>
-					<findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-				</configuration>
-				<executions>
-					<execution>
-						<id>analyze-compile</id>
-						<!-- <phase>compile</phase> -->
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-
+	            <groupId>org.codehaus.mojo</groupId>
+	            <artifactId>findbugs-maven-plugin</artifactId>
+	            <version>3.0.4</version>
+	            <configuration>
+	            	<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
+	                <effort>Max</effort>
+	                <threshold>Max</threshold>
+	                <xmlOutput>true</xmlOutput>
+	                <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+	            </configuration>
+	            <executions>
+	                <execution>
+	                    <id>analyze-compile</id>
+	                    <!-- <phase>compile</phase> -->
+	                    <goals>
+	                        <goal>check</goal>
+	                    </goals>
+	                </execution>
+	            </executions>
+	        </plugin>
+			
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -154,8 +157,7 @@
 		</plugins>
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings 
-					only. It has no influence on the Maven build itself. -->
+				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>

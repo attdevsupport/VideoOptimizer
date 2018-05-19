@@ -16,10 +16,15 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class UsingCacheResult extends AbstractBestPracticeResult {
+	@JsonProperty("missingCacheHeaderPct")
 	private double cacheHeaderRatio = 0.0;
+	@JsonIgnore
 	private PacketInfo noCacheHeaderFirstPacket;
+	@JsonIgnore
 	private String exportAllCacheConPct;
 	
 	public double getCacheHeaderRatio() {

@@ -16,13 +16,16 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ImageCompressionEntry {
 	private double orgImageSize;
+	@JsonIgnore
 	private double imgTimeStamp;
 	private String httpObjtName = "";
 	private String serverHostName = "";
 	private int imgHttpCode;
+	@JsonIgnore
 	private HttpRequestResponseInfo httpReqRes;
 	private double sizeE;
 	private double sizeS;
@@ -124,6 +127,7 @@ public class ImageCompressionEntry {
 		this.imgHttpCode = httpCode;
 	}
 
+	@JsonIgnore
 	public HttpRequestResponseInfo getHttpRequestResponse() {
 		return httpReqRes;
 	}

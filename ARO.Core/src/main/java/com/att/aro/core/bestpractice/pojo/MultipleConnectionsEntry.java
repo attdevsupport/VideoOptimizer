@@ -16,16 +16,22 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class MultipleConnectionsEntry {
+	@JsonIgnore
 	private double startTimeStamp;
+	@JsonIgnore
 	private double endTimeStamp;
+	@JsonIgnore
 	private int httpStatusCode;
 	private int concurrentSessions;
 	private double byteCount;
+	@JsonIgnore
 	private String httpReqObjName = "";
 	private String hostName = "";
 	private String ipValue = "";
+	@JsonIgnore
 	private HttpRequestResponseInfo httpReqRespInfo;
 
 	public MultipleConnectionsEntry(HttpRequestResponseInfo httpReqRespInfo, String domainName, int concurrentSessions,

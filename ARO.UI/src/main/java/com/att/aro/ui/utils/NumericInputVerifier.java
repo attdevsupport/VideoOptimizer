@@ -16,6 +16,7 @@
 package com.att.aro.ui.utils;
 
 import java.awt.Color;
+import java.awt.IllegalComponentStateException;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,9 +29,12 @@ import javax.swing.Popup;
 import javax.swing.PopupFactory;
 import javax.swing.Timer;
 
+import com.att.aro.core.ILogger;
+import com.att.aro.ui.commonui.ContextAware;
+
 /**
  * <pre>
- * Numeric verification of JTextField inputs. 
+ * Numeric verification of JTextField inputs.
  * Instantiate with a Maximum, Minimum, and number of significands.
  * 
  * When clicking on a Save Button you might want to recheck the validity.
@@ -46,7 +50,8 @@ public class NumericInputVerifier extends InputVerifier{
 	private static final int DISPLAYTIMER = 3000;
 
 	private static final Color COLOR = new Color(255, 255, 204);
-	
+	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
+
 	private double min = 0;
 	private double max = 0;
 	private Timer timer;
@@ -87,14 +92,14 @@ public class NumericInputVerifier extends InputVerifier{
 		tested = true;
 		try {
 			text = text.trim();
-			// strip trailing '0' and if it is last the '.' 
+			// strip trailing '0' and if it is last the '.'
 			text = text.indexOf(".") < 0 ? text : text.replaceAll("0*$", "").replaceAll("\\.$", "");
 			
 			BigDecimal value = new BigDecimal(text);
-			
+
 			if (value.doubleValue() > max) {
 				popup(input, String.format(maxMssgFormat, max));
-			} else if (value.doubleValue() < min) {
+			} else if (value.doubleValue() < min || text.startsWith("-")) {
 				popup(input, String.format(minMssgFormat, min));
 			} else if (value.scale() > significands) {
 				popup(input, significands>0
@@ -119,31 +124,34 @@ public class NumericInputVerifier extends InputVerifier{
 	 * @param messageText
 	 */
 	private void popup(JComponent component, String messageText) {
-		Point position = component.getLocationOnScreen();
-		int yOffset = position.y + (int) (component.getHeight() * 0.2);
-		int xOffset = position.x + (int) (component.getWidth() * 1.1);
+		try {
+			Point position = component.getLocationOnScreen();
+			int yOffset = position.y + (int) (component.getHeight() * 0.2);
+			int xOffset = position.x + (int) (component.getWidth() * 1.1);
 
-		PopupFactory factory = PopupFactory.getSharedInstance();
-		JTextField message = new JTextField(messageText);
-		message.setBackground(COLOR);
+			PopupFactory factory = PopupFactory.getSharedInstance();
+			JTextField message = new JTextField(messageText);
+			message.setBackground(COLOR);
 
-		popup = factory.getPopup(component.getParent(), message, xOffset, yOffset);
-		popup.show();
+			popup = factory.getPopup(component.getParent(), message, xOffset, yOffset);
+			popup.show();
 
-		ActionListener hider = new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			ActionListener hider = new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					timer.stop();
+					popup.hide();
+				}
+			};
+
+			// Hide popup in 3 seconds
+			if (timer != null) {
 				timer.stop();
-				popup.hide();
 			}
-		};
-
-		// Hide popup in 3 seconds
-		if (timer != null) {
-			timer.stop();
+			timer = new Timer(DISPLAYTIMER, hider);
+			timer.start();
+		} catch (IllegalComponentStateException e) {
+			log.error("ERROR: component location cannot be retrieved. " + e.getLocalizedMessage());
 		}
-		timer = new Timer(DISPLAYTIMER, hider);
-		timer.start();
-
 	}
 
 	private void hidePopup() {

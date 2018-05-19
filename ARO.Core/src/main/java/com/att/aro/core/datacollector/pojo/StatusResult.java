@@ -29,9 +29,9 @@ import com.att.aro.core.pojo.ErrorCode;
  */
 public class StatusResult {
 
-	private boolean success = false;
-	private ErrorCode error;
-
+	private Boolean success = false;
+	private ErrorCode errorCode;
+	
 	/**
 	 * A generic object to contain more information. For use with either success
 	 * or failure. Depending on the needs of the classes using an instance of
@@ -39,12 +39,24 @@ public class StatusResult {
 	 */
 	private Object data;
 
+	public StatusResult(){
+		this.success = false;
+		this.errorCode = null;
+		this.data = null;
+	}
+	
+	public StatusResult(Boolean success, ErrorCode errorCode, Object data) {
+		this.success = success;
+		this.errorCode = errorCode;
+		this.data = data;
+	}
+	
 	/**
 	 * Returns true if success, false otherwise
 	 * 
 	 * @return true if success, false otherwise
 	 */
-	public boolean isSuccess() {
+	public Boolean isSuccess() {
 		return success;
 	}
 
@@ -83,7 +95,7 @@ public class StatusResult {
 	 * @return an ErrorCode
 	 */
 	public ErrorCode getError() {
-		return error;
+		return errorCode;
 	}
 
 	/**
@@ -93,7 +105,7 @@ public class StatusResult {
 	 *            , an ErrorCode
 	 */
 	public void setError(ErrorCode error) {
-		this.error = error;
+		this.errorCode = error;
 	}
 
 	@Override
@@ -102,7 +114,7 @@ public class StatusResult {
 		sBuffer.append("status :");
 		sBuffer.append(success ? "success" : "fail:");
 		if (!success) {
-			sBuffer.append(error);
+			sBuffer.append(errorCode);
 		}
 		return sBuffer.toString();
 	}

@@ -15,7 +15,7 @@
 */
 package com.att.aro.core.packetanalysis.pojo;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * A bean class that contains one cache entry, and provides methods for

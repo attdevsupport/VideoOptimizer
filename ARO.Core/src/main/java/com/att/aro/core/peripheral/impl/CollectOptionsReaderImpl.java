@@ -40,7 +40,10 @@ public class CollectOptionsReaderImpl implements ICollectOptionsReader {
 		try {
 			List<String> lines = Files.readAllLines(file.toPath());
 			collectOptions = lines.size() < 5 ? readOldFormat(lines) : readNewFormat(file);
-			logger.info("Collection options: " + collectOptions.toString());
+			logger.info("Collection options: " + 
+			"ThrottleDL: "+ collectOptions.getThrottleDL() +
+			"ThrottleUL: "+ collectOptions.getThrottleUL()					
+			);
 		} catch (IOException | InvalidPathException | NumberFormatException e) {
 			logger.error("failed to read collection details file: " + path, e);
 		}

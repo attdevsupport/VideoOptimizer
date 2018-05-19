@@ -220,7 +220,7 @@ public class FilterProcessesDialog extends JDialog {
 				tempresult.getProfile(), tempresult.getStatistic().getPacketSizeToCountMap(), tempresult.getStatemachine().getStaterangelist(), 
 				tempresult.getTraceresult().getUserEvents(), cpuAList.getCpuActivities(), tempresult.getSessionlist());
 		
-		((MainFrame)parent).getController().getTheModel().getAnalyzerResult().setBurstcollectionAnalysisData(bd);
+		((MainFrame)parent).getController().getTheModel().getAnalyzerResult().setBurstCollectionAnalysisData(bd);
 		((MainFrame)parent).refresh();
 		callerMenuItem.setEnabled(true);
 		dispose();

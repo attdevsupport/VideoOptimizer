@@ -535,6 +535,9 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		if (collector.isTrafficCaptureRunning(1)) { //FIXME THINKS THE CAPTURE IS RUNNING AFTER STOP
 			StatusResult result = collector.stopCollector();
 			log.info("stopped collector, result:" + result);
+			if (collector.getType().equals(DataCollectorType.IOS) && (!collector.isDeviceDataPulledStatus())) {
+				this.theView.isDeviceDataPulled(false);
+			}
 			if (result.isSuccess()) {
 				Date traceStopTime = new Date();
 				traceDuration = traceStopTime.getTime() - traceStartTime.getTime();

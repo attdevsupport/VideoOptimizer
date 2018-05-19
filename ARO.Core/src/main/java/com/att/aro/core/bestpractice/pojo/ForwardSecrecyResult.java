@@ -18,7 +18,6 @@ package com.att.aro.core.bestpractice.pojo;
 import java.util.List;
 
 public class ForwardSecrecyResult extends AbstractBestPracticeResult {
-
 	private List<ForwardSecrecyEntry> results;
 
 	public List<ForwardSecrecyEntry> getResults() {
@@ -27,6 +26,10 @@ public class ForwardSecrecyResult extends AbstractBestPracticeResult {
 
 	public void setResults(List<ForwardSecrecyEntry> results) {
 		this.results = results;
+	}
+	
+	public int getFailureCount() {
+		return  results != null ? results.size() : 0;
 	}
 
 	@Override

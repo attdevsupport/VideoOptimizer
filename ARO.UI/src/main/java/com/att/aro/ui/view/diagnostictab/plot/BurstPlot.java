@@ -51,7 +51,7 @@ public class BurstPlot implements IPlot{
 				burstDataCollection.addSeries(series);
 				burstMap.put(eventType, new ArrayList<Burst>());
 			}
-			final List<Burst> burstStates = analysis.getAnalyzerResult().getBurstcollectionAnalysisData().getBurstCollection();
+			final List<Burst> burstStates = analysis.getAnalyzerResult().getBurstCollectionAnalysisData().getBurstCollection();
 			Iterator<Burst> iter = burstStates.iterator();
 			while (iter.hasNext()) {
 				Burst currEvent = iter.next();

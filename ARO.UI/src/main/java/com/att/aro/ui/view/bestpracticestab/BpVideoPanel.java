@@ -25,13 +25,14 @@ import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
+import com.att.aro.ui.view.MainFrame;
 
 
 public class BpVideoPanel extends BpDetail {
 	
 	private static final long serialVersionUID = 1L;
 
-	public BpVideoPanel(String title,
+	public BpVideoPanel(String title,MainFrame aroView,
 			IARODiagnosticsOverviewRoute diagnosticsOverviewRoute) {
 		super(title, diagnosticsOverviewRoute);
 		
@@ -40,8 +41,8 @@ public class BpVideoPanel extends BpDetail {
 
 		addPanel(row++, new BpDetailItem("videoStall"       		, BestPracticeType.VIDEO_STALL,        
 				new BPVideoStallTablePanel()));
-		addPanel(row++, new BpDetailItem("startUpDelay"     		, BestPracticeType.STARTUP_DELAY      ));
-		addPanel(row++, new BpDetailItem("bufferOccupancy"  		, BestPracticeType.BUFFER_OCCUPANCY   ));
+		addPanel(row++, new BpDetailItem("startUpDelay"     		, BestPracticeType.STARTUP_DELAY, aroView));
+		addPanel(row++, new BpDetailItem("bufferOccupancy"  		, BestPracticeType.BUFFER_OCCUPANCY, aroView));
 		addPanel(row++, new BpDetailItem("networkComparison"		, BestPracticeType.NETWORK_COMPARISON ));
 		addPanel(row++, new BpDetailItem("tcpConnection"    		, BestPracticeType.TCP_CONNECTION     ));
 		addPanel(row++, new BpDetailItem("chunkSize"        		, BestPracticeType.CHUNK_SIZE         ));

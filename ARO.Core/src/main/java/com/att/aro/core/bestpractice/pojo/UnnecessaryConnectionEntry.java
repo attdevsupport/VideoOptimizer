@@ -15,9 +15,12 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
-public class UnnecessaryConnectionEntry {
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
+public class UnnecessaryConnectionEntry {
+	@JsonIgnore
 	private double lowTime;
+	@JsonIgnore
 	private double highTime;
 	private int burstCount;
 	private double totalKB;

@@ -268,15 +268,15 @@ public class ConnectionStatisticsChartPanel extends TabPanelJPanel{
 				sessionTermPct = 100.0 * properTermSessions / termSessions;
 			}	
 			
-			longBurstCount = traceDataModel.getAnalyzerResult().getBurstcollectionAnalysisData().getLongBurstCount();
+			longBurstCount = traceDataModel.getAnalyzerResult().getBurstCollectionAnalysisData().getLongBurstCount();
 		}
 		connectionStatisticsPojo.setSessionTermPct(sessionTermPct);
 		
 		double tightlyCoupledTCPPct = 0.0;
 		if(traceDataModel != null && traceDataModel.getAnalyzerResult()!= null){
-			int burstSize = traceDataModel.getAnalyzerResult().getBurstcollectionAnalysisData().getBurstCollection().size();		
+			int burstSize = traceDataModel.getAnalyzerResult().getBurstCollectionAnalysisData().getBurstCollection().size();		
 			int periodicBurstCount = 0;
-			for (Burst burstInfo : traceDataModel.getAnalyzerResult().getBurstcollectionAnalysisData().getBurstCollection()){
+			for (Burst burstInfo : traceDataModel.getAnalyzerResult().getBurstCollectionAnalysisData().getBurstCollection()){
 				BurstCategory bCategory = burstInfo.getBurstCategory();
 				if(bCategory == BurstCategory.PERIODICAL){
 					periodicBurstCount += 1;

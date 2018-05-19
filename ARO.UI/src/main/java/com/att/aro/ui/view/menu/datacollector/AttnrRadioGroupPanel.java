@@ -21,18 +21,29 @@ import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.text.MessageFormat;
+import java.util.List;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
+import com.att.aro.core.datacollector.DataCollectorType;
+import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
+import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
+import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
+	private static final String SharedNetIF = "bridge100";
+	private static final String PORT_NUMBER = "8080";
+	private LoggerImpl log = new LoggerImpl(this.getClass().getName());
 
 	private String attnrSlider;
 	private String attnrLoadFile;
@@ -46,14 +57,16 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 	private DataCollectorSelectNStartDialog startDialog;
 	private AttnrThroughputThrottlePanel attnrTTPanel;
 	private AttnrLoadProfilePanel attnrLoadPanel;
+	private DeviceDialogOptions deviceInfo;
 	private AttenuatorModel miniAtnr;
 
-	public AttnrRadioGroupPanel(AttnrPanel jp, AttenuatorModel miniAtnr, DataCollectorSelectNStartDialog startDialog) {
+	public AttnrRadioGroupPanel(AttnrPanel jp, AttenuatorModel miniAtnr, DataCollectorSelectNStartDialog startDialog, DeviceDialogOptions deviceInfo) {
 
 		setLayout(new FlowLayout());
 		this.parentPanel = jp;
 		this.startDialog = startDialog;
 		this.miniAtnr = miniAtnr;
+		this.deviceInfo = deviceInfo;
 		attnrSlider = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.slider");
 		attnrLoadFile = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.loadfile");
 		attnrNone = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.none");
@@ -85,7 +98,7 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 		if (attnrSlider.equals(ac.getActionCommand())) {
 			parentPanel.getAttnrHolder().remove(getLoadProfilePanel());
 			getLoadProfilePanel().resetComponent();
-			parentPanel.getAttnrHolder().add(getThroughputPanel(),BorderLayout.CENTER);
+			parentPanel.getAttnrHolder().add(getThroughputPanel(), BorderLayout.CENTER);
 			parentPanel.getAttnrHolder().revalidate();
 			parentPanel.getAttnrHolder().repaint();
 
@@ -93,6 +106,10 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 			miniAtnr.setFreeThrottle(false);
 			miniAtnr.setLoadProfile(false);
 			startDialog.resizeLarge();
+			if(DataCollectorType.IOS.equals(deviceInfo.getCollector().getType())) {
+				MessageDialogFactory.getInstance().showInformationDialog(this, messageComposed(),
+						ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.title"));
+			}
 
 		} else if (attnrLoadFile.equals(ac.getActionCommand())) {
 			parentPanel.getAttnrHolder().remove(getThroughputPanel());
@@ -118,8 +135,8 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 		return attnrLoadPanel;
 	}
 
-	public AttnrThroughputThrottlePanel getThroughputPanel(){
-		if(attnrTTPanel == null){
+	public AttnrThroughputThrottlePanel getThroughputPanel() {
+		if (attnrTTPanel == null) {
 			attnrTTPanel = new AttnrThroughputThrottlePanel(miniAtnr);
 		}
 		return attnrTTPanel;
@@ -134,10 +151,14 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 			}
 		}
 	}
-	
+
+	public void setRbAtnrLoadFileEnable(boolean enable) {
+		rbAtnrLoadFile.setEnabled(enable);
+	}
+
 	public void reset() {
 		parentPanel.getAttnrHolder().remove(getThroughputPanel());
-		getThroughputPanel().resetComponent();		
+		getThroughputPanel().resetComponent();
 		parentPanel.getAttnrHolder().remove(getLoadProfilePanel());
 		getLoadProfilePanel().resetComponent();
 		parentPanel.getAttnrHolder().revalidate();
@@ -148,5 +169,36 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 		miniAtnr.setLoadProfile(false);
 		startDialog.resizeMedium();
 		rbAtnrNone.setSelected(true);
+	}
+
+	private String messageComposed() {
+		return MessageFormat.format(
+				ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.reminder"),
+				ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.warning"),
+				ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.status"),
+				detectWifiSharedActive(), ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.ip"),
+				detectWifiShareIP(), ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.port"),
+				PORT_NUMBER);
+
+	}
+
+	private String detectWifiShareIP() {
+		if (NetworkUtil.isNetworkUp(SharedNetIF)) {
+			List<InetAddress> listIp = NetworkUtil.listNetIFIPAddress(SharedNetIF);
+			for (InetAddress ip : listIp) {
+				if (ip instanceof Inet4Address) {
+					String ipString = ip.toString().replaceAll("/", "");
+					return ipString;
+				}
+			}
+		}
+		return "N/A ";
+	}
+
+	private String detectWifiSharedActive() {
+		if (NetworkUtil.isNetworkUp(SharedNetIF)) {
+			return "Active";
+		}
+		return "InActive";
 	}
 }

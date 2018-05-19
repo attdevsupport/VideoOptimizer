@@ -142,20 +142,22 @@ public class ImageUIComparatorImpl implements IBestPractice {
 	}
 
 	private void getImageList() {
-		String originalImage = "";
+		String originalImageName = "";
 		long orgImageSize = 0L;
 		String imgExtn = "";
 		for (Session session : tracedataResult.getSessionlist()) {
 			for (HttpRequestResponseInfo reqResp : session.getRequestResponseInfo()) {
 				if (reqResp.getDirection() == HttpDirection.RESPONSE && reqResp.getContentType() != null
 						&& reqResp.getContentType().contains("image/")) {
-					originalImage = Util.extractFullNameFromRequest(reqResp);
-					File orgImage = new File(imageFolderPath + originalImage);
-					orgImageSize = orgImage.length();
-					int pos = originalImage.lastIndexOf(".");
-					imgExtn = originalImage.substring(pos + 1, originalImage.length());
-					if (orgImageSize > 0 && Util.isJPG(orgImage, imgExtn)) {
-						updateOriginalImageDimensionMap(originalImage, imgExtn, pos, reqResp);
+					originalImageName = Util.extractFullNameFromRequest(reqResp);
+					if (!originalImageName.isEmpty()) {
+						File orgImage = new File(imageFolderPath + originalImageName);
+						orgImageSize = orgImage.length();
+						int pos = originalImageName.lastIndexOf(".");
+						imgExtn = originalImageName.substring(pos + 1, originalImageName.length());
+						if (orgImageSize > 0 && Util.isJPG(orgImage, imgExtn)) {
+							updateOriginalImageDimensionMap(originalImageName, imgExtn, pos, reqResp);
+						}
 					}
 				}
 			}

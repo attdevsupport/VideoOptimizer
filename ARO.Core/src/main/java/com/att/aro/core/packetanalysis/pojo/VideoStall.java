@@ -18,15 +18,11 @@ package com.att.aro.core.packetanalysis.pojo;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
 public class VideoStall {
-
-
 	private double duration;
 	private double stallStartTimeStamp;
 	private double stallEndTimeStamp;
 	private VideoEvent segmentTryingToPlay;
 	private String stallState;
-	
-	//private double stallTriggerTime;
 	
 	@Override
 	public String toString() {

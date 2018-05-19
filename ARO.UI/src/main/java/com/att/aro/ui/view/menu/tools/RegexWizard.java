@@ -37,9 +37,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -65,15 +69,17 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import org.apache.commons.lang.StringUtils;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.videoanalysis.IVideoAnalysisConfigHelper;
+import com.att.aro.core.videoanalysis.impl.RegexMatchLbl;
 import com.att.aro.core.videoanalysis.impl.VideoAnalysisConfigHelperImpl;
+import com.att.aro.core.videoanalysis.pojo.RegexMatchResult;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
 import com.att.aro.core.videoanalysis.pojo.config.VideoDataTags;
@@ -90,6 +96,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	private VideoAnalysisConfigHelperImpl voConfigHelper = (VideoAnalysisConfigHelperImpl) ContextAware.getAROConfigContext().getBean(IVideoAnalysisConfigHelper.class);
 	private VideoAnalysisConfig videoConfig = new VideoAnalysisConfig();
 	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
+	private VideoAnalysisConfig savedVoConfig;
 
 	private JPanel fieldPanel;
 
@@ -141,7 +148,8 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 
 	private Color darkGreen = new Color(0,127,0);
 
-
+	private int[] positionArray;
+	
 	private TableCellEditor cellEditor;
 
 	public static RegexWizard regexWizard = new RegexWizard();
@@ -210,18 +218,27 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		pack();
 	}
 
+	public int[] getPositionArray() {
+		return positionArray;
+	}
+
 	public void setRequest(HttpRequestResponseInfo request) {
-//		if (!request.getObjName().contains(".m3u8") && !request.getObjName().contains(".mpd")) {
 			populateURLFields(request.getObjUri().toString(), request.getAllHeaders(), request.getAssocReqResp().getAllHeaders());
 			videoConfig = voConfigHelper.findConfig(request.getObjUri().toString());
 			if (videoConfig != null) {
-
-				configField.setText(videoConfig.getDesc());
+			Map<RegexMatchLbl, VideoDataTags[]> map = new LinkedHashMap<>();
+			if(videoConfig.getXrefMap() != null){
+				map = new LinkedHashMap<>(videoConfig.getXrefMap());
+			}
+			savedVoConfig = new VideoAnalysisConfig(videoConfig.getVideoType(), videoConfig.getDesc(),
+					videoConfig.getType(), new String(videoConfig.getRegex()), new String(videoConfig.getHeaderRegex()),
+					new String(videoConfig.getResponseRegex()), videoConfig.getXref(), map);
+			configField.setText(videoConfig.getDesc());
 
 				regexRequestField.setText(videoConfig.getRegex());
 				regexResponseField.setText(videoConfig.getResponseRegex());
 				regexHeaderField.setText(videoConfig.getHeaderRegex());
-				String[] result = extractResult(videoConfig);
+				Map<RegexMatchLbl, RegexMatchResult> result = extractResult(videoConfig);
 				displayResult(result);
 				enableCheckBoxes(false);
 			} else {
@@ -586,10 +603,18 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 				if (voConfig != null) {
 					signalStopCellEditing();
 					this.videoConfig = voConfig;
+					Map<RegexMatchLbl, VideoDataTags[]> map = new LinkedHashMap<>();
+					if(videoConfig.getXrefMap() != null){
+						map = new LinkedHashMap<>(videoConfig.getXrefMap());
+					}
+					savedVoConfig = new VideoAnalysisConfig(videoConfig.getVideoType(), videoConfig.getDesc(),
+							videoConfig.getType(), new String(videoConfig.getRegex()),
+							new String(videoConfig.getHeaderRegex()), new String(videoConfig.getResponseRegex()),
+							videoConfig.getXref(), map);
 					regexRequestField.setText(voConfig.getRegex());
 					regexResponseField.setText(voConfig.getResponseRegex());
 					regexHeaderField.setText(voConfig.getHeaderRegex());
-					String[] result = extractResult(voConfig);
+					Map<RegexMatchLbl, RegexMatchResult> result = extractResult(voConfig);
 					displayResult(result);
 				} else {
 					JOptionPane.showMessageDialog(this, "Failed to load the configuration file.", "Failure", JOptionPane.ERROR_MESSAGE);
@@ -630,7 +655,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		requestFocusON = false;
 		headerFocusON = false;
 		responseFocusON = false;
-		String[] result = extractResult(videoConfig);
+		Map<RegexMatchLbl, RegexMatchResult> result = extractResult(videoConfig);
 		displayResult(result);
 	}
 
@@ -652,12 +677,12 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		if (this.videoConfig != null) {
 			doEnter();
 			VideoDataTags[] xref = resultsTable.getVideoDataTags();
+			Map<RegexMatchLbl, VideoDataTags[]> xrefMap = resultsTable.getVideoDataTagsMap();
 			if (xref.length > 0) {
 				this.videoConfig.setXref(xref);
+				this.videoConfig.setXrefMap(xrefMap);
 			}
 		}
-		// update object from fields
-		updateConfigAndTags();
 
 		if (this.videoConfig != null && voConfigHelper.validateConfig(videoConfig)) {
 			try {
@@ -669,6 +694,13 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 				if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
 					voConfigHelper.saveConfigFile(videoConfig.getVideoType(), fileChooser.getSelectedFile().getName().replaceAll("\\.json", ""), videoConfig.getType(), videoConfig.getRegex(),
 							videoConfig.getHeaderRegex(), videoConfig.getResponseRegex(), videoConfig.getXref());
+					videoConfig.setDesc(fileChooser.getSelectedFile().getName().replaceAll("\\.json", ""));
+					configField.setText(videoConfig.getDesc());
+					Map<RegexMatchLbl, VideoDataTags[]> map = new LinkedHashMap<>(videoConfig.getXrefMap());
+					savedVoConfig = new VideoAnalysisConfig(videoConfig.getVideoType(), videoConfig.getDesc(),
+							videoConfig.getType(), new String(videoConfig.getRegex()),
+							new String(videoConfig.getHeaderRegex()), new String(videoConfig.getResponseRegex()),
+							videoConfig.getXref(), map);
 				}
 			} catch (JsonGenerationException e1) {
 				log.error("VideoAnalysisConfig failed Jason generation :" + e1.getMessage());
@@ -690,24 +722,78 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 
 	}
 
+	private VideoDataTags[] copyXrefTags(VideoDataTags[] reqXref, VideoDataTags[] headerXref,
+			VideoDataTags[] responseXref, int size) {
+		VideoDataTags[] xrefTot = new VideoDataTags[size];
+		int idx = 0;
+		if (reqXref != null) {
+			for (VideoDataTags tg : reqXref) {
+				xrefTot[idx] = tg;
+				idx++;
+			}
+		}
+		if (headerXref != null) {
+			for (VideoDataTags tg : headerXref) {
+				xrefTot[idx] = tg;
+				idx++;
+			}
+		}
+		if (responseXref != null) {
+			for (VideoDataTags tg : responseXref) {
+				xrefTot[idx] = tg;
+				idx++;
+			}
+		}
+		return xrefTot;
+	}
+	
 	/**
 	 * Manages adjustments to xref to match CaptureGroups
 	 */
 	private void updateConfigAndTags() {
 
-		if (videoConfig == null) {
+		if (videoConfig == null || videoConfig.getXrefMap() == null) {
 			return;
 		}
-		
-		int[] venn = null;
-		venn = findArrayVenn(videoConfig.getRegex() + videoConfig.getHeaderRegex() + videoConfig.getResponseRegex(),
-				regexRequestField.getText() + regexHeaderField.getText() + regexResponseField.getText());
-		if (venn != null && videoConfig.getXref() != null) {
-			VideoDataTags[] xref = shift(venn[0], venn[1], VideoDataTags.unknown, videoConfig.getXref());
-			if (xref != null) {
-				videoConfig.setXref(xref);
-				resultsTable.update(new String[videoConfig.getXref().length], videoConfig.getXref());
-			}
+
+		voConfigHelper.setSavedVoConfig(savedVoConfig);
+
+		VideoDataTags[] reqXref = voConfigHelper.findXref(videoConfig, videoConfig.getRegex(),
+				regexRequestField.getText(), requestField.getText(), RegexMatchLbl.REQUEST,
+				resultsTable.getVideoDataTagsMap());
+		VideoDataTags[] headerXref = voConfigHelper.findXref(videoConfig, videoConfig.getHeaderRegex(),
+				regexHeaderField.getText(), headerField.getText(), RegexMatchLbl.HEADER,
+				resultsTable.getVideoDataTagsMap());
+		VideoDataTags[] responseXref = voConfigHelper.findXref(videoConfig, videoConfig.getResponseRegex(),
+				regexResponseField.getText(), responseField.getText(), RegexMatchLbl.RESPONSE,
+				resultsTable.getVideoDataTagsMap());
+		int size = 0;
+
+		if (reqXref != null && reqXref.length != 0) {
+			size = size + reqXref.length;
+			videoConfig.getXrefMap().put(RegexMatchLbl.REQUEST, reqXref);
+		} else {
+			videoConfig.getXrefMap().remove(RegexMatchLbl.REQUEST);
+		}
+
+		if (headerXref != null && headerXref.length != 0) {
+			size = size + headerXref.length;
+			videoConfig.getXrefMap().put(RegexMatchLbl.HEADER, headerXref);
+		} else {
+			videoConfig.getXrefMap().remove(RegexMatchLbl.HEADER);
+		}
+
+		if (responseXref != null && responseXref.length != 0) {
+			size = size + responseXref.length;
+			videoConfig.getXrefMap().put(RegexMatchLbl.RESPONSE, responseXref);
+		} else {
+			videoConfig.getXrefMap().remove(RegexMatchLbl.RESPONSE);
+		}
+
+		VideoDataTags[] xrefTgs = copyXrefTags(reqXref, headerXref, responseXref, size);
+		if (xrefTgs != null) {
+			videoConfig.setXref(xrefTgs);
+			resultsTable.update(new LinkedHashMap<>(), videoConfig.getXrefMap());
 		}
 
 		StringBuilder sbError = new StringBuilder();
@@ -754,7 +840,17 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 			}
 		}
 
-		String[] res = voConfigHelper.match(videoConfig, requestField.getText(),headerField.getText(),responseField.getText());
+		Map<RegexMatchLbl, RegexMatchResult> resMap = voConfigHelper.match(videoConfig, requestField.getText(),
+				headerField.getText(), responseField.getText());
+		int len = resMap.values().stream().mapToInt(i -> i.getResult().length).sum();
+		String[] res = new String[len];
+		int index = 0;
+		for (RegexMatchResult matchRes : resMap.values()) {
+			for (String str : matchRes.getResult()) {
+				res[index] = str;
+				index++;
+			}
+		}
 		if (sbError.length() > 0) {
 			compileResultsField.setForeground(Color.red);
 			compileResultsField.setText(String.format("ERRORS: %s" ,sbError.toString()));
@@ -764,8 +860,6 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 			compileResultsField.setText(String.format("Success: %d capture groups", res != null ? res.length : 0));
 		}
 		compileResultsField.setCaretPosition(0);
-
-		videoConfig.setXref(resultsTable.getVideoDataTags());
 
 	}
 
@@ -780,81 +874,111 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	 * @return new array of VideoDataTags
 	 */
 	public VideoDataTags[] shift(int position, int delta, VideoDataTags tag, VideoDataTags[] videoDataTags) {
+		boolean insert = true;
+		if (delta < 0) {
+			insert = false;
+		}
 		if (videoDataTags == null || (videoDataTags.length + delta) < 0) {
 			return null;
 		}
 		VideoDataTags[] newTags = new VideoDataTags[videoDataTags.length + delta];
 		Arrays.fill(newTags, VideoDataTags.unknown);
-
+		int pos = 0;
+		List<Integer> posList = null;
+		if (positionArray != null) {
+			posList = Arrays.stream(positionArray).boxed().collect(Collectors.toList());
+			if (delta > 0) {
+				int[] arr = new int[posList.size()];
+				int j = 0;
+				for (int i : posList) {
+					arr[j] = i % newTags.length;
+					j++;
+				}
+				posList.clear();
+				posList = Arrays.stream(arr).boxed().collect(Collectors.toList());
+			}
+		}
+	
 		if (newTags.length != 0) {
 			int idy = 0;
 			for (int idx = 0; idx < videoDataTags.length; idx++) {
-				if (idx == position && delta != 0) {
-					if (delta < 0) { // remove unused CaptureGroups xrefs
-						idx -= delta; // skips idx ahead
-						idx--;
-					} else { // insert new CaptureGroups xrefs
+				if ((idx == position && delta != 0) || (posList != null && posList.contains(idx) && !insert)) {
+					if (delta > 0) {
+						// insert new CaptureGroups xrefs
 						while (0 < delta--) {
-							newTags[idy++] = tag;
+							if (positionArray != null) {
+								newTags[positionArray[pos] % newTags.length] = tag;
+								pos++;
+							} else {
+								newTags[idy++] = tag;
+							}
 						}
-						newTags[idy++] = videoDataTags[idx];
+
+						if (posList != null && !(posList.contains(idy))) {
+							newTags[idy++] = videoDataTags[idx];
+						} else if (posList != null && (posList.contains(idy))) {
+							idy++;
+							idx--;
+						} else {
+							newTags[idy++] = videoDataTags[idx];
+						}
 					}
 					position = -1;
 				} else {
-					if (idy < newTags.length) {
+					if ((idy < newTags.length && posList == null) || ((idy < newTags.length && (!posList.contains(idy))))) {
+						newTags[idy++] = videoDataTags[idx];
+					} else if (posList != null && posList.contains(idy) && insert) {
+						idy++;
+						idx--;
+					} else if (posList != null && posList.contains(idy) && (!insert)) { // remove
 						newTags[idy++] = videoDataTags[idx];
 					}
+
+				}
+			}
+			if (delta > 0) {
+				while (0 < delta--) {
+					newTags[idy++] = tag;
 				}
 			}
 		}
 		return newTags;
 	}
 
-	/**
-	 * <pre>
-	 * Based on Venn diagram. Compares to Strings for CaptureGroups.
-	 * 
-	 * @param oStr
-	 * @param nStr
-	 * @return int[] null if no difference
-     *         [0]:starting point
-     *         [1]: number of insert or removal(if negative value)
-     *         [2]: number of CaptureGroups in nStr
-	 */
-	private int[] findArrayVenn(String oStr, String nStr) {
-		if (oStr.equals(nStr)) {
-			return null;
+	public VideoDataTags[] shift(int position, int delta, VideoDataTags tag, VideoDataTags[] videoDataTags,
+			boolean caller) {
+		if (!caller) {
+			positionArray = null;
 		}
+		return shift(position, delta, tag, videoDataTags);
+	}
 
-		String[] oStrng = oStr.replaceAll("\\\\\\(", "xxy").split("\\(");
-		String[] nStrng = nStr.replaceAll("\\\\\\(", "xxy").split("\\(");
-
-		int[] vennNumber = new int[3];
-		vennNumber[2] = nStrng.length;
-		vennNumber[1] = nStrng.length - oStrng.length;
-		if (vennNumber[1] == 0) {
-			return null;
-		} else {
-			for (int idx = 0; idx < oStrng.length && idx < nStrng.length; idx++) {
-				if (!nStrng[idx].equals(oStrng[idx])) {
-					vennNumber[0] = idx;
-					return vennNumber;
-				}
+	private List<String> filterString(List<String> strList){
+		for (int i = 0; i < strList.size(); i++) {
+			String str = strList.get(i);
+			if (str.contains(")")) {
+				str = str.substring(0, str.indexOf(")"));
+				strList.remove(i);
+				strList.add(i, str);
+			} else { // remove it
+				strList.remove(i);
+				i--;
 			}
 		}
-		return vennNumber;
+		return strList;
 	}
 
 	Pattern pat = Pattern.compile("(\\(.+\\))");
 
-	private String[] extractResult(VideoAnalysisConfig voConfig) {
-		String[] result = voConfigHelper.match(voConfig, requestField.getText(), headerField.getText(), responseField.getText());
+	private Map<RegexMatchLbl, RegexMatchResult> extractResult(VideoAnalysisConfig voConfig) {
+		Map<RegexMatchLbl, RegexMatchResult> result = voConfigHelper.match(voConfig, requestField.getText(),
+				headerField.getText(), responseField.getText());
 		return result;
 	}
 
-	public void displayResult(String[] result) {
+	public void displayResult(Map<RegexMatchLbl, RegexMatchResult> result) {
 		if (videoConfig != null) {
-			resultsTable.update(result, videoConfig.getXref());
+			resultsTable.update(result, videoConfig.getXrefMap());
 		}
 	}
 

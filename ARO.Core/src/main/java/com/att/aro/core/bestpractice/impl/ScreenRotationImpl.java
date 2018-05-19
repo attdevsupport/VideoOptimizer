@@ -63,7 +63,7 @@ public class ScreenRotationImpl implements IBestPractice {
 		ScreenRotationResult result = new ScreenRotationResult();
 		boolean passScreenRotation = true;//assuming it is passed for now
 		double screenRotationBurstTime = 0.0;
-		for(Burst burst:tracedata.getBurstcollectionAnalysisData().getBurstCollection()){
+		for(Burst burst:tracedata.getBurstCollectionAnalysisData().getBurstCollection()){
 			if(burst.getBurstCategory() == BurstCategory.SCREEN_ROTATION){
 				passScreenRotation = false;//screen rotation trigger network activity => fail
 				screenRotationBurstTime = burst.getBeginTime();

@@ -17,12 +17,15 @@ package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class AsyncCheckInScriptResult extends AbstractBestPracticeResult {
 	private int syncPacketCount = 0;
 	private int asyncPacketCount = 0;
 	private int syncLoadedScripts = 0;
 	private int asyncLoadedScripts = 0;
 	private List<AsyncCheckEntry> results;
+	@JsonIgnore
 	private String exportAllSyncPacketCount;
 	
 	@Override

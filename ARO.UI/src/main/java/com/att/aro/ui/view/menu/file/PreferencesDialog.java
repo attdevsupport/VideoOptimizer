@@ -100,7 +100,7 @@ public class PreferencesDialog extends JDialog {
 	private Settings settings = SettingsImpl.getInstance();
 	private JLabel helpLabel;
 	BPVideoWarnFailPanel bpVideoWarnFailPanel;
-
+	private JTabbedPane tabbedPane;
 	/**
 	 * Type of configuration This is used to provide appropriate method for
 	 * displaying configuration
@@ -227,12 +227,12 @@ public class PreferencesDialog extends JDialog {
 			jContentPane.setPreferredSize(new Dimension(750, 500));
 			jContentPane.setLayout(new BorderLayout());
 			bpVideoWarnFailPanel = new BPVideoWarnFailPanel();
-			JTabbedPane tabbedPane = new JTabbedPane();
+			tabbedPane = new JTabbedPane();
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.general.tabtile"), getGeneralTab());
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.bestpractice.tabtile"),
 					BPSelectionPanel.getBPPanel());
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.video.tabtitle"),
-					bpVideoWarnFailPanel);
+					bpVideoWarnFailPanel.getVideoPreferenceTab());
 			this.addComponentListener(new ComponentListener() {
 				@Override
 				public void componentResized(ComponentEvent e) {
@@ -258,7 +258,7 @@ public class PreferencesDialog extends JDialog {
 		}
 		return jContentPane;
 	}
-
+	
 	private JPanel getGeneralTab() {
 		JPanel general = new JPanel();
 		general.add(getEmptyPanel(), BorderLayout.WEST);
@@ -445,9 +445,28 @@ public class PreferencesDialog extends JDialog {
 		}
 	}
 
+	private String getTracePath() {
+		String tracePath = null;
+		if (((MainFrame) parent).getController().getCurrentTraceInitialAnalyzerResult() != null && ((MainFrame) parent)
+				.getController().getCurrentTraceInitialAnalyzerResult().getTraceresult() != null) {
+			
+			tracePath = ((MainFrame) parent).getController().getCurrentTraceInitialAnalyzerResult().getTraceresult()
+					.getTraceFile();
+
+		}
+		return tracePath;
+	}
+	
 	private void saveBPSelection() {
 		SettingsUtil.saveBestPractices(BPSelectionPanel.getInstance().getCheckedBP());
-		if (parent.getTracePath() != null && !"".equals(parent.getTracePath().trim())) {
+		String tracePath="";
+		if (parent instanceof MainFrame) {
+			String path = getTracePath();
+			tracePath = path != null ? path : tracePath;
+		}
+		if(tracePath != null && !tracePath.equals("")) {
+			parent.updateTracePath(new File(tracePath));
+		} else if (parent.getTracePath() != null && !"".equals(parent.getTracePath().trim())) {
 			parent.updateTracePath(new File(parent.getTracePath()));
 		}
 	}
@@ -484,5 +503,9 @@ public class PreferencesDialog extends JDialog {
 			}
 		});
 		return helpLabel;
+	}
+	
+	public JTabbedPane getTabbedPane(){
+		return tabbedPane;
 	}
 }

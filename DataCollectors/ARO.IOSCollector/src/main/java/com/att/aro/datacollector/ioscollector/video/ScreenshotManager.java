@@ -30,6 +30,8 @@ import java.util.Hashtable;
 import javax.media.jai.NullOpImage;
 import javax.media.jai.OpImage;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
@@ -46,8 +48,11 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 	Process proc = null;
 	String lastmessage = "";
 	int counter = 0;
+	int count = 0;
 	String imagefolder = "";
 	boolean isready = true;
+	volatile boolean isReadyForRead = false;
+
 	File tmpfolder;
 
 	public void setIsReady(boolean isReady) {
@@ -72,7 +77,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 			log.info("Not found exepath: " + exepath);
 		}
 
-		int count = 0;
+		
 		while (isready) {
 			String img = this.imagefolder + Util.FILE_SEPARATOR + "image" + count + ".tiff";
 			File file = new File(imagefolder);
@@ -101,6 +106,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 			if (imgFile.exists() || this.lastmessage.contains("Connect success")) {
 				log.debug("Connect success");
 				isready = true;
+				isReadyForRead = true;
 				count++;
 			}
 		}
@@ -114,11 +120,12 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 		BufferedImage imgdata = null;
 		File imgfile = null;
 		String img = this.imagefolder + Util.FILE_SEPARATOR + "image" + counter + ".tiff";
-		counter++;
-
+		int tempCounter = counter;
+		
 		try {
 			imgfile = new File(img);
-			if (imgfile.exists()) {
+			if (imgfile.exists() && isReadyForRead) {
+				
 				FileInputStream inputstream = new FileInputStream(imgfile);
 				byte[] imgdataarray = new byte[(int) imgfile.length()];
 				inputstream.read(imgdataarray);
@@ -128,17 +135,29 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 				ByteArrayOutputStream byteArrayOutputStream = Tiff2JpgUtil.tiff2Jpg(imgfile.getAbsolutePath());
 				imgdataarray = byteArrayOutputStream.toByteArray();
 				imgdata = getImageFromByte(imgdataarray);
+				
+				counter++;
+				// Making sure that the Live Screen Thread is at least one behind the Screenshot Capture.
+				if(counter >= count-1) {
+					isReadyForRead = false;
+				}
+				
 				try {
 					imgfile.delete();
 				} catch (Exception e) {
+					log.error("Error deleting image file:" + img, e);
 				}
 			}
-		} catch (IOException e) {
-			log.error("Error reading image file:" + img, e);
+		} catch (IOException ioe) {
+			
+			log.error("Error reading image file:" + img, ioe);
+			imgdata = null;
+			
+			if(ExceptionUtils.indexOfThrowable(ioe, NullPointerException.class) != -1) {
+				counter = tempCounter;
+			}
 		}
-		if (imgdata == null) {
-			counter--;
-		}
+
 		return imgdata;
 	}
 
@@ -224,5 +243,14 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 		// screenshot service will exit now
 		this.shutDown();
 
+	}
+	
+	
+	public boolean isReadyForRead() {
+		return isReadyForRead;
+	}
+
+	public void setReadyForRead(boolean isReadyForRead) {
+		this.isReadyForRead = isReadyForRead;
 	}
 }// end class

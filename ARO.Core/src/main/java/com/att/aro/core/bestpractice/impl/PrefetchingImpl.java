@@ -60,7 +60,7 @@ public class PrefetchingImpl implements IBestPractice {
 		PrefetchingResult result = new PrefetchingResult();
 		int userInputBurstCount = 0;
 		int burstCategoryCount = 0;
-		for(Burst burst: tracedata.getBurstcollectionAnalysisData().getBurstCollection()){
+		for(Burst burst: tracedata.getBurstCollectionAnalysisData().getBurstCollection()){
 			/*
 			 * Counts number of subsequent USER bursts. Stores the highest
 			 * number to be used for the best practice tab.

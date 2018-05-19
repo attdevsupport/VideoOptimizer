@@ -190,4 +190,10 @@ public interface IDataCollector {
 	 * @return a list of IAroDevices
 	 */
 	IAroDevice[] getDevices(StatusResult status);
+
+	/**
+	 * 
+	 * @return true if video data is pulled device
+	 */
+	boolean isDeviceDataPulledStatus();
 }

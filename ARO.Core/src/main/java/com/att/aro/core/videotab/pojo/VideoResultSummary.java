@@ -20,7 +20,6 @@ package com.att.aro.core.videotab.pojo;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,11 +38,11 @@ import com.att.aro.core.bestpractice.pojo.VideoTcpConnectionResult;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.videoanalysis.impl.SortSelection;
-import com.att.aro.core.videoanalysis.impl.VideoEventComparator;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoBufferData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+
+// this is populated in the wrong place
 
 public class VideoResultSummary {
 	private static final double MEGABYTE = 1048576;
@@ -72,15 +71,15 @@ public class VideoResultSummary {
 	private double minBufferByte;
 	private double maxBufferByte;
 	List<VideoBufferData> videoBufferDataList;
-	private boolean startupDelayStatus;	
-	
+	private boolean startupDelayStatus;
+
 	public VideoResultSummary(AROTraceData trace) {
 		populateSummary(trace);
 	}
 
 	private void populateSummary(AROTraceData trace) {
 		for (AbstractBestPracticeResult bpResult : trace.getBestPracticeResults()) {
-			if (bpResult.getClass().getName().contains("AROServiceImpl")){
+			if (bpResult.getClass().getName().contains("AROServiceImpl")) {
 				continue;
 			}
 			BestPracticeType bpType = bpResult.getBestPracticeType();
@@ -114,6 +113,7 @@ public class VideoResultSummary {
 				break;
 			case VIDEO_REDUNDANCY:
 				VideoRedundancyResult redundancyResult = (VideoRedundancyResult) bpResult;
+				duplicate = redundancyResult.getCountDuplicate();
 				redundancy = redundancyResult.getRedundantPercentage();
 				break;
 			case STARTUP_DELAY:
@@ -145,62 +145,22 @@ public class VideoResultSummary {
 		ipSessions = allSessions.size();
 
 		VideoUsage videoUsage = trace.getAnalyzerResult().getVideoUsage();
-		if(videoUsage == null) { 
+		if (videoUsage == null) {
 			return;
 		}
 		Collection<AROManifest> selectedManifests = videoUsage.getManifests();
 		movieMBytes = calculateMBytes(selectedManifests, false);
 		totalMBytes = calculateMBytes(selectedManifests, true);
-		duplicate = countDuplicateSegments(selectedManifests);
-		
-		if(trace.getAnalyzerResult().getVideoUsage().getChunkPlayTimeList().isEmpty()){
-			startupDelayStatus =false;
-		}else{
+
+		if (trace.getAnalyzerResult().getVideoUsage().getChunkPlayTimeList().isEmpty()) {
+			startupDelayStatus = false;
+		} else {
 			startupDelayStatus = true;
 		}
 	}
 
-	private int countDuplicateSegments(Collection<AROManifest> manifests) {
-		int segmentDuplicate = 0;
-		for (AROManifest manifest : manifests) {
-			if (manifest != null && manifest.isSelected() && (manifest.getVideoEventList() != null)) {
-				List<VideoEvent> videoEventList = new ArrayList<>(manifest.getVideoEventList().values());
-				Collections.sort(videoEventList, new VideoEventComparator(SortSelection.SEGMENT));
-
-				double prevSegment = -1;
-				List<String> qualitySubList = new ArrayList<>();
-				for (VideoEvent ve : videoEventList) {
-					double segment = ve.getSegment();
-
-					if (qualitySubList.size() == 0) {
-						qualitySubList.add(ve.getQuality());
-						prevSegment = segment;
-					} else if (prevSegment == segment) {
-						qualitySubList.add(ve.getQuality());
-					} else {
-						segmentDuplicate = segmentDuplicate + getDuplicateCountPerSubList(qualitySubList);
-						qualitySubList.clear();
-						qualitySubList.add(ve.getQuality());
-						prevSegment = segment;
-					}
-				}
-			}
-		}
-		return segmentDuplicate;
-	}
-
-	private int getDuplicateCountPerSubList(List<String> qualitySubList) {
-		List<String> bucketList = new ArrayList<>();
-		for (String quality : qualitySubList) {
-			if (!bucketList.contains(quality)) {
-				bucketList.add(quality);
-			}
-		}
-		return qualitySubList.size() - bucketList.size();
-	}
-
 	private double calculateMBytes(Collection<AROManifest> manifests, boolean allMovie) {
-		
+
 		double sumtotalBytes = 0;
 		if (manifests != null && !manifests.isEmpty()) {
 			if (allMovie) {

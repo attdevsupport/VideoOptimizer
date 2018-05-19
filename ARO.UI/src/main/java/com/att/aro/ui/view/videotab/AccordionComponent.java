@@ -33,6 +33,7 @@ import java.text.MessageFormat;
 import java.util.Collection;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -46,8 +47,14 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
+import com.att.aro.core.ILogger;
 import com.att.aro.core.IVideoBestPractices;
+import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
+import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
+import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
@@ -61,7 +68,11 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
 public class AccordionComponent extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
- 	private JPanel hiddenPanel;
+	
+	private static ILogger log = (ILogger) ContextAware.getAROConfigContext().getBean("logger");
+	private static IFileManager fileManager = (IFileManager) ContextAware.getAROConfigContext().getBean("fileManager");
+
+	private JPanel hiddenPanel;
 	private AROManifest aroManifest;
 	private JTable jTable;
 	private BasicArrowButton arrowButton;
@@ -78,10 +89,14 @@ public class AccordionComponent extends JPanel implements ActionListener {
 	private static final int HEIGHT_LINUX = 23;
 	private static final int HEIGHT_WIN = 28;
 	private int tableHeight = HEIGHT_MAC;
-	
+
+	private JButton uploadButton;
+
+	private TraceDirectoryResult traceDirectoryResult;
+
 	public AccordionComponent(AROManifest aroManifest, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute, AROTraceData analyzerResult, SharedAttributesProcesses aroView) {
 		this(true, aroView, aroManifest, analyzerResult);
-
+		
 		this.diagnosticsOverviewRoute = diagnosticsOverviewRoute;
 		updateHiddenPanelContent(true);
 	}
@@ -98,6 +113,8 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		this.aroManifest = aroManifest;
 		this.analyzerResult = analyzerResult;
 		setLayout(new BorderLayout());
+
+		setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 		
 		add(getTitleButton(),BorderLayout.NORTH);
 
@@ -107,6 +124,7 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		
 		arrowButton.addActionListener(this);
 		updateHiddenPanelContent(false);
+		
 	}
 	
 	/**
@@ -117,12 +135,49 @@ public class AccordionComponent extends JPanel implements ActionListener {
 
 		titlePanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
 		titlePanel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-		
+		titlePanel.setSize(500, 100);
+
 		arrowButton = new BasicArrowButton(SwingConstants.EAST);
-		
+
 		lbl = new JLabel();
 		lbl.setFont(new Font("accordionLabel", Font.ITALIC, 12));// AROUIManager.LABEL_FONT);
-		
+
+		titlePanel.add(getEnableCheckBox());
+		titlePanel.add(arrowButton);
+		titlePanel.add(lbl);
+		if (validateUpload()) {
+			titlePanel.add(getUploadButton());
+			titlePanel.grabFocus();
+		}
+
+		return titlePanel;
+	}
+
+	private boolean validateUpload() {
+		AbstractTraceResult traceResult = analyzerResult.getAnalyzerResult().getTraceresult();
+		if (TraceResultType.TRACE_DIRECTORY.equals(traceResult.getTraceResultType())) {
+			traceDirectoryResult = (TraceDirectoryResult)traceResult;
+			boolean mp4Exists = fileManager.createFile(traceResult.getTraceDirectory(), "video.mp4").exists();
+			boolean uploadEnabled = SettingsImpl.getInstance().checkAttributeValue("AMVOTS", "TRUE");
+			return uploadEnabled && mp4Exists;
+		} else {
+			return false;
+		}
+	}
+	
+	private Component getUploadButton() {
+		if (uploadButton == null) {
+			uploadButton = new JButton("TBD");
+		}
+		if (aroManifest.isValid()) {
+			uploadButton.setVisible(true);
+		} else {
+			uploadButton.setVisible(false);
+		}
+		return uploadButton;
+	}
+
+	private Component getEnableCheckBox() {
 		enableCheckBox = new JCheckBox();
 		boolean selected = aroManifest.getVideoEventList() != null? true:false;
 		if (!selected 
@@ -145,12 +200,11 @@ public class AccordionComponent extends JPanel implements ActionListener {
 				}
 			});
 		}
-		titlePanel.add(enableCheckBox);
-		titlePanel.add(arrowButton);
-		titlePanel.add(lbl);
- 		return titlePanel;
+
+		return enableCheckBox;
 	}
 
+ 
 	public void updateTitleButton(AROTraceData traceData) {
 		if (titlePanel != null) {
 			analyzerResult = traceData;

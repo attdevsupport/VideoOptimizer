@@ -30,6 +30,7 @@ import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.event.TableModelEvent;
@@ -37,11 +38,12 @@ import javax.swing.event.TableModelListener;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
+import com.att.aro.ui.commonui.ContextAware;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * This dialog provides options to configure that the video best practices
@@ -60,6 +62,8 @@ public class BPVideoWarnFailPanel extends JPanel {
 	private JTextField compileResultsField = new JTextField();
 	String sError = "";
 	private VideoPreferenceTableModel model;
+	private JPanel videoPreferenceTab;
+	private VideoAnalysisDialog videoAnalysisPane;
 
 	public BPVideoWarnFailPanel() {
 		JPanel mainPanel = new JPanel();
@@ -84,6 +88,7 @@ public class BPVideoWarnFailPanel extends JPanel {
 		constraint.gridy = 300;
 		constraint.gridwidth = 2;
 		mainPanel.add(compileResultsField, constraint);
+		mainPanel.updateUI();
 	}
 
 	public String getSbError() {
@@ -104,12 +109,14 @@ public class BPVideoWarnFailPanel extends JPanel {
 
 	private Component getGridPanel() {
 		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
 		scrollPane.setViewportView(getTable());
 		int height = 70;
-		if (Util.isWindowsOS()) {
+		if (Util.isWindowsOS()||Util.isLinuxOS()) {
 			height = 78;
 		}
-		scrollPane.setPreferredSize(new Dimension(550, height));
+		scrollPane.setPreferredSize(new Dimension(550, height));	
+		scrollPane.revalidate();
 		return scrollPane;
 	}
 
@@ -159,7 +166,7 @@ public class BPVideoWarnFailPanel extends JPanel {
 			}
 		} else {
 			try {
-				videoUsagePrefs = new VideoUsagePrefs();
+				videoUsagePrefs = ContextAware.getAROConfigContext().getBean("videoUsagePrefs",VideoUsagePrefs.class);// new VideoUsagePrefs();
 				temp = mapper.writeValueAsString(videoUsagePrefs);
 				prefs.setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
 			} catch (IOException e) {
@@ -167,6 +174,10 @@ public class BPVideoWarnFailPanel extends JPanel {
 			}
 		}
 		List<VideoPreferenceInfo> videoPreferenceList = new ArrayList<VideoPreferenceInfo>();
+		if(checkModelData(videoUsagePrefs)){
+			VideoPreferenceTableModel model = new VideoPreferenceTableModel();
+			return model.getDefaultValues();
+		  }
 		VideoPreferenceInfo vp = new VideoPreferenceInfo("Startup Delay (seconds)",
 				videoUsagePrefs.getStartUpDelayWarnVal(), videoUsagePrefs.getStartUpDelayFailVal());
 		videoPreferenceList.add(vp);
@@ -179,6 +190,19 @@ public class BPVideoWarnFailPanel extends JPanel {
 		return videoPreferenceList;
 	}
 
+	public boolean checkModelData(VideoUsagePrefs videoUsagePrefs) {
+		if (videoUsagePrefs.getStartUpDelayWarnVal() == null || videoUsagePrefs.getStartUpDelayFailVal() == null
+				|| videoUsagePrefs.getStallDurationWarnVal() == null
+				|| videoUsagePrefs.getStallDurationFailVal() == null
+				|| (videoUsagePrefs.getSegmentRedundancyWarnVal() == 0
+						&& videoUsagePrefs.getSegmentRedundancyFailVal() == 0)) {
+			return true;
+
+		} else {
+			return false;
+		}
+	}
+	
 	public void saveWarnFail() {
 		PreferenceHandlerImpl prefs = PreferenceHandlerImpl.getInstance();
 		if (model != null) {
@@ -199,5 +223,28 @@ public class BPVideoWarnFailPanel extends JPanel {
 				}
 			}
 		}
+		if (getVideoAnalysisTab().saveVideoAnalysisConfiguration()) {
+			throw new IllegalArgumentException(model.getValidationError().toString());
+		}
+	}
+
+	public JPanel getVideoPreferenceTab() {
+		if (videoPreferenceTab == null) {
+			videoPreferenceTab = new JPanel();
+			videoPreferenceTab.setPreferredSize(new Dimension(700, 400));
+			JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, this, getVideoAnalysisTab());
+			splitPane.setPreferredSize(videoPreferenceTab.getPreferredSize());
+			splitPane.setDividerLocation(150);
+			splitPane.setEnabled(false);
+			videoPreferenceTab.add(splitPane);
+		}
+		return videoPreferenceTab;
+	}
+
+	public VideoAnalysisDialog getVideoAnalysisTab() {
+		if (videoAnalysisPane == null) {
+			videoAnalysisPane = new VideoAnalysisDialog();
+		}
+		return videoAnalysisPane;
 	}
 }

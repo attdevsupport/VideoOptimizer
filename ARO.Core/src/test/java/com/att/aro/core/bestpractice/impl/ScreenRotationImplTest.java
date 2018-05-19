@@ -35,7 +35,7 @@ public class ScreenRotationImplTest extends BaseTest {
 		Mockito.when(burst01.getBeginTime()).thenReturn(1.0);
 		List<Burst> burstCollection = new ArrayList<Burst>();
 		burstCollection.add(burst01);
-		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
+		Mockito.when(tracedata.getBurstCollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
 		screenRotationImpl = (ScreenRotationImpl) context.getBean("screenRotation");
 		AbstractBestPracticeResult result = screenRotationImpl.runTest(tracedata);
@@ -51,7 +51,7 @@ public class ScreenRotationImplTest extends BaseTest {
 		Mockito.when(burst01.getBeginTime()).thenReturn(1.0);
 		List<Burst> burstCollection = new ArrayList<Burst>();
 		burstCollection.add(burst01);
-		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
+		Mockito.when(tracedata.getBurstCollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
 		screenRotationImpl = (ScreenRotationImpl) context.getBean("screenRotation");
 		AbstractBestPracticeResult result = screenRotationImpl.runTest(tracedata);

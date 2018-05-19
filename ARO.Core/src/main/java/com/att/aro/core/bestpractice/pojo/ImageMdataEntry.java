@@ -16,24 +16,28 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ImageMdataEntry {
 	
+	@JsonIgnore
 	private int imgSize; 
+	@JsonIgnore
 	private int formatdSize;
 	private double imageSize;
 	private double timeStamp;
 	private String httpObjName = "";
 	private String hostName = "";
 	private int httpCode;
-	private HttpRequestResponseInfo httpReqResp;
+	@JsonIgnore
+	private HttpRequestResponseInfo httpRequestResponse;
 	private double formattedSize;
 	private String percentSavings;
 
 	public ImageMdataEntry(HttpRequestResponseInfo reqRespInfo, String domainName, String imagefile, double iSize,
 			double fSize, String savings) {
 
-		this.httpReqResp = reqRespInfo;
+		this.httpRequestResponse = reqRespInfo;
 		this.httpObjName = imagefile;
 
 		this.imageSize = iSize;
@@ -50,7 +54,7 @@ public class ImageMdataEntry {
 	public ImageMdataEntry(HttpRequestResponseInfo reqRespInfo, String imagefile, int iSize,
 			int fSize, String savings) {
 
-		this.httpReqResp = reqRespInfo;
+		this.httpRequestResponse = reqRespInfo;
 		this.httpObjName = imagefile;
 
 		this.imgSize = iSize;
@@ -157,12 +161,13 @@ public class ImageMdataEntry {
 		this.httpCode = httpCode;
 	}
 
+	@JsonIgnore
 	public HttpRequestResponseInfo getHttpRequestResponse() {
-		return httpReqResp;
+		return httpRequestResponse;
 	}
 
 	public void setHttpRequestResponse(HttpRequestResponseInfo httpRequestResponse) {
-		this.httpReqResp = httpRequestResponse;
+		this.httpRequestResponse = httpRequestResponse;
 	}
 
 }

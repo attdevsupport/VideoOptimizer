@@ -36,6 +36,7 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.video.pojo.QuickTimeOutputStream;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageDecoder;
+import com.sun.media.jai.codecimpl.util.ImagingException;
 
 /**
  * Helper class for image rotation, conversion and resizing.
@@ -44,6 +45,9 @@ import com.sun.media.jai.codec.ImageDecoder;
  *
  */
 public class ImageHelper {
+
+	public static boolean imageDecoderStatus = true;
+	private final static String PNG_IMAGE_HEADER = "89 50 4E 47 0D 0A 1A 0A";
 
 	/**
 	 * Converts raw image in to buffered image object which will be provided to
@@ -115,17 +119,27 @@ public class ImageHelper {
 	 * @return new instance of BufferedImage
 	 * @throws IOException
 	 */
-	public static BufferedImage getImageFromByte(byte[] array) throws IOException{
+	public static BufferedImage getImageFromByte(byte[] array) throws IOException {
 		InputStream instream = new ByteArrayInputStream(array);
 		String imageType = getImageType(array);
 		ImageDecoder dec = ImageCodec.createImageDecoder(imageType, instream, null);
-		RenderedImage rendering = new NullOpImage(dec.decodeAsRenderedImage(0),null,null,OpImage.OP_IO_BOUND);
-		BufferedImage image = convertRenderedImage(rendering);
+		BufferedImage image = null;
+		try {
+			RenderedImage renderedImg = dec.decodeAsRenderedImage(0);
+			RenderedImage rendering = new NullOpImage(renderedImg, null, null, OpImage.OP_IO_BOUND);
+			image = convertRenderedImage(rendering);
+		} catch (ImagingException exp) {
+			setImageDecoderStatus(false);
+		}
 		return image;
 	}
-	
-	public static String getImageType(byte[] array){
-		if (array[0]==-119) {
+
+	public static String getImageType(byte[] array) {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < 8 && array.length >= 8; i++) {
+			sb.append(String.format("%02X ", array[i]));
+		}
+		if (sb.toString().trim().equals(PNG_IMAGE_HEADER)) {
 			return "png";
 		} 
 		return "tiff";
@@ -218,4 +232,11 @@ public class ImageHelper {
 		return extractedImageName;
 	}
 
+	public static boolean isImageDecoderStatus() {
+		return imageDecoderStatus;
+	}
+
+	public static void setImageDecoderStatus(boolean imageDecoderStatus) {
+		ImageHelper.imageDecoderStatus = imageDecoderStatus;
+	}
 }

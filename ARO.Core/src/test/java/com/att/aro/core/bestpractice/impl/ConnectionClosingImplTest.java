@@ -38,7 +38,7 @@ public class ConnectionClosingImplTest extends BaseTest{
 		burstCollection.add(burst01);
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
 		Mockito.when(burstCollectionAnalysisData.getTotalEnergy()).thenReturn(1.0);
-		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
+		Mockito.when(tracedata.getBurstCollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		connClsImpl = (ConnectionClosingImpl)context.getBean("connectionClosing");
 		AbstractBestPracticeResult result = connClsImpl.runTest(tracedata);		
 		assertEquals(BPResultType.FAIL, result.getResultType());
@@ -47,7 +47,7 @@ public class ConnectionClosingImplTest extends BaseTest{
 	@Test
 	public void runTest_resIsNoErrTypeIsPass(){
 		Mockito.when(burstCollectionAnalysisData.getTotalEnergy()).thenReturn(0.0);
-		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
+		Mockito.when(tracedata.getBurstCollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		connClsImpl = (ConnectionClosingImpl)context.getBean("connectionClosing");
 		AbstractBestPracticeResult result = connClsImpl.runTest(tracedata);		
 		assertEquals(BPResultType.PASS, result.getResultType());

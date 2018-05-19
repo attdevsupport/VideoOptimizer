@@ -18,15 +18,21 @@ package com.att.aro.core.bestpractice.pojo;
 import java.util.List;
 
 import com.att.aro.core.packetanalysis.pojo.CacheEntry;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DuplicateContentResult extends AbstractBestPracticeResult{
 	private double duplicateContentBytesRatio = 0.0;
 	private int duplicateContentSizeOfUniqueItems = 0;
 	private long duplicateContentBytes = 0;
 	private long totalContentBytes = 0;
+	@JsonProperty("duplicateContentCount")
 	private int duplicateContentsize = 0;
+	@JsonIgnore
 	private String exportAllPct;
+	@JsonIgnore
 	private String exportAllFiles;
+	@JsonIgnore
 	private String staticsUnitsMbytes;
 	private List<CacheEntry> duplicateContentList;
 	

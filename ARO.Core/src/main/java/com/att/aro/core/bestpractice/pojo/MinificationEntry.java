@@ -20,12 +20,14 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 public class MinificationEntry extends HttpEntry {
 	private int savingPercentage;
 	private int savingsSizeInByte;
+	private int originalSizeInByte;
 	
 	public MinificationEntry(HttpRequestResponseInfo hrri,
-			HttpRequestResponseInfo lastRequestObj, String domainName, int savingPercentage,int savingsSizeInByte) {
+			HttpRequestResponseInfo lastRequestObj, String domainName, int savingPercentage,int savingsSizeInByte, int originalSizeInByte) {
 		super(hrri, lastRequestObj, domainName);
 		this.savingPercentage = savingPercentage;
 		this.savingsSizeInByte = savingsSizeInByte;
+		this.originalSizeInByte = originalSizeInByte;
 	}
 
 	public int getSavingPercentage() {
@@ -43,6 +45,13 @@ public class MinificationEntry extends HttpEntry {
 	public void setSavingsSizeInByte(int savingsSizeInByte) {
 		this.savingsSizeInByte = savingsSizeInByte;
 	}
-	
-	
+
+	public int getOriginalSizeInByte() {
+		return originalSizeInByte;
+	}
+
+	public void setOriginalSizeInByte(int originalSizeInByte) {
+		this.originalSizeInByte = originalSizeInByte;
+	}
+
 }

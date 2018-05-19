@@ -17,10 +17,15 @@ package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class UnnecessaryConnectionResult extends AbstractBestPracticeResult{
 	private int tightlyCoupledBurstCount = 0;
 	private double tightlyCoupledBurstTime = 0;
+	@JsonIgnore
 	private String exportAllMultiConnDesc;
+	@JsonProperty("connectionEntries")
 	private List<UnnecessaryConnectionEntry> tightlyCoupledBurstsDetails;
 	
 	public int getTightlyCoupledBurstCount() {

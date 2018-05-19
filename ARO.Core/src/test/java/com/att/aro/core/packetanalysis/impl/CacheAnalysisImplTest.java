@@ -163,6 +163,8 @@ public class CacheAnalysisImplTest extends BaseTest {
 		}
 		packets.add(pktInfo01);
 		packets.add(pktInfo02);
+		session01.setPackets(packets);
+		session02.setPackets(packets);
 		when(session01.getRequestResponseInfo()).thenReturn(value);
 		when(session01.isUDP()).thenReturn(false);
 		when(session01.getPackets()).thenReturn(packets);
@@ -177,7 +179,7 @@ public class CacheAnalysisImplTest extends BaseTest {
 		assertEquals(60, testResult.getDiagnosisResults().size());
 		assertEquals(0, testResult.getDuplicateContentBytes());
 		assertEquals(0, testResult.getDuplicateContentBytesRatio(), 0.0);
-		assertEquals(28, testResult.getDuplicateContentWithOriginals().size());
+		assertEquals(0, testResult.getDuplicateContentWithOriginals().size());
 	}
 
 	@Test
@@ -194,6 +196,7 @@ public class CacheAnalysisImplTest extends BaseTest {
 				when(httpRequestInfoArray[i].getDirection()).thenReturn(HttpDirection.REQUEST);
 				when(httpRequestInfoArray[i].getHostName()).thenReturn("www.google.com");
 				when(httpRequestInfoArray[i].getObjName()).thenReturn(Util.getCurrentRunningDir());
+				when(httpRequestInfoArray[i].getContentLength()).thenReturn(5);
 			} else {
 				when(httpRequestInfoArray[i].getDirection()).thenReturn(HttpDirection.RESPONSE);
 				when(httpRequestInfoArray[18].getStatusCode()).thenReturn(304);
@@ -204,6 +207,7 @@ public class CacheAnalysisImplTest extends BaseTest {
 			when(httpRequestInfoArray[i].getHostName()).thenReturn("www.google.com" + i);
 			when(httpRequestInfoArray[i].getObjName()).thenReturn(Util.getCurrentRunningDir());
 			when(httpRequestInfoArray[i - 2].isRangeResponse()).thenReturn(true);
+			when(httpRequestInfoArray[i].getContentLength()).thenReturn(5);
 			if ((i - 20) % 2 == 1) {
 				when(httpRequestInfoArray[i].getDirection()).thenReturn(HttpDirection.REQUEST);
 			} else {
@@ -224,6 +228,7 @@ public class CacheAnalysisImplTest extends BaseTest {
 		for (int i = 50; i < 60; i++) {
 			when(httpRequestInfoArray[i].isRangeResponse()).thenReturn(false);
 			when(httpRequestInfoArray[i].isChunked()).thenReturn(true);
+			when(httpRequestInfoArray[i].getContentLength()).thenReturn(5);
 		}
 		for (int i = 0; i < 50; i++) {
 			when(httpRequestInfoArray[i].isRangeResponse()).thenReturn(true);
@@ -309,8 +314,8 @@ public class CacheAnalysisImplTest extends BaseTest {
 		CacheAnalysis testResult = cacheAnalysis.analyze(sessionList);
 		assertEquals(4, testResult.getCacheExpirationResponses().size());
 		assertEquals(60, testResult.getDiagnosisResults().size());
-		assertEquals(0, testResult.getDuplicateContentBytes());
-		assertEquals(0, testResult.getDuplicateContentBytesRatio(), 0.0);
-		assertEquals(28, testResult.getDuplicateContentWithOriginals().size());
+		assertEquals(45, testResult.getDuplicateContentBytes());
+		assertEquals(0, testResult.getDuplicateContentBytesRatio(), 0.225);
+		assertEquals(18, testResult.getDuplicateContentWithOriginals().size());
 	}
 }

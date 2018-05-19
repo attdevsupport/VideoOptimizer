@@ -97,8 +97,7 @@
 		    <version>3.0.4</version>
 		</dependency>
 	</dependencies>
- 
- 	<build>
+	<build>
 		<plugins>
 			<!-- compile to 1.8 -->
 			<plugin>
@@ -173,6 +172,7 @@
 					</dependency>
 				</dependencies>
 			</plugin>
+ 
 		</plugins>
 	</build>
 	<reporting>

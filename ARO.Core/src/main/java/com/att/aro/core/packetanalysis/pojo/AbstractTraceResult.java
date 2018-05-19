@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
-
 import com.att.aro.core.peripheral.pojo.BluetoothInfo;
 import com.att.aro.core.peripheral.pojo.CameraInfo;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
@@ -36,6 +34,7 @@ import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Common trace data returned from reading trace file
@@ -43,10 +42,10 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent;
  */
 public abstract class AbstractTraceResult {
 	
-	@JsonIgnore
 	/**
 	 *   a list of all packets
 	 */
+	@JsonIgnore
 	protected List<PacketInfo> allpackets;
 	
 	/**
@@ -73,97 +72,116 @@ public abstract class AbstractTraceResult {
 	/**
 	 * the pcap startTime timestamp 
 	 */
+	@JsonIgnore
 	protected double pcapTime0 = 0;
 	
 	/**
 	 * A Set of all app names active during trace
 	 */
+	@JsonIgnore
 	protected Set<String> allAppNames = null;
 	
 	/**
 	 * the time zone offset
 	 */
+	@JsonIgnore
 	protected int captureOffset = -1;
 	
 	/**
 	 *  a Map of IpAddresses
 	 */
+	@JsonIgnore
 	private Map<String, Set<InetAddress>> appIps = null;
 	
 	/**
 	 * List of active app ids
 	 */
+	@JsonIgnore
 	private List<Integer> appIds = null;
 	
 	/**
 	 * a list of app info
 	 */
+	@JsonIgnore
 	private List<String> appInfos = null;
 	
 	/**
 	 * Map of ip address count
 	 */
+	@JsonIgnore
 	private Map<InetAddress, Integer> ipCountMap;
 	
 	/**
 	 * List of CPU activity info
 	 */
+	@JsonIgnore
 	private CpuActivityList cpuActivityList = null;
 
 	/**
 	 * List of Gps Info
 	 */
+	@JsonIgnore
 	private List<GpsInfo> gpsInfos = null;
 
 	/**
 	 * List of Bluetooth Info
 	 */
+	@JsonIgnore
 	private List<BluetoothInfo> bluetoothInfos = null;
 
 	/**
 	 * List of Camera Info
 	 */
+	@JsonIgnore
 	private List<CameraInfo> cameraInfos = null;
 
 	/**
 	 * List of Screen State Info
 	 */
+	@JsonIgnore
 	private List<ScreenStateInfo> screenStateInfos = null;
 
 	/**
 	 * List of User Event Info
 	 */
+	@JsonIgnore
 	private List<UserEvent> userEvents = null;
 	
 	/**
 	 * List of User Event Info
 	 */
+	@JsonIgnore
 	private List<TemperatureEvent> temperatureEvents = null;
 	
 	/**
 	 * List of Location Event Info
 	 */
+	@JsonIgnore
 	private List<LocationEvent> locationEvents = null;
 	
 	/**
 	 * keyword private data info from device
 	 * <br>from trace directory - private_data
 	 */
+	@JsonIgnore
 	private Map<String, String> deviceKeywordInfos = null;
 
 	/**
 	 * from trace directory - video_time
 	 */
+	@JsonIgnore
 	protected double videoStartTime;
 
 	/**
 	 * indicates absence of exVideo_time
 	 */
+	@JsonIgnore
 	protected boolean exVideoTimeFileNotFound;
 
 	/**
 	 * indicates absence of exVideo_time
 	 */
+	@JsonIgnore
 	protected boolean exVideoFound;
 	
 	/**
@@ -173,10 +191,13 @@ public abstract class AbstractTraceResult {
 	 * false when exVideo_time exists
 	 * </ul>
 	 */
+	@JsonIgnore
 	protected boolean nativeVideo;
 
+	@JsonIgnore
 	private ICrypto crypto;
 
+	@JsonIgnore
 	private List<VideoEvent> videoEvents;
 
 	/**

@@ -49,31 +49,26 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		String filepath = directory + Util.FILE_SEPARATOR + exVideoDisplayFileName;
 		String nativeVideoFileOnDevice = "video.mp4";
 		String nativeVideoDisplayfile = "video.mov";
-		if (filereader.fileExist(filepath) || isExternalVideoSourceFilePresent(nativeVideoFileOnDevice,nativeVideoDisplayfile,false, directory)){
 		
-			 exVideoFound = true;
-			 exVideoTimeFileNotFound = false;
-			 filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.EXVIDEO_TIME_FILE;
-			 
-			 if (!filereader.fileExist(filepath)) {
-					exVideoTimeFileNotFound =true;
-					exVideoFound = false;
-			}else {
-					
+		if (filereader.fileExist(filepath) || isExternalVideoSourceFilePresent(nativeVideoFileOnDevice, nativeVideoDisplayfile, false, directory)) {
+			exVideoFound = true;
+			exVideoTimeFileNotFound = false;
+			filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.EXVIDEO_TIME_FILE;
+
+			if (!filereader.fileExist(filepath)) {
+				exVideoTimeFileNotFound = true;
+				exVideoFound = false;
+			} else {
 				videoStartTime += readVideoStartTime(filepath, traceDateTime);
-					
-				}
-		}else{
-		
+			}
+		} else {
 			exVideoFound = false;
 			exVideoTimeFileNotFound = false;
 			nativeVideo = true;
 			filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.VIDEO_TIME_FILE;
-			if(filereader.fileExist(filepath)){
+			if (filereader.fileExist(filepath)) {
 				videoStartTime += readVideoStartTime(filepath, traceDateTime);
-					
-			}	
-			
+			}
 		}
 		VideoTime vtime = new VideoTime();
 		vtime.setExVideoFound(exVideoFound);
@@ -82,6 +77,7 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		vtime.setVideoStartTime(videoStartTime);
 		return vtime;
 	}
+	
 	double readVideoStartTime(String filepath, Date traceDateTime){
 		double videoStartTime = 0;
 		String[] lines = null;
@@ -112,8 +108,7 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 					// and
 					// videoStartTime are in sync.
 					double tcpdumpLocalStartTime = Double.parseDouble(strValues[1]);
-					double tcpdumpDeviceVsLocalTimeDelta = (traceDateTime
-							.getTime() / 1000.0) - tcpdumpLocalStartTime;
+					double tcpdumpDeviceVsLocalTimeDelta = (traceDateTime.getTime() / 1000.0) - tcpdumpLocalStartTime;
 					videoStartTime += tcpdumpDeviceVsLocalTimeDelta;
 				}
 			}

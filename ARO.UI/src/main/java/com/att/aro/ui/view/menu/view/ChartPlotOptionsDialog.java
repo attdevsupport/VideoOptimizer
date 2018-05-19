@@ -273,7 +273,6 @@ public class ChartPlotOptionsDialog extends JDialog {
 	}
 
 	private void executeCancelButton() {
-		guiPreferences.setChartPlotOptions(currentCheckedOptionList);
 		updateFromUserPreferences();
 		setVisible(false);
 		callerMenuItem.setEnabled(true);

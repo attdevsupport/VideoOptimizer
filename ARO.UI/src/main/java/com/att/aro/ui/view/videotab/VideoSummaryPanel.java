@@ -17,6 +17,10 @@ package com.att.aro.ui.view.videotab;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.util.List;
@@ -55,6 +59,7 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 		videoSummary_mbytesTotal
 	}
 	
+	private Insets insets = new Insets(10, 1, 10, 1);
 	JTable bufferTable;
 	String[][] bufferData;
 	private static final long serialVersionUID = 1L;
@@ -64,8 +69,25 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 	
 	public VideoSummaryPanel() {
 		tabPanelCommon.initTabPanel(this);
-		add(getBufferTable(), BorderLayout.NORTH);
-		add(layoutDataPanel(), BorderLayout.WEST);
+		this.setLayout(new GridBagLayout());
+
+		JLabel titleLabel = getTitle();
+		JScrollPane bufferPane = getBufferTable();
+		int line = 0;
+		Insets insets2 = new Insets(0, 1, 10, 1);
+		add(titleLabel, new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, insets2, 0, 0));
+		insets2 = new Insets(10, 1, 15, 1);
+		add(bufferPane, new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		add(layoutDataPanel(), new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, insets2, 0, 0));
+	}
+
+	public JLabel getTitle() {
+		JLabel VideoResultSummaryLabel = new JLabel(ResourceBundleHelper.getMessageString("videoSummary.title"));
+		VideoResultSummaryLabel.setFont(new Font("HeaderFont", Font.BOLD, 18));
+		return VideoResultSummaryLabel;
 	}
 	
 	public JScrollPane getBufferTable(){
@@ -112,21 +134,24 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 	
 	@Override
 	public JPanel layoutDataPanel() {
-		if(tabPanelCommon == null){
+		JPanel pane = new JPanel(new BorderLayout());
+		
+		if (tabPanelCommon == null) {
 			return null;
 		}
 		
 		TabPanelCommonAttributes attributes = null;
-		for(LabelKeys keys : LabelKeys.values()){
-			if(keys.equals(LabelKeys.videoSummary_stalls)){
-				attributes = tabPanelCommon.addLabelLine(
-						new TabPanelCommonAttributes.Builder().enumKey(keys).build());
-			}else{
-				attributes = tabPanelCommon.addLabelLine(
-						new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(keys).build());
+		for (LabelKeys keys : LabelKeys.values()) {
+			if (keys.equals(LabelKeys.videoSummary_stalls)) {
+				attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().enumKey(keys).build());
+			} else {
+				attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(keys).build());
 			}
 		}
-		return tabPanelCommon.getTabPanel();
+		pane.add(tabPanelCommon.getTabPanel(), BorderLayout.WEST);
+		pane.setBackground(Color.WHITE);
+
+		return pane;
 	}
 	
 	private void clearVideoSummary() {

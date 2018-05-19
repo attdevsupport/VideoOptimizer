@@ -39,8 +39,9 @@
 			<id>sonatype-flex</id>
 			<name>Sonatype Flex</name>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-		</repository>
- 	</repositories>
+		</repository>	
+	</repositories>
+
 
 	<dependencies>
 		<dependency>
@@ -99,8 +100,8 @@
 		    <artifactId>findbugs-maven-plugin</artifactId>
 		    <version>3.0.4</version>
 		</dependency>
-
 	</dependencies>
+
 
 	<build>
 		<plugins>
@@ -228,7 +229,9 @@
 					</dependency>
 				</dependencies>
 			</plugin>
+			
 
+			<!-- jacoco unit tests -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>

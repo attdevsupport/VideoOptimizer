@@ -137,7 +137,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private static final String ZOOM_IN_ACTION = "zoomIn";
 	private static final String ZOOM_OUT_ACTION = "zoomOut";
 	private static final String SAVE_AS_ACTION = "saveGraph";
-	private static final String REFRESH_AS_ACTION = "refreshGraph";
 
 	private static final Shape DEFAULT_POINT_SHAPE = new Ellipse2D.Double(-2, -2, 4, 4);
 	private static final int MIN_SIGNAL = -121;
@@ -529,7 +528,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			}
 			filteredSessionTraceData.getAnalyzerResult().getStatistic().setTotalByte(stat.getTotalByte());
 			filteredSessionTraceData.getAnalyzerResult().setStatemachine(statemachine);
-			filteredSessionTraceData.getAnalyzerResult().setBurstcollectionAnalysisData(burstcollectiondata);
+			filteredSessionTraceData.getAnalyzerResult().setBurstCollectionAnalysisData(burstcollectiondata);
 			refresh(filteredSessionTraceData);
 
 		}
@@ -773,7 +772,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		getZoomInButton().setEnabled(aroTraceData != null);
 		getZoomOutButton().setEnabled(aroTraceData != null);
 		getSaveGraphButton().setEnabled(aroTraceData != null);
-		getRefreshButton().setEnabled(false); // Greg Story
 		if(aroTraceData != null) {
 			parent.getDeviceNetworkProfilePanel().refresh(aroTraceData); // Greg
 																		 // Story
@@ -880,19 +878,15 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = 0; // Greg Story
 			gbc.gridy = 0;
-			zoomSavePanel.add(getRefreshButton(), gbc);
+			zoomSavePanel.add(getZoomInButton(), gbc);
 			GridBagConstraints gbc1 = new GridBagConstraints();
 			gbc1.gridx = 0;
 			gbc1.gridy = 1;
-			zoomSavePanel.add(getZoomInButton(), gbc1);
+			zoomSavePanel.add(getZoomOutButton(), gbc1);
 			GridBagConstraints gbc2 = new GridBagConstraints();
 			gbc2.gridx = 0;
 			gbc2.gridy = 2;
-			zoomSavePanel.add(getZoomOutButton(), gbc2);
-			GridBagConstraints gbc3 = new GridBagConstraints();
-			gbc3.gridx = 0;
-			gbc3.gridy = 3;
-			zoomSavePanel.add(getSaveGraphButton(), gbc3);
+			zoomSavePanel.add(getSaveGraphButton(), gbc2);
 		}
 		return zoomSavePanel;
 	}
@@ -934,19 +928,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			saveGraphButton.setToolTipText(ResourceBundleHelper.getMessageString("chart.tooltip.saveas"));
 		}
 		return saveGraphButton;
-	}
-
-	private JButton getRefreshButton() {
-		if (refreshGraphButton == null) {
-			ImageIcon refreshButtonIcon = Images.REFRESH.getIcon();
-			refreshGraphButton = new JButton("", refreshButtonIcon);
-			refreshGraphButton.setActionCommand(REFRESH_AS_ACTION);
-			refreshGraphButton.setEnabled(false);
-			refreshGraphButton.setPreferredSize(new Dimension(60, 30));
-			refreshGraphButton.addActionListener(this);
-			refreshGraphButton.setToolTipText(ResourceBundleHelper.getMessageString("chart.tooltip.refresh"));
-		}
-		return refreshGraphButton;
 	}
 
 	private JScrollPane getPane() {
@@ -1425,9 +1406,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			zoomIn();
 		} else if (ZOOM_OUT_ACTION.equals(e.getActionCommand())) {
 			zoomOut();
-		} else if (REFRESH_AS_ACTION.equals(e.getActionCommand())) { // Greg
-																		// Story
-			filterFlowTable();
 		} else if (SAVE_AS_ACTION.equals(e.getActionCommand())) {
 			graphHelper.SaveImageAs(getViewport(),
 					getTraceData().getAnalyzerResult().getTraceresult().getTraceDirectory());
@@ -1456,10 +1434,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 	public void setTraceDuration(double traceDuration) {
 		this.traceDuration = traceDuration;
-	}
-
-	public void setTraceAnalysis() {
-		getRefreshButton().setEnabled(traceData != null); // Greg Story
 	}
 
 }

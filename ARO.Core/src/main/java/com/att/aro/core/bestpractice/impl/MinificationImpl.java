@@ -134,7 +134,7 @@ public class MinificationImpl implements IBestPractice {
 		List<MinificationEntry> minificationEntryList = new ArrayList<MinificationEntry>();
 		String contentType = null;
 		int totalSavingInBytes = 0;
-
+		int totalBytes= 0;
 		final ExecutorService executorService = Executors.newFixedThreadPool(50);
 		Collection<Worker> workers = new ArrayList<Worker>();
 		
@@ -171,6 +171,7 @@ public class MinificationImpl implements IBestPractice {
 			for (Future<MinificationEntry> future: list){
 				if (future != null && future.get()!=null) {
 					totalSavingInBytes += future.get().getSavingsSizeInByte();
+					totalBytes += future.get().getOriginalSizeInByte();
 					minificationEntryList.add(future.get());
 				}
 			}
@@ -191,11 +192,12 @@ public class MinificationImpl implements IBestPractice {
 			result.setResultText(text);
 		} else {
 			result.setResultType(BPResultType.FAIL);
+			String percentageSaving = String.valueOf(Math.round(((double) totalSavingInBytes / totalBytes) * 100));
 			text = MessageFormat.format(textResults, 
 										ApplicationConfig.getInstance().getAppShortName(), 
 										numberOfFiles, 
 										savingInKb, 
-										totalSavingInBytes);
+										percentageSaving);
 			result.setResultText(text);
 		}
 		result.setAboutText(aboutText);
@@ -320,7 +322,7 @@ public class MinificationImpl implements IBestPractice {
 		int savingBytes = originalSize - minifiedSize;
 		float savingPercentage = ((float) savingBytes * 100 / (float) originalSize);
 		if (savingPercentage > MIN_SAVING_PERCENTAGE) {
-			return new MinificationEntry(req, lastRequestObj, session.getDomainName(), Math.round(savingPercentage), savingBytes);
+			return new MinificationEntry(req, lastRequestObj, session.getDomainName(), Math.round(savingPercentage), savingBytes, originalSize);
 		}
 		return null;
 	}

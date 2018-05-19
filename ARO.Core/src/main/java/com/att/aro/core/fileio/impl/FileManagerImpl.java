@@ -53,9 +53,8 @@ public class FileManagerImpl implements IFileManager {
 	@Override
 	public String[] readAllLine(String filepath) throws IOException {
 		BufferedReader reader = new BufferedReader(new FileReader(filepath));
-
 		String[] arrlist = readAllLine(reader);
-
+		reader.close();
 		return arrlist;
 	}
 

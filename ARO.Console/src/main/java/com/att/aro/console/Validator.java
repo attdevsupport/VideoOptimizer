@@ -20,6 +20,7 @@ import org.springframework.context.ApplicationContext;
 import com.att.aro.console.util.ThrottleUtil;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.pojo.ErrorCode;
+import com.att.aro.core.util.NetworkUtil;
 
 /**
  * validate commands against arguments
@@ -65,6 +66,12 @@ public class Validator {
 					) {
 				return ErrorCodeRegistry.getInvalidVideoOption();
 			}
+ 
+			
+			ErrorCode noActivatedNetIF = validateNetIF(cmd);
+			if (noActivatedNetIF != null) {
+				return noActivatedNetIF;
+			}
 			
 			ErrorCode uplinkErrorCode = validateUplink(cmd);
 			if (uplinkErrorCode != null) {
@@ -78,12 +85,27 @@ public class Validator {
 		return null;
 	}
 	
- 	
+ 
+	
+	private ErrorCode validateNetIF(Commands cmd) {
+
+		if( "ios".equals(cmd.getStartcollector()) && !NetworkUtil.isNetworkUp("bridge100")
+				&& (isNumberInRange(cmd.getThrottleDL(), 64, 102400) 
+				|| isNumberInRange(cmd.getThrottleUL(), 64, 102400))) {
+ 					return ErrorCodeRegistry.getNetworkNotActivatedError();				
+			
+		}
+				
+		return null;
+
+	}
+	
 	private ErrorCode validateUplink(Commands cmd) {
 		if (cmd.getThrottleUL() != "-1") {
-			if ("vpn_android".equals(cmd.getStartcollector()) && !isNumberInRange(cmd.getThrottleUL(), 64, 102400)) {
+			if (("ios".equals(cmd.getStartcollector()) ||"vpn_android".equals(cmd.getStartcollector())) 
+					&& !isNumberInRange(cmd.getThrottleDL(), 64, 102400)) {
 				return ErrorCodeRegistry.getInvalidUplink();
-			} else if ("ios".equals(cmd.getStartcollector()) || "rooted_android".equals(cmd.getStartcollector())) {
+			} else if ("rooted_android".equals(cmd.getStartcollector())) {
 				return ErrorCodeRegistry.getUnsupportedCollector();
 			}
 		}
@@ -92,14 +114,16 @@ public class Validator {
 	
 	private ErrorCode validateDownlink(Commands cmd) {
 		if (cmd.getThrottleDL() != "-1") {
-			if ("vpn_android".equals(cmd.getStartcollector()) && !isNumberInRange(cmd.getThrottleDL(), 64, 102400)) {
+			if (("ios".equals(cmd.getStartcollector()) || "vpn_android".equals(cmd.getStartcollector())) 
+					&& !isNumberInRange(cmd.getThrottleDL(), 64, 102400)) {								
 				return ErrorCodeRegistry.getInvalidDownlink();
-			} else if ("ios".equals(cmd.getStartcollector()) || "rooted_android".equals(cmd.getStartcollector())) {
+			} else if ( "rooted_android".equals(cmd.getStartcollector())) {
 				return ErrorCodeRegistry.getUnsupportedCollector();
 			}
 		}
 		return null;
 	}
+	
 		
 	private boolean isNumberInRange(String number, int from, int to) {
 		int throughput = ThrottleUtil.getInstance().parseNumCvtUnit(number);
