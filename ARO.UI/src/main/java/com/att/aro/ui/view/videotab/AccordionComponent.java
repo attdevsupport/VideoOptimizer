@@ -167,13 +167,9 @@ public class AccordionComponent extends JPanel implements ActionListener {
 	
 	private Component getUploadButton() {
 		if (uploadButton == null) {
-			uploadButton = new JButton("TBD");
-		}
-		if (aroManifest.isValid()) {
-			uploadButton.setVisible(true);
-		} else {
-			uploadButton.setVisible(false);
-		}
+			uploadButton = new JButton();
+		} 
+		uploadButton.setVisible(false);		
 		return uploadButton;
 	}
 
