@@ -18,7 +18,6 @@ package com.att.aro.core.bestpractice.pojo;
 import java.util.List;
 
 public class UnsecureSSLVersionResult extends AbstractBestPracticeResult {
-
 	private List<UnsecureSSLVersionEntry> results;
 		
 	public List<UnsecureSSLVersionEntry> getResults() {
@@ -34,4 +33,7 @@ public class UnsecureSSLVersionResult extends AbstractBestPracticeResult {
 		return BestPracticeType.UNSECURE_SSL_VERSION;
 	}
 
+	public int getErrorCount() {
+		return results != null ? results.size() : 0;
+	}
 }

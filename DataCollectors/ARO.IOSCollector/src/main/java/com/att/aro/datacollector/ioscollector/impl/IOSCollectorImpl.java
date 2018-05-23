@@ -47,6 +47,7 @@ import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
+import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.Util;
@@ -55,6 +56,7 @@ import com.att.aro.datacollector.ioscollector.IOSDevice;
 import com.att.aro.datacollector.ioscollector.IOSDeviceStatus;
 import com.att.aro.datacollector.ioscollector.ImageSubscriber;
 import com.att.aro.datacollector.ioscollector.app.IOSAppException;
+import com.att.aro.datacollector.ioscollector.attenuator.MitmAttenuatorImpl;
 import com.att.aro.datacollector.ioscollector.reader.ExternalDeviceMonitorIOS;
 import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 import com.att.aro.datacollector.ioscollector.reader.UDIDReader;
@@ -95,6 +97,9 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private boolean isCommandLine;
 	private boolean isCapturingVideo;
 	private VideoOption videoOption;
+	private AttenuatorModel attenuatorModel;
+	private MitmAttenuatorImpl mitmAttenuator;
+	private boolean deviceDataPulled = true;
 	
 	public IOSCollectorImpl() {
 		super();
@@ -252,7 +257,11 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	@Override
 	public StatusResult startCollector(boolean commandLine, String folderToSaveTrace, VideoOption videoOption,
 			boolean liveViewVideo, String deviceId, Hashtable<String, Object> extraParams, String password) {
-
+		if(extraParams != null) {
+			this.videoOption = (VideoOption) extraParams.get("video_option");
+			this.attenuatorModel = (AttenuatorModel)extraParams.get("AttenuatorModel");
+		}
+ 
 		Callable<StatusResult> launchAppCallable = () -> {
 			return launchApp();
 		};
@@ -264,9 +273,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			this.sudoPassword = password;
 		}
 
-		if(extraParams != null) {
-			this.videoOption = (VideoOption) extraParams.get("video_option");
-		}
 		isCapturingVideo = isVideo();
 
 		this.isCommandLine = commandLine;
@@ -356,6 +362,10 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		}
 		
 		launchCollection(trafficFilePath, serialNumber, status);		
+		// Start Attenuation
+		if(attenuatorModel.isConstantThrottle()) {
+			startAttenuatorCollection(datadir, attenuatorModel);
+		}
 		
 		if (status.isSuccess()) {
 			try {
@@ -375,7 +385,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		String certName = SettingsImpl.getInstance().getAttribute("iosCert");
 		StatusResult status = new StatusResult();
 		status.setSuccess(true);
-		if(AppSigningHelper.isCertInfoPresent()) {
+		if (AppSigningHelper.isCertInfoPresent() && (this.videoOption.equals(VideoOption.HDEF))) {
 			try {
 				AppSigningHelper.getInstance().extractAndSign(provProfile, certName);
 				AppSigningHelper.getInstance().deployAndLaunchApp();
@@ -414,9 +424,9 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 		// packet capture start
 		startPacketCollection();
-
+		
 		if (isCapturingVideo) {
-			startVideoCapture(status);
+			status = startVideoCapture(status);
 			if (!status.isSuccess()) {
 				return status;
 			}
@@ -431,6 +441,26 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			}
 		}
 		return status;
+	}
+	
+	private void startAttenuatorCollection(String trafficFilePath,AttenuatorModel attenuatorModel ) {
+
+		    int throttleDL = 0;
+			int throttleUL = 0;
+
+			if(attenuatorModel.isThrottleDLEnable()){
+				throttleDL = attenuatorModel.getThrottleDL();
+			}
+			if(attenuatorModel.isThrottleULEnable()){
+				throttleUL = attenuatorModel.getThrottleUL();
+			}
+			// mitm and pcap4j start
+			if(mitmAttenuator == null) {
+				mitmAttenuator = new MitmAttenuatorImpl();
+			} 
+			mitmAttenuator.startCollect(trafficFilePath,throttleDL,throttleUL);	
+			
+		
 	}
 
 	private StatusResult startVideoCapture(StatusResult status) {
@@ -467,6 +497,11 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			protected void done() {
 				try {
 					get();
+					if (videoCapture.getStatusResult() != null) {
+						StatusResult temp = videoCapture.getStatusResult();
+						status.setError(temp.getError());
+						status.setSuccess(temp.isSuccess());
+					}
 				} catch (Exception ex) {
 					log.info("Error thrown by videoworker: " + ex.getMessage());
 				}
@@ -499,7 +534,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		};
 		packetworker.execute();
 	}
-
+	
 	private StatusResult initRVI(StatusResult status, final String trafficFilePath, final String serialNumber) {
 
 		log.debug("initRVI");
@@ -737,9 +772,13 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		StatusResult status = new StatusResult();
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
 				GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
-				GoogleAnalyticsUtil.getAnalyticsEvents().getEndTrace()); // GA
-																			// Request
-		// showWaitBox();
+				GoogleAnalyticsUtil.getAnalyticsEvents().getEndTrace()); // GA Request
+		if((attenuatorModel.isThrottleDLEnable()||
+				attenuatorModel.isThrottleULEnable())
+				&& mitmAttenuator!=null) {
+			mitmAttenuator.stopCollect();
+		}
+		this.deviceDataPulled = true;
 		this.stopWorkers();
 		if (datadir.length() > 1) {
 			File folder = new File(datadir);
@@ -754,12 +793,18 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				File pcapfile = new File(
 						datadir + Util.FILE_SEPARATOR + defaultBundle.getString("datadump.trafficFile"));
 				status.setSuccess(pcapfile.exists());
-				pullFromDevice();
+				if (AppSigningHelper.isCertInfoPresent() && (this.videoOption.equals(VideoOption.HDEF))) {
+					pullFromDevice(); // hd video trace only
+				}
 			}
 		}
 		return status;
 	}
 	
+	public boolean isDeviceDataPulledStatus() {
+		return this.deviceDataPulled;
+	}
+
 	@SuppressFBWarnings(value="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification="Findbugs false alarm")
 	private void pullFromDevice() {
 		AppSigningHelper.getInstance().relaunchApp();
@@ -781,6 +826,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			}
 		} catch (IOException | InterruptedException e) {
 			log.error("Error Copying files from ios device", e);
+			this.deviceDataPulled = false;
 		}
 		unmountDevice();
 	}

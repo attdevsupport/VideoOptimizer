@@ -47,13 +47,17 @@ public class LoggerImpl implements ILogger {
 	
 	@Override
 	public void elevatedInfo(String message) {
-		Level original = getLevel();
-		LogManager.getRootLogger().setLevel(Level.INFO);
-
-		StringBuffer source = getSource();
-		logger.info(wrapMessage(message, source));
+		Level original = setLevel(Level.INFO);
+		logger.info(wrapMessage(message, getSource()));
+		setLevel(original);
 		
-		LogManager.getRootLogger().setLevel(original);
+//		Level original = getLevel();
+//		LogManager.getRootLogger().setLevel(Level.INFO);
+//
+//		StringBuffer source = getSource();
+//		logger.info(wrapMessage(message, source));
+//		
+//		LogManager.getRootLogger().setLevel(original);
 	}
 	
 	@Override

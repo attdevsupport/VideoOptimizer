@@ -18,11 +18,16 @@ package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class FileOrderResult extends AbstractBestPracticeResult{
+	@JsonIgnore
 	private String textResult;
+	@JsonIgnore
 	private String exportAll;
 	private List<FileOrderEntry> results = null;
 	private int fileOrderCount = 0;
+	
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.FILE_ORDER;
@@ -64,6 +69,7 @@ public class FileOrderResult extends AbstractBestPracticeResult{
 	 * 
 	 * @return failed/success test indicator
 	 */
+	@JsonIgnore
 	public boolean isTestFailed() {
 		return (getFileOrderCount() > 0);
 	}

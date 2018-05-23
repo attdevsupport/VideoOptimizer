@@ -46,10 +46,15 @@ import com.att.aro.core.util.Util;
  * Designed to work with ddmlib r24.0.1 current release as of Jan 2015
  * 
  * Current dependencies are:
- *	   libs/ddmlib-24.0.1.jar
- * 	   libs/guava-17.0.jar
+ *	   libs/ddmlib-26.1.2.jar
+ * 	   libs/guava-22.0.jar
  *	   libs/kxml2-2.3.0.jar
- *	   libs/common-24.0.1.jar
+ *	   libs/annotations-26.1.2.jar
+ *	   libs/common-26.1.2.jar
+ *	   libs/jsr305-2.0.1
+ *	   libs/error_prone_annotations-2.0.18.jar
+ *     libs/j2objc-annotations-1.1.jar
+ *     libs/animal-sniffer-annotations-1.14
  *
  * <p>see: http://mvnrepository.com/artifact/com.android.tools.ddms/ddmlib</p>
  * 
@@ -142,7 +147,7 @@ public class AdbServiceImpl implements IAdbService {
 				if (path != null && fileManager.fileExist(path)) {
 					logger.debug(path);
 					configFile.setAndSaveAttribute(getADBAttributeName(), path);
-					return path;
+					return Util.validateInputLink(path);
 				}
 			}
 
@@ -151,7 +156,7 @@ public class AdbServiceImpl implements IAdbService {
 
 		}
 
-		return adbPath;
+		return Util.validateInputLink(adbPath);
 
 	}
 	

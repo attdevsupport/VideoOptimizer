@@ -181,17 +181,26 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 			TableColumn appCol = cols.getColumn(APP_COL);
 			DefaultTableCellRenderer defaultTableCR = new DefaultTableCellRenderer();
 			appCol.setCellRenderer(defaultTableCR);
+			appCol.setPreferredWidth(230);
+
+			appCol = cols.getColumn(DOMAIN_COL);
+			appCol.setPreferredWidth(150);
+
+			appCol = cols.getColumn(LOCALPORT_COL);
+			appCol.setPreferredWidth(60);
 			
 			//Re-sizing the column
 			appCol = cols.getColumn(BYTE_COUNT_COL);
-			appCol.setMaxWidth(75); 
-			
+			appCol.setMaxWidth(70);
+			appCol.setPreferredWidth(70);
+
 			appCol = cols.getColumn(PACKETCOUNT_COL);
 			appCol.setMaxWidth(75); 
 			
 			appCol = cols.getColumn(TCP_UDP_COL);
-			appCol.setMaxWidth(75); 
-			
+			appCol.setMaxWidth(55);
+			appCol.setPreferredWidth(55);
+
 			//Adding checkbox to column greg story
 			appCol = cols.getColumn(CHECKBOX_COL);
 			appCol.setCellRenderer(new CheckBoxRenderer());

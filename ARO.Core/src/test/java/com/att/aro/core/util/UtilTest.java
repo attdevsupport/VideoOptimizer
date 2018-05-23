@@ -188,7 +188,7 @@ public class UtilTest {
 		Comparator<String> result = Util.getFloatSorter();
 		assertNotNull(result);
 		assertNotEquals(0,result.compare("22.13", "1.02"));
-		assertEquals(0,result.compare("3.19", "3.19"));	
+		assertEquals(0,result.compare("3.19", "3.19"));
 	}
 	
 	@Test
@@ -196,17 +196,17 @@ public class UtilTest {
 		Comparator<Integer> result = Util.getDomainIntSorter();
 		assertNotNull(result);
 		assertNotEquals(0,result.compare(1, 2));
-		assertEquals(0,result.compare(1,1));	
+		assertEquals(0,result.compare(1,1));
 	}
 
 	
 	@Test
 	public void test_intCheckPassFailorWarning() {
 		BPResultType bpResultType = Util.checkPassFailorWarning(2, 1, 4);
-		assertEquals(bpResultType, BPResultType.WARNING);	
+		assertEquals(bpResultType, BPResultType.WARNING);
 	}
 	
-	@Test	
+	@Test
 	public void test_checkPassFailorWarning() {
 		BPResultType bpResultType = Util.checkPassFailorWarning(0.2, 0.1, 0.4);
 		assertEquals(bpResultType, BPResultType.WARNING);
@@ -225,7 +225,13 @@ public class UtilTest {
 		assertEquals("ERROR", Util.getLoggingLevel());
 	}
 	
-	
+	@Test
+	public void test_EmptySpace() {
+		String adblink = "C:\\Program Files\\test\\adbfolder";
+		String validatedLink = Util.validateInputLink(adblink);
+		assertNotNull(validatedLink);
+		assertTrue(validatedLink.contains("\""));
+	}
 	@Test
 	public void getEditCap(){
 		String editCap = Util.getEditCap();
@@ -252,5 +258,21 @@ public class UtilTest {
 		String formattedNumber = Util.formatDecimal(number, -1, 0);
 		
 		assertEquals("19801", formattedNumber);
+	}
+	
+	@Test
+	public void testParseForUTC() {
+
+		long result;
+		
+		result = Util.parseForUTC("2018-01-11T22:14:59.000000Z");
+		assertEquals(1515708899000l, result);
+		
+		result = Util.parseForUTC("2018-01-11T22:14:59");
+		assertEquals(1515708899000l, result);
+		
+		result = Util.parseForUTC("2018-01-11 22:14:59");
+		assertEquals(1515708899000l, result);
+		
 	}
 }

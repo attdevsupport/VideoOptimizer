@@ -17,7 +17,7 @@ package com.att.aro.core.packetanalysis.pojo;
 
 import java.io.Serializable;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * A bean class that contains one cache entry, and provides methods for
@@ -25,19 +25,28 @@ import org.codehaus.jackson.annotate.JsonIgnore;
  */
 public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	private static final long serialVersionUID = 1L;
+	@JsonIgnore
 	private CacheEntry cacheHit;
+	@JsonIgnore
 	private int hitCount;
+	@JsonIgnore
 	private HttpRequestResponseInfo request;
+	@JsonIgnore
 	private HttpRequestResponseInfo response;
+	@JsonIgnore
 	private Diagnosis diagnosis;
 	private long rawBytes;
 	private long bytesInCache;
 	private long bytesNotInCache;
+	@JsonIgnore
 	private PacketInfo sessionFirstPacket;
 	private int cacheCount = 0;
+	@JsonIgnore
 	private String hostName;
 	private long contentLength;
+	@JsonIgnore
 	private Double timeStamp;
+	@JsonIgnore
 	private HttpRequestResponseInfo httpRequestResponse;
 	private String httpObjectName;
 	@JsonIgnore

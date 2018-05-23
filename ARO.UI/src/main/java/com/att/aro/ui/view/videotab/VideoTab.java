@@ -17,7 +17,6 @@ package com.att.aro.ui.view.videotab;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -28,7 +27,6 @@ import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -82,7 +80,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 	private StartUpDelayWarningDialog startUpDelayWarningDialog = null;
 	private String warningMessage;
 	int graphPanelIndex = 0;
-
+	private AmvotsPanel amvotsPane;
 	/**
 	 * Create the panel.
 	 */
@@ -123,7 +121,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 			mainPanel.setOpaque(false);
 
 			int section = 1;			
-
+			
 			mainPanel.add(buildSummariesGroup(), new GridBagConstraints(
 					0, section++
 					, 1, 1
@@ -181,13 +179,6 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 			return true;
 		}
 	}
-
-	public JLabel getTitle(){
-		JLabel VideoResultSummaryLabel = new JLabel(ResourceBundleHelper.getMessageString("videoSummary.title"));
-		VideoResultSummaryLabel.setFont(new Font("HeaderFont", Font.BOLD, 18));
-		return VideoResultSummaryLabel; 
-	}
-	
 
 	public void openStartUpDelayWarningDialog(String tracePath) {
 		if(tracePath == null) {
@@ -282,16 +273,37 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		// Separator
 		topPanel.add(UIComponent.getInstance().getSeparator(),
 				new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 10, 0), 0, 0));
+			
+		topPanel.add(getSummaryPane(), new GridBagConstraints(0, section, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		
-		topPanel.add(getTitle(),new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
-		
+		return topPanel;
+	}
+
+	private JPanel getUploadAnalysisPane() {
+		amvotsPane = new AmvotsPanel();
+		localRefreshList.add(amvotsPane);
+		return amvotsPane;
+	}
+
+	private JPanel getSummaryPane() {
+		JPanel summaryPane = new JPanel(new GridBagLayout());
+		summaryPane.setOpaque(false);
+
 		// VideoSummaryPanel
 		VideoSummaryPanel videoSummaryPanel = new VideoSummaryPanel();
 		localRefreshList.add(videoSummaryPanel);
-		topPanel.add(videoSummaryPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		bpObservable.registerObserver(videoSummaryPanel);
 
-		return topPanel;
+		Insets inset = new Insets(0, 1, 10, 1);
+		summaryPane.add(videoSummaryPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
+				GridBagConstraints.HORIZONTAL, inset, 0, 0));
+
+		inset = new Insets(10, 40, 10, 1);
+		JPanel upload = getUploadAnalysisPane();
+		summaryPane.add(upload, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, GridBagConstraints.EAST,
+				GridBagConstraints.HORIZONTAL, inset, 0, 0));
+
+		return summaryPane;
 	}
 	
 	private JPanel buildGraphPanel() {
@@ -384,6 +396,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 			trace = result.getTraceDirectory() != null ? result.getTraceDirectory() : result.getTraceFile();
 			lastOpenedTrace = newTraceTime;
 			bpObservable.refreshModel(analyzerResult);
+			amvotsPane.refresh(analyzerResult);
 			updateUI();
 		}
 		if (isVideoAvailable(result)) {

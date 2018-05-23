@@ -20,11 +20,15 @@ import java.util.Map;
 import java.util.SortedMap;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class Http3xxCodeResult extends AbstractBestPracticeResult {
+	@JsonIgnore
 	private SortedMap<Integer, Integer> httpRedirectCounts3XX;
+	@JsonIgnore
 	private Map<Integer, HttpRequestResponseInfo> firstResMap;
 	List<HttpCode3xxEntry> http3xxResCode;
+	@JsonIgnore
 	private String exportAllHttpError;
 	
 	public String getExportAllHttpError() {
@@ -56,6 +60,10 @@ public class Http3xxCodeResult extends AbstractBestPracticeResult {
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.HTTP_3XX_CODE;
+	}
+	
+	public int getErrorCount() {
+		return httpRedirectCounts3XX != null ? httpRedirectCounts3XX.size() : 0;
 	}
 
 }

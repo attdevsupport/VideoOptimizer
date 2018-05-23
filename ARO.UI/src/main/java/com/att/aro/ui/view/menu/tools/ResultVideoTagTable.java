@@ -15,8 +15,11 @@
 */
 package com.att.aro.ui.view.menu.tools;
 
+import java.util.Map;
 import javax.swing.JTable;
 
+import com.att.aro.core.videoanalysis.impl.RegexMatchLbl;
+import com.att.aro.core.videoanalysis.pojo.RegexMatchResult;
 import com.att.aro.core.videoanalysis.pojo.config.VideoDataTags;
 
 public class ResultVideoTagTable extends JTable {
@@ -29,7 +32,8 @@ public class ResultVideoTagTable extends JTable {
 		setModel(tableModel);
 	}
 	
-	public void update(String[] results, VideoDataTags[] videoDataTags){
+	public void update(Map<RegexMatchLbl, RegexMatchResult> results,
+			Map<RegexMatchLbl, VideoDataTags[]> videoDataTags) {
 		tableModel.update(results, videoDataTags);
 	}
 	
@@ -37,4 +41,7 @@ public class ResultVideoTagTable extends JTable {
 		return tableModel.getVideoDataTags();
 	}
 
+	public Map<RegexMatchLbl, VideoDataTags[]> getVideoDataTagsMap() {
+		return tableModel.getVideoDataTagsMap();
+	}
 }

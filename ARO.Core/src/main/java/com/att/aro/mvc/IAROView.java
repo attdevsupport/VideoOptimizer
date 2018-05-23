@@ -197,4 +197,12 @@ public interface IAROView {
 	 * Show the Charts Panel on the Diagnostic tab
 	 */
 	void showAllCharts();
+
+	/**
+	 * Updates the status if ios device (video data) has been successfully
+	 * pulled down or not
+	 * 
+	 * @param status
+	 */
+	void isDeviceDataPulled(boolean status);
 }

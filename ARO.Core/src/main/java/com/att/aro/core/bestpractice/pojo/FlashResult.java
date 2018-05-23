@@ -16,10 +16,13 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class FlashResult extends AbstractBestPracticeResult {
+	@JsonIgnore
 	private HttpRequestResponseInfo firstFlash = null;
 	private int numberOfFlash = 0;
+	@JsonIgnore
 	private String exportAllNumberOfFlashFiles;
 	@Override
 	public BestPracticeType getBestPracticeType() {

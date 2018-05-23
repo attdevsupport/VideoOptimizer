@@ -298,11 +298,11 @@ public class HttpsUsageImplTest extends BaseTest {
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(2, httpsUsageEntries.size());
 		if (httpsUsageEntries.get(0).getIPAddress().equals("157.56.19.80")) {
-			assertEquals("0.3", httpsUsageEntries.get(0).getTotalHttpTrafficInKB());
-			assertEquals("0.1", httpsUsageEntries.get(1).getTotalHttpTrafficInKB());
+			assertEquals("0.293", httpsUsageEntries.get(0).getTotalHttpTrafficInKB());
+			assertEquals("0.098", httpsUsageEntries.get(1).getTotalHttpTrafficInKB());
 		} else {
-			assertEquals("0.1", httpsUsageEntries.get(0).getTotalHttpTrafficInKB());
-			assertEquals("0.3", httpsUsageEntries.get(1).getTotalHttpTrafficInKB());
+			assertEquals("0.098", httpsUsageEntries.get(0).getTotalHttpTrafficInKB());
+			assertEquals("0.293", httpsUsageEntries.get(1).getTotalHttpTrafficInKB());
 		}
 	}
 
@@ -313,11 +313,11 @@ public class HttpsUsageImplTest extends BaseTest {
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(2, httpsUsageEntries.size());
 		if (httpsUsageEntries.get(0).getIPAddress().equals("157.56.19.80")) {
-			assertEquals("0.3", httpsUsageEntries.get(0).getTotalTrafficInKB());
-			assertEquals("0.4", httpsUsageEntries.get(1).getTotalTrafficInKB());
+			assertEquals("0.293", httpsUsageEntries.get(0).getTotalTrafficInKB());
+			assertEquals("0.391", httpsUsageEntries.get(1).getTotalTrafficInKB());
 		} else {
-			assertEquals("0.4", httpsUsageEntries.get(0).getTotalTrafficInKB());
-			assertEquals("0.3", httpsUsageEntries.get(1).getTotalTrafficInKB());
+			assertEquals("0.391", httpsUsageEntries.get(0).getTotalTrafficInKB());
+			assertEquals("0.293", httpsUsageEntries.get(1).getTotalTrafficInKB());
 		}
 	}
 

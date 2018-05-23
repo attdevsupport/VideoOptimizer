@@ -17,9 +17,13 @@ package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class DisplayNoneInCSSResult extends AbstractBestPracticeResult {
+	@JsonIgnore
 	private String exportAll;
 	List<DisplayNoneInCSSEntry> results;
+
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.DISPLAY_NONE_IN_CSS;
@@ -41,4 +45,7 @@ public class DisplayNoneInCSSResult extends AbstractBestPracticeResult {
 		this.results = results;
 	}
 	
+	public int getErrorCount() {
+		return results != null ? results.size() : 0;
+	}
 }

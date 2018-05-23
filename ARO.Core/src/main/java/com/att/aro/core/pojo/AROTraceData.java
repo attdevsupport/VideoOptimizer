@@ -19,6 +19,7 @@ import java.util.List;
 
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * AROTraceData contains
@@ -32,7 +33,9 @@ import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
  *
  */
 public class AROTraceData {
+	@JsonIgnore
 	private boolean success = false;
+	@JsonIgnore
 	private ErrorCode error = null;
 	private List<AbstractBestPracticeResult> bestPracticeResults;
 	private PacketAnalyzerResult analyzerResult;
@@ -108,6 +111,14 @@ public class AROTraceData {
 	 */
 	public void setBestPracticeResults(List<AbstractBestPracticeResult> bestPracticeResults) {
 		this.bestPracticeResults = bestPracticeResults;
+	}
+
+	public String getErrorDescription() {
+		return error == null ? "Trace ran successfully" : error.getDescription();
+	}
+
+	public TraceMetadata getTraceMetadata() {
+		return new TraceMetadata(analyzerResult);
 	}
 
 }

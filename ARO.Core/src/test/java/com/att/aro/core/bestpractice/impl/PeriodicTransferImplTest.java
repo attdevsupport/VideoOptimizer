@@ -98,7 +98,7 @@ public class PeriodicTransferImplTest extends BaseTest {
 		profileLTE.setCloseSpacedBurstThreshold(0.0);
 		burstcollectionAnalysisData.setBurstCollection(burstCollection);
 		tracedata01.setSessionlist(sessionlist);
-		tracedata01.setBurstcollectionAnalysisData(burstcollectionAnalysisData);
+		tracedata01.setBurstCollectionAnalysisData(burstcollectionAnalysisData);
 		tracedata01.setProfile(profileLTE);
 		AbstractBestPracticeResult result01 = periodicTransferImpl.runTest(tracedata01);
 
@@ -304,7 +304,7 @@ public class PeriodicTransferImplTest extends BaseTest {
 		sessionlist.add(session01);
 
 		tracedata.setSessionlist(sessionlist);
-		tracedata.setBurstcollectionAnalysisData(burstcollectionAnalysisData);
+		tracedata.setBurstCollectionAnalysisData(burstcollectionAnalysisData);
 		tracedata.setProfile(profile3g);
 		AbstractBestPracticeResult result = periodicTransferImpl.runTest(tracedata);
 		assertEquals(BPResultType.FAIL, result.getResultType());

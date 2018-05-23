@@ -21,14 +21,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.ResourceBundle;
 
 import javax.swing.SwingUtilities;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
+import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.impl.LoggerImpl;
+import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.video.IVideoCapture;
 import com.att.aro.core.video.IVideoWriter;
 import com.att.aro.core.video.impl.VideoWriterImpl;
@@ -36,19 +39,21 @@ import com.att.aro.core.video.pojo.QuickTimeOutputStream;
 import com.att.aro.core.video.pojo.QuickTimeOutputStream.VideoFormat;
 import com.att.aro.datacollector.ioscollector.IScreenCapture;
 import com.att.aro.datacollector.ioscollector.ImageSubscriber;
+import com.att.aro.datacollector.ioscollector.utilities.ErrorCodeRegistry;
 
 public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 	private ILogger log = new LoggerImpl("IOSCollector");// ContextAware.getAROConfigContext().getBean(ILogger.class);
 	private List<ImageSubscriber> subscribers;
 	private List<IVideoImageSubscriber> vImageSubscribers = new ArrayList<IVideoImageSubscriber>();
-	
+	private static ResourceBundle defaultBundle = ResourceBundle.getBundle("messages");
+
 	private IVideoWriter videowriter = new VideoWriterImpl();
 
 	private volatile boolean stop = false;
 	private volatile boolean hasQuit = false;
 
 	private String workingFolder = "";
-
+	private StatusResult statusResult = null;
 	private Date videoStartTime;
 
 	IScreenCapture capt = null;
@@ -132,8 +137,15 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 						lastFrameTime = timestamp;
 						callSubscriber(image);
 					}
-				} 
-				else if (!stop) {
+				} else if (!stop && (!ImageHelper.isImageDecoderStatus())) {
+					stopCapture();
+					statusResult = new StatusResult();
+					statusResult.setSuccess(false);
+					statusResult.setError(
+							ErrorCodeRegistry.getImageDecoderError(defaultBundle.getString("Error.imagedecoder")));
+					log.error("Failed to get screenshot image, ImageDecoder error");
+					break;
+				}else if (!stop) {
 					log.info("Failed to get screenshot image, pause for 1/2 second");
 					try {
 						Thread.sleep(500);
@@ -149,7 +161,9 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 		}
 		try {
 			videowriter.close();
-			smanage.shutDown();
+			if (smanage != null) {
+				smanage.shutDown();
+			}
 		} catch (IOException ioExp) {
 			log.warn("Exception closing video output stream", ioExp);
 		}
@@ -283,5 +297,9 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 	@Override
 	public boolean isVideoCaptureActive() {
 		return false;
+	}
+
+	public StatusResult getStatusResult() {
+		return statusResult;
 	}
 }

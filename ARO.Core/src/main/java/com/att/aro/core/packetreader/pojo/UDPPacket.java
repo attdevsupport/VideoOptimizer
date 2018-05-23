@@ -18,7 +18,7 @@ package com.att.aro.core.packetreader.pojo;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * A bean class that provides access to UDP Packet data.

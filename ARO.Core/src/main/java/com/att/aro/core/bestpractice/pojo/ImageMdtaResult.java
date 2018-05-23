@@ -17,8 +17,11 @@ package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class ImageMdtaResult extends AbstractBestPracticeResult {
 	private List<ImageMdataEntry> results = null;
+	@JsonIgnore
 	private String exportNumberOfMdataImages;
 	
 	@Override
@@ -42,6 +45,7 @@ public class ImageMdtaResult extends AbstractBestPracticeResult {
 		this.exportNumberOfMdataImages = exportNumberOfMdataImages;
 	}
 	
-	
-	
+	public int getErrorCount() {
+		return results != null ? results.size() : 0;
+	}
 }

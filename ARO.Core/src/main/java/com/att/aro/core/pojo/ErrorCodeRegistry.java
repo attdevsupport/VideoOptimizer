@@ -87,7 +87,7 @@ public final class ErrorCodeRegistry {
 		err.setDescription("Failed to analyze trace file.");
 		return err;
 
-	}	
+	}
 	
 	public static ErrorCode getUnRecognizedPackets(){
 		ErrorCode err = new ErrorCode();
@@ -106,9 +106,17 @@ public final class ErrorCodeRegistry {
 		return err;
 	}
 	
-	public static ErrorCode getTrafficFileNotFound(){
+	public static ErrorCode getPacketsNotFound() {
 		ErrorCode err = new ErrorCode();
 		err.setCode(107);
+		err.setName("Traffic file has no packet information");
+		err.setDescription("There was no activity in the traffic file.");
+		return err;
+	}
+
+	public static ErrorCode getTrafficFileNotFound() {
+		ErrorCode err = new ErrorCode();
+		err.setCode(108);
 		err.setName("Traffic file not found");
 		err.setDescription("This trace doesn't seem to have a traffic file.");
 		return err;

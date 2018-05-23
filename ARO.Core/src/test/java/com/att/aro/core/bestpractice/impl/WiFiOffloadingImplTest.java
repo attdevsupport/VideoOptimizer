@@ -46,7 +46,7 @@ public class WiFiOffloadingImplTest extends BaseTest {
 		burstCollection.add(burst01);
 		burstCollection.add(burst02);
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
-		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
+		Mockito.when(tracedata.getBurstCollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		wifiOffloadingImpl = (WiFiOffloadingImpl) context.getBean("wifiOffloading");
 		AbstractBestPracticeResult result = wifiOffloadingImpl.runTest(tracedata);
 		assertEquals(BPResultType.PASS, result.getResultType());
@@ -61,7 +61,7 @@ public class WiFiOffloadingImplTest extends BaseTest {
 		List<Burst> burstCollection = new ArrayList<Burst>();
 		burstCollection.add(burst01);
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
-		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
+		Mockito.when(tracedata.getBurstCollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		wifiOffloadingImpl = (WiFiOffloadingImpl) context.getBean("wifiOffloading");
 		AbstractBestPracticeResult result = wifiOffloadingImpl.runTest(tracedata);
 		assertEquals(BPResultType.FAIL, result.getResultType());

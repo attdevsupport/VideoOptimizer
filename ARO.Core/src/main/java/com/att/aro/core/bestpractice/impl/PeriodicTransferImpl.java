@@ -105,10 +105,10 @@ public class PeriodicTransferImpl implements IBestPractice {
 		
 		PeriodicTransferResult result = new PeriodicTransferResult();
 		//logger.info("run diagnosisPeriodicRequest");
-		diagnosisPeriodicRequest(tracedata.getSessionlist(), tracedata.getBurstcollectionAnalysisData().getBurstCollection(),
+		diagnosisPeriodicRequest(tracedata.getSessionlist(), tracedata.getBurstCollectionAnalysisData().getBurstCollection(),
 				tracedata.getProfile());
 		//logger.info("run calculatePeriodicRequestTime");
-		calculatePeriodicRepeatTime(tracedata.getBurstcollectionAnalysisData().getBurstCollection());
+		calculatePeriodicRepeatTime(tracedata.getBurstCollectionAnalysisData().getBurstCollection());
 		
 		if(this.minimumPeriodicRepeatTime == 0.0){
 			result.setResultType(BPResultType.PASS);

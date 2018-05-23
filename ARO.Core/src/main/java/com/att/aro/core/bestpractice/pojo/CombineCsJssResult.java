@@ -18,12 +18,16 @@ package com.att.aro.core.bestpractice.pojo;
 import java.util.List;
 
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class CombineCsJssResult extends AbstractBestPracticeResult {
 	private int inefficientCssRequests = 0;
-	private PacketInfo consecutiveCssJsFirstPacket = null;
 	private int inefficientJsRequests = 0;
+	@JsonIgnore
+	private PacketInfo consecutiveCssJsFirstPacket = null;
+	@JsonIgnore
 	private String exportAllInefficientCssRequest;
+	@JsonIgnore
 	private String exportAllInefficientJsRequest;
 	private List<CsJssFilesDetails> filesDetails;
 	

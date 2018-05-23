@@ -15,10 +15,13 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
-public class ScreenRotationResult extends AbstractBestPracticeResult {
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
+public class ScreenRotationResult extends AbstractBestPracticeResult {
 	private double screenRotationBurstTime = 0.0;
+	@JsonIgnore
 	private String exportAllScreenRotationDescPass;
+	@JsonIgnore
 	private String exportAllScreenRotationFailed;
 	
 	public double getScreenRotationBurstTime() {

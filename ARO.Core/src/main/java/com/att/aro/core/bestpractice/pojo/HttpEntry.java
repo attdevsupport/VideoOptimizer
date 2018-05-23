@@ -17,12 +17,15 @@ package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class HttpEntry {
+	@JsonIgnore
 	private double timeStamp;
 	private String httpObjectName = "";
 	private String hostName = "";
 	private int httpCode;
+	@JsonIgnore
 	private HttpRequestResponseInfo httpRequestResponse;
 	
 	public HttpEntry(HttpRequestResponseInfo hrri, HttpRequestResponseInfo lastRequestObj, String domainName) {

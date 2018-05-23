@@ -7,8 +7,8 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

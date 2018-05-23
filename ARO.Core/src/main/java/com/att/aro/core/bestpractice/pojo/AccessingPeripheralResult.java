@@ -15,6 +15,8 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class AccessingPeripheralResult extends AbstractBestPracticeResult {
 	private double activeGPSRatio = 0.0;
 	private double activeGPSDuration = 0.0;
@@ -23,8 +25,11 @@ public class AccessingPeripheralResult extends AbstractBestPracticeResult {
 	private double activeCameraRatio = 0.0;
 	private double activeCameraDuration = 0.0;
 	
+	@JsonIgnore
 	private String exportAllGPSDesc;
+	@JsonIgnore
 	private String exportAllBTDesc;
+	@JsonIgnore
 	private String exportAllCamDesc;
 	
 	public double getActiveGPSRatio() {

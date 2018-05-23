@@ -3,7 +3,7 @@
 
 All works distributed in this package are covered by the Apache 2.0 License unless otherwise stated.
 
-> Copyright 2017
+> Copyright 2018
 Intellectual Property
 
 > Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,11 +51,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 1.4
+#### Video Optimizer 2.0
 
-**System Requirements for Video Optimizer 1.4:**
+**System Requirements for Video Optimizer 2.0:**
 
-Before you download Video Optimizer 1.4, make sure you meet the following system requirements for your operating system.
+Before you download Video Optimizer 2.0, make sure you meet the following system requirements for your operating system.
 
 1. 2GB or more for RAM
 2. Java 8 or above
@@ -63,29 +63,30 @@ Before you download Video Optimizer 1.4, make sure you meet the following system
 4. Latest Xcode for collecting iOS devices trace
 5. WinPcap and WireShark for Windows platform
 6. FFMpeg library and VLC media player installed and configured for HD video
-7. Brew, Ifuse, Xfuse  for MacOS platform
+7. Brew, Ifuse, Xfuse, WireShark  for MacOS platform
 
 
 
-#### Video Optimizer 1.4 Features
+#### Video Optimizer 2.0 Features
 
-#### • Diagnostic tab improvements to ensure the listing on the graph is aligned with the options selection from the menu (view).
+#### • iOS attenuator feature is now available both on the GUI and CLI versions. It currently supports static attenuation for the required speeds.
 
-#### • Help button will provide more information about Dumpcap path, FFMPEG, FFPROBE path in the preferences window.
+#### • Video analysis settings has been added to the Preferences within Video tab. A new option called “Near Stall” is included in video preferences.
 
-#### • Command Line improvements to support Dynamic attenuation
+#### •	Enhanced support for HLS video streaming.
+
+#### •	Modified Video Parser wizard to easily edit the capture group
+#### •	Other Enhancements include:
+#### - Refresh button is now moved to the TCP/UDP flow table in Diagnostic tab
+#### - Export JSON has been streamlined and enhanced with additional metadata
+#### - Percentage savings and verbiage updates have been added to the Best Practices such as Text file compression, Image format and Minify CSS, JS, and HTML
 
 
-### What are the known issues in Release 1.4?
 
-#### •	iOS setting
-+ Blank screen is displayed when you take the first trace using an iOS collector. User should stop and take a new trace to continue.
+### What are the known issues in Release 2.0?
 
-#### •  Android trace analysis result
-+	Application names are not displayed for traces taken with Oreo version
-
-#### •	Miscellaneous issues
-+	Unresponsive UI due to specific traces causing exceptions. Workaround is to restart the application.
+#### •	Application names, CPU usage, signal strength is not displayed for traces taken with Android Version Oreo and above.
+#### •	With iPhone X, intermittent delay in starting the trace.  
 
 ### •  Installation instruction
 + Please follow the order to compile projects

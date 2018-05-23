@@ -36,6 +36,8 @@ import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import org.jfree.util.Log;
+
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.ILogger;
 import com.att.aro.core.commandline.IExternalProcessRunner;
@@ -283,7 +285,7 @@ public class VlcjPlayer implements IVideoPlayer {
 	        
         } catch (RuntimeException e) {
         	
-			showVlcjError();        	     	
+        	showVlcjInformativeMsg();        	     	
         	return false;
         }
 		
@@ -479,7 +481,7 @@ public class VlcjPlayer implements IVideoPlayer {
 					Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
 			 
 				} else {
-					
+
 					showVlcjError();
 					return false;
 				}
@@ -499,7 +501,7 @@ public class VlcjPlayer implements IVideoPlayer {
 			}
 		
 		} catch (UnsatisfiedLinkError e) {
-		
+
 			showVlcjError();
 			return false;		
 		}
@@ -513,6 +515,11 @@ public class VlcjPlayer implements IVideoPlayer {
 				ResourceBundleHelper.getMessageString("video.error.vlcj"),
 				ResourceBundleHelper.getMessageString("menu.error.title"),
 				JOptionPane.ERROR_MESSAGE);
+	}
+
+	private void showVlcjInformativeMsg() {
+		MessageDialogFactory.showMessageDialog(null, ResourceBundleHelper.getMessageString("video.informative.vlcj"),
+				ResourceBundleHelper.getMessageString("menu.info.title"), JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	@Override

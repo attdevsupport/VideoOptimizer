@@ -34,7 +34,7 @@ public class ImageCompressionResult extends AbstractBestPracticeResult {
 		this.results = results;
 	}
 
-	
-	
-	
+	public int getErrorCount() {
+		return results != null ? results.size() : 0; 
+	}
 }

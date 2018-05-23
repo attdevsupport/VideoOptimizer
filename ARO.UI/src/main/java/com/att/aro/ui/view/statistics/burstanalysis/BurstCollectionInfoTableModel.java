@@ -149,7 +149,7 @@ public class BurstCollectionInfoTableModel extends DataTableModel<Burst> {
 	}
 
 	public void refresh(AROTraceData model) {
-		setData(model.getAnalyzerResult().getBurstcollectionAnalysisData().
+		setData(model.getAnalyzerResult().getBurstCollectionAnalysisData().
 				getBurstCollection());
 	}
 }

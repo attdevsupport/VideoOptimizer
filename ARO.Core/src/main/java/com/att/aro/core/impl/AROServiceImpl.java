@@ -45,6 +45,7 @@ import com.att.aro.core.pojo.ErrorCodeRegistry;
 import com.att.aro.core.pojo.VersionInfo;
 import com.att.aro.core.report.IReport;
 import com.att.aro.core.settings.SettingsUtil;
+import com.att.aro.core.util.Util;
 
 /**
  * This class provides access to ARO.Core functionality for analyzing and
@@ -569,10 +570,16 @@ public class AROServiceImpl implements IAROService {
 		} else {
 			if (result.getTraceresult() == null) {
 				// we set this on purpose
+				data.setSuccess(false);
 				data.setError(ErrorCodeRegistry.getUnRecognizedPackets());
 			} else if (result.getTraceresult().getAllpackets() == null
 					|| result.getTraceresult().getAllpackets().size() == 0) {
-				data.setError(ErrorCodeRegistry.getTrafficFileNotFound());
+				data.setSuccess(false);
+				if (filemanager.fileExist(traceDirectory + Util.FILE_SEPARATOR + "traffic.cap")) {
+					data.setError(ErrorCodeRegistry.getPacketsNotFound());
+				} else {
+					data.setError(ErrorCodeRegistry.getTrafficFileNotFound());
+				}
 			} else {
 				List<AbstractBestPracticeResult> bestPractices = analyze(result, requests);
 				bestPractices.addAll(createEmptyResults());

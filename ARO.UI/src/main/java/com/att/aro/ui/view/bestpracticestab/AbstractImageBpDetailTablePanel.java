@@ -17,38 +17,32 @@ package com.att.aro.ui.view.bestpracticestab;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
-import java.awt.Toolkit;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
-import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.UIManager;
 
+import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.IAROExpandable;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.model.ImageBPTable;
-import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  *
  *
  */
 public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel implements IAROExpandable, MouseListener {
-//	private static final Logger logger = Logger.getLogger(AbstractBpDetailTablePanel.class.getName()); 
+
+	final static int ROW_HEIGHT = 20;
+	final static int MINIMUM_ROWS = 5;
 
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
@@ -57,30 +51,20 @@ public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel imp
 
 	private static final long serialVersionUID = 1L;
 
-	final static int ROW_HEIGHT = 20;
-	final static int MINIMUM_ROWS = 5;
-
-	final String zoomOut = ResourceBundleHelper.getMessageString("button.ZoomOut"); // "+"
-	final String zoomIn = ResourceBundleHelper.getMessageString("button.ZoomIn");	// "-"
-
-	private JButton zoomBtn;
 	private IARODiagnosticsOverviewRoute diagnosticsOverviewRoute;
-	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
 	@SuppressWarnings("rawtypes")
 	DataTableModel tableModel;
-	
-	@SuppressWarnings("rawtypes")
-	ImageBPTable contentTable;
-	
-	
-	
-	int noOfRecords;
 
+	ImageBPTable<ImageMdataEntry> contentTable;
+
+	int noOfRecords;
 	private JPanel contentPanel;
 
 	private JScrollPane scrollPane;
 	
+	ImageTablePanelUtil imageTablePanelUtil;
+
 	public AbstractImageBpDetailTablePanel() {
 		initTableModel();
 		setLayout(new BorderLayout());
@@ -99,27 +83,15 @@ public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel imp
 
 	@Override
 	public JPanel layoutDataPanel() {
-		
 		JPanel layout = new JPanel();
-		
 		layout.setLayout(new BorderLayout());
-		
 		layout.add(getContentPanel(), BorderLayout.CENTER);
-		
 		JPanel contentPanelWidth = new JPanel(new GridLayout(2, 1, 5, 5));
 		JPanel contentPanelWidthAdjust = new JPanel(new GridBagLayout());
-		contentPanelWidthAdjust.add(contentPanelWidth
-				, new GridBagConstraints(
-						0, 0
-						, 1, 1
-						, 1.0, 1.0
-						, GridBagConstraints.NORTH
-						, GridBagConstraints.NONE
-						, new Insets(5, 5, 5, 0)
-						, 0, 0));
+		contentPanelWidthAdjust.add(contentPanelWidth, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+				GridBagConstraints.NORTH, GridBagConstraints.NONE, new Insets(5, 5, 5, 0), 0, 0));
 		contentPanelWidthAdjust.setBackground(Color.BLUE);
 		layout.add(contentPanelWidthAdjust, BorderLayout.EAST);
-		
 		return layout;
 	}
 
@@ -130,77 +102,20 @@ public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel imp
 		if (this.contentPanel == null) {
 			this.contentPanel = new JPanel(new BorderLayout());
 			this.contentPanel.add(getScrollPane(), BorderLayout.CENTER);
-			this.contentPanel.add(getButtonsPanel(), BorderLayout.EAST);
+			imageTablePanelUtil = new ImageTablePanelUtil(scrollPane, tableModel, ROW_HEIGHT, MINIMUM_ROWS);
+			this.contentPanel.add(imageTablePanelUtil.getButtonsPanel(), BorderLayout.EAST);
 		}
-		return this.contentPanel;}
+		return this.contentPanel;
+		}
 
 	/**
-	 * Returns the panel that contains the view and save button.
+	 * clicks the "+" button if table needs to expand
 	 */
-	private JPanel getButtonsPanel() {
-
-		JPanel bpButtonPanel = new JPanel(new GridBagLayout());
-
-		JPanel panel = new JPanel(new GridLayout(2, 1, 5, 5));
-		
-		panel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-		bpButtonPanel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-		
-		panel.add(getZoomBtn());
-
-		bpButtonPanel.add(panel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
-
-		return bpButtonPanel;
-	}
-
-	/**
-	 * Returns the zoom button.
-	 */
-	private JButton getZoomBtn() {
-		//TODO This same method is present in multiple locations, and should be refactored
-		zoomBtn = new JButton(zoomOut);
-		zoomBtn.setEnabled(false);
-		zoomBtn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent arg0) {
-				String val = zoomBtn.getText();
-				if (val.equals(zoomOut)) {
-					zoomBtn.setText(zoomIn);
-					setScrollSize(tableModel.getRowCount());
-				} else {
-					zoomBtn.setText(zoomOut);
-					setScrollSize(MINIMUM_ROWS);
-				}
-			}
-
-		});
-
-		return zoomBtn;
+	@Override
+	public void expand() {
+		imageTablePanelUtil.expand();
 	}
 	
-	/**
-	 * 
-	 */
-	void autoSetZoomBtn(){
-		zoomBtn.setEnabled(tableModel.getRowCount() > MINIMUM_ROWS);
-	}
-
-	/**
-	 * Set preferred height of scrollPane to match requested number of rows of JTable
-	 * 
-	 * @param scrollHeight 
-	 * 
-	 */
-	void setScrollSize(int scrollHeight) {
-		Dimension currentDimensions = scrollPane.getSize();
-		double panelWidth = screenSize.getWidth();
-		if(panelWidth>500){
-			panelWidth = panelWidth-400;
-		}
-		currentDimensions.setSize(panelWidth, ROW_HEIGHT * (scrollHeight + 1));
-		scrollPane.setPreferredSize(currentDimensions);
-	}
-
 	/**
 	 * Returns the Scroll Pane for the FileCompressionTable.
 	 */
@@ -212,37 +127,20 @@ public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel imp
 		return scrollPane;
 	}
 
+	void setScrollSize(int scrollHeight) {
+		imageTablePanelUtil.setScrollSize(scrollHeight);
+	}
+
+	void autoSetZoomBtn() {
+		imageTablePanelUtil.autoSetZoomBtn();
+	}
+
 	@SuppressWarnings("rawtypes")
 	public abstract ImageBPTable getContentTable();
 
-	/**
-	 * clicks the "+" button if table needs to expand
-	 */
-	@Override
-	public void expand() {
-		if (zoomBtn.getText().equals(zoomOut) && tableModel.getRowCount() >= MINIMUM_ROWS) {
-			zoomBtn.doClick();
-			this.scrollPane.revalidate();
-		}
-	
-	}
-
-
-	@SuppressWarnings("unchecked")
 	@Override
 	public void mousePressed(MouseEvent event) {
-		if (diagnosticsOverviewRoute != null && event.getClickCount() == 2) {
- 			if (event.getSource() instanceof JTable){
-				int selectionIndex = ((JTable)event.getSource()).getSelectedRow();
-				int original = ((JTable)event.getSource()).convertRowIndexToModel(selectionIndex);
-//				logger.info("BP selectionIndex: "+ selectionIndex);
-//				logger.info("Table Model: "+ tableModel);
-				if(selectionIndex > -1){
-					diagnosticsOverviewRoute.route(tableModel,
-							tableModel.getValueAt(original));
-				}
-			}
-		}
+		diagnosticsOverviewRoute = imageTablePanelUtil.mousePressed(event, diagnosticsOverviewRoute);
 	}
 	@Override
 	public void mouseClicked(MouseEvent event) {
@@ -256,5 +154,4 @@ public abstract class AbstractImageBpDetailTablePanel extends TabPanelJPanel imp
 	@Override
 	public void mouseExited(MouseEvent event) {
 	}
-
 }

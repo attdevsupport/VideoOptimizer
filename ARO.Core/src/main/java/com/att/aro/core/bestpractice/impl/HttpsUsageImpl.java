@@ -208,9 +208,9 @@ public class HttpsUsageImpl implements IBestPractice {
 			} // End all sessions associated to an IP
 			if (totalNumHttpConnectionsCurrentIp > 0) {
 				BigDecimal totalTrafficInKBCurrentIp = new BigDecimal(totalTrafficInByteCurrentIp)
-						.divide(new BigDecimal(1000), 3, RoundingMode.HALF_UP);
+						.divide(new BigDecimal(1024), 3, RoundingMode.HALF_UP);
 				BigDecimal totalHttpTrafficInKBCurrentIp = new BigDecimal(totalHttpTrafficInByteCurrentIp)
-						.divide(new BigDecimal(1000), 3, RoundingMode.HALF_UP);
+						.divide(new BigDecimal(1024), 3, RoundingMode.HALF_UP);
 				int httpConnectionsPercentage = getHttpConnectionsPercentage(totalNumHttpConnectionsCurrentIp,
 						totalNumConnectionsCurrentIp);
 				/*

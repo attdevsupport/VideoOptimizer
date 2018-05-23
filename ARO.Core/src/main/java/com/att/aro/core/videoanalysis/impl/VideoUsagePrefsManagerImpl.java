@@ -17,7 +17,8 @@ package com.att.aro.core.videoanalysis.impl;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.ILogger;
 import com.att.aro.core.model.InjectLogger;
@@ -30,9 +31,14 @@ public class VideoUsagePrefsManagerImpl implements IVideoUsagePrefsManager {
 	@InjectLogger
 	private static ILogger log;
 	
-	public VideoUsagePrefs getVideoUsagePreference() {
-		VideoUsagePrefs videoUsagePrefs = new VideoUsagePrefs();
+	@Autowired
+	VideoUsagePrefs videoUsagePrefs;
 
+	public void setVideoUsagePrefs(VideoUsagePrefs videoUsagePrefs) {
+		this.videoUsagePrefs = videoUsagePrefs;
+	}
+
+	public VideoUsagePrefs getVideoUsagePreference() {
 		PreferenceHandlerImpl prefs = PreferenceHandlerImpl.getInstance();
 		String videoPref = prefs.getPref(VideoUsagePrefs.VIDEO_PREFERENCE);
 		if (videoPref != null && !videoPref.equals("null")) {

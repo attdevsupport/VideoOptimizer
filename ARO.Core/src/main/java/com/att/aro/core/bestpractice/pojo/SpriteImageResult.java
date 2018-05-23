@@ -17,8 +17,11 @@ package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class SpriteImageResult extends AbstractBestPracticeResult {
 	private List<SpriteImageEntry> analysisResults = null;
+	@JsonIgnore
 	private String exportAllNumberOfSpriteFiles;
 	
 	@Override
@@ -38,4 +41,7 @@ public class SpriteImageResult extends AbstractBestPracticeResult {
 		this.exportAllNumberOfSpriteFiles = exportAllNumberOfSpriteFiles;
 	}
 	
+	public int getErrorCount() {
+		return analysisResults != null ? analysisResults.size() : 0;
+	}
 }

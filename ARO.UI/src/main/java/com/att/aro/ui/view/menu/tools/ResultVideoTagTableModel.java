@@ -15,10 +15,18 @@
 */
 package com.att.aro.ui.view.menu.tools;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.swing.table.AbstractTableModel;
 
+import com.att.aro.core.videoanalysis.impl.RegexMatchLbl;
+import com.att.aro.core.videoanalysis.pojo.RegexMatchResult;
 import com.att.aro.core.videoanalysis.pojo.config.VideoDataTags;
 
 public class ResultVideoTagTableModel extends AbstractTableModel {
@@ -31,6 +39,9 @@ public class ResultVideoTagTableModel extends AbstractTableModel {
 
 	private EnumSet<VideoDataTags> vdt;
 
+	public Object[][] getData(){
+		return this.data;
+	}
 	public int getColumnCount() {
 		return columnNames.length;
 	}
@@ -44,6 +55,12 @@ public class ResultVideoTagTableModel extends AbstractTableModel {
 	}
 
 	public Object getValueAt(int row, int col) {
+		Object str = data[row][col];
+		if (col == 0 && str != null) {
+			HashMap<RegexMatchLbl, String> value = (HashMap<RegexMatchLbl, String>) str;
+			String cellValue = value.values().stream().findFirst().get();
+			return cellValue;
+		}
 		return data[row][col];
 	}
 
@@ -104,21 +121,88 @@ public class ResultVideoTagTableModel extends AbstractTableModel {
 		return tags;
 	}
 
-	public void update(String[] results, VideoDataTags[] videoDataTags) {
-		if (results != null && videoDataTags != null && results.length > 0) {
-			int resSize = results.length;
-			int vdtSize = videoDataTags.length;
-			int maxCount = resSize > vdtSize ? resSize : vdtSize; // find larger array to avoid overruns
+	public Map<RegexMatchLbl, VideoDataTags[]> getVideoDataTagsMap() {
+		Map<RegexMatchLbl, VideoDataTags[]> resultMap = new LinkedHashMap<>();
+		RegexMatchLbl category = RegexMatchLbl.REQUEST;
+		List<VideoDataTags> tagList = new ArrayList<>();
+
+		for (int idx = 0; idx < data.length; idx++) {
+			Map<RegexMatchLbl, String> value = (HashMap<RegexMatchLbl, String>) data[idx][0];
+			if (value != null) {
+				RegexMatchLbl lbl = value.keySet().stream().findFirst().get();
+				if (category == lbl) {
+					tagList.add((VideoDataTags) data[idx][1]);
+				} else if (category != lbl && (!tagList.isEmpty())) {
+					resultMap.put(category, tagList.toArray(new VideoDataTags[tagList.size()]));
+					category = lbl;
+					tagList.clear();
+					tagList.add((VideoDataTags) data[idx][1]);
+				} else {
+					category = lbl;
+					tagList.add((VideoDataTags) data[idx][1]);
+				}
+			}
+		}
+		if (!tagList.isEmpty()) {
+			resultMap.put(category, tagList.toArray(new VideoDataTags[tagList.size()]));
+		}
+		return resultMap;
+	}
+
+	public void update(Map<RegexMatchLbl, RegexMatchResult> results,
+			Map<RegexMatchLbl, VideoDataTags[]> videoDataTags) {
+		if (results != null && videoDataTags != null && results.size() > 0) {
+
+			int resSize = results.values().stream().mapToInt(i -> i.getResult().length).sum();
+			int vdtSize = videoDataTags.values().stream().mapToInt(i -> i.length).sum(); 
+			int maxCount = resSize > vdtSize ? resSize : vdtSize;
 			data = new Object[maxCount][2];
-			// data will be at least results.length in size
+			String[] res = new String[resSize];
+			int index = 0;
+			for (RegexMatchResult value : results.values()) {
+				for (String strValue : value.getResult()) {
+					res[index] = strValue;
+					index++;
+				}
+			}
+			int prevSum = 0;
 			for (int idx = 0; idx < resSize; idx++) {
-				data[idx][0] = results[idx];
-				data[idx][1] = (videoDataTags.length > idx && videoDataTags[idx] != null) ? videoDataTags[idx] : VideoDataTags.unknown;
+				RegexMatchLbl category = null;
+				int lenSum = 0;
+
+				for (RegexMatchResult matchResult : results.values()) {
+					lenSum = lenSum + matchResult.getResult().length;
+					if (lenSum > idx) {
+						for (Entry<RegexMatchLbl, RegexMatchResult> entry : results.entrySet()) {
+							if (entry.getValue().equals(matchResult)) {
+								category = entry.getKey();
+								break;
+							}
+						}
+						break;
+					} else {
+						prevSum = lenSum;
+					}
+				}
+				Map<RegexMatchLbl, String> map = new HashMap<>();
+				map.put(category, res[idx]);
+				data[idx][0] = map;
+
+				if (category != null) {
+					VideoDataTags[] xrefs = videoDataTags.get(category);
+					if (xrefs != null) {
+						int len = xrefs.length;
+						VideoDataTags tag = (xrefs[(idx - prevSum) % len] != null) ? xrefs[(idx - prevSum) % len]
+								: VideoDataTags.unknown;
+						data[idx][1] = tag;
+					} else {
+						data[idx][1] = VideoDataTags.unknown;
+					}
+				}
 			}
 		} else {
 			data = new Object[0][2];
 		}
 		fireTableDataChanged();
 	}
-
 }

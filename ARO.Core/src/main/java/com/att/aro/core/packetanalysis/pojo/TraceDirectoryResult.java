@@ -37,6 +37,8 @@ import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  *  Trace data from reading trace directory, which contains a pcap file.<br>
  *  Depending on the type of trace various other trace information may be recorded.
@@ -81,85 +83,100 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	/**
 	 * from trace directory - screen_rotations
 	 */
+	@JsonIgnore
 	private int screenRotationCounter = 0;
 	
 	/**
 	 * Set of InetAddress
 	 * <br>from trace directory - device_info
 	 */
+	@JsonIgnore
 	private Set<InetAddress> localIPAddresses = null;
 
 	// Alarm Info
 	/**
 	 * Epoch time in milliseconds from (trace directory) alarm_info_end/alarm_info_start files
 	 */
+	@JsonIgnore
 	private double dumpsysEpochTimestamp;
 	
 	/**
 	 * Elapsed time in milliseconds from (trace directory) alarm_info_end/alarm_info_start files
 	 */
+	@JsonIgnore
 	private double dumpsysElapsedTimestamp; 
 	
 	/**
 	 * from trace directory - dmesg
 	 */
+	@JsonIgnore
 	private List<AlarmInfo> alarmInfos = null;
 	
 	/**
 	 * from trace directorys - alarm_info_end or alarm_info_start if first file doesn't exist
 	 */
+	@JsonIgnore
 	private List<AlarmAnalysisInfo> alarmStatisticsInfos = null;
 	
 	/**
 	 * a Map of scheduled alarms parsed from alarmStatisticsInfos
 	 */
+	@JsonIgnore
 	private Map<String, List<ScheduledAlarmInfo>> scheduledAlarms = null;
 
 	/**
 	 * App Version Info
 	 * <br>from trace directory - appname
 	 */
+	@JsonIgnore
 	private Map<String, String> appVersionMap = null;
 
 	/**
 	 * Wifi Info
 	 * <br>from trace directory - wifi_events
 	 */
+	@JsonIgnore
 	private List<WifiInfo> wifiInfos = null;
 
 	/**
 	 * Wakelock Info
 	 * <br>from trace directory - batteryinfo_dump
 	 */
+	@JsonIgnore
 	private List<WakelockInfo> wakelockInfos = null;
 
 	/**
 	 * Battery Info
 	 * <br>from trace directory - battery_events
 	 */
+	@JsonIgnore
 	private List<BatteryInfo> batteryInfos = null;
 	
 	/**
 	 * Temperature Data
 	 * <br>from trace directory - temperature
 	 */
+	@JsonIgnore
 	private List<TemperatureEvent> temperatureInfos = null;
 	
 	/**
 	 * Location Data
 	 * <br>from trace directory - location_events
 	 */
+	@JsonIgnore
 	private List<LocationEvent> locationInfos = null;
 	
 	/**
 	 * Radio Info
 	 * <br>from trace directory - radio_events
 	 */
+	@JsonIgnore
 	private List<RadioInfo> radioInfos = null;
 
 	/**
 	 * from trace directory - network_details
 	 */
+	@JsonIgnore
 	private List<NetworkBearerTypeInfo> networkTypeInfos = null;
 	
 	/**
@@ -190,60 +207,73 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	 * Event time in nanoseconds
 	 * <br>from trace directory - time file line 3
 	 */
+	@JsonIgnore
 	private double eventTime0;
 	
 	/**
 	 * from trace directory - gps_events
 	 */
+	@JsonIgnore
 	private double gpsActiveDuration;
 	
 	/**
 	 * from trace directory - wifi_events
 	 */	
+	@JsonIgnore
 	private double wifiActiveDuration;
 	
 	/**
 	 * from trace directory - bluetooth_events
 	 */
+	@JsonIgnore
 	private double bluetoothActiveDuration;
 	
 	/**
 	 * from trace directory - camera_events
 	 */
+	@JsonIgnore
 	private double cameraActiveDuration;
 
 	/**
 	 * List of trace files NOT found in trace directory.<br>
 	 * Note: different collectors create different sets of trace files.
 	 */
+	@JsonIgnore
 	private Set<String> missingFiles = null;
 	
 	/**
 	 * from trace directory - network_details
 	 */
+	@JsonIgnore
 	private List<NetworkType> networkTypesList = null;
 	
 	/**
 	 * list of attenuation event 
 	 */
+	@JsonIgnore
 	private  List<AttenuatorEvent> attenautionEvent = null;
 	
 	/**
 	 * list of throttle speed evnt
 	 */
+	@JsonIgnore
 	private List<SpeedThrottleEvent> speedThrottleEvent = null;
 	
 	/**
 	 * Total packets extracted from pcap file.
 	 * <br>from trace directory - traffic.cap
 	 */
+	@JsonIgnore
 	private int totalNoPackets = 0;
 	
 	/**
 	 * from trace directory - device_details (7th line)
 	 * <br> Note: No visible usage found
 	 */
+	@JsonIgnore
 	private NetworkType networkType;
+
+ 
 
 	public CollectOptions getCollectOptions() {
 		return collectOptions;
@@ -551,6 +581,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	/**
 	 * @return collector name from deviceDetail
 	 */
+	@JsonIgnore
 	public String getCollectorName() {
 		return this.deviceDetail.getCollectorName();
 	}
@@ -558,6 +589,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	/**
 	 * @return device model from deviceDetail
 	 */
+	@JsonIgnore
 	public String getDeviceModel() {
 		return this.deviceDetail.getDeviceModel();
 	}
@@ -565,6 +597,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	/**
 	 * @return device make from deviceDetail
 	 */
+	@JsonIgnore
 	public String getDeviceMake() {
 		return this.deviceDetail.getDeviceMake();
 	}
@@ -572,6 +605,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	/**
 	 * @return os type from deviceDetail ie. LGE
 	 */
+	@JsonIgnore
 	public String getOsType() {
 		return this.deviceDetail.getOsType();
 	}
@@ -579,6 +613,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	/**
 	 * @return os type from deviceDetail ie. android
 	 */
+	@JsonIgnore
 	public String getOsVersion() {
 		return this.deviceDetail.getOsVersion();
 	}
@@ -586,6 +621,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	/**
 	 * @return Version of collector 
 	 */
+	@JsonIgnore
 	public String getCollectorVersion() {
 		return this.deviceDetail.getCollectorVersion();
 	}
@@ -784,4 +820,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	public TraceResultType getTraceResultType() {
 		return TraceResultType.TRACE_DIRECTORY;
 	}
+ 
+ 
+	
 }

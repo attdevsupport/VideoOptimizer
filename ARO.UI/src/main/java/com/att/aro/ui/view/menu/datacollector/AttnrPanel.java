@@ -31,20 +31,22 @@ public class AttnrPanel extends JPanel {
 	private AttnrPanelHolder attnrHolderPanel;
 	private AttenuatorModel miniAtnr;
 	private DataCollectorSelectNStartDialog parent;
+	private DeviceDialogOptions deviceInfo;
 	
-	public AttnrPanel(DataCollectorSelectNStartDialog parent, AttenuatorModel miniAtnr){
+	public AttnrPanel(DeviceDialogOptions deviceInfo,DataCollectorSelectNStartDialog parent, AttenuatorModel miniAtnr){
 		setLayout(new GridBagLayout());
 		this.parent = parent;
 		this.miniAtnr = miniAtnr;
+		this.deviceInfo = deviceInfo;
  		add(getAttnrRadioGP(), new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.WEST,
 				GridBagConstraints.VERTICAL, new Insets(0, 0, 0, 0), 0, 0));		
  		add(getAttnrHolder(), new GridBagConstraints(0, 1, 5, 1, 1.0, 1.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
-}
+	}
 	
 	public AttnrRadioGroupPanel getAttnrRadioGP(){
 		if(attnrRadioGPanel == null){
-			attnrRadioGPanel = new AttnrRadioGroupPanel(this,miniAtnr, parent);
+			attnrRadioGPanel = new AttnrRadioGroupPanel(this,miniAtnr, parent, deviceInfo);
 		}
 		return attnrRadioGPanel;
 	}

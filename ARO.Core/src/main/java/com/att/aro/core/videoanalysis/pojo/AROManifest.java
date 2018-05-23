@@ -50,6 +50,9 @@ public class AROManifest {
 	Double duration = 0D;
 	Double timeScale = 0D;
 	TreeMap<String, Double> bitrateMap = new TreeMap<>();
+	/**
+	 *  milliseconds UTC
+	 */
 	double requestTime;
 	double timeLength;		                           // in milliseconds                        
 	double beginTime;		                           // timestamp of manifest request          
@@ -126,7 +129,7 @@ public class AROManifest {
 		}
 		if (resp != null) {
 			PacketInfo fdp = resp.getAssocReqResp().getFirstDataPacket();
-			this.requestTime = fdp != null ? fdp.getPacket().getTimeStamp() : 0;
+			this.requestTime = fdp != null ? fdp.getPacket().getTimeStamp() : 0; // milliseconds UTC
 			this.beginTime = resp.getTimeStamp();
 			this.session = resp.getSession();
 			this.uri = resp.getAssocReqResp().getObjUri();
@@ -256,6 +259,11 @@ public class AROManifest {
 		this.videoType = eventType;
 	}
 
+	/**
+	 * Request time(UTC) for manifest in milliseconds
+	 * 
+	 * @return milliseconds UTC
+	 */
 	public double getRequestTime() {
 		return requestTime;
 	}
@@ -411,7 +419,7 @@ public class AROManifest {
 	}
 
 	public VideoData getVData(String quality) {
-		if (videoDataMap!=null){
+		if (videoDataMap!=null && quality != null){
 			return videoDataMap.get(quality);
 		}
 		return null;

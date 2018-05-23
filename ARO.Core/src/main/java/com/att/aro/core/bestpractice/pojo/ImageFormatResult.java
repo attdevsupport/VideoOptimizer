@@ -19,8 +19,7 @@ import java.util.List;
 
 public class ImageFormatResult extends AbstractBestPracticeResult {
 	private List<ImageMdataEntry> results = null;
-	private String numberOfFormattedImages;
-	
+
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.IMAGE_FORMAT;
@@ -34,16 +33,8 @@ public class ImageFormatResult extends AbstractBestPracticeResult {
 		this.results = results;
 	}
 
-	public String getNumberOfFormattedImages() {
-		return numberOfFormattedImages;
+	public int getErrorCount() {
+		return results != null ? results.size() : 0;
 	}
-
-	public void setNumberOfFormattedImages(String numberOfFormattedImages) {
-		this.numberOfFormattedImages = numberOfFormattedImages;
-	}
-
-
-	
-	
 	
 }

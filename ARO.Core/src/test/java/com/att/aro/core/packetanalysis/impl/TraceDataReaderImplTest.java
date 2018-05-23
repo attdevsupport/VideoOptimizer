@@ -119,7 +119,7 @@ public class TraceDataReaderImplTest extends BaseTest {
 		}).when(packetreader).readPacket(any(String.class), any(IPacketListener.class));
 		when(filereader.fileExist(any(String.class))).thenReturn(true);
 		when(filereader.getDirectory(any(String.class))).thenReturn(Util.getCurrentRunningDir());
-		when(filereader.getLastModified(any(String.class))).thenReturn((long)date.getTime());
+		when(filereader.getLastModified(any(String.class))).thenReturn(date.getTime());
 		TraceFileResult result = traceDataReaderImpl.readTraceFile(Util.getCurrentRunningDir()+Util.FILE_SEPARATOR+"traffic.cap");
 		assertSame(-1,result.getCaptureOffset());
 		
@@ -131,7 +131,7 @@ public class TraceDataReaderImplTest extends BaseTest {
 		traceDataReaderImpl.setFileReader(filereader);
 		when(filereader.fileExist(any(String.class))).thenReturn(true);
 		when(filereader.getDirectory(any(String.class))).thenReturn(Util.getCurrentRunningDir());
-		when(filereader.getLastModified(any(String.class))).thenReturn((long)date.getTime());
+		when(filereader.getLastModified(any(String.class))).thenReturn(date.getTime());
 		
 		TraceFileResult result = traceDataReaderImpl.readTraceFile(Util.getCurrentRunningDir()+Util.FILE_SEPARATOR+"traffic.cap");
 		assertSame(0,result.getAllpackets().size());

@@ -18,7 +18,7 @@ package com.att.aro.core.packetanalysis.pojo;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.configuration.pojo.Profile;
@@ -31,46 +31,60 @@ public class PacketAnalyzerResult {
 	private AbstractTraceResult traceresult;
 	@JsonIgnore
 	private List<Session> sessionlist;
-
 	private Statistic statistic;
+	@JsonIgnore
 	private AbstractRrcStateMachine statemachine;
+	@JsonIgnore
 	private EnergyModel energyModel;
-
+	@JsonIgnore
 	private BurstCollectionAnalysisData burstCollectionAnalysisData;
 	
 	//For changing the packets based on selection
+	@JsonIgnore
 	private boolean ipv4Packets = true;
+	@JsonIgnore
 	private boolean ipv6Packets = true;
+	@JsonIgnore
 	private boolean udpPackets = true;
 
+	@JsonIgnore
 	private List<VideoStall> videoStalls;
+	@JsonIgnore
 	private BufferOccupancyBPResult bufferOccupancyResult;
+	@JsonIgnore
 	private BufferTimeBPResult bufferTimeResult;
+	@JsonIgnore
+	private List<NearStall> nearStalls;
 	
 	/**
 	 * The profile used in creating the EnergyModel
 	 */
+	@JsonIgnore
 	private Profile profile;
 	
 	/**
 	 * AnalysisFilter is used to limit the analysis results.<p>
 	 * A null value is no filtering
 	 */
+	@JsonIgnore
 	private AnalysisFilter filter;
 	
 	/**
 	 * Results of a cache analysis of the HTTP requests and responses.
 	 */
+	@JsonIgnore
 	private CacheAnalysis cacheAnalysis = null;
 	
 	/**
 	 * sensitive data from device
 	 */
+	@JsonIgnore
 	private Map<String, String> deviceKeywords;
 	
 	/**
 	 * results Video analysis
 	 */
+	@JsonIgnore
 	private VideoUsage videoUsage;
 
 	/**
@@ -168,7 +182,7 @@ public class PacketAnalyzerResult {
 	 * 
 	 * @return a BurstCollectionAnalysisData object
 	 */
-	public BurstCollectionAnalysisData getBurstcollectionAnalysisData() {
+	public BurstCollectionAnalysisData getBurstCollectionAnalysisData() {
 		return burstCollectionAnalysisData;
 	}
 
@@ -177,7 +191,7 @@ public class PacketAnalyzerResult {
 	 * 
 	 * @param burstcollectionAnalysisData a BurstCollectionAnalysisData object
 	 */
-	public void setBurstcollectionAnalysisData(BurstCollectionAnalysisData burstcollectionAnalysisData) {
+	public void setBurstCollectionAnalysisData(BurstCollectionAnalysisData burstcollectionAnalysisData) {
 		this.burstCollectionAnalysisData = burstcollectionAnalysisData;
 	}
 
@@ -272,6 +286,14 @@ public class PacketAnalyzerResult {
 		this.videoStalls = videoStalls;
 	}
 
+	public List<NearStall> getNearStalls() {
+		return nearStalls;
+	}
+
+	public void setNearStalls(List<NearStall> nearStalls) {
+		this.nearStalls = nearStalls;
+	}
+
 	public BufferOccupancyBPResult getBufferOccupancyResult() {
 		return bufferOccupancyResult;
 	}
@@ -282,6 +304,7 @@ public class PacketAnalyzerResult {
 	
 	public void clearBPResults() {
 		videoStalls = null;
+		nearStalls = null;
 		bufferOccupancyResult = null;
 		cacheAnalysis = null;
 		videoUsage = null;

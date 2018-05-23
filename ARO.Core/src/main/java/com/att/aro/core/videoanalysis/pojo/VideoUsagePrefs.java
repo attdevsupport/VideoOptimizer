@@ -15,7 +15,7 @@
 */
 package com.att.aro.core.videoanalysis.pojo;
 
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
@@ -42,17 +42,18 @@ public class VideoUsagePrefs {
 	private double stallPausePoint = 0.0D;
 	private double stallRecovery = 0.0D;
 	private boolean startupDelayReminder = true;
-	@Value("${preferences.video.defaultSegmentRedundancyWarnVal }")
+	private double nearStall = 0.01D;
+	@Value("${preferences.video.defaultSegmentRedundancyWarnVal : 15 }")
 	private int segmentRedundancyWarnVal;
-	@Value("${preferences.video.defaultStartUpDelayWarnVal }")
+	@Value("${preferences.video.defaultStartUpDelayWarnVal : 2.0000 }")
 	private String startUpDelayWarnVal;
-	@Value("${preferences.video.defaultStallDurationWarnVal }")
+	@Value("${preferences.video.defaultStallDurationWarnVal : 0.5000 }")
 	private String stallDurationWarnVal;
-	@Value("${preferences.video.defaultStartUpDelayFailVal}")
+	@Value("${preferences.video.defaultStartUpDelayFailVal : 3.0000}")
 	private String startUpDelayFailVal;
-	@Value("${preferences.video.defaultStallDurationFailVal }")
+	@Value("${preferences.video.defaultStallDurationFailVal : 1.0000 }")
 	private String stallDurationFailVal;
-	@Value("${preferences.video.defaultSegmentRedundancyFailVal }")
+	@Value("${preferences.video.defaultSegmentRedundancyFailVal : 25 }")
 	private int segmentRedundancyFailVal;
 
 	/**
@@ -205,5 +206,13 @@ public class VideoUsagePrefs {
 
 	public void setStallDurationFailVal(String stallDurationFailVal) {
 		this.stallDurationFailVal = stallDurationFailVal;
+	}
+
+	public double getNearStall() {
+		return nearStall;
+	}
+
+	public void setNearStall(double nearStall) {
+		this.nearStall = nearStall;
 	}
 }

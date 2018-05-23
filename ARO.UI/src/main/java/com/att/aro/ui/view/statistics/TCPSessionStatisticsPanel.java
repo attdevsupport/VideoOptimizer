@@ -101,13 +101,13 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 		Statistic statistic = model.getAnalyzerResult().getStatistic();
 		if (statistic != null) {
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_size, String.format(intFormatString,
-					statistic.getTotalByte()));
+					statistic.getTotalTCPBytes()));
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_duration, String.format(
-					doubleFormatString, statistic.getPacketDuration()));
+					doubleFormatString, statistic.getTCPPacketDuration()));
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_packets, String.format(
-					intFormatString, statistic.getTotalPackets()));
+					intFormatString, statistic.getTotalTCPPackets()));
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_throughput, String.format(
-					doubleFormatString, statistic.getAverageKbps()));
-		} 
+					doubleFormatString, statistic.getAverageTCPKbps()));
+		}
 	}
 }

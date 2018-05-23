@@ -104,13 +104,13 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
 		try {
 			String cmd = "fuser -f " + theExec;
 			response = runner.runCmd(cmd);
-			String[] pids = response.trim().split(" ");
-			if (pids.length > 0) {
-				pid = Integer.parseInt(pids[0]);
+			String[] pids = response.trim().split("\\s+");
+			if (pids.length > 0 && !"".equals(pids[0])) {
+ 				pid = Integer.parseInt(pids[0]);
 			}
-		} catch (IOException e) {
-			log.error("IOException", e);
-		}
+		} catch (IOException | NumberFormatException e) {
+			log.error("IOException | NumberFormatException ", e);
+		}  
 	}
 
 	/**

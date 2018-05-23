@@ -188,12 +188,7 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 	 * @param aroDevice
 	 */
 	public void setSelectedDevice(IAroDevice aroDevice) {
-//		if (Platform.Android == aroDevice.getPlatform() 
-//				&& !aroDevice.getState().equals(AroDeviceState.Available)) {
-//			//TODO need error message
-////			return;
-//		}
-		if (checkForCollector(aroDevice)) {
+
 			contentTable.selectItem(aroDevice);
 			selectedIAroDevice = aroDevice;
 			boolean validated = false;
@@ -204,13 +199,8 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 				dialog.enableStart(true);
 			}
 			logger.info("device :" + selectedIAroDevice);
-		}
 	}
 
-	private boolean checkForCollector(IAroDevice aroDevice) {
-		
-		return true;
-	}
 
 	@Override
 	public void mouseClicked(MouseEvent event) {

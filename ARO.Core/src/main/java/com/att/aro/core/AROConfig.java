@@ -171,7 +171,6 @@ import com.att.aro.core.util.StringParse;
 import com.att.aro.core.video.IScreenRecorder;
 import com.att.aro.core.video.IVideoCapture;
 import com.att.aro.core.video.IVideoWriter;
-import com.att.aro.core.video.amvots.ImageBoundsGrabber;
 import com.att.aro.core.video.impl.ScreenRecorderImpl;
 import com.att.aro.core.video.impl.VideoCaptureImpl;
 import com.att.aro.core.video.impl.VideoWriterImpl;
@@ -188,6 +187,7 @@ import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
 import com.att.aro.core.videoanalysis.impl.VideoEventDataHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
+import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
 /**
  * Spring configuration for ARO.Core<br>
@@ -231,7 +231,7 @@ public class AROConfig {
 		return new VersionInfo();
 	}
 
-	@Bean
+	@Bean(name = "threadexecutor")
 	public IThreadExecutor threadExecutor() {
 		return new ThreadExecutorImpl();
 	}
@@ -509,11 +509,6 @@ public class AROConfig {
 		return new ExternalProcessReaderImpl();
 	}
 
-	@Bean(name = "externalProcessRunnerImpl")
-	public IExternalProcessRunner getExternalProcessRunnerImpl() {
-		return new ExternalProcessRunnerImpl();
-	}
-
 	@Bean(name = "lldbProcessRunnerImpl")
 	public ILLDBProcessRunner getLLDBProcessRunnerImpl() {
 		return new LLDBProcessRunnerImpl();
@@ -650,9 +645,17 @@ public class AROConfig {
 	public IStringParse getStringParse(){
 		return new StringParse();
 	}
-	
-	@Bean(name = "imageBoundsGrabber")
-	public ImageBoundsGrabber getImageBoundsGrabber() {
-		return new ImageBoundsGrabber();
+
+	@Bean(name = "externalProcessRunnerImpl")
+	public IExternalProcessRunner getExternalProcessRunnerImpl() {
+		return new ExternalProcessRunnerImpl();
 	}
+
+	
+	@Bean(name ="videoUsagePrefs")
+	public VideoUsagePrefs getVideoUsagePrefs(){
+		return new VideoUsagePrefs();
+	}
+
+
 }

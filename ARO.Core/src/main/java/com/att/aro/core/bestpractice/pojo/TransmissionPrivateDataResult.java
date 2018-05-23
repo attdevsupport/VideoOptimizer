@@ -18,7 +18,6 @@ package com.att.aro.core.bestpractice.pojo;
 import java.util.List;
 
 public class TransmissionPrivateDataResult extends AbstractBestPracticeResult {
-	
 	private List<TransmissionPrivateDataEntry> results;
 	
 	@Override
@@ -32,5 +31,9 @@ public class TransmissionPrivateDataResult extends AbstractBestPracticeResult {
 
 	public void setResults(List<TransmissionPrivateDataEntry> results) {
 		this.results = results;
+	}
+	
+	public int getErrorCount() {
+		return results != null ? results.size() : 0;
 	}
 }

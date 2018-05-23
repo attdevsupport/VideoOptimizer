@@ -248,7 +248,7 @@ public class BurstAnalysisTableModel extends DataTableModel<BurstAnalysisInfo> {
 		RrcStateMachineType type = model.getAnalyzerResult().getStatemachine().getType();
 		refreshHeader(type);
 
-		setData(model.getAnalyzerResult().getBurstcollectionAnalysisData().
+		setData(model.getAnalyzerResult().getBurstCollectionAnalysisData().
 				getBurstAnalysisInfo());
 	}
 }

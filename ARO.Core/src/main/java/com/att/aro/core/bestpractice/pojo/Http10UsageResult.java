@@ -16,10 +16,13 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class Http10UsageResult extends AbstractBestPracticeResult {
 	int http10HeaderCount = 0;
+	@JsonIgnore
 	Session http10Session = null;
+	@JsonIgnore
 	private String exportAllHttpHeaderDesc;
 	
 	public int getHttp10HeaderCount() {

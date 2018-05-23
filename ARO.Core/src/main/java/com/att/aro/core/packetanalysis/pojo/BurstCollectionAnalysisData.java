@@ -18,7 +18,7 @@ package com.att.aro.core.packetanalysis.pojo;
 import java.io.Serializable;
 import java.util.List;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * A model of burst collection analysis results.<br>

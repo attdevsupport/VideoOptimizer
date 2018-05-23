@@ -20,13 +20,21 @@ import java.io.PrintStream;
 public final class UtilOut {
 	private PrintStream out = System.out;
 	private PrintStream err = System.err;
-	private MessageThreshold threshold = MessageThreshold.Verbose;
+	private MessageThreshold threshold = MessageThreshold.Quiet;
 
 	public enum MessageThreshold {
 		Quiet,
-		Normal,
 		Verbose
 	}
+
+	public UtilOut() {
+		this(MessageThreshold.Quiet);
+	}
+
+	public UtilOut(MessageThreshold threshold) {
+		this.threshold = threshold;
+	}
+
 
 	/**
 	 * print string to console
@@ -54,14 +62,6 @@ public final class UtilOut {
 		System.err.print(str+"\r\n");
 	}
 
-	public UtilOut(MessageThreshold threshold) {
-		this.threshold = threshold;
-	}
-
-	public UtilOut() {
-		this(MessageThreshold.Verbose);
-	}
-
 	public MessageThreshold getThreshold() {
 		return threshold;
 	}
@@ -78,20 +78,20 @@ public final class UtilOut {
 		}
 	}
 
-	public void outMessage(String str, MessageThreshold threshold) {
+	public void conditionalOutMessage(String str, MessageThreshold threshold) {
 		outIfAppropriate(str, out, threshold);
 	}
 
-	public void outMessage(String str) {
-		outMessage(str, MessageThreshold.Verbose);
+	public void conditionalOutMessage(String str) {
+		conditionalOutMessage(str, threshold);
 	}
 
-	public void outMessageln(String str, MessageThreshold threshold) {
+	public void conditionalOutMessageln(String str, MessageThreshold threshold) {
 		outlnIfAppropriate(str, out, threshold);
 	}
 
-	public void outMessageln(String str) {
-		outMessageln(str, MessageThreshold.Verbose);
+	public void conditionalOutMessageln(String str) {
+		conditionalOutMessageln(str, threshold);
 	}
 
 	public void errMessage(String str) {
@@ -100,5 +100,13 @@ public final class UtilOut {
 
 	public void errMessageln(String str) {
 		err.print(str + "\r\n");
+	}
+	
+	public void outMessageln(String str){
+		out.print(str + "\r\n");
+	}
+	
+	public void outMessage(String str){
+		out.print(str);
 	}
 }

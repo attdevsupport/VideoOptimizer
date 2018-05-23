@@ -28,13 +28,13 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class ConfirmationDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 
-	JPanel panel;
-	JButton okBtn;
+	protected JPanel panel;
+	protected JButton okBtn;
 
 	@InjectLogger
 	private static ILogger log;
 
-	static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
+	protected static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 
 	public void createDialog() {
 

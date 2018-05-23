@@ -84,7 +84,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	// local directory in user machine to pull trace from device to
 	private String localTraceFolder;
 	private static final int MILLISECONDSFORTIMEOUT = 300;
-	private static String APK_FILE_NAME = "VPNCollector-1.4.%s.apk";
+	private static String APK_FILE_NAME = "VPNCollector-2.0.%s.apk";
 	private static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 
 	private IAndroid android;
@@ -424,6 +424,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		filemanager.mkDir(folderToSaveTrace);
 		if (!filemanager.directoryExist(folderToSaveTrace)) {
 			result.setError(ErrorCodeRegistry.getFailedToCreateLocalTraceDirectory());
+			result.setSuccess(false);
 			return result;
 		}
 
@@ -502,6 +503,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			}
 		} else {
 			result.setError(ErrorCodeRegistry.getFailToInstallAPK());
+			result.setSuccess(false);
 			return result;
 		}
 		if (!isTrafficCaptureRunning(MILLISECONDSFORTIMEOUT)) {
@@ -1070,6 +1072,11 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	@Override
 	public IAroDevice[] getDevices(StatusResult status) {
 		return new IAroDevice[0];
+	}
+
+	@Override
+	public boolean isDeviceDataPulledStatus() {
+		return true;
 	}
 
 }

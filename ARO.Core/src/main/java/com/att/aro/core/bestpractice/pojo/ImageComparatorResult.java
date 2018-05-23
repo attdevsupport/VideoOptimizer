@@ -41,4 +41,8 @@ public class ImageComparatorResult extends AbstractBestPracticeResult {
 	public void setNumberOfImages(String numberOfImages) {
 		this.numberOfImages = numberOfImages;
 	}
+	
+	public int getErrorCount() {
+		return results != null ? results.size() : 0;
+	}
 }
