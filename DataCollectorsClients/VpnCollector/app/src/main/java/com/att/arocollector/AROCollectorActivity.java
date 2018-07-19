@@ -329,8 +329,9 @@ public class AROCollectorActivity extends Activity {
 
 					if (doVideoCapture()) {
 						getVideoCapturePermission();
+					}else{
+						pushAppToBackStack();
 					}
-
 				} else if (resultCode == RESULT_CANCELED) {
 					showVPNRefusedDialog();
 				}
