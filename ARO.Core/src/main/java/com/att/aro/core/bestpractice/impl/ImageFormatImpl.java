@@ -93,7 +93,8 @@ public class ImageFormatImpl implements IBestPractice {
 		ImageFormatResult result = new ImageFormatResult();
 		String tracePath = tracedata.getTraceresult().getTraceDirectory() + System.getProperty("file.separator");
 		imageFolderPath = tracePath + "Image" + System.getProperty("file.separator");
-	
+		orginalImagesSize = 0L;
+		convImgsSize = 0L;
 		if (isAndroid()) {
 			convExtn = "webp";
 		} else {
@@ -113,6 +114,7 @@ public class ImageFormatImpl implements IBestPractice {
 		result.setResults(entrylist);
 		String text = "";
 		String totalSavings = "";
+		
 		if (entrylist.isEmpty()) {
 			result.setResultType(BPResultType.PASS);
 			text = MessageFormat.format(textResultPass, entrylist.size());
@@ -120,8 +122,15 @@ public class ImageFormatImpl implements IBestPractice {
 		} else {
 			result.setResultType(BPResultType.FAIL);
 			long savings = orginalImagesSize - convImgsSize;
-			totalSavings = Long.toString(savings / 1024);
-			text = MessageFormat.format(textResults,entrylist.size(), totalSavings);
+			long savingsKB = savings / 1024;
+			int digits = (int) (Math.log10(savingsKB) + 1);
+			if (digits > 3) {
+				totalSavings = String.format("%.1f", ((double) savings / 1048576)) + "MB";
+			} else {
+				totalSavings = Long.toString(savingsKB) + "KB";
+			}
+			String percentageSaving = String.valueOf(Math.round(((double) savings / orginalImagesSize) * 100));
+			text = MessageFormat.format(textResults,entrylist.size(), totalSavings, percentageSaving);
 			result.setResultText(text);
 		}
 		result.setAboutText(aboutText);

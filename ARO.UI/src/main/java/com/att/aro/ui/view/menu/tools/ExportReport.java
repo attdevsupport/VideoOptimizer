@@ -122,7 +122,7 @@ public class ExportReport extends AROUIWorker<Void, Void> {
 						} else {
 							showFailedToOpen();
 						}
-					} catch (UnsupportedOperationException unsupportedException) {
+					} catch (Exception unsupportedException) {
 						showFailedToOpen();
 					}
 				}
@@ -139,7 +139,13 @@ public class ExportReport extends AROUIWorker<Void, Void> {
 	}
 
 	private void showFailedToOpen() {
-		MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
-				ResourceBundleHelper.getMessageString("Error.unableToOpen"));
+		if(exportPath.getName().contains(".json")) {
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
+					ResourceBundleHelper.getMessageString("Error.unableToOpenJSON"));
+		} else {
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
+					ResourceBundleHelper.getMessageString("Error.unableToOpenHTML"));
+		
+		}
 	}
 }

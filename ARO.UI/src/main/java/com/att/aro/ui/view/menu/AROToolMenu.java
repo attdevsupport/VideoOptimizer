@@ -51,7 +51,6 @@ import com.att.aro.ui.view.menu.tools.ExportReport;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
 import com.att.aro.ui.view.menu.tools.RegexWizard;
 import com.att.aro.ui.view.menu.tools.TimeRangeAnalysisDialog;
-import com.att.aro.ui.view.menu.tools.VideoAnalysisDialog;
 
 /**
  * This class adds the menu items under the Tools menu
@@ -80,7 +79,8 @@ public class AROToolMenu implements ActionListener {
 		menu_tools_clearErrorMsg, 
 		menu_tools_videoParserWizard,
 		menu_tools_uploadTraceDialog,
-		menu_tools_downloadTraceDialog
+		menu_tools_downloadTraceDialog,
+
 	}
 
 	public AROToolMenu(SharedAttributesProcesses parent){
@@ -99,19 +99,21 @@ public class AROToolMenu implements ActionListener {
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_wireshark));
 			}
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_timerangeanalysis));
+			toolMenu.addSeparator();
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_htmlExport));
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_jsonExport));
+			toolMenu.addSeparator();
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_privateData));
-			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_videoAnalysis));
 			if(isDevDevice()) {
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_getErrorMsg));
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_clearErrorMsg));
 			}
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_videoParserWizard));
 			if("dev".equals(SettingsImpl.getInstance().getAttribute("env"))) {
+				toolMenu.addSeparator();
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_uploadTraceDialog));
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_downloadTraceDialog));
-			}
+ 			}
 		}
 		return toolMenu;
 	}
@@ -128,8 +130,6 @@ public class AROToolMenu implements ActionListener {
 			exportJson();			
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_privateData, aEvent)) {
 			openPrivateDataDialog();
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_videoAnalysis, aEvent)) {
-			openVideoAnalysisDialog();
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_getErrorMsg, aEvent)) {
 			collectErrorMessage();
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_clearErrorMsg, aEvent)) {
@@ -241,23 +241,13 @@ public class AROToolMenu implements ActionListener {
 	}
 	
 	private void openAWSUploadDialog(AWS awsMode) {
-  			uploadDialog = new AWSDialog(awsMode); 
-			uploadDialog.setAWSMode(awsMode);
-			uploadDialog.setVisible(true);
-			uploadDialog.setAlwaysOnTop(true);	
-		  
- 	}
-
-	private void openVideoAnalysisDialog() {
-		VideoAnalysisDialog videoAnalysisDialog = ((MainFrame) parent).getVideoAnalysisDialog();
-		if (videoAnalysisDialog == null) {
-			videoAnalysisDialog = new VideoAnalysisDialog(parent);
-		}
-		if (videoAnalysisDialog != null) {
-			videoAnalysisDialog.setVisible(true);
-			videoAnalysisDialog.setAlwaysOnTop(true);
-		}
+		uploadDialog = new AWSDialog(awsMode);
+		uploadDialog.setAWSMode(awsMode);
+		uploadDialog.setVisible(true);
+		uploadDialog.setAlwaysOnTop(true);
 	}
+
+ 
 
 	private void openRegexWizard(){
 		RegexWizard regexWizard = RegexWizard.getInstance();

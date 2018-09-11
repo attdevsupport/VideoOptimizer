@@ -23,10 +23,11 @@ import java.util.List;
 import javax.swing.table.AbstractTableModel;
 
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
+import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class VideoPreferenceTableModel extends AbstractTableModel {
@@ -60,6 +61,8 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 	String segmentRedundancyFailVal = ResourceBundleHelper
 			.getMessageString("preferences.video.defaultSegmentRedundancyFailVal");
 
+ 	VideoPreferenceTableModel(){}
+ 	
 	VideoPreferenceTableModel(Collection<VideoPreferenceInfo> videoPreferences) {
 		setData(videoPreferences);
 	}
@@ -348,7 +351,7 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 				}
 			} else {
 				try {
-					videoUsagePrefs = new VideoUsagePrefs();
+					videoUsagePrefs = ContextAware.getAROConfigContext().getBean("videoUsagePrefs",VideoUsagePrefs.class);
 					temp = mapper.writeValueAsString(videoUsagePrefs);
 					prefs.setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
 				} catch (IOException e) {
@@ -403,6 +406,26 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 		}
 	}
 
+	public List<VideoPreferenceInfo> getDefaultValues() {
+		List<VideoPreferenceInfo> videoPreferenceList = new ArrayList<>();
+		VideoPreferenceInfo videoPref;
+		videoPref = new VideoPreferenceInfo("Startup Delay (seconds)");
+		videoPref.setWarningCriteria(getValue(STARTUP_DELAY_ROW, WARNING_COLUMN));
+		videoPref.setFailCriteria(getValue(STARTUP_DELAY_ROW, FAILURE_COLUMN));
+		videoPreferenceList.add(videoPref);
+
+		videoPref = new VideoPreferenceInfo("Stall Duration (seconds)");
+		videoPref.setWarningCriteria(getValue(STALL_DURATION_ROW, WARNING_COLUMN));
+		videoPref.setFailCriteria(getValue(STALL_DURATION_ROW, FAILURE_COLUMN));
+		videoPreferenceList.add(videoPref);
+
+		videoPref = new VideoPreferenceInfo("Segment Redundancy (%)");
+		videoPref.setWarningCriteriaInt(Integer.parseInt(getValue(SEGMENT_REDUNDANCY_ROW, WARNING_COLUMN)));
+		videoPref.setFailCriteriaInt(Integer.parseInt(getValue(SEGMENT_REDUNDANCY_ROW, FAILURE_COLUMN)));
+		videoPreferenceList.add(videoPref);
+		return videoPreferenceList;
+	}
+	
 	private String getValue(int row, int column) {
 		String value = "";
 		if (column == WARNING_COLUMN) {

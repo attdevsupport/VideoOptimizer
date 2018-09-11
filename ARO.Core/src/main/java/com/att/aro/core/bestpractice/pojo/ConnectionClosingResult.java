@@ -15,12 +15,15 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class ConnectionClosingResult extends AbstractBestPracticeResult {
 	private double wastedBurstEnergy = 0.0;
 	private boolean conClosingProb = true;
 	private double tcpControlEnergy = 0;
 	private double tcpControlEnergyRatio = 0;
 	private double largestEnergyTime = 0.0;
+	@JsonIgnore
 	private String exportAllConnClosingDesc;
 	
 	public double getWastedBurstEnergy() {

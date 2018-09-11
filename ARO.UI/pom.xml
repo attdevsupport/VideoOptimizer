@@ -60,7 +60,7 @@
 			<id>central</id>
 			<name>MavenCentral Repository</name>
 			<url>http://repo1.maven.org/maven2</url>
-		</pluginRepository>
+		</pluginRepository>	
 	</pluginRepositories>
 
 	<!-- dependencies -->
@@ -82,9 +82,9 @@
 			<version>1.2.14</version>
 		</dependency>
 		<dependency>
-			<groupId>org.jfree</groupId>
-			<artifactId>jfreechart</artifactId>
-			<version>1.0.19</version>
+		  <groupId>org.jfree</groupId>
+		  <artifactId>jfreechart</artifactId>
+		  <version>1.0.17</version>
 		</dependency>
 
 		<dependency>
@@ -126,7 +126,9 @@
 		</dependency>
 
 	</dependencies>
- 	<!-- build -->
+
+
+	<!-- build -->
 	<build>
 		<plugins>
 

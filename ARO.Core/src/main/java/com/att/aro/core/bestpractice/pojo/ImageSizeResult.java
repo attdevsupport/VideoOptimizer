@@ -17,11 +17,17 @@ package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 public class ImageSizeResult extends AbstractBestPracticeResult {
+	@JsonIgnore
 	private List<ImageSizeEntry> results = null;
+	@JsonIgnore
 	private int deviceScreenSizeRangeX = 0;
+	@JsonIgnore
 	private int deviceScreenSizeRangeY = 0;
+	@JsonIgnore
 	private String exportNumberOfLargeImages;
 	
 	@Override
@@ -58,6 +64,10 @@ public class ImageSizeResult extends AbstractBestPracticeResult {
 
 	public void setExportNumberOfLargeImages(String exportNumberOfLargeImages) {
 		this.exportNumberOfLargeImages = exportNumberOfLargeImages;
+	}
+	
+	public int getErrorCount() {
+		return results != null ? results.size() : 0;
 	}
 	
 }

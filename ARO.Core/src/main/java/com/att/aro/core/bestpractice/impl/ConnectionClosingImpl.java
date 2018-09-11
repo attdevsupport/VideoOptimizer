@@ -65,8 +65,8 @@ public class ConnectionClosingImpl implements IBestPractice {
 		double largestEnergyTime = 0.0;
 		double maxEnergy = 0.0;
 		double currentEnergy;
-		if(tracedata.getBurstcollectionAnalysisData().getTotalEnergy() > 0){
-			for(Burst burst : tracedata.getBurstcollectionAnalysisData().getBurstCollection()){
+		if(tracedata.getBurstCollectionAnalysisData().getTotalEnergy() > 0){
+			for(Burst burst : tracedata.getBurstCollectionAnalysisData().getBurstCollection()){
 				if(burst.getBurstCategory() == BurstCategory.TCP_PROTOCOL){
 					currentEnergy = burst.getEnergy();
 					wastedBurstEnergy += burst.getEnergy();
@@ -76,7 +76,7 @@ public class ConnectionClosingImpl implements IBestPractice {
 					}
 				}
 			}
-			double percentageWasted = wastedBurstEnergy / tracedata.getBurstcollectionAnalysisData().getTotalEnergy();
+			double percentageWasted = wastedBurstEnergy / tracedata.getBurstCollectionAnalysisData().getTotalEnergy();
 			conClosingProbPassed = percentageWasted < 0.05;
 			tcpControlEnergy = wastedBurstEnergy;
 			tcpControlEnergyRatio = percentageWasted;

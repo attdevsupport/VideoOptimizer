@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Statistic contains an accumulation of certain statistics pertaining to some
  * collection of packets. This is usually used for holding statistical data for
@@ -43,7 +45,14 @@ public class Statistic {
 	 * Total bytes
 	 */
 	private int totalByte;
-	
+	/**
+	 * Total TCP bytes
+	 */
+	private int totalTCPBytes;
+	/**
+	 * Total TCP bytes
+	 */
+	private int totalTCPPackets;
 	/**
 	 * total HTTPS bytes
 	 */
@@ -53,11 +62,19 @@ public class Statistic {
 	 * packet Duration
 	 */
 	private double packetDuration;
-	
+	/**
+	 * packet Duration
+	 */
+	private double packetTCPDuration;
 	/**
 	 * average Kbps
 	 */
 	private double averageKbps;
+	
+	/**
+	 * average TCP Kbps
+	 */
+	private double averageTCPKbps;
 	
 	/**
 	 * total Packets
@@ -72,6 +89,7 @@ public class Statistic {
 	/**
 	 * ip Packet Summary List
 	 */
+	@JsonIgnore
 	private List<IPPacketSummary> ipPacketSummary = null;
 	
 	/**
@@ -85,10 +103,11 @@ public class Statistic {
 	 * Usage:
 	 *   Map<Integer, Integer> packetSizeToCountMap = new HashMap<Integer, Integer>();
 	 *   Integer iValue = packetSizeToCountMap.get(packetSize);
-	 *   iValue = iValue != null ? iValue++: 1; 
+	 *   iValue = iValue != null ? iValue++: 1;
 	 *   packetSizeToCountMap.put(packetSize, iValue);
 	 * </pre>
 	 */
+	@JsonIgnore
 	private Map<Integer, Integer> packetSizeToCountMap = null;
 
 	/**
@@ -108,7 +127,27 @@ public class Statistic {
 	}
 
 	/**
+	 * Returns total TCP bytes
+	 * 
+	 * @return total TCP bytes
+	 */
+	public int getTotalTCPBytes() {
+		return totalTCPBytes;
+	}
+
+	/**
+	 * Sets total TCP bytes
+	 * 
+	 * @param totalByte
+	 *            total TCP bytes
+	 */
+	public void setTotalTCPBytes(int totalTCPBytes) {
+		this.totalTCPBytes = totalTCPBytes;
+	}
+
+	/**
 	 * Returns total HTTPS bytes
+	 * 
 	 * @return total HTTPS bytes
 	 */
 	public int getTotalHTTPSByte() {
@@ -237,5 +276,39 @@ public class Statistic {
 	public void setPacketSizeToCountMap(Map<Integer, Integer> packetSizeToCountMap) {
 		this.packetSizeToCountMap = packetSizeToCountMap;
 	}
+
+	/**
+	 * Returns total TCP Packets
+	 * @return total TCP Packets
+	 */
+	public int getTotalTCPPackets() {
+		return totalTCPPackets;
+	}
+
+	/**
+	 * Sets total TCP Packets
+	 * @param total TCP Packets
+	 */
+	public void setTotalTCPPackets(int totalTCPPackets) {
+		this.totalTCPPackets = totalTCPPackets;
+	}
+
+	public double getAverageTCPKbps() {
+		return averageTCPKbps;
+	}
+
+	public void setAverageTCPKbps(double averageTCPKbps) {
+		this.averageTCPKbps = averageTCPKbps;
+	}
+
+	public double getTCPPacketDuration() {
+		return packetTCPDuration;
+	}
+
+	public void setTCPPacketDuration(double packetTCPDuration) {
+		this.packetTCPDuration = packetTCPDuration;
+	}
+	
+	
 
 }

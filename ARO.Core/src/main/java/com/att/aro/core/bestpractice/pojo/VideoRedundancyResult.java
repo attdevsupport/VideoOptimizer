@@ -18,6 +18,9 @@ package com.att.aro.core.bestpractice.pojo;
 public class VideoRedundancyResult extends AbstractBestPracticeResult {
 
 	private double redundantPercentage;
+	private int countSegment;
+	private int countRedundant;
+	private int countDuplicate;
 	
 	@Override
 	public BestPracticeType getBestPracticeType() {
@@ -28,10 +31,32 @@ public class VideoRedundancyResult extends AbstractBestPracticeResult {
 		return redundantPercentage;
 	}
 
+	public int getCountSegment() {
+		return countSegment;
+	}
+
+	public int getCountRedundant() {
+		return countRedundant;
+	}
+
+	public int getCountDuplicate() {
+		return countDuplicate;
+	}
+
 	public void setRedundantPercentage(double redundantPercentage) {
 		this.redundantPercentage = redundantPercentage;
 	}
 
-	
+	public void setSegmentCount(int countSegment) {
+		this.countSegment = countSegment;
+	}
+
+	public void setRedundantCount(int countRedundant) {
+		this.countRedundant = countRedundant;
+	}
+
+	public void setDuplicateCount(int countDuplicate) {
+		this.countDuplicate = countDuplicate;
+	}
 
 }

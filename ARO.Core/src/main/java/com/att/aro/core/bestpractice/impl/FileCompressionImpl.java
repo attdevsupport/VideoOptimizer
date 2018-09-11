@@ -93,6 +93,7 @@ public class FileCompressionImpl implements IBestPractice {
 		int uncompressedCounter = 0;
 		int compressedCounter = 0;
 		int totalUncompressBytes = 0;
+		int totalDownloadedBytes = 0;
 		for(Session session: tracedata.getSessionlist()){
 			HttpRequestResponseInfo lastRequestObj = null;
 			for(HttpRequestResponseInfo req:session.getRequestResponseInfo()){
@@ -102,19 +103,20 @@ public class FileCompressionImpl implements IBestPractice {
 				if(req.getPacketDirection() == PacketDirection.DOWNLINK &&
 						req.getContentLength() > 0 && req.getContentType() != null &&
 						isTextContent(req.getContentType())){
+					totalDownloadedBytes += req.getContentLength();
 					//no compression?
 					if(req.getContentEncoding() == null || req.getContentEncoding().contains("identity")){
 						//don't count tiny file
 						if(req.getContentLength() > FILE_SIZE_THRESHOLD_BYTES){
 							uncompressedCounter++;
+							totalUncompressBytes += req.getContentLength();
+							TextFileCompressionEntry tfcEntry = new TextFileCompressionEntry(req, lastRequestObj,
+									session.getDomainName());
+							tfcEntry.setSavingsTextPercentage(calculateSavingForTextBasedOnGzip(req, session));
+							resultlist.add(tfcEntry);
 						}else{
 							compressedCounter++;
 						}
-						totalUncompressBytes += req.getContentLength();
-						TextFileCompressionEntry tfcEntry = new TextFileCompressionEntry(req,lastRequestObj,session.getDomainName());
-						tfcEntry.setSavingsTextPercentage(calculateSavingForTextBasedOnGzip(req, session));
-						resultlist.add(tfcEntry);
-						
 					}else{
 						compressedCounter++;
 					}
@@ -134,20 +136,22 @@ public class FileCompressionImpl implements IBestPractice {
 			result.setResultType(BPResultType.WARNING);
 		}
 		if(result.getResultType() == BPResultType.PASS){
-			text = MessageFormat.format(textResultPass, 
-									ApplicationConfig.getInstance().getAppShortName(), 
-									FILE_SIZE_THRESHOLD_BYTES, 
+			text = MessageFormat.format(textResultPass,
+									ApplicationConfig.getInstance().getAppShortName(),
+									FILE_SIZE_THRESHOLD_BYTES,
 									FILE_SIZE_THRESHOLD_BYTES);
 		}else{
-			text = MessageFormat.format(textResults,  
-									ApplicationConfig.getInstance().getAppShortName(), 
-									totalUncompressBytes / 1024, 
-									FILE_SIZE_THRESHOLD_BYTES);
+			String percentageSaving = String
+					.valueOf(Math.round(((double) totalUncompressBytes / totalDownloadedBytes) * 100));
+			text = MessageFormat.format(textResults,
+									ApplicationConfig.getInstance().getAppShortName(),
+									totalUncompressBytes / 1024,
+					FILE_SIZE_THRESHOLD_BYTES, percentageSaving, (totalDownloadedBytes / 1024));
 		}
 		result.setResultText(text);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
+		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl,
 													ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAll(exportAll);
@@ -156,7 +160,7 @@ public class FileCompressionImpl implements IBestPractice {
 	}
 	/**
 	 *  Indicates whether the content type is text or not.
-	 *  
+	 * 
 	 *  The following content types are considered as text:
 	 * - any type starting with 'text/'
 	 * - any type starting with 'application/' and followed by 'xml', for example: 'application/atom+xml'
@@ -176,7 +180,7 @@ public class FileCompressionImpl implements IBestPractice {
 			"application/javascript".equals(contentType)||
 			"text/javascript".equals(contentType)||
 			"message/http".equals(contentType)){
-			return true;		
+			return true;
 		} else {
 
 			Matcher match = textContentTypeText.matcher(contentType);
@@ -216,7 +220,7 @@ public class FileCompressionImpl implements IBestPractice {
 			gzip.write(content);
 			gzip.close();
 	
-			compressedBytes = out.toByteArray(); 
+			compressedBytes = out.toByteArray();
 			int originalSize = req.getContentLength();
 			int savingBytes = originalSize - compressedBytes.length;
 			
@@ -224,7 +228,7 @@ public class FileCompressionImpl implements IBestPractice {
 				return 0;
 			}
 			
-			float savingPercentage = ((float)savingBytes * 100/(float)originalSize);
+			float savingPercentage = ((float)savingBytes * 100/originalSize);
 			return Math.round(savingPercentage);
 		} catch (IOException IOexp) {
 			logger.error("Failed to get text content on Gzip savings calculation : "+ IOexp.getMessage());

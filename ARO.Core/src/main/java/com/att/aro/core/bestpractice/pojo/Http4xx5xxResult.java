@@ -20,10 +20,14 @@ import java.util.Map;
 import java.util.SortedMap;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class Http4xx5xxResult extends AbstractBestPracticeResult {
+	@JsonIgnore
 	private Map<Integer, HttpRequestResponseInfo> firstErrorRespMap4XX;
+	@JsonIgnore
 	private SortedMap<Integer, Integer> httpErrorCounts4XX;
+	@JsonIgnore
 	private String exportAllHttpError;
 	private List<Http4xx5xxStatusResponseCodesEntry> httpResCodelist;
 	
@@ -59,4 +63,7 @@ public class Http4xx5xxResult extends AbstractBestPracticeResult {
 		return BestPracticeType.HTTP_4XX_5XX;
 	}
 
+	public int getErrorCount() {
+		return firstErrorRespMap4XX != null ? firstErrorRespMap4XX.size() : 0;
+	}
 }

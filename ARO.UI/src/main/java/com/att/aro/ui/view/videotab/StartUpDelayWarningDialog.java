@@ -31,7 +31,7 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.att.aro.core.packetanalysis.IVideoUsageAnalysis;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -56,7 +56,7 @@ public class StartUpDelayWarningDialog extends JDialog {
 	private JPanel jDialogPanel;
 	GraphPanel graphPanel = null;
 	private IVideoUsageAnalysis videoUsage = ContextAware.getAROConfigContext().getBean(IVideoUsageAnalysis.class);
-	private VideoUsagePrefs videoUsagePrefs;
+	private VideoUsagePrefs videoUsagePrefs = ContextAware.getAROConfigContext().getBean("videoUsagePrefs",VideoUsagePrefs.class);;
 	IARODiagnosticsOverviewRoute diagnosticRoute;
 	private PacketAnalyzerResult currentTraceResult;
 	private JLabel warningLabel;

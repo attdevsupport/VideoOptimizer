@@ -16,6 +16,7 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
+import java.util.OptionalInt;
 
 public class SimultnsConnectionResult extends AbstractBestPracticeResult {
 	private List<MultipleConnectionsEntry> results = null;
@@ -31,5 +32,10 @@ public class SimultnsConnectionResult extends AbstractBestPracticeResult {
 
 	public void setResults(List<MultipleConnectionsEntry> results) {
 		this.results = results;
+	}
+	
+	public int getMaxSimultaneousConn() {
+		OptionalInt max = results.stream().mapToInt((m) -> m.getConcurrentSessions()).max();
+		return max.isPresent() ? max.getAsInt() : 0;
 	}
 }

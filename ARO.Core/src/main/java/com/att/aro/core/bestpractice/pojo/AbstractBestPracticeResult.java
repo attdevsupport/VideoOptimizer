@@ -15,14 +15,16 @@
  */
 package com.att.aro.core.bestpractice.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  * Abstract best practice result which will be extended by each BestPracticeResult.
  * These various Results should contains more detail specific to each type of best
  * practice.
  * Date: November 6, 2014
  */
+@JsonIgnoreProperties({"overviewTitle", "detailTitle", "isSelfTestBn", "aboutText", "learnMoreUrl", "resultText", "selfTest", "bestPracticeType"})
 public abstract class AbstractBestPracticeResult {
-	
 	private String overviewTitle = "";
 	private String detailTitle = "";
 	private boolean isSelfTestBn = false;
@@ -177,4 +179,8 @@ public abstract class AbstractBestPracticeResult {
 	 * @return a BestPracticeType
 	 */
 	public abstract BestPracticeType getBestPracticeType();
+	
+	public String getBestPracticeDescription() {
+		return getBestPracticeType().getCategory().getDescription() + " - " + getBestPracticeType().getDescription();
+	}
 }

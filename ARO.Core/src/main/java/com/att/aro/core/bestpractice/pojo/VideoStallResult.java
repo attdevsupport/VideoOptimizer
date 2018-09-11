@@ -21,11 +21,11 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class VideoStallResult extends AbstractBestPracticeResult {
-
 	private int videoStalls;
-	@Nonnull private List<VideoStall> videoStallList = new ArrayList<VideoStall>();
+	@Nonnull private List<VideoStall> videoStallList = new ArrayList<>();
 	
 	@Override
 	public BestPracticeType getBestPracticeType() {
@@ -40,6 +40,7 @@ public class VideoStallResult extends AbstractBestPracticeResult {
 		return videoStalls;
 	}
 
+	@JsonIgnore
 	public List<VideoStall> getResults() {
 		return videoStallList;
 	}

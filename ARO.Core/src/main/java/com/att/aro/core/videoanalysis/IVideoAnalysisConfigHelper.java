@@ -1,10 +1,12 @@
 package com.att.aro.core.videoanalysis;
 
 import java.io.IOException;
+import java.util.Map;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
-
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.att.aro.core.videoanalysis.impl.RegexMatchLbl;
+import com.att.aro.core.videoanalysis.pojo.RegexMatchResult;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
 import com.att.aro.core.videoanalysis.pojo.config.VideoDataTags;
@@ -36,7 +38,8 @@ public interface IVideoAnalysisConfigHelper {
 	 * @param responseStr
 	 * @return String[] of matches
 	 */
-	String[] match(VideoAnalysisConfig vConfig, String requestStr, String headerStr, String responseStr);
+	Map<RegexMatchLbl, RegexMatchResult> match(VideoAnalysisConfig vConfig, String requestStr, String headerStr,
+			String responseStr);
 
 	/**
 	 * Create and Serialize VideoAnalysisConfig object to {desc}.json file.

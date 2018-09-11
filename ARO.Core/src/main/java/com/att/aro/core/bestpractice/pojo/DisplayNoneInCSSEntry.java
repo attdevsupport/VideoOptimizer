@@ -16,6 +16,7 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 /* A list of this class represents files containing css command display:none*/
@@ -23,8 +24,11 @@ public class DisplayNoneInCSSEntry {
 	private double timeStamp;
 	private int contentLength;
 	private String hostName;
+	@JsonIgnore
 	private String httpObjectName;
+	@JsonIgnore
 	private HttpRequestResponseInfo httpRequestResponse;
+	
 	public DisplayNoneInCSSEntry(HttpRequestResponseInfo rrinfo) {
 		
 		this.timeStamp = rrinfo.getTimeStamp();

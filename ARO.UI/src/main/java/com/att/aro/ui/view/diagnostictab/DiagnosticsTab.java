@@ -18,24 +18,32 @@ package com.att.aro.ui.view.diagnostictab;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
+import javax.swing.plaf.basic.BasicArrowButton;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
@@ -61,6 +69,7 @@ import com.att.aro.ui.model.diagnostic.TCPUDPFlowsTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.overviewtab.DeviceNetworkProfilePanel;
 import com.att.aro.ui.view.video.IVideoPlayer;
+import com.att.aro.view.images.Images;
 
 public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListener {
 	private static final long serialVersionUID = 1L;
@@ -85,6 +94,14 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	private PacketViewTableModel jPacketViewTableModel = new PacketViewTableModel();
 	private List<HttpRequestResponseInfoWithSession> requestResponseWithSession = new ArrayList<HttpRequestResponseInfoWithSession>();
 	private AROTraceData analyzerResult;
+
+	private BasicArrowButton arrowBtnWest;
+	private BasicArrowButton arrowBtnEast;
+	private JPanel refreshPanel;
+	private JButton refreshGraphButton;
+	private static final String REFRESH_AS_ACTION = "refreshGraph";
+	private JScrollPane collapsibleRefreshPane;
+	private boolean arrowBtnWestClickStatus = false;
 
 	public List<HttpRequestResponseInfoWithSession> getRequestResponseWithSession() {
 		return requestResponseWithSession;
@@ -329,12 +346,95 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			jTCPFlowsPanel.setLayout(new BorderLayout());
 			jTCPFlowsPanel.add(getTcpFlowsHeadingPanel(), BorderLayout.NORTH);
 			jTCPFlowsPanel.add(getJTCPFlowsScrollPane(), BorderLayout.CENTER);
-			// jTCPFlowsPanel.setPreferredSize(new Dimension(400, 200));
+			jTCPFlowsPanel.add(getCollapsibleRefreshPanel(), BorderLayout.EAST);
 			jTCPFlowsPanel.setMinimumSize(new Dimension(400, 200));
 		}
 		return jTCPFlowsPanel;
 	}
+	
+	private JScrollPane getCollapsibleRefreshPanel() {
+		if (collapsibleRefreshPane == null) {
+			collapsibleRefreshPane = new JScrollPane();
+			collapsibleRefreshPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+			collapsibleRefreshPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+			arrowBtnWest = new BasicArrowButton(SwingConstants.WEST);
+			arrowBtnWest.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					collapsibleRefreshPane.setPreferredSize(getRefreshPanel().getPreferredSize());
+					collapsibleRefreshPane.setViewportView(getRefreshPanel());
+					arrowBtnWestClickStatus = true;
+					jTCPFlowsPanel.updateUI();
+					collapsibleRefreshPane.revalidate();
+				}
+			});
+			collapsibleRefreshPane.setViewportView(arrowBtnWest);
+		}
+		return collapsibleRefreshPane;
+	}
+	
+	public void openCollapsiblePane() {
+		if (!arrowBtnWestClickStatus) {
+			arrowBtnWest.doClick();
+		}
+	}
 
+	private JPanel getRefreshPanel() {
+		if (refreshPanel == null) {
+			arrowBtnEast = new BasicArrowButton(SwingConstants.EAST);
+			arrowBtnEast.setPreferredSize(new Dimension(20, 100));
+			arrowBtnEast.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					collapsibleRefreshPane.setViewportView(arrowBtnWest);
+					arrowBtnWestClickStatus = false;
+					collapsibleRefreshPane.setPreferredSize(new Dimension(20, 100));
+					jTCPFlowsPanel.updateUI();
+					collapsibleRefreshPane.revalidate();
+				}
+			});
+			refreshPanel = new JPanel();
+			refreshPanel.setLayout(new GridBagLayout());
+			GridBagConstraints gbc1 = new GridBagConstraints();
+			gbc1.gridx = 0;
+			gbc1.gridy = 0;
+			gbc1.insets = new Insets(0, 0, 0, 0);
+			gbc1.weighty = 0;
+			gbc1.anchor = GridBagConstraints.FIRST_LINE_START;
+			gbc1.fill = GridBagConstraints.BOTH;
+			gbc1.ipady = 90;
+			refreshPanel.add(arrowBtnEast, gbc1);
+
+			GridBagConstraints gbc2 = new GridBagConstraints();
+			gbc2.gridx = 1;
+			gbc2.gridy = 0;
+			gbc2.ipady = 0;
+			gbc2.weighty = 1;
+			gbc2.anchor = GridBagConstraints.CENTER;
+			gbc2.fill = GridBagConstraints.NONE;
+			refreshPanel.add(getRefreshButton(), gbc2);
+			refreshPanel.setPreferredSize(new Dimension(60, 100));
+		}
+		return refreshPanel;
+	}
+
+	public JButton getRefreshButton() {
+		if (refreshGraphButton == null) {
+			ImageIcon refreshButtonIcon = Images.REFRESH.getIcon();
+			refreshGraphButton = new JButton("", refreshButtonIcon);
+			refreshGraphButton.setActionCommand(REFRESH_AS_ACTION);
+			refreshGraphButton.setEnabled(false);
+			refreshGraphButton.setPreferredSize(new Dimension(40, 30));
+			refreshGraphButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					getGraphPanel().filterFlowTable();
+					refreshGraphButton.setEnabled(false);
+				}
+			});
+			refreshGraphButton.setToolTipText(ResourceBundleHelper.getMessageString("chart.tooltip.refresh"));
+		}
+		return refreshGraphButton;
+	}
 	/**
 	 * Creates the TCP Flows heading panel.
 	 */
@@ -372,7 +472,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	 */
 	public TCPFlowsDataTable<Session> getJTCPFlowsTable() {
 		if (tcpflowsTable == null) {
-			tcpflowsTable = new TCPFlowsDataTable<Session>(jTcpUdpFlowsModel);
+			tcpflowsTable = new TCPFlowsDataTable<Session>(jTcpUdpFlowsModel, this);
 			tcpflowsTable.setAutoCreateRowSorter(true);
 			tcpflowsTable.setGridColor(Color.LIGHT_GRAY);
 			tcpflowsTable.getSelectionModel().addListSelectionListener(this);
@@ -380,7 +480,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			tcpflowsTable.getModel().addTableModelListener(new TableModelListener() {
 				@Override
 				public void tableChanged(TableModelEvent arg0) {
-					graphPanel.setTraceAnalysis();
+					setTraceAnalysis();
 				}
 			});
 			TableRowSorter<TableModel> sorter = new TableRowSorter<>(tcpflowsTable.getModel());
@@ -390,6 +490,10 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			sorter.toggleSortOrder(TCPUDPFlowsTableModel.TIME_COL);
 		}
 		return tcpflowsTable;
+	}
+
+	public void setTraceAnalysis() {
+		getRefreshButton().setEnabled(analyzerResult != null); // Greg Story
 	}
 
 	/**

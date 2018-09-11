@@ -120,6 +120,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 						new CacheEntry(request, response, Diagnosis.CACHING_DIAG_REQUEST_NOT_FOUND, 0, firstPacket));
 				continue;
 			}
+			totalRequestResponseBytes += response.getContentLength();
 			// Request must by GET, POST, or PUT
 			String requestType = request.getRequestType();
 			if (!HttpRequestResponseInfo.HTTP_GET.equals(requestType)
@@ -223,40 +224,49 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		Map<String, DuplicateEntry> dulpicateEntiresMap = new HashMap<String, DuplicateEntry>();
 		CacheEntry cache;
 		for (DuplicateEntry dupEntry : dulpicateEntires) {
-			long bytes = dupEntry.getResponse().getContentLength();
-			totalRequestResponseBytes += bytes;
-			String key = dupEntry.getHttpObjectName() + dupEntry.getContentLength();
-			if (dupEntry.getHttpObjectName() != null) {
-				if (!dulpicateEntiresMap.containsKey(key)) {
-					dupEntry.setCount(1);
-					dulpicateEntiresMap.put(key, dupEntry);
-				} else {
-					if (Arrays.equals(dulpicateEntiresMap.get(key).getContent(), dupEntry.getContent())) {
-						int count = dulpicateEntiresMap.get(key).getCount();
-						if (count == 1) {
-							cache = new CacheEntry(dulpicateEntiresMap.get(key).getRequest(), dupEntry.getResponse(),
-									dulpicateEntiresMap.get(key).getDiagnosis(),
-									dulpicateEntiresMap.get(key).getSessionFirstPacket());
-							cache.setSession(dupEntry.getSession());
+			if (dupEntry.getContentLength() > 0) {
+				String key = dupEntry.getRequest().getHostName() + dupEntry.getHttpObjectName()
+						+ dupEntry.getContentLength();
+				if (dupEntry.getHttpObjectName() != null) {
+					if (!dulpicateEntiresMap.containsKey(key)) {
+						dupEntry.setCount(1);
+						dulpicateEntiresMap.put(key, dupEntry);
+					} else {
+						if (Arrays.equals(dulpicateEntiresMap.get(key).getContent(), dupEntry.getContent())) {
+							int count = dulpicateEntiresMap.get(key).getCount();
+							if (count == 1) {
+								cache = new CacheEntry(dulpicateEntiresMap.get(key).getRequest(),
+										dulpicateEntiresMap.get(key).getResponse(),
+										dulpicateEntiresMap.get(key).getDiagnosis(),
+										dulpicateEntiresMap.get(key).getSessionFirstPacket());
+								cache.setSession(dupEntry.getSession());
+								dupsWithOrig.add(cache);
+							}
+							cache = new CacheEntry(dupEntry.getRequest(), dupEntry.getResponse(),
+									dupEntry.getDiagnosis(), dupEntry.getSessionFirstPacket());
 							dupsWithOrig.add(cache);
+							dupEntry = new DuplicateEntry(dupEntry.getRequest(), dupEntry.getResponse(),
+									dupEntry.getDiagnosis(), dupEntry.getSessionFirstPacket(), dupEntry.getSession(),
+									dupEntry.getContent());
+							dupEntry.setCount(count + 1);
+							dulpicateEntiresMap.replace(key, dupEntry);
 						}
-						cache = new CacheEntry(dupEntry.getRequest(), dupEntry.getResponse(), dupEntry.getDiagnosis(),
-								dupEntry.getSessionFirstPacket());
-						dupsWithOrig.add(cache);
-						dupEntry = new DuplicateEntry(dupEntry.getRequest(), dupEntry.getResponse(),
-								dupEntry.getDiagnosis(), dupEntry.getSessionFirstPacket(), dupEntry.getSession(),
-								dupEntry.getContent());
-						dupEntry.setCount(count + 1);
-						dulpicateEntiresMap.replace(key, dupEntry);
 					}
 				}
 			}
 		}
 		for (Entry<String, DuplicateEntry> cacheEntry2 : dulpicateEntiresMap.entrySet()) {
 			if (cacheEntry2.getValue().getCount() > 1) {
+				int count = cacheEntry2.getValue().getCount();
 				cache = new CacheEntry(cacheEntry2.getValue().getRequest(), cacheEntry2.getValue().getResponse(),
 						cacheEntry2.getValue().getDiagnosis(), cacheEntry2.getValue().getSessionFirstPacket());
-				cache.setHitCount(cacheEntry2.getValue().getCount());
+				cache.setHitCount(count);
+				if (count > 2) {
+					totalRequestResponseDupBytes += (cacheEntry2.getValue().getHttpRequestResponse().getContentLength()
+							* (count - 1));
+				} else {
+					totalRequestResponseDupBytes += cacheEntry2.getValue().getHttpRequestResponse().getContentLength();
+				}
 				duplicateContent.add(cache);
 			}
 		}

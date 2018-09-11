@@ -17,9 +17,10 @@ package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
 
-public class HttpsUsageResult extends AbstractBestPracticeResult {
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-	// exportAll is used for testing
+public class HttpsUsageResult extends AbstractBestPracticeResult {
+	@JsonIgnore
 	private String exportAll;
 	private List<HttpsUsageEntry> results;
 	
@@ -47,6 +48,10 @@ public class HttpsUsageResult extends AbstractBestPracticeResult {
 	public void setResults(List<HttpsUsageEntry> results) {
 		
 		this.results = results;
+	}
+	
+	public int getErrorCount() {
+		return results != null ? results.size() : 0;
 	}
 	
 }

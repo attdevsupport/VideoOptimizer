@@ -319,4 +319,11 @@ public final class ErrorCodeRegistry {
 		err.setDescription(defaultBundle.getString("Error.app.trust"));
 		return err;
 	}
+
+	public static ErrorCode getImageDecoderError(String message) {
+		ErrorCode err = new ErrorCode();
+		err.setName("ImageDecoder Error");
+		err.setDescription(message);
+		return err;
+	}
 }

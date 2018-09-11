@@ -15,11 +15,15 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class CacheControlResult extends AbstractBestPracticeResult{
 
 	private int hitNotExpiredDupCount = 0;
 	private int hitExpired304Count = 0;
+	@JsonIgnore
 	private String exportAllCacheConNExpDesc;
+	@JsonIgnore
 	private String exportAllCacheCon304Desc;
 	
 	public int getHitNotExpiredDupCount() {

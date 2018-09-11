@@ -44,6 +44,7 @@ import javax.swing.event.HyperlinkListener;
 
 import org.jfree.ui.tabbedui.VerticalLayout;
 
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.view.images.Images;
 
@@ -129,12 +130,16 @@ public class MessageDialogFactory extends JOptionPane{
 	 */
 	public void showInvalidDirectoryDialog(String strTraceDir, Component parentComponent,
 			Throwable throwable) {
-		showMessageDialog(
+			showMessageDialog(
 				parentComponent,
 				MessageFormat.format(ResourceBundleHelper.getMessageString("Error.invalidDirecotry"), strTraceDir,
 						throwable.getLocalizedMessage()), ResourceBundleHelper.getMessageString("Error.title"), ERROR_MESSAGE);
 	}
 
+	public void showInformationDialog(Component parent, String message, String title) {
+				showMessageDialog(parent, message, title, INFORMATION_MESSAGE);
+	}
+	
 	/**
 	 * Displays an error dialog with the specified title. The error dialog is
 	 * associated with the specified parent window, and contains the specified
@@ -162,7 +167,21 @@ public class MessageDialogFactory extends JOptionPane{
 	 *            The message to be displayed in the dialog.
 	 */
 	public void showErrorDialog(Window window, String message) {
+
+		if (window != null) {
+			window.setFocusable(true);
+		}
+
+		if (Util.isMacOS()) {
+			window.setAlwaysOnTop(true);
+		}
+
 		showMessageDialog(window, message, ResourceBundleHelper.getMessageString("error.title"), ERROR_MESSAGE);
+
+		if (Util.isMacOS()) {
+			window.setAlwaysOnTop(false);
+		}
+
 	}
 
 	/**
@@ -209,7 +228,7 @@ public class MessageDialogFactory extends JOptionPane{
 	}
 
 	/**
-	 * Displays a confirmation dialog for exporting data from a table. The dialog 
+	 * Displays a confirmation dialog for exporting data from a table. The dialog
 	 * uses the default title, and is associated with the specified parent window.
 	 * 
 	 * @param parentComponent
@@ -266,7 +285,7 @@ public class MessageDialogFactory extends JOptionPane{
 		String[] options = new String[] { "OK", "Cancel" };
 
 		textField.selectAll();
-		int opt = MessageDialogFactory.showOptionDialog(parent, panel, title, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]); 
+		int opt = MessageDialogFactory.showOptionDialog(parent, panel, title, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 		
 		String text = null; // if cancel return null else return value
 		if (opt == MessageDialogFactory.OK_OPTION) {
@@ -323,7 +342,7 @@ public class MessageDialogFactory extends JOptionPane{
 		String[] options = new String[] { "OK", "Cancel" };
 
 		int opt = MessageDialogFactory.showOptionDialog(parent
-							, panel, title, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]); 
+							, panel, title, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 		
 		String text = null; // if cancel return null else return value
 		if (opt == MessageDialogFactory.OK_OPTION) {
@@ -398,7 +417,7 @@ public class MessageDialogFactory extends JOptionPane{
 	 * @param traceDuration
 	 * @return
 	 */
-	public String showTimeOutOptions( 
+	public String showTimeOutOptions(
 			Component parent
 			, String path
 			, String title
@@ -471,7 +490,7 @@ public class MessageDialogFactory extends JOptionPane{
 		
 		summaryAlligmentPanel.add(emulatorSummaryDataPanel, BorderLayout.SOUTH);
 		String[] options = new String[] { "Quit"};//, "Stop" };//, "Restart"};
-		int opt = MessageDialogFactory.showOptionDialog(parent, summaryAlligmentPanel, "Confirm", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]); 		
+		int opt = MessageDialogFactory.showOptionDialog(parent, summaryAlligmentPanel, "Confirm", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
 		return options[opt];
 	}
 
@@ -541,8 +560,8 @@ public class MessageDialogFactory extends JOptionPane{
 
 		summaryAlligmentPanel.add(emulatorSummaryDataPanel, BorderLayout.SOUTH);
 		String[] options = new String[] { "OK", "Open" };
-		int opt = MessageDialogFactory.showOptionDialog(parent, summaryAlligmentPanel, "Confirm", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]); 
-		approveOpenTrace = (opt == 1);	
+		int opt = MessageDialogFactory.showOptionDialog(parent, summaryAlligmentPanel, "Confirm", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+		approveOpenTrace = (opt == 1);
 		return approveOpenTrace;
 		
 	}
@@ -657,7 +676,7 @@ public class MessageDialogFactory extends JOptionPane{
 
 		if (selectedValue == null) {
 			response = 1;
-		}	
+		}
 		
 		for (int counter = 0, maxCounter = options.length; counter < maxCounter; counter++) {
 			if (options[counter].equals(selectedValue)){

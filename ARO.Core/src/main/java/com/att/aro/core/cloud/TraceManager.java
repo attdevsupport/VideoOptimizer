@@ -105,7 +105,7 @@ public class TraceManager {
 		return State.COMPLETE;
 	}
 
-	private void unZip(String zipFile, String saveTo) {
+	public void unZip(String zipFile, String saveTo) {
 		notifyListeners(State.UNCOMPRESSING);
 		if (zipFile == null) {
 			return;

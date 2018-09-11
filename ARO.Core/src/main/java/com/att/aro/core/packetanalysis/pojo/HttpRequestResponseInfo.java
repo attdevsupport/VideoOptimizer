@@ -19,7 +19,7 @@ import java.net.URI;
 import java.util.Date;
 import java.util.SortedMap;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import com.att.aro.core.packetreader.pojo.PacketDirection;
 
@@ -869,11 +869,14 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	public boolean equals(Object obj) {
 		if (obj instanceof HttpRequestResponseInfo) {
 			HttpRequestResponseInfo oHttp = (HttpRequestResponseInfo) obj;
-			if (getTimeStamp() == oHttp.getTimeStamp() && getHostName().equals(oHttp.getHostName())
-					&& getContentLength() == oHttp.getContentLength()) {
+			String hostName = getHostName();
+			String oHostName = oHttp.getHostName();
+			if (getTimeStamp() == oHttp.getTimeStamp() && hostName != null && oHostName != null
+					&& hostName.equals(oHostName) && getContentLength() == oHttp.getContentLength()) {
 				return true;
 			}
 		}
+
 		return false;
 	}
 

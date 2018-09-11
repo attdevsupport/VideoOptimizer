@@ -27,6 +27,7 @@ import org.apache.commons.math3.util.MathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
+import com.att.aro.core.packetanalysis.pojo.NearStall;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.videoanalysis.AbstractBufferOccupancyCalculator;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
@@ -37,6 +38,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 
 	private List<VideoEvent> filteredChunk;
 	private List<VideoEvent> chunkDownload;
+	private List<VideoEvent> chunkDownloadCopy;
 	private Map<VideoEvent, AROManifest> veManifestList;
 
 	private List<VideoEvent> veDone;
@@ -55,20 +57,28 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	private List<VideoEvent> completedDownloads = new ArrayList<>();
 	// private int stallCount;
 	private List<VideoStall> videoStallResult;
+	private List<NearStall> videoNearStallResult;
 	private boolean stallStarted;
 	double possibleStartPlayTime;
-
+	private List<VideoEvent> completedDownloadsWithOutNearStalls = new ArrayList<>();
+	private List<VideoEvent> veWithInPlayDownloadedSegments;
+	
 	@Autowired
 	private IVideoUsagePrefsManager videoPrefManager;
 
 	private double stallTriggerTime;
 	private double stallPausePoint;
 	private double stallRecovery;
-
+	private double nearStall;
+	
 	public List<VideoStall> getVideoStallResult() {
 		return videoStallResult;
 	}
 
+	public List<NearStall> getVideoNearStallResult(){
+		return videoNearStallResult;
+	}
+	
 	public double getStallTriggerTime() {
 		return stallTriggerTime;
 	}
@@ -93,20 +103,48 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 		this.stallRecovery = stallRecovery;
 	}
 
+	public double getNearStall() {
+		return nearStall;
+	}
+
+	public void setNearStall(double nearStall) {
+		this.nearStall = nearStall;
+	}
+
+	public void detectionForNearStall(VideoEvent chunkPlaying) {
+		if (completedDownloads.contains(chunkPlaying)
+				&& (!completedDownloadsWithOutNearStalls.contains(chunkPlaying))) {
+			// mark chunkPlaying as nearly stalled segment
+			NearStall nearStalledSegment = new NearStall(chunkPlaying.getEndTS() - (nearStall + stallPausePoint), chunkPlaying);
+			videoNearStallResult.add(nearStalledSegment);
+		} else if (completedDownloadsWithOutNearStalls.contains(chunkPlaying)
+				&& (!veWithInPlayDownloadedSegments.isEmpty())) {
+			// add veWithInPlayDownloadedSegments to completedDownloadsWithOutNearStalls collection
+			for (VideoEvent ve : veWithInPlayDownloadedSegments) {
+				completedDownloadsWithOutNearStalls.add(ve);
+				chunkDownloadCopy.remove(ve);
+			}
+		}
+	}
+
 	public Map<Integer, String> populate(VideoUsage videoUsage, Map<VideoEvent, Double> chunkPlayTimeList) {
 		if (videoPrefManager.getVideoUsagePreference() != null) {
 			setStallTriggerTime(videoPrefManager.getVideoUsagePreference().getStallTriggerTime());
 			setStallPausePoint(videoPrefManager.getVideoUsagePreference().getStallPausePoint());
 			setStallRecovery(videoPrefManager.getVideoUsagePreference().getStallRecovery());
+			setNearStall(videoPrefManager.getVideoUsagePreference().getNearStall());
 		}
 		// this.chunkPlayTimeList = chunkPlayTimeList;
 		seriesDataSets.clear();
 		key = 0;
 		// stallCount=0;
 		videoStallResult = new ArrayList<>();
+		videoNearStallResult = new ArrayList<>();
 		if (videoUsage != null) {
 			filteredChunk = new ArrayList<>();
 			chunkDownload = new ArrayList<>();
+			chunkDownloadCopy = new ArrayList<>();
+			veWithInPlayDownloadedSegments = new ArrayList<>();
 			veDone = new ArrayList<>();
 			veWithIn = new ArrayList<>();
 			completedDownloads.clear();
@@ -122,10 +160,13 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 				bufferInSeconds = 0;
 
 				updateUnfinishedDoneVideoEvent();
+				//update downloaded segments list with consideration of near stall
+				updateSegementsDownloadedList();
 
 				bufferInSeconds = drawVeDone(veDone, beginBuffer);
 				veDone.clear();
 
+				detectionForNearStall(chunkPlaying);
 				bufferInSeconds = drawVeWithIn(veWithIn, bufferInSeconds);
 				veWithIn.clear();
 
@@ -294,8 +335,10 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 		this.videoUsage = videoUsage;
 		filteredChunk = videoUsage.getFilteredSegments(); // filterVideoSegment(videoUsage);
 		chunkDownload = new ArrayList<>();
+		chunkDownloadCopy = new ArrayList<>();
 		for (VideoEvent vEvent : filteredChunk) {
 			chunkDownload.add(vEvent);
+			chunkDownloadCopy.add(vEvent);
 		}
 		veManifestList = videoUsage.getVideoEventManifestMap();
 
@@ -318,6 +361,21 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 			} else if (ve.getEndTS() > chunkPlayStartTime && ve.getEndTS() <= chunkPlayEndTime) {
 				veWithIn.add(ve);
 			}
+		}
+	}
+
+	public void updateSegementsDownloadedList() {
+		List<VideoEvent> toBeRemovedSegments = new ArrayList<>();
+		for (VideoEvent ve : chunkDownloadCopy) {
+			if (ve.getDLTimeStamp() < chunkPlayStartTime && ve.getEndTS() - (nearStall + stallPausePoint) <= chunkPlayStartTime) {
+				completedDownloadsWithOutNearStalls.add(ve);
+				toBeRemovedSegments.add(ve);
+			} else if (ve.getEndTS()- (nearStall + stallPausePoint) > chunkPlayStartTime && ve.getEndTS() - (nearStall + stallPausePoint) <= chunkPlayEndTime) {
+				veWithInPlayDownloadedSegments.add(ve);
+			}
+		}
+		for (VideoEvent ve : toBeRemovedSegments) {
+			chunkDownloadCopy.remove(ve);
 		}
 	}
 

@@ -77,19 +77,18 @@ public final class Application implements IAROView {
 	private Commands cmds;
 
 	private List<IDataCollector> collectorList;
+	
+	private VideoOption videoOption = VideoOption.NONE;
 
 	ResourceBundle buildBundle = ResourceBundle.getBundle("build");
 	
 	private Application(String[] args) {
 
-		removeStdoutAppender();
-		
+		removeStdoutAppender();		
 		ApplicationContext context = SpringContextUtil.getInstance().getContext();
-
-		aroController = new AROController(this);
-
+		aroController = new AROController(this);	
 		loadCommands(args);
-		utilOut = cmds.isVerbose() ? new UtilOut() : new UtilOut(UtilOut.MessageThreshold.Normal);
+		utilOut = cmds.isVerbose() ? new UtilOut(UtilOut.MessageThreshold.Verbose):new UtilOut();		
 
 		OutSave outSave = prepareSystemOut();
 		try {
@@ -97,7 +96,6 @@ public final class Application implements IAROView {
 		} finally {
 			restoreSystemOut(outSave);
 		}
-
 		// command sanity check, if fails then reverts to help
 		if (cmds.isHelp()
 				|| !((cmds.isListcollector() || cmds.isListDevices())
@@ -111,11 +109,10 @@ public final class Application implements IAROView {
 
 		collectorList = aroController.getAvailableCollectors();
 		if (collectorList == null || collectorList.size()==0){
-			outln("Error: There are no collectors installed!");
+			println("Error: There are no collectors installed!");
 			restoreSystemOut(outSave);
 			System.exit(1);
 		}
-
 		if (cmds.isListcollector()) {
 			showCollector(context, cmds);
 			System.exit(1);
@@ -129,25 +126,21 @@ public final class Application implements IAROView {
 		if (error != null) {
 			printError(error);
 			System.exit(1);
-		}
-		
+		}		
 		if ((cmds.getStartcollector() != null || cmds.getAsk() != null) && cmds.getOutput() == null) {
 			outln("Error: No output tracefolder was entered\n");
 			System.exit(1);
-		}
-		
+		}		
 		// ask user for device selection
 		if (cmds.getAsk() != null) {
 			selectDevice(context, outSave);
 		}
-
 		// start the collector
 		if (cmds.getStartcollector() != null) {
 			runDataCollector(context, cmds);
 		} else if (cmds.getAnalyze() != null) {
 			runAnalyzer(context, cmds);
 		}
-
 		outSave = prepareSystemOut();
 		try {
 			LOGGER.debug("Console app ended");
@@ -403,7 +396,6 @@ public final class Application implements IAROView {
 	 * @param cmds - user commands
 	 */
 	void runAnalyzer(ApplicationContext context, Commands cmds) {
-
 		String trace = cmds.getAnalyze();
 		IAROService serv = context.getBean(IAROService.class);
 		AROTraceData results = null;
@@ -438,7 +430,7 @@ public final class Application implements IAROView {
 					}
 				} else {
 					if (serv.getHtmlReport(cmds.getOutput(), results)) {
-						outln("Successfully produced HTML report: " + cmds.getOutput());
+						println("Successfully produced HTML report: " + cmds.getOutput());
 					} else {
 						errln("Failed to produce HTML report.");
 					}
@@ -456,9 +448,9 @@ public final class Application implements IAROView {
 		System.exit(1);
 	}
 	
-	private VideoOption getVideoOption() {
+	private VideoOption configureVideoOption(String videoOption) {
 		VideoOption option = VideoOption.NONE;
-		switch (cmds.getVideo()) {
+		switch (videoOption) {
 		case "yes":
 		case "slow": 
 			option = VideoOption.LREZ; break;
@@ -471,11 +463,11 @@ public final class Application implements IAROView {
 		default:
 			break;
 		}
+		
 		boolean isRootedColl = "rooted_android".equals(cmds.getStartcollector());
-		if(isRootedColl) {
-			boolean isHdVideo = option == VideoOption.SDEF || option == VideoOption.HDEF;
+		if(isRootedColl && (option == VideoOption.SDEF||option == VideoOption.HDEF)) {
 			outln("HD/SD Video is not supported on rooted collector: Setting video to low resolution");
-			return isHdVideo ? VideoOption.LREZ : option;
+			return VideoOption.LREZ;			
 		}
 		return option;
 	}
@@ -531,12 +523,7 @@ public final class Application implements IAROView {
 				System.exit(1);
 				break;
 			}
-			
-			String password = cmds.getSudo();
-			if (password!=null){
-				
-			}
-			
+ 			
 			StatusResult result = null;
 			if (collector==null){
 				printError(ErrorCodeRegistry.getCollectorNotfound());
@@ -549,12 +536,13 @@ public final class Application implements IAROView {
 				filemanager.directoryDeleteInnerFiles(traceName);
 			}
 			OutSave outSave = prepareSystemOut();
+			videoOption = configureVideoOption(cmds.getVideo());
 			try {
 				Hashtable<String,Object> extras = new Hashtable<String,Object>();
 				extras.put("video_option", getVideoOption());
 				extras.put("AttenuatorModel", getAttenuateModel(cmds));
  
-				result = runCommand(cmds, collector, password, extras);
+				result = runCommand(cmds, collector, cmds.getSudo(), extras);
 			} finally {
 				restoreSystemOut(outSave);
 			}
@@ -567,30 +555,30 @@ public final class Application implements IAROView {
 				outSave = prepareSystemOut();
 				try {
 					String input = "";
-					do {
-						out("Data collector is running, enter stop to save trace and quit program");
-						out(">");
+					print("Data collector is running, enter stop to save trace and quit program");
+					print(">");
+					do {		
 						input = readInput();
 					} while (!input.contains("stop"));
 				} finally {
 					restoreSystemOut(outSave);
 				}
 
-				outln("stopping collector...");
+				println("stopping collector...");
 				try {
 					if(collector!= null)
 						collector.stopCollector();
 				} finally {
 					restoreSystemOut(outSave);
 				}
-				outln("collector stopped, trace saved to: " + cmds.getOutput());
+				println("collector stopped, trace saved to: " + cmds.getOutput());
 
 				cleanUp(context);
-				outln("ARO exited");
+				println("VO exited");
 				System.exit(1);
 			}
 		}else{
-			outln("No output tracefolder was entered\n");
+			println("No output tracefolder was entered\n");
 			usageHelp();
 			System.exit(1);
 		}
@@ -659,11 +647,11 @@ public final class Application implements IAROView {
 	 *            - output text
 	 */
 	void out(String str) {
-		utilOut.outMessage(str, UtilOut.MessageThreshold.Normal);
+		utilOut.conditionalOutMessage(str);
 	}
 
 	void outln(String str) {
-		utilOut.outMessageln(str, UtilOut.MessageThreshold.Normal);
+		utilOut.conditionalOutMessageln(str);
 	}
 
 	void err(String str) {
@@ -673,7 +661,15 @@ public final class Application implements IAROView {
 	void errln(String str) {
 		utilOut.errMessageln(str);
 	}
-
+	
+	void println(String str){
+		utilOut.outMessageln(str);
+	}
+	
+	void print(String str){
+		utilOut.outMessage(str);
+	}
+	
 	/**
 	 * Displays user help
 	 */
@@ -698,7 +694,7 @@ public final class Application implements IAROView {
 						?"\n  --video [hd|sd|slow|no]: optional command to record video when running collector. Default: no."
 						:"\n  --video [yes|no]: optional command to record video when running collector. Default: no."
 						)
-				.append("\n  --throttleUL [number in kbps/mbps]: optional command for throttle uplink throughput, range from 64k - 100m (102400k).")
+ 				.append("\n  --throttleUL [number in kbps/mbps]: optional command for throttle uplink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --throttleDL [number in kbps/mbps]: optional command for throttle downlink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --profile [file_path]: optional command that provides a file with attenuation sequence")
 				.append("\n  --listcollectors: optional command to list available data collector.")
@@ -709,7 +705,9 @@ public final class Application implements IAROView {
 				.append("\nRun Android collector to capture trace with video:")
 				.append("\n    slow video is 1-2 frames per second: ")
 				.append("\n  --startcollector rooted_android --output /User/documents/test --video slow")
-								
+				
+				.append("\nRun Non-rooted Android collector to capture trace with video using secure collector:")
+				
 				.append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation applied:")
 				.append("\n    throttle uplink throughput can accept 64k - 100m (102400k)")
 				.append("\n    throttle downlink throughput can accept 64k - 100m (102400k)")
@@ -737,7 +735,7 @@ public final class Application implements IAROView {
 				
 				.append("\nAnalyze trace and produce JSON report:")
 				.append("\n  --analyze /User/documents/test/traffic.cap --output /User/documents/report.json");
-		outln(sbuilder.toString());
+		println(sbuilder.toString());
 	}
 
 	private void cleanUp(ApplicationContext context) {
@@ -851,6 +849,14 @@ public final class Application implements IAROView {
 	
 	@Override
 	public void showAllCharts(){
+	}
+	
+	public VideoOption getVideoOption() {
+		return videoOption;
+	}
+
+	@Override
+	public void isDeviceDataPulled(boolean status) {
 	}
 
 }

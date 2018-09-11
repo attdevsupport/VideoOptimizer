@@ -22,5 +22,13 @@ package com.att.aro.core.resourceextractor;
  */
 public interface IReadWriteFileExtractor {
 
+	/**
+	 * Extract a named resource from jar into a destination folder.
+	 *
+	 * @param localTraceFolder
+	 * @param filename
+	 * @param loader
+	 * @return
+	 */
 	boolean extractFiles(String localTraceFolder, String filename, ClassLoader loader);
 }

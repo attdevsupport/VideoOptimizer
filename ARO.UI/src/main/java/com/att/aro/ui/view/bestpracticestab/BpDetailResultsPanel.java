@@ -72,7 +72,7 @@ public class BpDetailResultsPanel extends JPanel implements Observer, IUITabPane
 		addBpSection(row++, new BpDetailConnectionsPanel( "bestPractices.header.connections"       , diagnosticsOverviewRoute));
 		addBpSection(row++, new BpDetailHtmlPanel(        "bestPractices.header.html"              , diagnosticsOverviewRoute));
 		addBpSection(row++, new BpDetailSecurityPanel(    "bestPractices.header.security"          , aroView, diagnosticsOverviewRoute));  // ARO 6.0 release
-		addBpSection(row++, new BpVideoPanel(             "bestPractices.header.videoBestPractice" , diagnosticsOverviewRoute));  // ARO 6.0 release
+		addBpSection(row++, new BpVideoPanel(             "bestPractices.header.videoBestPractice" , aroView, diagnosticsOverviewRoute));  // ARO 6.0 release
 		addBpSection(row++, new BpDetailOtherPanel(       "bestPractices.header.others"            , diagnosticsOverviewRoute));	
 
 		add(sectionPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));

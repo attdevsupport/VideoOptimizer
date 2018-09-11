@@ -77,7 +77,7 @@ public class UnnecessaryConnectionImplTest extends BaseTest {
 		}
 
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
-		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
+		Mockito.when(tracedata.getBurstCollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		unConnImpl = (UnnecessaryConnectionImpl) context.getBean("unnecessaryConnection");
 		unConnImpl.runTest(tracedata);
 		AbstractBestPracticeResult result = unConnImpl.runTest(tracedata);
@@ -98,7 +98,7 @@ public class UnnecessaryConnectionImplTest extends BaseTest {
 		burstCollection.add(burstArray[0]);
 		burstCollection.add(burstArray[1]);
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
-		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
+		Mockito.when(tracedata.getBurstCollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		unConnImpl = (UnnecessaryConnectionImpl) context.getBean("unnecessaryConnection");
 		unConnImpl.runTest(tracedata);
 		AbstractBestPracticeResult result = unConnImpl.runTest(tracedata);

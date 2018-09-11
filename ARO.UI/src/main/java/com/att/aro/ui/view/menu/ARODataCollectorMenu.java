@@ -29,8 +29,6 @@ import javax.swing.JOptionPane;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import org.jfree.util.Log;
-
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
@@ -40,6 +38,7 @@ import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
+import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.commonui.IosPasswordDialog;
@@ -55,7 +54,8 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
 public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
 	LoggerImpl log = new LoggerImpl(this.getClass().getName());
-	
+	private static final String SharedNetIF= "bridge100";
+
 	private IFileManager fileManager = new FileManagerImpl();
 
 	private JMenu dataCollectorMenu;
@@ -172,6 +172,8 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
  		int delayTimeDL = 0;
 		int throttleDL = 0;
 		int throttleUL = 0;
+		boolean throttleDLEnable = false;
+		boolean throttleULEnable = false;
 		boolean secure = false;
 		boolean installCert = false;
 		boolean profileBoolean = false;
@@ -180,15 +182,18 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		String profileLocation = "";
 		DataCollectorSelectNStartDialog dialog = new DataCollectorSelectNStartDialog(((MainFrame) parent).getJFrame(), deviceList, traceFolderName, collectors, true);
 
-		if (dialog.getResponse()) {
+		if (dialog.getResponse()){
+			
 			device = dialog.getDevice();
 			traceFolderName = dialog.getTraceFolder();
 			device.setCollector(dialog.getCollectorOption());
- 			/*debug purpose*/
+  			/*debug purpose*/
 			delayTimeDL = dialog.getDeviceOptionPanel().getMiniAtnr().getDelayDS();
 			dialog.getDeviceOptionPanel().getMiniAtnr().getDelayUS();
 			throttleDL = dialog.getDeviceOptionPanel().getMiniAtnr().getThrottleDL();
 			throttleUL = dialog.getDeviceOptionPanel().getMiniAtnr().getThrottleUL();
+			throttleDLEnable = dialog.getDeviceOptionPanel().getMiniAtnr().isThrottleDLEnable();
+			throttleULEnable = dialog.getDeviceOptionPanel().getMiniAtnr().isThrottleULEnable();
 			profileLocation = dialog.getDeviceOptionPanel().getMiniAtnr().getLocalPath();
 			profileBoolean = dialog.getDeviceOptionPanel().getMiniAtnr().isLoadProfile();			
 			log.info("set U delay: "+ delayTimeDL + "set D delay: "+ delayTimeDL 
@@ -197,12 +202,20 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			
 			if (device.isPlatform(IAroDevice.Platform.iOS)) {
 				IDataCollector iosCollector = findIOSCollector(collectors);
+				
+				if((throttleDLEnable||throttleULEnable) && !NetworkUtil.isNetworkUp(SharedNetIF)) {
+ 					 MessageDialogFactory.getInstance().showInformationDialog(
+								((MainFrame) parent).getJFrame(),
+								ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.finalwarning")	,							
+								ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.noshared" ));
+ 					 return null;
+				}
+				
 				if (!checkSetSuPassword(iosCollector)) {
 					return null;
 				}else{
 					log.info("pw validated");
-				}
-				
+				}				
 			}
 
 			String traceFolderPath = (device.getPlatform().equals(IAroDevice.Platform.Android))
@@ -236,14 +249,16 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			
-		} else {
+		}else {
 			traceFolderName = null;
 		}
+		
 		dialog.dispose();
 
 		return device;
 	}
-
+	
+	
 	/**
 	 * Check su password ask for password if empty
 	 * only valid for iOS and Mac OSX

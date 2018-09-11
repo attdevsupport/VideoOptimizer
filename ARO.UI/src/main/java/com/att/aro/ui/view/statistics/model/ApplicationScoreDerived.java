@@ -117,7 +117,7 @@ public class ApplicationScoreDerived {
 		PacketAnalyzerResult analyzerResults = model.getAnalyzerResult();
 		List<AbstractBestPracticeResult> bpResults = model.getBestPracticeResults();
 		List<BurstAnalysisInfo> burstInfo =
-				analyzerResults.getBurstcollectionAnalysisData().getBurstAnalysisInfo();
+				analyzerResults.getBurstCollectionAnalysisData().getBurstAnalysisInfo();
 		AbstractRrcStateMachine rrcStateMachine = analyzerResults.getStatemachine();
 		Statistic statistics = analyzerResults.getStatistic();
 		int burstInfoSize = burstInfo.size();

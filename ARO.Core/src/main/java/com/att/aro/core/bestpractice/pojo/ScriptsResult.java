@@ -16,11 +16,14 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 public class ScriptsResult extends AbstractBestPracticeResult {
 	private int numberOfFailedFiles = 0;
+	@JsonIgnore
 	private HttpRequestResponseInfo firstFailedHtml;
+	@JsonIgnore
 	private String exportAllNumberOfScriptsFiles;
 	
 	@Override

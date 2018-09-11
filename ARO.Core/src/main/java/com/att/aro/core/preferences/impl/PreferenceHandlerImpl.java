@@ -15,20 +15,18 @@
  */
 package com.att.aro.core.preferences.impl;
 
-import java.util.prefs.Preferences;
-
 import com.att.aro.core.ILogger;
 import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.preferences.IPreferenceHandler;
+import com.att.aro.core.settings.Settings;
+import com.att.aro.core.settings.impl.SettingsImpl;
 
 public final class PreferenceHandlerImpl implements IPreferenceHandler {
 
 	public static final String ARO_NODE_NAME = "/com/att/aro";
 	private static PreferenceHandlerImpl instance = new PreferenceHandlerImpl();
-	private Preferences prefs;
-	
 	private ILogger logger = new LoggerImpl(PreferenceHandlerImpl.class.getName());	
-
+	private Settings setting;
 	public static PreferenceHandlerImpl getInstance() {
 		return instance;
 	}
@@ -37,7 +35,7 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 	 * Private constructor. Use getInstance()
 	 */
 	private PreferenceHandlerImpl() {
-		prefs = Preferences.userRoot().node(ARO_NODE_NAME);
+		setting = SettingsImpl.getInstance();
 	}
 	
 	@Override
@@ -48,7 +46,7 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 			return null;  
 		}
 		
-		String prefValue = prefs.get(prefKey, null);
+		String prefValue = setting.getAttribute(prefKey);
 		logger.debug("Retrieving key:" + prefKey + ";value:" + prefValue);
 		return prefValue;
 	}
@@ -61,7 +59,7 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 					+ "key:" + prefKey + " value:" + prefValue);
 		} else {
 			logger.debug("Storing key:" + prefKey + ";value:" + prefValue);
-			prefs.put(prefKey, prefValue);
+			setting.setAndSaveAttribute(prefKey, prefValue);
 		}
 	}
 	
@@ -72,7 +70,7 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 			logger.error("Preference key cannot be null! ");
 		} else {
 			logger.debug("Removing preference - key:" + prefKey);
-			prefs.remove(prefKey);
+			setting.removeAndSaveAttribute(prefKey);
 		}
 	}
 	

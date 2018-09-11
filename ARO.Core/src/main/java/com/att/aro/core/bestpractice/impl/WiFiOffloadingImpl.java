@@ -66,13 +66,13 @@ public class WiFiOffloadingImpl implements IBestPractice {
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAllOffWifiDesc(exportAllOffWifiDesc);
 		 
-		int longBurstCount = tracedata.getBurstcollectionAnalysisData().getLongBurstCount();
+		int longBurstCount = tracedata.getBurstCollectionAnalysisData().getLongBurstCount();
 		boolean offloadingToWiFi = longBurstCount <= 3;
 		double time;
 		double largestBurstDuration = 0.0;
 		double largestBurstBeginTime = 0.0;
 		
-		for(Burst burst:tracedata.getBurstcollectionAnalysisData().getBurstCollection()){
+		for(Burst burst:tracedata.getBurstCollectionAnalysisData().getBurstCollection()){
 			time = burst.getEndTime() - burst.getBeginTime();
 			if (time > largestBurstDuration) {
 				largestBurstDuration = time;

@@ -66,7 +66,7 @@ public class SpeedThrottleEventReaderImplTest extends BaseTest{
 		Mockito.when(fileReader.fileExist(Mockito.anyString())).thenReturn(true);
 		
 		Mockito.when(fileReader.readAllLine(Mockito.anyString())).thenReturn(new String[] {
-					"DLT  1488927413524" });
+				"DLT , 12288 , 1488927413524"});
 		
 		
 		List<SpeedThrottleEvent> throttleInfos = speedThrottleReader.readData(traceFolder);

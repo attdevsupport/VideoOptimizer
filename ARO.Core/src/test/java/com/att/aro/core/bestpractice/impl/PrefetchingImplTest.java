@@ -38,7 +38,7 @@ public class PrefetchingImplTest extends BaseTest {
 		List<Burst> burstCollection = new ArrayList<Burst>();
 		burstCollection.add(burst01);
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
-		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
+		Mockito.when(tracedata.getBurstCollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		preFetching = (PrefetchingImpl) context.getBean("prefetching");
 		AbstractBestPracticeResult result = preFetching.runTest(tracedata);
 		assertEquals(BPResultType.PASS, result.getResultType());
@@ -52,7 +52,7 @@ public class PrefetchingImplTest extends BaseTest {
 			burstCollection.add(burst01);
 		}
 		Mockito.when(burstCollectionAnalysisData.getBurstCollection()).thenReturn(burstCollection);
-		Mockito.when(tracedata.getBurstcollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
+		Mockito.when(tracedata.getBurstCollectionAnalysisData()).thenReturn(burstCollectionAnalysisData);
 		preFetching = (PrefetchingImpl) context.getBean("prefetching");
 		AbstractBestPracticeResult result = preFetching.runTest(tracedata);
 		assertEquals(BPResultType.FAIL, result.getResultType());

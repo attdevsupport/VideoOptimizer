@@ -16,6 +16,7 @@
 package com.att.aro.core.videoanalysis.pojo;
 
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -33,13 +34,29 @@ import com.att.aro.core.videoanalysis.pojo.mpdplayerady.SegmentTemplatePR;
 public class ManifestDashPlayReady extends AROManifest {
 	
 	private MPDPlayReady mpd;
+	int segCount = 0;
+	
+	@Override
+	public int getSegIncremental() {
+		return segCount++;
+	}
 
-	public ManifestDashPlayReady(MPDPlayReady mpd, HttpRequestResponseInfo resp, String videoPath) {
-		super(VideoType.DASH, resp, null, videoPath);
+	public ManifestDashPlayReady(MPDPlayReady mpd, HttpRequestResponseInfo resp, String videoPath, VideoEventData ved) {
+		super(VideoType.DASH, resp, ved, videoPath);
 		this.mpd = mpd;
 		parseManifestData();
 	}
 	
+	@Override
+	public Double getBitrate(String key) {
+		Double rate = super.getBitrate(key);
+		if (rate == null) {
+			key = "video_eng=" + key;
+			rate = bitrateMap.get(key);
+		}
+		return rate;
+	}
+
 	@Override
 	public void updateManifest(MpdBase manifest) {
 		MPDPlayReady mani = (MPDPlayReady) manifest;
@@ -71,7 +88,9 @@ public class ManifestDashPlayReady extends AROManifest {
 
 				String[] names = stringParse.parse(representationPR.getId(), "(.+)-(\\d*)(.+)"); // id="1500581441685item-1item"
 				if (names == null || names.length < 3) {
-					return;
+					setVideoName(getVed().getId());
+					bitrateMap.put(representationPR.getId(), Double.valueOf(representationPR.getBandwidth()));
+					continue;
 				}
 				setVideoName(names[0]);
 				mpd.setName(videoName);
@@ -120,12 +139,60 @@ public class ManifestDashPlayReady extends AROManifest {
 		}
 	}
 	
+	private void buildSegmentList(VideoEventData ved) {
+		if (ved.getSegmentStartTime() != null && !segmentList.containsKey(ved.getSegmentStartTime())) {
+			segmentList.put(ved.getSegmentStartTime(), getSegIncremental());
+			durationList.put(segCount, String.valueOf(duration));
+		}
+	}
+	
 	@Override
 	public void adhocSegment(VideoEventData ved) {
 		if (ved.getSegmentReference() != null) {
 			Integer segment = "init".equals(ved.getSegmentReference()) ? 0 : (int) (simpleStringToDouble(ved.getSegmentReference()) / (getDuration()*getTimeScale()));
 			addSegment(ved.getSegmentReference(), segment, String.format("%f", getDuration()));
+		} else if (this.beginTime == 0.0) { // manifest is not retrieved
+			buildSegmentList(ved);
 		}
+	}
+
+	public int findSegmentNumber(VideoEventData ved) {
+		int segNumber = -4;
+		if (ved.getSegmentStartTime() != null) {
+			int segmentStartTime = Integer.parseInt(ved.getSegmentStartTime());
+			AdaptationSetPR adaptationSetVideo = findAdaptationSet("video");
+			if (adaptationSetVideo == null)
+				return segNumber;
+
+			List<SegmentPR> segList = adaptationSetVideo.getSegmentTemplate().getSegmentTimeline() != null
+					? adaptationSetVideo.getSegmentTemplate().getSegmentTimeline().getSegmentList() : new ArrayList<>();
+			int totalSegCount = 0;
+			int prevTotal;
+			int prevRepeat = 0;
+			for (SegmentPR seg : segList) {
+				prevTotal = totalSegCount;
+				int repeat;
+				if (seg.getRepeat() != null) {
+					repeat = Integer.parseInt(seg.getRepeat());
+				} else {
+					repeat = 0;
+				}
+
+				if (seg.getStartTime() != null) {
+					segmentStartTime = segmentStartTime + Integer.parseInt(seg.getStartTime());
+				}
+				int duration = Integer.parseInt(seg.getDuration());
+				totalSegCount = totalSegCount + (repeat * duration);
+				if (totalSegCount > segmentStartTime) {
+					segNumber = ((segmentStartTime - prevTotal) / duration) + prevRepeat + 1;
+					return segNumber;
+				} else {
+					prevRepeat = prevRepeat + repeat;
+				}
+			}
+
+		}
+		return segNumber;
 	}
 	
 	@Override
@@ -137,6 +204,7 @@ public class ManifestDashPlayReady extends AROManifest {
 		}
 		if (segment == null && ved != null) {
 			segment = ved.getSegment();
+			segment = (segment == null || segment < 0) ? findSegmentNumber(ved) : -1;
 		}
 
 		return segment == null ? -1 : segment;

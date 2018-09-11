@@ -28,23 +28,29 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
+import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
+@JsonIgnoreType
 public class VideoUsage extends AbstractBestPracticeResult {
-
 	private TreeMap<Double, AROManifest> aroManifestMap = new TreeMap<>();
 	private TreeMap<Double, HttpRequestResponseInfo> requestMap = new TreeMap<>();
-	private TreeMap<Double, String> failedRequestMap = new TreeMap<>();	
+	private TreeMap<Double, String> failedRequestMap = new TreeMap<>();
 	private Map<AROManifest,Double> durationAROManifestMap = new HashMap<>();
 	private Map<AROManifest,Double> timescaleAROManifestMap = new HashMap<>();
 	private String tracePath;
 	private VideoUsagePrefs videoUsagePrefs;
 	private Map<VideoEvent, Double> chunkPlayTimeList = new TreeMap<>();
 	private  Map<AROManifest,VideoEvent> firstSelectedSegment = new HashMap<>();
-	@Nonnull private List<VideoEvent> chunksBySegment = new ArrayList<>();
-	@Nonnull private Map<VideoEvent, AROManifest> veManifestList = new HashMap<>();
-	@Nonnull private List<VideoEvent> filteredSegments = new ArrayList<>();
-	@Nonnull private List<VideoEvent> allSegments = new ArrayList<>();
-	@Nonnull private List<VideoEvent> duplicateChunks = new ArrayList<>();
+	@Nonnull
+	private List<VideoEvent> chunksBySegment = new ArrayList<>();
+	@Nonnull
+	private Map<VideoEvent, AROManifest> veManifestList = new HashMap<>();
+	@Nonnull
+	private List<VideoEvent> filteredSegments = new ArrayList<>();
+	@Nonnull
+	private List<VideoEvent> allSegments = new ArrayList<>();
+	@Nonnull
+	private List<VideoEvent> duplicateChunks = new ArrayList<>();
 	
 	public List<VideoEvent> getChunksBySegmentNumber() {
 		return chunksBySegment;

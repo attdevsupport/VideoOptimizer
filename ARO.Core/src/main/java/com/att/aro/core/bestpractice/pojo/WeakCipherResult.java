@@ -18,7 +18,6 @@ package com.att.aro.core.bestpractice.pojo;
 import java.util.List;
 
 public class WeakCipherResult extends AbstractBestPracticeResult {
-
 	private List<WeakCipherEntry> results;
 
 	public List<WeakCipherEntry> getResults() {
@@ -32,6 +31,10 @@ public class WeakCipherResult extends AbstractBestPracticeResult {
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.WEAK_CIPHER;
+	}
+	
+	public int getErrorCount() {
+		return results != null ? results.size() : 0;
 	}
 
 }

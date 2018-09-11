@@ -17,18 +17,24 @@ package com.att.aro.core.bestpractice.pojo;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 public class FileCompressionResult extends AbstractBestPracticeResult{
 	private List<TextFileCompressionEntry> results;
 	private int noOfCompressedFiles;
 	private int noOfUncompressedFiles;
 	private int totalUncompressedSize;
+	@JsonIgnore
 	private String exportAll;
+	@JsonIgnore
 	private String exportAllKb;
+	
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.FILE_COMPRESSION;
 	}
+
 	public List<TextFileCompressionEntry> getResults() {
 		return results;
 	}

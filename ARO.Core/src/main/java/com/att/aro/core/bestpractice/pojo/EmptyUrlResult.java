@@ -16,10 +16,13 @@
 package com.att.aro.core.bestpractice.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class EmptyUrlResult extends AbstractBestPracticeResult {
+	@JsonIgnore
 	private HttpRequestResponseInfo firstFailedHtml = null;
 	private int numberOfFailedFiles = 0;
+	@JsonIgnore
 	private String exportAllEmptyUrlFiles;
 	
 	@Override

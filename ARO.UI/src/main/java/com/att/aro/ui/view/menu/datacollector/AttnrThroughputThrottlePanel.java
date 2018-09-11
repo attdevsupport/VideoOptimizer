@@ -19,6 +19,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Hashtable;
 
@@ -272,10 +274,12 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 	
 	private String addUnit(String value) {
 		String tempString = value.trim();
-		Integer temp = Integer.parseInt(tempString);
+		Double temp = Double.parseDouble(tempString);
+		double tempDouble =  temp.doubleValue() / 1024;
 		if(temp > 1024){
-			NumberFormat numFormat =  NumberFormat.getIntegerInstance(); 
-			return numFormat.format(temp.intValue() / 1024).concat(" Mbps");
+			DecimalFormat decFormat = new DecimalFormat("#.##");
+			decFormat.setRoundingMode(RoundingMode.HALF_UP);
+	        return decFormat.format(tempDouble).concat(" Mbps");
 		}else{
 			return value.concat(" kbps");	
 		}

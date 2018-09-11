@@ -111,7 +111,7 @@ public class AttenuationConstantPanel extends JPanel implements IUITabPanelLayou
 			}else{
 				tabPanelCommon.setText(LabelKeys.bestPractice_header_attenuator_downlink,
 						attenuator.numberTransferSignalDL(speedThrottleDL) + " - "
-								+ numFormat.format(speedThrottleDL) + " kbps");
+								+  attenuator.messageConvert(speedThrottleDL));
 			}				
 			if(speedThrottleUL < 0 ){
 				tabPanelCommon.setText(LabelKeys.bestPractice_header_attenuator_uplink,
@@ -119,7 +119,7 @@ public class AttenuationConstantPanel extends JPanel implements IUITabPanelLayou
 			}else{
 				tabPanelCommon.setText(LabelKeys.bestPractice_header_attenuator_uplink,
 						attenuator.numberTransferSignalUL(speedThrottleUL) + " - "
-								+ numFormat.format(speedThrottleUL) + " kbps");
+								+ attenuator.messageConvert(speedThrottleUL));
 			}
 		}
 	}

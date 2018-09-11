@@ -59,6 +59,7 @@ import com.att.aro.core.datacollector.pojo.CollectorStatus;
 import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
+import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
@@ -88,7 +89,6 @@ import com.att.aro.ui.view.menu.AROMainFrameMenu;
 import com.att.aro.ui.view.menu.help.SplashScreen;
 import com.att.aro.ui.view.menu.tools.DataDump;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
-import com.att.aro.ui.view.menu.tools.VideoAnalysisDialog;
 import com.att.aro.ui.view.overviewtab.OverviewTab;
 import com.att.aro.ui.view.statistics.StatisticsTab;
 import com.att.aro.ui.view.video.AROVideoPlayer;
@@ -124,7 +124,8 @@ public class MainFrame implements SharedAttributesProcesses {
 	private final List<ActionListener> actionListeners = new ArrayList<ActionListener>();
 	private static MainFrame window;
 	private AROModelObserver modelObserver;
-
+	private boolean deviceDataPulled = true;
+	
 	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
 	private VersionInfo versionInfo = ContextAware.getAROConfigContext().getBean(VersionInfo.class);
 	private TabPanels tabPanel = TabPanels.tab_panel_best_practices;
@@ -139,10 +140,6 @@ public class MainFrame implements SharedAttributesProcesses {
 	 * private data dialog reference
 	 */
 	private PrivateDataDialog privateDataDialog;
-	/**
-	 * video analysis dialog reference
-	 */
-	private VideoAnalysisDialog videoAnalysisDialog;
 	private boolean videoPlayerSelected = true;
 	private VideoPlayerController videoPlayerController;
 
@@ -180,14 +177,6 @@ public class MainFrame implements SharedAttributesProcesses {
 
 	public void setPrivateDataDialog(PrivateDataDialog privateDataDialog) {
 		this.privateDataDialog = privateDataDialog;
-	}
-
-	public VideoAnalysisDialog getVideoAnalysisDialog() {
-		return videoAnalysisDialog;
-	}
-
-	public void setVideoAnalysisDialog(VideoAnalysisDialog videoAnalysisDialog) {
-		this.videoAnalysisDialog = videoAnalysisDialog;
 	}
 
 	/**
@@ -515,9 +504,9 @@ public class MainFrame implements SharedAttributesProcesses {
 																			// Request
 				}
 			} else if (traceData.getError() != null) {
+				tracePath = null;
 				MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(),
 						traceData.getError().getDescription());
-
 			} else {
 				showErrorMessage("menu.error.unknownfileformat");
 			}
@@ -658,6 +647,10 @@ public class MainFrame implements SharedAttributesProcesses {
 		return aroController.getAroDevices();
 	}
 
+	public void isDeviceDataPulled(boolean status) {
+		deviceDataPulled = status;
+	}
+
 	@Override
 	public void updateCollectorStatus(CollectorStatus collectorStatus, StatusResult statusResult) {
 
@@ -668,7 +661,10 @@ public class MainFrame implements SharedAttributesProcesses {
 		}
 
 		log.info("updateCollectorStatus :STATUS :" + statusResult);
-
+		if (!deviceDataPulled) {
+			JOptionPane.showMessageDialog(window.getJFrame(), BUNDLE.getString("MainFrame.pulldata.message"),
+					BUNDLE.getString("MainFrame.pulldata.title"), JOptionPane.WARNING_MESSAGE);
+		}
 		// timeout - collection not approved in time
 		if (!statusResult.isSuccess()) {
 			//String traceFolder = aroController.getTraceFolderPath();

@@ -45,6 +45,7 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 	private JTable table;  
 	CheckBoxHeader rendererComponent;
 	private MyItemListener it;
+	private DiagnosticsTab diagnostics;
 	
 	/**
 	 * Initializes a new instance of an empty DataTableModel class.
@@ -53,9 +54,10 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 	 *            An array of java.lang.String objects that are the columns in
 	 *            the data table.
 	 */
-	public TCPFlowsDataTable(DataTableModel<T> dm){
+	public TCPFlowsDataTable(DataTableModel<T> dm, DiagnosticsTab diagnostics) {
 		super(dm);
 		table = this;
+		this.diagnostics = diagnostics;
 		TableColumn tc = table.getColumnModel().getColumn(1); 
 		it = new MyItemListener();
 		CheckBoxHeader checkBoxHeader = new CheckBoxHeader(it);
@@ -90,8 +92,7 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 	    	  tcpmodel.setValueAt(checked, x, 1);
 	    	  tcpmodel.fireTableCellUpdated(x, 1);
 	      }
-	      
-	      
+			diagnostics.openCollapsiblePane();
 	    }     
 	  }  
 	 
@@ -137,7 +138,8 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 	              }  
 	              if(checkedCount!= table.getRowCount()){  
 	                  ((JCheckBox)rendererComponent).setSelected(false);      
-	              }  
+	              } 
+				diagnostics.openCollapsiblePane();
 	          }  
 	          rendererComponent.addItemListener(it);  
 	          table.getTableHeader().repaint();  

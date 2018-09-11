@@ -95,15 +95,16 @@ public class VideoRedundancyImpl implements IBestPractice{
 		result.setSelfTest(true);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase())); // http://developer.att.com/ARO/BestPractices/Redundancy
+		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
 
 		VideoUsage videoUsage = tracedata.getVideoUsage();
 		int countRedundant = 0;
 		int countSegment = 0;
 		int redundantPercentage = 0;
+		int countDuplicate = 0;
+		
 		if (videoUsage != null) {
-
 			// count duplicate chunks (same segment number)
 			for (AROManifest aroManifest : videoUsage.getManifests()) {
 				if (aroManifest != null && aroManifest.isSelected()) {
@@ -113,13 +114,22 @@ public class VideoRedundancyImpl implements IBestPractice{
 						if (aroManifest instanceof ManifestDash && stuff.getSegment() == 0) {
 							continue;
 						}
-						if (preStuff != null && preStuff.getSegment() == stuff.getSegment()
-								&& !preStuff.getQuality().equals(stuff.getQuality())) {
+						if (preStuff != null 
+								&& preStuff.getSegment() == stuff.getSegment() 
+								&& !preStuff.getQuality().equals(stuff.getQuality())
+							) {
 							log.debug("Redundant :\t" + preStuff + "\n\t\t" + stuff);
 							countRedundant++;
 							countSegment--;
+						} else if (preStuff != null 
+								&& preStuff.getSegment() == stuff.getSegment() 
+								&& preStuff.getQuality().equals(stuff.getQuality())
+							) {
+							log.debug("Duplicate :\t" + preStuff + "\n\t\t" + stuff);
+							countDuplicate ++;
+							countSegment--;
 						}
-						preStuff = stuff;				
+						preStuff = stuff;
 					}
 				}
 			}
@@ -141,6 +151,9 @@ public class VideoRedundancyImpl implements IBestPractice{
 
 		}
 		result.setRedundantPercentage(redundantPercentage);
+		result.setSegmentCount(countSegment);
+		result.setRedundantCount(countRedundant);
+		result.setDuplicateCount(countDuplicate);
 		return result;
 	}
 

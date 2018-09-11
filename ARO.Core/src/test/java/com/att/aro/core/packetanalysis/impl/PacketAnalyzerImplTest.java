@@ -1,4 +1,5 @@
 package com.att.aro.core.packetanalysis.impl;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
@@ -53,6 +54,7 @@ import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.peripheral.pojo.CpuActivity;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
 
+
 @SuppressWarnings("unchecked")
 public class PacketAnalyzerImplTest extends BaseTest {
 	
@@ -92,12 +94,13 @@ public class PacketAnalyzerImplTest extends BaseTest {
 	}
 	
 	@Test
-	public void Test_analyzeTraceDirectory_returnIsPacketAnalyzerResult() throws  Exception{
+	public void Test_analyzeTraceDirectory_returnIsPacketAnalyzerResult() throws Exception {
 		iPacketAnalyzer.setEnergyModelFactory(energymodelfactory);
 		iPacketAnalyzer.setBurstCollectionAnalayzer(burstcollectionanalyzer);
 		iPacketAnalyzer.setRrcStateMachineFactory(statemachinefactory);
 		iPacketAnalyzer.setProfileFactory(profilefactory);
 		TraceDirectoryResult mockTraceDirResult = mock(TraceDirectoryResult.class);
+
 		AnalysisFilter filter = mock(AnalysisFilter.class);
 		filter.setIpv4Sel(true);
 		filter.setIpv6Sel(true);
@@ -106,12 +109,12 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		cpuList.add(new CpuActivity());
 		when(mockTraceDirResult.getCpuActivityList()).thenReturn(cpuList);
 		when(tracereader.readTraceDirectory(any(String.class))).thenReturn(mockTraceDirResult);
-		
+ 
 		ProfileLTE profileLTE = new ProfileLTE();
 		when(profilefactory.createLTEdefault()).thenReturn(profileLTE);
 
 		PacketAnalyzerResult testResult = iPacketAnalyzer.analyzeTraceDirectory("", profileLTE, filter);
-		assertEquals(null,testResult.getSessionlist());
+		assertEquals(null, testResult.getSessionlist());
 	}
 	
 	@Test

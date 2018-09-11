@@ -102,6 +102,7 @@ import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.util.Util;
+
 public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	@InjectLogger
 	private static ILogger logger;
@@ -188,7 +189,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 	@Autowired
 	private ISpeedThrottleEventReader speedThrottleReader;
-
+ 
 	private Set<InetAddress> localIPAddresses = null;
 	private List<PacketInfo> allPackets = null;
 	private Map<InetAddress, Integer> ipCountMap = null;
@@ -341,21 +342,21 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		// Second line is pcap time
 
 		if (lines.length > 1) {
-			line = lines[1];
+			line = (lines[1].contains(",") ? lines[1].replaceAll(",", ".") : lines[1]);
 			result.setStartTime(Double.valueOf(line));
 
 		}
 		if (lines.length > 2) {
-			line = lines[2];
+			line = (lines[2].contains(",") ? lines[2].replaceAll(",", ".") : lines[2]);
 			result.setEventTime(Double.parseDouble(line) / 1000.0);
 		}
 		if (lines.length > 3) {
-			line = lines[3];
+			line = (lines[3].contains(",") ? lines[3].replaceAll(",", ".") : lines[3]);
 			Double duration = Double.parseDouble(line) - result.getStartTime();
 			result.setDuration(duration);
 		}
 		if (lines.length > 4) {
-			line = lines[4];
+			line = (lines[4].contains(",") ? lines[4].replaceAll(",", ".") : lines[4]);
 			try {
 				result.setTimezoneOffset(Integer.valueOf(line));
 			} catch (NumberFormatException e) {
