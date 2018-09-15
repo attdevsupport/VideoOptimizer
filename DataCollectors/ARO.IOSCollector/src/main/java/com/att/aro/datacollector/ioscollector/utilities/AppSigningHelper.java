@@ -33,8 +33,9 @@ import java.util.Properties;
 import java.util.TreeMap;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
@@ -44,7 +45,7 @@ import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.app.IOSAppException;
 
 public final class AppSigningHelper {
-	private static final ILogger LOGGER = SpringContextUtil.getInstance().getContext().getBean(ILogger.class);	
+	private static final Logger LOGGER = LogManager.getLogger(AppSigningHelper.class.getName());	
 	private static final String IDEVICE_DEBUG = "/usr/local/bin/idevicedebug";
 	private static final String IDEVICE_INSTALLER = "/usr/local/bin/ideviceinstaller";	
 	private static final String VO_APP_FILE = "VideoOptimizer.app";

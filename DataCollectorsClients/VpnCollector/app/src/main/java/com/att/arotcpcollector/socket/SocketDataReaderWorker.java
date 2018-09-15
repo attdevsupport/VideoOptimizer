@@ -20,7 +20,6 @@ import android.util.Log;
 import com.att.arocollector.attenuator.AttenuatorManager;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
-import com.att.arotcpcollector.ip.IPPacketFactory;
 import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
@@ -135,7 +134,6 @@ public class SocketDataReaderWorker implements Runnable {
 							byte[] packet = new byte[buffer.position()];
 							buffer.flip();
 							buffer.get(packet);
-
 
 							buffer.clear();
 							if (packet.length>DataConst.MAX_RECEIVE_BUFFER_SIZE){
@@ -264,16 +262,6 @@ public class SocketDataReaderWorker implements Runnable {
 			}
 
 			byte[] clearData = session.getClearReceivedData();
-			if(session.isSecureSession() && null != clearData) {
-				try {
-					IPv4Header ipHeader = IPPacketFactory.createIPv4Header(data, 0);
-					TCPHeader tcpHeader = tcpFactory.createTCPHeader(data, ipHeader.getIPHeaderLength());
-					clearData = tcpFactory.createPacketData(ipHeader, tcpHeader, clearData);
-					pcapData.sendDataToPcap(clearData, true);
-				} catch (Exception ex) {
-
-				}
-			}
 
 			while(session.isClientWindowFull()) {
 				try {

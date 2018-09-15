@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.Inflater;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.securedpacketreader.ISSLKeyService;
@@ -35,8 +35,7 @@ import com.att.aro.core.securedpacketreader.pojo.TLSCipherSuite;
 
 public class TLSSessionInfoImpl implements ITLSSessionInfo {
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(TLSSessionInfoImpl.class.getName());
 
 	@Autowired
 	ICrypto crypto;
@@ -199,7 +198,7 @@ public class TLSSessionInfoImpl implements ITLSSessionInfo {
 			break;
 
 		default:
-			logger.warn("30013 - Invalid compression type.");
+			LOGGER.warn("30013 - Invalid compression type.");
 		}
 	}
 
@@ -221,12 +220,12 @@ public class TLSSessionInfoImpl implements ITLSSessionInfo {
 				decLen[0] = decompresser.inflate(out);
 				ret = 1;
 			} catch (Exception e) {
-				logger.warn("30015 - Error in decompression.");
+				LOGGER.warn("30015 - Error in decompression.");
 			}
 			break;
 
 		default:
-			logger.warn("30014 - Invalid compression type.");
+			LOGGER.warn("30014 - Invalid compression type.");
 		}
 		return ret;
 	}
@@ -268,7 +267,7 @@ public class TLSSessionInfoImpl implements ITLSSessionInfo {
 //=		System.out.println(Util.byteArrayToHex(plainArr));
 //=		System.out.println(Util.byteArrayToString(plainArr));
 		if (rvalue != 0) {
-			logger.warn("Error in decrypting data.");
+			LOGGER.warn("Error in decrypting data.");
 			return -1;
 		}
 
@@ -291,12 +290,12 @@ public class TLSSessionInfoImpl implements ITLSSessionInfo {
 			ret = crypto.cryptoHashInitUpdateFinish(dir.ordinal(), hashalg[0].ordinal(), this.keyBlock, hashsize[0], recType, payloadLen, plain, this.seqNum);
 		}
 		if (ret != 0) {
-			logger.warn("Error in performing hash operation.");
+			LOGGER.warn("Error in performing hash operation.");
 			return -1;
 		}
 
 		if (payloadLen > 0 && decompress(plain, payloadLen, dec, recPayloadLen) != 1) {
-			logger.warn("Error in decompressing data.");
+			LOGGER.warn("Error in decompressing data.");
 			return -1;
 		}
 
@@ -346,7 +345,7 @@ public class TLSSessionInfoImpl implements ITLSSessionInfo {
 			break;
 
 		default:
-			logger.warn("30023 - Invalid hash type.");
+			LOGGER.warn("30023 - Invalid hash type.");
 			break;
 		}
 	}
@@ -379,7 +378,7 @@ public class TLSSessionInfoImpl implements ITLSSessionInfo {
 				, tsiPending.getKeyBlockLen()
 				);
 		if (rvalue != 0) {
-			logger.error("Error in deriving new, cryptographically separate keys from a given key in TLS.");
+			LOGGER.error("Error in deriving new, cryptographically separate keys from a given key in TLS.");
 			return -1;
 		}
 
@@ -448,7 +447,7 @@ public class TLSSessionInfoImpl implements ITLSSessionInfo {
 
 		int ret = crypto.cryptoCipherInit(pCipherData.getAlg().ordinal(), temp1, temp2, pCipherData.getKeyMaterial(), bClient);
 		if (ret != 0) {
-			logger.error("Error in initializing crypto APIs.");
+			LOGGER.error("Error in initializing crypto APIs.");
 			return -1;
 		}
 		return ret;

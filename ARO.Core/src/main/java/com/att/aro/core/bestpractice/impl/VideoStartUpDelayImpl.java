@@ -24,13 +24,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
@@ -56,10 +54,6 @@ import com.att.aro.core.videoanalysis.pojo.AROManifest;
  * 
  */
 public class VideoStartUpDelayImpl implements IBestPractice{
-
-	@InjectLogger
-	private static ILogger log;
-
 	@Value("${startUpDelay.title}")
 	private String overviewTitle;
 
@@ -87,7 +81,7 @@ public class VideoStartUpDelayImpl implements IBestPractice{
 	@Autowired
 	private IVideoUsagePrefsManager videoPref;
 
-	private double startupDelay; // = 9999;
+	private double startupDelay;
 
 	
 	@Override

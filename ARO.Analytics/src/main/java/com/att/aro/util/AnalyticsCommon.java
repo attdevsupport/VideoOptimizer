@@ -39,7 +39,9 @@ public final class AnalyticsCommon {
 	public static final String GA_COLLECTOR = "Collector";
 	public static final String GA_START_TRACE = "StartTrace";
 	public static final String GA_END_TRACE = "EndTrace";
-
+	public static final String GA_VO_SESSION = "VO-Session";
+	public static final String GA_CLOSE = "Close";
+	public static final String GA_TRACE_ANALYZED = "TracesAnalyzed";
 	private static String getAnalyticsId() {
 		return ResourceBundle.getBundle("build").getString("ga.id");
 	}

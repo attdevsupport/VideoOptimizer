@@ -21,16 +21,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionEntry;
 import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
@@ -39,10 +39,9 @@ import com.att.aro.core.packetreader.pojo.TCPPacket;
 public class UnsecureSSLVersionImpl implements IBestPractice {
 
 	private static final String DELIMITER = ", ";
-	
-	@InjectLogger
-	private static ILogger logger;
-	
+
+	private static final Logger LOGGER = LogManager.getLogger(UnsecureSSLVersionImpl.class.getName());
+
 	@Value("${security.unsecureSSLVersion.title}")
 	private String overviewTitle;
 	
@@ -76,7 +75,7 @@ public class UnsecureSSLVersionImpl implements IBestPractice {
 				}
 			}
 		} catch(Exception e) {
-			logger.error("Error happened when running unsecure SSL Versions test :: Caused by: " + e.getMessage());
+			LOGGER.error("Error happened when running unsecure SSL Versions test :: Caused by: " + e.getMessage());
 		}
 
 		return getTestResult(entries);

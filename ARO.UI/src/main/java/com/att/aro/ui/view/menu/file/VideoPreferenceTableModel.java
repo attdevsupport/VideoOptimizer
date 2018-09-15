@@ -23,6 +23,7 @@ import java.util.List;
 import javax.swing.table.AbstractTableModel;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
@@ -37,7 +38,7 @@ public class VideoPreferenceTableModel extends AbstractTableModel {
 	private PreferenceHandlerImpl prefs;
 	public String validationError = "";
 	public boolean isDisable = true;
-	public static final Logger LOGGER = Logger.getLogger(BPVideoWarnFailPanel.class.getName());
+	public static final Logger LOGGER = LogManager.getLogger(BPVideoWarnFailPanel.class.getName());
 	public static final int BP_NAME_COLUMN = 0;
 	public static final int WARNING_COLUMN = 1;
 	public static final int FAILURE_COLUMN = 2;

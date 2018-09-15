@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
@@ -58,7 +60,7 @@ public class BufferInSecondsPlot implements IPlot{
 	BufferInSecondsCalculatorImpl bufferInSecondsCalculatorImpl= (BufferInSecondsCalculatorImpl) ContextAware.getAROConfigContext().getBean("bufferInSecondsCalculatorImpl",PlotHelperAbstract.class);
 	
 	Map<VideoEvent,Double> chunkPlayTimeList;
-	
+	private static final Logger LOG = LogManager.getLogger(BufferInSecondsPlot.class.getName());
 	public void setChunkPlayTimeList(Map<VideoEvent,Double> chunkPlayTime){
 		this.chunkPlayTimeList = chunkPlayTime;
 	}
@@ -120,8 +122,10 @@ public class BufferInSecondsPlot implements IPlot{
 
 					List<Long> segmentList = new ArrayList<Long>(segmentEndTimeMap.values());
 					Collections.sort(segmentList);
-					Long lastSegmentNo =segmentList.get(segmentList.size()-1);
-					
+					Long lastSegmentNo = -1L;
+					if(segmentList.size() != 0){
+						lastSegmentNo =segmentList.get(segmentList.size()-1);
+					}				
 					Long segmentNumber = 0L;
 					boolean isSegmentPlaying = false;
 					boolean startup = false;
@@ -173,15 +177,26 @@ public class BufferInSecondsPlot implements IPlot{
 		bufferTimePlot.setDataset(null);	
 	}
 	
-	public VideoEvent isDataItemStallPoint(double xDataValue,double yDataValue){
-		VideoEvent segmentToPlay=null;
-		List<VideoStall> videoStallResults =bufferInSecondsCalculatorImpl.getVideoStallResult();
-		if(videoStallResults != null && (!videoStallResults.isEmpty())){
-			VideoStall stallPoint =videoStallResults.get(videoStallResults.size()-1);
-			double lastDataSet_YValue = Double.parseDouble(seriesDataSets.get(seriesDataSets.keySet().size()-1).split(",")[1]);
-			if((stallPoint.getStallEndTimeStamp()==0 || stallPoint.getStallStartTimeStamp()==stallPoint.getStallEndTimeStamp()) && stallPoint.getStallStartTimeStamp() == xDataValue &&  lastDataSet_YValue== yDataValue){
-				segmentToPlay = stallPoint.getSegmentTryingToPlay();
+	public VideoEvent isDataItemStallPoint(double xDataValue, double yDataValue) {
+		VideoEvent segmentToPlay = null;
+		List<VideoStall> videoStallResults = bufferInSecondsCalculatorImpl.getVideoStallResult();
+		if (seriesDataSets == null || seriesDataSets.isEmpty()) {
+			LOG.error("ERROR: Checking data item/segment for a stall point: dataset is null or empty.");
+			return segmentToPlay;
+		}
+		String[] dataSetArray = seriesDataSets.get(seriesDataSets.size() - 1).split(",");
+		if (dataSetArray.length > 1 && dataSetArray[1] != null) {
+			if (videoStallResults != null && (!videoStallResults.isEmpty())) {
+				VideoStall stallPoint = videoStallResults.get(videoStallResults.size() - 1);
+				double lastDataSet_YValue = Double.parseDouble(dataSetArray[1]);
+				if ((stallPoint.getStallEndTimeStamp() == 0
+						|| stallPoint.getStallStartTimeStamp() == stallPoint.getStallEndTimeStamp())
+						&& stallPoint.getStallStartTimeStamp() == xDataValue && lastDataSet_YValue == yDataValue) {
+					segmentToPlay = stallPoint.getSegmentTryingToPlay();
+				}
 			}
+		} else {
+			LOG.error("ERROR: Checking data item/segment for a stall point: dataset y-value is null");
 		}
 		return segmentToPlay;
 	}

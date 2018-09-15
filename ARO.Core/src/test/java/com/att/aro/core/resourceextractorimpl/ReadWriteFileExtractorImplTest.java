@@ -3,7 +3,7 @@
  */
 package com.att.aro.core.resourceextractorimpl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -37,11 +37,12 @@ public class ReadWriteFileExtractorImplTest extends BaseTest{
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void exctactFilesFailTest() throws IOException{
-		Mockito.doAnswer(new Answer(){
+		Mockito.doAnswer(new Answer() {
 			@Override
 			public Object answer(InvocationOnMock invocation) throws Throwable {
 				return null;
-			}}).when(filemanager).saveFile(Mockito.any(InputStream.class), Mockito.anyString());
+			}
+		}).when(filemanager).saveFile(Mockito.any(InputStream.class), Mockito.anyString());
 		rwFileExtractor.setFileManager(filemanager);
 		
 		
@@ -59,11 +60,12 @@ public class ReadWriteFileExtractorImplTest extends BaseTest{
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void exctactFilesPassTest() throws IOException{
-		Mockito.doAnswer(new Answer(){
+		Mockito.doAnswer(new Answer() {
 			@Override
 			public Object answer(InvocationOnMock invocation) throws Throwable {
 				return null;
-			}}).when(filemanager).saveFile(Mockito.any(InputStream.class), Mockito.anyString());
+			}
+		}).when(filemanager).saveFile(Mockito.any(InputStream.class), Mockito.anyString());
 		rwFileExtractor.setFileManager(filemanager);
 		
 		
@@ -81,11 +83,12 @@ public class ReadWriteFileExtractorImplTest extends BaseTest{
 	@SuppressWarnings("rawtypes")
 	@Test
 	public void exctactFilesWithExceptionTest() throws IOException{
-		Mockito.doAnswer(new Answer(){
+		Mockito.doAnswer(new Answer() {
 			@Override
 			public Object answer(InvocationOnMock invocation) throws Throwable {
 				throw new IOException();
-			}}).when(filemanager).saveFile(Mockito.any(InputStream.class), Mockito.anyString());
+			}
+		}).when(filemanager).saveFile(Mockito.any(InputStream.class), Mockito.anyString());
 		rwFileExtractor.setFileManager(filemanager);
 		
 		stream = new ByteArrayInputStream("hello world".getBytes());

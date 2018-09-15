@@ -15,6 +15,9 @@
 */
 package com.att.aro.core.util;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.context.ApplicationContext;
@@ -23,6 +26,9 @@ import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.analytics.AnalyticsEvents;
 import com.att.aro.core.analytics.IAnalyticsManager;
 import com.att.aro.core.analytics.IGoogleAnalytics;
+import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.settings.Settings;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -35,7 +41,7 @@ public class GoogleAnalyticsUtil {
 	private static Settings aroConfigSetting;
 
 	ApplicationContext configContext = SpringContextUtil.getInstance().getContext();
-	AtomicInteger numTraces = new AtomicInteger(0);
+	static AtomicInteger numTraces = new AtomicInteger(0);
 
 	private GoogleAnalyticsUtil() {
 		sendAnalytics = getAvailableAnalyticsImplementor();
@@ -73,8 +79,37 @@ public class GoogleAnalyticsUtil {
 		return aroConfigSetting;
 	}
 	
-	public int getAndIncrementTraceCounter() {
+	public static int getAndIncrementTraceCounter() {
 		return numTraces.getAndIncrement();
 	}
-
+	
+	public static int getTraceCounter(){
+		return numTraces.get();
+	}
+	
+	public static void reportMimeDataType(AROTraceData tracedata){
+		if (tracedata.getAnalyzerResult() != null) {
+			List<Session> sessionList = tracedata.getAnalyzerResult().getSessionlist();
+			Map<String, Integer> dataMimeType = new HashMap<String, Integer>();
+			for (Session session : sessionList) {
+				for (HttpRequestResponseInfo rri : session.getRequestResponseInfo()) {
+					if (rri.getContentType() == null) {
+						continue;
+					}
+					if (dataMimeType.containsKey(rri.getContentType())) {
+						int count = dataMimeType.get(rri.getContentType());
+						dataMimeType.put(rri.getContentType(), count + 1);
+					} else {
+						dataMimeType.put(rri.getContentType(), 1);
+					}
+				}
+			}
+			for (String mimetype : dataMimeType.keySet()) {
+				getGoogleAnalyticsInstance().sendAnalyticsEvents(
+						GoogleAnalyticsUtil.getAnalyticsEvents().getDataMimeTypeEvent(), mimetype,
+						String.valueOf(dataMimeType.get(mimetype)));
+			}
+		}
+	}
+	
 }

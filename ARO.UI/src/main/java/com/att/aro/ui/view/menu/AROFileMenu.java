@@ -22,6 +22,8 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.File;
 import java.text.MessageFormat;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JComponent;
@@ -32,13 +34,16 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.preferences.UserPreferences;
 import com.att.aro.core.preferences.UserPreferencesFactory;
 import com.att.aro.core.util.CrashHandler;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.AROMenuAdder;
 import com.att.aro.ui.commonui.AROPrintablePanel;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.IAROPrintable;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.commonui.TabPanelCommon;
@@ -55,7 +60,7 @@ import com.att.aro.ui.view.menu.file.PreferencesDialog;
  *
  */
 public class AROFileMenu implements ActionListener, MenuListener {
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private static final Logger LOG = LogManager.getLogger(AROFileMenu.class.getSimpleName());	
 	
 	private final AROMenuAdder menuAdder = new AROMenuAdder(this);
 
@@ -64,6 +69,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 
 	private TabPanelCommon tabPanelCommon = new TabPanelCommon();
 	private JMenuItem printItem;
+	Map<String, String> recentMenuItems = new LinkedHashMap<>();
 
 	private UserPreferences userPreferences = UserPreferencesFactory.getInstance().create();
 
@@ -98,6 +104,15 @@ public class AROFileMenu implements ActionListener, MenuListener {
 
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_open));
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_pcap));
+			JMenu recentMenu = menuAdder.getMenuInstance(ResourceBundleHelper.getMessageString("menu.file.recent"));
+			recentMenuItems = Util.getRecentOpenMenuItems();
+			if (recentMenuItems != null) {
+				for (Map.Entry<String, String> entry : recentMenuItems.entrySet()) {
+					recentMenu.add(menuAdder.getMenuItemInstance(entry.getKey(),
+							ResourceBundleHelper.getMessageString("menu.file.recent")));
+				}
+			}
+			fileMenu.add(recentMenu);
 			fileMenu.addSeparator();
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_pref));
 			fileMenu.addSeparator();
@@ -122,30 +137,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 	@Override
 	public void actionPerformed(ActionEvent aEvent) {
 		if (menuAdder.isMenuSelected(MenuItem.menu_file_open, aEvent)) {
-			try {
-				File tracePath = null;
-				Object event = aEvent.getSource();
-				if (event instanceof JMenuItem) {
-					tracePath = chooseFileOrFolder(JFileChooser.DIRECTORIES_ONLY,
-							ResourceBundleHelper.getMessageString(MenuItem.menu_file_open));
-					if (tracePath != null) {
-						MissingTraceFiles missingTraceFiles = new MissingTraceFiles(tracePath);
-						Set<File> missingFiles = missingTraceFiles.retrieveMissingFiles();
-						if (missingFiles.size() > 0) {
-							log.warn(MessageFormat.format(ResourceBundleHelper.getMessageString(
-								MenuItem.file_missingAlert),
-									missingTraceFiles.formatMissingFiles(missingFiles)));
-						}
-						parent.updateTracePath(tracePath);
-						userPreferences.setLastTraceDirectory(tracePath.getParentFile());
-					}
-				}
-			} catch(OutOfMemoryError err) {
-				log.error(err.getMessage(), err);
-				MessageDialogFactory.getInstance().showErrorDialog(parent.getFrame(),
-						"Video Optimizer failed to load the trace: Trace is too big to load", "Out of Memory");
-			}
-
+			openTraceFolder(aEvent, false);
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_pcap, aEvent)) {
 			File tracePath = null;
 			Object event = aEvent.getSource();
@@ -155,6 +147,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 				if (tracePath != null) {
 					parent.updateTracePath(tracePath);
 					userPreferences.setLastTraceDirectory(tracePath.getParentFile().getParentFile());
+					GoogleAnalyticsUtil.getAndIncrementTraceCounter();
 				}
 			}
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_pref, aEvent)) {
@@ -166,7 +159,48 @@ public class AROFileMenu implements ActionListener, MenuListener {
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_exit, aEvent)) {
 			parent.dispose();
 			System.exit(0);
+		} else if (aEvent.getSource() != null) {
+			JMenuItem jmenuSource = (JMenuItem) aEvent.getSource();
+			if (jmenuSource.getName() != null
+					&& jmenuSource.getName().equals(ResourceBundleHelper.getMessageString("menu.file.recent"))) {
+				openTraceFolder(aEvent, true);
+			}
+
+
 		}
+	}
+
+	private void openTraceFolder(ActionEvent aEvent, boolean isRecent) {
+		try {
+			File tracePath = null;
+			Object event = aEvent.getSource();
+			if (event instanceof JMenuItem) {
+				if(!isRecent) {
+				tracePath = chooseFileOrFolder(JFileChooser.DIRECTORIES_ONLY,
+						ResourceBundleHelper.getMessageString(MenuItem.menu_file_open));
+				} else {
+					tracePath = new File(recentMenuItems.get(aEvent.getActionCommand()));
+				}
+				if (tracePath != null) {
+					MissingTraceFiles missingTraceFiles = new MissingTraceFiles(tracePath);
+					Set<File> missingFiles = missingTraceFiles.retrieveMissingFiles();
+					if (missingFiles.size() > 0) {
+						LOG.warn(MessageFormat.format(ResourceBundleHelper.getMessageString(
+							MenuItem.file_missingAlert),
+								missingTraceFiles.formatMissingFiles(missingFiles)));
+					}
+					parent.updateTracePath(tracePath);
+					userPreferences.setLastTraceDirectory(tracePath.getParentFile());
+					GoogleAnalyticsUtil.getAndIncrementTraceCounter();
+				}
+			}
+		} catch(OutOfMemoryError err) {
+			LOG.error(err.getMessage(), err);
+			MessageDialogFactory.getInstance().showErrorDialog(parent.getFrame(),
+					"Video Optimizer failed to load the trace: Trace is too big to load", "Out of Memory");
+		}
+		this.fileMenu.repaint();
+		this.fileMenu.updateUI();
 	}
 
 	/**
@@ -199,7 +233,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 		}
 		if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
 			tracePath = chooser.getSelectedFile();
-		} 
+		}
 		return tracePath;
 	}
 

@@ -39,7 +39,7 @@ import com.att.aro.ui.model.ImageCompressionDataTable;
 
 public abstract class AbstractBpImageCompressionTablePanel extends TabPanelJPanel implements IAROExpandable, MouseListener {
 	// private static final Logger logger =
-	// Logger.getLogger(AbstractBpDetailTablePanel.class.getName());
+	// LogManager.getLogger(AbstractBpDetailTablePanel.class.getName());
 	final static int ROW_HEIGHT = 20;
 	final static int MINIMUM_ROWS = 5;
 

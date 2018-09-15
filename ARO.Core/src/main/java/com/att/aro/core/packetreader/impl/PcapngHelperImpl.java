@@ -22,11 +22,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetreader.IPcapngHelper;
 
 public class PcapngHelperImpl implements IPcapngHelper {
@@ -44,8 +44,7 @@ public class PcapngHelperImpl implements IPcapngHelper {
 	@Autowired
 	private IFileManager fileManager;
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(PcapngHelperImpl.class.getName());
 
 	/**
 	 * check pcapfile header to see if it is created by Apples tcpdump
@@ -113,13 +112,13 @@ public class PcapngHelperImpl implements IPcapngHelper {
 			try {
 				stream.read(data);
 			} catch (IOException e) {
-				logger.error("failed to read fileStream");
+				LOGGER.error("failed to read fileStream");
 				return null;
 			} finally {
 				try {
 					stream.close();
 				} catch (IOException e) {
-					logger.error("failed to close fileStream");
+					LOGGER.error("failed to close fileStream");
 				}
 			}
 		}

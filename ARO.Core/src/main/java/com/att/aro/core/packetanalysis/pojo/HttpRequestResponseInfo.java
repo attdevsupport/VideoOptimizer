@@ -19,9 +19,8 @@ import java.net.URI;
 import java.util.Date;
 import java.util.SortedMap;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import com.att.aro.core.packetreader.pojo.PacketDirection;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Encapsulates information about an HTTP request or response. This class was converted from struct HTTP_REQUEST_RESPONSE
@@ -134,11 +133,16 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(direction.toString());
-		strblr.append(", TS :"); strblr.append(String.format("%.6f",  getTimeStamp()));
-		strblr.append(", raw size :"); strblr.append(rawSize);
-		strblr.append(", contentLength :"); strblr.append(contentLength);
-		strblr.append(", contentOffsetLength :"); strblr.append(contentOffsetLength);
-		strblr.append(", contentType :"); strblr.append(contentType);
+		strblr.append(", TS :");
+		strblr.append(String.format("%.6f", getTimeStamp()));
+		strblr.append(", raw size :");
+		strblr.append(rawSize);
+		strblr.append(", contentLength :");
+		strblr.append(contentLength);
+		strblr.append(", contentOffsetLength :");
+		strblr.append(contentOffsetLength);
+		strblr.append(", contentType :");
+		strblr.append(contentType);
 		return strblr.toString();
 	}
 
@@ -860,23 +864,38 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 		return firstDataPacket != null ? new Date(Math.round(firstDataPacket.getPacket().getTimeStamp() * 1000)) : null;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#equals(java.lang.Object)
+	/**
+	 * Validates if two HttpRequestResponseInfo are same True if
+	 * hostnames/start_time/content_size are same
 	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof HttpRequestResponseInfo) {
 			HttpRequestResponseInfo oHttp = (HttpRequestResponseInfo) obj;
-			String hostName = getHostName();
-			String oHostName = oHttp.getHostName();
-			if (getTimeStamp() == oHttp.getTimeStamp() && hostName != null && oHostName != null
-					&& hostName.equals(oHostName) && getContentLength() == oHttp.getContentLength()) {
+			if (getTimeStamp() == oHttp.getTimeStamp() && isEqualHostName(oHttp)
+					&& oHttp.getContentLength() == contentLength) {
 				return true;
 			}
 		}
+		return false;
+	}
 
+	/****
+	 * 
+	 * if hostnames are null for response, the hostnames are derived from
+	 * corresponding requests and returns whether they are equal
+	 * 
+	 * @param HttpRequestResponseInfo
+	 * @return
+	 */
+	private boolean isEqualHostName(HttpRequestResponseInfo oHttp) {
+		if (hostName != null && oHttp.getHostName() != null) {
+			return hostName.equals(oHttp.getHostName());
+		} else if (hostName == null && oHttp.getHostName() == null && oHttp.getDirection() == HttpDirection.RESPONSE
+				&& direction == HttpDirection.RESPONSE && oHttp.getAssocReqResp().getHostName() != null) {
+				return oHttp.getAssocReqResp().getHostName().equals(this.assocReqResp.getHostName());
+
+		}
 		return false;
 	}
 
@@ -908,5 +927,4 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	public Session getSession() {
 		return session;
 	}
-
 }// end class

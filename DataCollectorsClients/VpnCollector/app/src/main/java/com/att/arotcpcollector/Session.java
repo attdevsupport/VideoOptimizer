@@ -134,14 +134,12 @@ public class Session {
 	private SelectionKey selectionKey = null;
 	private String sessionKey = null;
 
- 	private boolean inContinuationMsg = false;
+	private boolean inContinuationMsg = false;
 	private boolean outContinuationMsg = false;
 
 	private volatile boolean printLog = false;
 
     private long lastAccessed = System.currentTimeMillis();
-
-	private boolean secureSession = false;
 
 	public boolean isOutContinuationMsg() {
 		return outContinuationMsg;
@@ -166,9 +164,6 @@ public class Session {
 		clearSendingStream = new ByteArrayOutputStream();
 	}
 
-	void addSSLEngines(int destIP, int destPort, int srcIP, int srcPort){
-
-	}
 
 	/**
 	 * decrease value of sendAmountSinceLastAck so that client's window is not
@@ -486,12 +481,8 @@ public class Session {
 
 	public void setClosingConnection(boolean closingConnection) {
 		this.closingConnection = closingConnection;
-		destroySSLEngines();
 	}
 
-	private void destroySSLEngines(){
-	}
-	
 	public boolean isDataForSendingReady() {
 		return isDataForSendingReady;
 	}
@@ -688,11 +679,4 @@ public class Session {
 		return data;
 	}
 
-	public boolean isSecureSession() {
-		return secureSession;
-	}
-
-	public void setSecureSession(boolean secureSession) {
-		this.secureSession = secureSession;
-	}
 }

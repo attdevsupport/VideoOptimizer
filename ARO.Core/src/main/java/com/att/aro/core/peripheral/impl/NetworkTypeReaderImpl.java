@@ -19,8 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.NetworkBearerTypeInfo;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.INetworkTypeReader;
@@ -32,9 +33,8 @@ import com.att.aro.core.util.Util;
  * Date: October 7, 2014
  */
 public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTypeReader {
-	
-	@InjectLogger
-	private static ILogger logger;
+
+	private static final Logger LOGGER = LogManager.getLogger(NetworkTypeReaderImpl.class.getName());
 
 	@Override
 	public NetworkTypeObject readData(String directory, double startTime, double traceDuration) {
@@ -50,7 +50,7 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed to read network info file: " + filepath);
+			LOGGER.error("failed to read network info file: " + filepath);
 		}
 
 		String line;
@@ -69,7 +69,7 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 					networkType = getNetworkTypeFromCode(Integer.parseInt(fields[1]));
 				} catch (NumberFormatException e) {
 					networkType = NetworkType.none;
-					logger.warn("Invalid network type [" + fields[1] + "]");
+					LOGGER.warn("Invalid network type [" + fields[1] + "]");
 				}
 				networkTypesList.add(networkType);
 				for (int i = 1; i < lines.length; i++) {
@@ -82,7 +82,7 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 							networkType = getNetworkTypeFromCode(Integer.parseInt(fields[1]));
 						} catch (NumberFormatException e) {
 							networkType = NetworkType.none;
-							logger.warn("Invalid network type [" + fields[1] + "]");
+							LOGGER.warn("Invalid network type [" + fields[1] + "]");
 						}
 						beginTime = endTime;
 						if (!networkTypesList.contains(networkType)) {

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.att.aro.core.android.AndroidApiLevel;
 import com.att.aro.core.peripheral.pojo.SpeedThrottleAdapter;
@@ -40,7 +41,7 @@ import com.att.aro.core.peripheral.pojo.SpeedThrottleAdapter;
 public class AttnScriptUtil {
 
 	private static final String FILE_SEPARATOR = System.getProperty("file.separator");
-	private static final Logger LOGGER = Logger.getLogger(AttnScriptUtil.class.getSimpleName());
+	private static final Logger LOGGER = LogManager.getLogger(AttnScriptUtil.class.getSimpleName());
 	private static final Charset ENCODING = StandardCharsets.US_ASCII;
 
 	private List<SpeedThrottleAdapter> eventList;

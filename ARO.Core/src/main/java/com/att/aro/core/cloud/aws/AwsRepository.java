@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -49,7 +50,7 @@ import com.att.aro.core.cloud.Repository;
  * Reuse TransferManager and client objects and share them throughout applications.
  */
 public class AwsRepository extends Repository {
-	private static final Logger LOGGER = Logger.getLogger(AwsRepository.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(AwsRepository.class.getName());
 
 	private AmazonS3 s3Client = null;
 	private TransferManager transferMgr;

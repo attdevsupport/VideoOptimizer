@@ -17,8 +17,10 @@ package com.att.aro.core.pojo;
 
 import java.util.List;
 
+import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
+import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -39,6 +41,7 @@ public class AROTraceData {
 	private ErrorCode error = null;
 	private List<AbstractBestPracticeResult> bestPracticeResults;
 	private PacketAnalyzerResult analyzerResult;
+
 
 	/**
 	 * Returns the PacketAnalyzerResult, an object that contains the analyzed trace.
@@ -117,8 +120,5 @@ public class AROTraceData {
 		return error == null ? "Trace ran successfully" : error.getDescription();
 	}
 
-	public TraceMetadata getTraceMetadata() {
-		return new TraceMetadata(analyzerResult);
-	}
 
 }

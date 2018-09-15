@@ -18,11 +18,11 @@ package com.att.aro.core.resourceextractorimpl;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
 
 /**
@@ -31,9 +31,8 @@ import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
  */
 public class ReadWriteFileExtractorImpl implements IReadWriteFileExtractor{
 
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(ReadWriteFileExtractorImpl.class.getName());
+
 	IFileManager fileManager;
 	@Autowired
 	public void setFileManager(IFileManager filemanager){
@@ -46,7 +45,7 @@ public class ReadWriteFileExtractorImpl implements IReadWriteFileExtractor{
 		iStream = aroClassloader.getResourceAsStream(filename);
 		
 		if(iStream == null){
-			logger.debug("resource not found: "+filename);
+			LOGGER.debug("resource not found: "+filename);
 			return false;
 		}
 		try{

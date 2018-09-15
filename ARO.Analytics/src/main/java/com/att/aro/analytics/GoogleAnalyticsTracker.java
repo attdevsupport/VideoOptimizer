@@ -16,7 +16,10 @@
 package com.att.aro.analytics;
 
 import java.util.List;
-import java.util.logging.Logger;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.db.AROObjectDao;
 
 /**
@@ -30,7 +33,7 @@ import com.att.aro.db.AROObjectDao;
  */
 public class GoogleAnalyticsTracker {
 
-	private static final Logger LOGGER = Logger.getLogger(GoogleAnalyticsTracker.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(GoogleAnalyticsTracker.class.getName());
     private GAUrlBuilder urlBuildingStrategy = null;
     private HTTPGetMethod httpRequest = new HTTPGetMethod();
     private AROObjectDao aroDAO = null;

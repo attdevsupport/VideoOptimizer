@@ -20,6 +20,9 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -28,12 +31,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.ScriptsResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -70,8 +71,7 @@ public class ScriptsImpl implements IBestPractice {
 		this.reqhelper = reqhelper;
 	}
 
-	@InjectLogger
-	private static ILogger log;
+	private static final Logger LOG = LogManager.getLogger(ScriptsImpl.class.getName());
 
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
@@ -119,10 +119,10 @@ public class ScriptsImpl implements IBestPractice {
 				}
 			}
 		} catch (Exception e) {
-			log.error("Failed to get content from HttpRequestResponseInfo", e);
+			LOG.error("Failed to get content from HttpRequestResponseInfo", e);
 			if (hrri != null && session != null) {
-				log.error("jsoup error: contenttype: " + hrri.getContentType());
-				log.error("jsoup error:  start time: " + session.getSessionStartTime());
+				LOG.error("jsoup error: contenttype: " + hrri.getContentType());
+				LOG.error("jsoup error:  start time: " + session.getSessionStartTime());
 			}
 		}
 		return result;
@@ -173,7 +173,7 @@ public class ScriptsImpl implements IBestPractice {
 			try {
 				url = new URL(url).getHost();
 			} catch (MalformedURLException e) {
-				log.warn("getDomain() got malformedURLException: " + e.getMessage());
+				LOG.warn("getDomain() got malformedURLException: " + e.getMessage());
 			}
 		}
 		return url;

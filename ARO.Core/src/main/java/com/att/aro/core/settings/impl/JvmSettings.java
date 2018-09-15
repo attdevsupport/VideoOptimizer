@@ -31,12 +31,12 @@ import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarException;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.exception.ARORuntimeException;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.settings.Settings;
 import com.att.aro.core.util.Util;
 
@@ -51,7 +51,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 public final class JvmSettings implements Settings {
 	private static final String DEFAULT_MEM = Util.isWindows32OS() ? "1433" : "2048";
-	private static final ILogger LOGGER = new LoggerImpl(JvmSettings.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(JvmSettings.class.getName());
 	public static final String CONFIG_FILE_PATH = System.getProperty("user.home") + System.getProperty("file.separator")
 			+ "VideoOptimizerLibrary" + System.getProperty("file.separator") + ".jvm.options";
 	private static final JvmSettings INSTANCE = new JvmSettings();

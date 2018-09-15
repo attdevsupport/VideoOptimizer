@@ -30,8 +30,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs.DUPLICATE_HANDLING;
@@ -48,10 +49,9 @@ public class VideoAnalysisDialog extends JPanel {
 	private static int MAXSTALLRECOVERY = 10;
 	private static int MAXTARGETEDSTARTUPDELAY = 10;
 	private static float MAXNEARSTALL = 0.5f;
+
+	private static final Logger LOG = LogManager.getLogger(VideoAnalysisDialog.class.getName());
 	
-	@InjectLogger
-	private static ILogger log;
-		
 	private JPanel jDialogPanel;
 	private VideoUsagePrefs videoUsagePrefs;
 	private ObjectMapper mapper;
@@ -77,7 +77,7 @@ public class VideoAnalysisDialog extends JPanel {
 			try {
 				videoUsagePrefs = mapper.readValue(temp, VideoUsagePrefs.class);
 			} catch (IOException e) {
-				log.error("VideoUsagePrefs failed to de-serialize :" + e.getMessage());
+				LOG.error("VideoUsagePrefs failed to de-serialize :" + e.getMessage());
 			}
 		} else {
 			try {
@@ -85,7 +85,7 @@ public class VideoAnalysisDialog extends JPanel {
 				temp = mapper.writeValueAsString(videoUsagePrefs);
 				prefs.setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
 			} catch (IOException e) {
-				log.error("VideoUsagePrefs failed to serialize :" + e.getMessage());
+				LOG.error("VideoUsagePrefs failed to serialize :" + e.getMessage());
 			}
 		}
 	}

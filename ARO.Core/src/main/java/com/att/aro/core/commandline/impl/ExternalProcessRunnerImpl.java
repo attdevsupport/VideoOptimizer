@@ -21,14 +21,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.commandline.IProcessFactory;
 import com.att.aro.core.commandline.pojo.ProcessWorker;
 import com.att.aro.core.concurrent.IThreadExecutor;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.util.Util;
 
 public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
@@ -37,9 +37,8 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 	ProcessWorker worker = null;
 	IProcessFactory procfactory;
     
-	@InjectLogger
-	private static ILogger log;
-	
+	private static final Logger LOG = LogManager.getLogger(ExternalProcessRunnerImpl.class.getName());
+
 	@Autowired
 	public void setProcessFactory(IProcessFactory factory){
 		this.procfactory = factory;
@@ -81,7 +80,6 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		StringBuilder builder = new StringBuilder();
 		try {
 			Process proc = pbldr.start();
-			proc.getErrorStream();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			
 			String line = null;
@@ -91,16 +89,16 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 					break;
 				}
 				if(earlyExit && line.trim().equals(msg)) {
-					log.debug("read a line:" + line);
+					LOG.debug("read a line:" + line);
 					builder.append(line);
 					break;
 				}
-				log.debug("read a line:" + line);
+				LOG.debug("read a line:" + line);
 				builder.append(line);
 				builder.append(System.getProperty("line.separator"));
 			}
 		} catch (IOException e) {
-			log.error("Error executing <" + cmd + "> IOException:" + e.getMessage());
+			LOG.error("Error executing <" + cmd + "> IOException:" + e.getMessage());
 		}
 		return builder.toString();
 	}

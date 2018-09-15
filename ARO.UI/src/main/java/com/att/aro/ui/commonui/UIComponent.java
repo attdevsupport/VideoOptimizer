@@ -77,7 +77,7 @@ public class UIComponent extends JPanel {
 	public JPanel getSeparator() {
 		return new ImagePanel(Images.DIVIDER.getImage(), true, Color.WHITE);
 	}
-	
+
 	/**
 	 * Retrieves an Image from the jar file or from imageCache
 	 * 

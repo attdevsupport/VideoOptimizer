@@ -37,7 +37,9 @@ import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.impl.PacketAnalyzerImpl;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.ApplicationSelection;
@@ -45,7 +47,6 @@ import com.att.aro.core.packetanalysis.pojo.IPAddressSelection;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.mvc.IAROView;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.model.DataTable;
@@ -62,8 +63,7 @@ import com.att.aro.ui.view.MainFrame;
  */
 public class FilterApplicationsAndIpDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
-	private static ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
-
+	private static final Logger LOGGER = LogManager.getLogger(FilterApplicationsAndIpDialog.class);	
 	private JPanel jButtonPanel = null;
 	private JPanel jButtonGrid = null;
 	private JButton okButton = null;
@@ -124,7 +124,7 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 		PacketAnalyzerResult initialTraceResult = ((MainFrame)parent).getController().getCurrentTraceInitialAnalyzerResult();
 		
 		if (currentTraceResult==null){
-			logger.error("Trace result error! " );
+			LOGGER.error("Trace result error! " );
 			MessageDialogFactory.getInstance().showErrorDialog(FilterApplicationsAndIpDialog.this,"wrong.."); 
 		}else{
 			setCurrentPktAnalyzerResult(currentTraceResult);

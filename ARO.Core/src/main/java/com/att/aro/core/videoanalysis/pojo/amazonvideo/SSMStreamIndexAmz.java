@@ -52,17 +52,19 @@ public class SSMStreamIndexAmz {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("SSMStreamIndexAmz :"); 
-		strblr.append(" type :");                   strblr.append(type);               
-		strblr.append(", name :");                  strblr.append(name);               
-		strblr.append(", chunks :");                strblr.append(chunks);             
-		strblr.append(", qualityLevels :");         strblr.append(qualityLevels);      
-//		strblr.append(", url :");                   strblr.append(url);                
-//		strblr.append(", language :");              strblr.append(language);           
-		strblr.append(", maxWidth :");              strblr.append(maxWidth);           
-		strblr.append(", maxHeight :");             strblr.append(maxHeight);          
-//		strblr.append(", displayWidth :");          strblr.append(displayWidth);       
-//		strblr.append(", displayHeight :");         strblr.append(displayHeight);      
+		strblr.append("SSMStreamIndexAmz :");
+		strblr.append(" type :");
+		strblr.append(type);
+		strblr.append(", name :");
+		strblr.append(name);
+		strblr.append(", chunks :");
+		strblr.append(chunks);
+		strblr.append(", qualityLevels :");
+		strblr.append(qualityLevels);
+		strblr.append(", maxWidth :");
+		strblr.append(maxWidth);
+		strblr.append(", maxHeight :");
+		strblr.append(maxHeight);
 		if (!qualityLevelList.isEmpty()) {
 			strblr.append("\n\t\t\tqualityLevelList:");
 			for (SSMQualityLevelAmz qlevel : qualityLevelList) {
@@ -70,8 +72,8 @@ public class SSMStreamIndexAmz {
 				strblr.append(qlevel);
 			}
 		}
-		strblr.append("\n\t\t\tsegDurationList:");      strblr.append(segDurationList);   
-		
+		strblr.append("\n\t\t\tsegDurationList:");
+		strblr.append(segDurationList);
 		return strblr.toString();
 	}
 	

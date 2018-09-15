@@ -2,16 +2,23 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.att.aro</groupId>
-	<artifactId>aro-ui</artifactId>
-	<version>6.0.0-SNAPSHOT</version>
+    <parent>
+        <groupId>com.att.aro</groupId>
+        <artifactId>vo-parent</artifactId>
+        <version>2.1.0</version>
+        <relativePath>../ARO.Parent</relativePath>
+    </parent>
+
+	<artifactId>vo-ui</artifactId>
 	<packaging>jar</packaging>
-	<name>ARO Analyzer</name>
+	<name>VO GUI</name>
 	<description>User Interface Application for ARO.</description>
 
 	<properties>
 		<main.class>com.att.aro.ui.view.MainFrame</main.class>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.deploy.skip>true</maven.deploy.skip>
+		<vo.version>2.1.0</vo.version>
 	</properties>
 
 	<!-- repositories -->
@@ -67,19 +74,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.att.aro</groupId>
-			<artifactId>aro-core</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.11</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.14</version>
+			<artifactId>vo-core</artifactId>
+			<version>${vo.version}</version>
 		</dependency>
 		<dependency>
 		  <groupId>org.jfree</groupId>
@@ -96,23 +92,23 @@
 		<dependency>
 			<groupId>com.att.aro.datacollector</groupId>
 			<artifactId>vpn-android-collector</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
+			<version>${vo.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.att.aro.datacollector</groupId>
 			<artifactId>rooted-android-collector</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
+			<version>${vo.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.att.aro.datacollector</groupId>
 			<artifactId>ios-collector</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
+			<version>${vo.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.att.aro.analytics</groupId>
-			<artifactId>aro-analytics</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
+			<artifactId>vo-analytics</artifactId>
+			<version>${vo.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.media</groupId>
@@ -126,8 +122,7 @@
 		</dependency>
 
 	</dependencies>
-
-
+ 
 	<!-- build -->
 	<build>
 		<plugins>
@@ -207,20 +202,6 @@
 				</configuration>
 			</plugin>
 
-			<!-- compile to 1.8 -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-					<compilerArgument>-Xlint:all</compilerArgument>
-					<showWarnings>true</showWarnings>
-					<showDeprecation>true</showDeprecation>
-				</configuration>
-			</plugin>
-
 			<!-- maven-dependency -->
 			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -236,7 +217,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<!-- junit -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -250,7 +230,7 @@
 					</dependency>
 				</dependencies>
 			</plugin>
-
+			<!-- jacoco unit tests -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>

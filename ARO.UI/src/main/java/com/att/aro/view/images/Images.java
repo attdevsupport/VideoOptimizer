@@ -17,9 +17,11 @@ package com.att.aro.view.images;
 
 import java.awt.Image;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -142,7 +144,7 @@ public enum Images {
 	 */
 	RED_RECORDING_INDICATOR("redRecordingIndicator");
 
-	private static Logger logger = Logger.getLogger(Images.class.getName());
+	private static Logger logger = LogManager.getLogger(Images.class.getName());
 
 	private static final String PREFIX = "Image.";
 	private static final ResourceBundle rb = ResourceBundleHelper.getImagesBundle();
@@ -169,7 +171,7 @@ public enum Images {
 	public ImageIcon getIcon() {
 		if (imageIcon == null) {
 			String resourceName = basePath + rb.getString(PREFIX + this.resourceKey);
-			logger.fine("Creating ImageIcon: " +  resourceName);
+			logger.debug("Creating ImageIcon: " +  resourceName);
 			this.imageIcon = new ImageIcon(getClass().getResource(resourceName));
 		}
 		return imageIcon;

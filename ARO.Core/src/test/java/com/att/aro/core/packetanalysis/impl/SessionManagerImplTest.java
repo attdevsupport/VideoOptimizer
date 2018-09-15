@@ -133,12 +133,12 @@ public class SessionManagerImplTest extends BaseTest{
 		Mockito.when(tcpPacket.getDestinationPort()).thenReturn(82);
 		Mockito.when(tcpPacket.getDestinationIPAddress()).thenReturn(iAdr2);
 		Mockito.when(tcpPacket.getSourceIPAddress()).thenReturn(iAdr2);
-		Mockito.when(tcpPacket.getAckNumber()).thenReturn(0l);
+		Mockito.when(tcpPacket.getAckNumber()).thenReturn(0L);
 		Mockito.when(tcpPacket.getLen()).thenReturn(50);
 		Mockito.when(tcpPacket.isSYN()).thenReturn(true);
 		Mockito.when(tcpPacket.isFIN()).thenReturn(true);
 		Mockito.when(tcpPacket.isRST()).thenReturn(true);
-		Mockito.when(tcpPacket.getSequenceNumber()).thenReturn(20l);
+		Mockito.when(tcpPacket.getSequenceNumber()).thenReturn(20L);
 		Mockito.when(tcpPacket.getTimeStamp()).thenReturn((double)date.getTime()-3000);
 		//Mockito.when(tcpPacket.getTimeStamp()).thenReturn((double)date.getTime()-10000);
 		
@@ -161,11 +161,11 @@ public class SessionManagerImplTest extends BaseTest{
 		Mockito.when(tcpPacket2.getDestinationPort()).thenReturn(99);
 		Mockito.when(tcpPacket2.getDestinationIPAddress()).thenReturn(iAdr3);
 		Mockito.when(tcpPacket2.getSourceIPAddress()).thenReturn(iAdr3);
-		Mockito.when(tcpPacket.getAckNumber()).thenReturn(0l);
+		Mockito.when(tcpPacket.getAckNumber()).thenReturn(0L);
 		Mockito.when(tcpPacket2.isSYN()).thenReturn(true);
 		Mockito.when(tcpPacket2.isFIN()).thenReturn(true);
 		Mockito.when(tcpPacket2.isRST()).thenReturn(true);
-		Mockito.when(tcpPacket.getSequenceNumber()).thenReturn(1l);
+		Mockito.when(tcpPacket.getSequenceNumber()).thenReturn(1L);
 		Mockito.when(tcpPacket2.getTimeStamp()).thenReturn(10000d);
 		
 		PacketInfo packetInfo3 = Mockito.mock(PacketInfo.class);
@@ -363,12 +363,12 @@ public class SessionManagerImplTest extends BaseTest{
 		Mockito.when(tcpPacket.getDestinationPort()).thenReturn(82);
 		Mockito.when(tcpPacket.getDestinationIPAddress()).thenReturn(iAdr2);
 		Mockito.when(tcpPacket.getSourceIPAddress()).thenReturn(iAdr2);
-		Mockito.when(tcpPacket.getAckNumber()).thenReturn(0l);
+		Mockito.when(tcpPacket.getAckNumber()).thenReturn(0L);
 		Mockito.when(tcpPacket.getLen()).thenReturn(50);
 		Mockito.when(tcpPacket.isSYN()).thenReturn(true);
 		Mockito.when(tcpPacket.isFIN()).thenReturn(true);
 		Mockito.when(tcpPacket.isRST()).thenReturn(true);
-		Mockito.when(tcpPacket.getSequenceNumber()).thenReturn(-3l);
+		Mockito.when(tcpPacket.getSequenceNumber()).thenReturn(-3L);
 		Mockito.when(tcpPacket.getTimeStamp()).thenReturn((double)date.getTime()-3000);
 		//Mockito.when(tcpPacket.getTimeStamp()).thenReturn((double)date.getTime()-10000);
 		
@@ -392,11 +392,11 @@ public class SessionManagerImplTest extends BaseTest{
 		Mockito.when(tcpPacket2.getDestinationPort()).thenReturn(99);
 		Mockito.when(tcpPacket2.getDestinationIPAddress()).thenReturn(iAdr3);
 		Mockito.when(tcpPacket2.getSourceIPAddress()).thenReturn(iAdr3);
-		Mockito.when(tcpPacket.getAckNumber()).thenReturn(0l);
+		Mockito.when(tcpPacket.getAckNumber()).thenReturn(0L);
 		Mockito.when(tcpPacket2.isSYN()).thenReturn(true);
 		Mockito.when(tcpPacket2.isFIN()).thenReturn(true);
 		Mockito.when(tcpPacket2.isRST()).thenReturn(true);
-		Mockito.when(tcpPacket.getSequenceNumber()).thenReturn(1l);
+		Mockito.when(tcpPacket.getSequenceNumber()).thenReturn(1L);
 		Mockito.when(tcpPacket2.getTimeStamp()).thenReturn(10000d);
 		
 		PacketInfo packetInfo3 = Mockito.mock(PacketInfo.class);
@@ -507,12 +507,12 @@ public class SessionManagerImplTest extends BaseTest{
 		Mockito.when(tcpPacket6.getDestinationPort()).thenReturn(96);
 		Mockito.when(tcpPacket6.getDestinationIPAddress()).thenReturn(iAdr6);
 		Mockito.when(tcpPacket6.getSourceIPAddress()).thenReturn(iAdr6);
-		Mockito.when(tcpPacket6.getAckNumber()).thenReturn(1l);
+		Mockito.when(tcpPacket6.getAckNumber()).thenReturn(1L);
 		Mockito.when(tcpPacket6.getLen()).thenReturn(50);
 		Mockito.when(tcpPacket6.isSYN()).thenReturn(true);
 		Mockito.when(tcpPacket6.isFIN()).thenReturn(true);
 		Mockito.when(tcpPacket6.isRST()).thenReturn(false);
-		Mockito.when(tcpPacket6.getSequenceNumber()).thenReturn(5l);
+		Mockito.when(tcpPacket6.getSequenceNumber()).thenReturn(5L);
 		Mockito.when(tcpPacket6.getTimeStamp()).thenReturn((double)date.getTime()-20000);
 		//Mockito.when(tcpPacket.getTimeStamp()).thenReturn((double)date.getTime()-10000);
 		

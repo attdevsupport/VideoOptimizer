@@ -33,27 +33,23 @@ public class VideoEventComparator implements Comparator<VideoEvent> {
 			double endTime2 = ve2.getEndTS();
 			if (endTime1 < endTime2){
 				return -1;
-			}
-			else if (endTime1 > endTime2){
+			} else if (endTime1 > endTime2){
 				return 1;
 			}
-		}
-		else if(choice == SortSelection.START_TS){
+		} else if(choice == SortSelection.START_TS){
 			double startTime1 = ve1.getStartTS();
 			double startTime2 = ve2.getStartTS();
 			if (startTime1 < startTime2){
 				return -1;
-			}
-			else if (startTime1 > startTime2){
+			} else if (startTime1 > startTime2){
 				return 1;
 			}
-		}else if(choice == SortSelection.SEGMENT){
+		} else if(choice == SortSelection.SEGMENT){
 			double seg1 = ve1.getSegment();
 			double seg2 = ve2.getSegment();
 			if (seg1 < seg2){
 				return -1;
-			} 
-			else if (seg1 > seg2){
+			} else if (seg1 > seg2){
 				return 1;
 			}			
 		}else if(choice == SortSelection.END_TS_DESCENDING){
@@ -61,11 +57,9 @@ public class VideoEventComparator implements Comparator<VideoEvent> {
 			double endTime1 = ve1.getEndTS();
 			if (endTime2 < endTime1){
 				return -1;
-			}
-			else if (endTime2 > endTime1){
+			} else if (endTime2 > endTime1){
 				return 1;
-			}
-			
+			}			
 		}
 		return 0;
 	}

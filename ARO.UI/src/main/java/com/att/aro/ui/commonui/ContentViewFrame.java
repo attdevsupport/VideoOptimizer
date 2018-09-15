@@ -46,7 +46,7 @@ public class ContentViewFrame extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 
-//	private static final Logger LOGGER = Logger.getLogger(ContentViewFrame.class.getName());
+//	private static final Logger LOGGER = LogManager.getLogger(ContentViewFrame.class.getName());
 
 	private HttpRequestResponseInfo rrInfo;
 	private Session session;

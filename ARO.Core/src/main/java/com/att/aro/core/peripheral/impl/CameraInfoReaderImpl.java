@@ -19,8 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.ICameraInfoReader;
 import com.att.aro.core.peripheral.pojo.CameraInfo;
@@ -33,8 +34,7 @@ import com.att.aro.core.util.Util;
  * Date: October 1, 2014
  */
 public class CameraInfoReaderImpl extends PeripheralBase implements ICameraInfoReader {
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(CameraInfoReaderImpl.class.getName());
 	
 	private double activeDuration = 0;
 	@Override
@@ -60,7 +60,7 @@ public class CameraInfoReaderImpl extends PeripheralBase implements ICameraInfoR
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed to read Camera info file: "+filepath);
+			LOGGER.error("failed to read Camera info file: "+filepath);
 		}
 		
 		if (lines != null && lines.length > 0) {
@@ -77,7 +77,7 @@ public class CameraInfoReaderImpl extends PeripheralBase implements ICameraInfoR
 					} else if (TraceDataConst.CAMERA_OFF.equals(strFieldsFirstLine[1])) {
 						prevCameraState = CameraState.CAMERA_OFF;
 					} else {
-						logger.warn("Unknown camera state: " + firstLine);
+						LOGGER.warn("Unknown camera state: " + firstLine);
 						prevCameraState = CameraState.CAMERA_UNKNOWN;
 					}
 
@@ -87,10 +87,10 @@ public class CameraInfoReaderImpl extends PeripheralBase implements ICameraInfoR
 						dLastActiveTimeStamp = 0.0;
 					}
 				} catch (Exception e) {
-					logger.warn("Unexpected error in camera events: " + firstLine, e);
+					LOGGER.warn("Unexpected error in camera events: " + firstLine, e);
 				}
 			} else {
-				logger.warn("Unrecognized camera event: " + firstLine);
+				LOGGER.warn("Unrecognized camera event: " + firstLine);
 			}
 
 			for (int i=1;i<lines.length;i++) {
@@ -107,7 +107,7 @@ public class CameraInfoReaderImpl extends PeripheralBase implements ICameraInfoR
 						} else if (TraceDataConst.CAMERA_OFF.equals(strFields[1])) {
 							cameraState = CameraState.CAMERA_OFF;
 						} else {
-							logger.warn("Unknown camera state: " + strLineBuf);
+							LOGGER.warn("Unknown camera state: " + strLineBuf);
 							cameraState = CameraState.CAMERA_UNKNOWN;
 						}
 						cameraInfos.add(new CameraInfo(beginTime, endTime, prevCameraState));
@@ -120,10 +120,10 @@ public class CameraInfoReaderImpl extends PeripheralBase implements ICameraInfoR
 						beginTime = endTime;
 
 					} catch (Exception e) {
-						logger.warn("Unexpected error in camera events: "+ strLineBuf, e);
+						LOGGER.warn("Unexpected error in camera events: "+ strLineBuf, e);
 					}
 				} else {
-					logger.warn("Unrecognized camera event: " + strLineBuf);
+					LOGGER.warn("Unrecognized camera event: " + strLineBuf);
 				}
 			}
 			cameraInfos.add(new CameraInfo(beginTime, traceDuration, prevCameraState));

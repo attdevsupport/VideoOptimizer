@@ -29,10 +29,10 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IRequestResponseBuilder;
 import com.att.aro.core.packetanalysis.ISessionManager;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
@@ -60,8 +60,7 @@ import com.att.aro.core.securedpacketreader.pojo.SavedTLSSession;
 //FIXME LOT OF TODOS IN HERE - RENAMING IT TO FROM TODO to TODOS FOR NOW
 public class SessionManagerImpl implements ISessionManager {
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(SessionManagerImpl.class.getName());
 
 	@Autowired
 	ICrypto crypto;
@@ -137,8 +136,8 @@ public class SessionManagerImpl implements ISessionManager {
 
 		iteratePackets(packets, allSessions, dnsPackets, udpPackets, hostMap);
 
-		logger.debug("end of first looping, now got session: " + allSessions.size());
-		logger.debug("dns packet: " + dnsPackets.size());
+		LOGGER.debug("end of first looping, now got session: " + allSessions.size());
+		LOGGER.debug("dns packet: " + dnsPackets.size());
 
 		// Reassemble sessions
 		List<Session> sessions = new ArrayList<Session>(allSessions.values());
@@ -147,7 +146,7 @@ public class SessionManagerImpl implements ISessionManager {
 		Reassembler dol = new Reassembler();
 		try {
 			reassembleSessions(sessions, upl, dol);
-			logger.debug("creating HttpReqResInfo for sessions: " + sessions.size());
+			LOGGER.debug("creating HttpReqResInfo for sessions: " + sessions.size());
 			analyzeRequestResponseInfo(sessions);
 		} finally {
 			upl.clear();
@@ -162,7 +161,7 @@ public class SessionManagerImpl implements ISessionManager {
 				udpSessions = getUDPSessions(udpPackets, sessions);
 				sessions.addAll(udpSessions);
 			} catch (IOException e) {
-				logger.error("Error", e);
+				LOGGER.error("Error", e);
 			}
 		}
 
@@ -275,7 +274,7 @@ public class SessionManagerImpl implements ISessionManager {
 				try {
 					session.setRequestResponseInfo(requestResponseBuilder.createRequestResponseInfo(session));
 				} catch (IOException e) {
-					logger.error("IOException " + e.getMessage());
+					LOGGER.error("IOException " + e.getMessage());
 				}
 
 				for (HttpRequestResponseInfo hrri : session.getRequestResponseInfo()) {
@@ -358,7 +357,7 @@ public class SessionManagerImpl implements ISessionManager {
 			if (pData == null) {
 				// TODOS fix -
 				// logger.error(Util.RB.getString("tls.error.ssldata"));
-				logger.warn("tls.error.ssldata");
+				LOGGER.warn("tls.error.ssldata");
 				return -1;
 			}
 
@@ -377,7 +376,7 @@ public class SessionManagerImpl implements ISessionManager {
 				if (checkTLSVersion(pData.array(), 1) == 0) {
 					// TODOS fix -
 					// logger.error(Util.RB.getString("tls.error.sslversion"));
-					logger.warn("tls.error.sslversion");
+					LOGGER.warn("tls.error.sslversion");
 					return -1;
 				}
 				int encRecPayloadSize = pData.getShort(3); // Reverse not
@@ -419,12 +418,12 @@ public class SessionManagerImpl implements ISessionManager {
 					default:
 						// TODOS fix -
 						// logger.error(Util.RB.getString(TLS_ERROR_INVALIDPKTDIR));
-						logger.error(TLS_ERROR_INVALIDPKTDIR);
+						LOGGER.error(TLS_ERROR_INVALIDPKTDIR);
 						return -1;
 					}
 
 					if (returnVal <= 0) {
-						logger.error("30012 - Error in SSL record decryption.");
+						LOGGER.error("30012 - Error in SSL record decryption.");
 						return -1;
 					}
 				}
@@ -461,7 +460,7 @@ public class SessionManagerImpl implements ISessionManager {
 							if (resRead == 0) {
 								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.readhandshake"));
-								logger.warn("tls.error.readhandshake");
+								LOGGER.warn("tls.error.readhandshake");
 							}
 							return -1;
 						}
@@ -492,7 +491,7 @@ public class SessionManagerImpl implements ISessionManager {
 								} else {
 									// TODOS fix -
 									// logger.error(Util.RB.getString("tls.error.PacketIDList"));
-									logger.warn("tls.error.PacketIDList");
+									LOGGER.warn("tls.error.PacketIDList");
 									return -1;
 								}
 							}
@@ -534,7 +533,7 @@ public class SessionManagerImpl implements ISessionManager {
 								} else {
 									// TODOS fix -
 									// logger.error(Util.RB.getString("tls.error.PacketIDList"));
-									logger.error("tls.error.PacketIDList");
+									LOGGER.error("tls.error.PacketIDList");
 									return -1;
 								}
 							}
@@ -549,7 +548,7 @@ public class SessionManagerImpl implements ISessionManager {
 							if (tsiPending.getTLSCipherSuite() == null) {
 								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.keyexchange"));
-								logger.warn("tls.error.keyexchange");
+								LOGGER.warn("tls.error.keyexchange");
 								return -1;
 							}
 							// TODOS: Diffie-Hellman not supported
@@ -557,7 +556,7 @@ public class SessionManagerImpl implements ISessionManager {
 									.getKeyexchange() != CryptoEnum.TLSKeyExchange.TLS_KEY_X_RSA) {
 								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.onlyRSAsupported"));
-								logger.debug("tls.error.onlyRSAsupported");
+								LOGGER.debug("tls.error.onlyRSAsupported");
 								return -1;
 							}
 
@@ -566,7 +565,7 @@ public class SessionManagerImpl implements ISessionManager {
 							if (tsiPending.getCipherData() == null) {
 								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.cipherdata"));
-								logger.debug("tls.error.cipherdata");
+								LOGGER.debug("tls.error.cipherdata");
 								return -1;
 							}
 
@@ -584,7 +583,7 @@ public class SessionManagerImpl implements ISessionManager {
 									}
 									if (handshake.getSessionIDLen() == sessionID.length && match) {
 										// sessionID of client and server match
-										logger.warn("sessionID of client and server match");
+										LOGGER.warn("sessionID of client and server match");
 									} else {
 										sessionID = null;
 									}
@@ -604,11 +603,11 @@ public class SessionManagerImpl implements ISessionManager {
 							// logger.info(session);
 							// }
 							if (handshake.getTicketLen() == -1) {
-								logger.warn("Invalid TLS handshake ticket length");
+								LOGGER.warn("Invalid TLS handshake ticket length");
 							} else if (handshake.getTicketLen() == 0) {
 								// -logger.info("Zero TLS handshake ticket
 								// length:"+session);
-								logger.warn("Zero TLS handshake ticket length");
+								LOGGER.warn("Zero TLS handshake ticket length");
 							} else {
 
 								serverTicketExtension = new byte[handshake.getTicketLen()];
@@ -639,7 +638,7 @@ public class SessionManagerImpl implements ISessionManager {
 							if (serverHelloTS == -1.0 || serverRandom == null) {
 								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.invalidRecType"));
-								logger.error("tls.error.invalidRecType");
+								LOGGER.error("tls.error.invalidRecType");
 								return -1;
 							}
 
@@ -656,7 +655,7 @@ public class SessionManagerImpl implements ISessionManager {
 								if (nPass == 2) {
 									// TODOS -fix
 									// logger.warning(Util.RB.getString("tls.error.masterNotFound"));
-									logger.info("tls.error.masterNotFound");
+									LOGGER.info("tls.error.masterNotFound");
 								}
 								return -2;
 							}
@@ -712,7 +711,7 @@ public class SessionManagerImpl implements ISessionManager {
 							default:
 								// TODOS fix -
 								// logger.error(Util.RB.getString(TLS_ERROR_INVALIDPKTDIR));
-								logger.error(TLS_ERROR_INVALIDPKTDIR);
+								LOGGER.error(TLS_ERROR_INVALIDPKTDIR);
 								return -1;
 							}
 
@@ -741,7 +740,7 @@ public class SessionManagerImpl implements ISessionManager {
 							// -logger.info(">>>>TLS_HANDSHAKE_CERTIFICATE_VERIFY");
 							// TODOS fix -
 							// logger.error(Util.RB.getString("tls.error.unsupportedTLSHandshake"));
-							logger.error("tls.error.unsupportedTLSHandshake");
+							LOGGER.error("tls.error.unsupportedTLSHandshake");
 							return -1;
 						}
 
@@ -750,7 +749,7 @@ public class SessionManagerImpl implements ISessionManager {
 							if (bServerIssuedTicket != 0 || masterSecret == null) {
 								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.invalidServerIssuedTicket"));
-								logger.warn("tls.error.invalidServerIssuedTicket");
+								LOGGER.warn("tls.error.invalidServerIssuedTicket");
 								return -1;
 							}
 
@@ -764,7 +763,7 @@ public class SessionManagerImpl implements ISessionManager {
 							if (masterSecret.length != TLS_MASTER_SECRET_LEN) {
 								// TODOS fix -
 								// logger.error(Util.RB.getString("tls.error.incorrectMasterLen"));
-								logger.error("tls.error.incorrectMasterLen");
+								LOGGER.error("tls.error.incorrectMasterLen");
 								return -1;
 							}
 							resRead = tsiPending.saveTLSSessionByTicket(serverIssuedTicket, masterSecret);
@@ -781,7 +780,7 @@ public class SessionManagerImpl implements ISessionManager {
 							// -logger.info(">>>>TLS_ nothing ... so default");
 							// TODOS fix -
 							// logger.error(Util.RB.getString("tls.error.invalidHSType"));
-							logger.warn("tls.error.invalidHSType");
+							LOGGER.warn("tls.error.invalidHSType");
 							return -1;
 						} // End of inner switch
 					} // End of while loop
@@ -789,7 +788,7 @@ public class SessionManagerImpl implements ISessionManager {
 				} // End of 1st case in main switch
 
 				case TLS_RECORD_CHANGE_CIPHER_SPEC: {
-					logger.info("TLS_RECORD_CHANGE_CIPHER_SPEC\n");
+					LOGGER.info("TLS_RECORD_CHANGE_CIPHER_SPEC\n");
 					// the record payload should only contain 0x01
 					switch (dir) {
 					case UPLINK: {
@@ -804,7 +803,7 @@ public class SessionManagerImpl implements ISessionManager {
 							state = TLS_STATE_C_CHANGECIPHERSPEC;
 							bClientChangeCipher = 1;
 						} else {
-							logger.error("tls.error.invalidTLSstate");
+							LOGGER.error("tls.error.invalidTLSstate");
 							return -1;
 						}
 						break;
@@ -816,14 +815,14 @@ public class SessionManagerImpl implements ISessionManager {
 						switch (state) {
 						case TLS_STATE_C_FINISHED: {
 							if (state != TLS_STATE_C_FINISHED) {
-								logger.error("30029 - Wrong TLS state");
+								LOGGER.error("30029 - Wrong TLS state");
 							}
 							break;
 						}
 
 						case TLS_STATE_S_HELLO: {
 							if (state != TLS_STATE_S_HELLO) {
-								logger.error("30030 - Wrong TLS state");
+								LOGGER.error("30030 - Wrong TLS state");
 							}
 
 							SavedTLSSession[] pSaved = new SavedTLSSession[1];
@@ -864,7 +863,7 @@ public class SessionManagerImpl implements ISessionManager {
 						default:
 							// TODOS fix -
 							// logger.error(Util.RB.getString("tls.error.invalidTLSstate"));
-							logger.error("tls.error.invalidTLSstate");
+							LOGGER.error("tls.error.invalidTLSstate");
 							return -1;
 						}
 
@@ -883,7 +882,7 @@ public class SessionManagerImpl implements ISessionManager {
 					default: // dir
 						// TODOS fix -
 						// logger.error(Util.RB.getString(TLS_ERROR_INVALIDPKTDIR));
-						logger.error(TLS_ERROR_INVALIDPKTDIR);
+						LOGGER.error(TLS_ERROR_INVALIDPKTDIR);
 						return -1;
 					}
 
@@ -945,7 +944,7 @@ public class SessionManagerImpl implements ISessionManager {
 					default:
 						// TODOS fix -
 						// logger.error(Util.RB.getString(TLS_ERROR_INVALIDPKTDIR));
-						logger.error(TLS_ERROR_INVALIDPKTDIR);
+						LOGGER.error(TLS_ERROR_INVALIDPKTDIR);
 						return -1;
 					}
 					break;
@@ -955,7 +954,7 @@ public class SessionManagerImpl implements ISessionManager {
 					if (recPayloadLen[0] != 2) {
 						// TODOS fix -
 						// logger.error(Util.RB.getString("tls.error.wrongTLS_AlertSize"));
-						logger.error("tls.error.wrongTLS_AlertSize");
+						LOGGER.error("tls.error.wrongTLS_AlertSize");
 						return -1;
 					}
 
@@ -965,7 +964,7 @@ public class SessionManagerImpl implements ISessionManager {
 					if (alertLevel != ALERT_LEVEL_WARNING && alertLevel != ALERT_LEVEL_FATAL) {
 						// TODOS fix -
 						// logger.error(Util.RB.getString("tls.error.wrongTLS_AlertLevel"));
-						logger.error("tls.error.wrongTLS_AlertLevel");
+						LOGGER.error("tls.error.wrongTLS_AlertLevel");
 						return -1;
 					}
 
@@ -978,7 +977,7 @@ public class SessionManagerImpl implements ISessionManager {
 					} else {
 						// TODOS fix -
 						// logger.error(Util.RB.getString("tls.error.invalidTLS_Alert"));
-						logger.error("tls.error.invalidTLS_Alert");
+						LOGGER.error("tls.error.invalidTLS_Alert");
 						return -1;
 					}
 
@@ -988,7 +987,7 @@ public class SessionManagerImpl implements ISessionManager {
 				default:
 					// TODOS fix -
 					// logger.error(Util.RB.getString("tls.error.invalidHSType"));
-					logger.warn("tls.error.invalidHSType");
+					LOGGER.warn("tls.error.invalidHSType");
 					return -1;
 				}// End of main switch
 			} // End of custom block
@@ -1040,7 +1039,7 @@ public class SessionManagerImpl implements ISessionManager {
 
 	// TODOS generateRecords
 	private void generateRecords(Session session, int protocol) {
-		logger.info(session.toString());
+		LOGGER.info(session.toString());
 		List<MatchedRecord> mrList = session.getMrList();
 
 		mrList.clear();
@@ -1052,16 +1051,16 @@ public class SessionManagerImpl implements ISessionManager {
 		if (protocol == PROT_RECORD_TLS) {
 			pBothStorage = session.getpStorageBothRAW();
 		} else {
-			logger.info("30001 - Unexpected protocol.");
+			LOGGER.info("30001 - Unexpected protocol.");
 		}
 
 		// logger.info(session);
 		matchRecords(session, protocol, pBothStorage, PacketDirection.UPLINK);
-		logger.info(session + "---Up");
+		LOGGER.info(session + "---Up");
 		int upls = mrList.size();
 
 		matchRecords(session, protocol, pBothStorage, PacketDirection.DOWNLINK);
-		logger.info(session + "---Down");
+		LOGGER.info(session + "---Down");
 		int dnls = mrList.size();
 
 		checkRecords(session);
@@ -1092,7 +1091,7 @@ public class SessionManagerImpl implements ISessionManager {
 				msg = String.format("30005 - Raw data stream not observed in %s direction (prot: %s, localPort=%d)",
 						dirStr[2], protStr[protocol], session.getLocalPort());
 			}
-			logger.info(msg);
+			LOGGER.info(msg);
 			return;
 		}
 
@@ -1116,7 +1115,7 @@ public class SessionManagerImpl implements ISessionManager {
 						"30006 - Records do not start from the beginning of the %s data stream (prot: %s, localPort=%d)",
 						dirStr[2], protStr[protocol], session.getLocalPort());
 			}
-			logger.info(msg);
+			LOGGER.info(msg);
 			return;
 		}
 
@@ -1126,7 +1125,7 @@ public class SessionManagerImpl implements ISessionManager {
 		}
 
 		if (iterPtr < 0) {
-			logger.info("30007 - Error in checking completeness of SSL records.");
+			LOGGER.info("30007 - Error in checking completeness of SSL records.");
 		}
 
 		if (mrList.get(nTo).getEndBDC() != iterPtr
@@ -1141,7 +1140,7 @@ public class SessionManagerImpl implements ISessionManager {
 						"30008 - Records do not stop at the end of the %s data stream (prot: %s, localPort=%d)",
 						dirStr[2], protStr[protocol], session.getLocalPort());
 			}
-			logger.info(msg);
+			LOGGER.info(msg);
 			return;
 		}
 
@@ -1149,7 +1148,7 @@ public class SessionManagerImpl implements ISessionManager {
 		for (iterPtr = nFrom + 1; iterPtr <= nTo; iterPtr++) {
 			if (mrList.get(iterPtr - 1).getUniDirOffset() + mrList.get(iterPtr - 1).getBytes() != mrList.get(iterPtr)
 					.getUniDirOffset()) {
-				logger.info("30009 - Error in checking completeness of SSL records.");
+				LOGGER.info("30009 - Error in checking completeness of SSL records.");
 			}
 
 			int bInOrder = 0;
@@ -1162,7 +1161,7 @@ public class SessionManagerImpl implements ISessionManager {
 			}
 
 			if (bInOrder == 0) {
-				logger.info("30010 - Error in checking completeness of SSL records.");
+				LOGGER.info("30010 - Error in checking completeness of SSL records.");
 			}
 		}
 	}
@@ -1190,7 +1189,7 @@ public class SessionManagerImpl implements ISessionManager {
 							|| (matchedRecord.getBeginBDC() == matchedRecord.getEndBDC()
 									&& matchedRecord.getBeginOfs() < matchedRecord.getEndOfs()));
 			if (!bPass) {
-				logger.info("30004 - ssl record mismatch.");
+				LOGGER.info("30004 - ssl record mismatch.");
 			}
 		}
 	}
@@ -1250,7 +1249,7 @@ public class SessionManagerImpl implements ISessionManager {
 			if (prot == PROT_RECORD_TLS) {
 				return matchRecordCore(session, PROT_RECORD_TLS_FIRST, pBothStorage, matchedRecord);
 			} else {
-				logger.info("30002 - Unexpected protocol.");
+				LOGGER.info("30002 - Unexpected protocol.");
 				return false;
 			}
 		} else {
@@ -1362,7 +1361,7 @@ public class SessionManagerImpl implements ISessionManager {
 				return false;
 			}
 		} else {
-			logger.info("30003 - Unexpected protocol.");
+			LOGGER.info("30003 - Unexpected protocol.");
 		}
 
 		// go back by one byte
@@ -1458,10 +1457,8 @@ public class SessionManagerImpl implements ISessionManager {
 		}
 	}
 	// End of generateRecords
-
 	// end of ssl
-	
-	@SuppressWarnings("unused")//Keeping this method to be able to switch
+
 	private void analyzeRequestResponseInfo(List<Session> sessions) {
 		for (Session session : sessions) {
 			for (PacketInfo sPacket : session.getPackets()) {
@@ -1475,7 +1472,7 @@ public class SessionManagerImpl implements ISessionManager {
 			try {
 				session.setRequestResponseInfo(requestResponseBuilder.createRequestResponseInfo(session));
 			} catch (IOException exe) {
-				logger.warn("Error create RequestResponseInfo", exe);
+				LOGGER.warn("Error create RequestResponseInfo", exe);
 			}
 			for (HttpRequestResponseInfo rrinfo : session.getRequestResponseInfo()) {
 				if (rrinfo.getDirection() == HttpDirection.REQUEST) {
@@ -1536,7 +1533,7 @@ public class SessionManagerImpl implements ISessionManager {
 					break;
 
 				default:
-					logger.warn("91 - No direction for packet");
+					LOGGER.warn("91 - No direction for packet");
 					continue;
 				}
 
@@ -1548,7 +1545,7 @@ public class SessionManagerImpl implements ISessionManager {
 						// Finds establish
 						reassembledSession.setBaseSeq(pac.getSequenceNumber());
 						if (pac.getPayloadLen() != 0) {
-							logger.warn("92 - Payload in establish packet");
+							LOGGER.warn("92 - Payload in establish packet");
 						}
 					} else {
 
@@ -1556,7 +1553,7 @@ public class SessionManagerImpl implements ISessionManager {
 						List<PacketInfo> currentList = pSes.getPackets();
 						int index = currentList.indexOf(packetInfo);
 						if (!bTerminated) {
-							logger.debug("28 - Session termination not found");
+							LOGGER.debug("28 - Session termination not found");
 						}
 
 						// Correct packet list in original session
@@ -1604,7 +1601,7 @@ public class SessionManagerImpl implements ISessionManager {
 							upl.setBaseSeq(pac.getAckNumber());
 							break;
 						default:
-							logger.warn("Invalid packet direction");
+							LOGGER.warn("Invalid packet direction");
 						}
 					}
 				}
@@ -1663,7 +1660,7 @@ public class SessionManagerImpl implements ISessionManager {
 							} else if (tPacket1.getPayloadLen() == 0 && seqn == reassembledSession.getSeq() - 1
 									&& tPacket1.isACK() && !tPacket1.isSYN() && !tPacket1.isFIN()
 									&& !tPacket1.isRST()) {
-								logger.warn("31 - ???");
+								LOGGER.warn("31 - ???");
 							}
 						}
 						reassembledSession.getOoid().removeAll(fixed);
@@ -1714,7 +1711,7 @@ public class SessionManagerImpl implements ISessionManager {
 	private void iteratePackets(List<PacketInfo> packets, Map<String, Session> allSessions, List<PacketInfo> dnsPackets,
 			List<PacketInfo> udpPackets, Map<InetAddress, String> hostMap) {
 
-		logger.debug("looping thru packets info list, total packets: " + (packets != null ? packets.size() : "null"));
+		LOGGER.debug("looping thru packets info list, total packets: " + (packets != null ? packets.size() : "null"));
 
 		if (packets != null) {
 			for (PacketInfo packet : packets) {
@@ -1761,7 +1758,7 @@ public class SessionManagerImpl implements ISessionManager {
 					break;
 
 				default:
-					logger.warn("29 - Unable to determine packet direction");
+					LOGGER.warn("29 - Unable to determine packet direction");
 					continue;
 				}
 
@@ -1949,7 +1946,7 @@ public class SessionManagerImpl implements ISessionManager {
 				break;
 
 			default:
-				logger.warn("97 - No direction for packet");
+				LOGGER.warn("97 - No direction for packet");
 				continue;
 			}
 
@@ -1973,14 +1970,14 @@ public class SessionManagerImpl implements ISessionManager {
 			int payloadLen = pack.getPayloadLen();
 			if (pAliveAck2.contains(ackNum - 1) && payloadLen == 0 && !pack.isSYN() && !pack.isFIN() && !pack.isRST()) {
 				if (pinfo.getTcpInfo() != null) {
-					logger.warn("34 - Packet already typed");
+					LOGGER.warn("34 - Packet already typed");
 				}
 				pinfo.setTcpInfo(TcpInfo.TCP_KEEP_ALIVE);
 			} else if (!pAckWinSize.containsKey(key)) {
 				pAckWinSize.put(key, win);
 				if (payloadLen == 0 && !pack.isSYN() && !pack.isFIN() && !pack.isRST()) {
 					if (pinfo.getTcpInfo() != null) {
-						logger.warn("98 - Packet already typed");
+						LOGGER.warn("98 - Packet already typed");
 					}
 					pinfo.setTcpInfo(TcpInfo.TCP_ACK);
 				}
@@ -2134,7 +2131,7 @@ public class SessionManagerImpl implements ISessionManager {
 				remotePort = udp.getSourcePort();
 				break;
 			default:
-				logger.warn("29 - Unable to determine packet direction");
+				LOGGER.warn("29 - Unable to determine packet direction");
 				continue;
 			}
 			String key = localPort + " " + remotePort + " " + remoteIP.getHostAddress();
@@ -2181,7 +2178,7 @@ public class SessionManagerImpl implements ISessionManager {
 						break;
 	
 					default:
-						logger.warn("91 - No direction for packet");
+						LOGGER.warn("91 - No direction for packet");
 						continue;
 					}
 					if (packet.getPayloadLen() > 0) {

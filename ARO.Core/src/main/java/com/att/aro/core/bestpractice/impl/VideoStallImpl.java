@@ -25,12 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.util.Util;
@@ -55,10 +53,6 @@ import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
  * Link goes to a view of video stalls.
  */
 public class VideoStallImpl implements IBestPractice{
-
-	@InjectLogger
-	private static ILogger log;
-
 	@Value("${videoStall.title}")
 	private String overviewTitle;
 	

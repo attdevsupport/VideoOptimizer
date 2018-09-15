@@ -166,7 +166,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private JButton zoomInButton;
 	private JButton zoomOutButton;
 	private JButton saveGraphButton;
-	private JButton refreshGraphButton;
 	private JPanel zoomSavePanel;
 	private JViewport port;
 	private JPanel graphLabelsPanel;

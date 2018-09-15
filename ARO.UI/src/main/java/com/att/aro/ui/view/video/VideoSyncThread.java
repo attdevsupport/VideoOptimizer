@@ -16,8 +16,10 @@
 package com.att.aro.ui.view.video;
 
 import javax.swing.SwingUtilities;
-import com.att.aro.core.ILogger;
-import com.att.aro.ui.commonui.ContextAware;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 
 /**
@@ -45,8 +47,7 @@ public class VideoSyncThread implements Runnable {
 		}
 	}
 	//End of inner class
-
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private static final Logger LOGGER = LogManager.getLogger(VideoSyncThread.class);	
 	private double videoSecondsElapsed;
 	private IVideoPlayer videoPlayer;
 	private DiagnosticsTab aroAdvancedTab;
@@ -72,7 +73,7 @@ public class VideoSyncThread implements Runnable {
 						break;
 					}
 				} catch (Exception ex){
-					logger.error("Exception in VideoSyncThread", ex.getCause());
+					LOGGER.error("Exception in VideoSyncThread", ex.getCause());
 					break;
 				}
 			}
@@ -85,7 +86,7 @@ public class VideoSyncThread implements Runnable {
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException exception) {
-				logger.error("InterruptedException", exception);
+				LOGGER.error("InterruptedException", exception);
 			}
 		} while (isPlaying);
 	}

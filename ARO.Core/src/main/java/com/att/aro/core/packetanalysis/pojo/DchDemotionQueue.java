@@ -82,9 +82,7 @@ public class DchDemotionQueue {
 				dchDemotionQueueDL = 0;
 			}
 			dchLastPktTSUL = tStamp;
-		}
-
-		else if (dir == PacketDirection.DOWNLINK) {
+		} else if (dir == PacketDirection.DOWNLINK) {
 			if (tStamp > dchLastPktTSDL + profile.getDchTimerResetWin()) {
 				dchDemotionQueueDL = size;
 			} else {

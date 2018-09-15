@@ -32,8 +32,8 @@ import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.stream.MemoryCacheImageOutputStream;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 /**
  * Represents a QuickTime video output stream. This class supports the writing
@@ -45,9 +45,8 @@ import com.att.aro.core.model.InjectLogger;
 @SuppressWarnings("resource") //TODO POSSIBLE RESOURCE LEAKS
 public class QuickTimeOutputStream {
 
-	@InjectLogger
-	private static ILogger log;
-	
+	private static final Logger LOG = LogManager.getLogger(QuickTimeOutputStream.class.getName());
+
 	/**
 	 * Output stream of the QuickTimeOutputStream.
 	 */
@@ -322,7 +321,7 @@ public class QuickTimeOutputStream {
 				finished = true;
 				long sizeAfter = size();
 				if (sizeBefore != sizeAfter) {
-					log.error("size mismatch " + sizeBefore + ".." + sizeAfter);
+					LOG.error("size mismatch " + sizeBefore + ".." + sizeAfter);
 				}
 			}
 		}
@@ -742,6 +741,7 @@ public class QuickTimeOutputStream {
 		ftypAtom.finish();
 	}
 
+	@SuppressWarnings("checkstyle:missingswitchdefault")
 	private void writeEpilog() throws IOException {
 		Date modificationTime = new Date();
 		int duration = 0;

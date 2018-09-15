@@ -19,8 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IScreenStateInfoReader;
 import com.att.aro.core.peripheral.pojo.ScreenStateInfo;
@@ -34,9 +35,8 @@ import com.att.aro.core.util.Util;
  */
 public class ScreenStateInfoReaderImpl extends PeripheralBase implements IScreenStateInfoReader {
 
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(ScreenStateInfoReaderImpl.class.getName());
+
 	@Override
 	public List<ScreenStateInfo> readData(String directory, double startTime,
 			double traceDuration) {
@@ -62,7 +62,7 @@ public class ScreenStateInfoReaderImpl extends PeripheralBase implements IScreen
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed to open Screen State info file: "+filepath);
+			LOGGER.error("failed to open Screen State info file: "+filepath);
 		}
 		
 		if (lines != null && lines.length > 0) {
@@ -81,15 +81,15 @@ public class ScreenStateInfoReaderImpl extends PeripheralBase implements IScreen
 					} else if (TraceDataConst.SCREEN_OFF.equals(strFieldsFirstLine[1])) {
 						prevScreenState = ScreenState.SCREEN_OFF;
 					} else {
-						logger.warn("Unknown screen state: " + firstLine);
+						LOGGER.warn("Unknown screen state: " + firstLine);
 						prevScreenState = ScreenState.SCREEN_UNKNOWN;
 					}
 
 				} catch (Exception e) {
-					logger.warn("Unexpected error in screen events: " + firstLine, e);
+					LOGGER.warn("Unexpected error in screen events: " + firstLine, e);
 				}
 			} else {
-				logger.warn("Unrecognized screen state event: " + firstLine);
+				LOGGER.warn("Unrecognized screen state event: " + firstLine);
 			}
 			for (int i=1;i<lines.length;i++) {
 				strLineBuf = lines[i];
@@ -108,7 +108,7 @@ public class ScreenStateInfoReaderImpl extends PeripheralBase implements IScreen
 						} else if (TraceDataConst.SCREEN_OFF.equals(strFields[1])) {
 							screenState = ScreenState.SCREEN_OFF;
 						} else {
-							logger.warn("Unknown screen state: " + strLineBuf);
+							LOGGER.warn("Unknown screen state: " + strLineBuf);
 							screenState = ScreenState.SCREEN_UNKNOWN;
 						}
 
@@ -120,10 +120,10 @@ public class ScreenStateInfoReaderImpl extends PeripheralBase implements IScreen
 						prevTimeOut = timeout;
 						beginTime = endTime;
 					} catch (Exception e) {
-						logger.warn("Unexpected error in screen events: "+ strLineBuf, e);
+						LOGGER.warn("Unexpected error in screen events: "+ strLineBuf, e);
 					}
 				} else {
-					logger.warn("Unrecognized screen state event: " + strLineBuf);
+					LOGGER.warn("Unrecognized screen state event: " + strLineBuf);
 				}
 			}
 			screenStateInfos.add(new ScreenStateInfo(beginTime, traceDuration,

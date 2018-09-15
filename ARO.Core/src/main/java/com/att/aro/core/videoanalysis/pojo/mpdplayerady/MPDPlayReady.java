@@ -31,14 +31,15 @@ public class MPDPlayReady implements MpdBase {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("MPDPlayReady, Size :");
+		strblr.append("\n\ttype=");
+		strblr.append(getType());
+		strblr.append("\n\tavailabilityStartTime=");
+		strblr.append(getAvailabilityStartTime());
 
-		strblr.append("\n\ttype=");strblr.append(getType()); 
-		strblr.append("\n\tavailabilityStartTime=");strblr.append(getAvailabilityStartTime()); 
-		
 		if (period != null) {
-			strblr.append(getSize()); 
-			strblr.append(" List<PeriodPR>");strblr.append(period);
-			// strblr.append(", sample contentType:"); strblr.append(mpdPlayReadyOut.getPeriod().get(0).getAdaptationSet().get(0).getContentType());
+			strblr.append(getSize());
+			strblr.append(" List<PeriodPR>");
+			strblr.append(period);
 		} else {
 			strblr.append("period == null");
 		}

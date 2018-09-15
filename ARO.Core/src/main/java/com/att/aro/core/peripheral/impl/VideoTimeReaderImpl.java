@@ -22,8 +22,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IVideoTimeReader;
 import com.att.aro.core.peripheral.pojo.VideoTime;
@@ -36,9 +37,8 @@ import com.att.aro.core.util.Util;
  */
 public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeReader {
 
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(VideoTimeReaderImpl.class.getName());
+
 	@Override
 	public VideoTime readData(String directory, Date traceDateTime) {
 		boolean exVideoFound = false;
@@ -84,7 +84,7 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed reading video time file", e1);
+			LOGGER.error("failed reading video time file", e1);
 		}
 		if (lines != null && lines.length > 0) {
 			String line = lines[0];
@@ -93,7 +93,7 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 				try {
 					videoStartTime = Double.parseDouble(strValues[0]);
 				} catch (NumberFormatException e) {
-					logger.error("Cannot determine actual video start time", e);
+					LOGGER.error("Cannot determine actual video start time", e);
 				}
 				if (strValues.length > 1) {
 					// For emulator only, tcpdumpLocalStartTime is
@@ -168,8 +168,7 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 						&& (nativeVideoFileOnDevice.equals(matches[index]) || nativeVideoDisplayfile.equals(matches[index]))
 						&& (nativeVideoFileOnDevice.equals(matches[index+1]) || nativeVideoDisplayfile.equals(matches[index+1]))	){
 						return false;
-					}
-					else{
+					} else{
 						// if trace directory contains video.mp4 or video.
 						//mov along with external video file, we give preference to external video file.
 						if(nativeVideoFileOnDevice.equals(matches[index]) || nativeVideoDisplayfile.equals(matches[index])){

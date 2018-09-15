@@ -19,8 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IBluetoothInfoReader;
 import com.att.aro.core.peripheral.pojo.BluetoothInfo;
@@ -35,8 +36,7 @@ import com.att.aro.core.util.Util;
  *
  */
 public class BluetoothInfoReaderImpl extends PeripheralBase implements IBluetoothInfoReader {
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(BluetoothInfoReaderImpl.class.getName());
 
 	private double activeBluetoothDuration = 0.0;
 
@@ -63,7 +63,7 @@ public class BluetoothInfoReaderImpl extends PeripheralBase implements IBluetoot
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed reading Bluetooth info file: " + filepath);
+			LOGGER.error("failed reading Bluetooth info file: " + filepath);
 		}
 		if (lines != null && lines.length > 0) {
 			firstLine = lines[0];
@@ -80,7 +80,7 @@ public class BluetoothInfoReaderImpl extends PeripheralBase implements IBluetoot
 					} else if (TraceDataConst.BLUETOOTH_ON.equals(strFieldsFirstLine[1])) {
 						prevBtState = BluetoothState.BLUETOOTH_TURNED_ON;
 					} else {
-						logger.warn("Unknown bluetooth state: " + firstLine);
+						LOGGER.warn("Unknown bluetooth state: " + firstLine);
 						prevBtState = BluetoothState.BLUETOOTH_UNKNOWN;
 					}
 					// It is not possible for lastState to not be null at this point
@@ -90,10 +90,10 @@ public class BluetoothInfoReaderImpl extends PeripheralBase implements IBluetoot
 					lastState = prevBtState;
 					dLastTimeStamp = beginTime;
 				} catch (Exception e) {
-					logger.warn("Unexpected error parsing bluetooth event: " + firstLine, e);
+					LOGGER.warn("Unexpected error parsing bluetooth event: " + firstLine, e);
 				}
 			} else {
-				logger.warn("Invalid Bluetooth trace entry: " + firstLine);
+				LOGGER.warn("Invalid Bluetooth trace entry: " + firstLine);
 			}
 
 			for (int i = 1; i < lines.length; i++) {
@@ -111,7 +111,7 @@ public class BluetoothInfoReaderImpl extends PeripheralBase implements IBluetoot
 						} else if (TraceDataConst.BLUETOOTH_ON.equals(strFields[1])) {
 							btState = BluetoothState.BLUETOOTH_TURNED_ON;
 						} else {
-							logger.warn("Unknown bluetooth state: " + strLineBuf);
+							LOGGER.warn("Unknown bluetooth state: " + strLineBuf);
 							btState = BluetoothState.BLUETOOTH_UNKNOWN;
 						}
 						bluetoothInfos.add(new BluetoothInfo(beginTime, endTime, prevBtState));
@@ -124,10 +124,10 @@ public class BluetoothInfoReaderImpl extends PeripheralBase implements IBluetoot
 						prevBtState = btState;
 						beginTime = endTime;
 					} catch (Exception e) {
-						logger.warn("Unexpected error parsing bluetooth event: " + strLineBuf, e);
+						LOGGER.warn("Unexpected error parsing bluetooth event: " + strLineBuf, e);
 					}
 				} else {
-					logger.warn("Invalid Bluetooth trace entry: " + strLineBuf);
+					LOGGER.warn("Invalid Bluetooth trace entry: " + strLineBuf);
 				}
 			}
 			bluetoothInfos.add(new BluetoothInfo(beginTime, traceDuration, prevBtState));

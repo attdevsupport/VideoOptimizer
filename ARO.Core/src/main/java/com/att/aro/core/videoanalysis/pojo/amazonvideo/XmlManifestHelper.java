@@ -6,15 +6,15 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.videoanalysis.pojo.mpdplayerady.MPDPlayReady;
 
 public class XmlManifestHelper {
 
-	@InjectLogger
-	private static ILogger log;
-	
+	private static final Logger LOG = LogManager.getLogger(XmlManifestHelper.class.getName());
+
 	public enum ManifestFormat{
 		SmoothStreamingMedia
 		, MPD_EncodedSegmentList
@@ -77,12 +77,12 @@ public class XmlManifestHelper {
 			unMarshaller = context.createUnmarshaller();
 			mpdOutput = (MPDAmz) unMarshaller.unmarshal(xmlByte);
 			if (context == null || mpdOutput.getPeriod().isEmpty()) {
-				log.error("MPD NULL");
+				LOG.error("MPD NULL");
 			}
 		} catch (JAXBException e) {
-			log.error("JAXBException" + e.getMessage());
+			LOG.error("JAXBException" + e.getMessage());
 		} catch (Exception ex) {
-			log.error("JaxB parse Exception" + ex.getMessage());
+			LOG.error("JaxB parse Exception" + ex.getMessage());
 		}
 		return mpdOutput;
 	}
@@ -98,10 +98,10 @@ public class XmlManifestHelper {
 			unMarshaller = context.createUnmarshaller();
 			mpdOutput = (MpdBase) unMarshaller.unmarshal(xmlByte);
 			if (context == null || mpdOutput.getSize() == 0) {
-				log.error("MPD NULL");
+				LOG.error("MPD NULL");
 			}
 		} catch (Exception ex) {
-			log.error("JaxB parse Exception" + ex.getMessage());
+			LOG.error("JaxB parse Exception" + ex.getMessage());
 		}
 		return mpdOutput;
 	}
@@ -117,12 +117,12 @@ public class XmlManifestHelper {
 			unMarshaller = context.createUnmarshaller();
 			manifest = (SSMAmz) unMarshaller.unmarshal(xmlByte);
 			if (context == null || manifest.getStreamIndex().isEmpty()) {
-				log.error("SSM NULL");
+				LOG.error("SSM NULL");
 			}
 		} catch (JAXBException e) {
-			log.error("JAXBException" + e.getMessage());
+			LOG.error("JAXBException" + e.getMessage());
 		} catch (Exception ex) {
-			log.error("JaxB parse Exception" + ex.getMessage());
+			LOG.error("JaxB parse Exception" + ex.getMessage());
 		}
 		return manifest;
 	}

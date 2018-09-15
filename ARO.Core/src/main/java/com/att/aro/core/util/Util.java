@@ -33,13 +33,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-//import org.apache.log4j.Level;
-//import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.SpringContextUtil;
@@ -52,6 +53,7 @@ import com.att.aro.core.settings.impl.SettingsImpl;
 public final class Util {
 	public static final String DUMPCAP = "dumpCap";
 	public static final String FFMPEG = "ffmpeg";
+	public static final String RECENT_MENU = "RECENT_MENU";
 	public static final String FFPROBE = "ffprobe";
 	public static final String IDEVICESCREENSHOT = "iDeviceScreenshot";
 
@@ -60,13 +62,14 @@ public final class Util {
 	public static final String FILE_SEPARATOR = System.getProperty("file.separator");
 	public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 	public static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
+	
 	private static final double TIME_CORRECTION = 1.0E9;
 	private static Comparator<String> comparator;
 	private static Comparator<String> floatValComparator;
 	private static Comparator<Integer> intComparator;
-
-	private static Logger logger = Logger.getLogger(Util.class.getName());
-	private static final IExternalProcessRunner extrunner = SpringContextUtil.getInstance().getContext().getBean(IExternalProcessRunner.class);
+	private static Logger logger = LogManager.getLogger(Util.class.getName());
+	private static final IExternalProcessRunner extrunner = SpringContextUtil.getInstance().getContext()
+			.getBean(IExternalProcessRunner.class);
 
 	public static boolean isMacOS() {
 		return Util.OS_NAME.contains("Mac OS");
@@ -109,8 +112,8 @@ public final class Util {
 	 */
 	public static String getAppPath() {
 		return System.getProperty("user.dir");
-
-		// File filepath = new File(Util.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+		// File filepath = new
+		// File(Util.class.getProtectionDomain().getCodeSource().getLocation().getPath());
 		// return filepath.getParentFile().getParent();
 	}
 
@@ -121,13 +124,15 @@ public final class Util {
 	 */
 	public static String getMethod() {
 		StackTraceElement traceElement = Thread.currentThread().getStackTrace()[2];
-		String name = null; // traceElement.getClassName() + "::" + traceElement.getMethodName();
+		String name = null; // traceElement.getClassName() + "::" +
+							// traceElement.getMethodName();
 		name = ((traceElement.getFileName()).split("\\."))[0] + "::" + traceElement.getMethodName() + "(...)";
 		return name;
 	}
 
 	/**
-	 * location to save trace data such as pcap, video etc. used by non-rooted IOS
+	 * location to save trace data such as pcap, video etc. used by non-rooted
+	 * IOS
 	 * 
 	 * @return
 	 */
@@ -164,7 +169,8 @@ public final class Util {
 	}
 
 	/**
-	 * location to save trace data such as pcap, video etc. used by non-rooted Android
+	 * location to save trace data such as pcap, video etc. used by non-rooted
+	 * Android
 	 * 
 	 * @return
 	 */
@@ -202,7 +208,8 @@ public final class Util {
 
 	/**
 	 * <pre>
-	 * Returns a string representing Unknown App if appName is empty, blank, or null. Otherwise returns appName.
+	 * Returns a string representing Unknown App if appName is empty, blank, or
+	 * null. Otherwise returns appName.
 	 */
 	public static String getDefaultAppName(String appName) {
 		return getDefaultString(appName, "unknown");
@@ -210,7 +217,8 @@ public final class Util {
 
 	/**
 	 * <pre>
-	 * Returns defaultStr if str is empty, blank, or null. Otherwise returns str.
+	 * Returns defaultStr if str is empty, blank, or null. Otherwise returns
+	 * str.
 	 */
 	public static String getDefaultString(String str, String defaultStr) {
 		return isEmptyIsBlank(str) ? defaultStr : str;
@@ -243,11 +251,10 @@ public final class Util {
 		return tmpTime;
 	}
 
-	/** <pre>
-	 * Supported date formats:
-	 *   2018-01-11T22:14:59.000000Z
-	 *   2018-01-11T22:14:59
-	 *   2018-01-11 22:14:59
+	/**
+	 * <pre>
+	 * Supported date formats: 2018-01-11T22:14:59.000000Z 2018-01-11T22:14:59
+	 * 2018-01-11 22:14:59
 	 * 
 	 * @param creationTime
 	 * @return
@@ -271,10 +278,9 @@ public final class Util {
 	public static String formatYMD(long timestamp) {
 		String pattern = "yyyy-MM-dd HH:mm:ss";
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
-
 		return simpleDateFormat.format(new Date(timestamp));
 	}
-	
+
 	public static String formatHHMMSS(int seconds) {
 		String theTime = "";
 		int sec = seconds % 60;
@@ -415,7 +421,8 @@ public final class Util {
 	 */
 	private static final String PATTERN_RFC1036 = "EEEE, dd-MMM-yy HH:mm:ss zzz";
 	/**
-	 * Date format pattern used to parse HTTP date headers in ANSI C <code>asctime()</code> format.
+	 * Date format pattern used to parse HTTP date headers in ANSI C
+	 * <code>asctime()</code> format.
 	 */
 	private static final String PATTERN_ASCTIME = "EEE MMM d HH:mm:ss yyyy";
 	private static final String PATTERN_ASCTIME2 = "EEE MMM d HH:mm:ss zzz yyyy";
@@ -427,12 +434,15 @@ public final class Util {
 	private static final Date BEGINNING_OF_TIME = new Date(0);
 
 	/**
-	 * Parses HTTP date formats. Synchronized because DateFormat objects are not thread-safe. If defaultForExpired is true and value is an invalid dateFormat (such
-	 * as -1 or 0 meaning already expired), the returned Date will be "beginning of time" Jan 1 1970.
+	 * Parses HTTP date formats. Synchronized because DateFormat objects are not
+	 * thread-safe. If defaultForExpired is true and value is an invalid
+	 * dateFormat (such as -1 or 0 meaning already expired), the returned Date
+	 * will be "beginning of time" Jan 1 1970.
 	 *
 	 * @param value
 	 * @param defaultForExpired
-	 *            boolean - true/false provide default "beginning of time" Jan 1 1970 GMT Date
+	 *            boolean - true/false provide default "beginning of time" Jan 1
+	 *            1970 GMT Date
 	 * @return formated Date value else null.
 	 */
 	public static Date readHttpDate(String value, boolean defaultForExpired) {
@@ -464,7 +474,8 @@ public final class Util {
 			InputStream is = aroClassloader.getResourceAsStream(filename);
 			if (is != null) {
 				File libfolder = new File(targetLibFolder);
-				// if (!libfolder.exists() || !libfolder.isDirectory() || new File(libfolder+File.separator+filename).exists()) {
+				// if (!libfolder.exists() || !libfolder.isDirectory() || new
+				// File(libfolder+File.separator+filename).exists()) {
 				targetLibFolder = makeLibFolder(filename, libfolder);
 				if (targetLibFolder != null) {
 					makeLibFile(filename, targetLibFolder, is);
@@ -483,7 +494,8 @@ public final class Util {
 	 * <pre>
 	 * makes a folder in the targetLibFolder location. Mac {home}/AROLibrary Win
 	 *
-	 * if it fails it will create AROLibrary the current application execution folder
+	 * if it fails it will create AROLibrary the current application execution
+	 * folder
 	 *
 	 * @param filename
 	 * @param currentRelativePath
@@ -496,7 +508,8 @@ public final class Util {
 		try {
 			Files.createDirectories(libFolder.toPath());
 		} catch (IOException ioe1) {
-			// if no write access rights to the path folder then extract the lib to a default local folder
+			// if no write access rights to the path folder then extract the lib
+			// to a default local folder
 			targetLibFolder = currentRelativePath.toAbsolutePath().toString() + File.separator + "AROLibrary";
 			try {
 				Files.createDirectories(libFolder.toPath());
@@ -573,9 +586,11 @@ public final class Util {
 	}
 
 	/**
-	 * Formats a number so that the number of digits in the fraction portion of it is bound by a maximum value and a minimum value. <br>
+	 * Formats a number so that the number of digits in the fraction portion of
+	 * it is bound by a maximum value and a minimum value. <br>
 	 * <br>
-	 * Examples with maxFractionDigits being 3 and minFractionDigits being 0: <br>
+	 * Examples with maxFractionDigits being 3 and minFractionDigits being 0:
+	 * <br>
 	 * 2.4535 -> 2.454 <br>
 	 * 20 -> 20 <br>
 	 * 24535 -> 24535 <br>
@@ -587,9 +602,11 @@ public final class Util {
 	 *
 	 * @param number
 	 * @param maxFractionDigits
-	 *            maximum number of fraction digits, replaced by 0 if it is a negative value
+	 *            maximum number of fraction digits, replaced by 0 if it is a
+	 *            negative value
 	 * @param minFractionDigits
-	 *            minimum number of fraction digits, replaced by 0 if it is a negative value
+	 *            minimum number of fraction digits, replaced by 0 if it is a
+	 *            negative value
 	 * @return
 	 */
 	public static String formatDecimal(BigDecimal number, int maxFractionDigits, int minFractionDigits) {
@@ -693,7 +710,8 @@ public final class Util {
 	 * @return object name
 	 */
 	public static String extractFullNameFromRequest(HttpRequestResponseInfo hrri) {
-		HttpRequestResponseInfo req = hrri.getDirection().equals(HttpDirection.RESPONSE) ? hrri.getAssocReqResp() : hrri;
+		HttpRequestResponseInfo req = hrri.getDirection().equals(HttpDirection.RESPONSE) ? hrri.getAssocReqResp()
+				: hrri;
 		String extractedName = "";
 		String objectName = "";
 		if (req != null) {
@@ -709,8 +727,9 @@ public final class Util {
 
 	/**
 	 * <pre>
-	 * Sorts domain numbers and names. matches on ###.###.###.### where # is any number. then builds a double based on address to compare. if alpha is involved then
-	 * alpha comparison is used.
+	 * Sorts domain numbers and names. matches on ###.###.###.### where # is any
+	 * number. then builds a double based on address to compare. if alpha is
+	 * involved then alpha comparison is used.
 	 * 
 	 * @return
 	 */
@@ -756,12 +775,13 @@ public final class Util {
 		intComparator = new Comparator<Integer>() {
 			@Override
 			public int compare(Integer a, Integer b) {
-				if (a.compareTo(b) > 0)
+				if (a.compareTo(b) > 0) {
 					return -1;
-				else if (a.compareTo(b) < 0)
+				} else if (a.compareTo(b) < 0) {
 					return 1;
-				else
+				} else {
 					return 0;
+				}
 			}
 		};
 		return intComparator;
@@ -816,7 +836,11 @@ public final class Util {
 	}
 
 	public static void setLoggingLevel(String logginglevel) {
-		Logger.getRootLogger().setLevel(getLoggingLvl(logginglevel));
+		setLoggingLevel(getLoggingLvl(logginglevel));
+	}
+
+	public static void setLoggingLevel(Level loggingLevel) {
+		Logger.getRootLogger().setLevel(loggingLevel);
 	}
 
 	public static String getLoggingLevel() {
@@ -826,7 +850,7 @@ public final class Util {
 		}
 		return logLevel;
 	}
-
+	
 	public static boolean checkDevMode() {
 		return SettingsImpl.getInstance().checkAttributeValue("env", "dev");
 	}
@@ -867,7 +891,8 @@ public final class Util {
 	public static String parseImageName(String originalImage, HttpRequestResponseInfo reqResp) {
 		String imageName = Util.extractFullNameFromLink(originalImage);
 		if (!imageName.isEmpty()) {
-			originalImage = imageName + "." + reqResp.getContentType().substring(reqResp.getContentType().indexOf("image/") + 6, reqResp.getContentType().length());
+			originalImage = imageName + "." + reqResp.getContentType()
+					.substring(reqResp.getContentType().indexOf("image/") + 6, reqResp.getContentType().length());
 		}
 		return originalImage;
 	}
@@ -884,11 +909,12 @@ public final class Util {
 	 * @return destination path for PNG file
 	 */
 	public static String extractFrameToPNG(double timestamp, String videoPath, String ximagePath) {
-		String cmd = Util.getFFMPEG() + " -y -i " + "\"" + videoPath + "\"" + " -ss " + timestamp + "   -vframes 1 " + "\"" + ximagePath + "\"";
+		String cmd = Util.getFFMPEG() + " -y -i " + "\"" + videoPath + "\"" + " -ss " + timestamp + "   -vframes 1 "
+				+ "\"" + ximagePath + "\"";
 		extrunner.executeCmd(cmd);
 		return ximagePath;
 	}
-	
+
 	public static String validateInputLink(String inputValue) {
 		if (StringUtils.isNotBlank(inputValue)) {
 			if (inputValue.trim().indexOf(" ") > 0) {
@@ -896,5 +922,64 @@ public final class Util {
 			}
 		}
 		return inputValue;
+	}
+
+	/***
+	 * Reads the RECENT_MENU parameter from the config.properties and creates a
+	 * map with folder as key and tracepath as value
+	 * 
+	 * @return Map<String, String
+	 */
+	public static Map<String, String> getRecentOpenMenuItems() {
+		Map<String, String> recentMenuItems = new LinkedHashMap<String, String>();
+		if (SettingsImpl.getInstance().getAttribute(RECENT_MENU) != null) {
+			String[] menuItem = SettingsImpl.getInstance().getAttribute(RECENT_MENU).split(",");
+			if (menuItem != null) {
+				for (int i = 0; i < menuItem.length; i++) {
+					if (menuItem[i] != null) {
+						String recentMenuItem = getTraceName(menuItem[i]);
+						if (!recentMenuItem.isEmpty()) {
+							recentMenuItems.put(recentMenuItem, menuItem[i]);
+						}
+					}
+				}
+			}
+		}
+		return recentMenuItems;
+	}
+
+	/***
+	 * Extracts the trace name from the tracepath
+	 * 
+	 * @param tracePath
+	 * @return String tracename
+	 */
+	private static String getTraceName(String tracePath) {
+		String traceName = "";
+		if (tracePath != null) {
+			int index = tracePath.lastIndexOf(FILE_SEPARATOR);
+			if (index > 0) {
+				traceName = tracePath.substring(index + 1);
+			}
+		}
+		return traceName;
+	}
+	
+	/**
+	 * Convert and wrap password for echo through bash to sudo
+	 * 
+	 * \ is converted to \\
+	 * ! is converted to \x21
+	 * ' is converted to \x27
+	 * null converted to empty string, does not need wrapping
+	 * 
+	 * @param password
+	 * @return wrapped password
+	 */
+	public static String wrapPasswordForEcho(String password) {
+		if (password == null) {
+			return "";
+		}
+		return "$'" + password.replace("\\\\", "\\\\\\\\").replace("!", "\\\\x21").replace("'", "\\\\x27") + "'";
 	}
 }

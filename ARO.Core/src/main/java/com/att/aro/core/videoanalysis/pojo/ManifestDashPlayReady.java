@@ -125,7 +125,7 @@ public class ManifestDashPlayReady extends AROManifest {
 					Double segTimeLine = simpleStringToDouble(segmentPR.getStartTime());
 					Double segment = segTimeLine / duration / getTimeScale();
 					addSegment(segmentPR.getStartTime(), segment.intValue(), segmentPR.getDuration());
-					log.info(String.format("base> %s :%s", videoName, timeScale));
+					LOG.info(String.format("base> %s :%s", videoName, timeScale));
 				}
 			}
 		}
@@ -161,9 +161,9 @@ public class ManifestDashPlayReady extends AROManifest {
 		if (ved.getSegmentStartTime() != null) {
 			int segmentStartTime = Integer.parseInt(ved.getSegmentStartTime());
 			AdaptationSetPR adaptationSetVideo = findAdaptationSet("video");
-			if (adaptationSetVideo == null)
+			if (adaptationSetVideo == null) {
 				return segNumber;
-
+			}
 			List<SegmentPR> segList = adaptationSetVideo.getSegmentTemplate().getSegmentTimeline() != null
 					? adaptationSetVideo.getSegmentTemplate().getSegmentTimeline().getSegmentList() : new ArrayList<>();
 			int totalSegCount = 0;
@@ -276,8 +276,10 @@ public class ManifestDashPlayReady extends AROManifest {
 		StringBuilder strblr = new StringBuilder(42);
 		strblr.append("ManifestPlayReady");
 		if (mpd != null) {
-			strblr.append(", Size :"); strblr.append(mpd.getPeriod().size());
-			strblr.append(", TimeScale :"); strblr.append(numberFormat.format(timeScale));
+			strblr.append(", Size :");
+			strblr.append(mpd.getPeriod().size());
+			strblr.append(", TimeScale :");
+			strblr.append(numberFormat.format(timeScale));
 		} else {
 			strblr.append("mpdPlayReadyOut == null");
 		}

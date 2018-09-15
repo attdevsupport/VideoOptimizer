@@ -26,8 +26,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.ScheduledAlarmInfo;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IAlarmAnalysisInfoParser;
@@ -44,10 +45,9 @@ import com.att.aro.core.util.Util;
  *
  */
 public class AlarmAnalysisInfoParserImpl extends PeripheralBase implements IAlarmAnalysisInfoParser {
-	
-	@InjectLogger
-	private static ILogger logger;
-	
+
+	private static final Logger LOGGER = LogManager.getLogger(AlarmAnalysisInfoParserImpl.class.getName());
+
 	@Override
 	public AlarmAnalysisResult parse(String directory, String fileName, String osVersion, double dumpsysEpochTimestamp, double dumpsysElapsedTimestamp, Date traceDateTime) {
 		AlarmAnalysisResult result = new AlarmAnalysisResult();
@@ -68,7 +68,7 @@ public class AlarmAnalysisInfoParserImpl extends PeripheralBase implements IAlar
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e) {
-			logger.error("failed to read Alarm info file: " + filepath);
+			LOGGER.error("failed to read Alarm info file: " + filepath);
 		}
 		if (lines != null) {
 			for (int lineCursor = 0; lineCursor < lines.length; lineCursor++) {
@@ -130,14 +130,14 @@ public class AlarmAnalysisInfoParserImpl extends PeripheralBase implements IAlar
 							}
 							adding.add(new ScheduledAlarmInfo(appName, whenNextTrace, whenNextEpoch, whenNextElapsed, alarmType, repeatInterval, count));
 							scheduledAlarms.put(appName, adding);
-							if (logger != null) {
-								logger.debug("alarmAnalysisInfoParser \n" + appName 
+							if (LOGGER != null) {
+								LOGGER.debug("alarmAnalysisInfoParser \n" + appName 
 										+ "\nElapsed: " + whenNextElapsed 
 										+ "\nEpoch: " + whenNextEpoch 
 										+ "\nFrom trace start: " + whenNextTrace);
 							}
 						} else {
-							logger.debug("Application Name Not Found: " + appName);
+							LOGGER.debug("Application Name Not Found: " + appName);
 						}
 						++lineCursor;
 					}
@@ -156,11 +156,11 @@ public class AlarmAnalysisInfoParserImpl extends PeripheralBase implements IAlar
 					double runningTime = 0;
 					double wakeups = 0;
 					if (run.matches()) {
-						logger.info("RUNNING: " + run.group(1) + " wakeups: " + run.group(2));
+						LOGGER.info("RUNNING: " + run.group(1) + " wakeups: " + run.group(2));
 						runningTime = Double.parseDouble(run.group(1));
 						wakeups = Double.parseDouble(run.group(2));
 					}
-					logger.info("APPLICATION: " + applicationName + " running " + running + "ms");
+					LOGGER.info("APPLICATION: " + applicationName + " running " + running + "ms");
 
 					// Gathering alarm intents of an application
 					List<String> intents = new ArrayList<String>();
@@ -192,11 +192,11 @@ public class AlarmAnalysisInfoParserImpl extends PeripheralBase implements IAlar
 					}
 				}
 				if (!alarmStats && strLineBuf.indexOf("Alarm Stats:") > 0) {
-					logger.info("Alarm Stats Found" + strLineBuf);
+					LOGGER.info("Alarm Stats Found" + strLineBuf);
 					alarmStats = true;
 				}
 			}
-			logger.info("Number of scheduled alarm = " + totalScheduledAlarms 
+			LOGGER.info("Number of scheduled alarm = " + totalScheduledAlarms 
 					+ "\n Number of apps has scheduled alarms: " + scheduledAlarms.size());
 		}
 		return result;
@@ -244,7 +244,7 @@ public class AlarmAnalysisInfoParserImpl extends PeripheralBase implements IAlar
 
 			// If no matching application, skip to next
 			if (!alarmInfoS.getApplication().equals(alarmInfoE.getApplication())) {
-				logger.info("no matching application - " + alarmInfoE.getApplication());
+				LOGGER.info("no matching application - " + alarmInfoE.getApplication());
 				continue;
 			}
 
@@ -254,7 +254,7 @@ public class AlarmAnalysisInfoParserImpl extends PeripheralBase implements IAlar
 			 */
 			double wakeup = alarmInfoE.getWakeup() - alarmInfoS.getWakeup();
 			double running = alarmInfoE.getRunning() - alarmInfoS.getRunning();
-			logger.debug("running: " + running);
+			LOGGER.debug("running: " + running);
 			/**
 			 * Discard those applications didn't fire any alarms using running
 			 * time as reference.
@@ -301,11 +301,11 @@ public class AlarmAnalysisInfoParserImpl extends PeripheralBase implements IAlar
 								itStringEnd.set(alarms + " alarms: " + endingMatcher.group(2));
 							} else {
 								itStringEnd.remove();
-								logger.debug("compareAlarmAnalysis: alarm intent discarded - " + endingMatcher.group(2));
+								LOGGER.debug("compareAlarmAnalysis: alarm intent discarded - " + endingMatcher.group(2));
 							}
 						} else {
 							totalFired += Double.parseDouble(endingMatcher.group(1));
-							logger.debug("No matching alarm intent found \n Total fired = " + endingMatcher.group(1) + " " + stringEnd);
+							LOGGER.debug("No matching alarm intent found \n Total fired = " + endingMatcher.group(1) + " " + stringEnd);
 						}
 					} else {
 						break;
@@ -317,7 +317,7 @@ public class AlarmAnalysisInfoParserImpl extends PeripheralBase implements IAlar
 				itrAlarmAnalysisInfoE.set(replacing);
 			} else {
 				itrAlarmAnalysisInfoE.remove();
-				logger.debug("compareAlarmAnalysis: history discarded - " + alarmInfoE.getApplication());
+				LOGGER.debug("compareAlarmAnalysis: history discarded - " + alarmInfoE.getApplication());
 			}
 		}
 		return end;

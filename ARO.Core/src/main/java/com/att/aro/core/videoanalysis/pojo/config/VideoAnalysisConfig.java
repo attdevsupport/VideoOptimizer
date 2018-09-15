@@ -3,6 +3,7 @@ package com.att.aro.core.videoanalysis.pojo.config;
  * put copyright here
  */
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -187,16 +188,18 @@ public class VideoAnalysisConfig {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(60);
-		strblr.append("VideoAnalysisConfig : desc = ");            strblr.append(desc);
-		strblr.append("\n\t, regex = ");           strblr.append(regex);
-		if (headerRegex != null 
-				&& !headerRegex.isEmpty()) {
-				strblr.append("\n\t, headerRegex = "); strblr.append(headerRegex);
-			}
-		if (responseRegex != null 
-				&& !responseRegex.isEmpty()) {
-				strblr.append("\n\t, responseRegex = "); strblr.append(responseRegex);
-			}
+		strblr.append("VideoAnalysisConfig : desc = ");
+		strblr.append(desc);
+		strblr.append("\n\t, regex = ");
+		strblr.append(regex);
+		if (headerRegex != null && !headerRegex.isEmpty()) {
+			strblr.append("\n\t, headerRegex = ");
+			strblr.append(headerRegex);
+		}
+		if (responseRegex != null && !responseRegex.isEmpty()) {
+			strblr.append("\n\t, responseRegex = ");
+			strblr.append(responseRegex);
+		}
 		strblr.append("\n\t, xref ");
 		for (VideoDataTags ref : xref) {
 			strblr.append(',');
@@ -239,6 +242,6 @@ public class VideoAnalysisConfig {
 	}
 
 	public void setXrefMap(Map<RegexMatchLbl, VideoDataTags[]> xrefMap) {
-		this.xrefMap = xrefMap;
+		this.xrefMap = new HashMap<>(xrefMap);
 	}
 }

@@ -24,17 +24,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.FileCompressionResult;
 import com.att.aro.core.bestpractice.pojo.TextFileCompressionEntry;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -52,10 +52,9 @@ import com.att.aro.core.packetreader.pojo.PacketDirection;
 public class FileCompressionImpl implements IBestPractice {
 	public static final int FILE_SIZE_THRESHOLD_BYTES = 850;
 	public static final int UNCOMPRESSED_SIZE_FAILED_THRESHOLD = 100*1024; //100 Kb
-	
-	@InjectLogger
-	ILogger logger;
-	
+
+	private static final Logger LOGGER = LogManager.getLogger(FileCompressionImpl.class.getName());
+
 	@Value("${textFileCompression.title}")
 	private String overviewTitle;
 	
@@ -208,7 +207,7 @@ public class FileCompressionImpl implements IBestPractice {
 		try {
 			content = reqhelper.getContent(req, session);
 		} catch (Exception exp) {
-			logger.error("Failed to get text content from response: "+ exp.getMessage());
+			LOGGER.error("Failed to get text content from response: "+ exp.getMessage());
 		}
 		if(content == null){
 			return 0;
@@ -231,7 +230,7 @@ public class FileCompressionImpl implements IBestPractice {
 			float savingPercentage = ((float)savingBytes * 100/originalSize);
 			return Math.round(savingPercentage);
 		} catch (IOException IOexp) {
-			logger.error("Failed to get text content on Gzip savings calculation : "+ IOexp.getMessage());
+			LOGGER.error("Failed to get text content on Gzip savings calculation : "+ IOexp.getMessage());
 			return 0;
 		}
 	}

@@ -1,13 +1,23 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.att.aro</groupId>
+        <artifactId>vo-parent</artifactId>
+        <version>2.1.0</version>
+        <relativePath>../ARO.Parent</relativePath>
+    </parent>
+
 	<groupId>com.att.aro.analytics</groupId>
-	<artifactId>aro-analytics</artifactId>
-	<version>6.0.0-SNAPSHOT</version>
+	<artifactId>vo-analytics</artifactId>
 	<packaging>jar</packaging>
-	<name>ARO Analytics</name>
+	<name>VO Analytics</name>
 	<description>Google Analytics Library for ARO</description>
 
+	<properties>
+		<maven.deploy.skip>true</maven.deploy.skip>
+	</properties>
+	
 	<repositories>
 		<repository>
 			<id>central</id>
@@ -29,8 +39,8 @@
 			<name>Sonatype Flex</name>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</repository>
-
 	</repositories>
+	
 	<pluginRepositories>
 		<pluginRepository>
 			<id>central</id>
@@ -41,11 +51,11 @@
 
 	<!-- dependencies -->
 	<dependencies>	
-		<dependency>
-			<groupId>com.att.aro</groupId>
-			<artifactId>aro-core</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
-		</dependency>
+    <dependency>
+        <groupId>com.att.aro</groupId>
+        <artifactId>vo-core</artifactId>
+        <version>2.1.0</version>
+    </dependency>	
 		<dependency>
 			<groupId>com.orientechnologies</groupId>
 			<artifactId>orientdb-core</artifactId>
@@ -64,27 +74,24 @@
 		<dependency>
 			<groupId>org.javassist</groupId>
 			<artifactId>javassist</artifactId>
-			<version>3.16.1-GA</version>
 		</dependency>
-		<dependency>
+		 <dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 			<version>4.0.3.RELEASE</version>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>com.proxy</groupId>
 			<artifactId>proxy-vole</artifactId>
 			<version>1.0</version>
-		</dependency>
+		</dependency>		
 		<dependency>
-			<groupId>org.codehaus.mojo</groupId>
-			<artifactId>findbugs-maven-plugin</artifactId>
-			<version>3.0.4</version>
+		    <groupId>org.codehaus.mojo</groupId>
+		    <artifactId>findbugs-maven-plugin</artifactId>
+		    <version>3.0.4</version>
 		</dependency>
 	</dependencies>
- 
 
 	<!-- build -->
 	<build>
@@ -139,22 +146,9 @@
 	                    </goals>
 	                </execution>
 	            </executions>
-	        </plugin>
-			
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.17</version>
-				<dependencies>
-					<dependency>
-						<groupId>org.apache.maven.surefire</groupId>
-						<artifactId>surefire-junit47</artifactId>
-						<version>2.16</version>
-					</dependency>
-				</dependencies>
-			</plugin>
-
+	        </plugin>			
 		</plugins>
+
 		<pluginManagement>
 			<plugins>
 				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->

@@ -18,6 +18,8 @@ package com.att.aro.ui.view.diagnostictab.plot;
 import java.awt.BasicStroke;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;
@@ -26,25 +28,22 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.AttenuatorEvent;
 import com.att.aro.core.peripheral.pojo.AttenuatorEvent.AttnrEventFlow;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.ui.commonui.ContextAware;
 
 public class AttenuatorPlot implements IPlot {
-	public ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
-
+	private static final Logger LOGGER = LogManager.getLogger(AttenuatorPlot.class);	
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
 		if (analysis == null) {
-			logger.info("didn't get analysis trace data!");
+			LOGGER.info("didn't get analysis trace data!");
 		} else {
 			TraceResultType resultType = analysis.getAnalyzerResult().getTraceresult().getTraceResultType();
 			if (resultType.equals(TraceResultType.TRACE_FILE)) {
-				logger.info("didn't get analysis trace folder!");
+				LOGGER.info("didn't get analysis trace folder!");
 
 			} else {
 				XYSeries seriesDL = new XYSeries(0);
@@ -123,13 +122,13 @@ public class AttenuatorPlot implements IPlot {
 					if (AttnrEventFlow.DL.equals(event.getAtnrFL())) {
 						double tempTime1 = (event.getTimeStamp() - firstTimeDTamp) / 1000;
 						seriesDL.add(tempTime1, (double)event.getDelayTime());
-						logger.info("Time stamp: " + tempTime1+ " " +event.getDelayTime());
+						LOGGER.info("Time stamp: " + tempTime1+ " " +event.getDelayTime());
 					} else if (AttnrEventFlow.UL.equals(event.getAtnrFL())) {
 						double tempTime2 = (event.getTimeStamp() - firstTimeUTemp) / 1000;
 						seriesUP.add(tempTime2, (double)event.getDelayTime());
-						logger.info("Time stamp: " + tempTime2+ " " +event.getDelayTime());
+						LOGGER.info("Time stamp: " + tempTime2+ " " +event.getDelayTime());
 					} else {
-						logger.info("wrong record for attenuation event");
+						LOGGER.info("wrong record for attenuation event");
 					}
 				}
 			} else {
@@ -138,9 +137,9 @@ public class AttenuatorPlot implements IPlot {
 			}
 
 		} catch (IndexOutOfBoundsException exception1) {
-			logger.info("No sufficient data in the attenuation log file", exception1);
+			LOGGER.info("No sufficient data in the attenuation log file", exception1);
 		} catch (Exception exception2) {
-			logger.info("Wrong Format", exception2);
+			LOGGER.info("Wrong Format", exception2);
 		}
 	}
 

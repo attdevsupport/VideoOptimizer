@@ -80,7 +80,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 	private StartUpDelayWarningDialog startUpDelayWarningDialog = null;
 	private String warningMessage;
 	int graphPanelIndex = 0;
-	private AmvotsPanel amvotsPane;
+
 	/**
 	 * Create the panel.
 	 */
@@ -279,12 +279,6 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		return topPanel;
 	}
 
-	private JPanel getUploadAnalysisPane() {
-		amvotsPane = new AmvotsPanel();
-		localRefreshList.add(amvotsPane);
-		return amvotsPane;
-	}
-
 	private JPanel getSummaryPane() {
 		JPanel summaryPane = new JPanel(new GridBagLayout());
 		summaryPane.setOpaque(false);
@@ -296,11 +290,6 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 
 		Insets inset = new Insets(0, 1, 10, 1);
 		summaryPane.add(videoSummaryPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.HORIZONTAL, inset, 0, 0));
-
-		inset = new Insets(10, 40, 10, 1);
-		JPanel upload = getUploadAnalysisPane();
-		summaryPane.add(upload, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0, GridBagConstraints.EAST,
 				GridBagConstraints.HORIZONTAL, inset, 0, 0));
 
 		return summaryPane;
@@ -396,7 +385,6 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 			trace = result.getTraceDirectory() != null ? result.getTraceDirectory() : result.getTraceFile();
 			lastOpenedTrace = newTraceTime;
 			bpObservable.refreshModel(analyzerResult);
-			amvotsPane.refresh(analyzerResult);
 			updateUI();
 		}
 		if (isVideoAvailable(result)) {

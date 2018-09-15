@@ -15,15 +15,11 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoAnalysisConfigHelper;
 import com.att.aro.core.videoanalysis.pojo.RegexMatchResult;
@@ -31,6 +27,10 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
 import com.att.aro.core.videoanalysis.pojo.config.VideoDataTags;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper {
 
@@ -46,9 +46,8 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 	private VideoAnalysisConfig vaConfig = null;
 	private final String NA = "N\\A";
 	private String fName;
-	
-	@InjectLogger
-	private static ILogger log;
+
+	private static final Logger LOG = LogManager.getLogger(VideoAnalysisConfigHelperImpl.class.getName());
 
 	@Override
 	public VideoAnalysisConfig findConfig(String target) {
@@ -59,7 +58,7 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 		} else {
 			for (VideoAnalysisConfig tempConfig : vaConfigMap.values()) {
 				if (tempConfig.isValidated() && tempConfig.patternFind(target)) {
-					log.info(tempConfig.getDesc());
+					LOG.info(tempConfig.getDesc());
 					vaConfig = tempConfig;
 					return vaConfig;
 				}
@@ -73,7 +72,7 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 
 			loadConfigFiles();
 
-			log.info("vaConfigMap.keySet() :" + vaConfigMap.keySet());
+			LOG.info("vaConfigMap.keySet() :" + vaConfigMap.keySet());
 		}
 	}
 
@@ -84,7 +83,7 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 			try {
 				initDefaultConfig();
 			} catch (Exception e) {
-				log.error("Failed to generate default Video Config json files :", e);
+				LOG.error("Failed to generate default Video Config json files :", e);
 			}
 			list = filemanager.findFilesByExtention(folderPath, ".json");
 		} else {
@@ -104,12 +103,12 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 									vConfig.getRegex(), vConfig.getHeaderRegex(), vConfig.getResponseRegex(),
 									vConfig.getXref(), jsonFile);
 						} catch (Exception e) {
-							log.error("Unable to save json file: " + e.getMessage());
+							LOG.error("Unable to save json file: " + e.getMessage());
 						}
 					}
 				}
 			} catch (IOException e) {
-				log.error("Unable to read json file: " + e.getMessage());
+				LOG.error("Unable to read json file: " + e.getMessage());
 			}
 		}
 		for (String jsonFile : list) {
@@ -214,7 +213,7 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 
 				
 		} catch (Exception e) {
-			log.error(String.format("%s :%s", e.getClass().getName(), e.getMessage()));
+			LOG.error(String.format("%s :%s", e.getClass().getName(), e.getMessage()));
 		}
 			
 
@@ -229,14 +228,14 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 		try {
 			String temp = new String(Files.readAllBytes(filePath));
 			videoUsagePrefs = mapper.readValue(temp, VideoUsagePrefs.class);
-			log.debug("videoUsagePrefs :" + videoUsagePrefs);
+			LOG.debug("videoUsagePrefs :" + videoUsagePrefs);
 
 		} catch (JsonParseException e) {
-			log.error("VideoUsagePrefs failed to de-serialize :" + e.getMessage());
+			LOG.error("VideoUsagePrefs failed to de-serialize :" + e.getMessage());
 		} catch (JsonMappingException e) {
-			log.error("VideoUsagePrefs failed to de-serialize :" + e.getMessage());
+			LOG.error("VideoUsagePrefs failed to de-serialize :" + e.getMessage());
 		} catch (IOException e) {
-			log.error("VideoUsagePrefs failed to load :" + e.getMessage());
+			LOG.error("VideoUsagePrefs failed to load :" + e.getMessage());
 		}
 	}
 
@@ -269,7 +268,7 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 		}
 
 		// TODO hand this problem back to user
-		log.error(error);
+		LOG.error(error);
 		return null;
 	}
 
@@ -301,7 +300,7 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 		int respCount =  count(responseRegex, "\\(");
 		int regexCount = count(regex, "\\(") + count(headerRegex, "\\(") + count(responseRegex, "\\(");
 		if (regexCount != xref.length) {
-			log.error(String.format("%s: regex count %d != xref count %d", desc, regexCount, xref.length));
+			LOG.error(String.format("%s: regex count %d != xref count %d", desc, regexCount, xref.length));
 			throw new Exception("Bad Regex-VideoDataTag count");
 		}
 		VideoAnalysisConfig vConfig = new VideoAnalysisConfig(videoType, desc, type, regex, headerRegex, responseRegex, xref);
@@ -383,80 +382,87 @@ public class VideoAnalysisConfigHelperImpl implements IVideoAnalysisConfigHelper
 	public VideoDataTags[] findXref(VideoAnalysisConfig videoConfig, String prevRegexText, String regexFieldText,
 			String reqRespHeaderFieldText, RegexMatchLbl key, Map<RegexMatchLbl, VideoDataTags[]> xrefMap) {
 		// New regex on the request/response/header url
-		Pattern pattern = Pattern.compile(regexFieldText != null ? regexFieldText : "");
-		Matcher matcher = pattern.matcher(reqRespHeaderFieldText);
-		String[] temp = null; // temp is the new data result
-		if (matcher.find()) {
-			temp = new String[matcher.groupCount()];
-			for (int index = 0; index < matcher.groupCount();) {
-				temp[index++] = matcher.group(index);
-			}
-		}
-
-		// Previous regex on the request/response/header url
-		VideoDataTags[] reqTags = xrefMap.get(key); // last saved xref //get
-													// from table
-		String[] prevTemp = null;
-		if (prevRegexText != null) {
-			pattern = Pattern.compile(prevRegexText);
-			matcher = pattern.matcher(reqRespHeaderFieldText);
+		VideoDataTags[] xrefTgs = null;
+		try {
+			Pattern pattern = Pattern.compile(regexFieldText != null ? regexFieldText : "");
+			Matcher matcher = pattern.matcher(reqRespHeaderFieldText);
+			String[] temp = null; // temp is the new data result
 			if (matcher.find()) {
-				prevTemp = new String[matcher.groupCount()];
+				temp = new String[matcher.groupCount()];
 				for (int index = 0; index < matcher.groupCount();) {
-					prevTemp[index++] = matcher.group(index);
+					temp[index++] = matcher.group(index);
 				}
 			}
-		}
 
-		List<VideoDataTags> xrefTemp = new ArrayList<>();
-		VideoDataTags[] xrefTgs;
-		boolean found;
-		if (temp != null) {
-			for (int j = 0; j < temp.length; j++) {
-				found = false;
-				if (prevTemp != null) {
-					for (int i = 0; i < prevTemp.length; i++) {
-						if (prevTemp[i].equals(temp[j])) {
-							xrefTemp.add(reqTags[i]);
-							found = true;
-							break;
+			// Previous regex on the request/response/header url
+			VideoDataTags[] reqTags = xrefMap.get(key); // last saved xref //get
+														// from table
+			String[] prevTemp = null;
+			if (prevRegexText != null) {
+				pattern = Pattern.compile(prevRegexText);
+				matcher = pattern.matcher(reqRespHeaderFieldText);
+				if (matcher.find()) {
+					prevTemp = new String[matcher.groupCount()];
+					for (int index = 0; index < matcher.groupCount();) {
+						prevTemp[index++] = matcher.group(index);
+					}
+				}
+			}
+			
+			List<VideoDataTags> tagList = reqTags != null ?new ArrayList<>(Arrays.asList(reqTags)): new ArrayList<>();
+			List<VideoDataTags> xrefTemp = new ArrayList<>();
+			boolean found;
+			if (temp != null) {
+				for (int j = 0; j < temp.length; j++) {
+					found = false;
+					if (prevTemp != null) {
+						for (int i = 0; i < prevTemp.length; i++) {
+							if (prevTemp[i].equals(temp[j]) && (i < tagList.size() && tagList.get(i) != null)) {
+								xrefTemp.add(tagList.get(i));
+								found = true;
+								tagList.set(i, null); //null indicates that this value has been added to the xrefTemp already.
+								break;
+							}
+						}
+					} else {
+						VideoDataTags[] tags = matchXrefTags(regexFieldText, prevRegexText, reqTags);
+						return tags;
+					}
+					if (!found) {
+
+						VideoDataTags[] prevTags = null;
+						if (savedVoConfig != null) {
+							String previousRegex = "";
+							if (key == RegexMatchLbl.REQUEST) {
+								previousRegex = savedVoConfig.getRegex();
+							} else if (key == RegexMatchLbl.HEADER) {
+								previousRegex = savedVoConfig.getHeaderRegex();
+							} else {
+								previousRegex = savedVoConfig.getResponseRegex();
+							}
+							prevTags = matchXrefTags(regexFieldText, previousRegex,
+									savedVoConfig.getXrefMap().get(key)); // ;
+						}
+						if (prevTags != null && j < prevTags.length) {
+							xrefTemp.add(prevTags[j] != VideoDataTags.unknown ? prevTags[j] : VideoDataTags.unknown);
+						} else {
+							xrefTemp.add(VideoDataTags.unknown);
+
 						}
 					}
-				} else {
+				}
+				xrefTgs = xrefTemp.toArray(new VideoDataTags[xrefTemp.size()]);
+
+			} else {
+				int captureGrp = count(regexFieldText, "\\(");
+				if (reqTags != null && captureGrp != reqTags.length) {
 					VideoDataTags[] tags = matchXrefTags(regexFieldText, prevRegexText, reqTags);
 					return tags;
 				}
-				if (!found) {
-
-					VideoDataTags[] prevTags = null;
-					if (savedVoConfig != null) {
-						String previousRegex = "";
-						if (key == RegexMatchLbl.REQUEST) {
-							previousRegex = savedVoConfig.getRegex();
-						} else if (key == RegexMatchLbl.HEADER) {
-							previousRegex = savedVoConfig.getHeaderRegex();
-						} else {
-							previousRegex = savedVoConfig.getResponseRegex();
-						}
-						prevTags = matchXrefTags(regexFieldText, previousRegex, savedVoConfig.getXrefMap().get(key)); // ;
-					}
-					if (prevTags != null && j < prevTags.length) {
-						xrefTemp.add(prevTags[j] != VideoDataTags.unknown ? prevTags[j] : VideoDataTags.unknown);
-					} else {
-						xrefTemp.add(VideoDataTags.unknown);
-
-					}
-				}
+				return reqTags;
 			}
-			xrefTgs = xrefTemp.toArray(new VideoDataTags[xrefTemp.size()]);
-
-		} else {
-			int captureGrp = count(regexFieldText, "\\(");
-			if (reqTags != null && captureGrp != reqTags.length) {
-				VideoDataTags[] tags = matchXrefTags(regexFieldText, prevRegexText, reqTags);
-				return tags;
-			}
-			return reqTags;
+		} catch (PatternSyntaxException e) {
+			LOG.error("PatternSyntaxException: " + e.getMessage());
 		}
 		return xrefTgs;
 	}

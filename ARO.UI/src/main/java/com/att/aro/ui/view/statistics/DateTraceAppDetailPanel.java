@@ -16,23 +16,17 @@
 package com.att.aro.ui.view.statistics;
 
 import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Set;
 
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
 
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
-import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.TabPanelCommon;
 import com.att.aro.ui.commonui.TabPanelCommonAttributes;
 import com.att.aro.ui.commonui.TabPanelJPanel;
@@ -51,6 +45,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 	}
 
 	private static final long serialVersionUID = 1L;
+	private static final String EMPTY_SPACE = "                              ";
 	private final TabPanelCommon tabPanelCommon = new TabPanelCommon();
 	
 	
@@ -59,24 +54,9 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 	 */
 	public DateTraceAppDetailPanel() {
 		tabPanelCommon.initTabPanel(this);
-		add(getTitlePanel(), BorderLayout.EAST);
 		add(layoutDataPanel(), BorderLayout.WEST);
 	}
 
-	public JPanel getTitlePanel() {
-		JPanel titlePanel = new JPanel();
-		titlePanel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-		GridBagConstraints sideConstraints = TabPanelCommonAttributes.getDefaultLabelConstraints();
-		sideConstraints.gridx = 1;
-		sideConstraints.anchor = GridBagConstraints.NORTHWEST;
-		sideConstraints.weightx = 1.0;
-		
-		String titleName = MessageFormat.format(tabPanelCommon.getText(LabelKeys.bestPractices_sideTitle), 
-												ApplicationConfig.getInstance().getAppName());
-		JLabel titleLabel = new JLabel(titleName, JLabel.RIGHT);
-		titlePanel.add(titleLabel, BorderLayout.EAST);
-		return titlePanel;
-	}
 
 	/**
 	 * Creates the JPanel containing the Date , Trace and Application details
@@ -118,6 +98,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 				.copyNextLine(attributes)
 				.enumKey(LabelKeys.bestPractices_profile)
 			.build());
+		tabPanelCommon.setText(LabelKeys.bestPractices_date, EMPTY_SPACE);
 
 		return tabPanelCommon.getTabPanel();
 	}

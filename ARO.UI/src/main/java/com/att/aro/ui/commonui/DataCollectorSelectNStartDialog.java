@@ -50,14 +50,17 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.menu.datacollector.AttnrRadioGroupPanel;
 import com.att.aro.ui.view.menu.datacollector.DeviceDialogOptions;
 import com.att.aro.ui.view.menu.datacollector.DeviceTablePanel;
 import com.att.aro.ui.view.menu.datacollector.HelpDialog;
@@ -74,8 +77,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 
 	private static final long serialVersionUID = 1L;
 	
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
-	
+	private static final Logger LOG = LogManager.getLogger(DataCollectorSelectNStartDialog.class);	
 	private static final int TRACE_FOLDER_ALLOWED_LENGTH = 50;
 
 	private boolean proceed;
@@ -162,7 +164,6 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 
 		getJTraceFolderTextField().setText(traceFolderName);
 		getJTraceFolderTextField().selectAll();
-//		getJRecordVideoCheckBox().setSelected(recordVideo);
 		
 		deviceOptionPanel.showVideoOrientation(false);
 	}
@@ -284,23 +285,33 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					log.debug("Button.start");
+					LOG.debug("Button.start");
 					String traceFolderName = traceFolderNameField.getText();
+					AttnrRadioGroupPanel radioGP = getDeviceOptionPanel().getAttnrGroup().getAttnrRadioGP();					
+					if (radioGP.getSliderBtn().isSelected()) {
+						boolean isAttenuateSelected = radioGP.getThroughputPanel().getDownloadCheckBox().isSelected()
+								|| radioGP.getThroughputPanel().getUploadCheckBox().isSelected();
+						if (!isAttenuateSelected) {
+							LOG.info("need to set at least one DL or UL for the throttle");
+							proceed = false;
+					        showAttenuationError();
+							return;
+						}
+					}	
 					// don't allow whitespace
-					traceFolderName = traceFolderName.replaceAll("\\s", "");
-					
+					traceFolderName = traceFolderName.replaceAll("\\s", "");					
 					if (!traceFolderName.isEmpty()) {
 						proceed = true;
 						if (traceFolderNameField.getText() != null) {
 							if (isContainsSpecialCharacterorSpace(traceFolderNameField.getText())) {
-								JOptionPane.showMessageDialog(getOwner()
+								JOptionPane.showMessageDialog(getCollectorDialogComponent()
 															, ResourceBundleHelper.getMessageString("Error.specialchar")
 															, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
 																					ApplicationConfig.getInstance().getAppShortName())
 															, JOptionPane.ERROR_MESSAGE);
 								return;
 							} else if (traceFolderNameField.getText().toString().length() > TRACE_FOLDER_ALLOWED_LENGTH) {
-								JOptionPane.showMessageDialog(getOwner()
+								JOptionPane.showMessageDialog(getCollectorDialogComponent()
 															, ResourceBundleHelper.getMessageString("Error.tracefolderlength")
 															, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
 																					ApplicationConfig.getInstance().getAppShortName())
@@ -311,15 +322,15 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 							}
 						}
 					} else {
-						log.info("traceFolderName is blank");
+						LOG.info("traceFolderName is blank");
 						proceed = false;
-						JOptionPane.showMessageDialog(getOwner()
+						JOptionPane.showMessageDialog(getCollectorDialogComponent()
 								, ResourceBundleHelper.getMessageString("Error.tracefolderempty")
 								, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
 														ApplicationConfig.getInstance().getAppShortName())
-								, JOptionPane.ERROR_MESSAGE);
+								, JOptionPane.ERROR_MESSAGE);					
 						traceFolderNameField.requestFocus();
-					}
+					} 
 				}
 			});
 			if (deviceTablePanel.getSelection() != null && traceFolderNameField != null){
@@ -329,6 +340,22 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 			}
 		}
 		return startButton;
+	}
+	
+
+	private DataCollectorSelectNStartDialog getCollectorDialogComponent(){
+		return this;
+	}
+
+	private void showAttenuationError() {
+		JOptionPane pane = new JOptionPane();
+		pane.setMessage(ResourceBundleHelper.getMessageString("Error.checkbox.attenuator"));
+		pane.setMessageType(JOptionPane.ERROR_MESSAGE);
+		JDialog dialog = pane.createDialog(
+				MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"),
+				ApplicationConfig.getInstance().getAppShortName())); 
+		dialog.setAlwaysOnTop(true); 
+		dialog.setVisible(true);
 	}
 
 	public void enableStart(boolean flag) {
@@ -355,7 +382,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					proceed = false;
-					log.debug(ResourceBundleHelper.getMessageString("Button.cancel"));
+					LOG.debug(ResourceBundleHelper.getMessageString("Button.cancel"));
 					DataCollectorSelectNStartDialog.this.dispose();
 				}
 			});
@@ -456,7 +483,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	public boolean getResponse() {
 		this.setVisible(true);
 		if (proceed) {
-			log.debug("tracefolder :" + traceFolderNameField.getName() + " video :" + (getRecordVideo() ? "checked" : "unchecked"));
+			LOG.debug("tracefolder :" + traceFolderNameField.getName() + " video :" + (getRecordVideo() ? "checked" : "unchecked"));
 		}
 		return proceed;
 	}
@@ -531,7 +558,6 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 			helpLabel.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseClicked(MouseEvent e) {
-//					JOptionPane.showMessageDialog(DataCollectorSelectNStartDialog.this,"You clicked Help","Information",JOptionPane.INFORMATION_MESSAGE);
 					new HelpDialog(DataCollectorSelectNStartDialog.this);
 
 				}
@@ -539,4 +565,5 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		}
 		return helpLabel;
 	}
+
 }

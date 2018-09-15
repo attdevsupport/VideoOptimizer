@@ -18,17 +18,17 @@ package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoRedundancyResult;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
@@ -63,8 +63,7 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent;
  */
 public class VideoRedundancyImpl implements IBestPractice{
 
-	@InjectLogger
-	private static ILogger log;
+	private static final Logger LOG = LogManager.getLogger(VideoRedundancyImpl.class.getName());
 
 	@Value("${videoRedundancy.title}")
 	private String overviewTitle;
@@ -118,14 +117,14 @@ public class VideoRedundancyImpl implements IBestPractice{
 								&& preStuff.getSegment() == stuff.getSegment() 
 								&& !preStuff.getQuality().equals(stuff.getQuality())
 							) {
-							log.debug("Redundant :\t" + preStuff + "\n\t\t" + stuff);
+							LOG.debug("Redundant :\t" + preStuff + "\n\t\t" + stuff);
 							countRedundant++;
 							countSegment--;
 						} else if (preStuff != null 
 								&& preStuff.getSegment() == stuff.getSegment() 
 								&& preStuff.getQuality().equals(stuff.getQuality())
 							) {
-							log.debug("Duplicate :\t" + preStuff + "\n\t\t" + stuff);
+							LOG.debug("Duplicate :\t" + preStuff + "\n\t\t" + stuff);
 							countDuplicate ++;
 							countSegment--;
 						}

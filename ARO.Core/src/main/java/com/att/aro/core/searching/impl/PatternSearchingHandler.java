@@ -24,10 +24,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.validator.CreditCardValidator;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.pojo.PrivateDataType;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.searching.ISearchingHandler;
 import com.att.aro.core.searching.pojo.PatternInfo;
@@ -39,10 +39,9 @@ import com.att.aro.core.searching.pojo.SearchingResultBuilder;
 
 @SuppressWarnings("deprecation")
 public class PatternSearchingHandler implements ISearchingHandler {
-	
-	@InjectLogger
-	private static ILogger logger;
-	
+
+	private static final Logger LOGGER = LogManager.getLogger(PatternSearchingHandler.class.getName());
+
 	private CreditCardValidator validator;
 	
 	public PatternSearchingHandler() {
@@ -235,7 +234,7 @@ public class PatternSearchingHandler implements ISearchingHandler {
 				   .append(e.getMessage())
 				   .append(", pattern: ")
 				   .append(patttern);
-			logger.error(builder.toString());
+			LOGGER.error(builder.toString());
 			return null;
 		}
 	}

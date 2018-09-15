@@ -1,6 +1,7 @@
 package com.att.aro.core.searching.strategy.impl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -8,8 +9,8 @@ import org.mockito.InjectMocks;
 
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.bestpractice.pojo.PrivateDataType;
-import com.att.aro.core.searching.pojo.SearchingPatternBuilder;
 import com.att.aro.core.searching.pojo.SearchingContent;
+import com.att.aro.core.searching.pojo.SearchingPatternBuilder;
 import com.att.aro.core.searching.pojo.SearchingResult;
 import com.att.aro.core.searching.strategy.ISearchingStrategy;
 

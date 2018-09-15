@@ -31,11 +31,14 @@ public class SegmentPR {
 		StringBuilder strblr = new StringBuilder(83);
 		strblr.append("\n\t\t\t\t\t\t\t\tSegment");
 		if (!startTime.isEmpty()) {
-			strblr.append(" startTime:"); strblr.append(startTime);
+			strblr.append(" startTime:");
+			strblr.append(startTime);
 		}
-		strblr.append(" duration:"); strblr.append(duration);
+		strblr.append(" duration:");
+		strblr.append(duration);
 		if (!repeat.isEmpty()) {
-			strblr.append(" repeat:"); strblr.append(repeat);
+			strblr.append(" repeat:");
+			strblr.append(repeat);
 		}
 		return strblr.toString();
 	}

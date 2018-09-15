@@ -21,6 +21,8 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.android.ddmlib.AdbCommandRejectedException;
@@ -30,18 +32,15 @@ import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.android.pojo.ShellCommandCheckSDCardOutputReceiver;
 import com.att.aro.core.android.pojo.ShellOutputReceiver;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 
 public class AndroidImpl implements IAndroid {
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(AndroidImpl.class.getName());
 	@Autowired
 	private IFileManager filereader;
 
@@ -56,15 +55,15 @@ public class AndroidImpl implements IAndroid {
 	 * 
 	 * Used to launch tcpdump
 	 */
-	private final static String TCPDUMP = "tcpdump";
-	private static final String TCPDUMP_PIE = "tcpdump_pie";	
+	private static final String TCPDUMP = "tcpdump";
+	private static final String TCPDUMP_PIE = "tcpdump_pie";
 	private static final String TCPDUMP_PATH = INTERNAL_DATA_PATH + TCPDUMP;
 	private static final String TCPDUMP_PIE_PATH = INTERNAL_DATA_PATH + TCPDUMP_PIE;
-	private final static int TCPDUMP_PORT = 50999;
+	private static final int TCPDUMP_PORT = 50999;
 
-	private final static String KBYTE = "K";
-	private final static String MBYTE = "M";
-	private final static String GBYTE = "G";
+	private static final String KBYTE = "K";
+	private static final String MBYTE = "M";
+	private static final String GBYTE = "G";
 
 	private static final String[] DATAEMULATORCOLLECTORTRACEFILENAMES = { TraceDataConst.FileName.CPU_FILE, TraceDataConst.FileName.APPID_FILE,
 			TraceDataConst.FileName.APPNAME_FILE, TraceDataConst.FileName.TIME_FILE, TraceDataConst.FileName.USER_EVENTS_FILE, TraceDataConst.FileName.PCAP_FILE, };
@@ -124,11 +123,11 @@ public class AndroidImpl implements IAndroid {
 				success = true;
 				return success;
 			} catch (SyncException e) {
-				logger.error(e.getMessage());
+				LOGGER.error(e.getMessage());
 			} catch (IOException e) {
-				logger.error(e.getMessage());
+				LOGGER.error(e.getMessage());
 			} catch (TimeoutException e) {
-				logger.error(e.getMessage());
+				LOGGER.error(e.getMessage());
 			}
 		}
 		return success;
@@ -220,7 +219,7 @@ public class AndroidImpl implements IAndroid {
 				strFileSize = strValues[3];
 			}
 		} catch (IndexOutOfBoundsException e) {
-			logger.error("Error parsing SD card df output", e);
+			LOGGER.error("Error parsing SD card df output", e);
 		}
 
 		if (strFileSize != null) {
@@ -250,7 +249,7 @@ public class AndroidImpl implements IAndroid {
 					sdCardMemoryAvailable = (new Double(Math.round(iFileSizeInKB))).longValue();
 				}
 			} catch (Exception e) {
-				logger.error("get number format exception", e);
+				LOGGER.error("get number format exception", e);
 			}
 		}
 		return sdCardMemoryAvailable;
@@ -275,13 +274,13 @@ public class AndroidImpl implements IAndroid {
 					success = true;
 				} catch (SyncException e) {
 					success = false;
-					logger.error(e.getMessage());
+					LOGGER.error(e.getMessage());
 				} catch (TimeoutException e) {
 					success = false;
-					logger.error(e.getMessage());
+					LOGGER.error(e.getMessage());
 				} catch (IOException e) {
 					success = false;
-					logger.error(e.getMessage());
+					LOGGER.error(e.getMessage());
 				}
 			}
 		}
@@ -312,13 +311,13 @@ public class AndroidImpl implements IAndroid {
 					success1 = true;
 				} catch (SyncException e) {
 					success1 = false;
-					logger.error(e.getMessage());
+					LOGGER.error(e.getMessage());
 				} catch (TimeoutException e) {
 					success1 = false;
-					logger.error(e.getMessage());
+					LOGGER.error(e.getMessage());
 				} catch (IOException e) {
 					success1 = false;
-					logger.error(e.getMessage());
+					LOGGER.error(e.getMessage());
 				}
 			}
 
@@ -331,13 +330,13 @@ public class AndroidImpl implements IAndroid {
 					success2 = true;
 				} catch (SyncException e) {
 					success2 = false;
-					logger.error(e.getMessage());
+					LOGGER.error(e.getMessage());
 				} catch (TimeoutException e) {
 					success2 = false;
-					logger.error(e.getMessage());
+					LOGGER.error(e.getMessage());
 				} catch (IOException e) {
 					success2 = false;
-					logger.error(e.getMessage());
+					LOGGER.error(e.getMessage());
 				}
 
 			}
@@ -398,11 +397,11 @@ public class AndroidImpl implements IAndroid {
 		try {
 			return device.getSyncService();
 		} catch (TimeoutException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		} catch (AdbCommandRejectedException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		} catch (IOException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		}
 		return null;
 	}
@@ -418,10 +417,10 @@ public class AndroidImpl implements IAndroid {
 	public boolean removeEmulatorData(IDevice device, String deviceTracePath) {
 		boolean success = false;
 		boolean result1 = executeShellCommand(device, "rm " + deviceTracePath + "/*");
-		logger.debug("remove files under " + deviceTracePath + ": " + result1);
+		LOGGER.debug("remove files under " + deviceTracePath + ": " + result1);
 		
 		boolean result2 = executeShellCommand(device, "rm -fr " + deviceTracePath);
-		logger.debug("remove dir " + deviceTracePath + ": " + result2);
+		LOGGER.debug("remove dir " + deviceTracePath + ": " + result2);
 		
 		if (result1 && result2) {
 			success = true;
@@ -440,9 +439,9 @@ public class AndroidImpl implements IAndroid {
 			}
 			return true;
 		} catch (UnknownHostException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		} catch (IOException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		}
 		return false;
 	}
@@ -515,7 +514,7 @@ public class AndroidImpl implements IAndroid {
 		// if SELinux is enforced append the correct command to ignore port 5555
 		String tcpName = TCPDUMP_PATH + (seLinuxEnforced ? "_pie" : "");
 		String strTcpDumpCommand = tcpName + " -w " + traceFolderName + (seLinuxEnforced ? " \"tcp port not 5555\"" : " port not 5555");
-		logger.info("tcp >> >" + strTcpDumpCommand + ">");
+		LOGGER.info("tcp >> >" + strTcpDumpCommand + ">");
 		traceRunning = true;
 		// this executeShellCommand is blocking and will terminate once tcpdump has completed or terminated
 		boolean result = executeShellCommand(device, strTcpDumpCommand);
@@ -540,30 +539,30 @@ public class AndroidImpl implements IAndroid {
 		}
 		boolean success = true;
 		try {
-			logger.debug(">>---> executeShellCommand :"+arocmd);
+			LOGGER.debug(">>---> executeShellCommand :"+arocmd);
 			device.executeShellCommand(arocmd, shelloutPut, 0, null);
 		} catch (TimeoutException e) {
 			success = false;
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		} catch (AdbCommandRejectedException e) {
 			success = false;
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		} catch (ShellCommandUnresponsiveException e) {
 			success = false;
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		} catch (IOException e) {
 			success = false;
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		}
 		if (success && shelloutPut.isShellError()) {
 			success = false;
 		}
 		if (shelloutPut.getReturnedData().size() > 0) {
-			logger.debug("========= Shell output data ===========");
+			LOGGER.debug("========= Shell output data ===========");
 			for (String line : shelloutPut.getReturnedData()) {
-				logger.debug(line);
+				LOGGER.debug(line);
 			}
-			logger.debug("========= end Shell output data ===========");
+			LOGGER.debug("========= end Shell output data ===========");
 		}
 		return success;
 
@@ -573,16 +572,16 @@ public class AndroidImpl implements IAndroid {
 	public String[] getShellReturn(IDevice device, String arocmd) {
 		ShellCommandCheckSDCardOutputReceiver shellout = getOutputReturn();
 		try {
-			logger.debug("excute :" + arocmd);
+			LOGGER.debug("excute :" + arocmd);
 			device.executeShellCommand(arocmd, shellout);
 		} catch (TimeoutException e) {
-			logger.error("TimeoutException :" + e.getMessage());
+			LOGGER.error("TimeoutException :" + e.getMessage());
 		} catch (AdbCommandRejectedException e) {
-			logger.error("AdbCommandRejectedException :" + e.getMessage());
+			LOGGER.error("AdbCommandRejectedException :" + e.getMessage());
 		} catch (ShellCommandUnresponsiveException e) {
-			logger.error("ShellCommandUnresponsiveException :" + e.getMessage());
+			LOGGER.error("ShellCommandUnresponsiveException :" + e.getMessage());
 		} catch (IOException e) {
-			logger.error("IOException :" + e.getMessage());
+			LOGGER.error("IOException :" + e.getMessage());
 		}
 		return shellout.getResultOutput();
 	}

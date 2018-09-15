@@ -21,13 +21,11 @@ import java.text.MessageFormat;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoChunkSizeResult;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.ManifestDash;
@@ -46,10 +44,6 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent;
  * Link: goes to a view of chunks measured in bytes.
  */
 public class VideoChunkSizeImpl implements IBestPractice{
-
-	@InjectLogger
-	private static ILogger log;
-
 	@Value("${chunkSize.title}")
 	private String overviewTitle;
 

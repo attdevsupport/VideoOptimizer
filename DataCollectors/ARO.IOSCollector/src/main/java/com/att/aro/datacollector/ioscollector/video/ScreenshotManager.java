@@ -29,10 +29,9 @@ import java.util.Hashtable;
 
 import javax.media.jai.NullOpImage;
 import javax.media.jai.OpImage;
-
 import org.apache.commons.lang3.exception.ExceptionUtils;
-
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.IScreenshotPubSub;
@@ -42,9 +41,9 @@ import com.sun.media.jai.codec.ImageDecoder;
 
 public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 	// private static final Logger logger =
-	// Logger.getLogger(ScreenshotManager.class.getName());
+	// LogManager.getLogger(ScreenshotManager.class.getName());
 
-	LoggerImpl log = new LoggerImpl(this.getClass().getName());
+	private static final Logger LOG = LogManager.getLogger(ScreenshotManager.class.getName());
 	Process proc = null;
 	String lastmessage = "";
 	int counter = 0;
@@ -63,9 +62,9 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 		imagefolder = folder + Util.FILE_SEPARATOR + "tmp";
 		tmpfolder = new File(imagefolder);
 		if (!tmpfolder.exists()) {
-			log.debug("tmpfolder.mkdirs()" + imagefolder);
+			LOG.debug("tmpfolder.mkdirs()" + imagefolder);
 			tmpfolder.mkdirs();
-			log.debug("exists :" + tmpfolder.exists());
+			LOG.debug("exists :" + tmpfolder.exists());
 		}
 	}
 
@@ -74,7 +73,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 		String exepath = Util.getIdeviceScreenshot();
 		File exefile = new File(exepath);
 		if (!exefile.exists()) {
-			log.info("Not found exepath: " + exepath);
+			LOG.info("Not found exepath: " + exepath);
 		}
 
 		
@@ -85,7 +84,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 				try {
 					file.createNewFile();
 				} catch (IOException e) {
-					log.error("Failed to create image folder", e);
+					LOG.error("Failed to create image folder", e);
 				}
 			}
 			String[] cmds = new String[] { "bash", "-c", exepath + " " + img };
@@ -95,7 +94,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 			try {
 				proc = builder.start();
 			} catch (IOException e) {
-				log.error("Error starting idevicescreenshot:", e);
+				LOG.error("Error starting idevicescreenshot:", e);
 				return;
 			}
 			try {
@@ -104,7 +103,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 			}
 			File imgFile = new File(img);
 			if (imgFile.exists() || this.lastmessage.contains("Connect success")) {
-				log.debug("Connect success");
+				LOG.debug("Connect success");
 				isready = true;
 				isReadyForRead = true;
 				count++;
@@ -145,12 +144,11 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 				try {
 					imgfile.delete();
 				} catch (Exception e) {
-					log.error("Error deleting image file:" + img, e);
+					LOG.error("Error deleting image file:" + img, e);
 				}
 			}
 		} catch (IOException ioe) {
-			
-			log.error("Error reading image file:" + img, ioe);
+			LOG.error("Error reading image file:" + img, ioe);
 			imgdata = null;
 			
 			if(ExceptionUtils.indexOfThrowable(ioe, NullPointerException.class) != -1) {
@@ -223,10 +221,10 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 			for (File file : files) {
 				file.delete();
 			}
-			log.info("deleted left-over image files.");
+			LOG.info("deleted left-over image files.");
 		}
 		tmpfolder.delete();
-		log.info("ScreenshotManager.shutDown() finished");
+		LOG.info("ScreenshotManager.shutDown() finished");
 	}
 
 	@Override
@@ -239,7 +237,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 
 	@Override
 	public void willExit() {
-		log.info("willExit() called");
+		LOG.info("willExit() called");
 		// screenshot service will exit now
 		this.shutDown();
 

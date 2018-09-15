@@ -47,7 +47,9 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.IVideoBestPractices;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
@@ -69,7 +71,7 @@ public class AccordionComponent extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
 	
-	private static ILogger log = (ILogger) ContextAware.getAROConfigContext().getBean("logger");
+	private static final Logger LOG = LogManager.getLogger(AccordionComponent.class);	
 	private static IFileManager fileManager = (IFileManager) ContextAware.getAROConfigContext().getBean("fileManager");
 
 	private JPanel hiddenPanel;
@@ -145,33 +147,10 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		titlePanel.add(getEnableCheckBox());
 		titlePanel.add(arrowButton);
 		titlePanel.add(lbl);
-		if (validateUpload()) {
-			titlePanel.add(getUploadButton());
-			titlePanel.grabFocus();
-		}
 
 		return titlePanel;
 	}
 
-	private boolean validateUpload() {
-		AbstractTraceResult traceResult = analyzerResult.getAnalyzerResult().getTraceresult();
-		if (TraceResultType.TRACE_DIRECTORY.equals(traceResult.getTraceResultType())) {
-			traceDirectoryResult = (TraceDirectoryResult)traceResult;
-			boolean mp4Exists = fileManager.createFile(traceResult.getTraceDirectory(), "video.mp4").exists();
-			boolean uploadEnabled = SettingsImpl.getInstance().checkAttributeValue("AMVOTS", "TRUE");
-			return uploadEnabled && mp4Exists;
-		} else {
-			return false;
-		}
-	}
-	
-	private Component getUploadButton() {
-		if (uploadButton == null) {
-			uploadButton = new JButton();
-		} 
-		uploadButton.setVisible(false);		
-		return uploadButton;
-	}
 
 	private Component getEnableCheckBox() {
 		enableCheckBox = new JCheckBox();
@@ -200,7 +179,7 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		return enableCheckBox;
 	}
 
- 
+
 	public void updateTitleButton(AROTraceData traceData) {
 		if (titlePanel != null) {
 			analyzerResult = traceData;

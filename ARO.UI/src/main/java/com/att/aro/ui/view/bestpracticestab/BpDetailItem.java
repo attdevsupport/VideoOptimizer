@@ -37,7 +37,6 @@ import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
@@ -114,8 +113,6 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 	private BestPracticeType bpType;
 	static final Font TEXT_FONT = new Font("TextFont", Font.PLAIN, 12);
 	private static final int TEXT_WIDTH = 600;
-	private static final int FILE_MENU_INDEX = 0;
-	private static final int FILE_PREFERENCE_INDEX = 3;
 	private static final int FILE_PREFERENCE_VIDEO_INDEX = 2;
 	
 	public BpDetailItem(String name, BestPracticeType bpType, AbstractBpDetailTablePanel resultsTablePanel) {
@@ -375,9 +372,7 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 	void performAction(HyperlinkEvent e) {
 		if (this.bpType == BestPracticeType.STARTUP_DELAY || this.bpType == BestPracticeType.BUFFER_OCCUPANCY) {
 			if (this.aroView != null) {
-				JMenuItem callerItem = this.aroView.getJFrame().getJMenuBar().getMenu(FILE_MENU_INDEX)
-						.getItem(FILE_PREFERENCE_INDEX);
-				PreferencesDialog prefDialog = new PreferencesDialog(this.aroView, callerItem);
+				PreferencesDialog prefDialog = new PreferencesDialog(this.aroView, resultsTextLabel);
 				prefDialog.getTabbedPane().setSelectedIndex(FILE_PREFERENCE_VIDEO_INDEX);
 				prefDialog.setVisible(true);
 			}

@@ -18,7 +18,6 @@ package com.att.aro.console.printstreamutils;
 import java.io.PrintStream;
 import java.util.Arrays;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 /**
@@ -60,9 +59,7 @@ public class ImHereThread implements Runnable {
 		runflag = true;
 		running = true;
 		while (running) {
-			logger.setLevel(Level.OFF);
 			outPrintStream.print(sequence[sequenceIndex++]);
-			logger.setLevel(outSave.getLevel());
 			sequenceIndex %= sequence.length;
 			try {
 				Thread.sleep(sleepTime);

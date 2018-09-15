@@ -161,24 +161,6 @@ public interface IAROService {
 	AROTraceData analyzeFile(List<BestPracticeType> requests, String traceFile) throws IOException;
 
 	/**
-	 * Launches an analysis of a trace directory with the results populating an
-	 * AROTraceData object.
-	 * <p>
-	 * Other trace files depend on capture method, platform and version of
-	 * device.
-	 * </p>
-	 * 
-	 * @param requests
-	 *            list of BestPracticeType bestPractices to analyze
-	 * @param traceDirectory
-	 *            path to a trace directory, usually contains traffic.cap
-	 * @return AROTraceData object
-	 * @throws IOException
-	 *             if trace file not found
-	 */
-	AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory) throws IOException;
-
-	/**
 	 * Launches an analysis of a traceFile with the results populating an
 	 * AROTraceData object
 	 * 
@@ -195,6 +177,24 @@ public interface IAROService {
 	 *             if trace file not found
 	 */
 	AROTraceData analyzeFile(List<BestPracticeType> requests, String traceFile, Profile profile, AnalysisFilter filter) throws IOException;
+
+	/**
+	 * Launches an analysis of a trace directory with the results populating an
+	 * AROTraceData object.
+	 * <p>
+	 * Other trace files depend on capture method, platform and version of
+	 * device.
+	 * </p>
+	 * 
+	 * @param requests
+	 *            list of BestPracticeType bestPractices to analyze
+	 * @param traceDirectory
+	 *            path to a trace directory, usually contains traffic.cap
+	 * @return AROTraceData object
+	 * @throws IOException
+	 *             if trace file not found
+	 */
+	AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory) throws IOException;
 
 	/**
 	 * Launches an analysis of a trace directory with the results populating an

@@ -20,11 +20,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.TreeMap;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import com.att.aro.core.AROConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
@@ -37,8 +38,7 @@ import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
 public class AROManifest {
 
 	ApplicationContext context = new AnnotationConfigApplicationContext(AROConfig.class);
-	ILogger log = (ILogger) context.getBean("logger");
-	
+	protected static final Logger LOG = LogManager.getLogger(AROManifest.class.getName());	
 	IStringParse stringParse = context.getBean(IStringParse.class);
 	
 	IHttpRequestResponseHelper reqhelper = (IHttpRequestResponseHelper) context.getBean("httpRequestResponseHelper");
@@ -144,17 +144,27 @@ public class AROManifest {
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("\n\tAROManifest :");
 		strblr.append(videoType);
-		strblr.append(", Name :");		   strblr.append(getVideoName());
-		strblr.append(", Encryption :");   strblr.append(getEncryption());
-		strblr.append(", URIs :");         strblr.append(uri != null ? uri.getRawPath() : "null");
-		if (!segmentList.isEmpty()){
-			strblr.append("\n\t, segmentList  :");  strblr.append(segmentList.size());  strblr.append(segmentList);
-			strblr.append("\n\t, durationList  :"); strblr.append(durationList.size()); strblr.append(durationList);
+		strblr.append(", Name :");
+		strblr.append(getVideoName());
+		strblr.append(", Encryption :");
+		strblr.append(getEncryption());
+		strblr.append(", URIs :");
+		strblr.append(uri != null ? uri.getRawPath() : "null");
+		if (!segmentList.isEmpty()) {
+			strblr.append("\n\t, segmentList  :");
+			strblr.append(segmentList.size());
+			strblr.append(segmentList);
+			strblr.append("\n\t, durationList  :");
+			strblr.append(durationList.size());
+			strblr.append(durationList);
 		}
-		strblr.append("\n\t, segmentCount :"); strblr.append(getSegmentCount());
-		strblr.append(", duration :")    ; strblr.append(getDuration());
-		strblr.append("\n\t, bitrates :"); strblr.append(bitrateMap);
-		
+		strblr.append("\n\t, segmentCount :");
+		strblr.append(getSegmentCount());
+		strblr.append(", duration :");
+		strblr.append(getDuration());
+		strblr.append("\n\t, bitrates :");
+		strblr.append(bitrateMap);
+
 		strblr.append(", \n\tvideoEvents [\n\t ");
 		if (!videoEventList.isEmpty()) {
 			for (VideoEvent videoEvent : videoEventList.values()) {

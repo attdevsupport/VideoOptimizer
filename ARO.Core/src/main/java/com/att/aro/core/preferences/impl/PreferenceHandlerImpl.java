@@ -15,8 +15,9 @@
  */
 package com.att.aro.core.preferences.impl;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.preferences.IPreferenceHandler;
 import com.att.aro.core.settings.Settings;
 import com.att.aro.core.settings.impl.SettingsImpl;
@@ -25,7 +26,7 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 
 	public static final String ARO_NODE_NAME = "/com/att/aro";
 	private static PreferenceHandlerImpl instance = new PreferenceHandlerImpl();
-	private ILogger logger = new LoggerImpl(PreferenceHandlerImpl.class.getName());	
+	private static final Logger LOGGER = LogManager.getLogger(PreferenceHandlerImpl.class.getName());
 	private Settings setting;
 	public static PreferenceHandlerImpl getInstance() {
 		return instance;
@@ -42,12 +43,12 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 	public String getPref(String prefKey) {
 		
 		if (prefKey == null) {
-			logger.error("Null preference key!");
+			LOGGER.error("Null preference key!");
 			return null;  
 		}
 		
 		String prefValue = setting.getAttribute(prefKey);
-		logger.debug("Retrieving key:" + prefKey + ";value:" + prefValue);
+		LOGGER.debug("Retrieving key:" + prefKey + ";value:" + prefValue);
 		return prefValue;
 	}
 	
@@ -55,10 +56,10 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 	public void setPref(String prefKey, String prefValue) {
 		
 		if (prefKey == null || prefValue == null || prefValue.equals("null")) {
-			logger.error("Preference key and preference value cannot be null! "
+			LOGGER.error("Preference key and preference value cannot be null! "
 					+ "key:" + prefKey + " value:" + prefValue);
 		} else {
-			logger.debug("Storing key:" + prefKey + ";value:" + prefValue);
+			LOGGER.debug("Storing key:" + prefKey + ";value:" + prefValue);
 			setting.setAndSaveAttribute(prefKey, prefValue);
 		}
 	}
@@ -67,9 +68,9 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 	public void removePref(String prefKey) {
 		
 		if (prefKey == null) {
-			logger.error("Preference key cannot be null! ");
+			LOGGER.error("Preference key cannot be null! ");
 		} else {
-			logger.debug("Removing preference - key:" + prefKey);
+			LOGGER.debug("Removing preference - key:" + prefKey);
 			setting.removeAndSaveAttribute(prefKey);
 		}
 	}

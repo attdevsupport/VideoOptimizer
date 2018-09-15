@@ -9,6 +9,6 @@ public interface IResultSubscriber {
 	 * @param pass		true: success, false: failed, null: message only
 	 * @param result		message
 	 */
-	public void receiveResults(Class sender, Boolean pass, String result);
+	public void receiveResults(Class<?> sender, Boolean pass, String result);
 	
 }

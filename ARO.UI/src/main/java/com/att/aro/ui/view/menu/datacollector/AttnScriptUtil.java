@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.att.aro.core.util.Util;
 
@@ -40,7 +41,7 @@ import com.att.aro.core.util.Util;
 public class AttnScriptUtil {
 
 	private static final String FILE_SEPARATOR = System.getProperty("file.separator");
-	private static Logger logger = Logger.getLogger(AttnScriptUtil.class.getSimpleName());
+	private static Logger logger = LogManager.getLogger(AttnScriptUtil.class.getSimpleName());
 	private final static Charset ENCODING = StandardCharsets.US_ASCII;
 
 	private List<SpeedThrottleAdapter> eventList;

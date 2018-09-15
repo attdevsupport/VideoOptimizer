@@ -25,22 +25,18 @@ import java.util.TreeMap;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoConcurrentSession;
 import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
 public class VideoConcurrentSessionImpl implements IBestPractice {
-	@InjectLogger
-	private static ILogger logger;
 	@Value("${videoConcurrentSession.title}")
 	private String overviewTitle;
 	@Value("${videoConcurrentSession.detailedTitle}")

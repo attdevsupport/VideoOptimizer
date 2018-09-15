@@ -23,7 +23,7 @@ import com.att.aro.core.datacollector.IDataCollector;
 
 public class AROAndroidDevice implements IAroDevice {
 
-	final private Platform platform = IAroDevice.Platform.Android;
+	private final Platform platform = IAroDevice.Platform.Android;
 
 	AroDeviceState state = AroDeviceState.Unknown; // Available, in-use, Unknown
 	

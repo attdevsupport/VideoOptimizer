@@ -21,14 +21,15 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.IExternalProcessReaderSubscriber;
 
 public class ExternalDumpcapExecutor extends Thread implements IExternalProcessReaderSubscriber {
 	
-	private ILogger log = new LoggerImpl("IOSCollector");
+	private static final Logger LOG = LogManager.getLogger(ExternalDumpcapExecutor.class);
 	BufferedWriter writer;
 	Process proc = null;
 	String pcappath;
@@ -49,7 +50,7 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 
 	@Override
 	public void run() {
-		log.debug("run");
+		LOG.debug("run");
 		dumpcapCommand = "echo " + this.sudoPassword + " | sudo -S " + Util.getDumpCap() + " -P -i rvi0 -s 0 -Z none -w \"" + this.pcappath + "\"";
 		String[] cmds = new String[] { "bash", "-c", dumpcapCommand };
 
@@ -59,7 +60,7 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 		try {
 			proc = builder.start();
 		} catch (IOException e) {
-			log.debug("IOException:", e);
+			LOG.debug("IOException:", e);
 			return;
 		}
 
@@ -70,7 +71,7 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 
 		// find the processID for tshark, used to kill the process when done with trace
 		if (!findPcapPathProcess(40)) {
-			log.warn("failed to locate process number for " + this.pcappath);
+			LOG.warn("failed to locate process number for " + this.pcappath);
 		}
 	}
 
@@ -102,14 +103,14 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 					}
 				}
 			} catch (IOException e1) {
-				log.debug("IOException:", e1);
+				LOG.debug("IOException:", e1);
 			}
 			try {
 				sleep(50);
 
 			
 			} catch (InterruptedException e) {
-				log.debug("InterruptedException:", e);
+				LOG.debug("InterruptedException:", e);
 			}
 		}
 		return result;
@@ -134,7 +135,7 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 	 */
 	public void stopTshark() {
 
-		log.info("shutting down tshark");
+		LOG.info("shutting down tshark");
 		
 		if (pidlist.size() > 0) {
 			this.shutdownSignal = false;
@@ -145,7 +146,7 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 					String[] pscmd = new String[] { "bash", "-c", cmd };
 					runner.runCmd(pscmd);
 				} catch (IOException e) {
-					log.error(e.getMessage());
+					LOG.error(e.getMessage());
 				}
 			}
 			if (processReader != null) {
@@ -157,7 +158,7 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 				try {
 					Thread.sleep(200);
 				} catch (InterruptedException e) {
-					log.debug("InterruptedException:", e);
+					LOG.debug("InterruptedException:", e);
 					break;
 				}
 				count++;
@@ -174,7 +175,7 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 			result = runner.runCmd(command);
 		} catch (IOException e) {
 		}
-		log.elevatedInfo(result);
+		LOG.info(result);
 	}
 
 	/**

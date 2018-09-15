@@ -1,19 +1,24 @@
 package com.att.aro.core.preferences;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
+
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.configuration.pojo.Profile3G;
 import com.att.aro.core.configuration.pojo.ProfileLTE;
 import com.att.aro.core.configuration.pojo.ProfileType;
 import com.att.aro.core.configuration.pojo.ProfileWiFi;
 import com.att.aro.core.peripheral.pojo.PrivateDataInfo;
-import com.att.aro.core.preferences.UserPreferences;
-import static org.junit.Assert.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
 
 public class UserPreferencesTest extends BaseTest {
 	

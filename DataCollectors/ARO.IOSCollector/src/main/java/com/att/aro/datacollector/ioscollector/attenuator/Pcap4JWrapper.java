@@ -17,6 +17,8 @@ package com.att.aro.datacollector.ioscollector.attenuator;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.littleshoot.proxy.TransportProtocol;
 import org.pcap4j.core.BpfProgram.BpfCompileMode;
 import org.pcap4j.core.NotOpenException;
@@ -27,12 +29,10 @@ import org.pcap4j.core.PcapNetworkInterface;
 import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
 import org.pcap4j.core.Pcaps;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.util.Util;
 
 public class Pcap4JWrapper implements Runnable{
-	private ILogger log = new LoggerImpl("PcapForJWrapper");
+	private static final Logger LOG = LogManager.getLogger(Pcap4JWrapper.class);
 	private final String COUNT_KEY = Pcap4JWrapper.class.getName() + ".count";
 	private final int COUNT = Integer.getInteger(COUNT_KEY, -1);
 	private final String READ_TIMEOUT_KEY = Pcap4JWrapper.class.getName() + ".readTimeout";
@@ -58,7 +58,7 @@ public class Pcap4JWrapper implements Runnable{
 		try {
 			nif = Pcaps.getDevByName("bridge100");		
 		} catch (/*IOException | */PcapNativeException pcape) {
-			log.info("PcapNativeException :", pcape);
+			LOG.info("PcapNativeException :", pcape);
 			return;
 		} 
 		
@@ -66,7 +66,7 @@ public class Pcap4JWrapper implements Runnable{
 			return;
 		}
 
-		log.info(nif.getName() + "(" + nif.getDescription() + ")");
+		LOG.info(nif.getName() + "(" + nif.getDescription() + ")");
 
 		try {
 		    handle
@@ -77,10 +77,10 @@ public class Pcap4JWrapper implements Runnable{
 			try {
 			      handle.loop(COUNT, dumper);
 		    } catch (InterruptedException e) {
-				log.error("InterruptedException :", e);
+				LOG.error("InterruptedException :", e);
 		    }
 		} catch (PcapNativeException | NotOpenException e) {
-			log.error("PcapNativeException or NotOpenException :", e);
+			LOG.error("PcapNativeException or NotOpenException :", e);
 		}
 
 	}
@@ -90,13 +90,13 @@ public class Pcap4JWrapper implements Runnable{
           try {
             handle.breakLoop();
           } catch (NotOpenException noe) {
-  			log.error("NotOpenException :", noe);
+  			LOG.error("NotOpenException :", noe);
           }
           
           try {
             Thread.sleep(1000);
           } catch (InterruptedException ioe) {
-    			log.error("InterruptedException :", ioe);
+    			LOG.error("InterruptedException :", ioe);
           }
           handle.close();
         }

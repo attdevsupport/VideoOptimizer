@@ -59,9 +59,6 @@ public class PeriodicTransferImpl implements IBestPractice {
 	private static final int MAX_NUM_OF_REQUESTS = 200;
 	private static final int SMALL_PERIODICITY = 3;
 	
-//	@InjectLogger
-//	private static ILogger logger;
-	
 	int periodicCount = 0;
 	int diffPeriodicCount = 0;
 	double minimumPeriodicRepeatTime = 0.0;

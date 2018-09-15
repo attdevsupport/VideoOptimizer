@@ -30,6 +30,7 @@ import javax.swing.JTable;
 import javax.swing.table.TableColumnModel;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.util.Util;
@@ -37,7 +38,7 @@ import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.model.DataTable;
 
 public class DeviceTablePanel extends JPanel implements MouseListener{
-	private static final Logger logger = Logger.getLogger(DeviceTablePanel.class.getName()); 
+	private static final Logger logger = LogManager.getLogger(DeviceTablePanel.class.getName()); 
 
 	private static final long serialVersionUID = 1L;
 

@@ -15,8 +15,9 @@
 */
 package com.att.aro.datacollector.norootedandroidcollector.impl;
 
+import org.apache.log4j.Logger;
+
 import com.android.ddmlib.IDevice;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
@@ -24,8 +25,7 @@ import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 
 public class AttenuationScriptExcuable implements Runnable {
-	private static ILogger LOGGER;
-	
+	private static Logger LOGGER;	
 	private IAroDevice aroDevice;
 	private IExternalProcessRunner extrunner;
 	private IAndroid android;
@@ -38,9 +38,9 @@ public class AttenuationScriptExcuable implements Runnable {
 	private static final String REMOTE_EXECUTABLE = REMOTE_FILEPATH + PAYLOAD_FILENAME;
 
  
-	public void setAdbFileMgrLogExtProc(IAroDevice aroDevice,IAdbService adbservice, IFileManager fileManager, ILogger logger, IExternalProcessRunner runner){
+	public void setAdbFileMgrLogExtProc(IAroDevice aroDevice,IAdbService adbservice, IFileManager fileManager, Logger log, IExternalProcessRunner runner){
 		this.adbService = adbservice;
-		LOGGER = logger;
+		LOGGER = log;
 		this.extrunner = runner;
 		this.aroDevice = aroDevice;
 	}

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.att.aro.core.adb.IAdbService;
 
@@ -31,7 +32,7 @@ import com.att.aro.core.adb.IAdbService;
  *
  */
 public class LogcatCollector {
-	private static final Logger LOGGER = Logger.getLogger(LogcatCollector.class);
+	private static final Logger LOGGER = LogManager.getLogger(LogcatCollector.class);
 	private final String serialNumber;
 	private final IAdbService adbService;
 

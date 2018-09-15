@@ -30,18 +30,18 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.ImageFormatResult;
 import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -56,8 +56,7 @@ import com.sun.media.imageio.plugins.jpeg2000.J2KImageWriteParam;
 //FIXME ADD UNIT TESTS
 public class ImageFormatImpl implements IBestPractice {
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(ImageFormatImpl.class.getName());
 
 	@Value("${imageFormat.title}")
 	private String overviewTitle;
@@ -105,7 +104,7 @@ public class ImageFormatImpl implements IBestPractice {
 			try {
 				formatImages();
 			} catch (Exception imgException) {
-				logger.error("Image Format  exception : ", imgException);
+				LOGGER.error("Image Format  exception : ", imgException);
 			}
 		}
 
@@ -257,7 +256,7 @@ public class ImageFormatImpl implements IBestPractice {
 			exec.shutdown();
 			exec.awaitTermination(10, TimeUnit.MINUTES);
 		} catch (InterruptedException e) {
-			logger.error("Image Format execution exception : ", e);
+			LOGGER.error("Image Format execution exception : ", e);
 		}
 	}
 
@@ -302,7 +301,7 @@ public class ImageFormatImpl implements IBestPractice {
 			imageOutputStream.close();
 		
 		} catch (IOException e) {
-			logger.error("Format Image exception : ", e);
+			LOGGER.error("Format Image exception : ", e);
 		}
 	}
 

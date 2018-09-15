@@ -17,23 +17,16 @@ package com.att.aro.datacollector.ioscollector.utilities;
 
 import java.io.IOException;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 
 public class XCodeInfo {
 
 	ExternalProcessRunner runner = null;
     private boolean xcodeCLTError = false;
-    
-	private ILogger log = new LoggerImpl("IOSCollector");
-
-	@Autowired
-	public void setLogger(ILogger logger) {
-		this.log = logger;
-	}
+	private static final Logger LOG = LogManager.getLogger(XCodeInfo.class);
 
 	public XCodeInfo() {
 		runner = new ExternalProcessRunner();
@@ -57,7 +50,7 @@ public class XCodeInfo {
 			result = runner.runCmd(cmd);
 
 		} catch (IOException e) {
-			log.debug("IOException:", e);
+			LOG.debug("IOException:", e);
 		}
 		if (result.length() > 1) {
 			yes = true;
@@ -76,9 +69,9 @@ public class XCodeInfo {
 		String xCode = "";
 		try {
 			xCode = runner.runCmd(cmd);
-			log.info("xCode Installation Dir : " + xCode);
+			LOG.info("xCode Installation Dir : " + xCode);
 		} catch (IOException ioE) {
-			log.debug("IOException:", ioE);
+			LOG.debug("IOException:", ioE);
 		}
 		if (xCode.length() > 1) {
 			flag = true;
@@ -98,21 +91,21 @@ public class XCodeInfo {
 		String xCodeVersion = "";
 		try {
 			xCodeVersion = runner.runCmd(cmd);
-			log.info("xCode Version : " + xCodeVersion);
+			LOG.info("xCode Version : " + xCodeVersion);
 		} catch (IOException ex) {
-			log.debug("IOException:", ex);
+			LOG.debug("IOException:", ex);
 		}
 		if (!xCodeVersion.isEmpty()) {
 			String[] version = xCodeVersion.split("\\r?\\n");
 			String xCode = version[0];
 			String versionOfxCode = xCode.substring(xCode.indexOf(" "));
-			log.info(" Version Code : " + versionOfxCode);
+			LOG.info(" Version Code : " + versionOfxCode);
 			int versionNumber = 0;
 			try {
 				versionNumber = Integer.parseInt(versionOfxCode.substring(0, versionOfxCode.indexOf(".")).trim());
-				log.info(" Version Number : " + versionNumber);
+				LOG.info(" Version Number : " + versionNumber);
 			} catch (NumberFormatException e) {
-				log.debug("NumberFormatException:", e);
+				LOG.debug("NumberFormatException:", e);
 			}
 			if (versionNumber >= 7) { //only 8% of iphone users has xcode version 6 and below --- November 2016 statistics
 				supportedVersionFlag = true;

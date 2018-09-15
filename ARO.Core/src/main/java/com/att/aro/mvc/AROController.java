@@ -32,12 +32,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.IAROService;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.configuration.pojo.Profile;
@@ -58,6 +59,7 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.ErrorCodeRegistry;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.VideoOption;
 
@@ -70,8 +72,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	@Autowired
 	private IAROService serv;
 
-	@Autowired
-	private ILogger log;
+	private static final Logger LOG = LogManager.getLogger(AROController.class.getName());	
 	private IDataCollector collector;
 	private String traceFolderPath;
 //	private VideoOption videoOption;
@@ -90,9 +91,6 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		this.theModel = new AROTraceData();
 		this.theView.addAROPropertyChangeListener(this);
 		this.theView.addAROActionListener(this);
-		if (this.log == null) {
-			this.log = context.getBean(ILogger.class);
-		}
 	}
 
 	/**
@@ -130,10 +128,10 @@ public class AROController implements PropertyChangeListener, ActionListener {
 
 		try {
 			System.gc(); // Request garbage collection before loading a trace
-			log.debug("Analyze trace :" + trace);
+			LOG.debug("Analyze trace :" + trace);
 			long totalMem = Runtime.getRuntime().totalMemory();
 			long freeMem = Runtime.getRuntime().freeMemory();
-			log.debug("runAnalyzer total :"+totalMem+", free:"+freeMem);
+			LOG.debug("runAnalyzer total :"+totalMem+", free:"+freeMem);
 			
 			// analyze trace file or directory?
 			try {
@@ -143,13 +141,13 @@ public class AROController implements PropertyChangeListener, ActionListener {
 					results = serv.analyzeDirectory(retrieveBestPractices(), trace, profile, filter);
 				}
 			} catch(OutOfMemoryError err) {
-				log.error(err.getMessage(), err);
+				LOG.error(err.getMessage(), err);
 				results = new AROTraceData();
 				results.setSuccess(false);
 				results.setError(ErrorCodeRegistry.getOutOfMemoryError());
 			}
 		} catch (IOException exception) {
-			log.error(exception.getMessage(), exception);
+			LOG.error(exception.getMessage(), exception);
 			results.setSuccess(false);
 			results.setError(ErrorCodeRegistry.getUnknownFileFormat());
 		}
@@ -205,15 +203,15 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			stopCollector(CollectorStatus.STOPPED);
 			this.theView.updateCollectorStatus(CollectorStatus.STOPPED, null);
 
-			log.info("stopCollector() performed");
+			LOG.info("stopCollector() performed");
 		} else if ("cancelCollector".equals(actionCommand)) {
 			stopCollector(CollectorStatus.CANCELLED);
-			log.info("stopCollector() cancel performed");
+			LOG.info("stopCollector() cancel performed");
 		} else if ("haltCollectorInDevice".equals(actionCommand)) {
 			haltCollectorInDevice();
 			this.theView.updateCollectorStatus(CollectorStatus.STOPPED, null);
 
-			log.info("stopCollector() performed");
+			LOG.info("stopCollector() performed");
 		} else if ("printJSONReport".equals(actionCommand)) {
 			printReport(true, theView.getReportPath());
 		} else if ("printCSVReport".equals(actionCommand)) {
@@ -233,16 +231,16 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		if (json) {
 			res = serv.getJSonReport(reportPath, theModel);
 			if (res) {
-				log.info("Successfully produce JSON report: " + reportPath);
+				LOG.info("Successfully produce JSON report: " + reportPath);
 			} else {
-				log.info("Failed to produce JSON report: " + reportPath);
+				LOG.info("Failed to produce JSON report: " + reportPath);
 			}
 		} else {
 			res = serv.getHtmlReport(reportPath, theModel);
 			if (res) {
-				log.info("Successfully produce HTML report: " + reportPath);
+				LOG.info("Successfully produce HTML report: " + reportPath);
 			} else {
-				log.info("Failed to produce HTML report: " + reportPath);
+				LOG.info("Failed to produce HTML report: " + reportPath);
 			}
 		}
 		return res;
@@ -270,11 +268,12 @@ public class AROController implements PropertyChangeListener, ActionListener {
 				theView.refresh();
 			}
 		} catch(Exception ex){
-			log.info("Error Log:" + ex.getMessage());
-			log.error("Exception : ",ex);
+			LOG.info("Error Log:" + ex.getMessage());
+			LOG.error("Exception : ",ex);
 		}
+		(new Thread(() -> GoogleAnalyticsUtil.reportMimeDataType(theModel))).start();
 	}
-
+	
 	private void initializeFilter() {
 		Collection<String> appNames = theModel.getAnalyzerResult().getTraceresult().getAllAppNames();
 		Map<String, Set<InetAddress>> map = theModel.getAnalyzerResult().getTraceresult().getAppIps();
@@ -331,7 +330,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		try {
 			devices = context.getBean(IAdbService.class).getConnectedDevices();
 		} catch (Exception exception) {
-			log.error("failed to discover connected devices, Exception :" + exception.getMessage());
+			LOG.error("failed to discover connected devices, Exception :" + exception.getMessage());
 		}
 		return devices;
 	}
@@ -399,14 +398,14 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			
 			result = startCollector(device, traceName, extraParams);
 				
-				log.info("---------- Android " + result.toString());
+				LOG.info("---------- Android " + result.toString());
 				if (!result.isSuccess()) { // report failure
 
 					if (result.getError().getCode() == 206) {
 						try {
 							(new File(traceFolderPath)).delete();
 						} catch (Exception e) {
-							log.warn("failed to delete trace folder :" + traceFolderPath);
+							LOG.warn("failed to delete trace folder :" + traceFolderPath);
 						}
 						this.theView.updateCollectorStatus(CollectorStatus.CANCELLED, result);
 					}else{
@@ -434,7 +433,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 
 		StatusResult result = null;
 		
-		log.info("starting collector:" + traceFolderName +" " + extraParams);
+		LOG.info("starting collector:" + traceFolderName +" " + extraParams);
 
 		getAvailableCollectors();
 
@@ -452,14 +451,14 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			traceStartTime = new Date();
 
 			if (result.isSuccess()) {
-				log.info("Result : traffic capture launched successfully");
+				LOG.info("Result : traffic capture launched successfully");
 				traceDuration = 0;
 			} else {
-				log.error("Result trace success:" + result.isSuccess() + ", Name :" + result.getError().getName() + ", Description :" + result.getError().getDescription());
-				log.error("device logcat:");
+				LOG.error("Result trace success:" + result.isSuccess() + ", Name :" + result.getError().getName() + ", Description :" + result.getError().getDescription());
+				LOG.error("device logcat:");
 			}
 		} else {
-			log.info("Illegal path:" + traceFolderPath);
+			LOG.info("Illegal path:" + traceFolderPath);
 			result = new StatusResult();
 			result.setError(ErrorCodeRegistry.getTraceFolderNotFound());
 			return result;
@@ -497,14 +496,14 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		
 		if (device.isPlatform(IAroDevice.Platform.Android)) {
 			if (device.isRooted()) {
-				log.debug("rooted device");
+				LOG.debug("rooted device");
 				collector = context.getBean(IDataCollectorManager.class).getRootedDataCollector();
 			} else {
-				log.debug("non-rooted device");
+				LOG.debug("non-rooted device");
 				collector = context.getBean(IDataCollectorManager.class).getNorootedDataCollector();
 			}
 		} else if (device.isPlatform(IAroDevice.Platform.iOS)) {
-			log.debug("iOS device");
+			LOG.debug("iOS device");
 			collector = context.getBean(IDataCollectorManager.class).getIOSCollector();
 		}
 		
@@ -531,10 +530,10 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		if (collector == null) {
 			return;
 		}
-		log.debug("stopCollector() check if running");
+		LOG.debug("stopCollector() check if running");
 		if (collector.isTrafficCaptureRunning(1)) { //FIXME THINKS THE CAPTURE IS RUNNING AFTER STOP
 			StatusResult result = collector.stopCollector();
-			log.info("stopped collector, result:" + result);
+			LOG.info("stopped collector, result:" + result);
 			if (collector.getType().equals(DataCollectorType.IOS) && (!collector.isDeviceDataPulledStatus())) {
 				this.theView.isDeviceDataPulled(false);
 			}
@@ -593,3 +592,5 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	}
 
 }
+
+

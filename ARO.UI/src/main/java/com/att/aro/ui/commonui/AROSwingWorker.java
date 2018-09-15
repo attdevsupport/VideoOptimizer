@@ -28,16 +28,16 @@ import java.util.concurrent.ExecutionException;
 import javax.swing.JFrame;
 import javax.swing.SwingWorker;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.util.CrashHandler;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.bestpracticestab.BestPracticesTab;
 
 public class AROSwingWorker<T, V> extends SwingWorker<T, V> {
-
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
-
+	private static final Logger LOG = LogManager.getLogger(AROSwingWorker.class);	
 	private JFrame parent;
 	private AROProgressDialog progress;
 	private String property;
@@ -106,12 +106,12 @@ public class AROSwingWorker<T, V> extends SwingWorker<T, V> {
 		try {
 			get();
 			endTime = System.currentTimeMillis();
-			log.debug("deltaTime :" + (endTime - startTime));
+			LOG.debug("deltaTime :" + (endTime - startTime));
 		} catch (InterruptedException e) {
-			log.error("Interrupted error: " + e.getLocalizedMessage());
+			LOG.error("Interrupted error: " + e.getLocalizedMessage());
 			new MessageDialogFactory().showErrorDialog(parent, e.getLocalizedMessage(), "Interrupted");
 		} catch (ExecutionException e) {
-			log.error("Processing error: " + e.getLocalizedMessage(), e);
+			LOG.error("Processing error: " + e.getLocalizedMessage(), e);
 			if (e.getMessage().contains("GC overhead limit exceeded")) {
 				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("Error.gc_overhead_limit_exceeded"), 
 														ApplicationConfig.getInstance().getAppShortName());

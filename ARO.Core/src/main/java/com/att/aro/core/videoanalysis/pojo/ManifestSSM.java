@@ -31,7 +31,7 @@ public class ManifestSSM extends AROManifest {
 			//TODO verify
 			content = reqhelper.getContent(resp, session);
 		} catch (Exception e) {
-			log.error("Failed to parse manifest data, absTimeStamp:"
+			LOG.error("Failed to parse manifest data, absTimeStamp:"
 					+ resp.getAbsTimeStamp().getTime() 
 					+ ", Name:" + resp.getObjNameWithoutParams());
 			return;
@@ -42,7 +42,7 @@ public class ManifestSSM extends AROManifest {
 	}
 	
 	public void parseManifestData() {
-		log.info("parseManifestData" + manifest);
+		LOG.info("parseManifestData" + manifest);
 	}
 
 	@Override

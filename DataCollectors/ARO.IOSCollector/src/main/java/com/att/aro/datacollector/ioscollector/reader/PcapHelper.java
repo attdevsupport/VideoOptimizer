@@ -20,19 +20,12 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 public class PcapHelper {
 	ExternalProcessRunner runner;
-	private ILogger log = new LoggerImpl("IOSCollector");
-
-	@Autowired
-	public void setLogger(ILogger logger) {
-		this.log = logger;
-	}
+	private static final Logger LOG = LogManager.getLogger(PcapHelper.class);
 
 	public PcapHelper() {
 		runner = new ExternalProcessRunner();
@@ -57,12 +50,12 @@ public class PcapHelper {
 			long timeout = 3000;
 			data = runner.runCmdWithTimeout(new String[] { "bash", "-c", cmd }, timeout);
 		} catch (IOException e) {
-			log.debug("IOException:", e);
+			LOG.debug("IOException:", e);
 		}
 		if (data.length() > 1) {
 			String dtstring = getFirstPacketTime(data);
 			if (dtstring.length() > 0) {
-				log.info("found packet date string: " + dtstring);
+				LOG.info("found packet date string: " + dtstring);
 				double d = Double.parseDouble(dtstring);
 				long tick = (long) (d * 1000);
 				Date dt = new Date(tick);

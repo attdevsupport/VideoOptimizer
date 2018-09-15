@@ -49,7 +49,6 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
@@ -61,6 +60,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
+import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.settings.Settings;
@@ -85,7 +85,7 @@ import com.att.aro.ui.view.menu.datacollector.HelpDialog;
 public class PreferencesDialog extends JDialog {
 	private static final int BORDER_HEIGHT = 80;
 	private static final int BORDER_WIDTH = 15;
-	private static final Logger LOGGER = Logger.getLogger(PreferencesDialog.class);
+	private static final Logger LOGGER = LogManager.getLogger(PreferencesDialog.class);
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane;
 	private JPanel buttonPanel;
@@ -94,7 +94,7 @@ public class PreferencesDialog extends JDialog {
 	private JPanel optionsPanel;
 	private EnableEscKeyCloseDialog enableEscKeyCloseDialog;
 	private final SharedAttributesProcesses parent;
-	private final JMenuItem callerMenuItem;
+	private final Component callerItem;
 	private Map<Config, String> updates = new HashMap<>();
 	String logginglevel = "ERROR";
 	private Settings settings = SettingsImpl.getInstance();
@@ -114,7 +114,7 @@ public class PreferencesDialog extends JDialog {
 	 * to be displayed on the preferences dialog
 	 */
 	enum Config {
-		MEM("Xmx", "Max heap in MB", TEXT, JvmSettings.getInstance(), isHeapEnabled()), 
+		MEM("Xmx", "Max heap in MB", TEXT, JvmSettings.getInstance(), isHeapEnabled()),
 		ADB("adb", "Adb Path", FILE, SettingsImpl.getInstance(), true),
 		DUMP_CAP("dumpCap", "Dumpcap Path", FILE, SettingsImpl.getInstance(), Util.isMacOS(), null, ()->Util.getDumpCap()),
 		IDEVICE_SCREENSHOT("iDeviceScreenshot", "iDeviceScreenshot Path", FILE, SettingsImpl.getInstance(),
@@ -122,7 +122,7 @@ public class PreferencesDialog extends JDialog {
 		FFMPEG("ffmpeg", "FFMpeg Path", FILE, SettingsImpl.getInstance(), true, null, () -> Util.getFFMPEG()),
 		FFPROBE("ffprobe", "FFProbe Path", FILE, SettingsImpl.getInstance(), true, null, () -> Util.getFFPROBE()),
 		IOS_PROV("iosProv", "iOS Provisioning Profile", FILE, SettingsImpl.getInstance(), Util.isMacOS()),
-		IOS_CERT("iosCert", "iOS Certificate", TEXT, SettingsImpl.getInstance(), Util.isMacOS(), 
+		IOS_CERT("iosCert", "iOS Certificate", TEXT, SettingsImpl.getInstance(), Util.isMacOS(),
 				ResourceBundleHelper.getMessageString("preferences.iosCert.textField.hint"), null),
 		LOG_LVL("logging", "Logging Level", COMBO, SettingsImpl.getInstance(),true,ResourceBundleHelper.getMessageString("preferences.logging.dropdown.values"));
 
@@ -195,11 +195,11 @@ public class PreferencesDialog extends JDialog {
 		}
 	}
 
-	public PreferencesDialog(SharedAttributesProcesses parent, JMenuItem callerMenuItem) {
+	public PreferencesDialog(SharedAttributesProcesses parent, Component caller) {
 		super(parent.getFrame());
 		this.parent = parent;
-		this.callerMenuItem = callerMenuItem;
-		callerMenuItem.setEnabled(false);
+		this.callerItem = caller;
+			callerItem.setEnabled(false);
 		init();
 	}
 
@@ -473,7 +473,7 @@ public class PreferencesDialog extends JDialog {
 
 	@Override
 	public void dispose() {
-		callerMenuItem.setEnabled(true);
+		callerItem.setEnabled(true);
 		super.dispose();
 	}
 

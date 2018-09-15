@@ -17,20 +17,19 @@ package com.att.aro.core.mobiledevice.pojo;
 
 import java.util.ArrayList;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 
 import com.android.ddmlib.IDevice;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.android.AndroidApiLevel;
 import com.att.aro.core.mobiledevice.IAndroidDevice;
 
 public class AroDevices implements IAroDevices {
 
-	@Autowired
-	private ILogger log;
-
+	private static final Logger LOG = LogManager.getLogger(AroDevices.class.getName());	
 	private ApplicationContext context = SpringContextUtil.getInstance().getContext();
 
 	ArrayList<IAroDevice> deviceList = null;
@@ -40,9 +39,6 @@ public class AroDevices implements IAroDevices {
 
 	public AroDevices() {
 		deviceList = new ArrayList<IAroDevice>();
-		if (this.log == null) {
-			this.log = context.getBean(ILogger.class);
-		}
 		if (androidDev == null) {
 			androidDev = context.getBean(IAndroidDevice.class);
 		}
@@ -98,7 +94,7 @@ public class AroDevices implements IAroDevices {
 		try {
 			rootFlag = androidDev.isAndroidRooted(device);
 		} catch (Exception e) {
-			log.error("Failed to determine rootflag:" + e.getMessage());
+			LOG.error("Failed to determine rootflag:" + e.getMessage());
 		}
 		return rootFlag;
 	}

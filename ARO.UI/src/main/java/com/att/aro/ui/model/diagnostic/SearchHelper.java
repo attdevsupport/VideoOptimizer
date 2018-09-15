@@ -15,16 +15,19 @@
 */
 package com.att.aro.ui.model.diagnostic;
 
+import static java.text.MessageFormat.format;
+
 import java.awt.Color;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
@@ -35,7 +38,7 @@ import com.att.aro.ui.commonui.ContextAware;
 //this is search function class
 public class SearchHelper {
 	
-	private static final Logger LOGGER = Logger.getLogger(SearchHelper.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(SearchHelper.class.getName());
 	private static final DefaultHighlighter.DefaultHighlightPainter highlightPainter = new DefaultHighlighter.DefaultHighlightPainter(
 			new Color(0, 162, 232));
  	private String searchString;
@@ -57,7 +60,7 @@ public class SearchHelper {
 	}
 	
 	private void doTextSearch(String text, boolean next,Session session) throws Exception {
-		LOGGER.log(Level.FINEST, "searching for: {0}", text);
+		LOGGER.info(format("searching for: {0}", text));
 
 		boolean foundIt = false;
 		boolean findNext = next;
@@ -115,25 +118,20 @@ public class SearchHelper {
 					if (matchFound(session,rr, text)) {
 						// look for a next occurrence of the string?
 						if(lookForNextOccurrence) {
-							LOGGER.log(Level.FINE, "found it, now looking for the next!");
-//							highlightRequestRespose(rr);
-//							setFindNextButtonEnable(false);
-							//search for the next only once
+							LOGGER.debug("found it, now looking for the next!");
 							lookForNextOccurrence = false;
 							foundIt = true;
 						} else {
-							LOGGER.log(Level.FINE, "found next, done searching");
-//							setFindNextButtonEnable(true);
-							// return to allow Find Next function
+							LOGGER.debug("found next, done searching");
 							return foundIt;
 						}
 					}
 				} catch (ContentException e) {
 					// nothing can be done here if the content is not available 
-					LOGGER.log(Level.FINE, "Search - Unexpected Exception {0}", e.getMessage());
+					LOGGER.debug(format("Search - Unexpected Exception {0}", e.getMessage()));
 				} catch (IOException e) {
 					// nothing can be done here in case of IO Exception 
-					LOGGER.log(Level.FINE, "Search - Unexpected Exception {0}", e.getMessage());
+					LOGGER.debug(format("Search - Unexpected Exception {0}", e.getMessage()));
 				}
 			} // END:  Request/Response iteration
  		
@@ -175,7 +173,7 @@ public class SearchHelper {
 				}
 			}
 		} catch (BadLocationException e) {
-			LOGGER.warning("Unable to highlight [" + text + "]");
+			LOGGER.warn("Unable to highlight [" + text + "]");
 		}
 		    
 		return foundIt;
@@ -186,17 +184,17 @@ public class SearchHelper {
 		
 		// if found a match in the payload
 		if (rrInfo.getContentLength() != 0 && rrHelper.getContentString(rrInfo,session).indexOf(text) != -1) {
-			LOGGER.log(Level.FINE, "found a match in the payload");
+			LOGGER.debug("found a match in the payload");
 			return true;
 		// else if found in the headers 	
 		} else if (rrInfo.getAllHeaders() != null && rrInfo.getAllHeaders().indexOf(text) != -1) {
-			LOGGER.log(Level.FINE, "found in the headers");
+			LOGGER.debug("found in the headers");
 			return true;
 		// else if found in request/response request/status line	
 		} else if (rrInfo.getDirection() == HttpDirection.REQUEST &&
 				   rrInfo.getStatusLine() != null &&
 				   rrInfo.getStatusLine().indexOf(text) != -1) {
-			LOGGER.log(Level.FINE, "found in request/response request/status line");
+			LOGGER.debug("found in request/response request/status line");
 			return true;
 		}
 		return false;

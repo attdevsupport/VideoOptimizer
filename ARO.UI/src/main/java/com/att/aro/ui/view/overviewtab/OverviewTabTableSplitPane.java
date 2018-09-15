@@ -34,12 +34,13 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.CacheEntry;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.overview.AccessedDomainsTableModel;
@@ -56,7 +57,7 @@ import com.att.aro.ui.view.AROModelObserver;
 public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseListener {
 
 	private static final long serialVersionUID = 1L;
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);	
+	private static final Logger LOGGER = LogManager.getLogger(OverviewTabTableSplitPane.class);	
 
 	private JSplitPane tableSplitPane;
 	private JPanel duplicatesPanel;
@@ -278,7 +279,7 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 		if(event.getClickCount()==2){
 			if (event.getSource() instanceof JTable){
 				int selectionIndex = ((JTable)event.getSource()).getSelectedRow();
-				logger.info("selectionIndex: "+ selectionIndex);
+				LOGGER.info("selectionIndex: "+ selectionIndex);
 				if(selectionIndex!=-1){
 					Session session = expandedDomainModel.getValueAt(selectionIndex);
 					overviewTab.updateDiagnosticsTab(session);

@@ -21,8 +21,9 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetreader.IDomainNameParser;
 import com.att.aro.core.packetreader.pojo.DomainNameSystem;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
@@ -41,8 +42,8 @@ public class DomainNameParserImpl implements IDomainNameParser {
 	private byte[] data;
 	private int start;
 	private ByteBuffer bytes;
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(DomainNameParserImpl.class.getName());
+
 	@Override
 	public DomainNameSystem parseDomainName(UDPPacket packet) {
 		DomainNameSystem domain = new DomainNameSystem();
@@ -69,7 +70,7 @@ public class DomainNameParserImpl implements IDomainNameParser {
 
 		// Make sure that there is one question
 		if (queries != 1) {
-			logger.warn("DNS packet with more than one query");
+			LOGGER.warn("DNS packet with more than one query");
 			return null;
 		}			
 
@@ -111,12 +112,12 @@ public class DomainNameParserImpl implements IDomainNameParser {
 				bytes.getInt(); // TTL
 				short len = bytes.getShort();
 				if (!domainname.equals(domainName) && !domainname.equals(cname)) {
-					logger.warn("Unexpected answer domain: " + domainname);
+					LOGGER.warn("Unexpected answer domain: " + domainname);
 					bytes.position(bytes.position() + len);
 					continue;
 				}
 				if (qclass != 1) {
-					logger.warn("Unrecognized DNS answer class:" + qclass);
+					LOGGER.warn("Unrecognized DNS answer class:" + qclass);
 					bytes.position(bytes.position() + len);
 					continue;
 				}
@@ -129,7 +130,7 @@ public class DomainNameParserImpl implements IDomainNameParser {
 					try {
 						ipAddresses.add(InetAddress.getByAddress(bdata));
 					} catch (UnknownHostException e) {
-						logger.warn("Unexpected exception reading IP address from DNS response");
+						LOGGER.warn("Unexpected exception reading IP address from DNS response");
 					}
 					break;
 				case TYPE_CNAME :
@@ -137,7 +138,7 @@ public class DomainNameParserImpl implements IDomainNameParser {
 					cname = readDomainName();
 					break;
 				default :
-					logger.warn("Unhandled DNS answer type:" + qtype);
+					LOGGER.warn("Unhandled DNS answer type:" + qtype);
 					bytes.position(bytes.position() + len);
 				}
 			}

@@ -38,6 +38,7 @@ import javax.swing.event.TableModelListener;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.util.Util;
@@ -58,7 +59,7 @@ public class BPVideoWarnFailPanel extends JPanel {
 	private ObjectMapper mapper;
 	private PreferenceHandlerImpl prefs;
 	private VideoUsagePrefs videoUsagePrefs;
-	public static final Logger LOGGER = Logger.getLogger(BPVideoWarnFailPanel.class.getName());
+	public static final Logger LOGGER = LogManager.getLogger(BPVideoWarnFailPanel.class.getName());
 	private JTextField compileResultsField = new JTextField();
 	String sError = "";
 	private VideoPreferenceTableModel model;

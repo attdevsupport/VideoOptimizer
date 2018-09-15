@@ -34,14 +34,16 @@ public class AdaptationSetPR {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("\n\t\tAdaptationSet\n\t\t\tmimeType:"); strblr.append(mimeType);
-		strblr.append("\n\t\t\tcontentType:"); strblr.append(contentType);
+		strblr.append("\n\t\tAdaptationSet\n\t\t\tmimeType:");
+		strblr.append(mimeType);
+		strblr.append("\n\t\t\tcontentType:");
+		strblr.append(contentType);
 		int cntr = 0;
-//		strblr.append("\n\t\t SegmentTemplatePR :"); 
 		strblr.append(segmenttemplate);
 		for (RepresentationPR repSet : representation) {
 			strblr.append(cntr++ == 0 ? ": " : ", ");
-			strblr.append("\n\t\t RepresentationPR :"); strblr.append(repSet);
+			strblr.append("\n\t\t RepresentationPR :");
+			strblr.append(repSet);
 		}
 		return strblr.toString();
 	}

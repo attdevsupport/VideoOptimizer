@@ -17,10 +17,10 @@ package com.att.aro.core.packetreader.impl;
 
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetreader.INetmonPacketSubscriber;
 import com.att.aro.core.packetreader.IPacketListener;
 import com.att.aro.core.packetreader.IPacketReader;
@@ -28,9 +28,8 @@ import com.att.aro.core.packetreader.IPacketService;
 @Deprecated
 public class NetmonPacketReaderImpl implements IPacketReader, INetmonPacketSubscriber {
 
-	@InjectLogger
-	private ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(NetmonPacketReaderImpl.class.getName());
+
 	@Autowired
 	private IPacketService packetservice;
 	
@@ -65,9 +64,9 @@ public class NetmonPacketReaderImpl implements IPacketReader, INetmonPacketSubsc
 			netmon.loadNativeLibs();
 		}
 		
-		logger.info("Creating Netmon Adapter...");
+		LOGGER.info("Creating Netmon Adapter...");
 		if (listener == null) {
-			logger.error("PacketListener cannot be null");
+			LOGGER.error("PacketListener cannot be null");
 			throw new IllegalArgumentException("PacketListener cannot be null");
 		}
 
@@ -79,7 +78,7 @@ public class NetmonPacketReaderImpl implements IPacketReader, INetmonPacketSubsc
 		case NETMON_TRACE_FILE_LOAD_ERROR:
 		case NETMON_ERROR:
 		default:
-			logger.error("NetMon error code: " + retval);
+			LOGGER.error("NetMon error code: " + retval);
 			throw new IOException("NetMon error code: " + retval);
 		}
 	}

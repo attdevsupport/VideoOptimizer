@@ -26,14 +26,17 @@ public class SSMQualityLevelAmz {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("SSMQualityLevelAmz :"); 
-		strblr.append(" index:");                               strblr.append(index           );                
-		strblr.append(", bitrate:");                            strblr.append(bitrate         );                
-//		strblr.append(", codecPrivateData:");                   strblr.append(codecPrivateData);                
-		strblr.append(", maxWidth:");                           strblr.append(maxWidth        );                
-		strblr.append(", maxHeight:");                          strblr.append(maxHeight       );                
-		strblr.append(", fourCC:");                             strblr.append(fourCC          );     
-		
+		strblr.append("SSMQualityLevelAmz :");
+		strblr.append(" index:");
+		strblr.append(index);
+		strblr.append(", bitrate:");
+		strblr.append(bitrate);
+		strblr.append(", maxWidth:");
+		strblr.append(maxWidth);
+		strblr.append(", maxHeight:");
+		strblr.append(maxHeight);
+		strblr.append(", fourCC:");
+		strblr.append(fourCC);
 		return strblr.toString();
 	}
 	

@@ -28,11 +28,12 @@ import java.util.HashMap;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
@@ -52,7 +53,7 @@ import javafx.util.Duration;
 
 public class JFxPlayer implements IVideoPlayer {
 
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private static final Logger LOGGER = LogManager.getLogger(JFxPlayer.class);	
 	private String traceDirectory;
 	private AbstractTraceResult traceResult;
 	private double videoOffset;
@@ -189,12 +190,10 @@ public class JFxPlayer implements IVideoPlayer {
 		launchFXPlayer();
 		
 		if (playerControl == null) {
-			logger.error("Player control is not available!");
+			LOGGER.error("Player control is not available!");
 			return;
 		}
 		
-		videoOffset = playerControl.getFinalizedVideoOffset();
-
 		Double startTime = 0.0;
 		AnalysisFilter filter = ((MainFrame)aroView).getController().getTheModel().getAnalyzerResult().getFilter();
 		if(null != filter){
@@ -287,7 +286,7 @@ public class JFxPlayer implements IVideoPlayer {
 		try {
 			refresh();
 		} catch (IOException e) {
-			logger.error("Error launching player", e);
+			LOGGER.error("Error launching player", e);
 		}
 	}
 

@@ -19,6 +19,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -41,6 +42,19 @@ public class AROMenuAdder {
 		JMenuItem helpMenuItem = new JMenuItem(item);
 		helpMenuItem.addActionListener(listener);
 		return helpMenuItem;
+	}
+
+	public JMenuItem getMenuItemInstance(String menuName, String menuItemName) {
+		JMenuItem jMenuItem = new JMenuItem(menuName);
+		jMenuItem.addActionListener(listener);
+		jMenuItem.setName(menuItemName);
+		return jMenuItem;
+	}
+
+	public JMenu getMenuInstance(String menuItemName) {
+		JMenu jMenu = new JMenu(menuItemName);
+		jMenu.addActionListener(listener);
+		return jMenu;
 	}
 
 	public JCheckBoxMenuItem getCheckboxMenuItemInstance(Enum<?> menuItemKey) {

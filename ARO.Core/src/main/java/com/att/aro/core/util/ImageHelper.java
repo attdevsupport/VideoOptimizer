@@ -47,7 +47,7 @@ import com.sun.media.jai.codecimpl.util.ImagingException;
 public class ImageHelper {
 
 	public static boolean imageDecoderStatus = true;
-	private final static String PNG_IMAGE_HEADER = "89 50 4E 47 0D 0A 1A 0A";
+	private static final String PNG_IMAGE_HEADER = "89 50 4E 47 0D 0A 1A 0A";
 
 	/**
 	 * Converts raw image in to buffered image object which will be provided to

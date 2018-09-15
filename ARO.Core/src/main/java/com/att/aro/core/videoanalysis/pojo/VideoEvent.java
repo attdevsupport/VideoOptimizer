@@ -77,18 +77,30 @@ public class VideoEvent {
 		StringBuilder strblr = new StringBuilder(83);
 		strblr.append("VideoType :"); 
 		strblr.append(eventType.toString());
-//		strblr.append(", URI:"); strblr.append(response.getAssocReqResp().getObjUri());
-		strblr.append(", file:"); strblr.append(response.getAssocReqResp().getFileName());
-		strblr.append(", Segment:"); strblr.append(segment);
-		strblr.append(", Session:"); strblr.append(String.format("%.4f",getSession().getSessionStartTime()));
-		strblr.append(", SegmentStartTime:"); strblr.append(String.format("%.0f", segmentStartTime));
-		strblr.append(", Quality:"); strblr.append(quality);
-		if (!rangeList.isEmpty()&&rangeList.get(0).isValidRange()) {strblr.append(", Byte Range:"); strblr.append(rangeList);}
-		strblr.append(", bitrate:"); strblr.append(bitrate);
-		strblr.append(", duration:"); strblr.append(String.format("%.6f", duration*1e0));
-		strblr.append(", dlSize:"); strblr.append(response.getContentLength());
-		strblr.append(", mdatSize:"); strblr.append(mdatSize);
-		strblr.append(", endTS:"); strblr.append(String.format("%.6f", endTS*1e0));
+		strblr.append(", file:");
+		strblr.append(response.getAssocReqResp().getFileName());
+		strblr.append(", Segment:");
+		strblr.append(segment);
+		strblr.append(", Session:");
+		strblr.append(String.format("%.4f", getSession().getSessionStartTime()));
+		strblr.append(", SegmentStartTime:");
+		strblr.append(String.format("%.0f", segmentStartTime));
+		strblr.append(", Quality:");
+		strblr.append(quality);
+		if (!rangeList.isEmpty() && rangeList.get(0).isValidRange()) {
+			strblr.append(", Byte Range:");
+			strblr.append(rangeList);
+		}
+		strblr.append(", bitrate:");
+		strblr.append(bitrate);
+		strblr.append(", duration:");
+		strblr.append(String.format("%.6f", duration * 1e0));
+		strblr.append(", dlSize:");
+		strblr.append(response.getContentLength());
+		strblr.append(", mdatSize:");
+		strblr.append(mdatSize);
+		strblr.append(", endTS:");
+		strblr.append(String.format("%.6f", endTS * 1e0));
 		return strblr.toString();
 	}
 	

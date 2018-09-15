@@ -88,7 +88,7 @@ public class ManifestHLS extends AROManifest {
 		String strData = new String(data);
 		String[] sData = (new String(data)).split("[\n\r]");
 
-		log.info("import Manifest:\n"+strData);
+		LOG.info("import Manifest:\n"+strData);
 		
 		if (encryption.isEmpty()) {
 			encryption = StringParse.findLabeledDataFromString("#EXT-X-KEY:METHOD=", ",", strData);

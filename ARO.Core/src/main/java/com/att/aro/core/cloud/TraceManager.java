@@ -37,6 +37,9 @@ public class TraceManager {
 	private Repository repository;
 	private Collection<Listener> listeners;
 
+	public TraceManager(){
+		
+	}
   
     public TraceManager(Repository repository) {
 		this.repository = repository;
@@ -55,7 +58,7 @@ public class TraceManager {
 		}
  	}
 
-	private String compress(String trace) {
+	public String compress(String trace) {
 		notifyListeners(State.COMPRESSING);
 
 		File folder = new File(trace);
@@ -67,7 +70,8 @@ public class TraceManager {
 		
 		ArrayList<File> sourceFileList = new ArrayList<>();
 		for (int i = 0; i < listOfFiles.length; i++) {
-			if (listOfFiles[i].isFile()) {
+			String fileName = listOfFiles[i].getName();
+			if (listOfFiles[i].isFile() && !fileName.endsWith("mp4") && !fileName.endsWith("mov")) {
 				sourceFileList.add(listOfFiles[i]);
 			}
 		}

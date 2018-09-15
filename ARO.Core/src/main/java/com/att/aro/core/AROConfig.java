@@ -45,7 +45,6 @@ import com.att.aro.core.configuration.impl.ProfileFactoryImpl;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.impl.AROServiceImpl;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.mobiledevice.IAndroidDevice;
 import com.att.aro.core.mobiledevice.impl.AndroidDeviceImpl;
 import com.att.aro.core.mobiledevice.pojo.AroDevices;
@@ -189,6 +188,7 @@ import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
+
 /**
  * Spring configuration for ARO.Core<br>
  * Included are all the components to collect, open, analyze and generate
@@ -234,11 +234,6 @@ public class AROConfig {
 	@Bean(name = "threadexecutor")
 	public IThreadExecutor threadExecutor() {
 		return new ThreadExecutorImpl();
-	}
-
-	@Bean(name = "logger")
-	public ILogger getLog() {
-		return new LoggerImpl("");
 	}
 
 	@Bean(name = "packetReader")
@@ -650,12 +645,10 @@ public class AROConfig {
 	public IExternalProcessRunner getExternalProcessRunnerImpl() {
 		return new ExternalProcessRunnerImpl();
 	}
-
-	
 	@Bean(name ="videoUsagePrefs")
 	public VideoUsagePrefs getVideoUsagePrefs(){
 		return new VideoUsagePrefs();
 	}
-
+ 
 
 }

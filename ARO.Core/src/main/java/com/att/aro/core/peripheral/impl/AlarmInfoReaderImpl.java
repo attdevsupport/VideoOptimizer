@@ -20,8 +20,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IAlarmInfoReader;
 import com.att.aro.core.peripheral.pojo.AlarmInfo;
@@ -36,8 +37,7 @@ import com.att.aro.core.util.Util;
  */
 public class AlarmInfoReaderImpl extends PeripheralBase implements IAlarmInfoReader {
 	
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(AlarmInfoReaderImpl.class.getName());
 
 	@Override
 	public List<AlarmInfo> readData(String directory, double dumpsysEpochTimestamp, double dumpsysElapsedTimestamp, Date traceDateTime) {
@@ -57,7 +57,7 @@ public class AlarmInfoReaderImpl extends PeripheralBase implements IAlarmInfoRea
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed to read kernal log file for Alarm Info data: " + filepath);
+			LOGGER.error("failed to read kernal log file for Alarm Info data: " + filepath);
 			return alarmInfos;
 		}
 
@@ -85,7 +85,7 @@ public class AlarmInfoReaderImpl extends PeripheralBase implements IAlarmInfoRea
 						default:
 
 							// should not arrive here
-							logger.warn("cannot resolve alarm type: " + timestamp 
+							LOGGER.warn("cannot resolve alarm type: " + timestamp 
 									+ " type " + Double.parseDouble(strFields[strFields.length - 3]));
 							alarmType = AlarmType.UNKNOWN;
 							break;
@@ -107,7 +107,7 @@ public class AlarmInfoReaderImpl extends PeripheralBase implements IAlarmInfoRea
 //								+ "\nEpoch: " + timestampEpoch
 //								+ "\nElapsed: " + timestampElapsed);
 					} catch (Exception e) {
-						logger.warn("Unexpected error parsing alarm event: " + strLineBuf, e);
+						LOGGER.warn("Unexpected error parsing alarm event: " + strLineBuf, e);
 					}
 				}
 			}

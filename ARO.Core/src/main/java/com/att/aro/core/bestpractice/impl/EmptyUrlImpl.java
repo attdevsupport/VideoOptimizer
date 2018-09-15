@@ -17,6 +17,8 @@ package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -25,12 +27,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.EmptyUrlResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -69,9 +69,8 @@ public class EmptyUrlImpl implements IBestPractice {
 	
 	private IHttpRequestResponseHelper reqhelper;
 	
-	@InjectLogger
-	private static ILogger log;
-	
+	private static final Logger LOG = LogManager.getLogger(EmptyUrlImpl.class.getName());
+
 	@Autowired
 	public void setHttpReqResHelper(IHttpRequestResponseHelper reqhelper){
 		this.reqhelper = reqhelper;
@@ -112,7 +111,7 @@ public class EmptyUrlImpl implements IBestPractice {
 		try {
 			contentstr = reqhelper.getContentString(request, session);
 		} catch (Exception e) {
-			log.error("Failed to get content from HttpRequestResponseInfo", e);
+			LOG.error("Failed to get content from HttpRequestResponseInfo", e);
 			return res;
 		}
 		Elements allSrcElements = new Elements();
@@ -124,7 +123,7 @@ public class EmptyUrlImpl implements IBestPractice {
 			allSrcElements.addAll(htmlDoc.select("a"));
 			allSrcElements.addAll(htmlDoc.select("link"));
 		} catch (Exception e) {
-			log.error("Failed to parse :"+contentstr, e);
+			LOG.error("Failed to parse :"+contentstr, e);
 		}
 		res = checkAttributeEmpty(request, allSrcElements, res);
 		return res;

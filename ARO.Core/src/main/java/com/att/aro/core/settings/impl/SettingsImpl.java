@@ -26,11 +26,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.exception.ARORuntimeException;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.settings.Settings;
-import com.att.aro.core.util.Util;
 
 /**
  * Implements Settings class and acts as interface to (load from/save to) config.properties file.
@@ -44,7 +44,7 @@ public final class SettingsImpl implements Settings {
 
 	public static final String CONFIG_FILE_PATH = System.getProperty("user.home") + System.getProperty("file.separator")
 			+ "VideoOptimizerLibrary" + System.getProperty("file.separator") + "config.properties";
-	private static final ILogger LOGGER = new LoggerImpl(SettingsImpl.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(SettingsImpl.class.getName());
 	private static final SettingsImpl INSTANCE = new SettingsImpl();
 	private final Properties configProperties;
 	private final Map<String, String> valueMap = new ConcurrentHashMap<>();
@@ -73,6 +73,7 @@ public final class SettingsImpl implements Settings {
 		return configProperties;
 	}
 
+	@SuppressWarnings("checkstyle:emptyblock")
 	private void createConfig(String configFilePath) {
 		File configFile = new File(configFilePath);
 		if (!configFile.exists()) {

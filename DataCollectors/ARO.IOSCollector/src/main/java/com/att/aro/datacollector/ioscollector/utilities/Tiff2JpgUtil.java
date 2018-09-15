@@ -24,14 +24,14 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.util.ImageHelper;
 
 public class Tiff2JpgUtil {
 
-	private static ILogger log = new LoggerImpl("Tiff2JpgUtil");
-	
+	private static final Logger LOG = LogManager.getLogger(Tiff2JpgUtil.class.getName());
 	public static ByteArrayOutputStream tiff2Jpg(String inputFile) {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		try {
@@ -39,7 +39,7 @@ public class Tiff2JpgUtil {
 			image = convert(image, BufferedImage.TYPE_INT_RGB);
 			ImageIO.write(image, "jpg", byteArrayOutputStream);
 		} catch (Exception e) {
-			log.debug("Exception:", e);
+			LOG.debug("Exception:", e);
 		}
 		return byteArrayOutputStream;
 	}

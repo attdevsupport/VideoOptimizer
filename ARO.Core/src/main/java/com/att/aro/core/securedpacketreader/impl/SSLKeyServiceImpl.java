@@ -21,9 +21,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.securedpacketreader.ISSLKeyService;
@@ -34,8 +36,7 @@ public class SSLKeyServiceImpl implements ISSLKeyService {
 	@Autowired
 	ICrypto crypto;
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(SSLKeyServiceImpl.class.getName());
 
 	public static final int TLS_MASTER_SECRET_LEN = 48;
 	public static final int TLS_RANDOM_LEN = 32;
@@ -92,7 +93,7 @@ public class SSLKeyServiceImpl implements ISSLKeyService {
 	private int match(SSLKey key, byte[] random, byte[] master) {
 		int ret = tlsprf(key.getPreMaster(), key.getPreMasterLen(), "master secret", random, TLS_RANDOM_LEN + TLS_RANDOM_LEN, master, TLS_MASTER_SECRET_LEN);
 		if (ret == -1) {
-			logger.warn("Error in deriving new, cryptographically separate keys from a given key in TLS.");
+			LOGGER.warn("Error in deriving new, cryptographically separate keys from a given key in TLS.");
 		}
 
 		boolean match = true;
@@ -198,7 +199,7 @@ public class SSLKeyServiceImpl implements ISSLKeyService {
 
 	private boolean cryptoApiHashVector(String alg, int hashlen, int numElem, byte[] addr, int len, byte[] mac) {
 		// TODO: why is this variable unused?
-		logger.debug("unused parameters => hashlen: " + hashlen + ", len: " + len + ", numElem: " + numElem);
+		LOGGER.debug("unused parameters => hashlen: " + hashlen + ", len: " + len + ", numElem: " + numElem);
 
 		MessageDigest msgd = null;
 		try {
@@ -217,7 +218,7 @@ public class SSLKeyServiceImpl implements ISSLKeyService {
 
 	private boolean cryptoApiHashVector(String alg, int hashlen, int numElem, byte[][] addr, int[] len, byte[] mac) {
 		// TODO: why is this variable unused?
-		logger.debug("unused parameters => hashlen: " + hashlen);
+		LOGGER.debug("unused parameters => hashlen: " + hashlen);
 		MessageDigest msgd = null;
 		try {
 			msgd = MessageDigest.getInstance(alg);
@@ -317,7 +318,7 @@ public class SSLKeyServiceImpl implements ISSLKeyService {
 
 	private boolean hmacSha1Vector(byte[] keyArr, int keylenValue, int numElem, byte[][] addr, int[] len, byte[] mac, int addrIndex) {
 		// TODO: why is this variable unused?
-		logger.debug("unused parameters => addrIndex: " + addrIndex);
+		LOGGER.debug("unused parameters => addrIndex: " + addrIndex);
 		byte[] kpad = new byte[64];
 		byte[] tkarr = new byte[16];
 		byte[][] addrArr = new byte[6][];

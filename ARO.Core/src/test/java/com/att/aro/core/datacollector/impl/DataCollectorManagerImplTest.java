@@ -1,17 +1,19 @@
 package com.att.aro.core.datacollector.impl;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.context.ApplicationContext;
-import static org.junit.Assert.*;
+
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.datacollector.IDataCollectorManager;
-import com.att.aro.core.datacollector.impl.DataCollectorManagerImpl;
 
 public class DataCollectorManagerImplTest extends BaseTest {
 	DataCollectorManagerImpl cmg;

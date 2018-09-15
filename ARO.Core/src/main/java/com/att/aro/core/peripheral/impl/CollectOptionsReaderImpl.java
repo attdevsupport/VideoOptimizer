@@ -15,6 +15,7 @@ import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.ICollectOptionsReader;
@@ -27,7 +28,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class CollectOptionsReaderImpl implements ICollectOptionsReader {
 	private static final String REGEX_NUMBER = "\\D+";
-	private static Logger logger = Logger.getLogger(CollectOptionsReaderImpl.class.getName());
+	private static Logger logger = LogManager.getLogger(CollectOptionsReaderImpl.class.getName());
 
 	@Override
 	public CollectOptions readData(String directory) {
@@ -68,6 +69,7 @@ public class CollectOptionsReaderImpl implements ICollectOptionsReader {
 		}
 	}
 
+	@SuppressWarnings("checkstyle:fallthrough")
 	CollectOptions readOldFormat(List<String> lines) {
 		CollectOptions collectOptions = new CollectOptions();
 		try {

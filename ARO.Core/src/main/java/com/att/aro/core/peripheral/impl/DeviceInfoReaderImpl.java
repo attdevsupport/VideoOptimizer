@@ -20,17 +20,17 @@ import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IDeviceInfoReader;
 import com.att.aro.core.util.Util;
 
 public class DeviceInfoReaderImpl extends PeripheralBase implements IDeviceInfoReader {
-	
-	@InjectLogger
-	private static ILogger logger;
-	
+
+	private static final Logger LOGGER = LogManager.getLogger(DeviceInfoReaderImpl.class.getName());
+
 	@Override
 	public Set<InetAddress> readData(String directory) {
 		String filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.DEVICEINFO_FILE;
@@ -42,7 +42,7 @@ public class DeviceInfoReaderImpl extends PeripheralBase implements IDeviceInfoR
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e) {
-			logger.error("failed to read Device Info file: "+filepath);
+			LOGGER.error("failed to read Device Info file: "+filepath);
 		}
 		if(lines != null){
 			for(String line: lines) {
@@ -52,7 +52,7 @@ public class DeviceInfoReaderImpl extends PeripheralBase implements IDeviceInfoR
 				try {
 					localIPAddresses.add(InetAddress.getByName(index > 0 ? line.substring(0, index) : line));
 				} catch (UnknownHostException e) {
-					logger.error("failed to read ip address: "+line);
+					LOGGER.error("failed to read ip address: "+line);
 				}
 			}
 		}

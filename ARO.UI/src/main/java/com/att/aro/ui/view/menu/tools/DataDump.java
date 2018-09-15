@@ -35,12 +35,9 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.preferences.UserPreferences;
 import com.att.aro.core.preferences.UserPreferencesFactory;
@@ -50,14 +47,16 @@ import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.menu.profiles.ProfileException;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Manages export functionality of multiple traces.
  */
 public class DataDump {
 
-	private ILogger log = new LoggerImpl(DataDump.class.getCanonicalName());
-
+	private static final Logger LOG = LogManager.getLogger(DataDump.class.getName());
 	private final AROController controller;
 	private final File traceDir;
 	private File fileToSave;
@@ -170,7 +169,7 @@ public class DataDump {
 					(File.separatorChar + ResourceBundleHelper.
 							getMessageString(MessageItem.datadump_autofilename)));
 			if (!overwrite && fileToSave.exists()) {
-				log.info(ResourceBundleHelper.getMessageString(
+				LOG.info(ResourceBundleHelper.getMessageString(
 						MessageItem.datadump_exists));
 				return;
 			}
@@ -202,7 +201,7 @@ public class DataDump {
 				try {
 					if (get().getName().contains(EXTENSION_FILTER)) {
 						if (singleTrace) {
-							log.info(ResourceBundleHelper.getMessageString(
+							LOG.info(ResourceBundleHelper.getMessageString(
 									MessageItem.table_export_success));
 						} else {
 							if (new MessageDialogFactory()
@@ -215,17 +214,17 @@ public class DataDump {
 					}
 					this.cancel(true);
 				} catch (IOException e) {
-					log.error("Unexpected IOException analyzing trace", e);
+					LOG.error("Unexpected IOException analyzing trace", e);
 					new MessageDialogFactory().showUnexpectedExceptionDialog(MSG_WINDOW, e);
 				} catch (UnsupportedOperationException unsupportedException) {
 					MessageDialogFactory.showMessageDialog(MSG_WINDOW,
 							ResourceBundleHelper.getMessageString(
 									MessageItem.Error_unableToOpen));
 				} catch (InterruptedException e) {
-					log.error("Unexpected exception analyzing trace", e);
+					LOG.error("Unexpected exception analyzing trace", e);
 					new MessageDialogFactory().showUnexpectedExceptionDialog(MSG_WINDOW, e);
 				} catch (ExecutionException e) {
-					log.error("Unexpected execution exception analyzing trace", e);
+					LOG.error("Unexpected execution exception analyzing trace", e);
 					if (e.getCause() instanceof OutOfMemoryError) {
 						new MessageDialogFactory().showErrorDialog(null,
 								ResourceBundleHelper.getMessageString(
@@ -308,20 +307,20 @@ public class DataDump {
 					analysis.add(controller.runAnalyzer(traceDirectory.getAbsolutePath(),
 						controller.getTheModel().getAnalyzerResult().getProfile(), null));
 				} catch (Exception e) {
-					log.warn("Unable to run analysis on folder: " + traceDirectory, e);
+					LOG.warn("Unable to run analysis on folder: " + traceDirectory, e);
 				}
 			}
 
 			try {
 				new ObjectMapper().writeValue(fileToSave, analysis);
 			} catch (JsonGenerationException e) {
-				log.error(e.getMessage());
+				LOG.error(e.getMessage());
 				new MessageDialogFactory().showUnexpectedExceptionDialog(MSG_WINDOW, e);
 			} catch (JsonMappingException e) {
-				log.error(e.getMessage());
+				LOG.error(e.getMessage());
 				new MessageDialogFactory().showUnexpectedExceptionDialog(MSG_WINDOW, e);
 			} catch (IOException e) {
-				log.error(e.getMessage());
+				LOG.error(e.getMessage());
 				new MessageDialogFactory().showUnexpectedExceptionDialog(MSG_WINDOW, e);
 			}
 

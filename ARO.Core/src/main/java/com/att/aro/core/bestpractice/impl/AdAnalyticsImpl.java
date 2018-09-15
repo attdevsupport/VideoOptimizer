@@ -27,18 +27,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.AdAnalyticsResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.MultipleConnectionsEntry;
 import com.att.aro.core.bestpractice.pojo.SimultnsUtil;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -59,8 +59,8 @@ public class AdAnalyticsImpl implements IBestPractice {
 	private String textResultPass;
 	@Value("${connections.adAnalytics.results}")
 	private String textResults;
-	@InjectLogger
-	private static ILogger log;
+	private static final Logger LOG = LogManager.getLogger(AdAnalyticsImpl.class.getName());
+
 	@Autowired
 	IHttpRequestResponseHelper rrhelper;
 	private double totalAdAnalyticsBytes = 0.0f;
@@ -152,7 +152,7 @@ public class AdAnalyticsImpl implements IBestPractice {
 						new FileReader(new File(getClass().getResource("/ads_analytics.txt").getFile())));
 				adAnaltyicsfound = isAdAnaltyicsfound(reqRespMap.get(ipInside).getAssocReqResp(), session, reader);
 			} catch (FileNotFoundException e) {
-				log.error("Ad Analytics text file not found");
+				LOG.error("Ad Analytics text file not found");
 			}
 		}
 		if (adAnaltyicsfound) {
@@ -178,7 +178,7 @@ public class AdAnalyticsImpl implements IBestPractice {
 					}
 				}
 			} catch (Exception e) {
-				log.error("Error in retrieving Content");
+				LOG.error("Error in retrieving Content");
 			} finally {
 				try {
 					reader.close();

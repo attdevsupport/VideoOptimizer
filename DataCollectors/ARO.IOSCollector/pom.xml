@@ -2,14 +2,21 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>com.att.aro</groupId>
+        <artifactId>vo-parent</artifactId>
+        <version>2.1.0</version>
+        <relativePath>../../ARO.Parent</relativePath>
+    </parent>
+
 	<groupId>com.att.aro.datacollector</groupId>
 	<artifactId>ios-collector</artifactId>
-	<version>6.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<name>ARO IOS Collector</name>
+	<name>VO IOS Collector</name>
 	<description>IOS data collector for ARO.</description>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
 	<licenses>
 		<license>
@@ -18,7 +25,6 @@
 			<distribution>manual</distribution>
 		</license>
 	</licenses>
-
 
 	<repositories>
 		<repository>
@@ -41,7 +47,7 @@
 			<id>sonatype-public</id>
 			<name>Sonatype Public</name>
 			<url>http://repository.sonatype.org/content/groups/public</url>
-		</repository>
+		</repository>	
 	</repositories>
 
 	<pluginRepositories>
@@ -62,34 +68,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.att.aro</groupId>
-			<artifactId>aro-core</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.14</version>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.11</version>
-			<scope>test</scope>
+			<artifactId>vo-core</artifactId>
+			<version>2.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.media</groupId>

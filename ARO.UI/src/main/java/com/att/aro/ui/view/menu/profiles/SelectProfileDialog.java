@@ -41,10 +41,11 @@ import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.configuration.pojo.Profile;
 import com.att.aro.core.preferences.UserPreferencesFactory;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.model.DataTable;
@@ -56,9 +57,7 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
  */
 public class SelectProfileDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
-
-	private static ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
-
+	private static final Logger LOGGER = LogManager.getLogger(SelectProfileDialog.class);	
 	private JPanel jContentPane = null;
 	private JPanel jButtonPanel = null;
 	private JPanel selectionPanel = null;
@@ -201,7 +200,7 @@ public class SelectProfileDialog extends JDialog {
 					Profile profile = jProfilesTable.getSelectedItem();
 					if (profile == null) {
 						if (filename == null || filename.trim().length() == 0) {
-							logger.debug(ResourceBundleHelper.getMessageString("profile.noselection"));
+							LOGGER.debug(ResourceBundleHelper.getMessageString("profile.noselection"));
 							MessageDialogFactory.getInstance().showErrorDialog(SelectProfileDialog.this,ResourceBundleHelper.getMessageString("profile.noselection"));
 						} else {
 							try {
@@ -212,18 +211,18 @@ public class SelectProfileDialog extends JDialog {
 								parent.updateProfile(profile);
 								dispose();
 							} catch (FileNotFoundException fnfException) {
-								logger.debug(fnfException.getMessage(), fnfException);
+								LOGGER.debug(fnfException.getMessage(), fnfException);
 								MessageDialogFactory.getInstance().showErrorDialog(SelectProfileDialog.this,ResourceBundleHelper.getMessageString("profile.filenotfound"));
 							} catch (IOException ioException) {
 								String message = "Unable to load device profile file: "+ filename;
-								logger.debug(message, ioException);
+								LOGGER.debug(message, ioException);
 								MessageDialogFactory.getInstance().showErrorDialog(SelectProfileDialog.this, ioException.getMessage());
 							} catch (ProfileException profileException) {
-								logger.debug(profileException.getMessage(), profileException);
+								LOGGER.debug(profileException.getMessage(), profileException);
 								MessageDialogFactory.getInstance().showErrorDialog(SelectProfileDialog.this,
 										MessageFormat.format(ResourceBundleHelper.getMessageString("configuration.parseerror"), profileException.getMessage()));
 							} catch (IllegalArgumentException illegalArgException) {
-								logger.debug(illegalArgException.getMessage(), illegalArgException);
+								LOGGER.debug(illegalArgException.getMessage(), illegalArgException);
 								MessageDialogFactory.getInstance().showErrorDialog(SelectProfileDialog.this, ResourceBundleHelper.getMessageString("profile.invalid"));
 							}
 						}

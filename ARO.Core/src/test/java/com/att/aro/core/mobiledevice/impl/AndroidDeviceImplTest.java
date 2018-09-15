@@ -13,12 +13,10 @@ import org.mockito.stubbing.Answer;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.BaseTest;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.android.pojo.ShellOutputReceiver;
 import com.att.aro.core.mobiledevice.IAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.RootCheckOutputReceiver;
-import com.att.aro.core.model.InjectLogger;
 
 public class AndroidDeviceImplTest extends BaseTest {
 
@@ -31,15 +29,14 @@ public class AndroidDeviceImplTest extends BaseTest {
 
 	@Mock
 	IAndroid android;
-	
-	@InjectLogger
-	private ILogger logger;
+
+	//private static final Logger logger = LogManager.getLogger(AndroidDeviceImplTest.class.getName());
 
 	@Before
 	public void init() {
 		androidDeviceImpl = (AndroidDeviceImpl) context.getBean(IAndroidDevice.class);
-		logger = Mockito.mock(ILogger.class);
-		androidDeviceImpl.setLogger(logger);
+		//logger = Mockito.mock(ILogger.class);
+		//androidDeviceImpl.setLogger(logger);
 		android = Mockito.mock(IAndroid.class);
 		androidDeviceImpl.setAndroid(android);
 		MockitoAnnotations.initMocks(this);
@@ -60,8 +57,8 @@ public class AndroidDeviceImplTest extends BaseTest {
 
 		AndroidDeviceImpl spied = Mockito.spy(new AndroidDeviceImpl());
 
-		logger = Mockito.mock(ILogger.class);
-		spied.setLogger(logger);
+		//logger = Mockito.mock(ILogger.class);
+		//spied.setLogger(logger);
 
 		Mockito.when(spied.makeRootCheckOutputReceiver()).thenReturn(receiverSU);
 		Mockito.when(receiverSU.isRootId()).thenReturn(true);
@@ -90,8 +87,8 @@ public class AndroidDeviceImplTest extends BaseTest {
 		
 		AndroidDeviceImpl spied = Mockito.spy(new AndroidDeviceImpl());
 
-		logger = Mockito.mock(ILogger.class);
-		spied.setLogger(logger);
+		//logger = Mockito.mock(ILogger.class);
+		//spied.setLogger(logger);
 		
 		Mockito.when(spied.makeRootCheckOutputReceiver()).thenReturn(receiverSU);
 		Mockito.when(receiverSU.isRootId()).thenReturn(false);
@@ -120,8 +117,8 @@ public class AndroidDeviceImplTest extends BaseTest {
 		
 		AndroidDeviceImpl spied = Mockito.spy(new AndroidDeviceImpl());
 
-		logger = Mockito.mock(ILogger.class);
-		spied.setLogger(logger);
+		//logger = Mockito.mock(ILogger.class);
+		//spied.setLogger(logger);
 		
 		Mockito.when(device.getState()).thenReturn(IDevice.DeviceState.UNAUTHORIZED);
 		
@@ -185,9 +182,9 @@ public class AndroidDeviceImplTest extends BaseTest {
 
 		AndroidDeviceImpl spied = Mockito.spy(new AndroidDeviceImpl());
 		spied.setAndroid(android);
-
-		logger = Mockito.mock(ILogger.class);
-		spied.setLogger(logger);
+		
+		//logger = Mockito.mock(ILogger.class);
+		//spied.setLogger(logger);
 		
 		Mockito.when(spied.makeRootCheckOutputReceiver()).thenReturn(receiverSU);
 		Mockito.when(receiverSU.isRootId()).thenReturn(false);

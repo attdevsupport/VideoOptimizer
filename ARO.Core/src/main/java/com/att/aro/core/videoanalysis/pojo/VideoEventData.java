@@ -34,30 +34,102 @@ public class VideoEventData {
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(60);
 		strblr.append("VideoEventData ");
-		if (cdn              != null) {strblr.append("\n\t cdn : ");              strblr.append(cdn                                                  );}
-		if (name             != null) {strblr.append("\n\t name : ");             strblr.append(name                                                 );}
-		if (!extension.isEmpty()    ) {strblr.append("\n\t extension : ");        strblr.append(extension                                            );}
-		if (segment          != null) {strblr.append("\n\t segment : ");          strblr.append(segment                                              );}
-		if (segmentReference != null) {strblr.append("\n\t segmentReference : "); strblr.append(segmentReference                                     );}
-		if (byteStart        != null) {strblr.append("\n\t byteStart : ");        strblr.append(byteStart                                            );}
-		if (byteEnd          != null) {strblr.append("\n\t byteEnd : ");          strblr.append(byteEnd                                              );}
-		if (quality          != null) {strblr.append("\n\t quality : ");          strblr.append(quality                                              );}
-		if (segmentStartTime != null) {strblr.append("\n\t segmentStartTime : "); strblr.append(segmentStartTime                                     );}
-		if (bitrate          != null) {strblr.append("\n\t bitrate : ");          strblr.append(bitrate                                              );}
-		if (mdatSize         != null) {strblr.append("\n\t mdatSize : ");         strblr.append(mdatSize                                             );}
-		if (duration         != null) {strblr.append("\n\t duration : ");         strblr.append(duration                                             );}
-		if (rateCode         != null) {strblr.append("\n\t rateCode : ");         strblr.append(rateCode                                             );}
-		if (position         != null) {strblr.append("\n\t position : ");         strblr.append(position                                             );} 
-		if (timestamp        != 0)    {strblr.append("\n\t timestamp : ");        strblr.append(String.format("%d",((Double)timestamp).intValue())   );} 
-		if (dateTime         != null) {strblr.append("\n\t dateTime : ");         strblr.append(dateTime                               				 );} 
-		if (dtTime            > 0)    {strblr.append("\n\t dtTime : ");           strblr.append(String.format("%.0f",dtTime)                         );}
-		if (byteRange        != null) {strblr.append("\n\t byteRange : ");        strblr.append(byteRange                                            );}
-		if (contentType      != null) {strblr.append("\n\t contentType : ");      strblr.append(contentType                                          );}
-		if (contentLength    != 0)    {strblr.append("\n\t contentLength : ");    strblr.append(contentLength                                        );}
-		if (contentSize      != 0)    {strblr.append("\n\t contentSize : ");      strblr.append(contentSize                                          );}
-		if (contentStart     != 0)    {strblr.append("\n\t contentStart : ");     strblr.append(contentStart                                         );}
-		if (contentEnd       != 0)    {strblr.append("\n\t contentEnd : ");       strblr.append(contentEnd                                           );}
-		if (!failure.isEmpty())       {strblr.append("\n\t failure : ");          strblr.append(failure                                              );}
+		if (cdn != null) {
+			strblr.append("\n\t cdn : ");
+			strblr.append(cdn);
+		}
+		if (name != null) {
+			strblr.append("\n\t name : ");
+			strblr.append(name);
+		}
+		if (!extension.isEmpty()) {
+			strblr.append("\n\t extension : ");
+			strblr.append(extension);
+		}
+		if (segment != null) {
+			strblr.append("\n\t segment : ");
+			strblr.append(segment);
+		}
+		if (segmentReference != null) {
+			strblr.append("\n\t segmentReference : ");
+			strblr.append(segmentReference);
+		}
+		if (byteStart != null) {
+			strblr.append("\n\t byteStart : ");
+			strblr.append(byteStart);
+		}
+		if (byteEnd != null) {
+			strblr.append("\n\t byteEnd : ");
+			strblr.append(byteEnd);
+		}
+		if (quality != null) {
+			strblr.append("\n\t quality : ");
+			strblr.append(quality);
+		}
+		if (segmentStartTime != null) {
+			strblr.append("\n\t segmentStartTime : ");
+			strblr.append(segmentStartTime);
+		}
+		if (bitrate != null) {
+			strblr.append("\n\t bitrate : ");
+			strblr.append(bitrate);
+		}
+		if (mdatSize != null) {
+			strblr.append("\n\t mdatSize : ");
+			strblr.append(mdatSize);
+		}
+		if (duration != null) {
+			strblr.append("\n\t duration : ");
+			strblr.append(duration);
+		}
+		if (rateCode != null) {
+			strblr.append("\n\t rateCode : ");
+			strblr.append(rateCode);
+		}
+		if (position != null) {
+			strblr.append("\n\t position : ");
+			strblr.append(position);
+		}
+		if (timestamp != 0) {
+			strblr.append("\n\t timestamp : ");
+			strblr.append(String.format("%d", ((Double) timestamp).intValue()));
+		}
+		if (dateTime != null) {
+			strblr.append("\n\t dateTime : ");
+			strblr.append(dateTime);
+		}
+		if (dtTime > 0) {
+			strblr.append("\n\t dtTime : ");
+			strblr.append(String.format("%.0f", dtTime));
+		}
+		if (byteRange != null) {
+			strblr.append("\n\t byteRange : ");
+			strblr.append(byteRange);
+		}
+		if (contentType != null) {
+			strblr.append("\n\t contentType : ");
+			strblr.append(contentType);
+		}
+		if (contentLength != 0) {
+			strblr.append("\n\t contentLength : ");
+			strblr.append(contentLength);
+		}
+		if (contentSize != 0) {
+			strblr.append("\n\t contentSize : ");
+			strblr.append(contentSize);
+		}
+		if (contentStart != 0) {
+			strblr.append("\n\t contentStart : ");
+			strblr.append(contentStart);
+		}
+		if (contentEnd != 0) {
+			strblr.append("\n\t contentEnd : ");
+			strblr.append(contentEnd);
+		}
+		if (!failure.isEmpty()) {
+			strblr.append("\n\t failure : ");
+			strblr.append(failure);
+		}
 
 		strblr.append(" }");
 		strblr.replace(14, 16, ":{\n");

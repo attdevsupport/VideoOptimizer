@@ -128,13 +128,22 @@ public class DefaultGoogleAnalyticsImpl implements IGoogleAnalytics {
 	}
 
 	@Override
-	public void sendCrashEvents(String crashDesc, String source) {
+	public void sendCrashEvents(String crashDesc){
 		
 	}
 	
 	@Override
+	public void sendAnalyticsTimings(String timingLabel, long runTime, String timingCategory) {
+	}
+
+	@Override
 	public void sendViews(String screen) {
 		
+	}
+
+	@Override
+	public void sendErrorEvents(String errnName, String errDescription, boolean isFatal) {
+
 	}
 
 }

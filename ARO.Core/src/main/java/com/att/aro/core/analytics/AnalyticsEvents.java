@@ -83,6 +83,47 @@ public class AnalyticsEvents {
 	@Value("${ga.request.event.collector.emulator}")
 	private String emulator;
 
+	@Value("${ga.request.event.category.secureCollector}")
+	private String secureCollectorEvent;
+	
+	@Value("${ga.request.event.secureCollector.action.applied}")
+	private String secureCollectorApplied;
+	
+	@Value("${ga.request.event.category.attenuation}")
+	private String attenuationEvent;
+	
+	@Value("${ga.request.event.attenuation.action.applied}")
+	private String attenuationApplied;
+	
+	@Value("${ga.request.event.attenuation.action.notapplied}")
+	private String attenuationNotApplied;
+	
+	@Value("${ga.request.event.category.traceduration}")
+	private String traceDurationEvent;
+	
+	@Value("${ga.request.event.category.bpresult}")
+	private String bPResultEvent;
+	
+	@Value("${ga.request.event.category.videobpresult}")
+	private String videoBPResultEvent;
+	
+	@Value("${ga.request.event.category.diagnosticsViews}")
+	private String diagnosticsViewsEvent;
+	
+	@Value("${ga.request.event.category.dataMimeType}")
+	private String dataMimeTypeEvent;
+	
+	@Value("${ga.request.event.analyzer.tracesAnalyzed}")
+	private String tracesAnalyzedEvent;
+	
+	@Value("${ga.request.event.category.voSession}")
+	private String voSessionEvent;
+
+	@Value("${ga.request.event.voSession.action.voSessionDuration}")
+	private String voSessionDuration;
+	
+	@Value("${ga.request.event.category.https}")
+	private String httpsEvent;
 	/**
 	 * @return the trackerID
 	 */
@@ -222,5 +263,60 @@ public class AnalyticsEvents {
 	public String getEmulator() {
 		return emulator;
 	}
+
+	public String getSecureCollectorEvent() {
+		return secureCollectorEvent;
+	}
+
+	public String getSecureCollectorApplied() {
+		return secureCollectorApplied;
+	}
+
+	public String getAttenuationEvent() {
+		return attenuationEvent;
+	}
+
+	public String getAttenuationApplied() {
+		return attenuationApplied;
+	}
+
+	public String getAttenuationNotApplied() {
+		return attenuationNotApplied;
+	}
+
+	public String getTraceDurationEvent() {
+		return traceDurationEvent;
+	}
 	
+	public String getBPResultEvent(){
+		return bPResultEvent;
+	}
+
+	public String getVideoBPResultEvent() {
+		return videoBPResultEvent;
+	}
+
+	public String getDiagnosticsViewsEvent() {
+		return diagnosticsViewsEvent;
+	}
+	
+	public String getDataMimeTypeEvent(){
+		return dataMimeTypeEvent;
+	}
+	
+	public String getTracesAnalyzedEvent(){
+		return tracesAnalyzedEvent;
+	}
+	
+	public String getVOSessionEvent(){
+		return voSessionEvent;
+	}
+	
+	public String getVOSessionDuration(){
+		return voSessionDuration;
+	}
+	
+	public String getHTTPSEvent(){
+		return httpsEvent;
+	}
 }

@@ -21,8 +21,6 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class ConfirmationDialog extends JDialog {
@@ -30,9 +28,6 @@ public class ConfirmationDialog extends JDialog {
 
 	protected JPanel panel;
 	protected JButton okBtn;
-
-	@InjectLogger
-	private static ILogger log;
 
 	protected static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 

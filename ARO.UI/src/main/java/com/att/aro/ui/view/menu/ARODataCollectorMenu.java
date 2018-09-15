@@ -29,13 +29,15 @@ import javax.swing.JOptionPane;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.datacollector.pojo.CollectorStatus;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
 import com.att.aro.core.util.NetworkUtil;
@@ -47,13 +49,9 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 
-/**
- *
- *
- */
 public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
-	LoggerImpl log = new LoggerImpl(this.getClass().getName());
+	private static final Logger LOG = LogManager.getLogger(ARODataCollectorMenu.class.getName());
 	private static final String SharedNetIF= "bridge100";
 
 	private IFileManager fileManager = new FileManagerImpl();
@@ -129,9 +127,9 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 							return;
 				}
 				
-				log.info("collector count:" + collectors.size());
+				LOG.info("collector count:" + collectors.size());
 				for (IDataCollector collector : collectors) {
-					log.info(collector.getName());
+					LOG.info(collector.getName());
 				}
 				
 				IAroDevices aroDevices = parent.getAroDevices();
@@ -174,8 +172,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		int throttleUL = 0;
 		boolean throttleDLEnable = false;
 		boolean throttleULEnable = false;
-		boolean secure = false;
-		boolean installCert = false;
+
 		boolean profileBoolean = false;
 		
 		String traceFolderName = "";
@@ -187,16 +184,16 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			device = dialog.getDevice();
 			traceFolderName = dialog.getTraceFolder();
 			device.setCollector(dialog.getCollectorOption());
-  			/*debug purpose*/
+			/*debug purpose*/
 			delayTimeDL = dialog.getDeviceOptionPanel().getMiniAtnr().getDelayDS();
 			dialog.getDeviceOptionPanel().getMiniAtnr().getDelayUS();
 			throttleDL = dialog.getDeviceOptionPanel().getMiniAtnr().getThrottleDL();
 			throttleUL = dialog.getDeviceOptionPanel().getMiniAtnr().getThrottleUL();
-			throttleDLEnable = dialog.getDeviceOptionPanel().getMiniAtnr().isThrottleDLEnable();
-			throttleULEnable = dialog.getDeviceOptionPanel().getMiniAtnr().isThrottleULEnable();
+			throttleDLEnable = dialog.getDeviceOptionPanel().getMiniAtnr().isThrottleDLEnabled();
+			throttleULEnable = dialog.getDeviceOptionPanel().getMiniAtnr().isThrottleULEnabled();
 			profileLocation = dialog.getDeviceOptionPanel().getMiniAtnr().getLocalPath();
 			profileBoolean = dialog.getDeviceOptionPanel().getMiniAtnr().isLoadProfile();			
-			log.info("set U delay: "+ delayTimeDL + "set D delay: "+ delayTimeDL 
+			LOG.info("set U delay: "+ delayTimeDL + "set D delay: "+ delayTimeDL 
 					+ "set U throttle: "+ throttleUL + "set D throttle: "+ throttleDL 
 					+ "set profile: " + profileBoolean+ "set profileLocation: "+ profileLocation);
 			
@@ -214,7 +211,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 				if (!checkSetSuPassword(iosCollector)) {
 					return null;
 				}else{
-					log.info("pw validated");
+					LOG.info("pw validated");
 				}				
 			}
 
@@ -242,10 +239,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			extras.put("video_option", dialog.getRecordVideoOption());
 			extras.put("videoOrientation", dialog.getVideoOrientation());
 			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getMiniAtnr());
-			if (secure) {
-				extras.put("secure", secure);
-				extras.put("installCert", installCert);
-			}
 
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			
@@ -321,7 +314,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		String title = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
 											ApplicationConfig.getInstance().getAppShortName());
 		int dialogResults = MessageDialogFactory.showConfirmDialog(((MainFrame) parent).getJFrame(), mssg, title, JOptionPane.OK_CANCEL_OPTION);
-		log.info("replace directory :"+dialogResults);
+		LOG.info("replace directory :"+dialogResults);
 		return dialogResults;
 	}
 
@@ -332,7 +325,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 	 * @param active
 	 */
 	public void setStartMenuItem(boolean active) {
-		log.debug(active?"set start":"set stop");
+		LOG.debug(active?"set start":"set stop");
 		dataCollectorStartMenuItem.setEnabled(active);
 		dataCollectorStopMenuItem.setEnabled(!active);
 	}

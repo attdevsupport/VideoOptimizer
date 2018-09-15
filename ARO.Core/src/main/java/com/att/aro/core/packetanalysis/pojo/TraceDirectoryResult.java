@@ -36,7 +36,6 @@ import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent;
 import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -272,9 +271,6 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	 */
 	@JsonIgnore
 	private NetworkType networkType;
-
- 
-
 	public CollectOptions getCollectOptions() {
 		return collectOptions;
 	}
@@ -820,7 +816,6 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	public TraceResultType getTraceResultType() {
 		return TraceResultType.TRACE_DIRECTORY;
 	}
- 
- 
+
 	
 }

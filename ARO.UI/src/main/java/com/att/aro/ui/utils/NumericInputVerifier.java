@@ -29,8 +29,8 @@ import javax.swing.Popup;
 import javax.swing.PopupFactory;
 import javax.swing.Timer;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.ui.commonui.ContextAware;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 /**
  * <pre>
@@ -50,8 +50,7 @@ public class NumericInputVerifier extends InputVerifier{
 	private static final int DISPLAYTIMER = 3000;
 
 	private static final Color COLOR = new Color(255, 255, 204);
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
-
+	private static final Logger LOG = LogManager.getLogger(NumericInputVerifier.class.getSimpleName());	
 	private double min = 0;
 	private double max = 0;
 	private Timer timer;
@@ -150,7 +149,7 @@ public class NumericInputVerifier extends InputVerifier{
 			timer = new Timer(DISPLAYTIMER, hider);
 			timer.start();
 		} catch (IllegalComponentStateException e) {
-			log.error("ERROR: component location cannot be retrieved. " + e.getLocalizedMessage());
+			LOG.error("ERROR: component location cannot be retrieved. " + e.getLocalizedMessage());
 		}
 	}
 

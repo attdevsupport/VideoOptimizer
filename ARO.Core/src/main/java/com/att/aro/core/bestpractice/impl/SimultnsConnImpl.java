@@ -27,21 +27,17 @@ import java.util.TreeMap;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.MultipleConnectionsEntry;
 import com.att.aro.core.bestpractice.pojo.SimultnsConnectionResult;
 import com.att.aro.core.bestpractice.pojo.SimultnsUtil;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.SessionValues;
 
 public class SimultnsConnImpl implements IBestPractice {
-	@InjectLogger
-	private static ILogger logger;
 	@Value("${connections.simultaneous.title}")
 	private String overviewTitle;
 	@Value("${connections.simultaneous.detailedTitle}")

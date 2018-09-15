@@ -10,6 +10,7 @@ import java.util.Enumeration;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 /**
  * Utility class for network interfaces on a machine 
@@ -18,7 +19,7 @@ import org.apache.log4j.Logger;
  */
 public class NetworkUtil {
 	
-	private static final Logger LOGGER = Logger.getLogger(NetworkUtil.class.getSimpleName());
+	private static final Logger LOGGER = LogManager.getLogger(NetworkUtil.class.getSimpleName());
 
  	public static boolean isNetworkUp(String ifName) {
  		

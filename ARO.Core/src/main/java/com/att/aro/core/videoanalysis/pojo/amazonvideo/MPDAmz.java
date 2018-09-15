@@ -38,14 +38,21 @@ public class MPDAmz implements MpdBase{
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("MPDAmz :"); 
-		strblr.append(" majorVersion :"); strblr.append( majorVersion);
-		strblr.append(",  mediaPresentationDuration :"); strblr.append( mediaPresentationDuration);
-		strblr.append(",  minBufferTime :"); strblr.append( minBufferTime);
-		strblr.append(",  minorVersion :"); strblr.append( minorVersion);
-		strblr.append(",  profiles :"); strblr.append( profiles);
-		strblr.append(",  revision :"); strblr.append( revision);
-		strblr.append("\n\tPeriod:"); strblr.append(getPeriod());
+		strblr.append("MPDAmz :");
+		strblr.append(" majorVersion :");
+		strblr.append(majorVersion);
+		strblr.append(",  mediaPresentationDuration :");
+		strblr.append(mediaPresentationDuration);
+		strblr.append(",  minBufferTime :");
+		strblr.append(minBufferTime);
+		strblr.append(",  minorVersion :");
+		strblr.append(minorVersion);
+		strblr.append(",  profiles :");
+		strblr.append(profiles);
+		strblr.append(",  revision :");
+		strblr.append(revision);
+		strblr.append("\n\tPeriod:");
+		strblr.append(getPeriod());
 		return strblr.toString();
 	}
 	

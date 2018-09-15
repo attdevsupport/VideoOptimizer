@@ -23,11 +23,13 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.IAROService;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
@@ -35,7 +37,6 @@ import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
 import com.att.aro.core.configuration.pojo.Profile;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.ICacheAnalysis;
 import com.att.aro.core.packetanalysis.IPacketAnalyzer;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
@@ -45,6 +46,7 @@ import com.att.aro.core.pojo.ErrorCodeRegistry;
 import com.att.aro.core.pojo.VersionInfo;
 import com.att.aro.core.report.IReport;
 import com.att.aro.core.settings.SettingsUtil;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.Util;
 
 /**
@@ -75,14 +77,15 @@ import com.att.aro.core.util.Util;
  *
  */
 public class AROServiceImpl implements IAROService {
-	@InjectLogger
-	private ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(AROServiceImpl.class.getName());
 	private IPacketAnalyzer packetanalyzer;
 	private ICacheAnalysis cacheAnalyzer;
 	@Autowired
 	private transient VersionInfo info;
 	@Autowired
 	private IFileManager filemanager;
+	@Value("${ga.request.timing.bpTimings.title}")
+	private String bpTimingsTitle;
 	private IReport jsonreport;
 
 	@Autowired
@@ -133,7 +136,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice forwardSecrecy;
 	private IBestPractice simultaneous;
 	private IBestPractice multipleSimultaneous;
-	//private IBestPractice adAnalytics;
+	// private IBestPractice adAnalytics;
 	// ARO 6.0 VideoBp
 	private IBestPractice videoStall;
 	private IBestPractice startupDelay;
@@ -238,12 +241,6 @@ public class AROServiceImpl implements IAROService {
 	public void setMultipleSimultaneous(IBestPractice multipleSimultaneous) {
 		this.multipleSimultaneous = multipleSimultaneous;
 	}
-
-	/*@Autowired
-	@Qualifier("adAnalytics")
-	public void setAdAnalytics(IBestPractice adAnalytics) {
-		this.adAnalytics = adAnalytics;
-	}*/
 
 	@Autowired
 	@Qualifier("http3xx")
@@ -630,160 +627,144 @@ public class AROServiceImpl implements IAROService {
 			return null;
 		}
 		List<AbstractBestPracticeResult> resultlist = new ArrayList<AbstractBestPracticeResult>();
-		List<IBestPractice> workers = new ArrayList<IBestPractice>();
+		IBestPractice worker = null;
+		if (requests.contains(BestPracticeType.USING_CACHE) || requests.contains(BestPracticeType.CACHE_CONTROL)
+				|| requests.contains(BestPracticeType.DUPLICATE_CONTENT)) {
+			this.createCacheAnalysis(result);
+		}
 		for (BestPracticeType type : requests) {
-			switch (type) {
-			case PERIODIC_TRANSFER:
-				workers.add(periodicTransfer);
-				break;
-			case UNNECESSARY_CONNECTIONS:
-				workers.add(unnecessaryConnection);
-				break;
-			case ACCESSING_PERIPHERALS:
-				workers.add(accessingPeripheral);
-				break;
-			case ASYNC_CHECK:
-				workers.add(async);
-				break;
-			case CACHE_CONTROL:
-				// analyze cache if not yet done
-				this.createCacheAnalysis(result);
-				workers.add(cacheControl);
-				break;
-			case COMBINE_CS_JSS:
-				workers.add(combineCsJss);
-				break;
-			case CONNECTION_CLOSING:
-				workers.add(connectionClosing);
-				break;
-			case CONNECTION_OPENING:
-				workers.add(connectionOpening);
-				break;
-			case DISPLAY_NONE_IN_CSS:
-				workers.add(displaynoneincss);
-				break;
-			case DUPLICATE_CONTENT:
-				this.createCacheAnalysis(result);
-				workers.add(duplicateContent);
-				break;
-			case EMPTY_URL:
-				workers.add(emptyUrl);
-				break;
-			case FILE_COMPRESSION:
-				workers.add(textFileCompression);
-				break;
-			case FILE_ORDER:
-				workers.add(fileorder);
-				break;
-			case FLASH:
-				workers.add(flash);
-				break;
-			case HTTP_1_0_USAGE:
-				workers.add(http10Usage);
-				break;
-			case HTTP_3XX_CODE:
-				workers.add(http3xx);
-				break;
-			case HTTP_4XX_5XX:
-				workers.add(http4xx5xx);
-				break;
-			case IMAGE_SIZE:
-				workers.add(imageSize);
-				break;
-			case IMAGE_MDATA:
-				workers.add(imageMetadata);
-				break;
-			case IMAGE_CMPRS:
-				workers.add(imageCompression);
-				break;
-			case IMAGE_FORMAT:
-				workers.add(imageFormat);
-				break;
-			case IMAGE_COMPARE:
-				workers.add(uiComparator);
-				break;
-			case MINIFICATION:
-				workers.add(minify);
-				break;
-			case SCREEN_ROTATION:
-				workers.add(screenRotation);
-				break;
-			case SCRIPTS_URL:
-				workers.add(scripts);
-				break;
-			case SIMUL_CONN:
-				workers.add(simultaneous);
-				break;
-			case MULTI_SIMULCONN:
-				workers.add(multipleSimultaneous);
-				break;
-			/*case AD_ANALYTICS:
-				workers.add(adAnalytics);
-				break;*/
-			case SPRITEIMAGE:
-				workers.add(spriteImage);
-				break;
-			case USING_CACHE:
-				// analyze cache if not yet done
-				this.createCacheAnalysis(result);
-				workers.add(usingCache);
-				break;
-			// ARO 6.0 release
-			case VIDEO_STALL:
-				workers.add(videoStall);
-				break;
-			case STARTUP_DELAY:
-				workers.add(startupDelay);
-				break;
-			case BUFFER_OCCUPANCY:
-				workers.add(bufferOccupancy);
-				break;
-			case NETWORK_COMPARISON:
-				workers.add(networkComparison);
-				break;
-			case TCP_CONNECTION:
-				workers.add(tcpConnection);
-				break;
-			case CHUNK_SIZE:
-				workers.add(chunkSize);
-				break;
-			case CHUNK_PACING:
-				workers.add(chunkPacing);
-				break;
-			case VIDEO_REDUNDANCY:
-				workers.add(videoRedundancy);
-				break;
-			case VIDEO_CONCURRENT_SESSION:
-				workers.add(videoConcurrentSession);
-				break;
-			case HTTPS_USAGE:
-				workers.add(httpsUsage);
-				break;
-			case TRANSMISSION_PRIVATE_DATA:
-				workers.add(transmissionPrivateData);
-				break;
-			case UNSECURE_SSL_VERSION:
-				workers.add(unsecureSSLVersion);
-				break;
-			case WEAK_CIPHER:
-				workers.add(weakCipher);
-				break;
-			case FORWARD_SECRECY:
-				workers.add(forwardSecrecy);
-				break;
-			default:
-				break;
+			worker = getBPWorker(type);
+			if (worker != null) {
+				try {
+					long bpStartTime = System.currentTimeMillis();
+					resultlist.add(worker.runTest(result));
+					GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(type.getDescription(),
+							System.currentTimeMillis() - bpStartTime, bpTimingsTitle);
+				} catch (Exception | Error ex) {
+					LOGGER.error("Error running best practice " + type.getDescription() + " : ", ex);
+					new Thread(() -> sendExceptiontoGA(type)).start();
+				}
 			}
 		}
-		for (IBestPractice worker : workers) {
-			try {
-				AbstractBestPracticeResult testresult = worker.runTest(result);
-				resultlist.add(testresult);
-			} catch (Exception | Error ex) {
-				logger.error("Error running best practice:", ex);
-			}
+		for(AbstractBestPracticeResult testresult : resultlist){
+			sendGABPResult(testresult);
 		}
 		return resultlist;
+	}
+	
+    private void sendExceptiontoGA(BestPracticeType type){
+    	GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendErrorEvents("Exception", "Error running best practice: "+ type.getDescription(), false);
+    }
+    
+	private void sendGABPResult(AbstractBestPracticeResult testresult){
+		if(testresult == null){
+			return;
+		}
+		StringBuffer eventLabel = new StringBuffer();
+		if(testresult.getResultType() == BPResultType.FAIL){
+			eventLabel.append(testresult.getResultType());
+			eventLabel.append(": ");
+			eventLabel.append(testresult.getResultText());		
+		}else{
+			eventLabel.append(testresult.getResultType());
+		}
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+				GoogleAnalyticsUtil.getAnalyticsEvents().getBPResultEvent(), 
+				testresult.getBestPracticeType().getDescription(),
+				eventLabel.toString());
+	}
+
+	private IBestPractice getBPWorker(BestPracticeType type) {
+		switch (type) {
+		case PERIODIC_TRANSFER:
+			return periodicTransfer;
+		case UNNECESSARY_CONNECTIONS:
+			return unnecessaryConnection;
+		case ACCESSING_PERIPHERALS:
+			return accessingPeripheral;
+		case ASYNC_CHECK:
+			return async;
+		case CACHE_CONTROL:
+			return cacheControl;
+		case COMBINE_CS_JSS:
+			return combineCsJss;
+		case CONNECTION_CLOSING:
+			return connectionClosing;
+		case CONNECTION_OPENING:
+			return connectionOpening;
+		case DISPLAY_NONE_IN_CSS:
+			return displaynoneincss;
+		case DUPLICATE_CONTENT:
+			return duplicateContent;
+		case EMPTY_URL:
+			return emptyUrl;
+		case FILE_COMPRESSION:
+			return textFileCompression;
+		case FILE_ORDER:
+			return fileorder;
+		case FLASH:
+			return flash;
+		case HTTP_1_0_USAGE:
+			return http10Usage;
+		case HTTP_3XX_CODE:
+			return http3xx;
+		case HTTP_4XX_5XX:
+			return http4xx5xx;
+		case IMAGE_SIZE:
+			return imageSize;
+		case IMAGE_MDATA:
+			return imageMetadata;
+		case IMAGE_CMPRS:
+			return imageCompression;
+		case IMAGE_FORMAT:
+			return imageFormat;
+		case IMAGE_COMPARE:
+			return uiComparator;
+		case MINIFICATION:
+			return minify;
+		case SCREEN_ROTATION:
+			return screenRotation;
+		case SCRIPTS_URL:
+			return scripts;
+		case SIMUL_CONN:
+			return simultaneous;
+		case MULTI_SIMULCONN:
+			return multipleSimultaneous;
+		case SPRITEIMAGE:
+			return spriteImage;
+		case USING_CACHE:
+			return usingCache;
+		case VIDEO_STALL:
+			return videoStall;
+		case STARTUP_DELAY:
+			return startupDelay;
+		case BUFFER_OCCUPANCY:
+			return bufferOccupancy;
+		case NETWORK_COMPARISON:
+			return networkComparison;
+		case TCP_CONNECTION:
+			return tcpConnection;
+		case CHUNK_SIZE:
+			return chunkSize;
+		case CHUNK_PACING:
+			return chunkPacing;
+		case VIDEO_REDUNDANCY:
+			return videoRedundancy;
+		case VIDEO_CONCURRENT_SESSION:
+			return videoConcurrentSession;
+		case HTTPS_USAGE:
+			return httpsUsage;
+		case TRANSMISSION_PRIVATE_DATA:
+			return transmissionPrivateData;
+		case UNSECURE_SSL_VERSION:
+			return unsecureSSLVersion;
+		case WEAK_CIPHER:
+			return weakCipher;
+		case FORWARD_SECRECY:
+			return forwardSecrecy;
+		default:
+			return null;
+		}
 	}
 
 	/**

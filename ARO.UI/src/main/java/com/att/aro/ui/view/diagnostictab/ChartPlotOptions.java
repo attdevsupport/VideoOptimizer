@@ -18,7 +18,9 @@ package com.att.aro.ui.view.diagnostictab;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 /**
  * The ChartPlotOptions enumeration defines constant values that specify the
@@ -35,7 +37,7 @@ public enum ChartPlotOptions {
 
 	private static final String DELIM = ";";
 	
-	private static final Logger LOGGER = Logger.getLogger(ChartPlotOptions.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(ChartPlotOptions.class.getName());
 
 	/**
 	 * Returns a String containing the chart plot options selected by the user
@@ -86,7 +88,7 @@ public enum ChartPlotOptions {
 						list.add(cpo);
 					}
 				} catch (IllegalArgumentException e) {
-					LOGGER.warning("Unrecognized chart plot option in preferences: " + str);
+					LOGGER.warn("Unrecognized chart plot option in preferences: " + str);
 				}
 			}
 		}

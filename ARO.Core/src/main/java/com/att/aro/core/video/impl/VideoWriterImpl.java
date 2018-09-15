@@ -19,11 +19,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.video.IVideoWriter;
 import com.att.aro.core.video.pojo.QuickTimeOutputStream;
 import com.att.aro.core.video.pojo.QuickTimeOutputStream.VideoFormat;
@@ -39,9 +39,8 @@ import com.att.aro.core.video.pojo.QuickTimeOutputStream.VideoFormat;
  */
 public class VideoWriterImpl implements IVideoWriter{
 
-	@InjectLogger
-	protected static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(VideoWriterImpl.class.getName());
+
 	private IFileManager fileManager;
 
 	private QuickTimeOutputStream qtOutputStream = null;
@@ -173,7 +172,7 @@ public class VideoWriterImpl implements IVideoWriter{
 		try {
 			qtOutputStream.close();
 		} catch (IOException e) {
-			logger.warn("Exception closing video output stream"+ e.getMessage());
+			LOGGER.warn("Exception closing video output stream"+ e.getMessage());
 		}
 	}
 

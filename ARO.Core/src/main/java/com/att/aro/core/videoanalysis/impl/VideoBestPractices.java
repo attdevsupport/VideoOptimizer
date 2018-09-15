@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.att.aro.core.IAROService;
 import com.att.aro.core.IVideoBestPractices;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
+import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
 import com.att.aro.core.bestpractice.pojo.BufferOccupancyResult;
@@ -20,6 +21,7 @@ import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.VideoTcpConnectionResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 
 public class VideoBestPractices implements IVideoBestPractices {
 	
@@ -85,7 +87,7 @@ public class VideoBestPractices implements IVideoBestPractices {
 					break;
 			}
 		}
-			
+		sendGAVideoBPResult(videoBestPracticeResults);	
 		for (AbstractBestPracticeResult bestPractice : bpResults) {
 			
 			if (bestPractice instanceof VideoStallResult) {
@@ -113,5 +115,22 @@ public class VideoBestPractices implements IVideoBestPractices {
 		
 		traceDataresult.setBestPracticeResults(bpResults);
 		return traceDataresult;
+	}
+	
+	private void sendGAVideoBPResult(List<AbstractBestPracticeResult> videoBestPracticeResults) {
+		for (AbstractBestPracticeResult videoBPResult : videoBestPracticeResults) {
+			videoBPResult.getBestPracticeType().getDescription();
+			StringBuffer eventLabel = new StringBuffer();
+			if (videoBPResult.getResultType() == BPResultType.FAIL) {
+				eventLabel.append(videoBPResult.getResultType());
+				eventLabel.append(": ");
+				eventLabel.append(videoBPResult.getResultText());
+			} else {
+				eventLabel.append(videoBPResult.getResultType());
+			}
+			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+					GoogleAnalyticsUtil.getAnalyticsEvents().getVideoBPResultEvent(),
+					videoBPResult.getBestPracticeType().getDescription(), eventLabel.toString());
+		}
 	}
 }

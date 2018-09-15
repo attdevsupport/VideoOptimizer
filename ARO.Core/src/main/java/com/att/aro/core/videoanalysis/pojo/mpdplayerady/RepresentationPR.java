@@ -32,11 +32,26 @@ public class RepresentationPR {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		if (! contentID.isEmpty())        {strblr.append(" id:");           strblr.append(contentID);                                  }      
-		if (! bandwidth.isEmpty()) {strblr.append(", bandwidth:");   strblr.append(String.format("%8s", bandwidth));     }      
-		if (! width.isEmpty())     {strblr.append(", width:");       strblr.append(String.format("%4s", width));         }      
-		if (! height.isEmpty())    {strblr.append(", height:");      strblr.append(String.format("%4s", height));        }      
-		if (! codecs.isEmpty())    {strblr.append(", codecs:");      strblr.append(codecs);                              }      
+		if (!contentID.isEmpty()) {
+			strblr.append(" id:");
+			strblr.append(contentID);
+		}
+		if (!bandwidth.isEmpty()) {
+			strblr.append(", bandwidth:");
+			strblr.append(String.format("%8s", bandwidth));
+		}
+		if (!width.isEmpty()) {
+			strblr.append(", width:");
+			strblr.append(String.format("%4s", width));
+		}
+		if (!height.isEmpty()) {
+			strblr.append(", height:");
+			strblr.append(String.format("%4s", height));
+		}
+		if (!codecs.isEmpty()) {
+			strblr.append(", codecs:");
+			strblr.append(codecs);
+		}
 		
 		return strblr.toString();
 	}
