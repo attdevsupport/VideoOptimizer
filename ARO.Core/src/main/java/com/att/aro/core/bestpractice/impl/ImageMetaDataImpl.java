@@ -30,16 +30,16 @@ import org.apache.commons.imaging.common.bytesource.ByteSourceFile;
 import org.apache.commons.imaging.formats.jpeg.JpegImageMetadata;
 import org.apache.commons.imaging.formats.jpeg.JpegImageParser;
 import org.apache.commons.imaging.formats.tiff.TiffImageMetadata;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.bestpractice.pojo.ImageMdtaResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -69,8 +69,7 @@ public class ImageMetaDataImpl implements IBestPractice {
 	@Value("${exportall.csvNumberOfMdataImages}")
 	private String exportNumberOfMdataImages;
 
-	@InjectLogger
-	private static ILogger log;
+	private static final Logger LOG = LogManager.getLogger(ImageMetaDataImpl.class.getName());
 
 	private boolean isMetaDataPresent = false;
 
@@ -196,7 +195,7 @@ public class ImageMetaDataImpl implements IBestPractice {
 				}
 			}
 		} catch (IOException | ImageReadException imgException) {
-			log.error(imgException.toString());
+			LOG.error(imgException.toString());
 		}
 
 	}

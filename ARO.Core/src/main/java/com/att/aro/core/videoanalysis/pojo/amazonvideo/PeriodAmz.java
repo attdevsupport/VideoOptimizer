@@ -29,8 +29,9 @@ public class PeriodAmz {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		for(AdaptationSetAmz set:adaptationSet){
-			strblr.append("\n\t\tAdaptationSetAmz :"); strblr.append( set);
+		for (AdaptationSetAmz set : adaptationSet) {
+			strblr.append("\n\t\tAdaptationSetAmz :");
+			strblr.append(set);
 		}
 		return strblr.toString();
 	}

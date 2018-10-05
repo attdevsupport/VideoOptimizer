@@ -25,6 +25,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.android.ddmlib.AdbCommandRejectedException;
@@ -34,7 +36,6 @@ import com.android.ddmlib.InstallException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.concurrent.IThreadExecutor;
@@ -69,7 +70,7 @@ public class RootedAndroidCollectorImpl implements IDataCollector, IVideoImageSu
 	private IFileManager filemanager;
 	private IDevice device;
 	private IAroDevice aroDevice;
-	private ILogger log;
+	private static final Logger log = LogManager.getLogger(RootedAndroidCollectorImpl.class.getName());	
 	@Autowired
 	private IAdbService adbservice;
 	@Autowired
@@ -138,11 +139,6 @@ public class RootedAndroidCollectorImpl implements IDataCollector, IVideoImageSu
 
 	public int getMilliSecondsForTimeout() {
 		return milliSecondsForTimeout;
-	}
-
-	@Autowired
-	public void setLogger(ILogger logger) {
-		this.log = logger;
 	}
 
 	@Override

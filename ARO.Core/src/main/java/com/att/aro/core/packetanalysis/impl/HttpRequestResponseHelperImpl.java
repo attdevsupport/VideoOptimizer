@@ -23,8 +23,9 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.zip.GZIPInputStream;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
@@ -35,8 +36,7 @@ import com.att.aro.core.packetanalysis.pojo.Session;
  */
 public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper {
 	private static final int TWO_MB = 2 * 1024 * 1024;
-	@InjectLogger
-	private static ILogger log;
+	private static final Logger LOG = LogManager.getLogger(HttpRequestResponseHelperImpl.class.getName());
 	
 	/**
 	 * Indicates whether the content type is CSS or not.
@@ -102,7 +102,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 		if(content == null || content.length == 0) {
 			return "";
 		} else if (content.length > TWO_MB) {
-			log.error("Ignoring this html file as it's too big to process - possibly a speed test file.");
+			LOG.error("Ignoring this html file as it's too big to process - possibly a speed test file.");
 			return "";
 		} else {
 			return new String(content, "UTF-8");
@@ -117,9 +117,9 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 	public byte[] getContent(HttpRequestResponseInfo req, Session session) throws Exception{
 		SortedMap<Integer, Integer> contentOffsetLength = req.getContentOffsetLength();
 
-		log.debug("getContent(req, session) :" + req.toString());
-		log.debug("-->contentOffsetLength :" + contentOffsetLength);
-		log.debug("-->getActualByteCount(req, session) :" + getActualByteCount(req, session));
+		LOG.debug("getContent(req, session) :" + req.toString());
+		LOG.debug("-->contentOffsetLength :" + contentOffsetLength);
+		LOG.debug("-->getActualByteCount(req, session) :" + getActualByteCount(req, session));
 
 		String contentEncoding = req.getContentEncoding();
 		if (contentOffsetLength != null) {
@@ -140,7 +140,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 				} else if (buffer.length < start + size) {
 					req.setExtractable(false);
 					if(req.getContentType().contains("text/html")){
-						log.error("The content may be corrupted.");
+						LOG.error("The content may be corrupted.");
 						continue;
 					}else{
 						throw new Exception("The content may be corrupted.");
@@ -256,7 +256,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 							break;
 						}
 					}
-				}while(true);
+				} while(true);
 			}
 			yes = true;
 		}else{

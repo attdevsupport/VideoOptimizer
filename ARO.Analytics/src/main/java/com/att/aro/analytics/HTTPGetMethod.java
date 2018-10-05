@@ -21,6 +21,7 @@ import java.net.Proxy;
 import java.net.URL;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 /**
  * Simple class peforming HTTP Get method on the requested url
@@ -29,7 +30,7 @@ import org.apache.log4j.Logger;
  */
 public class HTTPGetMethod {
 	@SuppressWarnings("unused")
-	private static final Logger LOGGER = Logger.getLogger(HTTPGetMethod.class.getSimpleName());
+	private static final Logger LOGGER = LogManager.getLogger(HTTPGetMethod.class.getSimpleName());
 	private static final String GET_METHOD_NAME = "GET";
 	private static String applicationName = "VideoOptimizer";
 	private static String userAgentInfo = null;
@@ -64,8 +65,8 @@ public class HTTPGetMethod {
 				gaRequestStatus = true;
 			}
 			urlConnection.disconnect();
-		} catch (Exception e) {
-			// Ignoring exception
+		} catch (Exception exception) {
+			LOGGER.error("Connection Failure: ", exception);
 		}
 		return gaRequestStatus;
 	}

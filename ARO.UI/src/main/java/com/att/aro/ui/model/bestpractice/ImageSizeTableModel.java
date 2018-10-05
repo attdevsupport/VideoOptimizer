@@ -15,12 +15,15 @@
  */
 package com.att.aro.ui.model.bestpractice;
 
+import static java.text.MessageFormat.format;
+
 import java.text.DecimalFormat;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.bestpractice.pojo.ImageSizeEntry;
 import com.att.aro.ui.model.DataTableModel;
@@ -36,7 +39,7 @@ public class ImageSizeTableModel extends DataTableModel<ImageSizeEntry> {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final Logger LOGGER = Logger.getLogger(ImageSizeTableModel.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(ImageSizeTableModel.class.getName());
 
 	private static final int COL1_MIN = 70;
 	private static final int COL1_MAX = 100;
@@ -122,7 +125,7 @@ public class ImageSizeTableModel extends DataTableModel<ImageSizeEntry> {
 	 */
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		ImageSizeTableModel.LOGGER.log(Level.FINE, "getColumnClass, idx: {0}", columnIndex);
+		ImageSizeTableModel.LOGGER.debug(format("getColumnClass, idx: {0}", columnIndex));
 		switch (columnIndex) {
 		case COL_1:
 			return Double.class;
@@ -150,7 +153,7 @@ public class ImageSizeTableModel extends DataTableModel<ImageSizeEntry> {
 	 */
 	@Override
 	protected Object getColumnValue(ImageSizeEntry item, int columnIndex) {
-		ImageSizeTableModel.LOGGER.log(Level.FINEST, "getColumnValue, idx:{0}", columnIndex);
+		ImageSizeTableModel.LOGGER.trace(format("getColumnValue, idx:{0}", columnIndex));
 		switch (columnIndex) {
 		case COL_1:
 			return item.getTimeStamp();

@@ -19,8 +19,8 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.text.MessageFormat;
@@ -31,27 +31,26 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
 import com.att.aro.core.datacollector.DataCollectorType;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
+public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 
 	private static final long serialVersionUID = 1L;
-	private static final String SharedNetIF = "bridge100";
+	private static final String SHARED_NETWORK_INTERFACE = "bridge100";
 	private static final String PORT_NUMBER = "8080";
-	private LoggerImpl log = new LoggerImpl(this.getClass().getName());
 
 	private String attnrSlider;
 	private String attnrLoadFile;
 	private String attnrNone;
 
-	private JRadioButton attnrSliderRBtn;
-	private JRadioButton rbAtnrLoadFile;
-	private JRadioButton rbAtnrNone;
+	private JRadioButton sliderBtn;
+	private JRadioButton loadFileBtn;
+	private JRadioButton defaultBtn;
+
 	private ButtonGroup radioAttnGroup;
 	private AttnrPanel parentPanel;
 	private DataCollectorSelectNStartDialog startDialog;
@@ -71,62 +70,78 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 		attnrLoadFile = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.loadfile");
 		attnrNone = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.none");
 
-		attnrSliderRBtn = new JRadioButton(attnrSlider);
-		rbAtnrLoadFile = new JRadioButton(attnrLoadFile);
-		rbAtnrNone = new JRadioButton(attnrNone);
+		sliderBtn = new JRadioButton(attnrSlider);
+		loadFileBtn = new JRadioButton(attnrLoadFile);
+		defaultBtn = new JRadioButton(attnrNone);
 
 		radioAttnGroup = new ButtonGroup();
-		radioAttnGroup.add(attnrSliderRBtn);
-		radioAttnGroup.add(rbAtnrLoadFile);
-		radioAttnGroup.add(rbAtnrNone);
+		radioAttnGroup.add(sliderBtn);
+		radioAttnGroup.add(loadFileBtn);
+		radioAttnGroup.add(defaultBtn);
 
-		attnrSliderRBtn.addActionListener(this);
-		rbAtnrLoadFile.addActionListener(this);
-		rbAtnrNone.addActionListener(this);
-		rbAtnrNone.setSelected(true);
+		sliderBtn.addItemListener(this);
+		loadFileBtn.addItemListener(this);
+		defaultBtn.addItemListener(this);
+		
+		defaultBtn.setSelected(true);
 
-		add(rbAtnrNone);
+		add(defaultBtn);
 
-		add(attnrSliderRBtn);
+		add(sliderBtn);
 
-		add(rbAtnrLoadFile);
+		add(loadFileBtn);
+	}
+
+	public ButtonGroup getRadioAttnGroup() {
+		return radioAttnGroup;
+	}
+
+	public void setRadioAttnGroup(ButtonGroup radioAttnGroup) {
+		this.radioAttnGroup = radioAttnGroup;
 	}
 
 	@Override
-	public void actionPerformed(ActionEvent ac) {
-
-		if (attnrSlider.equals(ac.getActionCommand())) {
-			parentPanel.getAttnrHolder().remove(getLoadProfilePanel());
-			getLoadProfilePanel().resetComponent();
-			parentPanel.getAttnrHolder().add(getThroughputPanel(), BorderLayout.CENTER);
-			parentPanel.getAttnrHolder().revalidate();
-			parentPanel.getAttnrHolder().repaint();
-
-			miniAtnr.setConstantThrottle(true);
-			miniAtnr.setFreeThrottle(false);
-			miniAtnr.setLoadProfile(false);
-			startDialog.resizeLarge();
-			if(DataCollectorType.IOS.equals(deviceInfo.getCollector().getType())) {
+	public void itemStateChanged(ItemEvent event) {
+		JRadioButton item = (JRadioButton) event.getItem();
+		String itemStr = item.getText();
+		if (event.getStateChange() == ItemEvent.SELECTED) {
+			if(attnrSlider.equals(itemStr)) {
+				parentPanel.getAttnrHolder().remove(getLoadProfilePanel());
+				getLoadProfilePanel().resetComponent();
+				parentPanel.getAttnrHolder().add(getThroughputPanel(), BorderLayout.CENTER);
+				parentPanel.getAttnrHolder().revalidate();
+				parentPanel.getAttnrHolder().repaint();
+	
+				miniAtnr.setConstantThrottle(true);
+				miniAtnr.setFreeThrottle(false);
+				miniAtnr.setLoadProfile(false);
+				startDialog.resizeLarge();
+				if(DataCollectorType.IOS.equals(deviceInfo.getCollector().getType())) {
 				MessageDialogFactory.getInstance().showInformationDialog(this, messageComposed(),
 						ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.title"));
 			}
 
-		} else if (attnrLoadFile.equals(ac.getActionCommand())) {
-			parentPanel.getAttnrHolder().remove(getThroughputPanel());
-			getThroughputPanel().resetComponent();
-			parentPanel.getAttnrHolder().add(getLoadProfilePanel());
-			parentPanel.getAttnrHolder().revalidate();
-			parentPanel.getAttnrHolder().repaint();
-
-			miniAtnr.setConstantThrottle(false);
-			miniAtnr.setFreeThrottle(false);
-			miniAtnr.setLoadProfile(true);
-			startDialog.resizeMedium();
-
-		} else if (attnrNone.equals(ac.getActionCommand())) {
-			reset();
+			}else if(attnrLoadFile.equals(itemStr)) {
+				parentPanel.getAttnrHolder().remove(getThroughputPanel());
+				getThroughputPanel().resetComponent();
+				parentPanel.getAttnrHolder().add(getLoadProfilePanel());
+				parentPanel.getAttnrHolder().revalidate();
+				parentPanel.getAttnrHolder().repaint();
+	
+				miniAtnr.setConstantThrottle(false);
+				miniAtnr.setFreeThrottle(false);
+				miniAtnr.setLoadProfile(true);
+				startDialog.resizeMedium();
+			}else if(attnrNone.equals(itemStr)) {
+				reset();
+	
+			}else {
+				reset();
+	
+			}
 		}
 	}
+
 
 	public AttnrLoadProfilePanel getLoadProfilePanel() {
 		if (attnrLoadPanel == null) {
@@ -153,7 +168,7 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 	}
 
 	public void setRbAtnrLoadFileEnable(boolean enable) {
-		rbAtnrLoadFile.setEnabled(enable);
+		loadFileBtn.setEnabled(enable);
 	}
 
 	public void reset() {
@@ -168,7 +183,7 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 		miniAtnr.setFreeThrottle(true);
 		miniAtnr.setLoadProfile(false);
 		startDialog.resizeMedium();
-		rbAtnrNone.setSelected(true);
+		defaultBtn.setSelected(true);
 	}
 
 	private String messageComposed() {
@@ -183,8 +198,8 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 	}
 
 	private String detectWifiShareIP() {
-		if (NetworkUtil.isNetworkUp(SharedNetIF)) {
-			List<InetAddress> listIp = NetworkUtil.listNetIFIPAddress(SharedNetIF);
+		if (NetworkUtil.isNetworkUp(SHARED_NETWORK_INTERFACE)) {
+			List<InetAddress> listIp = NetworkUtil.listNetIFIPAddress(SHARED_NETWORK_INTERFACE);
 			for (InetAddress ip : listIp) {
 				if (ip instanceof Inet4Address) {
 					String ipString = ip.toString().replaceAll("/", "");
@@ -196,9 +211,33 @@ public class AttnrRadioGroupPanel extends JPanel implements ActionListener {
 	}
 
 	private String detectWifiSharedActive() {
-		if (NetworkUtil.isNetworkUp(SharedNetIF)) {
+		if (NetworkUtil.isNetworkUp(SHARED_NETWORK_INTERFACE)) {
 			return "Active";
 		}
 		return "InActive";
+	}
+	
+	public JRadioButton getSliderBtn() {
+		return sliderBtn;
+	}
+
+	public void setSliderBtn(JRadioButton sliderBtn) {
+		this.sliderBtn = sliderBtn;
+	}
+
+	public JRadioButton getLoadFileBtn() {
+		return loadFileBtn;
+	}
+
+	public void setLoadFileBtn(JRadioButton loadFileBtn) {
+		this.loadFileBtn = loadFileBtn;
+	}
+	
+	public JRadioButton getDefaultBtn() {
+		return defaultBtn;
+	}
+
+	public void setDefaultBtn(JRadioButton defaultBtn) {
+		this.defaultBtn = defaultBtn;
 	}
 }

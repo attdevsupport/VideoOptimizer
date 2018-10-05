@@ -25,18 +25,17 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.util.FileCopyUtils;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.util.Util;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 
 public class LoadManifestDialog extends JPanel {
 	
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
-	
+	private static final Logger LOG = LogManager.getLogger(LoadManifestDialog.class);	
 	private static final long serialVersionUID = 1L;
 	private JButton loadBtn;
 	private MainFrame aroView;
@@ -90,10 +89,10 @@ public class LoadManifestDialog extends JPanel {
 							}
 						}
 					} else {
-						log.error("user error :Chose downloads folder, will ignore");
+						LOG.error("user error :Chose downloads folder, will ignore");
 					}
 				} catch (IOException e1) {
-					log.error("IOException :"+e1.getMessage());
+					LOG.error("IOException :"+e1.getMessage());
 				}
 				// refresh analyzer
 				aroView.updateTracePath(new File(aroView.getTracePath()));

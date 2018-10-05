@@ -18,12 +18,12 @@ package com.att.aro.core.packetreader.impl;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetreader.INativePacketSubscriber;
 import com.att.aro.core.packetreader.IPacketListener;
 import com.att.aro.core.packetreader.IPacketReader;
@@ -35,9 +35,7 @@ import com.att.aro.pcap.PCapAdapter;
 
 public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber {
 
-	@InjectLogger
-	private static ILogger logger;
-
+	private static final Logger LOGGER = LogManager.getLogger(PacketReaderImpl.class.getName());
 	@Autowired
 	private IPacketService packetservice;
 
@@ -87,7 +85,7 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 		provisionalPcapConversion(packetfile);
 		
 		if (listener == null) {
-			logger.error("PacketListener cannot be null");
+			LOGGER.error("PacketListener cannot be null");
 			throw new IllegalArgumentException("PacketListener cannot be null");
 		}
 
@@ -107,10 +105,10 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 
 		// finish 
 		if (result != null) {
-			logger.debug("Result from executing all pcap packets: " + result);
+			LOGGER.debug("Result from executing all pcap packets: " + result);
 			throw new IOException(result);
 		}
-		logger.debug("Created PCapAdapter");
+		LOGGER.debug("Created PCapAdapter");
 	}
 
 	public void setVOLibName() {
@@ -123,9 +121,9 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 	 */
 	public void setAroJpcapLibName(String osname, String osarch) {
 
-		logger.info("OS: " + osname);
+		LOGGER.info("OS: " + osname);
 
-		logger.info("OS Arch: " + osarch);
+		LOGGER.info("OS Arch: " + osarch);
 
 		if (osname != null && osarch != null) {
 
@@ -150,7 +148,7 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 				aroJpcapLibFileName = "lib" + aroJpcapLibName + ".jnilib";
 			}
 		}
-		logger.info("ARO Jpcap DLL lib file name: " + aroJpcapLibFileName);
+		LOGGER.info("ARO Jpcap DLL lib file name: " + aroJpcapLibFileName);
 	}
 
 	/**
@@ -166,9 +164,9 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 
 	public void setAroWebPLib(String osname, String osarch) {
 
-		logger.info("OS: " + osname);
+		LOGGER.info("OS: " + osname);
 
-		logger.info("OS Arch: " + osarch);
+		LOGGER.info("OS Arch: " + osarch);
 
 		if (osname != null && osarch != null) {
 
@@ -189,7 +187,7 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 				aroWebPLibFileName = aroWebPLibName + ".dylib";
 			}
 		}
-		logger.info("ARO WebP DLL lib file name: " + aroWebPLibFileName);
+		LOGGER.info("ARO WebP DLL lib file name: " + aroWebPLibFileName);
 	}
 
 	public String getAroWebPLibFileName() {
@@ -205,7 +203,7 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 			Packet tempPacket = packetservice.createPacketFromPcap(datalink, seconds, microSeconds, len, data, currentPacketfile);
 			packetlistener.packetArrived(null, tempPacket);
 		} catch (Throwable t) {
-			logger.error("Unexpected exception parsing packet", t);
+			LOGGER.error("Unexpected exception parsing packet", t);
 		}
 	}
 
@@ -236,7 +234,7 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 				}
 
 				lines = extrunner.executeCmd(Util.getEditCap() + " -F pcap " + "\"" + file + "\" \"" + temp.getAbsolutePath() + "\"");
-				logger.elevatedInfo("convert pcapng to pcap results :" + lines);
+				LOGGER.info("convert pcapng to pcap results :" + lines);
 				if (temp.exists()) {
 					filemanager.renameFile(file, backupCapFileName);
 					filemanager.renameFile(temp, file.getName());
@@ -252,7 +250,7 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 		} else {
 			return;
 		}
-		logger.error(eStr);
+		LOGGER.error(eStr);
 		throw new IOException(eStr);
 	}
 

@@ -24,10 +24,8 @@ import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.SwingWorker;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.mvc.AROCollectorActionEvent;
 import com.att.aro.ui.commonui.AROProgressDialog;
@@ -44,9 +42,6 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
  */
 public class AROCollectorSwingWorker<T, V> extends SwingWorker<T, V>{
 
-	@InjectLogger
-	private ILogger log;
-	
 	private JFrame parentUI;
 	private AROProgressDialog progress;
 	List<PropertyChangeListener> changeListeners = null;

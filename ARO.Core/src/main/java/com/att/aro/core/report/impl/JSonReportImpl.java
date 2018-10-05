@@ -17,25 +17,22 @@ package com.att.aro.core.report.impl;
 
 import java.io.IOException;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.report.IReport;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.att.aro.core.ILogger;
-import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
-import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.report.IReport;
 
 public class JSonReportImpl implements IReport {
 	
-
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(JSonReportImpl.class.getName());
 	@Autowired
 	private IFileManager filereader;
-
 	@Override
 	public boolean reportGenerator(String resultFilePath, AROTraceData results) {
 		if (resultFilePath == null || results == null) {
@@ -46,11 +43,11 @@ public class JSonReportImpl implements IReport {
 			mapper.writeValue(filereader.createFile(resultFilePath), results);
 			return true;
 		} catch (JsonGenerationException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		} catch (JsonMappingException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		} catch (IOException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		}
 		return false;
 	}

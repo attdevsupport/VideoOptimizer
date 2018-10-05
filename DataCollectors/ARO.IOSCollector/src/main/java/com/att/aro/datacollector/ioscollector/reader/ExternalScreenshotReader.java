@@ -22,7 +22,9 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.datacollector.ioscollector.IScreenshotPubSub;
 
 public class ExternalScreenshotReader extends Thread {
@@ -36,8 +38,7 @@ public class ExternalScreenshotReader extends Thread {
 		this.capturing = capturing;
 	}
 
-	LoggerImpl log = new LoggerImpl(this.getClass().getName());
-	
+	private static final Logger LOG = LogManager.getLogger(ExternalScreenshotReader.class.getName());
 	private InputStream is;
 	List<IScreenshotPubSub> pubsub;
 
@@ -60,7 +61,7 @@ public class ExternalScreenshotReader extends Thread {
 			// connection recognized here
 			while (capturing) {
 				line = bufferedReader.readLine();
-				log.debug("    >>"+line);
+				LOG.debug("    >>"+line);
 				if (line == null) {
 					try {
 						Thread.sleep(100);;
@@ -74,7 +75,7 @@ public class ExternalScreenshotReader extends Thread {
 			}
 			
 		} catch (IOException exception) {
-			log.error("IOException - updateSubsribers :", exception);
+			LOG.error("IOException - updateSubsribers :", exception);
 			updateSubsribers("Error: " + exception.getMessage());
 		}
 		updateSubsribers(">Exited ExternalProcessReader");

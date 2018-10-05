@@ -20,8 +20,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IUserEventReader;
 import com.att.aro.core.peripheral.pojo.UserEvent;
@@ -35,8 +36,7 @@ import com.att.aro.core.util.Util;
  */
 public class UserEventReaderImpl extends PeripheralBase implements IUserEventReader {
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(UserEventReaderImpl.class.getName());
 	
 	public List<UserEvent> readGetEventsFile(String directory, double eventTime0, double startTime) {
 
@@ -46,7 +46,7 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 		try {
 			lines = filereader.readAllLine(filePath);
 		} catch (IOException e) {
-			logger.error("failed to read user event file: " + filePath);
+			LOGGER.error("failed to read user event file: " + filePath);
 		}
 
 		if (lines != null && lines.length > 0) {
@@ -95,7 +95,7 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 						actionType = UserEventType.KEY_KEY;
 					}
 				} else {
-					logger.warn("Invalid user event type in trace: " + lineBuf);
+					LOGGER.warn("Invalid user event type in trace: " + lineBuf);
 					continue;
 				}
 
@@ -138,7 +138,7 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e) {
-			logger.error("failed to read user event file: "+filepath);
+			LOGGER.error("failed to read user event file: "+filepath);
 		}
 		if(lines != null && lines.length > 0){
 			for (String lineBuf : lines) {
@@ -194,7 +194,7 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 					}
 				} else {
 					
-					logger.warn("Invalid user event type in trace: " + lineBuf);
+					LOGGER.warn("Invalid user event type in trace: " + lineBuf);
 					continue;
 				}
 	
@@ -205,7 +205,7 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 				} else if (TraceDataConst.UserEvent.RELEASE.equalsIgnoreCase(processedEvent)) {
 					bPress = false;
 				} else {
-					logger.warn("211 - Key event does not have press/release indication: "+ lineBuf);
+					LOGGER.warn("211 - Key event does not have press/release indication: "+ lineBuf);
 				
 					continue;
 				}
@@ -217,7 +217,7 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 					if (lastTime != null) {
 						userEventsList.add(new UserEvent(actionType, lastTime, dTimeStamp));
 					} else {
-						logger.warn("Found key release event with no associated press event: "+ lineBuf);
+						LOGGER.warn("Found key release event with no associated press event: "+ lineBuf);
 						continue;
 					}
 				}

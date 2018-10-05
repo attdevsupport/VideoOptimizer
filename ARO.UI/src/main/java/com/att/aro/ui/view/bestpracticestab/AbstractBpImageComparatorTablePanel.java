@@ -38,7 +38,7 @@ import com.att.aro.ui.model.ImageComparatorDataTable;
 
 
 public abstract class AbstractBpImageComparatorTablePanel extends TabPanelJPanel implements IAROExpandable, MouseListener {
-//	private static final Logger logger = Logger.getLogger(AbstractBpDetailTablePanel.class.getName());
+//	private static final Logger logger = LogManager.getLogger(AbstractBpDetailTablePanel.class.getName());
 
 	final static int ROW_HEIGHT = 20;
 	final static int MINIMUM_ROWS = 5;

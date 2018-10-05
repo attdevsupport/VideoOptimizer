@@ -19,8 +19,6 @@ import android.util.Log;
 
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
-import com.att.arotcpcollector.ip.IPv4Header;
-import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
 import com.att.arotcpcollector.util.PacketUtil;
@@ -155,15 +153,7 @@ public class SocketDataWriterWorker implements Runnable {
 
 			byte[] clearData = session.getClearSendingData();
 
-			if(session.isSecureSession() && null != clearData) {
-				IPv4Header ipHeader = session.getLastIPheader();
-				TCPHeader tcpHeader = session.getLastTCPheader();
-				clearData = tcpFactory.createPacketData(ipHeader,tcpHeader, clearData);
-				pcapData.sendDataToPcap(clearData, true);
-			}
-		} catch (NotYetConnectedException ex) {
-			Log.e(TAG, "socket not connected");
-		} catch (IOException e) {
+		}  catch (IOException e) {
 			//close connection with vpn client
 			byte[] rstdata = tcpFactory.createRstData(session.getLastIPheader(), session.getLastTCPheader(), 0);
 			Log.i("TCPTRACK"+session.getDestPort(), "<RST");

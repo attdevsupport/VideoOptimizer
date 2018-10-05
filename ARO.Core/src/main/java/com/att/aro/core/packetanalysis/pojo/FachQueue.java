@@ -66,9 +66,7 @@ public class FachQueue {
 			ulQueue += size;
 			ulTS = tStamp;
 
-		}
-
-		else if (dir == PacketDirection.DOWNLINK) {
+		} else if (dir == PacketDirection.DOWNLINK) {
 			// MyAssert(ts >= dlTS, 114);
 			double queueConsumptionTime = (dlQueue * dlQueue * profile.getRlcDlRateP2()
 					+ dlQueue * profile.getRlcDlRateP1() + profile.getRlcDlRateP0()) / 1000.0f;

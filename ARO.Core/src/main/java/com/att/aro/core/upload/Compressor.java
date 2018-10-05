@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
-package com.att.aro.core.util;
+package com.att.aro.core.upload;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.util.Base64.Encoder;
+import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.cloud.State;
+import com.att.aro.core.cloud.TraceManager;
 import com.att.aro.core.datacollector.pojo.StatusResult;
+import com.att.aro.core.util.IResultSubscriber;
+import com.att.aro.core.util.Util;
 
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
@@ -40,59 +40,31 @@ import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.util.Zip4jConstants;
 
 public class Compressor implements Runnable {
-
 	private String targetFolder;
-
-	private ArrayList<String> excluded;
-
 	private IResultSubscriber subscriber;
 
-	private String fileName;
-
 	private static final String FILE_SEPARATOR = System.getProperty("file.separator");
-	private static final Logger LOG = LoggerFactory.getLogger(Compressor.class);
+	private static final Logger LOG = LogManager.getLogger(Compressor.class);
 	
 	public void prepare(IResultSubscriber subscriber, String targetFolder, String[] exclude, String fileName) {
 		this.subscriber = subscriber;
 		this.targetFolder = targetFolder;
-		this.fileName = fileName;
-		this.excluded = sArrayToArrayList(exclude);
 	}
 	
 	@Override
 	public void run() {
-		LOG.error("preparePayload()");
-		String bzip = null;
+		LOG.info("preparingPayload");
+		notifyListeners(new StatusResult(null, null, State.COMPRESSING.toString() + ": " + new File(targetFolder).getName())); // message status update
+		String base64WrappedZipFile = null;
 		try {
-			bzip = zipBase64();
+			base64WrappedZipFile = zipBase64();
 		} catch (Exception e1) {
 			String error = "Exception :" + e1.getMessage();
 			LOG.error(error);
-			notifyListeners(new StatusResult(false, null, error));
+			notifyListeners(new StatusResult(false, null, error)); // message status failed
 			return;
 		}
-
-		File bZipped = new File(targetFolder, fileName);
-		BufferedWriter out = null;
-		try {
-			out = new BufferedWriter(new FileWriter(bZipped));
-			out.write(bzip);
-		} catch (Exception e) {
-			String error = "Exception :" + e.getMessage();
-			LOG.error(error);
-			notifyListeners(new StatusResult(false, null, error));
-			return;
-		} finally {
-			try {
-				if (out != null) {
-					out.close();
-				}
-			} catch (IOException e) {
-				LOG.error("Failed to close IOException", e);
-			}
-		}
-
-		notifyListeners(new StatusResult(true, null, bZipped.toString()));
+		notifyListeners(new StatusResult(true, null, base64WrappedZipFile)); // message completed success, zip base64 filename
 	}
 
 	public void setSubscriber(IResultSubscriber subscriber) {
@@ -100,7 +72,14 @@ public class Compressor implements Runnable {
 	}
 
 	private void notifyListeners(StatusResult status) {
-		subscriber.receiveResults(this.getClass(), status.isSuccess(), (String)status.getData());
+		if (subscriber != null) {
+			LOG.debug(String.format("%s : notifyListeners(%s, %B, %s)"
+							, subscriber.getClass().getName()
+							, this.getClass().getName()
+							, status.isSuccess()
+							, status.getData().toString()));
+			subscriber.receiveResults(this.getClass(), status.isSuccess(), status.getData().toString());
+		}
 	}
 	
 	/**
@@ -127,51 +106,50 @@ public class Compressor implements Runnable {
 	 * @return
 	 */
 	public String zipBase64() throws Exception{
-		File folder = new File(targetFolder);
-		ArrayList<File> sourceFileList = new ArrayList<>();
-		if (folder.exists()) {
-			File[] fileList = folder.listFiles();
-			if (fileList==null) {
-				throw new Exception("Nothing to compress");
-			}
-			for (File file : fileList) {
-				if (file.isFile() && !excluded.contains(file.getName())) {
-					sourceFileList.add(file);
-				}
-			}
-		}
-
-		try {
-			try (ByteArrayOutputStream baos = new ByteArrayOutputStream(1024 * 8)) {
-				try (OutputStream baseos = Base64.getEncoder().wrap(baos)) {
-					try (ZipOutputStream zos = new ZipOutputStream(baseos)) {
-						for (File file : sourceFileList) {
-							ZipEntry entry = new ZipEntry(file.getPath());
-							zos.putNextEntry(entry);
-							Files.copy(file.toPath(), zos);
-							zos.closeEntry();
-						}
-					}
-				}
-				return baos.toString("ISO-8859-1");
-			}
-		} catch (IOException ex) {
-			throw new UncheckedIOException("Failed to zip and wrap in base-64", ex);
-		}
+		TraceManager tm = new TraceManager(null);
+		delete(".zip");		
+		delete(".zip64");
+		String zipPath = tm.compress(targetFolder);
+		return encode(zipPath);
 	}
 
-	/**
-	 * very very near future, coming soon
-	 * Unpack downloaded payload to a trace folder
-	 */
-//	String unZipBase64(String b64) {
-//		String path = "empty";
-//		ByteArrayInputStream bais = new ByteArrayInputStream(b64.getBytes());
-//		InputStream zis = Base64.getDecoder().wrap(bais);
-//
-//		return path;
-//	}
+	private void delete(String fileExt) {
+		File file = new File(targetFolder + Util.FILE_SEPARATOR + folderName(targetFolder) + fileExt);
+		if (file.exists()) {
+			file.delete();
+		}
+	}
+	
+	private String folderName(String trace) {
+		String pattern = Pattern.quote(FILE_SEPARATOR);
+		String[] split = trace.split(pattern);
+		String traceName = trace;
+		if (split.length > 0) {
+			traceName = split[split.length - 1];
+		}
+ 		return traceName;
+	}
 
+	public String encode(String zipPath) throws IOException {
+		String zip64 = zipPath + "64";
+		Encoder encoder = Base64.getEncoder();
+		try (FileOutputStream fos = new FileOutputStream(zip64);
+				FileInputStream fis = new FileInputStream(new File(zipPath))) {
+			int size;
+			final int capacity = 3 * 1024 * 1024;// Keep it mutliple of 3 so it could be decoded 4/3 size
+			byte[] buffer = new byte[capacity];
+			while ((size = fis.read(buffer)) != -1) {
+				if(size < capacity) {
+					fos.write(encoder.encode(Arrays.copyOfRange(buffer, 0, size)));
+				} else {
+					fos.write(encoder.encode(buffer));
+				}
+			}
+			fos.flush();
+		}
+		return zip64;
+	}
+	
 	/**
 	 * Create a zip file of a folder while filtering out certain folders/files
 	 * 

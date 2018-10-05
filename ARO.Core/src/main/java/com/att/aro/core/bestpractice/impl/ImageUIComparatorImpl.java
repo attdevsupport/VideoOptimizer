@@ -39,6 +39,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,14 +52,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.ImageComparatorResult;
 import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -71,8 +71,7 @@ public class ImageUIComparatorImpl implements IBestPractice {
 	private IFileManager filemanager;
 	@Autowired
 	private IStringParse iStringParse;
-	@InjectLogger
-	private static ILogger log;
+	private static final Logger LOG = LogManager.getLogger(ImageUIComparatorImpl.class.getName());
 	@Value("${uiComparator.title}")
 	private String overviewTitle;
 	@Value("${uiComparator.detailedTitle}")
@@ -178,12 +177,12 @@ public class ImageUIComparatorImpl implements IBestPractice {
 				originalImageDimensionMap.put(imgName, width * height);
 				reqRespMap.put(imgName, reqResp);
 			} catch (IOException e) {
-				log.info("No reader found for given format: " + imgExtn);
+				LOG.info("No reader found for given format: " + imgExtn);
 			} finally {
 				reader.dispose();
 			}
 		} else {
-			log.info("No reader found for given format: " + imgExtn);
+			LOG.info("No reader found for given format: " + imgExtn);
 		}
 	}
 
@@ -211,7 +210,7 @@ public class ImageUIComparatorImpl implements IBestPractice {
 									int imageDimension = getXYPoints(eElement.getAttribute("bounds"));
 									if (imageDimension > 0) {
 										if (Util.checkDevMode()) {
-											log.debug("XML : " + uiXMLFile.getName() + " IMG : "
+											LOG.debug("XML : " + uiXMLFile.getName() + " IMG : "
 													+ eElement.getAttribute("content-desc"));
 										}
 										uiXmlMap.put(eElement.getAttribute("content-desc"), imageDimension);
@@ -220,7 +219,7 @@ public class ImageUIComparatorImpl implements IBestPractice {
 							}
 						}
 					} catch (IOException | ParserConfigurationException | SAXException e) {
-						log.error(e.toString());
+						LOG.error(e.toString());
 					}
 				}
 			}
@@ -311,7 +310,7 @@ public class ImageUIComparatorImpl implements IBestPractice {
 							}
 						}
 					} catch (IOException e) {
-						log.error(e.toString());
+						LOG.error(e.toString());
 					}
 				}
 			}
@@ -326,7 +325,7 @@ public class ImageUIComparatorImpl implements IBestPractice {
 						StandardCopyOption.REPLACE_EXISTING);
 				Files.deleteIfExists(Paths.get(cleanPath));
 			} catch (IOException e) {
-				log.info("Error moving UIComparator folder");
+				LOG.info("Error moving UIComparator folder");
 			}
 		}
 	}

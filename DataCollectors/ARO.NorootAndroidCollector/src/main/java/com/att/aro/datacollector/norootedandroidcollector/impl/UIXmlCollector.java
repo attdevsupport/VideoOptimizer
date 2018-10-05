@@ -17,6 +17,7 @@ package com.att.aro.datacollector.norootedandroidcollector.impl;
 
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.adb.IAdbService;
@@ -33,7 +34,7 @@ public class UIXmlCollector implements Runnable {
 		INITIALISED, CAPTURING, STOPPING, DONE, ERROR, UNDEFINED
 	}
 
-	private static final Logger logger = Logger.getLogger(UIXmlCollector.class.getName());
+	private static final Logger logger = LogManager.getLogger(UIXmlCollector.class.getName());
 	private IAroDevice aroDevice;
 	private IExternalProcessRunner extrunner;
 	private IAndroid android;

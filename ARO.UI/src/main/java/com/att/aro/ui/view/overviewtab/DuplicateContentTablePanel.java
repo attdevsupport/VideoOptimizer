@@ -31,7 +31,6 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -40,6 +39,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.pojo.CacheEntry;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
@@ -59,7 +61,7 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class DuplicateContentTablePanel extends TabPanelJPanel implements MouseListener {
 	
 	private static final long serialVersionUID = 1L;
-	private static final Logger logger = Logger.getLogger(DuplicateContentTablePanel.class.getName()); 
+	private static final Logger logger = LogManager.getLogger(DuplicateContentTablePanel.class.getName());
 
 	private DuplicateContentTableModel duplicateContentTableModel = new DuplicateContentTableModel();
 	private DataTable<CacheEntry> duplicateContentTable;
@@ -185,18 +187,19 @@ public class DuplicateContentTablePanel extends TabPanelJPanel implements MouseL
 					public void actionPerformed(ActionEvent arg0) {
 						
 						try{
-							CacheEntry cEntry = duplicateContentTable.getSelectedItem();							
+							CacheEntry cEntry = duplicateContentTable.getSelectedItem();
 							if(cEntry != null){
 								if(!cEntry.getResponse().getContentType().contains("video")){
 									if(cEntry.getResponse().getRawSize() < 5242880){
-										ContentViewer.getInstance().viewContent(cEntry.getSession(), cEntry.getResponse());
+									ContentViewer.getInstance().viewContent(cEntry.getRequest().getSession(),
+											cEntry.getResponse());
 									} else {
 									MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()), ResourceBundleHelper.getMessageString("Error.fileSize"));
 									}
 								} else {
 									MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()), MessageFormat.format(ResourceBundleHelper.getMessageString("Error.videofile"), cEntry.getResponse().getContentType()));
 								}
-							} 
+							}
 							
 						} catch (Exception ioExp){
 						 	MessageDialogFactory.showMessageDialog(DuplicateContentTablePanel.this.getTopLevelAncestor(), ioExp);

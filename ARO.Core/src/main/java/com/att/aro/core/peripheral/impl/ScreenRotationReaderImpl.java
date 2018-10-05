@@ -20,8 +20,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IScreenRotationReader;
 import com.att.aro.core.peripheral.pojo.UserEvent;
@@ -36,9 +37,8 @@ import com.att.aro.core.util.Util;
  */
 public class ScreenRotationReaderImpl extends PeripheralBase implements IScreenRotationReader {
 
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(ScreenRotationReaderImpl.class.getName());
+
 	UserEventType eventType = null;
 
 	@Override
@@ -52,7 +52,7 @@ public class ScreenRotationReaderImpl extends PeripheralBase implements IScreenR
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e) {
-			logger.error("failed to read screen rotation file: "+filepath);
+			LOGGER.error("failed to read screen rotation file: "+filepath);
 		}
 		if(lines != null){
 			for(String line: lines) {

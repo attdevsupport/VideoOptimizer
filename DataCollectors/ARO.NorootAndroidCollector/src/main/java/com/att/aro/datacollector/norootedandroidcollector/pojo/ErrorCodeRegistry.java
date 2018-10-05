@@ -17,6 +17,7 @@ package com.att.aro.datacollector.norootedandroidcollector.pojo;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.pojo.ErrorCode;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 
 /**
  * error code for none-rooted Android Collector start from 400
@@ -32,6 +33,7 @@ public final class ErrorCodeRegistry {
 		error.setCode(400);
 		error.setName("Android Debug Bridge failed to start");
 		error.setDescription(ApplicationConfig.getInstance().getVPNCollectorName() + " tried to start Android Debug Bridge service. The service was not started successfully.");
+		sendGAErrorCode(error);
 		return error;
 	}
 
@@ -40,6 +42,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(401);
 		err.setName("Failed to install Android App on device");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " tried to install " + ApplicationConfig.getInstance().getVPNCollectorName() + " on device and failed.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -48,6 +51,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(402);
 		err.setName("Found existing trace directory that is not empty");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " found an existing directory that contains files and did not want to override it. Some files may be hidden.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -56,6 +60,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(403);
 		err.setName("No Android device found.");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " cannot find any Android device plugged into the machine.");
+		sendGAErrorCode(err);
 		return err;
 	}
 	
@@ -70,6 +75,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(404);
 		err.setName("Android device Id or serial number not found.");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " cannot find any Android device plugged into the machine that matched the device ID or serial number you specified.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -78,6 +84,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(405);
 		err.setName("Failed to run VPN APK");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " failed to run Data Collector in device");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -91,6 +98,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(406);
 		err.setName("Failed to create local trace directory");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " tried to create local directory for saving trace data, but failed.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -99,6 +107,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(407);
 		err.setName("VPN activation timeout");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " failed to get the VPN service to activate.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -107,6 +116,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(411);
 		err.setName("Failed to connect to device SyncService");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " failed to get the trace, since it's not able to connect to Device");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -115,6 +125,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(412);
 		err.setName("Android device not online.");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " cannot command an Android device that is not online.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -123,6 +134,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(206);
 		err.setName( ApplicationConfig.getInstance().getAppShortName() + ApplicationConfig.getInstance().getVPNCollectorName() + " is already running");
 		err.setDescription("There is already a " + ApplicationConfig.getInstance().getVPNCollectorName() +" running on this device. Stop it first, manually, before starting a new trace.");
+		sendGAErrorCode(err);
 		return err;
 	}
 	
@@ -131,6 +143,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(414);
 		err.setName("Lost connection");
 		err.setDescription("lost AndroidDebugBridge connection" + message);
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -139,6 +152,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(415);
 		err.setName("ABI X86 Not Supported");
 		err.setDescription(message);
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -147,6 +161,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(416);
 		err.setName("ADB command failed to pull data.");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + " was unable to pull trace from target device.");
+		sendGAErrorCode(err);
 		return err;
 	}
 	
@@ -155,7 +170,11 @@ public final class ErrorCodeRegistry {
 		err.setCode(417);
 		err.setName("Script convert Error");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() +" was unable to read the profile "+ path);
+		sendGAErrorCode(err);
 		return err;
 	}
 	
+	private static void sendGAErrorCode(ErrorCode err){
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendErrorEvents(err.getName(),err.getDescription(), false);
+	}
 }

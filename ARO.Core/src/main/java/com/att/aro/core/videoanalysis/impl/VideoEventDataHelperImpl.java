@@ -5,6 +5,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.packetanalysis.pojo.ByteRange;
 import com.att.aro.core.videoanalysis.IVideoEventDataHelper;
 import com.att.aro.core.videoanalysis.pojo.VideoEventData;
@@ -15,6 +18,8 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 
 	private VideoEventData ved;
 
+	private static final Logger LOG = LogManager.getLogger(VideoEventDataHelperImpl.class);
+	
 	@Override
 	public VideoEventData create(String name, String exten) {
 		ved = new VideoEventData();
@@ -49,6 +54,11 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 
 			VideoDataTags switchVal = i < xref.length ? xref[i] : VideoDataTags.unknown;
 
+			if ("N\\A".equals(strData[i])) {
+				appendFailure(switchVal, strData[i]);
+				continue;
+			}
+						
 			switch (switchVal) {
 
 			case ID: {
@@ -95,7 +105,7 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 					}
 				} catch (NumberFormatException e) {
 					ved.setSegment(-3);
-					ved.setFailure(ved.getFailure() + ",segment :" + strData[i]);
+					appendFailure(switchVal, strData[i]);
 				}
 				break;
 			}
@@ -113,7 +123,7 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 					ved.setSegment(Integer.valueOf(strData[i], 16));
 				} catch (NumberFormatException e) {
 					ved.setSegment(-3);
-					ved.setFailure(ved.getFailure() + ",segment :" + strData[i]);
+					appendFailure(switchVal, strData[i]);
 				}
 				break;
 			}
@@ -149,12 +159,22 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 			}
 
 			case Timestamp: {
-				ved.setTimestamp(Double.valueOf(strData[i]));
+				try {
+					ved.setTimestamp(Double.valueOf(strData[i]));
+				} catch (NumberFormatException e) {
+					ved.setTimestamp(0);
+					appendFailure(switchVal, strData[i]);
+				}
 				break;
 			}
 
 			case ContentLength: {
-				ved.setContentLength(Double.valueOf(strData[i]));
+				try {
+					ved.setContentLength(Double.valueOf(strData[i]));
+				} catch (NumberFormatException e) {
+					ved.setContentLength(0);
+					appendFailure(switchVal, strData[i]);
+				}
 				break;
 			}
 
@@ -164,7 +184,7 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 						ved.setContentSize(Double.valueOf(strData[i]));
 					} catch (NumberFormatException e) {
 						ved.setContentSize(0);
-						ved.setFailure(ved.getFailure() + ",contentSize :" + strData[i]);
+						appendFailure(switchVal, strData[i]);
 					}
 				}
 				break;
@@ -180,7 +200,7 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 					ved.setContentStart(Double.valueOf(strData[i]));
 				} catch (NumberFormatException e) {
 					ved.setContentStart(0);
-					ved.setFailure(ved.getFailure() + ",contentStart :" + strData[i]);
+					appendFailure(switchVal, strData[i]);
 				}
 				break;
 			}
@@ -190,7 +210,7 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 					ved.setContentEnd(Double.valueOf(strData[i]));
 				} catch (NumberFormatException e) {
 					ved.setContentEnd(0);
-					ved.setFailure(ved.getFailure() + ",contentEnd :" + strData[i]);
+					appendFailure(switchVal, strData[i]);
 				}
 				break;
 			}
@@ -201,15 +221,21 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 				utcFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 				try {
 					StringBuilder temp = new StringBuilder(16);
-					                  temp.append(ved.getDateTime().substring(0, 4));    // yr
-					temp.append('-'); temp.append(ved.getDateTime().substring(4, 6));    // mo
-					temp.append('-'); temp.append(ved.getDateTime().substring(6, 8));    // dy
-					temp.append('T'); temp.append(ved.getDateTime().substring(9, 11));   // hr
-					temp.append(':'); temp.append(ved.getDateTime().substring(11, 13));  // hr
-					temp.append(':'); temp.append(ved.getDateTime().substring(13, 15));  // min
-					
+					temp.append(ved.getDateTime().substring(0, 4)); // yr
+					temp.append('-');
+					temp.append(ved.getDateTime().substring(4, 6)); // mo
+					temp.append('-');
+					temp.append(ved.getDateTime().substring(6, 8)); // dy
+					temp.append('T');
+					temp.append(ved.getDateTime().substring(9, 11)); // hr
+					temp.append(':');
+					temp.append(ved.getDateTime().substring(11, 13)); // hr
+					temp.append(':');
+					temp.append(ved.getDateTime().substring(13, 15)); // min
+
 					if (ved.getDateTime().length() == 18) {
-						temp.append('.'); temp.append(ved.getDateTime().substring(15, 18));
+						temp.append('.');
+						temp.append(ved.getDateTime().substring(15, 18));
 					} else {
 						temp.append(".000");
 					}
@@ -217,6 +243,7 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 					ved.setDtTime(utcFormat.parse(temp.toString()).getTime());
 				} catch (ParseException e) {
 					ved.setDtTime(0);
+					appendFailure(switchVal, strData[i]);
 				}
 				break;
 			}
@@ -229,5 +256,18 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 				break;
 			}
 		}
+	}
+
+	/** <pre>
+	 * Record failed parsing into VideoEventData.failure
+	 * by appending to any previous errors
+	 * 
+	 * @param label
+	 * @param data
+	 */
+	private void appendFailure(VideoDataTags label, String data) {
+		String sep = ved.getFailure().isEmpty() ? "" : ", ";
+		ved.setFailure(ved.getFailure() + sep + label + " :" + data);
+		LOG.info("Failed to Parse {" + label + " :" + data + "}");
 	}
 }

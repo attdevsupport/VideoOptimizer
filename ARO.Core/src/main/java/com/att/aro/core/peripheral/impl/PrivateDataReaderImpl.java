@@ -18,8 +18,9 @@ package com.att.aro.core.peripheral.impl;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IPrivateDataReader;
 import com.att.aro.core.peripheral.pojo.PrivateDataInfo;
@@ -27,9 +28,8 @@ import com.att.aro.core.util.Util;
 
 public class PrivateDataReaderImpl extends PeripheralBase implements IPrivateDataReader {
 
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(PrivateDataReaderImpl.class.getName());
+
 	private static final String DELIMITER = ",";
 	
 	@Override
@@ -44,7 +44,7 @@ public class PrivateDataReaderImpl extends PeripheralBase implements IPrivateDat
 		try {
 			lines = filereader.readAllLine(filePath);
 		} catch (Exception e) {
-			logger.error("failed to read private data info file: "+ filePath);
+			LOGGER.error("failed to read private data info file: "+ filePath);
 		}
 		
 		if (lines != null && lines.length != 0) {
@@ -82,7 +82,7 @@ public class PrivateDataReaderImpl extends PeripheralBase implements IPrivateDat
 			privateDataInfo.setSelected(isSelected);
 			return privateDataInfo;
 		} catch (Exception e) {
-			logger.error("Invalid format of pattern from user setting: "+ line);
+			LOGGER.error("Invalid format of pattern from user setting: "+ line);
 			return null;
 		}
 	}

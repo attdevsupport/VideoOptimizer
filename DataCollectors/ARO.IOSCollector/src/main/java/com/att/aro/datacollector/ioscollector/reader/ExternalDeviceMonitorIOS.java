@@ -19,14 +19,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.IExternalProcessReaderSubscriber;
 import com.att.aro.datacollector.ioscollector.IOSDeviceStatus;
 
 public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcessReaderSubscriber {
-	private ILogger log = new LoggerImpl("IOSCollector");
+	private static final Logger LOG = LogManager.getLogger(ExternalDeviceMonitorIOS.class);
 	Process proc = null;
 	String exepath;
 	ExternalProcessReader procreader;
@@ -60,7 +61,7 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
 			String[] cmd = {"bash", "-c", "fuser -f "+exepath+"|xargs kill"};
 			runner.runCmd(cmd);
 		} catch (IOException e) {
-			log.error("IOException", e);
+			LOG.error("IOException", e);
 		}
 	}
 	
@@ -78,7 +79,7 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
 		try {
 			proc = builder.start();
 		} catch (IOException e) {
-			log.error("IOException :", e);
+			LOG.error("IOException :", e);
 			return;
 		}
 
@@ -109,7 +110,7 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
  				pid = Integer.parseInt(pids[0]);
 			}
 		} catch (IOException | NumberFormatException e) {
-			log.error("IOException | NumberFormatException ", e);
+			LOG.error("IOException | NumberFormatException ", e);
 		}  
 	}
 
@@ -121,9 +122,9 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
 			this.shutdownSignal = false;
 			try {
 				Runtime.getRuntime().exec("kill -SIGINT " + pid);
-				log.info("kill device monitor process pid: " + pid);
+				LOG.info("kill device monitor process pid: " + pid);
 			} catch (IOException e) {
-				log.error("IOException :", e);
+				LOG.error("IOException :", e);
 			}
 			int count = 0;
 			while (!shutdownSignal && count < 10) {
@@ -153,10 +154,10 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
 	@Override
 	public void newMessage(String message) {
 		if (message.equals("[connected]")) {
-			log.info("Device connected");
+			LOG.info("Device connected");
 			notifyConnected();
 		} else if (message.equals("[disconnected]")) {
-			log.info("Device disconnected");
+			LOG.info("Device disconnected");
 			notifyDisconnected();
 		}
 	}

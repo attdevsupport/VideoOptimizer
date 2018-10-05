@@ -29,11 +29,14 @@ public class EncodedSegmentListAmz {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append(" duration:"); strblr.append(duration);
-		strblr.append(", timescale:"); strblr.append(timescale);
+		strblr.append(" duration:");
+		strblr.append(duration);
+		strblr.append(", timescale:");
+		strblr.append(timescale);
 		int mark = encodedSegmentListValue.indexOf(';');
 		if (mark > 0) {
-			strblr.append(", encodedSegmentListValue :"); strblr.append(encodedSegmentListValue.substring(0, mark));
+			strblr.append(", encodedSegmentListValue :");
+			strblr.append(encodedSegmentListValue.substring(0, mark));
 		}
 		return strblr.toString();
 	}

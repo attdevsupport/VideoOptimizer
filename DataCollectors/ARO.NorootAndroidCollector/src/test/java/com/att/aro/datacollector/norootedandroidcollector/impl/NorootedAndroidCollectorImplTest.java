@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.Hashtable;
 
+import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -32,12 +33,10 @@ import org.mockito.MockitoAnnotations;
 
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.InstallException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.SyncService.ISyncProgressMonitor;
 import com.android.ddmlib.TimeoutException;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.concurrent.IThreadExecutor;
@@ -51,7 +50,7 @@ import com.att.aro.core.video.pojo.VideoOption;
 public class NorootedAndroidCollectorImplTest{
 	
 	@Mock
-	ILogger logMock;
+	Logger logMock;
 	@Mock
 	IReadWriteFileExtractor extractor;
 	@Mock
@@ -90,7 +89,6 @@ public class NorootedAndroidCollectorImplTest{
 		
 		MockitoAnnotations.initMocks(this);
 		
-		nonRootedAndroidCollector.setLog(logMock);
 		nonRootedAndroidCollector.setFileManager(fileManager);
 		nonRootedAndroidCollector.setAdbService(adbService);
 		nonRootedAndroidCollector.setAndroid(android);

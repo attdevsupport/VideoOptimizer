@@ -2,14 +2,20 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>com.att.aro</groupId>
+        <artifactId>vo-parent</artifactId>
+        <version>2.1.0</version>
+        <relativePath>../../ARO.Parent</relativePath>
+    </parent>
 	<groupId>com.att.aro.datacollector</groupId>
 	<artifactId>vpn-android-collector</artifactId>
-	<version>6.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<name>ARO Non-rooted Android Collector</name>
-	<description>Non-rooted Android data collector for ARO.</description>
+	<name>VO Non-rooted Android Collector</name>
+	<description>Non-rooted Android data collector for VO.</description>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
 	<licenses>
 		<license>
@@ -56,28 +62,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.att.aro</groupId>
-			<artifactId>aro-core</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.14</version>
+			<artifactId>vo-core</artifactId>
+			<version>2.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -97,19 +83,9 @@
 		    <version>3.0.4</version>
 		</dependency>
 	</dependencies>
+
 	<build>
 		<plugins>
-			<!-- compile to 1.8 -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
@@ -160,19 +136,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.17</version>
-				<dependencies>
-					<dependency>
-						<groupId>org.apache.maven.surefire</groupId>
-						<artifactId>surefire-junit47</artifactId>
-						<version>2.16</version>
-					</dependency>
-				</dependencies>
-			</plugin>
- 
 		</plugins>
 	</build>
 	<reporting>

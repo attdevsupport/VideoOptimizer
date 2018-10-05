@@ -32,22 +32,16 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class FFmpegConfirmationDialog extends ConfirmationDialog {
 	private static final long serialVersionUID = 1L;
+	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 	
 	private JLabel ffmpegMsgLabel;
 	private JCheckBox dontShowAgainCheckBox;
-
-	@InjectLogger
-	private static ILogger log;
-
-	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 	public FFmpegConfirmationImpl ffmpegImpl = ContextAware.getAROConfigContext().getBean("ffmpegConfirmationImpl",
 			FFmpegConfirmationImpl.class);
 

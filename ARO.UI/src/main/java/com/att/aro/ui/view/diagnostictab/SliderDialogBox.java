@@ -56,9 +56,11 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
@@ -71,9 +73,12 @@ import com.att.aro.ui.view.diagnostictab.plot.VideoChunksPlot;
 import com.att.aro.ui.view.video.IVideoPlayer;
 
 public class SliderDialogBox extends JDialog {
-	private static final Logger LOGGER = Logger.getLogger(SliderDialogBox.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(SliderDialogBox.class.getName());
 	private static final long serialVersionUID = 1L;
 	private static final int SLIDERDIALOG_COLUMN_COUNT = 2;
+	private static final int MAXIMUM_EVENT_PER_SECOND = 20;
+	private long eventTimeStamp = 0;
+	private int eventCount =0;
 	private JSlider slider;
 	private JButton okButton;
 	private int maxValue;
@@ -417,12 +422,18 @@ public class SliderDialogBox extends JDialog {
 		slider.addChangeListener(new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
-				double value = ((JSlider) e.getSource()).getValue();
-				// double seconds = value / 10;
-				double seconds = value * 0.04; /// 100;
-				getPlayer().setMediaTime(seconds);
-				double mediaTime = getPlayer().getMediaTime();
-				startTime = mediaTime + getPlayer().getVideoOffset();
+				boolean executeEvent = true;
+				if (Util.isWindowsOS()) {
+					executeEvent = rateLimitEventsPerSecond();
+				}
+				if (executeEvent) {
+					double value = ((JSlider) e.getSource()).getValue();
+					// double seconds = value / 10;
+					double seconds = value * 0.04; /// 100;
+					getPlayer().setMediaTime(seconds);
+					double mediaTime = getPlayer().getMediaTime();
+					startTime = mediaTime + getPlayer().getVideoOffset();
+				}
 			}
 		});
 		sliderPanel.add(slider, constraint);
@@ -546,5 +557,20 @@ public class SliderDialogBox extends JDialog {
 			}
 		});
 		return tunerBtn;
+	}
+	
+	private boolean rateLimitEventsPerSecond() {
+		long currentTime = System.currentTimeMillis();
+		if (eventTimeStamp == 0) {
+			eventTimeStamp = currentTime;
+		}
+		long diff = currentTime - eventTimeStamp;
+		if (diff > 1000) { // diff value check against one second interval
+			eventCount = 0;
+			eventTimeStamp = currentTime;
+			return true;
+		}
+		boolean executeEvent = (diff < 1000 && eventCount++ < MAXIMUM_EVENT_PER_SECOND) ? true : false;
+		return executeEvent;
 	}
 }

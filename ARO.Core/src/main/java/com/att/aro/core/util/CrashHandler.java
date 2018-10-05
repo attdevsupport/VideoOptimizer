@@ -18,10 +18,8 @@ package com.att.aro.core.util;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.analytics.IGoogleAnalytics;
 
 public class CrashHandler implements Thread.UncaughtExceptionHandler {
@@ -29,18 +27,17 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 	@Override
 	public void uncaughtException(Thread thread, Throwable throwable) {
 		IGoogleAnalytics googleAnalytics = GoogleAnalyticsUtil.getGoogleAnalyticsInstance();
-		googleAnalytics.sendCrashEvents(convertTracetoString("", throwable), "");
-		AnnotationConfigApplicationContext context = (AnnotationConfigApplicationContext) SpringContextUtil
-				.getInstance().getContext();
-		context.getBean(ILogger.class).error("Uncaught ARO Exception:", throwable);
-		context.close();
+		googleAnalytics.sendCrashEvents(convertTracetoString("", throwable));
+		LogManager.getLogger(CrashHandler.class.getName()).error("Uncaught ARO Exception:", throwable);	
 	}
 
 	public static String convertTracetoString(String message, Throwable throwable){
 		StringWriter sw = new StringWriter();
 		throwable.printStackTrace(new PrintWriter(sw));
-		int max = message.length() < 100 ? message.length():100;
-		String exceptionAsString = (message+'\n'+sw.toString()).substring(0, max);
+		String swValue = sw.toString();
+		int max = swValue.length() < 100 ? swValue.length():100;
+		String exceptionAsString = (message+swValue).substring(0, max);
+		exceptionAsString = exceptionAsString.replaceAll("\n\t", "%20").replaceAll("\n", "%20");
 		return exceptionAsString;
 	}
 	

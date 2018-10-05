@@ -20,21 +20,20 @@ package com.att.aro.core.commandline.impl;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.commandline.ILLDBProcessRunner;
 import com.att.aro.core.commandline.IProcessFactory;
-import com.att.aro.core.model.InjectLogger;
 
 public class LLDBProcessRunnerImpl implements ILLDBProcessRunner{
 
 	IProcessFactory procfactory;
 	private Process lldbProcess;
-	
-	@InjectLogger
-	private static ILogger log;
-	
+
+	private static final Logger LOG = LogManager.getLogger(LLDBProcessRunnerImpl.class.getName());
+
 	@Autowired
 	public void setProcessFactory(IProcessFactory factory){
 		this.procfactory = factory;
@@ -59,7 +58,7 @@ public class LLDBProcessRunnerImpl implements ILLDBProcessRunner{
 			}		
 			done = true;
 		} catch (IOException e1) {
-			log.error("Executing cmds on attached lldb process has failed");
+			LOG.error("Executing cmds on attached lldb process has failed");
 		}
 		
 		return done;

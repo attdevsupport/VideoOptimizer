@@ -31,21 +31,15 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.util.PcapConfirmationImpl;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class PcapConfirmationDialog extends ConfirmationDialog {
 	private static final long serialVersionUID = 1L;
-	
-	private JLabel pcapMsgLabel;
-
-	@InjectLogger
-	private static ILogger log;
-
 	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
+
+	private JLabel pcapMsgLabel;
 	public PcapConfirmationImpl pcapImpl = ContextAware.getAROConfigContext().getBean("pcapConfirmationImpl",
 			PcapConfirmationImpl.class);
 

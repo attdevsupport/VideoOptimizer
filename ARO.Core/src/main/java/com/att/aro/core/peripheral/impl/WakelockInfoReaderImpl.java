@@ -21,8 +21,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IWakelockInfoReader;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
@@ -38,9 +39,8 @@ import com.att.aro.core.util.Util;
  * */
 public class WakelockInfoReaderImpl extends PeripheralBase implements IWakelockInfoReader {
 
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(WakelockInfoReaderImpl.class.getName());
+
 	@Override
 	public List<WakelockInfo> readData(String directory, String osVersion, double dumpsysEpochTimestamp, Date traceDateTime){
 		List<WakelockInfo> wakelockInfos = new ArrayList<WakelockInfo>();
@@ -50,12 +50,12 @@ public class WakelockInfoReaderImpl extends PeripheralBase implements IWakelockI
 			return wakelockInfos;
 		}
 		if (osVersion != null && osVersion.compareTo("2.3") < 0) {
-			logger.info("OS 2.2(Froyo) or earlier does not has the wakelock timeline");
+			LOGGER.info("OS 2.2(Froyo) or earlier does not has the wakelock timeline");
 		}
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed to read Wakelock Info file: "+filepath);
+			LOGGER.error("failed to read Wakelock Info file: "+filepath);
 		}
 		if(lines != null && lines.length > 0){
 			WakelockState wakelockState;
@@ -83,14 +83,14 @@ public class WakelockInfoReaderImpl extends PeripheralBase implements IWakelockI
 								wakelockState = WakelockState.WAKELOCK_ACQUIRED;
 							}
 							wakelockInfos.add(new WakelockInfo(bTimeStamp, wakelockState));
-							logger.info("Trace Start: " 
+							LOGGER.info("Trace Start: " 
 									+ traceDateTime.getTime() 
 									+ "\nWakelock Time: " + bTimeStamp 
 									+ " Wakelock state: " + actualWakelockstate 
 									+ " strFields " + Arrays.toString(strFields));
 						}
 					} catch (Exception e) {
-						logger.warn("Unexpected error parsing wakelock event: "
+						LOGGER.warn("Unexpected error parsing wakelock event: "
 										+ Arrays.toString(strFields) 
 										+ " found wakelock in " + index, e);
 					}

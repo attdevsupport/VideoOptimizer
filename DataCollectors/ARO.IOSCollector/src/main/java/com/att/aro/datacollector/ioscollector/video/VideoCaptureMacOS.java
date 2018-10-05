@@ -25,12 +25,13 @@ import java.util.ResourceBundle;
 
 import javax.swing.SwingUtilities;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.android.ddmlib.IDevice;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
 import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.video.IVideoCapture;
 import com.att.aro.core.video.IVideoWriter;
@@ -42,7 +43,7 @@ import com.att.aro.datacollector.ioscollector.ImageSubscriber;
 import com.att.aro.datacollector.ioscollector.utilities.ErrorCodeRegistry;
 
 public class VideoCaptureMacOS extends Thread implements IVideoCapture {
-	private ILogger log = new LoggerImpl("IOSCollector");// ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private static final Logger LOG = LogManager.getLogger(VideoCaptureMacOS.class);
 	private List<ImageSubscriber> subscribers;
 	private List<IVideoImageSubscriber> vImageSubscribers = new ArrayList<IVideoImageSubscriber>();
 	private static ResourceBundle defaultBundle = ResourceBundle.getBundle("messages");
@@ -82,7 +83,7 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 
 	public void setWorkingFolder(String folder) {
 		this.workingFolder = folder;
-		log.info("set working folder: " + this.workingFolder);
+		LOG.info("set working folder: " + this.workingFolder);
 	}
 
 	/**
@@ -100,27 +101,27 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 	public void doWork() {
 		stop = false;
 		hasQuit = false;
-		log.info("Init Screencapture...");
-		log.info("workingfolder :"+this.workingFolder);
+		LOG.info("Init Screencapture...");
+		LOG.info("workingfolder :"+this.workingFolder);
 
 		smanage = new ScreenshotManager(this.workingFolder);
 		smanage.start();
-		log.info("started ScreenshotManager.");
+		LOG.info("started ScreenshotManager.");
 		int timeoutcounter = 0;
 		while (!smanage.isReady()) {
 			try {
-				log.info("waiting for ScreenshotManager to be ready");
+				LOG.info("waiting for ScreenshotManager to be ready");
 				Thread.sleep(200);
 				timeoutcounter++;
 			} catch (InterruptedException e) {
-				log.debug("InterruptedException:", e);
+				LOG.debug("InterruptedException:", e);
 			}
 			if (timeoutcounter > 30) {//give it 6 seconds to start up
-				log.info("Timeout on screenshotmanager");
+				LOG.info("Timeout on screenshotmanager");
 				break;
 			}
 		}
-		log.info("ScreenshotManager is ready: " + smanage.isReady());
+		LOG.info("ScreenshotManager is ready: " + smanage.isReady());
 
 		Date lastFrameTime = this.videoStartTime = new Date();
 		while (!stop) {
@@ -143,18 +144,18 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 					statusResult.setSuccess(false);
 					statusResult.setError(
 							ErrorCodeRegistry.getImageDecoderError(defaultBundle.getString("Error.imagedecoder")));
-					log.error("Failed to get screenshot image, ImageDecoder error");
+					LOG.error("Failed to get screenshot image, ImageDecoder error");
 					break;
 				}else if (!stop) {
-					log.info("Failed to get screenshot image, pause for 1/2 second");
+					LOG.info("Failed to get screenshot image, pause for 1/2 second");
 					try {
 						Thread.sleep(500);
 					} catch (InterruptedException e) {
-						log.debug("InterruptedException:", e);
+						LOG.debug("InterruptedException:", e);
 					}
 				}
 			} catch (IOException e) {
-				log.debug("IOException:", e);
+				LOG.debug("IOException:", e);
 				break;
 			}
 
@@ -165,40 +166,40 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 				smanage.shutDown();
 			}
 		} catch (IOException ioExp) {
-			log.warn("Exception closing video output stream", ioExp);
+			LOG.warn("Exception closing video output stream", ioExp);
 		}
 		hasQuit = true;
 		stop = false;//signal waiter to stop waiting
-		log.info("stopped screencapture");
+		LOG.info("stopped screencapture");
 
 	}
 
 	public void signalStop() {
 		stop = true;
-		log.info("signal video capture to stop. no waiting for now");
+		LOG.info("signal video capture to stop. no waiting for now");
 	}
 
 	public void stopCapture() {
 		if (!hasQuit) {//in case video is already stopped
 			stop = true;
-			log.info("sent signal to stop long running task and now wait");
+			LOG.info("sent signal to stop long running task and now wait");
 			int waitcount = 0;
 			while (stop) {//run() should reset it to false before it quit
 				try {
-					log.info("Waiting for videocapture to stop, counter: " + waitcount);
+					LOG.info("Waiting for videocapture to stop, counter: " + waitcount);
 					Thread.sleep(100);
 					waitcount++;
 					if (waitcount > 20) {
-						log.info("Timeout on wait, force exit on counter: " + waitcount);
+						LOG.info("Timeout on wait, force exit on counter: " + waitcount);
 						break;
 					}
 				} catch (InterruptedException e) {
-					log.debug("InterruptedException:", e);
+					LOG.debug("InterruptedException:", e);
 					break;
 				}
 			}
 		} else {
-			log.info("capture engine already quit, proceed to next step");
+			LOG.info("capture engine already quit, proceed to next step");
 		}
 		if (capt != null) {
 			try {
@@ -206,13 +207,13 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 			} catch (UnsatisfiedLinkError er) {
 			}
 			capt = null;
-			log.info("disposed screencapture");
+			LOG.info("disposed screencapture");
 		}
 		if (smanage != null) {
 			try {
 				smanage.signalShutdown();
 			} catch (IOException e) {
-				log.debug("IOException:", e);
+				LOG.debug("IOException:", e);
 			}
 			smanage = null;
 		}
@@ -220,9 +221,9 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 		try {
 			videowriter.close();
 		} catch (IOException ioExp) {
-			log.warn("Exception closing video output stream", ioExp);
+			LOG.warn("Exception closing video output stream", ioExp);
 		}
-		log.info("finished video capture");
+		LOG.info("finished video capture");
 		System.gc();
 	}
 
@@ -266,7 +267,7 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 		try {
 			videowriter.close();
 		} catch (IOException ioExp) {
-			log.warn("Exception closing video output stream", ioExp);
+			LOG.warn("Exception closing video output stream", ioExp);
 		}
 	}
 

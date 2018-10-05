@@ -1,6 +1,6 @@
 package com.att.aro.ui.controller;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 

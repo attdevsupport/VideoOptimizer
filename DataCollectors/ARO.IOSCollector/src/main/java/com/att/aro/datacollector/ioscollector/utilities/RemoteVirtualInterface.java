@@ -18,12 +18,11 @@ package com.att.aro.datacollector.ioscollector.utilities;
 import java.io.IOException;
 import java.util.Date;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
-import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 import com.att.aro.datacollector.ioscollector.reader.ExternalDumpcapExecutor;
+import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 import com.att.aro.datacollector.ioscollector.reader.PcapHelper;
 
 /**
@@ -32,7 +31,7 @@ import com.att.aro.datacollector.ioscollector.reader.PcapHelper;
  * require Sudo password to perform dumpcap command.
  */
 public class RemoteVirtualInterface {
-	private ILogger log = new LoggerImpl("IOSCollector");
+	private static final Logger LOG = LogManager.getLogger(RemoteVirtualInterface.class);
 	String serialNumber = "";
 	String sudoPassword = "";//we need to ask user for password to run some command on Mac
 	ExternalProcessRunner runner = null;
@@ -48,11 +47,6 @@ public class RemoteVirtualInterface {
 	volatile boolean hasSetup = false;
 	private boolean launchDaemonsExecuted;
 	private String rviName;
-
-	@Autowired
-	public void setLogger(ILogger logger) {
-		this.log = logger;
-	}
 
 	public RemoteVirtualInterface(String sudoPassword) {
 		startDate = new Date();
@@ -109,10 +103,10 @@ public class RemoteVirtualInterface {
 		for (int attempt = 0; attempt < 10; attempt++) {
 			if (rviConnect(connect, serialNumber)) {
 				success = true;
-				log.info("RVI is started ok.");
+				LOG.info("RVI is started ok.");
 				break;
 			} else {
-				log.info("RVI failed :" + attempt + " time(s)");
+				LOG.info("RVI failed :" + attempt + " time(s)");
 				rviConnect(disconnect, serialNumber);
 				Thread.sleep(500);
 			}
@@ -120,7 +114,7 @@ public class RemoteVirtualInterface {
 		
 		if (!success){
 			this.errorMsg = "Failed to connect to device. \r\nTry disconnect your device and reconnect it back. \r\n If problem still exit, try again or restarting ARO or Machine.";
-			log.error(this.errorMsg);
+			LOG.error(this.errorMsg);
 		}
 		
 		this.hasSetup = success;
@@ -135,7 +129,7 @@ public class RemoteVirtualInterface {
 				runner.runCmd(cmnd);
 				launchDaemonsExecuted = true;
 			} catch (IOException e) {
-				log.error("IOException", e);
+				LOG.error("IOException", e);
 			}
 		}
 	}
@@ -155,7 +149,7 @@ public class RemoteVirtualInterface {
 		try {
 			cmdResponse = runner.runCmd("rvictl " + mode + " " + serialNumber );
 		} catch (IOException e) {
-			log.error("IOException", e);
+			LOG.error("IOException", e);
 			return false;
 		}
 		if (cmdResponse != null && cmdResponse.contains("[SUCCEEDED]")) {
@@ -187,7 +181,7 @@ public class RemoteVirtualInterface {
 				response = runner.runCmd("rvictl -l");
 			} while (!response.trim().equals("Could not get list of devices"));
 		} catch (IOException e) {
-			log.error("IOException", e);
+			LOG.error("IOException", e);
 		}
 	}
 
@@ -202,7 +196,7 @@ public class RemoteVirtualInterface {
 		try {
 			data = runner.runCmd("rvictl -l | grep " + serialNumber + " |awk -F \"interface \" '{print $2}'");
 		} catch (IOException e) {
-			log.error("IOException", e);
+			LOG.error("IOException", e);
 			return null;
 		}
 		return data;
@@ -215,7 +209,7 @@ public class RemoteVirtualInterface {
 	 */
 	public void startCapture() throws Exception {
 		
-		log.info("********** Starting dumpcap... **********");
+		LOG.info("********** Starting dumpcap... **********");
 		
 		startDate = new Date();
 		initDate = startDate;
@@ -224,7 +218,7 @@ public class RemoteVirtualInterface {
 		dumpcapExecutor = new ExternalDumpcapExecutor(this.pcapfilepath, sudoPassword, this.runner);
 		dumpcapExecutor.start();
 		
-		log.info("************  Tcpdump started in background. ****************");
+		LOG.info("************  Tcpdump started in background. ****************");
 	}
 
 	/**
@@ -232,7 +226,7 @@ public class RemoteVirtualInterface {
 	 */
 	public void stopCapture() {
 		
-		log.info("********** Stop dumpcap... **********");
+		LOG.info("********** Stop dumpcap... **********");
 
 		if (dumpcapExecutor != null) {
 			try {
@@ -244,7 +238,7 @@ public class RemoteVirtualInterface {
 			}
 			dumpcapExecutor = null;
 
-			log.info("destroyed dumpcap executor thread");
+			LOG.info("destroyed dumpcap executor thread");
 
 			if (this.totalPacketCaptured > 0) {
 				Date dt = pcaphelp.getFirstPacketDate(this.pcapfilepath);
@@ -253,7 +247,7 @@ public class RemoteVirtualInterface {
 					if(startCaptureDate != null) {
 						this.startCaptureDate = startDate;
 					}
-					log.info("RVI Set packet date to: " + dt.getTime());
+					LOG.info("RVI Set packet date to: " + dt.getTime());
 				}
 			}
 

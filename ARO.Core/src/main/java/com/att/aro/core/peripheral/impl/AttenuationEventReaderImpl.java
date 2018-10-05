@@ -4,8 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IAttenuattionEventReader;
 import com.att.aro.core.peripheral.pojo.AttenuatorEvent;
@@ -13,9 +14,8 @@ import com.att.aro.core.peripheral.pojo.AttenuatorEvent.AttnrEventFlow;
 import com.att.aro.core.util.Util;
 
 public class AttenuationEventReaderImpl extends PeripheralBase implements IAttenuattionEventReader{
-
-	@InjectLogger
-	private static ILogger logger;
+	
+	private static final Logger LOGGER = LogManager.getLogger(AttenuationEventReaderImpl.class.getName());
 	private static final String DELIMITER = ",";
 
 	@Override
@@ -30,7 +30,7 @@ public class AttenuationEventReaderImpl extends PeripheralBase implements IAtten
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("Failed to open file for Attenuation Event: " + filepath, e1);
+			LOGGER.error("Failed to open file for Attenuation Event: " + filepath, e1);
 		}
 		if(lines != null && lines.length > 0){
 			for (String strLineBuf : lines) {
@@ -51,11 +51,11 @@ public class AttenuationEventReaderImpl extends PeripheralBase implements IAtten
 			attnrEvent = new AttenuatorEvent(atnrFL,delayTime,timeStamp);
 			
 		}catch(NumberFormatException numberException){
-			logger.error("Invalid number format : "+ line , numberException);
+			LOGGER.error("Invalid number format : "+ line , numberException);
 			return new AttenuatorEvent(AttnrEventFlow.DL,0,0L);
 
 		}catch (Exception exception) {
-			logger.error("Invalid input: "+ line , exception);
+			LOGGER.error("Invalid input: "+ line , exception);
 			return new AttenuatorEvent(AttnrEventFlow.DL,0,0L);
 		}
 

@@ -18,10 +18,7 @@ package com.att.aro.core.bestpractice.impl;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 
@@ -71,7 +68,7 @@ public class DuplicateContentImpl implements IBestPractice {
 			totalTCPBytes = tracedata.getStatistic().getTotalTCPBytes();
 		}
 		result.setTotalContentBytes(totalTCPBytes);
-		List<CacheEntry> caUResult = createUniqueItemList(cacheAnalysis.getDuplicateContent());
+		List<CacheEntry> caUResult = cacheAnalysis.getDuplicateContent();
 		result.setDuplicateContentList(caUResult);
 		int duplicateContentSizeOfUniqueItems = caUResult.size();
 		result.setDuplicateContentSizeOfUniqueItems(duplicateContentSizeOfUniqueItems);
@@ -98,25 +95,5 @@ public class DuplicateContentImpl implements IBestPractice {
 		result.setExportAllPct(exportAllPct);
 		result.setStaticsUnitsMbytes(staticsUnitsMbytes);
 		return result;
-	}
-
-	/**
-	 *
-	 * Createa unique item list.
-	 *
-	 * @param caResult
-	 */
-	private List<CacheEntry> createUniqueItemList(List<CacheEntry> caResult) {
-		List<CacheEntry> caUResult = new ArrayList<CacheEntry>();
-		Set<String> set = new HashSet<String>();
-		for (int i = 0; i < caResult.size(); i++) {
-			CacheEntry cEntry = caResult.get(i);
-			String key = Integer.toString(cEntry.getHitCount()) + cEntry.getHostName() + cEntry.getHttpObjectName();
-			if (!set.contains(key)) {
-				caUResult.add(cEntry);
-			}
-			set.add(key);
-		}
-		return caUResult;
 	}
 }

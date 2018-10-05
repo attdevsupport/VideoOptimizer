@@ -17,31 +17,25 @@ package com.att.aro.core.mobiledevice.impl;
 
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IDevice.DeviceState;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.android.pojo.ShellOutputReceiver;
 import com.att.aro.core.mobiledevice.IAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.RootCheckOutputReceiver;
-import com.att.aro.core.model.InjectLogger;
 
 public class AndroidDeviceImpl implements IAndroidDevice {
 
-	@InjectLogger
-	private ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(AndroidDeviceImpl.class.getName());
 
 	private IAndroid android;
 	@Autowired
 	public void setAndroid(IAndroid android) {
 		this.android = android;
-	}
-	
-	@Autowired
-	public void setLogger(ILogger logger) {
-		this.logger = logger;
 	}
 	
 	public RootCheckOutputReceiver makeRootCheckOutputReceiver() {
@@ -66,7 +60,7 @@ public class AndroidDeviceImpl implements IAndroidDevice {
 		device.executeShellCommand("getenforce", shSELinux);
 
 		boolean seLinuxEnforced = shSELinux.isSELinuxEnforce();
-		logger.info("--->seLinuxEnforced:" + seLinuxEnforced);
+		LOGGER.info("--->seLinuxEnforced:" + seLinuxEnforced);
 
 		return seLinuxEnforced;
 	}

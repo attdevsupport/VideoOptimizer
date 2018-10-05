@@ -15,17 +15,16 @@
 */
 package com.att.aro.datacollector.ioscollector.attenuator;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.HttpProxyServerBootstrap;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 import org.littleshoot.proxy.impl.ThreadPoolConfiguration;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
-
 public class LittleProxyWrapper implements Runnable {
 	
-	private ILogger log = new LoggerImpl("LittleProxyWrapper");
+	private static final Logger LOG = LogManager.getLogger(LittleProxyWrapper.class.getName());
     private HttpProxyServer proxyServer;
 
 	private int defaultPort = 8080;
@@ -60,7 +59,7 @@ public class LittleProxyWrapper implements Runnable {
 			config.withClientToProxyWorkerThreads(1);
 			config.withAcceptorThreads(2);
 			config.withProxyToServerWorkerThreads(1);
-			log.info("About to start server on port: " + defaultPort);
+			LOG.info("About to start server on port: " + defaultPort);
 			HttpProxyServerBootstrap bootstrap = DefaultHttpProxyServer
 					.bootstrapFromFile("./littleproxy.properties")
 					.withPort(defaultPort)
@@ -69,11 +68,11 @@ public class LittleProxyWrapper implements Runnable {
 					.withThrottling(getThrottleReadStream(), getThrottleWriteStream())
 					;
 			
-			log.info("About to start...");
+			LOG.info("About to start...");
 			proxyServer = bootstrap.start();
 
 		} catch (Exception e) {
-			log.error(e.getMessage(), e);
+			LOG.error(e.getMessage(), e);
  		}
 
 	}

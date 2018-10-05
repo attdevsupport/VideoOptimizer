@@ -27,8 +27,9 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.configuration.IProfileFactory;
 import com.att.aro.core.configuration.pojo.Profile;
@@ -51,7 +52,7 @@ public final class ProfileManager {
 
 	private static final String DEFAULT_PROFILE = "i997";
 	private static final String DEFAULT_PROFILE_LTE = "lte";
-	private static final Logger LOGGER = Logger.getLogger(ProfileManager.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(ProfileManager.class.getName());
 	private static final ProfileManager PROFILE_MANAGER = new ProfileManager();
 	private static IProfileFactory profileFactory ; 
 	
@@ -216,7 +217,7 @@ public final class ProfileManager {
 				try {
 					result = getProfile(file);
 				} catch (IOException e) {
-					LOGGER.warning("Unable to load previous profile file: " + file.getAbsolutePath());
+					LOGGER.warn("Unable to load previous profile file: " + file.getAbsolutePath());
 					throw new IOException(e);
 				}
 			}
@@ -228,7 +229,7 @@ public final class ProfileManager {
 					String name = profileType == ProfileType.LTE ? DEFAULT_PROFILE_LTE: DEFAULT_PROFILE;
 					result = getPredefinedProfile(name);
 				} catch (IOException e) {
-					LOGGER.log(Level.WARNING,"Unable to load previous pre-defined profile: " + profile);
+					LOGGER.warn("Unable to load previous pre-defined profile: " + profile);
 				}
 			}
 		}
@@ -254,9 +255,9 @@ public final class ProfileManager {
 		try {
 			result = getPredefinedProfile(name);//aroProfiles.getString(name));
 		} catch (ProfileException e) {
-			LOGGER.log(Level.WARNING,"Unable to load default pre-defined profile: " + profileType.name(), e);
+			LOGGER.warn("Unable to load default pre-defined profile: " + profileType.name(), e);
 		} catch (IOException e) {
-			LOGGER.log(Level.WARNING,"Unable to load default pre-defined profile: " + profileType.name(), e);
+			LOGGER.warn("Unable to load default pre-defined profile: " + profileType.name(), e);
 		}
 
 		if (result == null) {

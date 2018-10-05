@@ -1,17 +1,26 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+	
+    <parent>
+        <groupId>com.att.aro</groupId>
+        <artifactId>vo-parent</artifactId>
+        <version>2.1.0</version>
+        <relativePath>../ARO.Parent</relativePath>
+    </parent>
 
-	<groupId>com.att.aro</groupId>
-	<artifactId>aro-console</artifactId>
-	<version>6.0.0-SNAPSHOT</version>
+	<artifactId>vo-console</artifactId>
 	<packaging>jar</packaging>
-	<name>ARO Console</name>
+	<name>VO Console</name>
 	<description>Console application for ARO.</description>
+
 	<properties>
 		<main.class>com.att.aro.console.Application</main.class>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<vo.version>2.1.0</vo.version>
+		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
+
 	<licenses>
 		<license>
 			<name>Apache v2</name>
@@ -19,87 +28,46 @@
 			<distribution>manual</distribution>
 		</license>
 	</licenses>
-	<repositories>
-		<repository>
+	<pluginRepositories>
+		<pluginRepository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
 			<url>http://repo1.maven.org/maven2</url>
-		</repository>
-		<repository>
-			<id>apache-snapshots</id>
-			<name>Apache Snapshot</name>
-			<url>https://repository.apache.org/content/repositories/snapshots/</url>
-		</repository>
-		<repository>
-			<id>sonatype-public</id>
-			<name>Sonatype Public</name>
-			<url>http://repository.sonatype.org/content/groups/public</url>
-		</repository>
-		<repository>
-			<id>sonatype-flex</id>
-			<name>Sonatype Flex</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-		</repository>	
-	</repositories>
-
+		</pluginRepository>	
+	</pluginRepositories>
 
 	<dependencies>
-		<dependency>
-			<groupId>com.att.aro</groupId>
-			<artifactId>aro-core</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.14</version>
-		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.11</version>
-			<scope>test</scope>
-		</dependency>
 		<dependency>
 			<groupId>com.beust</groupId>
 			<artifactId>jcommander</artifactId>
 			<version>1.30</version>
 		</dependency>
 		<dependency>
+			<groupId>com.att.aro</groupId>
+			<artifactId>vo-core</artifactId>
+			<version>2.1.0</version>			
+		</dependency>
+		<dependency>
 			<groupId>com.att.aro.datacollector</groupId>
 			<artifactId>vpn-android-collector</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
+			<version>2.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.att.aro.datacollector</groupId>
 			<artifactId>rooted-android-collector</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
+			<version>2.1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.att.aro.datacollector</groupId>
 			<artifactId>ios-collector</artifactId>
-			<version>6.0.0-SNAPSHOT</version>
+			<version>2.1.0</version>
 		</dependency>
 		<dependency>
 		    <groupId>org.codehaus.mojo</groupId>
 		    <artifactId>findbugs-maven-plugin</artifactId>
 		    <version>3.0.4</version>
 		</dependency>
+
 	</dependencies>
 
 
@@ -192,17 +160,6 @@
 				</configuration>
 			</plugin>
 
-			<!-- compile to 1.8 -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-
 			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
@@ -217,19 +174,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.17</version>
-				<dependencies>
-					<dependency>
-						<groupId>org.apache.maven.surefire</groupId>
-						<artifactId>surefire-junit47</artifactId>
-						<version>2.16</version>
-					</dependency>
-				</dependencies>
-			</plugin>
-			
 
 			<!-- jacoco unit tests -->
 			<plugin>

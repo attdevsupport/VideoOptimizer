@@ -23,11 +23,12 @@ public class NetmonPacketReaderImplTest extends BaseTest {
 	@Before
 	public void setup(){
 		netmon = Mockito.mock(NetmonAdapter.class);
-		Mockito.doAnswer(new Answer<Void>(){
+		Mockito.doAnswer(new Answer<Void>() {
 			@Override
 			public Void answer(InvocationOnMock invocation) throws Throwable {
 				return null;
-			}}).when(netmon).loadNativeLibs();
+			}
+		}).when(netmon).loadNativeLibs();
 		Mockito.when(netmon.parseTraceFile(Mockito.anyString())).thenReturn(0);
 		file = Mockito.mock(File.class);
 		Mockito.when(file.getAbsolutePath()).thenReturn("test");

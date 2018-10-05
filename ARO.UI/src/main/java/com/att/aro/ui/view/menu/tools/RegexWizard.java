@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,11 +70,10 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import org.apache.commons.lang.StringUtils;
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.videoanalysis.IVideoAnalysisConfigHelper;
@@ -85,13 +85,16 @@ import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
 import com.att.aro.core.videoanalysis.pojo.config.VideoDataTags;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 public class RegexWizard extends JDialog implements ActionListener, FocusListener, ComponentListener {
 
 	private static final long serialVersionUID = 1L;
 
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
-	
+	private static final Logger LOG = LogManager.getLogger(RegexWizard.class);	
+	private static boolean errorOccured = false;
+	private Map<RegexMatchLbl, VideoDataTags[]> prevXrefMap;
 	@Autowired
 	private VideoAnalysisConfigHelperImpl voConfigHelper = (VideoAnalysisConfigHelperImpl) ContextAware.getAROConfigContext().getBean(IVideoAnalysisConfigHelper.class);
 	private VideoAnalysisConfig videoConfig = new VideoAnalysisConfig();
@@ -657,6 +660,14 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		responseFocusON = false;
 		Map<RegexMatchLbl, RegexMatchResult> result = extractResult(videoConfig);
 		displayResult(result);
+		if(errorOccured){
+			videoConfig = new VideoAnalysisConfig(savedVoConfig.getVideoType(), savedVoConfig.getDesc(), savedVoConfig.getType(), 
+					savedVoConfig.getRegex(), savedVoConfig.getHeaderRegex(), savedVoConfig.getResponseRegex(), savedVoConfig.getXref(), savedVoConfig.getXrefMap());
+			prevXrefMap = new HashMap<>(videoConfig.getXrefMap());
+			errorOccured = false;
+		}else{
+			prevXrefMap = resultsTable.getVideoDataTagsMap();
+		}
 	}
 
 	/*<pre>
@@ -703,17 +714,17 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 							videoConfig.getXref(), map);
 				}
 			} catch (JsonGenerationException e1) {
-				log.error("VideoAnalysisConfig failed Jason generation :" + e1.getMessage());
+				LOG.error("VideoAnalysisConfig failed Jason generation :" + e1.getMessage());
 			} catch (JsonMappingException e1) {
-				log.error("VideoAnalysisConfig failed to de-serialize :" + e1.getMessage());
+				LOG.error("VideoAnalysisConfig failed to de-serialize :" + e1.getMessage());
 			} catch (IOException e1) {
-				log.error("VideoAnalysisConfig failed to save :" + e1.getMessage());
+				LOG.error("VideoAnalysisConfig failed to save :" + e1.getMessage());
 			} catch (Exception e1) {
-				log.error("VideoAnalysisConfig failed to load :" + e1.getMessage());
+				LOG.error("VideoAnalysisConfig failed to load :" + e1.getMessage());
 			}
 
 		} else {
-			log.error("VideoAnalysisConfig is invalid: capture groups not equal to cross references");
+			LOG.error("VideoAnalysisConfig is invalid: capture groups not equal to cross references");
 			JOptionPane.showMessageDialog(this,
 					String.format("%s config is invalid: capture groups not equal to cross references", videoConfig != null ? videoConfig.getDesc() : "unknown")
 					, "Failure"
@@ -757,16 +768,19 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		}
 
 		voConfigHelper.setSavedVoConfig(savedVoConfig);
-
+		if(prevXrefMap == null){
+			prevXrefMap = resultsTable.getVideoDataTagsMap();
+		}
+		
 		VideoDataTags[] reqXref = voConfigHelper.findXref(videoConfig, videoConfig.getRegex(),
 				regexRequestField.getText(), requestField.getText(), RegexMatchLbl.REQUEST,
-				resultsTable.getVideoDataTagsMap());
+				prevXrefMap);
 		VideoDataTags[] headerXref = voConfigHelper.findXref(videoConfig, videoConfig.getHeaderRegex(),
 				regexHeaderField.getText(), headerField.getText(), RegexMatchLbl.HEADER,
-				resultsTable.getVideoDataTagsMap());
+				prevXrefMap);
 		VideoDataTags[] responseXref = voConfigHelper.findXref(videoConfig, videoConfig.getResponseRegex(),
 				regexResponseField.getText(), responseField.getText(), RegexMatchLbl.RESPONSE,
-				resultsTable.getVideoDataTagsMap());
+				prevXrefMap);
 		int size = 0;
 
 		if (reqXref != null && reqXref.length != 0) {
@@ -852,6 +866,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 			}
 		}
 		if (sbError.length() > 0) {
+			errorOccured = true;
 			compileResultsField.setForeground(Color.red);
 			compileResultsField.setText(String.format("ERRORS: %s" ,sbError.toString()));
 			displayResult(null);
@@ -951,21 +966,6 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 			positionArray = null;
 		}
 		return shift(position, delta, tag, videoDataTags);
-	}
-
-	private List<String> filterString(List<String> strList){
-		for (int i = 0; i < strList.size(); i++) {
-			String str = strList.get(i);
-			if (str.contains(")")) {
-				str = str.substring(0, str.indexOf(")"));
-				strList.remove(i);
-				strList.add(i, str);
-			} else { // remove it
-				strList.remove(i);
-				i--;
-			}
-		}
-		return strList;
 	}
 
 	Pattern pat = Pattern.compile("(\\(.+\\))");
@@ -1106,8 +1106,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		} else if (field.getName().equals(responseField.getName())) {
 			setResponseHighlightedText(field.getSelectedText());
 			updateFocus(false, true, false);
-		} else {// if(field.getName().equals(regexRequestField.getName()) || field.getName().equals(regexResponseField.getName()) ||
-				// field.getName().equals(regexHeaderField.getName())){
+		} else {
 			clearHighlightedTexts();
 			if (field.getName().equals(regexRequestField.getName())) {
 				updateFocus(true, false, false);

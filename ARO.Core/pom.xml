@@ -1,10 +1,15 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.att.aro</groupId>
+		<artifactId>vo-parent</artifactId>
+		<version>2.1.0</version>
+		<relativePath>../ARO.Parent</relativePath>
+	</parent>
 
-	<groupId>com.att.aro</groupId>
-	<artifactId>aro-core</artifactId>
-	<version>6.0.0-SNAPSHOT</version>
+	<artifactId>vo-core</artifactId>
 	<packaging>jar</packaging>
 
 	<properties>
@@ -13,6 +18,7 @@
 		<ga.id>dev</ga.id>
 		<build.number>dev</build.number>
 		<maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+		<maven.deploy.skip>false</maven.deploy.skip>
 	</properties>
 
 	<repositories>
@@ -80,15 +86,15 @@
 			<id>Google</id>
 			<name>Google</name>
 			<url>https://maven.google.com/</url>
-		</repository>
+		</repository>	
 	</repositories>
-	
 	<pluginRepositories>
 		<pluginRepository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
 			<url>http://repo1.maven.org/maven2</url>
 		</pluginRepository>
+
 	</pluginRepositories>
 	<dependencyManagement>
 		<dependencies>
@@ -102,35 +108,38 @@
 		</dependencies>
 	</dependencyManagement>
 
-
 	<dependencies>
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
-			<version>4.3.4.RELEASE</version>
-			<exclusions>
-				<exclusion>
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-			</exclusions>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-s3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.5.3</version>
 		</dependency>
 
-	<dependency>
-		<groupId>com.amazonaws</groupId>
-		<artifactId>aws-java-sdk-s3</artifactId>
- 	</dependency>
-	<dependency>
-		<groupId>org.apache.httpcomponents</groupId>
-		<artifactId>httpclient</artifactId>
-		<version>4.5.3</version>
-	</dependency>
+ 		<dependency>
+			<groupId>org.glassfish.jersey.core</groupId>
+			<artifactId>jersey-server</artifactId>
+			<version>2.25.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.containers</groupId>
+			<artifactId>jersey-container-servlet</artifactId>
+			<version>2.25.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-multipart</artifactId>
+			<version>2.26</version>
+		</dependency>
 
-	<dependency>
-		<groupId>org.glassfish.jaxb</groupId>
-		<artifactId>jaxb-runtime</artifactId>
-		<version>2.2.11</version>
-	</dependency>
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
+			<version>2.2.11</version>
+		</dependency>
 		<dependency>
 			<groupId>com.sun.xml.bind</groupId>
 			<artifactId>jaxb-impl</artifactId>
@@ -142,19 +151,16 @@
 			<version>2.2.11</version>
 		</dependency>
 		<!-- end jaxb support -->
-
 		<dependency>
 			<groupId>com.drewnoakes</groupId>
 			<artifactId>metadata-extractor</artifactId>
 			<version>2.8.1</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-imaging</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
-
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
@@ -166,31 +172,25 @@
 			<artifactId>commons-math3</artifactId>
 			<version>3.5</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.springframework.plugin</groupId>
 			<artifactId>spring-plugin-core</artifactId>
-			<version>1.1.0.RELEASE</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.14</version>
+			<version>1.2.0.RELEASE</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-context</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-beans</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-aop</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -261,19 +261,24 @@
 			<version>1.5.2</version>
 		</dependency>
 		<dependency>
-			  <groupId>com.fasterxml.jackson.core</groupId>
-			  <artifactId>jackson-core</artifactId>
-			  <version>2.9.4</version>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.9.4</version>
 		</dependency>
 		<dependency>
-		  <groupId>com.fasterxml.jackson.core</groupId>
-		  <artifactId>jackson-databind</artifactId>
-		  <version>2.9.4</version>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.9.4</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.codehaus.mojo</groupId>
-		    <artifactId>findbugs-maven-plugin</artifactId>
-		    <version>3.0.4</version>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>findbugs-maven-plugin</artifactId>
+			<version>3.0.4</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>20.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.android.tools.ddms</groupId>
@@ -291,23 +296,20 @@
 			<artifactId>commons-validator</artifactId>
 			<version>1.4.0</version>
 		</dependency>
-		<!--Please download the source code from the web site and compile it and publish to your own local repository-->
-<!--https://bitbucket.org/luciad/webp-imageio  -->
-<!--mvn install:install-file -Dfile=luciad-webp-imageio-0.6.0-SNAPSHOT.jar -DgroupId=com.luciad.imageio \-DartifactId=webp-imageio \-Dversion=0.6.0-SNAPSHOT \-Dpackaging=jar -->		
-		<dependency>
-			<groupId>com.luciad.imageio</groupId>
-			<artifactId>webp-imageio</artifactId>
-			<version>0.5.2</version>
-		</dependency>
 		<dependency>
 			<groupId>com.github.jai-imageio</groupId>
 			<artifactId>jai-imageio-jpeg2000</artifactId>
 			<version>1.1</version>
 		</dependency>
 		<dependency>
-		  <groupId>org.hyperic</groupId>
-		  <artifactId>sigar</artifactId>
-		  <version>1.6.4</version>
+			<groupId>com.luciad.imageio</groupId>
+			<artifactId>webp-imageio</artifactId>
+			<version>0.5.2</version>
+		</dependency>		
+		<dependency>
+			<groupId>org.hyperic</groupId>
+			<artifactId>sigar</artifactId>
+			<version>1.6.4</version>
 		</dependency>
 		<!-- jni ffmpeg support -->
 		<dependency>
@@ -341,17 +343,17 @@
 			<artifactId>zip4j</artifactId>
 			<version>1.3.2</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.sikulix</groupId>
 			<artifactId>sikulixapi</artifactId>
-			<version>1.1.0</version>
+			<version>1.1.1</version>
 		</dependency>
 
 	</dependencies>
 
-
 	<build>
-<resources>
+		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
 				<filtering>false</filtering>
@@ -367,45 +369,31 @@
 				</includes>
 			</resource>
 		</resources>
+		
+		
 		<plugins>
-
-			<!-- compile to 1.8 -->
+			<!-- FindBugs -->
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>3.0.4</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-					<compilerArgument>-Xlint:all</compilerArgument>
-					<showWarnings>true</showWarnings>
-					<showDeprecation>true</showDeprecation>
+					<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
+					<effort>Max</effort>
+					<threshold>Max</threshold>
+					<maxRank>15</maxRank>
+					<xmlOutput>true</xmlOutput>
+					<findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
 				</configuration>
+				<executions>
+					<execution>
+						<id>analyze-compile</id>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
-
-			<plugin>
-	            <groupId>org.codehaus.mojo</groupId>
-	            <artifactId>findbugs-maven-plugin</artifactId>
-	            <version>3.0.4</version>
-	            <configuration>
-	            	<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
-	                <effort>Max</effort>
-	                <threshold>Max</threshold>
-	                <maxRank>15</maxRank>
-	                <xmlOutput>true</xmlOutput>
-	                <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-	            </configuration>
-	            <executions>
-	                <execution>
-	                    <id>analyze-compile</id>
-	                    <!-- <phase>compile</phase> -->
-	                    <goals>
-	                        <goal>check</goal>
-	                    </goals>
-	                </execution>
-	            </executions>
-	        </plugin>
-
 			<plugin>
 			  <artifactId>maven-install-plugin</artifactId>
 			  <version>2.5.2</version>
@@ -455,8 +443,8 @@
 			    
 			  </executions>
 			</plugin>
-						
-			<plugin>
+
+				<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.17</version>
@@ -467,8 +455,8 @@
 						<version>2.16</version>
 					</dependency>
 				</dependencies>
-			</plugin>
-
+			</plugin>	
+			<!-- Maven Dependency -->
 			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
@@ -483,113 +471,52 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<!-- JUNIT/JACOCO -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.7.6.201602180812</version>
+				<version>0.8.1</version>
 				<executions>
+					<!--
+			            Prepares the property pointing to the JaCoCo runtime agent which
+			            is passed as VM argument when Maven the Surefire plugin is executed.
+			        -->
 					<execution>
-						<id>default-prepare-agent</id>
+						<id>prepare-agent</id>
 						<goals>
 							<goal>prepare-agent</goal>
 						</goals>
 					</execution>
 					<execution>
-						<id>default-report</id>
+						<id>report</id>
 						<phase>prepare-package</phase>
 						<goals>
 							<goal>report</goal>
 						</goals>
 					</execution>
 					<execution>
-						<id>default-check</id>
+						<id>check</id>
 						<goals>
 							<goal>check</goal>
 						</goals>
 						<configuration>
 							<rules>
 								<rule>
-									<element>CLASS</element>
+									<element>BUNDLE</element>
 									<excludes>
 										<exclude>*Test</exclude>
-										<exclude>*Config</exclude>
-										<exclude>*LoggerPostProcessor</exclude>
-										<exclude>*pojo*</exclude>
-										<exclude>*NetmonAdapter</exclude>
-										<exclude>com.att.aro.pcap.PCapAdapter</exclude>
-										<exclude>*securedpacketreader*</exclude>
-										<exclude>com.att.aro.core.commandline.impl.ProcessFactoryImpl</exclude>
-										<exclude>com.att.aro.core.datacollector.impl.DefaultDataCollectorImpl</exclude>
-										<exclude>com.att.aro.mvc.MainController</exclude>
-										<exclude>com.att.aro.core.util.Util</exclude>
-										<exclude>com.att.aro.mvc.AROController*</exclude>
-										<exclude>com.att.aro.mvc.AROCollectorActionEvent</exclude>
-										<exclude>com.att.aro.core.exception.*</exclude>
-										<exclude>com.att.aro.core.analytics.*</exclude>
-										<exclude>com.att.aro.core.util.GoogleAnalyticsUtil</exclude>
-										<exclude>com.att.aro.core.util.CrashHandler</exclude>
-										<exclude>com.att.aro.core.packetanalysis.impl.SessionManagerImpl</exclude>
-										<exclude>com.att.aro.pcap.packetrebuild.*</exclude>
-										<exclude>com.att.aro.core.packetreader.impl.PacketReaderImpl</exclude>
-										<exclude>com.att.aro.core.fileio.impl.FileManagerImpl.1</exclude>
-
-										<!-- exclude for screenrecord development -->
-										<exclude>com.att.aro.core.video.IScreenRecorder</exclude>
-										<exclude>com.att.aro.core.video.IScreenRecorder.State</exclude>
-										<exclude>com.att.aro.core.video.impl.ScreenRecorderImpl</exclude>
-										<exclude>com.att.aro.core.video.impl.ScreenRecorderImpl.1</exclude>
-										<exclude>com.att.aro.core.video.impl.ScreenRecorderImpl.VideoSegment</exclude>
-										<exclude>com.att.aro.core.video.impl.ScreenRecorderImpl.VideoSegment.Segment</exclude>
-										<exclude>com.att.aro.core.adb.impl.AdbServiceImpl</exclude>
-										<!-- end of exclude for screenrecord development -->
-
-										<!-- exclude for development VideoBP -->
-										<exclude>com.att.aro.core.bestpractice.impl.*</exclude>
-										<exclude>com.att.aro.core.impl.AROServiceImpl</exclude>
-										<exclude>com.att.aro.core.packetanalysis.impl.VideoUsageAnalysisImpl</exclude>
-										<exclude>com.att.aro.core.videoanalysis.impl.BufferOccupancyCalculatorImp</exclude>
-										<exclude>com.att.aro.core.videoanalysis.*</exclude>
-										<exclude>com.att.aro.core.videoanalysis.pojo.*</exclude>
-										<exclude>com.att.aro.core.videoanalysis.impl.*</exclude>
-										<exclude>com.att.aro.core.util.StringParse</exclude>
-										<!-- end of exclude for development VideoBP -->
-
-										<exclude>com.att.aro.core.fileio.impl.FileManagerImpl</exclude>
-										<exclude>com.att.aro.core.video.VideoHelper</exclude>
-										<exclude>com.att.aro.core.AnalyzerOS</exclude>
-
-										<!-- exclude for wrapper classes -->
-										<exclude>com.att.aro.core.preferences.impl.PreferenceHandlerImpl</exclude>
-										<exclude>com.att.aro.core.settings.*</exclude>
-										<exclude>com.att.aro.core.settings.impl.*</exclude>
-										
-										<!-- exclude for enums -->
-										<exclude>com.att.aro.core.settings.impl.SettingsImpl.ConfigFileAttributes</exclude>										
-										
-										<!-- Lambdas -->
-										<exclude>com.att.aro.core.impl.AROServiceImpl.*</exclude>
-										
-										<!--  temporary  -->
-										<exclude>com.att.aro.core.peripheral.impl.CollectOptionsReaderImpl</exclude>
-										<exclude>com.att.aro.core.util.AttnScriptUtil</exclude>
-										<!--  FIXME remove after 1.3 is done. --> 
-										<exclude>com.att.aro.core.commandline.impl.LLDBProcessRunnerImpl</exclude>
-										<exclude>com.att.aro.core.cloud.*</exclude>					
-										<exclue>com.att.aro.core.packetanalysis.impl.TraceDataReaderImpl</exclue>			
-										
-										<exclude>com.att.aro.core.util.FFmpegConfirmationImpl</exclude>
-										<exclude>com.att.aro.core.util.PcapConfirmationImpl</exclude>
-										<exclude>com.att.aro.core.video.amvots.ImageBoundsGrabber</exclude>
-										<exclude>com.att.aro.core.video.amvots.ImageBoundsGrabber.SikulixLib</exclude>
-										<exclude>com.att.aro.core.peripheral.impl.SpeedThrottleEventReaderImpl</exclude>
-										<exclude>com.att.aro.core.util.Compressor</exclude>
-										<exclude>com.att.aro.core.util.NetworkUtil</exclude>
 									</excludes>
 									<limits>
 										<limit>
-											<counter>LINE</counter>
+											<counter>INSTRUCTION</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.80</minimum>
+											<minimum>45%</minimum>
+										</limit>
+										<limit>
+											<counter>CLASS</counter>
+									        <value>MISSEDCOUNT</value>
+									        <maximum>181</maximum>
 										</limit>
 									</limits>
 								</rule>
@@ -609,6 +536,43 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											org.apache.maven.plugins
+										</groupId>
+										<artifactId>
+											maven-checkstyle-plugin
+										</artifactId>
+										<versionRange>
+											[2.17,)
+										</versionRange>
+										<goals>
+											<goal>check</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<execute>
+											<runOnIncremental>false</runOnIncremental>
+										</execute>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 	<reporting>
 		<plugins>

@@ -26,8 +26,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
@@ -41,6 +39,8 @@ import javax.swing.JTable;
 import javax.swing.WindowConstants;
 import javax.swing.table.TableCellEditor;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.ApplicationConfig;
@@ -65,7 +65,7 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
 public class ConfigurationFrame extends JDialog implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private static final ResourceBundle DEFAULTBUNDLE = ResourceBundleHelper.getDefaultBundle();
-	private static final Logger LOG = Logger.getLogger(ConfigurationFrame.class.getName());
+	private static final Logger LOG = LogManager.getLogger(ConfigurationFrame.class.getName());
 
 	private JTable deviceAttributesTable;
 	private JTable networkAttributesTable;
@@ -378,7 +378,7 @@ public class ConfigurationFrame extends JDialog implements Serializable {
 			} catch (ProfileException e) {
 				handleProfileException(e);
 			} catch (IOException e) {
-				LOG.log(Level.SEVERE, "IOException saving profile", e);
+				LOG.error("IOException saving profile", e);
 				MessageDialogFactory dialog = new MessageDialogFactory();
 				dialog.showUnexpectedExceptionDialog(ConfigurationFrame.this, e);
 			}

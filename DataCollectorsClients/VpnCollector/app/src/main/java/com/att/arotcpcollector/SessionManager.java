@@ -181,18 +181,7 @@ public class SessionManager {
 	}
 
 	public Session getSessionByDatagramChannel(DatagramChannel channel) {
-		Session session = null;
-		synchronized (syncTable) {
-			Iterator<Session> it = table.values().iterator();
-			while (it.hasNext()) {
-				Session sess = it.next();
-				if (sess.getUdpChannel() == channel) {
-					session = sess;
-					break;
-				}
-			}
-		}
-		return session;
+		return table.getSessionByChannel(channel);
 	}
 
 	public Session getSessionByChannel(SocketChannel channel) {
@@ -435,7 +424,6 @@ public class SessionManager {
 		session.setConnected(false);
 		session.setSessionKey(sessionKey);
 		session.setPrintLog(printLog);
-		session.addSSLEngines(ip, port, srcIp, srcPort);
 
 		SocketChannel channel = null;
 		try {

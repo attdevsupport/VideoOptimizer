@@ -27,10 +27,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IByteArrayLineReader;
 import com.att.aro.core.packetanalysis.IParseHeaderLine;
 import com.att.aro.core.packetanalysis.IRequestResponseBuilder;
@@ -48,9 +48,8 @@ import com.att.aro.core.packetreader.pojo.TCPPacket;
  * Date: February 5, 2015
  */
 public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(RequestResponseBuilderImpl.class.getName());
+
 	@Autowired
 	private IParseHeaderLine parseHeaderLine;
 
@@ -250,7 +249,7 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 								String trim = str[0].trim();
 								size = Integer.parseInt(trim, 16);
 							} catch (NumberFormatException e) {
-								logger.warn("Unexpected begin of the chunk format : " + line);
+								LOGGER.warn("Unexpected begin of the chunk format : " + line);
 							}
 							if (size > 0) {
 
@@ -263,14 +262,14 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 								line = storageReader.readLine();
 
 								if (line != null && line.length() > 0) {
-									logger.warn("Unexpected end of chunk: " + line);
+									LOGGER.warn("Unexpected end of chunk: " + line);
 								}
 							} else {
 								rrInfo.setChunkModeFinished(true);
 								line = storageReader.readLine(); // End of chunks
 
 								if (line != null && line.length() > 0) {
-									logger.warn("Unexpected end of chunked data: " + line);
+									LOGGER.warn("Unexpected end of chunked data: " + line);
 								}
 								break;
 							}
@@ -290,7 +289,7 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 						rrInfo.setObjUri( new URI(rrInfo.getScheme().toLowerCase(), null, rrInfo.getHostName(), port, rrInfo.getObjUri().getPath(), rrInfo.getObjUri().getQuery(), rrInfo.getObjUri().getFragment()));
 					} catch (URISyntaxException e) {
 						// Just log fine message
-						logger.info("Unexpected exception creating URI for request: " + e.getMessage()+
+						LOGGER.info("Unexpected exception creating URI for request: " + e.getMessage()+
 								". Scheme=" + rrInfo.getScheme().toLowerCase() +",Host name="+ rrInfo.getHostName()
 								+",Path=" + rrInfo.getObjUri().getPath() + ",Fragment="+ rrInfo.getObjUri().getFragment());
 						
@@ -299,7 +298,7 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 				
 				result.add(rrInfo);
 				if (rrInfo.getDirection() == null) {
-					logger.warn("Request/response object has unknown direction");
+					LOGGER.warn("Request/response object has unknown direction");
 				}
 				rrInfo = findNextRequestResponse(direction, packetOffsets);
 			} else {
@@ -413,7 +412,7 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 					}
 				} catch (URISyntaxException e) {
 					// Ignore since value does not have to be a URI
-					logger.error(e.getMessage());
+					LOGGER.error(e.getMessage());
 				}
 				rrInfo.setVersion(matcher.group(3));
 				rrInfo.setScheme(rrInfo.getVersion().split("/")[0]);

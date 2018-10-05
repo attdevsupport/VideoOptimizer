@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.android.ddmlib.AdbCommandRejectedException;
@@ -29,7 +31,6 @@ import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.android.AndroidApiLevel;
 import com.att.aro.core.android.IAndroid;
@@ -43,12 +44,7 @@ import com.att.aro.core.video.pojo.VideoOption;
 
 public class ScreenRecorderImpl implements IScreenRecorder {
 
-	private static ILogger LOGGER;
-	
-	@Autowired
-	public void setLogger(ILogger logger) {
-		LOGGER = logger;
-	}
+	private static final Logger LOGGER = LogManager.getLogger(ScreenRecorderImpl.class.getName());	
 
 	@Autowired
 	protected IFileManager filereader;

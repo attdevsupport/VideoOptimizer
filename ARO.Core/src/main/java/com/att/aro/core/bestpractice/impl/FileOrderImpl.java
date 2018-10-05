@@ -18,6 +18,9 @@ package com.att.aro.core.bestpractice.impl;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -26,13 +29,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.FileOrderEntry;
 import com.att.aro.core.bestpractice.pojo.FileOrderResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -75,8 +76,7 @@ public class FileOrderImpl implements IBestPractice {
 		this.reqhelper = reqhelper;
 	}
 
-	@InjectLogger
-	private static ILogger log;
+	private static final Logger LOG = LogManager.getLogger(FileOrderImpl.class.getName());
 
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
@@ -209,14 +209,14 @@ public class FileOrderImpl implements IBestPractice {
 			try {
 				packetContent = reqhelper.getContentString(req, session);
 			} catch (Exception e) {
-				log.error("Failed to parse html", e);
+				LOG.error("Failed to parse html", e);
 			}
 		}
 		if (packetContent != null) {
 			try {
 				doc = Jsoup.parse(packetContent);
 			} catch (Exception e) {
-				log.error("Failed to parse :"+packetContent, e);
+				LOG.error("Failed to parse :"+packetContent, e);
 			}
 		}
 		return doc;

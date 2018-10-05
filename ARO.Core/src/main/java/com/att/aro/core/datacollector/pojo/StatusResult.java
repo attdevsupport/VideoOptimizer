@@ -38,11 +38,16 @@ public class StatusResult {
 	 * StatusResult.
 	 */
 	private Object data;
+	
+	private int status;
+	private String statusInfo;
 
 	public StatusResult(){
 		this.success = false;
 		this.errorCode = null;
 		this.data = null;
+		this.status = 0;
+		this.statusInfo = "";
 	}
 	
 	public StatusResult(Boolean success, ErrorCode errorCode, Object data) {
@@ -117,5 +122,41 @@ public class StatusResult {
 			sBuffer.append(errorCode);
 		}
 		return sBuffer.toString();
+	}
+	
+	/**
+	 * Returns the Status Code 
+	 * 
+	 * @return Status Code.
+	 */
+	public int getStatus() {
+		return status;
+	}
+
+	/**
+	 * Sets a Status Code
+	 * 
+	 * @param status , a Status Code.
+	 */
+	public void setStatus(int status) {
+		this.status = status;
+	}
+
+	/**
+	 * Returns the Status Information 
+	 * 
+	 * @return Status Message.
+	 */
+	public String getStatusInfo() {
+		return statusInfo;
+	}
+
+	/**
+	 * Sets a Status Information
+	 * 
+	 * @param statusInfo, Status Information
+	 */
+	public void setStatusInfo(String statusInfo) {
+		this.statusInfo = statusInfo;
 	}
 }

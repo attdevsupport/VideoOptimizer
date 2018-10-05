@@ -19,6 +19,8 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -27,13 +29,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.DisplayNoneInCSSEntry;
 import com.att.aro.core.bestpractice.pojo.DisplayNoneInCSSResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -47,8 +47,7 @@ import com.att.aro.core.packetanalysis.pojo.Session;
  */
 public class DisplayNoneInCSSImpl implements IBestPractice {
 
-	@InjectLogger
-	private static ILogger log;
+	private static final Logger LOG = LogManager.getLogger(DisplayNoneInCSSImpl.class.getName());
 
 	@Value("${html.displaynoneincss.title}")
 	private String overviewTitle;
@@ -140,14 +139,14 @@ public class DisplayNoneInCSSImpl implements IBestPractice {
 		try {
 			htmlContent = reqhelper.getContentString(reqres, session);
 		} catch (Exception e) {
-			log.error(e.getMessage());
+			LOG.error(e.getMessage());
 		}
 
 		if (htmlContent != null) {
 			try {
 				doc = Jsoup.parse(htmlContent);
 			} catch (Exception e) {
-				log.error("Failed to parse :"+htmlContent, e);
+				LOG.error("Failed to parse :"+htmlContent, e);
 			}
 		}
 
@@ -165,7 +164,7 @@ public class DisplayNoneInCSSImpl implements IBestPractice {
 		try {
 			cssContent = reqhelper.getContentString(reqres, session);
 		} catch (Exception e) {
-			log.error(e.getMessage());
+			LOG.error(e.getMessage());
 		}
 
 		return cssContent;

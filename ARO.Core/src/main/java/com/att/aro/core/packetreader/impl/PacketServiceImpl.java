@@ -18,10 +18,10 @@ package com.att.aro.core.packetreader.impl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetreader.IDomainNameParser;
 import com.att.aro.core.packetreader.IPacketService;
 import com.att.aro.core.packetreader.IPcapngHelper;
@@ -33,8 +33,7 @@ import com.att.aro.core.packetreader.pojo.UDPPacket;
 
 public class PacketServiceImpl implements IPacketService {
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(PacketServiceImpl.class.getName());
 
 	private static final short IPV4 = 0x0800;
 	private static final short IPV6 = (short) 0x86DD;
@@ -99,13 +98,13 @@ public class PacketServiceImpl implements IPacketService {
 							hdrLen = 4;
 						}
 					} catch (IOException e) {
-						logger.error(e.getMessage());
+						LOGGER.error(e.getMessage());
 					}
 				}
 				break;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		}
 
 		return createPacket(network, seconds, microSeconds, len, hdrLen, data);
@@ -179,7 +178,7 @@ public class PacketServiceImpl implements IPacketService {
 				break;
 			}
 		} catch (IndexOutOfBoundsException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		}
 
 		return createPacket(network, seconds, microSeconds, len, hdrLen, data);

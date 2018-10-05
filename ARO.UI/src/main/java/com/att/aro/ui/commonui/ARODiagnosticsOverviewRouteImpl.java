@@ -18,7 +18,9 @@ package com.att.aro.ui.commonui;
 import javax.swing.JTabbedPane;
 import javax.swing.table.AbstractTableModel;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.CombineCsJssResult;
@@ -54,7 +56,7 @@ import com.att.aro.ui.view.overviewtab.OverviewTab;
  *
  */
 public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewRoute {
-	private final ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private static final Logger LOG = LogManager.getLogger(ARODiagnosticsOverviewRouteImpl.class);
 	private final JTabbedPane jtabbedPane;
 	private static final int OVERVIEW_INDEX = 1;
 	private static final int DIAGNOSTIC_INDEX = 2;
@@ -379,10 +381,10 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		DiagnosticsTab diagnosticsTab = (DiagnosticsTab) jtabbedPane.getSelectedComponent();
 		if (routeInfo == null) {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
-			log.error("Diagnostics Tab needs a type for updating");
+			LOG.error("Diagnostics Tab needs a type for updating");
 			return;
 		}
-		log.debug("Type used to route to Diagnostics Tab: " + routeInfo.getClass().getSimpleName());
+		LOG.debug("Type used to route to Diagnostics Tab: " + routeInfo.getClass().getSimpleName());
 		if (routeInfo instanceof CacheEntry) {
 			diagnosticsTab.setHighlightedTCP(((CacheEntry) routeInfo).getHttpRequestResponse());
 		} else if (routeInfo instanceof Session) {
@@ -417,7 +419,7 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 			diagnosticsTab.getVideoPlayer().setMediaTime(timestamp);
 		} else {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
-			log.error("Diagnostics Tab cannot handle a type of " + routeInfo.getClass().getSimpleName()
+			LOG.error("Diagnostics Tab cannot handle a type of " + routeInfo.getClass().getSimpleName()
 					+ " for updating");
 		}
 	}
@@ -435,15 +437,15 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		OverviewTab overviewTab = (OverviewTab) jtabbedPane.getSelectedComponent();
 		if (routeInfo == null) {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
-			log.error("Overview Tab needs a type for updating");
+			LOG.error("Overview Tab needs a type for updating");
 			return;
 		}
-		log.debug("Type used to route to Overview Tab: " + routeInfo.getClass().getSimpleName());
+		LOG.debug("Type used to route to Overview Tab: " + routeInfo.getClass().getSimpleName());
 		if (routeInfo instanceof CacheEntry) {
 			overviewTab.setHighlightedDuplicate((CacheEntry) routeInfo);
 		} else {
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
-			log.error("Overview Tab cannot handle a type of " + routeInfo.getClass().getSimpleName() + " for updating");
+			LOG.error("Overview Tab cannot handle a type of " + routeInfo.getClass().getSimpleName() + " for updating");
 		}
 	}
 }

@@ -27,16 +27,15 @@ import javax.swing.event.CaretListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.ui.commonui.ContextAware;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class SearchTextField extends JTextField {
 
 	private static final long serialVersionUID = 1L;
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(
-			ILogger.class);
- 
+	private static final Logger LOGGER = LogManager.getLogger(SearchTextField.class);	
 
 	private static final int MIN_SIZE_TXT_STRING = 2;
 	private static final boolean FIND_NEXT = true;
@@ -83,7 +82,7 @@ public class SearchTextField extends JTextField {
 				// (mouse is clicked inside the field)
 				// just in case he Caret Event would not catch the click
 				if (firstCaretEvent) {
-					logger.info("mouseClicked");
+					LOGGER.info("mouseClicked");
 					SearchTextField textField = (SearchTextField) e.getComponent();
 					if (textField.isEnabled()) {
 						textField.setText(null);
@@ -147,7 +146,7 @@ public class SearchTextField extends JTextField {
 	}
 
 	private void doTextSearch(String text, boolean next) {
-		logger.info("searching for: " + text);
+		LOGGER.info("searching for: " + text);
 
 		boolean foundIt = false;
 		boolean findNext = next;
@@ -221,7 +220,7 @@ public class SearchTextField extends JTextField {
 				}
 			}
 		} catch (BadLocationException e) {
-			logger.error("Unable to highlight [" + text + "]");
+			LOGGER.error("Unable to highlight [" + text + "]");
 		}
 
 		return foundIt;

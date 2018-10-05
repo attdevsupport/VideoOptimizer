@@ -18,15 +18,15 @@ package com.att.aro.ui.commonui;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public abstract class AROUIWorker<T,V> {
 
-	@InjectLogger
-	ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(AROUIWorker.class.getName());
+
 	private String errorMessage;
 	private JFrame frame;
 	
@@ -53,7 +53,7 @@ public abstract class AROUIWorker<T,V> {
 	}
 	
 	private void handleError(Exception exception){
-		logger.debug(errorMessage, exception);
+		LOGGER.debug(errorMessage, exception);
 		MessageDialogFactory.showMessageDialog(frame,
 				ResourceBundleHelper.getMessageString(errorMessage),
 				ResourceBundleHelper.getMessageString("menu.error.title"),

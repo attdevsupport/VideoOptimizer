@@ -1,7 +1,10 @@
 package com.att.aro.core.preferences;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import org.junit.Test;
+
 import com.att.aro.core.BaseTest;
 
 public class UserPreferencesFactoryTest extends BaseTest {

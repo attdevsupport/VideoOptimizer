@@ -28,7 +28,7 @@
 		<tr>
 			<td>jCommon</td>
 			<td>
-				The Video Optimizer uses Open Source Software that is licensed
+				The AT&T Video Optimizer uses Open Source Software that is licensed
 				under the GNU Lesser General Public License (LGPL) version 2.1 (the "License"), and you
 				may not use this file except in compliance with the License. You may obtain a copy of
 				the Licenses at: http://www.jfree.org/jcommon/. Unless required by applicable law or

@@ -19,6 +19,8 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jfree.chart.axis.LogAxis;
 import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.labels.XYToolTipGenerator;
@@ -28,31 +30,29 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent;
 import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent.SpeedThrottleFlow;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  * Speed Throttle indicated number and time line plot 
  */
 public class SpeedThrottlePlot implements IPlot {
-	public ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private static final Logger LOGGER = LogManager.getLogger(SpeedThrottlePlot.class);	
 	private XYSeriesCollection serCollection = new XYSeriesCollection();
 	
  	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
  		serCollection.removeAllSeries();
 		if (analysis == null) {
-			logger.info("There is no trace data in the pojo!");
+			LOGGER.info("There is no trace data in the pojo!");
 		} else {
 			TraceResultType resultType = analysis.getAnalyzerResult().getTraceresult().getTraceResultType();
 			if (resultType.equals(TraceResultType.TRACE_FILE)) {
-				logger.info("This is trace file pojo so there is no speed throttle info involved here.");
+				LOGGER.info("This is trace file pojo so there is no speed throttle info involved here.");
 			} else {
 				XYSeries seriesDL = new XYSeries(0);
 				XYSeries seriesUP = new XYSeries(1);
@@ -140,7 +140,7 @@ public class SpeedThrottlePlot implements IPlot {
 						}else{
 							seriesDL.add(tempTime1, null);
 						}
-						logger.info("Time stamp: " + tempTime1+ " " +throttleDLS);
+						LOGGER.info("Time stamp: " + tempTime1+ " " +throttleDLS);
 
 					} else if (SpeedThrottleFlow.ULT.equals(event.getThrottleFlow())) {
 						double tempTime2 = (event.getTimeStamp() - firstTimeUTemp) / 1000;
@@ -150,9 +150,9 @@ public class SpeedThrottlePlot implements IPlot {
 						}else{
 							seriesUP.add(tempTime2, null);
 						}
-						logger.info("Time stamp: " + tempTime2+ " " +throttleULS);
+						LOGGER.info("Time stamp: " + tempTime2+ " " +throttleULS);
 					} else {
-						logger.info("wrong record for attenuation event");
+						LOGGER.info("wrong record for attenuation event");
 					}
 				}
 			} else {
@@ -161,9 +161,9 @@ public class SpeedThrottlePlot implements IPlot {
 			}
 
 		} catch (IndexOutOfBoundsException exception1) {
-			logger.info("No sufficient data in the attenuation log file", exception1);
+			LOGGER.info("No sufficient data in the attenuation log file", exception1);
 		} catch (Exception exception2) {
-			logger.info("Wrong Format", exception2);
+			LOGGER.info("Wrong Format", exception2);
 		}
 	}
 

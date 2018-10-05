@@ -35,6 +35,7 @@ import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.ui.utils.CommonHelper;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -101,17 +102,17 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
         statisticsHeaderLabel     .setFont(SUMMARY_FONT);
         attenuatorHeaderLabel 	  .setFont(SUMMARY_FONT);
                                                          
-        appScoreLabel             .setFont(TEXT_FONT);   
-        causesScoreLabel          .setFont(TEXT_FONT);   
-        durationLabel             .setFont(TEXT_FONT);   
-        effectsScoreLabel         .setFont(TEXT_FONT);   
-        energyConsumedLabel       .setFont(TEXT_FONT);   
-        httpsDataAnalyzedLabel    .setFont(TEXT_FONT);   
-        httpsDataNotAnalyzedLabel .setFont(TEXT_FONT);   
-        summaryFillerHeaderLabel  .setFont(TEXT_FONT);   
-        testFillerHeaderLabel     .setFont(TEXT_FONT);   
-        totalAppScoreLabel        .setFont(TEXT_FONT);   
-        totalDataLabel            .setFont(TEXT_FONT);   
+        appScoreLabel             .setFont(TEXT_FONT);
+        causesScoreLabel          .setFont(TEXT_FONT);
+        durationLabel             .setFont(TEXT_FONT);
+        effectsScoreLabel         .setFont(TEXT_FONT);
+        energyConsumedLabel       .setFont(TEXT_FONT);
+        httpsDataAnalyzedLabel    .setFont(TEXT_FONT);
+        httpsDataNotAnalyzedLabel .setFont(TEXT_FONT);
+        summaryFillerHeaderLabel  .setFont(TEXT_FONT);
+        testFillerHeaderLabel     .setFont(TEXT_FONT);
+        totalAppScoreLabel        .setFont(TEXT_FONT);
+        totalDataLabel            .setFont(TEXT_FONT);
         totalhttpsDataLabel       .setFont(TEXT_FONT);
         
         downlinkLabel			  .setFont(TEXT_FONT);
@@ -136,27 +137,20 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 
 			int idx = 0;
 			
-			addLabelLineName(summaryHeaderLabel        , "bestPractices.header.summary"         ,   idx ,2, weightX, insets, SUMMARY_FONT);  // 
-			addLabelLineName(testFillerHeaderLabel     , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     // 		
-			addLabelLineName(statisticsHeaderLabel     , "bestPractices.header.statistics"      , ++idx ,2, weightX, insets, HEADER_FONT);   // 
-			                                                                                                                             // 
+			addLabelLineName(summaryHeaderLabel        , "bestPractices.header.summary"         ,   idx ,2, weightX, insets, SUMMARY_FONT);  //
+			addLabelLineName(statisticsHeaderLabel     , "bestPractices.header.statistics"      , ++idx ,2, weightX, insets, HEADER_FONT);   //
+			                                                                                                                             //
 			addLabelLineName(httpsDataNotAnalyzedLabel , "bestPractices.HTTPSDataNotAnalyzed"   , ++idx ,2, weightX, insets, TEXT_FONT);     // HTTPS data not analyzed\:
-			/*
-			 * addLabelLine(totalhttpsDataLabel , "bestPractices.TotalHTTPSData"
-			 * , ++idx ,2, weightX, insets, TEXT_FONT); // Total HTTPS data\:
-			 * addLabelLine(httpsDataAnalyzedLabel ,
-			 * "bestPractices.HTTPSDataAnalyzed" , ++idx ,2, weightX, insets,
-			 * TEXT_FONT); // HTTPS data analyzed\:
-			 */			
-			addLabelLineName(durationLabel             , "bestPractices.duration"               , ++idx ,2, weightX, insets, TEXT_FONT);     // 
-			addLabelLineName(totalDataLabel            , "bestPractices.totalDataTransfered"    , ++idx ,2, weightX, insets, TEXT_FONT);     // 
-			addLabelLineName(energyConsumedLabel       , "bestPractices.energyConsumed"         , ++idx ,2, weightX, insets, TEXT_FONT);     // 
-			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     // 
+
+			addLabelLineName(durationLabel             , "bestPractices.duration"               , ++idx ,2, weightX, insets, TEXT_FONT);     //
+			addLabelLineName(totalDataLabel            , "bestPractices.totalDataTransfered"    , ++idx ,2, weightX, insets, TEXT_FONT);     //
+			addLabelLineName(energyConsumedLabel       , "bestPractices.energyConsumed"         , ++idx ,2, weightX, insets, TEXT_FONT);     //
+			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     //
 			
 			addLabelLineName(attenuatorHeaderLabel     , "bestPractice.header.attenuator"      , ++idx ,2, weightX, insets, HEADER_FONT);
 			addLabelLineName(downlinkLabel			   , "bestPractice.header.attenuator.downlink", ++idx ,2, weightX, insets, TEXT_FONT);
 			addLabelLineName(uplinkLabel			   , "bestPractice.header.attenuator.uplink", ++idx ,2, weightX, insets, TEXT_FONT);
-			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     // 
+			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     //
 			
 		}
 		return dataPanel;
@@ -178,9 +172,9 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 		
 		httpsDataNotAnalyzedLabel.setText(MessageFormat.format(
 				ResourceBundleHelper.getMessageString("bestPractices.HTTPSDataNotAnalyzedValue"),
-				pctFmt.format(httpsDataNotAnalyzedPct), 
+				pctFmt.format(httpsDataNotAnalyzedPct),
 				decFormat.format(httpsDataNotAnalyzedKB)));
-		
+		sendGAHTTPSDataNotAnalyzed(pctFmt.format(httpsDataNotAnalyzedPct), decFormat.format(httpsDataNotAnalyzedKB));
 		// Total Data Transferred\:
 		totalDataLabel.setText(MessageFormat.format(
 				ResourceBundleHelper.getMessageString("bestPractices.totalDataTransferedValue"),
@@ -195,7 +189,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 		// Energy Consumed:
 		energyConsumedLabel.setText(MessageFormat.format(
 				ResourceBundleHelper.getMessageString("bestPractices.energyConsumedValue"),
-				decFormat.format(analyzerResults.getEnergyModel().getTotalEnergyConsumed())));		
+				decFormat.format(analyzerResults.getEnergyModel().getTotalEnergyConsumed())));
 		
 		//Attenuator :
 		if (TraceResultType.TRACE_DIRECTORY.equals(model.getAnalyzerResult().getTraceresult().getTraceResultType())) {
@@ -209,9 +203,21 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 		}
 	}
 	
+	public void sendGAHTTPSDataNotAnalyzed(String dataPercentage, String dataKB){
+		Runnable runGA = new Runnable() {	
+			@Override
+			public void run() {
+				GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+						GoogleAnalyticsUtil.getAnalyticsEvents().getHTTPSEvent(), 
+						dataPercentage,
+						dataKB);
+			}
+		};
+		new Thread(runGA).start();
+	}
 	private void clearSpeedThrottleValue() {
 		downlinkLabel.setText("");
-		uplinkLabel.setText("");		
+		uplinkLabel.setText("");
 	}
 
 	private void setSpeedThrottleValue(CollectOptions collectOptions){
@@ -241,13 +247,13 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 				if(speedThrottleDL < 0){
 					this.downlinkLabel.setText(ResourceBundleHelper.getMessageString("waterfall.na"));
 				}else{
-					this.downlinkLabel.setText(attenuator.numberTransferSignalDL(speedThrottleDL) + 
+					this.downlinkLabel.setText(attenuator.numberTransferSignalDL(speedThrottleDL) +
 							" - " + attenuator.messageConvert(speedThrottleDL));
-				}				
+				}
 				if(speedThrottleUL < 0 ){
 					this.uplinkLabel.setText(ResourceBundleHelper.getMessageString("waterfall.na"));
 				}else{
-					this.uplinkLabel.setText(attenuator.numberTransferSignalUL(speedThrottleUL) + 
+					this.uplinkLabel.setText(attenuator.numberTransferSignalUL(speedThrottleUL) +
 							" - " + attenuator.messageConvert(speedThrottleUL));
 				}
 			}

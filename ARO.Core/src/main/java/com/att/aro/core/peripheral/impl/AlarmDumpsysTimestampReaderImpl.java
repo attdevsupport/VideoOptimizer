@@ -21,8 +21,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IAlarmDumpsysTimestampReader;
 import com.att.aro.core.peripheral.pojo.AlarmDumpsysTimestamp;
@@ -38,8 +39,7 @@ import com.att.aro.core.util.Util;
  */
 public class AlarmDumpsysTimestampReaderImpl extends PeripheralBase implements IAlarmDumpsysTimestampReader {
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(AlarmDumpsysTimestampReaderImpl.class.getName());
 
 	@Override
 	public AlarmDumpsysTimestamp readData(String directory
@@ -59,9 +59,9 @@ public class AlarmDumpsysTimestampReaderImpl extends PeripheralBase implements I
 			filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.ALARM_START_FILE;
 			if (!filereader.fileExist(filepath)) {
 				if (traceDateTime == null) {
-					logger.debug("traceDateTime is null");
+					LOGGER.debug("traceDateTime is null");
 				} else {
-					logger.debug("traceDuration: " + traceDuration);
+					LOGGER.debug("traceDuration: " + traceDuration);
 					/**
 					 * Neither of the alarm dumpsys files exist fall back to use
 					 * file "time" written when trace start
@@ -77,7 +77,7 @@ public class AlarmDumpsysTimestampReaderImpl extends PeripheralBase implements I
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed to open alarm dumpsys timestamp file: " + filepath);
+			LOGGER.error("failed to open alarm dumpsys timestamp file: " + filepath);
 			return null;
 		}
 
@@ -91,7 +91,7 @@ public class AlarmDumpsysTimestampReaderImpl extends PeripheralBase implements I
 					try {
 						dumpsysEpochTimestamp = format.parse(realTime[1].trim().substring(0, realTime[1].length() - 2)).getTime();
 					} catch (ParseException e) {
-						logger.warn("ParseException ", e);
+						LOGGER.warn("ParseException ", e);
 					}
 				}
 			}
@@ -113,7 +113,7 @@ public class AlarmDumpsysTimestampReaderImpl extends PeripheralBase implements I
 		}
 
 		if (osVersion != null) {
-			logger.info("Elapsed realtime : " + dumpsysElapsedTimestamp + "\n\tEPOCH: " + dumpsysEpochTimestamp + "\n\tOS: " + osVersion);
+			LOGGER.info("Elapsed realtime : " + dumpsysElapsedTimestamp + "\n\tEPOCH: " + dumpsysEpochTimestamp + "\n\tOS: " + osVersion);
 		}
 		AlarmDumpsysTimestamp time = new AlarmDumpsysTimestamp();
 		time.setDumpsysElapsedTimestamp(dumpsysElapsedTimestamp);

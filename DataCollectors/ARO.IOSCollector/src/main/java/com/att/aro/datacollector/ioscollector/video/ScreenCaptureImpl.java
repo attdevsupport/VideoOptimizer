@@ -16,12 +16,13 @@
 
 package com.att.aro.datacollector.ioscollector.video;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.datacollector.ioscollector.IScreenCapture;
 
 public class ScreenCaptureImpl implements IScreenCapture {
-	private ILogger log = new LoggerImpl("IOSCollector");
+	private static final Logger LOG = LogManager.getLogger(ScreenCaptureImpl.class);
 	static { 
 		System.loadLibrary("ScreencaptureBridge");
 	}
@@ -48,12 +49,12 @@ public class ScreenCaptureImpl implements IScreenCapture {
 	@Override
 	public String initService(){
 		if(!isAlreadyInit){
-			log.info("initService()");
+			LOG.info("initService()");
 			isAlreadyInit = true;
 			isRunning = true;
 			return this.startService();
 		}else{
-			log.info("skip initService(). It is already done");
+			LOG.info("skip initService(). It is already done");
 		}
 		return "SUCCESS";
 	}
@@ -72,15 +73,15 @@ public class ScreenCaptureImpl implements IScreenCapture {
 		if(isRunning){
 			try{
 				this.stopService();
-				log.info("stopCapture()");
+				LOG.info("stopCapture()");
 			}catch(Exception ex){
-				log.error("Error stopping screencapture service: "+ex.getMessage());
+				LOG.error("Error stopping screencapture service: "+ex.getMessage());
 			}
 			isRunning = false;
 			isAlreadyInit = false;
 			
 		}else{
-			log.info("skip stopCapture(), it was already stopped");
+			LOG.info("skip stopCapture(), it was already stopped");
 		}
 	}
 }

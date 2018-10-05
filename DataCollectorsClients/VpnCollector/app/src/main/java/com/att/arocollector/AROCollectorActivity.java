@@ -72,7 +72,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-
 public class AROCollectorActivity extends Activity {
 
 	private static String TAG = AROCollectorActivity.class.getSimpleName();
@@ -91,8 +90,9 @@ public class AROCollectorActivity extends Activity {
 	private String screenSize = "";
 	private VideoCapture videoCapture;
 	private MediaProjectionManager mediaProjectionManager;
- 	private boolean printLog = false;
+	private boolean printLog = false;
 	private File tempCertFile;
+	private String CERTFILE = "cacert.pem";
 	private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
 	@Override
@@ -137,8 +137,6 @@ public class AROCollectorActivity extends Activity {
 
 		AttenuatorManager.getInstance().setThrottleUL(throttleUl);
 		Log.d(TAG,"Upload speed throttle value: "+ throttleUl + " kbps");
-
-
 
 		printLog = intent.getBooleanExtra(BundleKeyUtil.PRINT_LOG, false);
 
@@ -313,7 +311,7 @@ public class AROCollectorActivity extends Activity {
 
 					captureVpnServiceIntent = new Intent(getApplicationContext(), CaptureVpnService.class);
 					captureVpnServiceIntent.putExtra("TRACE_DIR", Config.TRACE_DIR);
- 					captureVpnServiceIntent.putExtra(BundleKeyUtil.PRINT_LOG, printLog);
+					captureVpnServiceIntent.putExtra(BundleKeyUtil.PRINT_LOG, printLog);
 
 					if(isExternalStorageWritable()){
 						Log.i(TAG, "TRACE_DIR: "+ Config.TRACE_DIR +"trace directory: "+
@@ -329,9 +327,10 @@ public class AROCollectorActivity extends Activity {
 
 					if (doVideoCapture()) {
 						getVideoCapturePermission();
-					}else{
+					} else {
 						pushAppToBackStack();
 					}
+
 				} else if (resultCode == RESULT_CANCELED) {
 					showVPNRefusedDialog();
 				}
@@ -352,6 +351,18 @@ public class AROCollectorActivity extends Activity {
 						resultCode, data);
 				videoCapture = new VideoCapture(getApplicationContext(), getWindowManager(), mediaProjection, bitRate, screenSize, videoOrient);
 				videoCapture.start();
+				break;
+
+			case Config.Permission.CERT_INSTALL_REQUEST_CODE:
+				if (resultCode == RESULT_OK) {
+					if (tempCertFile != null) {
+						tempCertFile.delete();
+						tempCertFile = null;
+					}
+					pushAppToBackStack();
+				} else {
+					pushAppToBackStack();
+				}
 				break;
 
 			default:
@@ -614,8 +625,7 @@ public class AROCollectorActivity extends Activity {
 
 
 	public void handleUncaughtException (Thread thread, Throwable e)  {
-
-		MemoryInfo mi = new MemoryInfo();
+ 		MemoryInfo mi = new MemoryInfo();
 		ActivityManager activityManager = (ActivityManager)this.getSystemService(Activity.ACTIVITY_SERVICE);
 		activityManager.getMemoryInfo(mi);
 		long availableMegs = mi.availMem / 1048576L;

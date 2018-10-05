@@ -56,6 +56,7 @@ public class IOSDevice implements IAroDevice {
 		productName = profile.get("ProductName");
 		productType = profile.get("ProductType");
 		abi = profile.get("CPUArchitecture");
+		state = "Activated".equals(profile.get("ActivationState")) ? AroDeviceState.Available : AroDeviceState.Unknown;
 		
 		if (productName == null) {
 			productName = "iosDevice";

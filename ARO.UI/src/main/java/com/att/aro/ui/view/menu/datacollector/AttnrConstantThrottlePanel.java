@@ -28,9 +28,10 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
@@ -40,8 +41,7 @@ public class AttnrConstantThrottlePanel extends JPanel implements ActionListener
 	
 	private static final long serialVersionUID = 1L;
 
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
-
+	private static final Logger LOG = LogManager.getLogger(AttnrConstantThrottlePanel.class);	
 	private JCheckBox cbDlAttenuator;
 	private JCheckBox cbUlAttenuator;
 	private String downLink;
@@ -119,7 +119,7 @@ public class AttnrConstantThrottlePanel extends JPanel implements ActionListener
 			if (!source.getValueIsAdjusting()) {
 				int fps_local = (int) source.getValue();
 				setFps(fps_local);
-				log.info("Set DelayTime: " + fpsDL);
+				LOG.info("Set DelayTime: " + fpsDL);
 				setDelayTime(fpsDL);
 				fsJLabel.setText(fpsDL + " ");
 				miniAtnr.setDelayDS(fpsDL);
@@ -133,7 +133,7 @@ public class AttnrConstantThrottlePanel extends JPanel implements ActionListener
 			if (!source.getValueIsAdjusting()) {
 				int fps_local = (int) source.getValue();
 				setUpFps(fps_local);
-				log.info("Set DelayTime: " + fpsUL);
+				LOG.info("Set DelayTime: " + fpsUL);
 				setDelayUpTime(fpsUL);
 				fsUpJLabel.setText(fpsUL + " ");
 				miniAtnr.setDelayUS(fpsUL);

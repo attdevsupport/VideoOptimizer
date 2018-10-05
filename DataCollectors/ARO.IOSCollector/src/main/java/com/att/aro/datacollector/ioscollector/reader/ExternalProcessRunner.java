@@ -20,7 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 /**
  * To help execute external program and consume data returned back as string or
@@ -29,8 +30,7 @@ import com.att.aro.core.impl.LoggerImpl;
  */
 public class ExternalProcessRunner {
 
-	LoggerImpl log = new LoggerImpl("ExternalProcessRunner");
-
+	private static final Logger LOG = LogManager.getLogger(ExternalProcessRunner.class.getName());
 	ProcessBuilder builder = null;
 
 	public ExternalProcessRunner() {
@@ -134,7 +134,7 @@ public class ExternalProcessRunner {
 
 		while ((totalread = input.read(data, 0, data.length)) != -1) {
 			out.write(data, 0, totalread);
-			log.info(new String(data));
+			LOG.info(new String(data));
 		}
 		worker.setExit();
 		worker.interrupt();

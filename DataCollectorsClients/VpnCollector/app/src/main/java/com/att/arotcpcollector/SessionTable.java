@@ -18,10 +18,13 @@ package com.att.arotcpcollector;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import java.nio.channels.Channel;
+import java.nio.channels.DatagramChannel;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by Bharath.
@@ -33,6 +36,7 @@ class SessionTable implements Map<String, Session>{
 
     private final int limit;
     private final Hashtable<String, Session> sessionTable = new Hashtable<>();
+    private final Map<Channel, Session> channelBasedSessionTable = new ConcurrentHashMap<>();
 
     public SessionTable(int limit) {
         this.limit = limit;
@@ -80,6 +84,11 @@ class SessionTable implements Map<String, Session>{
         if(sessionTable.size() >= limit) {
             evictEntry();
         }
+
+	    DatagramChannel channel = value.getUdpChannel();
+        if (channel != null && channel.isConnected()){
+	        channelBasedSessionTable.put(channel,value);
+        }
         return sessionTable.put(key, value);
     }
 
@@ -108,7 +117,12 @@ class SessionTable implements Map<String, Session>{
 
     @Override
     public Session remove(Object key) {
-        return sessionTable.remove(key);
+    	Session value = sessionTable.remove(key);
+	    DatagramChannel channel = value.getUdpChannel();
+	    if (channel != null){
+	    	channelBasedSessionTable.remove(channel);
+	    }
+        return value;
     }
 
     @Override
@@ -121,4 +135,8 @@ class SessionTable implements Map<String, Session>{
     public Collection<Session> values() {
         return sessionTable.values();
     }
+
+	public Session getSessionByChannel(Channel channel) {
+    	return channelBasedSessionTable.get(channel);
+	}
 }

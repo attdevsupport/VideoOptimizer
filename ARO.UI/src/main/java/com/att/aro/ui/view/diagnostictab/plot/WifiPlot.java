@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
@@ -30,28 +32,26 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYIntervalSeries;
 import org.jfree.data.xy.XYIntervalSeriesCollection;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo.WifiState;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class WifiPlot implements IPlot{
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);	
+	private static final Logger LOGGER = LogManager.getLogger(WifiPlot.class);	
 	private XYIntervalSeriesCollection wifiData;
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
 		 wifiData = new XYIntervalSeriesCollection();
 
 		if (analysis == null ) {
-			logger.info("didn't get analysis trace data!  ");
+			LOGGER.info("didn't get analysis trace data!  ");
 		}else{
 			TraceResultType resultType = analysis.getAnalyzerResult().getTraceresult().getTraceResultType();
 			if(resultType.equals(TraceResultType.TRACE_FILE)){
-				logger.info("it is not contain the file ");
+				LOGGER.info("it is not contain the file ");
 			}else{
 	 		TraceDirectoryResult traceresult = (TraceDirectoryResult)analysis.getAnalyzerResult().getTraceresult();
 

@@ -17,8 +17,9 @@ package com.att.aro.core.peripheral.impl;
 
 import java.io.IOException;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IDeviceDetailReader;
 import com.att.aro.core.peripheral.pojo.DeviceDetail;
@@ -30,9 +31,8 @@ import com.att.aro.core.util.Util;
  * Date: October 7, 2014
  */
 public class DeviceDetailReaderImpl extends PeripheralBase implements IDeviceDetailReader {
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(DeviceDetailReaderImpl.class.getName());
+
 	@Override
 	public DeviceDetail readData(String directory) {
 		String filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.DEVICEDETAILS_FILE;
@@ -45,7 +45,7 @@ public class DeviceDetailReaderImpl extends PeripheralBase implements IDeviceDet
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e) {
-			logger.error("failed to read device detail file: "+filepath);
+			LOGGER.error("failed to read device detail file: "+filepath);
 		}
 
 		if(lines == null || lines.length < 1){

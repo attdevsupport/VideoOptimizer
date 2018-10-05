@@ -16,6 +16,7 @@
 package com.att.aro.core.pojo;
 
 import com.att.aro.core.ApplicationConfig;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 
 /**
  * Standardized ErrorCodes for ARO.Core<br>
@@ -43,6 +44,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(100);
 		err.setName("Trace Directory not found.");
 		err.setDescription(ApplicationConfig.getInstance().getAppName() + " cannot find or access the trace directory user specified. Please check if the directory exists.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -56,6 +58,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(101);
 		err.setName("Trace file not found.");
 		err.setDescription(ApplicationConfig.getInstance().getAppName() + " cannot find or access trace file user specified. Please check if the file exist.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -69,6 +72,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(102);
 		err.setName("Trace folder not found.");
 		err.setDescription(ApplicationConfig.getInstance().getAppName() + " cannot find or access trace folder.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -77,6 +81,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(103);
 		err.setName("Analyzing trace directory Failure");
 		err.setDescription("Failed to analyze trace directory.");
+		sendGAErrorCode(err);
 		return err;
 	}
 	
@@ -85,6 +90,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(104);
 		err.setName("Analyzing trace file Failure");
 		err.setDescription("Failed to analyze trace file.");
+		sendGAErrorCode(err);
 		return err;
 
 	}
@@ -94,6 +100,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(105);
 		err.setName("Unrecognized Packets");
 		err.setDescription("This trace has no packets or has unrecognized packets and their data will not be displayed");
+		sendGAErrorCode(err);
 		return err;
 
 	}
@@ -103,6 +110,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(106);
 		err.setName("Unknown file format");
 		err.setDescription("Result from executing all pcap packets: unknown file format");
+		sendGAErrorCode(err);
 		return err;
 	}
 	
@@ -111,6 +119,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(107);
 		err.setName("Traffic file has no packet information");
 		err.setDescription("There was no activity in the traffic file.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -119,6 +128,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(108);
 		err.setName("Traffic file not found");
 		err.setDescription("This trace doesn't seem to have a traffic file.");
+		sendGAErrorCode(err);
 		return err;
 	}
 	
@@ -127,6 +137,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(202);
 		err.setName("Found existing trace directory that is not empty");
 		err.setDescription(ApplicationConfig.getInstance().getAppName() + " found an existing directory that contains files and did not want to override it. Some files may be hidden.");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -135,6 +146,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(215);
 		err.setName("Problem accessing device");
 		err.setDescription(ApplicationConfig.getInstance().getAppName() + " failed to access device :"+message);
+		sendGAErrorCode(err);
 		return err;
 
 	}
@@ -144,6 +156,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(130);
 		err.setName("Out of memory");
 		err.setDescription("Trace too big to load");
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -152,7 +165,12 @@ public final class ErrorCodeRegistry {
 		err.setCode(140);
 		err.setName("REST:POST failure");
 		err.setDescription(message);
+		sendGAErrorCode(err);
 		return err;
+	}
+	
+	private static void sendGAErrorCode(ErrorCode err){
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendErrorEvents(err.getName(),err.getDescription(), false);
 	}
 
 }

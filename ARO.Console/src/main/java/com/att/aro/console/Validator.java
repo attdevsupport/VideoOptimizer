@@ -66,13 +66,7 @@ public class Validator {
 					) {
 				return ErrorCodeRegistry.getInvalidVideoOption();
 			}
- 
-			
-			ErrorCode noActivatedNetIF = validateNetIF(cmd);
-			if (noActivatedNetIF != null) {
-				return noActivatedNetIF;
-			}
-			
+						
 			ErrorCode uplinkErrorCode = validateUplink(cmd);
 			if (uplinkErrorCode != null) {
 				return uplinkErrorCode;
@@ -85,21 +79,7 @@ public class Validator {
 		return null;
 	}
 	
- 
-	
-	private ErrorCode validateNetIF(Commands cmd) {
-
-		if( "ios".equals(cmd.getStartcollector()) && !NetworkUtil.isNetworkUp("bridge100")
-				&& (isNumberInRange(cmd.getThrottleDL(), 64, 102400) 
-				|| isNumberInRange(cmd.getThrottleUL(), 64, 102400))) {
- 					return ErrorCodeRegistry.getNetworkNotActivatedError();				
-			
-		}
-				
-		return null;
-
-	}
-	
+ 	
 	private ErrorCode validateUplink(Commands cmd) {
 		if (cmd.getThrottleUL() != "-1") {
 			if (("ios".equals(cmd.getStartcollector()) ||"vpn_android".equals(cmd.getStartcollector())) 

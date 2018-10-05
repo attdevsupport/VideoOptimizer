@@ -15,9 +15,10 @@
 */
 package com.att.aro.ui.view.video;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
@@ -59,10 +60,9 @@ public class JFxPlayerControl {
 	private StackPane stackPane;
 	private DiagnosticsTab diagnosticTab;
 	private double videoOffset;
-	private Double finalizedVideoOffset;
 	private VideoSyncThread diagnosticTabSynThread;	
 	private JFxPlayer jfxPlayer;
-	private static ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private static final Logger LOGGER = LogManager.getLogger(JFxPlayerControl.class);	
 	private SharedAttributesProcesses aroView;
 	 /*
 	  *  We multiply video duration by it to be the max value of  
@@ -79,7 +79,6 @@ public class JFxPlayerControl {
 		this.mediaPlayer = mediaPlayer;
 		this.diagnosticTab = diagnosticTab;
 		this.videoOffset = videoOffset;
-		
 		setUpUI();
 	}
 
@@ -153,11 +152,11 @@ public class JFxPlayerControl {
 				double newTime = ((Slider) event.getSource()).getValue();
 				Duration newDuration = duration.multiply(newTime/sliderMax);
 				mediaPlayer.seek(duration.multiply(newTime/sliderMax));
-				diagnosticTab.setTimeLineLinkedComponents(newDuration.toSeconds() + finalizedVideoOffset, true);
+				diagnosticTab.setTimeLineLinkedComponents(newDuration.toSeconds() + videoOffset, true);
 				
 				if (newTime == 0 || newTime == sliderMax) {
 					mediaPlayer.seek(Duration.ZERO);
-					diagnosticTab.setTimeLineLinkedComponents(finalizedVideoOffset, true);
+					diagnosticTab.setTimeLineLinkedComponents(videoOffset, true);
 				};
 				
 				updateTimeLabel();
@@ -170,7 +169,7 @@ public class JFxPlayerControl {
 				double newTime = ((Slider) event.getSource()).getValue();			
 				if (newTime == 0 || newTime == sliderMax) {
 					mediaPlayer.seek(Duration.ZERO);
-					diagnosticTab.setTimeLineLinkedComponents(finalizedVideoOffset, true);
+					diagnosticTab.setTimeLineLinkedComponents(videoOffset, true);
 				}		
 				updateTimeLabel();
 			}			
@@ -206,7 +205,7 @@ public class JFxPlayerControl {
 			@Override
 			public void run() {
 				playButton.setText("||");
-				diagnosticTabSynThread = new VideoSyncThread(jfxPlayer, diagnosticTab, finalizedVideoOffset);
+				diagnosticTabSynThread = new VideoSyncThread(jfxPlayer, diagnosticTab, videoOffset);
 				new Thread(diagnosticTabSynThread).start();
 			}
 		});
@@ -237,7 +236,6 @@ public class JFxPlayerControl {
 			public void run() {
 				// Duration is available when player is ready (not available before that) 
 				duration = mediaPlayer.getMedia().getDuration();			
-				finalizedVideoOffset = Math.abs(videoOffset) >= duration.toSeconds()? 0.0:videoOffset;	
 				sliderMax = getVideoDuration()*FRAME_RATE;
 				if(timeSlider != null) {
 					timeSlider.setMax(sliderMax);
@@ -272,7 +270,7 @@ public class JFxPlayerControl {
 		          Duration currentTime = mediaPlayer.getCurrentTime();
 		          playTime.setText(formatTime(currentTime, duration));
 		          if (duration == null) {
-		        	  logger.error("Video duration is unavailable");
+		        	  LOGGER.error("Video duration is unavailable");
 		        	  return;
 		          }
 		          timeSlider.setDisable(duration.isUnknown());
@@ -292,24 +290,10 @@ public class JFxPlayerControl {
 	    }
 	}
 	
-	/**
-	 * This methods returns the final video offset value after this conditional check:
-	 * If video offset is longer than video duration, make it zero.
-	 * 
-	 * @return
-	 */
-	protected double getFinalizedVideoOffset() {
-		if (finalizedVideoOffset == null) {
-			logger.error("Video offset value not yet finalized");
-			return 0;
-		}
-		return finalizedVideoOffset;
-	}
-	
     private static String formatTime(Duration elapsed, Duration duration) {
 	 
     	if (elapsed == null || duration == null) {
-    		logger.error("Missing time info. Elapsed: " + elapsed + ", Duration: " + duration);
+    		LOGGER.error("Missing time info. Elapsed: " + elapsed + ", Duration: " + duration);
     		return "";
     	}
     	
@@ -379,7 +363,7 @@ public class JFxPlayerControl {
 	 		mediaPlayer.seek(newMediaTime);	 		
  		}
  		
- 		diagnosticTab.setTimeLineLinkedComponents(newMediaTime.toSeconds() + getFinalizedVideoOffset(), true);
+ 		diagnosticTab.setTimeLineLinkedComponents(newMediaTime.toSeconds() + videoOffset, true);
  		updateControllerBar();
  	}
  	
@@ -390,7 +374,7 @@ public class JFxPlayerControl {
  	 */
  	protected double getVideoDuration() { 		
  		if (duration == null) {
- 			logger.error("Duration info not ready, need to wait for player to be ready");
+ 			LOGGER.error("Duration info not ready, need to wait for player to be ready");
  			return 0;
  		}
  		return mediaPlayer.getMedia().getDuration().toSeconds();

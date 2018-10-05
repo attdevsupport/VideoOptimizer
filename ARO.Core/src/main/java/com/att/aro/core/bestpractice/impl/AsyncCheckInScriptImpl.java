@@ -19,6 +19,8 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -26,13 +28,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.AsyncCheckEntry;
 import com.att.aro.core.bestpractice.pojo.AsyncCheckInScriptResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -68,8 +68,7 @@ public class AsyncCheckInScriptImpl implements IBestPractice {
 
 	private IHttpRequestResponseHelper reqhelper;
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(AsyncCheckInScriptImpl.class.getName());
 
 	@Autowired
 	public void setHttpRequestResponseHelper(IHttpRequestResponseHelper reqhelper) {
@@ -138,7 +137,7 @@ public class AsyncCheckInScriptImpl implements IBestPractice {
 		try {
 			packetContent = reqhelper.getContentString(info, session);
 		} catch (Exception e1) {
-			logger.error("Failed to get content from HttpRequestResponseInfo", e1);
+			LOGGER.error("Failed to get content from HttpRequestResponseInfo", e1);
 		}
 
 		if (packetContent != null) {
@@ -160,7 +159,7 @@ public class AsyncCheckInScriptImpl implements IBestPractice {
 					}
 				}
 			} catch (Exception e) {
-				logger.error("Failed to get content from html content", e);
+				LOGGER.error("Failed to get content from html content", e);
 			}
 		}
 

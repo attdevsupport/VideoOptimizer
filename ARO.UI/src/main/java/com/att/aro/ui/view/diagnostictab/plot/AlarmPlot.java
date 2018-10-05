@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jfree.chart.annotations.XYPointerAnnotation;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;
@@ -34,20 +36,16 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYIntervalSeries;
 import org.jfree.data.xy.XYIntervalSeriesCollection;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.ScheduledAlarmInfo;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.AlarmInfo;
 import com.att.aro.core.peripheral.pojo.AlarmInfo.AlarmType;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class AlarmPlot implements IPlot {
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(
-			ILogger.class);
-
+	private static final Logger LOGGER = LogManager.getLogger(AlarmPlot.class.getSimpleName());	
 	private XYIntervalSeriesCollection alarmDataCollection = new XYIntervalSeriesCollection();
 	private List<XYPointerAnnotation> pointerAnnotation = new ArrayList<XYPointerAnnotation>();
 	private Map<AlarmType, XYIntervalSeries> seriesMap = new EnumMap<AlarmType, XYIntervalSeries>(
@@ -58,7 +56,7 @@ public class AlarmPlot implements IPlot {
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
 		if (analysis == null) {
-			logger.info("analysis data is null");
+			LOGGER.info("analysis data is null");
 		} else {
 			alarmDataCollection.removeAllSeries();
 			pointerAnnotation.clear();
@@ -66,7 +64,7 @@ public class AlarmPlot implements IPlot {
 			TraceResultType resultType = analysis.getAnalyzerResult()
 					.getTraceresult().getTraceResultType();
 			if (resultType.equals(TraceResultType.TRACE_FILE)) {
-				logger.info("didn't get analysis trace data!");
+				LOGGER.info("didn't get analysis trace data!");
 
 			} else {
 				// Remove old annotation from previous plots

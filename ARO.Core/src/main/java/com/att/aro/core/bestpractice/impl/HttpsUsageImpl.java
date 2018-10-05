@@ -24,16 +24,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.HttpsUsageEntry;
 import com.att.aro.core.bestpractice.pojo.HttpsUsageResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
@@ -41,8 +41,7 @@ import com.att.aro.core.packetreader.pojo.Packet;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 
 public class HttpsUsageImpl implements IBestPractice {
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(HttpsUsageImpl.class.getName());
 	@Value("${security.httpsUsage.title}")
 	private String overviewTitle;
 	@Value("${security.httpsUsage.detailedTitle}")
@@ -162,7 +161,7 @@ public class HttpsUsageImpl implements IBestPractice {
 				}
 				List<PacketInfo> packetsInfo = session.getPackets();
 				if (packetsInfo.isEmpty()) {
-					logger.error("Session without packets! Session's remote IP and port: "
+					LOGGER.error("Session without packets! Session's remote IP and port: "
 							+ session.getRemoteIP().getHostAddress() + ":" + session.getRemotePort());
 					continue;
 				}
@@ -218,7 +217,7 @@ public class HttpsUsageImpl implements IBestPractice {
 				 * divide-by-zero exception for any unexpected reason.
 				 */
 				if (totalTrafficInByteCurrentIp <= 0) {
-					logger.error("Total traffic size of all TCP sessions is zero or less ("
+					LOGGER.error("Total traffic size of all TCP sessions is zero or less ("
 							+ totalTrafficInByteCurrentIp + " byte)! IP: " + ipSessions.getKey().getHostAddress());
 				} else {
 					httpTrafficPercentage = getHttpTrafficPercentage(totalHttpTrafficInByteCurrentIp,
@@ -264,8 +263,9 @@ public class HttpsUsageImpl implements IBestPractice {
 				}
 				String[] labels = domainName.split("\\.");
 				topLevel = labels[labels.length - 1];
-				if (labels.length > 1)
+				if (labels.length > 1) {
 					secondLevel = labels[labels.length - 2];
+				}
 				/*
 				 * If top-level domain contains at least one alphabet, then the
 				 * domain name value should not be a literal IP.

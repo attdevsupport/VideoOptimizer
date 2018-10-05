@@ -20,8 +20,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 /**
  * Class for creating capture files in libcap format.<br>
@@ -35,11 +35,10 @@ import com.att.aro.core.impl.LoggerImpl;
  */
 public class PCapFileWriter implements ICaptureFileWriter {
 
-	private ILogger log = new LoggerImpl("PCapFileWriter");
-
+	private static final Logger LOG = LogManager.getLogger(PCapFileWriter.class.getName());
 	private static final int MAX_PACKET_SIZE = 65356;
 
-	public static final long DEFAULT_LIMIT = 100000000000l;
+	public static final long DEFAULT_LIMIT = 100000000000L;
 
 	// limit the file size
 	private long myLimit = DEFAULT_LIMIT;
@@ -204,7 +203,7 @@ public class PCapFileWriter implements ICaptureFileWriter {
 		}
 
 		hder.setTimeValMsec32Uint((time) % 1000000);
-		hder.setTimeValSec32Uint(time / 1000000l);
+		hder.setTimeValSec32Uint(time / 1000000L);
 
 		// updated to use the real packet length
 		hder.setPktlenUint32(length + ethernetHdrLen);
@@ -249,7 +248,7 @@ public class PCapFileWriter implements ICaptureFileWriter {
 		PCapPacketHeader hder = new PCapPacketHeader();
 
 		hder.setTimeValMsec32Uint((time) % 1000000);
-		hder.setTimeValSec32Uint(time / 1000000l);
+		hder.setTimeValSec32Uint(time / 1000000L);
 		hder.setPktlenUint32(thepkt.length);
 		hder.setCaplen32Uint(thepkt.length);
 
@@ -284,7 +283,7 @@ public class PCapFileWriter implements ICaptureFileWriter {
 		long gap = getNanoTime() - myStartTime; // the gap since start in nano sec
 
 		hder.setTimeValMsec32Uint((gap / 1000) % 1000000);
-		hder.setTimeValSec32Uint(gap / 1000000000l);
+		hder.setTimeValSec32Uint(gap / 1000000000L);
 
 		//updated to use the real packet length
 		hder.setPktlenUint32(length + ethernetHdrLen);
@@ -334,7 +333,7 @@ public class PCapFileWriter implements ICaptureFileWriter {
 		}
 
 		hder.setTimeValMsec32Uint((time / 1000) % 1000000);
-		hder.setTimeValSec32Uint(time / 1000000000l);
+		hder.setTimeValSec32Uint(time / 1000000000L);
 
 		// updated to use the real packet length
 		hder.setPktlenUint32(length + ethernetHdrLen);
@@ -366,7 +365,7 @@ public class PCapFileWriter implements ICaptureFileWriter {
 			try {
 				myOutStrm.close();
 			} catch (IOException e) {
-				log.error("Failed to close output stream, IOException :",e);
+				LOG.error("Failed to close output stream, IOException :",e);
 			}
 			isOpened = false;
 			myOutStrm = null;

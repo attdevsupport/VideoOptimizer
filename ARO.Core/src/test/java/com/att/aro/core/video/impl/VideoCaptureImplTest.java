@@ -93,7 +93,7 @@ public class VideoCaptureImplTest extends BaseTest{
 		videoCapture.setDevice(device);
 		when(device.getScreenshot()).thenThrow(new IOException());
 		videoCapture.run();		
-		assertEquals(6,videoCapture.getiExceptionCount());
+		assertEquals(31,videoCapture.getiExceptionCount());
 	}
 	
 	@Test
@@ -101,7 +101,7 @@ public class VideoCaptureImplTest extends BaseTest{
 		videoCapture.setDevice(device);
 		when(device.getScreenshot()).thenThrow(new TimeoutException());
 		videoCapture.run();
-		assertEquals(6,videoCapture.getiExceptionCount());
+		assertEquals(31,videoCapture.getiExceptionCount());
 	}
 	
 	@Test(expected=IOException.class)

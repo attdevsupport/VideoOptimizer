@@ -15,8 +15,9 @@
 */
 package com.att.aro.datacollector.norootedandroidcollector.impl;
 
+import org.apache.log4j.Logger;
+
 import com.android.ddmlib.IDevice;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
@@ -40,8 +41,7 @@ public class CpuTraceCollector implements Runnable {
 		, Undefined
 	}
 
-	private static ILogger LOGGER;
-	
+	private static Logger LOGGER;	
 	private IAroDevice aroDevice;
 	private IExternalProcessRunner extrunner;
 	private IAndroid android;
@@ -56,10 +56,10 @@ public class CpuTraceCollector implements Runnable {
 	String remoteCpuFilesPath = "/sdcard/ARO/cpufiles/";
 	String remoteExecutable = remoteCpuFilesPath + payloadFileName;
 	
-	public void setAdbFileMgrLogExtProc(IAdbService adbservice, IFileManager fileManager, ILogger logger, IExternalProcessRunner runner){
+	public void setAdbFileMgrLogExtProc(IAdbService adbservice, IFileManager fileManager, Logger log, IExternalProcessRunner runner){
 		this.adbservice = adbservice;
+		LOGGER = log;
 		this.filemanager = fileManager;
-		LOGGER = logger;
 		this.extrunner = runner;
 	}
 	

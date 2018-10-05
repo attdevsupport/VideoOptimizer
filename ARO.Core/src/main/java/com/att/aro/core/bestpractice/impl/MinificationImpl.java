@@ -32,19 +32,19 @@ import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.mozilla.javascript.EvaluatorException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.MinificationEntry;
 import com.att.aro.core.bestpractice.pojo.MinificationResult;
 import com.att.aro.core.bestpractice.pojo.YuiCompressorErrorReporter;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -68,8 +68,7 @@ public class MinificationImpl implements IBestPractice {
 	private HtmlCompressor htmlCompressor;
 	private static final int MIN_SAVING_PERCENTAGE = 5;//we only care if saving more than 5%
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(MinificationImpl.class.getName());
 
 	@Value("${minification.title}")
 	private String overviewTitle;
@@ -114,8 +113,10 @@ public class MinificationImpl implements IBestPractice {
 				MinificationEntry res = calculateSavingMinifiedCss(req, lastRequestObj, session); 
 				return res;
 			} else if (reqhelper.isHtml(contentType)) {
-				MinificationEntry res = calculateSavingMinifiedHtml(req, lastRequestObj, session); 
-				return res;
+				if(req.getRawSizeInKB() < 500) {
+					MinificationEntry res = calculateSavingMinifiedHtml(req, lastRequestObj, session); 
+					return res;
+				}
 			}
 			return null;
 		}
@@ -176,7 +177,7 @@ public class MinificationImpl implements IBestPractice {
 				}
 			}
 		} catch(InterruptedException | ExecutionException ee){
-			logger.error(ee.getMessage(), ee);
+			LOGGER.error(ee.getMessage(), ee);
 		}
 		executorService.shutdown();
 		
@@ -222,14 +223,14 @@ public class MinificationImpl implements IBestPractice {
 		try {
 			content = reqhelper.getContentString(req, session);
 		} catch (Exception e) {
-			logger.error("Failed to get content from html response: " + e.getMessage());
+			LOGGER.error("Failed to get content from html response: " + e.getMessage());
 		}
 		if (content != null) {
 			String minicontent = null;
 			try {
 				minicontent = htmlCompressor.compress(content);
 			} catch (Exception e) {
-				logger.error("Failed to compress html response: " + e.getMessage());
+				LOGGER.error("Failed to compress html response: " + e.getMessage());
 			}
 			if (minicontent != null) {
 				return minSavingEntry(minicontent.length(), content.length(), req, lastRequestObj, session);
@@ -243,15 +244,15 @@ public class MinificationImpl implements IBestPractice {
 		try {
 			content = reqhelper.getContentString(req, session);
 		} catch (Exception e) {
-			logger.error("Failed to get content from Css response: " + e.getMessage());
+			LOGGER.error("Failed to get content from Css response: " + e.getMessage());
 		}
 		if (content != null) {
 			String minicontent = null;
 			try {
 				minicontent = minifyCss(content);
 			} catch (IOException | IllegalArgumentException ex) {
-				logger.error(ex.getMessage());
-				logger.debug(ex.getMessage(), ex);
+				LOGGER.error(ex.getMessage());
+				LOGGER.debug(ex.getMessage(), ex);
 			}
 			if (minicontent != null) {
 				return minSavingEntry(minicontent.length(), content.length(), req, lastRequestObj, session);
@@ -273,18 +274,18 @@ public class MinificationImpl implements IBestPractice {
 		try {
 			content = reqhelper.getContentString(req, session);
 		} catch (Exception e) {
-			logger.error("Failed to get content from Javascript response: " + e.getMessage());
+			LOGGER.error("Failed to get content from Javascript response: " + e.getMessage());
 		}
 		if (content != null) {
 			String minicontent = null;
 			try {
 				minicontent = minifyJavascript(content);
 			} catch (EvaluatorException ex) {
-				logger.error(ex.getMessage());
+				LOGGER.error(ex.getMessage());
 			} catch (IOException ex2) {
-				logger.error(ex2.getMessage());
+				LOGGER.error(ex2.getMessage());
 			} catch (Exception ex) {
-				logger.error("Failed to minify javascript, content: " + content);
+				LOGGER.error("Failed to minify javascript, content: " + content);
 			}
 			if (minicontent != null) {
 				return minSavingEntry(minicontent.length(), content.length(), req, lastRequestObj, session);
@@ -306,7 +307,7 @@ public class MinificationImpl implements IBestPractice {
 		try {
 			content = reqhelper.getContentString(req, session);
 		} catch (Exception e) {
-			logger.error("Failed to get content from Json response: " + e.getMessage());
+			LOGGER.error("Failed to get content from Json response: " + e.getMessage());
 		}
 		if (content != null) {
 			String minicontent = minifyJson(content);

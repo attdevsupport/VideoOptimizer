@@ -34,17 +34,17 @@ import java.util.concurrent.FutureTask;
 
 import javax.swing.SwingWorker;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.datacollector.IDeviceStatus;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
 import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
@@ -72,7 +72,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageSubscriber {
 	private static final String IOSAPP_MOUNT = "iosapp_mount";
 	private IFileManager filemanager;
-	private ILogger log = new LoggerImpl("IOSCollector");
+	private static final Logger LOG = LogManager.getLogger(IOSCollectorImpl.class);
 	private static ResourceBundle defaultBundle = ResourceBundle.getBundle("messages");
 	private volatile boolean running = false;
 	private File timeFile;
@@ -100,6 +100,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private AttenuatorModel attenuatorModel;
 	private MitmAttenuatorImpl mitmAttenuator;
 	private boolean deviceDataPulled = true;
+	private boolean validPW;
 	
 	public IOSCollectorImpl() {
 		super();
@@ -109,11 +110,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	@Autowired
 	public void setFileManager(IFileManager filemanager) {
 		this.filemanager = filemanager;
-	}
-
-	@Autowired
-	public void setLogger(ILogger logger) {
-		this.log = logger;
 	}
 
 	@Override
@@ -131,7 +127,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			try {
 				rvi.stop();
 			} catch (IOException e) {
-				log.debug("IOException:", e);
+				LOG.debug("IOException:", e);
 			}
 		}
 	}
@@ -153,7 +149,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			try {
 				rvi.stop();
 			} catch (IOException e) {
-				log.error("IOException", e);
+				LOG.error("IOException", e);
 			}
 			recordPcapStartStop();
 		}
@@ -161,7 +157,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (packetworker != null) {
 			packetworker.cancel(true);
 			packetworker = null;
-			log.info("disposed packetworker");
+			LOG.info("disposed packetworker");
 		}
 
 		if (videoCapture != null) {
@@ -169,24 +165,24 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 										// fully stop //FIXME REMOVE THIS
 			try(BufferedWriter videoTimeStampWriter = new BufferedWriter(
 					new FileWriter(new File(localTraceFolder, TraceDataConst.FileName.VIDEO_TIME_FILE)));) {
-				log.info("Writing video time to file");
+				LOG.info("Writing video time to file");
 				String timestr = Double.toString(videoCapture.getVideoStartTime().getTime() / 1000.0);
 				timestr += " " + Double.toString(rvi.getTcpdumpInitDate().getTime() / 1000.0);
 				videoTimeStampWriter.write(timestr);
 			} catch (IOException e) {
-				log.info("Error writing video time to file: " + e.getMessage());
+				LOG.info("Error writing video time to file: " + e.getMessage());
 			}
 			if (videoCapture.isAlive()) {
 				videoCapture.interrupt();
 			}
 			videoCapture = null;
-			log.info("disposed videoCapture");
+			LOG.info("disposed videoCapture");
 		}
 
 		if (videoworker != null) {
 			videoworker.cancel(true);
 			videoworker = null;
-			log.info("disposed videoworker");
+			LOG.info("disposed videoworker");
 		}
 		running = false;
 		return status;
@@ -208,7 +204,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	@Override
 	public void addVideoImageSubscriber(IVideoImageSubscriber subscriber) {
-		log.debug("subscribe :" + subscriber.getClass().getName());
+		LOG.debug("subscribe :" + subscriber.getClass().getName());
 		videoCapture.addSubscriber(subscriber);
 	}
 
@@ -218,7 +214,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	 */
 	@Override
 	public void receiveImage(BufferedImage videoimage) {
-		log.debug("receiveImage");
+		LOG.debug("receiveImage");
 		for (IVideoImageSubscriber subscriber : videoImageSubscribers) {
 			subscriber.receiveImage(videoimage);
 		}
@@ -269,8 +265,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		Thread appThread = new Thread(futureTask);
 		appThread.start();
 		
-		if (password != null) {
-			this.sudoPassword = password;
+		if (password != null && !validPW) {
+			setPassword(password);
 		}
 
 		isCapturingVideo = isVideo();
@@ -311,7 +307,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (udid == null || udid.length() < 2) {
 			// Failed to get Serial Number of Device, connect an IOS device to
 			// start.
-			log.error(defaultBundle.getString("Error.serialnumberconnection"));
+			LOG.error(defaultBundle.getString("Error.serialnumberconnection"));
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getIncorrectSerialNumber());
 		}
@@ -326,7 +322,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			if (!localTraceFolder.mkdirs()) {
 				datadir = "";
 				// There was an error creating directory:
-				log.error(defaultBundle.getString("Error.foldernamerequired"));
+				LOG.error(defaultBundle.getString("Error.foldernamerequired"));
 				status.setSuccess(false);
 				status.setError(ErrorCodeRegistry.getMissingFolderName());
 				return status;
@@ -349,11 +345,10 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 						: "Unknown"); // GA Request
 		final String serialNumber = udid;
 
-		if ("".equals(this.sudoPassword) || !isValidSudoPassword(sudoPassword)) {
+		if ("".equals(this.sudoPassword)|| !validPW ) {
 			if (isCommandLine) {
 				status.setError(ErrorCodeRegistry.getSudoPasswordIssue());
-				log.info(defaultBundle.getString("Error.sudopasswordissue"));
-				// System.exit(0);
+				LOG.info(defaultBundle.getString("Error.sudopasswordissue"));
 				return status;
 			} else {
 				status.setData("requestPassword");
@@ -363,7 +358,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		
 		launchCollection(trafficFilePath, serialNumber, status);		
 		// Start Attenuation
-		if(attenuatorModel.isConstantThrottle()) {
+		if(attenuatorModel.isConstantThrottle()&&(attenuatorModel.isThrottleDLEnabled()||attenuatorModel.isThrottleULEnabled())) {
 			startAttenuatorCollection(datadir, attenuatorModel);
 		}
 		
@@ -371,9 +366,9 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			try {
 				status = futureTask.get();
 			} catch (InterruptedException inEx) {
-				log.error("Error getting app launching result", inEx);
+				LOG.error("Error getting app launching result", inEx);
 			} catch (ExecutionException exEx) {
-				log.error("Error getting app launching result", exEx);
+				LOG.error("Error getting app launching result", exEx);
 			}
 		}	
 		
@@ -392,7 +387,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			} catch (IOSAppException appEx) {
 				status.setSuccess(false);
 				status.setError(appEx.getErrorCode());
-				log.error(appEx.getMessage(), appEx);
+				LOG.error(appEx.getMessage(), appEx);
 				stopProccesses();
 			}
 		}
@@ -435,9 +430,9 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (isCapturingVideo && isLiveViewVideo) {
 
 			if (isDeviceConnected) {
-				log.info("device is connected");
+				LOG.info("device is connected");
 			} else {
-				log.info("Device not connected");
+				LOG.info("Device not connected");
 			}
 		}
 		return status;
@@ -448,10 +443,10 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		    int throttleDL = 0;
 			int throttleUL = 0;
 
-			if(attenuatorModel.isThrottleDLEnable()){
+			if(attenuatorModel.isThrottleDLEnabled()){
 				throttleDL = attenuatorModel.getThrottleDL();
 			}
-			if(attenuatorModel.isThrottleULEnable()){
+			if(attenuatorModel.isThrottleULEnabled()){
 				throttleUL = attenuatorModel.getThrottleUL();
 			}
 			// mitm and pcap4j start
@@ -475,7 +470,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			try {
 				videoCapture = new VideoCaptureMacOS(videofile);
 			} catch (IOException e) {
-				log.error(rvi.getErrorMessage());
+				LOG.error(rvi.getErrorMessage());
 				status.setSuccess(false);
 				status.setError(ErrorCodeRegistry.getrviError());
 				return status;
@@ -503,7 +498,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 						status.setSuccess(temp.isSuccess());
 					}
 				} catch (Exception ex) {
-					log.info("Error thrown by videoworker: " + ex.getMessage());
+					LOG.info("Error thrown by videoworker: " + ex.getMessage());
 				}
 			}
 		};
@@ -528,7 +523,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				try {
 					get();
 				} catch (Exception ex) {
-					log.info("Error thrown by packetworker: " + ex.getMessage());
+					LOG.info("Error thrown by packetworker: " + ex.getMessage());
 				}
 			}
 		};
@@ -537,7 +532,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	
 	private StatusResult initRVI(StatusResult status, final String trafficFilePath, final String serialNumber) {
 
-		log.debug("initRVI");
+		LOG.debug("initRVI");
 		if (rvi == null) {
 			rvi = new RemoteVirtualInterface(this.sudoPassword);
 			rvi.disconnectFromRvi(serialNumber);
@@ -545,15 +540,15 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 		try {
 			if (!rvi.setup(serialNumber, trafficFilePath)) {
-				log.error(rvi.getErrorMessage());
+				LOG.error(rvi.getErrorMessage());
 				if (isCommandLine) {
-					log.info(rvi.getErrorMessage());
+					LOG.info(rvi.getErrorMessage());
 				}
 				status.setSuccess(false);
 				status.setError(ErrorCodeRegistry.getrviError());
 			}
 		} catch (Exception e1) {
-			log.error(e1.getMessage());
+			LOG.error(e1.getMessage());
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getrviError());
 		}
@@ -562,29 +557,29 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	private StatusResult checkDeviceInfo(StatusResult status, String udid, String deviceDetails) {
 		if (!deviceinfo.getDeviceInfo(udid, deviceDetails)) {
-			log.error(defaultBundle.getString("Error.deviceinfoissue"));
+			LOG.error(defaultBundle.getString("Error.deviceinfoissue"));
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getDeviceInfoIssue());
 		} else {
 			String version = deviceinfo.getDeviceVersion(); // get device
 															// version number
-			log.info("Device Version :" + version);
+			LOG.info("Device Version :" + version);
 			if (version != null && version.length() > 0) {
 				int versionNumber = 0;
 				int dotIndex = 0;
 				try {
 					dotIndex = version.indexOf(".");
 					versionNumber = Integer.parseInt(version.substring(0, dotIndex));
-					log.info("Parsed Version Number : " + versionNumber);
+					LOG.info("Parsed Version Number : " + versionNumber);
 				} catch (NumberFormatException nfe) {
-					log.error(defaultBundle.getString("Error.deviceversionissue"));
+					LOG.error(defaultBundle.getString("Error.deviceversionissue"));
 					status.setSuccess(false);
 					status.setError(ErrorCodeRegistry.getDeviceVersionIssue());
 				}
 				if (versionNumber < 5) {
 					String msg = MessageFormat.format(defaultBundle.getString("Error.iosunsupportedversion"),
 							ApplicationConfig.getInstance().getAppShortName());
-					log.error(msg);
+					LOG.error(msg);
 					status.setSuccess(false);
 					status.setError(ErrorCodeRegistry.getiOSUnsupportedVersion());
 				}
@@ -602,7 +597,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		try {
 			udid = reader.getSerialNumber();
 		} catch (IOException e) {
-			log.error(defaultBundle.getString("Error.incorrectserialnumber") + e.getMessage());
+			LOG.error(defaultBundle.getString("Error.incorrectserialnumber") + e.getMessage());
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getIncorrectSerialNumber());
 		}
@@ -626,7 +621,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 						aroDevices[pos++] = new IOSDevice(udid);
 					} catch (IOException e) {
 						String errorMessage = "Failed to retrieve iOS device data:" + e.getMessage();
-						log.error(errorMessage);
+						LOG.error(errorMessage);
 						status.setError(ErrorCodeRegistry.getFailedRetrieveDeviceData(errorMessage));
 					}
 				}
@@ -640,7 +635,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			monitor = new ExternalDeviceMonitorIOS();
 			monitor.subscribe(this);
 			monitor.start();
-			log.info(defaultBundle.getString("Status.start"));// "Started device
+			LOG.info(defaultBundle.getString("Status.start"));// "Started device
 																// monitoring");
 		}
 		if (xcode == null) {
@@ -651,7 +646,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		}
 		if (!hasRVI) {
 			// please install the latest version of XCode to continue.
-			log.error(defaultBundle.getString("Error.xcoderequired"));
+			LOG.error(defaultBundle.getString("Error.xcoderequired"));
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getFailedToLoadXCode());
 			return status;
@@ -671,12 +666,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 					}
 				} else {
 					// please install the latest version of XCode to continue.
-					log.error(defaultBundle.getString("Error.xcoderequired"));
+					LOG.error(defaultBundle.getString("Error.xcoderequired"));
 					status.setSuccess(false);
 					status.setError(ErrorCodeRegistry.getFailedToLoadXCode());
 					return status;
 				}
-				log.info("Found rvictl command");
+				LOG.info("Found rvictl command");
 			}
 		}
 		return status;
@@ -705,8 +700,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	/**
 	 * Check if the password provided is correct
 	 * 
-	 * @param password
-	 *            sudoer password
+	 * @param password sudoer password
 	 * @return true if password is correct otherwise false
 	 */
 	private boolean isValidSudoPassword(String password) {
@@ -717,19 +711,20 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		try {
 			data = runner.runCmd(new String[] { "bash", "-c", cmd });
 		} catch (IOException e) {
-			log.debug("IOException:", e);
+			LOG.debug("IOException:", e);
 			// There was an error validating password.
-			log.error(defaultBundle.getString("Error.validatepassword"));
-			return false;
+			LOG.error(defaultBundle.getString("Error.validatepassword"));
+			validPW = false;
+			return validPW;
 		}
 		if (data != null) {
 			data = data.trim();
 		}
 		if (data != null && data.length() > 1 && !data.contains("incorrect password attempt")) {
-			return true;
+			validPW = true;
 		}
 
-		return false;
+		return validPW;
 	}
 
 	/**
@@ -744,7 +739,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			timeFile = new File(datadir + Util.FILE_SEPARATOR + sFileName);
 			timeStream = new FileOutputStream(timeFile);
 		} catch (IOException e) {
-			log.error("file creation error: " + e.getMessage());
+			LOG.error("file creation error: " + e.getMessage());
 		}
 
 		String str = String.format("%s\n%.3f\n%d\n%.3f\n", "Synchronized timestamps" // line
@@ -762,7 +757,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			timeStream.flush();
 			timeStream.close();
 		} catch (IOException e) {
-			log.error("closeTimeFile() IOException:" + e.getMessage());
+			LOG.error("closeTimeFile() IOException:" + e.getMessage());
 		}
 
 	}
@@ -773,8 +768,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
 				GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
 				GoogleAnalyticsUtil.getAnalyticsEvents().getEndTrace()); // GA Request
-		if((attenuatorModel.isThrottleDLEnable()||
-				attenuatorModel.isThrottleULEnable())
+		if((attenuatorModel.isThrottleDLEnabled()||
+				attenuatorModel.isThrottleULEnabled())
 				&& mitmAttenuator!=null) {
 			mitmAttenuator.stopCollect();
 		}
@@ -786,7 +781,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				// if video data is zero, java media player will throw exception
 				if (videofile != null && videofile.exists() && videofile.length() < 2) {
 					videofile.delete();
-					log.info("deleted empty video file");
+					LOG.info("deleted empty video file");
 				}
 				// now check for pcap existence otherwise there will be popup
 				// error.
@@ -825,7 +820,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				}
 			}
 		} catch (IOException | InterruptedException e) {
-			log.error("Error Copying files from ios device", e);
+			LOG.error("Error Copying files from ios device", e);
 			this.deviceDataPulled = false;
 		}
 		unmountDevice();
@@ -851,7 +846,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	 */
 	@Override
 	public boolean isTrafficCaptureRunning(int seconds) {
-		log.info("isiOSCollectorRunning()");
+		LOG.info("isiOSCollectorRunning()");
 		boolean tcpdumpActive = false;
 		int count = 30;
 		int timer = seconds / count;
@@ -859,7 +854,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			return false;
 		}
 		do {
-			log.debug("isTrafficCaptureRunning :" + packetworker.isCancelled() + " - " + packetworker.isDone());
+			LOG.debug("isTrafficCaptureRunning :" + packetworker.isCancelled() + " - " + packetworker.isDone());
 			tcpdumpActive = (packetworker.isCancelled() || packetworker.isDone());// checkTcpDumpRunning(device);
 			if (!tcpdumpActive) {
 				try {
@@ -889,15 +884,13 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	}
 
 	/**
-	 * Stores the password
+	 * Stores the wrapped password
 	 */
 	@Override
 	public boolean setPassword(String password) {
-		if (isValidSudoPassword(password)) {
-			sudoPassword = password;
-			return true;
-		}
-		return false;
+		sudoPassword = Util.wrapPasswordForEcho(password);
+		validPW = isValidSudoPassword(sudoPassword);
+		return validPW;
 	}
 
 	/**

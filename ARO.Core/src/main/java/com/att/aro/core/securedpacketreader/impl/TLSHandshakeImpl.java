@@ -17,15 +17,15 @@ package com.att.aro.core.securedpacketreader.impl;
 
 import java.nio.ByteBuffer;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.securedpacketreader.ITLSHandshake;
 
 public class TLSHandshakeImpl implements ITLSHandshake {
 
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(TLSHandshakeImpl.class.getName());
+
 	private static final int MAX_ENC_PREMASTER_LEN = 2048;
 	
 	public static final int TLS_HANDSHAKE_CLIENT_HELLO = 1;
@@ -197,7 +197,7 @@ public class TLSHandshakeImpl implements ITLSHandshake {
 			case TLS_HANDSHAKE_CERTIFICATE_REQUEST:
 			case TLS_HANDSHAKE_CERTIFICATE_VERIFY:
 				//Currently Not Supported
-				logger.warn("30017 - TLS_HANDSHAKE_SERVER_KEY_EXCHANGE/TLS_HANDSHAKE_CERTIFICATE_REQUEST/TLS_HANDSHAKE_CERTIFICATE_VERIFY not support now");
+				LOGGER.warn("30017 - TLS_HANDSHAKE_SERVER_KEY_EXCHANGE/TLS_HANDSHAKE_CERTIFICATE_REQUEST/TLS_HANDSHAKE_CERTIFICATE_VERIFY not support now");
 				break;
 
 			case TLS_HANDSHAKE_SERVER_HELLO_DONE:
@@ -238,7 +238,7 @@ public class TLSHandshakeImpl implements ITLSHandshake {
 					result = this.tlsHandShakeNextProtocol(len, pData);
 					break;
 			default:
-				logger.warn("Invalid TLS handshake type encountered in TCP session.");
+				LOGGER.warn("Invalid TLS handshake type encountered in TCP session.");
 				return -1;
 		}
 
@@ -273,7 +273,7 @@ public class TLSHandshakeImpl implements ITLSHandshake {
 		} else if (protocol.compareToIgnoreCase("http/1.1") == 0) {
 			nextProtocol = APP_PROTOCOL_HTTP_1_1;
 		} else {
-			logger.warn("Invalid protocol encountered in a TCP session.");
+			LOGGER.warn("Invalid protocol encountered in a TCP session.");
 			return -1;
 		}
 		return 1;

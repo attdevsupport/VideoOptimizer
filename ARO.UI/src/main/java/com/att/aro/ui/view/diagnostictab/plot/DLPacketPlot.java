@@ -47,7 +47,7 @@ public class DLPacketPlot implements IPlot{
 		setDownloadPacket(isDownload);
 		populate(plot, analysis);
 	}
-//	private static final Logger logger = Logger.getLogger(DLPacketPlot.class.getName()); 
+//	private static final Logger logger = LogManager.getLogger(DLPacketPlot.class.getName()); 
 
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {

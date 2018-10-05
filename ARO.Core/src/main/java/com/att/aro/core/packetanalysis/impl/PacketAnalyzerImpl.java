@@ -28,13 +28,14 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.configuration.IProfileFactory;
 import com.att.aro.core.configuration.pojo.Profile;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IBurstCollectionAnalysis;
 import com.att.aro.core.packetanalysis.IEnergyModelFactory;
 import com.att.aro.core.packetanalysis.IPacketAnalyzer;
@@ -62,6 +63,7 @@ import com.att.aro.core.packetreader.pojo.IPPacket;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.settings.SettingsUtil;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 
 /**
  * analyze trace file or trace directory and return data that can be used by practice engines.
@@ -85,12 +87,17 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 
 	private IVideoUsageAnalysis videoUsageAnalyzer;
 	
- 	@InjectLogger
-	private static ILogger logger;
+	@Value("${ga.request.timing.pktAnalysisTimings.title}")
+	private String pktAnalysisTitle;
+	@Value("${ga.request.timing.analysisCategory.title}")
+	private String analysisCategory;
+
+	private static final Logger LOGGER = LogManager.getLogger(PacketAnalyzerImpl.class.getName());
 
 	public PacketAnalyzerImpl(){
 	}
 	
+
 	@Autowired
 	public void setTraceReader(ITraceDataReader tracereader){
 		this.tracereader = tracereader;
@@ -135,6 +142,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 	@Override
 	public PacketAnalyzerResult analyzeTraceDirectory(String traceDirectory, Profile profile,
 			AnalysisFilter filter) throws FileNotFoundException{
+		long bpStartTime = System.currentTimeMillis();
 		TraceDirectoryResult result = tracereader.readTraceDirectory(traceDirectory);
 		if(filter !=null){
 			TimeRange tempTimeRange = filter.getTimeRange();
@@ -158,7 +166,8 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				result.setAttenautionEvent(tempResult.getAttenautionEvent());
 			}
 		}
- 		
+ 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(pktAnalysisTitle,
+				System.currentTimeMillis() - bpStartTime, analysisCategory);
 		return finalResult(result,profile,filter);
 	}
 
@@ -221,7 +230,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		
 		
 		if (result!=null){
-			logger.debug("Starting pre processing in PAI");
+			LOGGER.debug("Starting pre processing in PAI");
 			AbstractRrcStateMachine statemachine = statemachinefactory.create(filteredPackets, aProfile,
 					stat.getPacketDuration(), result.getTraceDuration(), stat.getTotalByte(), timeRange);
 			
@@ -245,7 +254,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 					data.setVideoUsage(videoUsageAnalyzer.clearData());
 				}
 			} catch (Exception ex) {
-				logger.error("Error in Video usage analysis :" + ex.getLocalizedMessage(), ex);
+				LOGGER.error("Error in Video usage analysis :" + ex.getLocalizedMessage(), ex);
 			}
 			
 			data.setBurstCollectionAnalysisData(burstcollectiondata);

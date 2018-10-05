@@ -31,12 +31,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.ITraceDataReader;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
@@ -104,8 +104,7 @@ import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.util.Util;
 
 public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(TraceDataReaderImpl.class.getName());
 
 	private IFileManager filereader;
 
@@ -189,7 +188,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 	@Autowired
 	private ISpeedThrottleEventReader speedThrottleReader;
- 
+	
 	private Set<InetAddress> localIPAddresses = null;
 	private List<PacketInfo> allPackets = null;
 	private Map<InetAddress, Integer> ipCountMap = null;
@@ -233,7 +232,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		try {
 			result = readTimeAndPcap(result);
 		} catch (IOException e1) {
-			logger.error("Failed to read file", e1);
+			LOGGER.error("Failed to read file", e1);
 			return null;// no need to continue, everything else is useless without packet data
 		}
 		if (result == null) {
@@ -253,7 +252,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		try {
 			readAlarmAnalysisInfo(result);
 		} catch (IOException e) {
-			logger.info("*** Warning: no alarm dumpsys information found ***");
+			LOGGER.info("*** Warning: no alarm dumpsys information found ***");
 		}
 
 		readWakelockInfo(result);
@@ -283,9 +282,9 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if (filereader.fileExist(filepath) && !Util.isLinuxOS()) {
 			crypto.readSSLKeys(filepath);
 			result.setCrypto(crypto);
-			logger.info("crypto read:" + crypto.getSSLKeyList().size() + " records");
+			LOGGER.info("crypto read:" + crypto.getSSLKeyList().size() + " records");
 		} else {
-			logger.info("No SSL keys");
+			LOGGER.info("No SSL keys");
 		}
 	}
 
@@ -360,7 +359,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 			try {
 				result.setTimezoneOffset(Integer.valueOf(line));
 			} catch (NumberFormatException e) {
-				logger.warn("Unable to parse Collector Timezone Offset - value: " + line);
+				LOGGER.warn("Unable to parse Collector Timezone Offset - value: " + line);
 			}
 		}
 
@@ -395,7 +394,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 				}
 				appIds.add(appId);
 			} else {
-				logger.warn("appid file contains a line not well formated");
+				LOGGER.warn("appid file contains a line not well formated");
 			}
 
 		}
@@ -512,14 +511,14 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 					if (appIdIdx < appInfos.size()) {
 						appName = appInfos.get(appIdIdx);
 					} else {
-						logger.debug("Invalid app ID " + appIdIdx + " for packet " + packetIdx);
+						LOGGER.debug("Invalid app ID " + appIdIdx + " for packet " + packetIdx);
 					}
 				} else if (appIdIdx != TraceDataConst.VALID_UNKNOWN_APP_ID) {
-					logger.debug("Invalid app ID " + appIdIdx + " for packet " + packetIdx);
+					LOGGER.debug("Invalid app ID " + appIdIdx + " for packet " + packetIdx);
 				}
 
 			} else {
-				logger.debug("No app ID for packet " + packetIdx);
+				LOGGER.debug("No app ID for packet " + packetIdx);
 			}
 		}
 
@@ -638,7 +637,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		} else {
 			dirParent = result.getTraceDirectory();
 		}
-		logger.info("dirParent: " + dirParent);
+		LOGGER.info("dirParent: " + dirParent);
 
 		VideoTime vtime = videotimereader.readData(dirParent, result.getTraceDateTime());
 		result.setVideoStartTime(vtime.getVideoStartTime());
@@ -653,8 +652,8 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	private AbstractTraceResult readPcapTraceFile(String filepath, Double startTime, Double duration,
 			AbstractTraceResult dresult) throws IOException {
 		if (!filereader.fileExist(filepath)) {
-			if (logger != null) {
-				logger.error("No packet file found at: " + filepath);
+			if (LOGGER != null) {
+				LOGGER.error("No packet file found at: " + filepath);
 			}
 			return null;
 		}
@@ -740,7 +739,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	private AbstractTraceResult readSecurePcapTraceFile(String filepath, AbstractTraceResult result)
 			throws IOException {
 		if (!filereader.fileExist(filepath)) {
-			logger.error("Secure packet file unavailable at: " + filepath);
+			LOGGER.error("Secure packet file unavailable at: " + filepath);
 			return result;
 		}
 		this.packetreader.readPacket(filepath, this);
@@ -772,7 +771,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 						try {
 							videoStartTime = Double.parseDouble(strValues[0]);
 						} catch (NumberFormatException e) {
-							logger.error("Cannot determine actual video start time", e);
+							LOGGER.error("Cannot determine actual video start time", e);
 						}
 						if (strValues.length > 1) {
 							/*
@@ -879,7 +878,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if (packet instanceof IPPacket) {
 			IPPacket ipack = (IPPacket) packet;
 			if ((ipack.getIPVersion() == 4) && (ipack.getFragmentOffset() != 0)) {
-				logger.warn("226 - no IP fragmentation");
+				LOGGER.warn("226 - no IP fragmentation");
 			}
 			addIpCount(ipack.getSourceIPAddress());
 			addIpCount(ipack.getDestinationIPAddress());

@@ -19,7 +19,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 /**
- * Google Analytics Entry represent individual entries into google analytics 
+ * Google Analytics Entry represent individual entries into google analytics
  * for events, visit counts, exceptions, and timing.
  *
  */
@@ -30,8 +30,13 @@ public class GAEntry {
 	private String label;
 	private String value = "0";
 	
+	private String timingCategory;
+	private String timingValue;
+	private String timingVariable;
+	
 	private HitType hitType;
 	private String exceptionDesc;
+	private String errorName;
 	private String dataSource;
 	private String session;
 	private boolean isFatal;
@@ -130,12 +135,27 @@ public class GAEntry {
 		this.hitType = hitType;
 	}
 
+	public String getErrorName() {
+		return errorName;
+	}
+
+	public void setErrorName(String errorName) {
+		this.errorName = errorName;
+	}
+
 	public void resetParams() {
 		this.action = null;
 		this.category = null;
 		this.label = null;
 		this.value = "0";
 		this.session = null;
+		this.dataSource = null;
+		this.exceptionDesc = null;
+		this.errorName = null;
+		this.hitType = null;
+		this.timingCategory = null;
+		this.timingValue = null;
+		this.timingVariable = null;
 	}
 
 	public void resetSession() {
@@ -148,6 +168,30 @@ public class GAEntry {
 		} catch (UnsupportedEncodingException e) {
 			return name;
 		}
+	}
+
+	public String getTimingCategory() {
+		return timingCategory;
+	}
+
+	public void setTimingCategory(String timingCategory) {
+		this.timingCategory = timingCategory;
+	}
+
+	public String getTimingValue() {
+		return timingValue;
+	}
+
+	public void setTimingValue(String timingValue) {
+		this.timingValue = timingValue;
+	}
+
+	public String getTimingVariable() {
+		return timingVariable;
+	}
+
+	public void setTimingVariable(String timingVariable) {
+		this.timingVariable = timingVariable;
 	}
 
 }

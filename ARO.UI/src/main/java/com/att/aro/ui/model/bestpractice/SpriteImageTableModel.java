@@ -15,12 +15,15 @@
  */
 package com.att.aro.ui.model.bestpractice;
 
+import static java.text.MessageFormat.format;
+
 import java.text.DecimalFormat;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.bestpractice.pojo.SpriteImageEntry;
 import com.att.aro.ui.model.DataTableModel;
@@ -35,7 +38,7 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class SpriteImageTableModel extends DataTableModel<SpriteImageEntry> {
 	private static final long serialVersionUID = 1L;
 
-	private static final Logger LOGGER = Logger.getLogger(SpriteImageTableModel.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(SpriteImageTableModel.class.getName());
 
 	private static final int COL1_MIN = 70;
 	private static final int COL1_MAX = 100;
@@ -121,7 +124,7 @@ public class SpriteImageTableModel extends DataTableModel<SpriteImageEntry> {
 	 */
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		SpriteImageTableModel.LOGGER.log(Level.FINE, "getColumnClass, idx: {0}", columnIndex);
+		SpriteImageTableModel.LOGGER.debug(format("getColumnClass, idx: {0}", columnIndex));
 		switch (columnIndex) {
 		case COL_1:
 			return Double.class;
@@ -149,7 +152,7 @@ public class SpriteImageTableModel extends DataTableModel<SpriteImageEntry> {
 	 */
 	@Override
 	protected Object getColumnValue(SpriteImageEntry item, int columnIndex) {
-		SpriteImageTableModel.LOGGER.log(Level.FINEST, "getColumnValue, idx:{0}", columnIndex);
+		SpriteImageTableModel.LOGGER.debug(format("getColumnValue, idx:{0}", columnIndex));
 		switch (columnIndex) {
 		case COL_1:
 			return item.getTimeStamp();

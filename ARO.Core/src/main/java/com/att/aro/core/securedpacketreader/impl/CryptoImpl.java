@@ -19,8 +19,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.securedpacketreader.CryptoAdapter;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.securedpacketreader.IReceiveSSLKey;
@@ -34,8 +35,7 @@ import com.att.aro.core.util.Util;
  */
 public class CryptoImpl implements ICrypto, IReceiveSSLKey {
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(CryptoImpl.class.getName());
 
 	boolean vpnKey;
 	List<SSLKey> sslkeys;
@@ -138,7 +138,7 @@ public class CryptoImpl implements ICrypto, IReceiveSSLKey {
 
 	@Override
 	public void handleSSLKey(double tsvalue, int preMasterLen, byte[] preMaster, byte[] master) {
-	    logger.info( "sslkey ts:" + String.format("%.3f", tsvalue) 
+	    LOGGER.info( "sslkey ts:" + String.format("%.3f", tsvalue) 
 						 + " PREMASTER:" + Util.byteArrayToHex(preMaster)
 						 + " MASTER:" + Util.byteArrayToHex(master)
 						 );

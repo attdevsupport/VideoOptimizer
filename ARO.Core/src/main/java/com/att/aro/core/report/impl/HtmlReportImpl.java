@@ -24,13 +24,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.EnergyModel;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -45,9 +45,8 @@ public class HtmlReportImpl implements IReport {
 	@Autowired
 	private IFileManager filereader;	
 
-	@InjectLogger
-	private static ILogger logger;
-  
+	private static final Logger LOGGER = LogManager.getLogger(HtmlReportImpl.class.getName());
+	
 	@Override
 	public boolean reportGenerator(String resultFilePath,
 			AROTraceData results) {
@@ -83,7 +82,7 @@ public class HtmlReportImpl implements IReport {
 			writer.close();
 			return true;
 		} catch (IOException e) {
-			logger.info("IOException: "+e);
+			LOGGER.info("IOException: "+e);
 		}
 
 		return false;

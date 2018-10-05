@@ -33,10 +33,10 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.util.Util;
 
 /**
@@ -47,9 +47,8 @@ import com.att.aro.core.util.Util;
  */
 public class FileManagerImpl implements IFileManager {
 
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(FileManagerImpl.class.getName());
+
 	@Override
 	public String[] readAllLine(String filepath) throws IOException {
 		BufferedReader reader = new BufferedReader(new FileReader(filepath));
@@ -66,7 +65,7 @@ public class FileManagerImpl implements IFileManager {
 				list.add(line);
 			}
 		} catch (IOException e) {
-			logger.error("error reading data from BufferedReader", e);
+			LOGGER.error("error reading data from BufferedReader", e);
 		}
 		String[] arrlist = list.toArray(new String[list.size()]);
 
@@ -137,7 +136,7 @@ public class FileManagerImpl implements IFileManager {
 			}
 			boolean tempResult = deleteFile(filepath);
 			delResult = delResult && tempResult;
-			logger.debug("delete :" + file + (tempResult ? " deleted" : " failed"));
+			LOGGER.debug("delete :" + file + (tempResult ? " deleted" : " failed"));
 		}
 		return delResult;
 	}
@@ -147,7 +146,7 @@ public class FileManagerImpl implements IFileManager {
 	public boolean directoryDeleteInnerFiles(String directoryPath) {
 		if ((Util.isWindowsOS() && ("C:\\".equals(directoryPath) || "C:".equals(directoryPath)))
 				|| "/".equals(directoryPath)) {
-			logger.error("Illegal attempt to delete files in " + directoryPath);
+			LOGGER.error("Illegal attempt to delete files in " + directoryPath);
 			return false;
 		}
 		try {

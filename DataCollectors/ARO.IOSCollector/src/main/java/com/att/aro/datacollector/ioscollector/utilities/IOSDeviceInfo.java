@@ -24,14 +24,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 
 public class IOSDeviceInfo {
-	private ILogger log = new LoggerImpl("IOSCollector");
+	private static final Logger LOG = LogManager.getLogger(IOSDeviceInfo.class);
 	String exepath = "";
 	ExternalProcessRunner runner;
 	Map<String, String> list;
@@ -40,16 +39,11 @@ public class IOSDeviceInfo {
 	String currentFilepath = "";
 	ResourceBundle buildBundle = ResourceBundle.getBundle("build");
 
-	@Autowired
-	public void setLogger(ILogger logger) {
-		this.log = logger;
-	}
-
 	public IOSDeviceInfo() {
 		list = new HashMap<String, String>();
 		exepath = "/usr/local/bin/ideviceinfo";
 		
-		log.info("set ideviceinfo path: " + exepath);
+		LOG.info("set ideviceinfo path: " + exepath);
 
 		runner = new ExternalProcessRunner();
 		
@@ -82,9 +76,9 @@ public class IOSDeviceInfo {
 	 */
 	public boolean getDeviceInfo(String deviceId, String filepath) {
 		File exefile = new File(exepath);
-		log.debug("exepath :"+exepath);
+		LOG.debug("exepath :"+exepath);
 		if (!exefile.exists()) {
-			log.error("" + exepath + " is not found.");
+			LOG.error("" + exepath + " is not found.");
 			return false;
 		}
 		String data = null;
@@ -95,7 +89,7 @@ public class IOSDeviceInfo {
 			writeData(filepath);
 			return true;
 		} catch (IOException e) {
-			log.error("getDeviceInfo IOException:", e);
+			LOG.error("getDeviceInfo IOException:", e);
 		}
 		return false;
 	}

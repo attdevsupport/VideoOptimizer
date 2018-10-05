@@ -27,6 +27,8 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.XYPlot;
@@ -38,7 +40,6 @@ import org.jfree.data.xy.XYIntervalSeriesCollection;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.GpsInfo;
@@ -46,12 +47,10 @@ import com.att.aro.core.peripheral.pojo.GpsInfo.GpsState;
 import com.att.aro.core.peripheral.pojo.LocationEvent;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.ImageHelper;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class GpsPlot implements IPlot{
-	
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);	
+	private static final Logger LOGGER = LogManager.getLogger(GpsPlot.class);	
 	XYIntervalSeriesCollection gpsData = new XYIntervalSeriesCollection();
 	XYSeriesCollection locationData = new XYSeriesCollection();
 	ArrayList<LocationEvent> listLocationEvent;
@@ -61,7 +60,7 @@ public class GpsPlot implements IPlot{
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
 		if (analysis == null) {
-			logger.info("analysis data is null");
+			LOGGER.info("analysis data is null");
 			return;
 		} 
 			
@@ -71,7 +70,7 @@ public class GpsPlot implements IPlot{
 		TraceResultType resultType = analysis.getAnalyzerResult()
 				.getTraceresult().getTraceResultType();
 		if (resultType.equals(TraceResultType.TRACE_FILE)) {
-			logger.info("didn't get analysis trace data!");
+			LOGGER.info("didn't get analysis trace data!");
 
 		} else {
 		

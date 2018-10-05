@@ -87,16 +87,11 @@ public class PCapFileHeader
 		uint32snaplen = ByteUtils.getByteNetOrderToUnit32(tmp, 16);
 		uint32LinkType = ByteUtils.getByteNetOrderToUnit32(tmp, 20);
 
-		if (uint32MagicNum == MAGIC_NUMBER_DONT_FLIP)
-		{
+		if (uint32MagicNum == MAGIC_NUMBER_DONT_FLIP) {
 			endianFlipped = false;
-        }
-		else if (uint32MagicNum == MAGIC_NUMBER_FLIP)
-		{
+        } else if (uint32MagicNum == MAGIC_NUMBER_FLIP) {
 			endianFlipped = true;
-		}
-		else
-		{
+		} else {
 			throw new IOException("Not a libcap file format");
 		}
 

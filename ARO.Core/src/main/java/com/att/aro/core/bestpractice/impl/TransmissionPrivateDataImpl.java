@@ -27,14 +27,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.PrivateDataType;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.peripheral.pojo.PrivateDataInfo;
@@ -43,17 +41,14 @@ import com.att.aro.core.preferences.UserPreferencesFactory;
 import com.att.aro.core.searching.ISearchingHandler;
 import com.att.aro.core.searching.impl.KeywordSearchingHandler;
 import com.att.aro.core.searching.impl.PatternSearchingHandler;
-import com.att.aro.core.searching.pojo.SearchingPatternBuilder;
 import com.att.aro.core.searching.pojo.SearchingContent;
 import com.att.aro.core.searching.pojo.SearchingPattern;
+import com.att.aro.core.searching.pojo.SearchingPatternBuilder;
 import com.att.aro.core.searching.pojo.SearchingResult;
 import com.att.aro.core.util.Util;
 
 public class TransmissionPrivateDataImpl implements IBestPractice {
-	
-	@InjectLogger
-	private static ILogger logger;
-	
+
 	@Value("${security.transmissionPrivateData.title}")
 	private String overviewTitle;
 	

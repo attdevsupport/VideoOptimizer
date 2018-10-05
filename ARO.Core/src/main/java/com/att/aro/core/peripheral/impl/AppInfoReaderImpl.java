@@ -17,8 +17,9 @@ package com.att.aro.core.peripheral.impl;
 
 import java.io.IOException;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IAppInfoReader;
 import com.att.aro.core.peripheral.pojo.AppInfo;
@@ -30,17 +31,16 @@ import com.att.aro.core.util.Util;
  *
  */
 public class AppInfoReaderImpl extends PeripheralBase implements IAppInfoReader {
-	
-	@InjectLogger
-	private static ILogger logger;
-	
+
+	private static final Logger LOGGER = LogManager.getLogger(AppInfoReaderImpl.class.getName());
+
 	@Override
 	public AppInfo readData(String directory) {
 		AppInfo app = new AppInfo();
 		String filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.APPNAME_FILE;
 		
 		if (!filereader.fileExist(filepath)) {
-			logger.warn("Application info file does not exists.");
+			LOGGER.warn("Application info file does not exists.");
 			return app;
 		}
 		
@@ -48,7 +48,7 @@ public class AppInfoReaderImpl extends PeripheralBase implements IAppInfoReader 
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e) {
-			logger.error("failed to open appname file: "+filepath);
+			LOGGER.error("failed to open appname file: "+filepath);
 		}
 		if(lines != null && lines.length > 0){
 			for (String line : lines) {

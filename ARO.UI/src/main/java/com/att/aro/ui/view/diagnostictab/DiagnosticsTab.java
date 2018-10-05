@@ -47,7 +47,9 @@ import javax.swing.plaf.basic.BasicArrowButton;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.bestpractice.pojo.ForwardSecrecyEntry;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
 import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionEntry;
@@ -59,7 +61,6 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
 import com.att.aro.mvc.IAROView;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.GUIPreferences;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.TabPanelJPanel;
@@ -73,7 +74,7 @@ import com.att.aro.view.images.Images;
 
 public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListener {
 	private static final long serialVersionUID = 1L;
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private static final Logger LOGGER = LogManager.getLogger(DiagnosticsTab.class);	
 	private static final int MAX_ZOOM = 4;
 	private static final Double MATCH_SECONDS_RANGE = 0.5;
 	// network profile panel
@@ -175,9 +176,9 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		// Add TCP flows split pane
 		chartAndTablePanel.add(getOrientationPanel(), BorderLayout.CENTER);
 		chartAndTablePanel.add(getDiagnosticsPanel(), BorderLayout.CENTER);
-		add(chartAndTablePanel, BorderLayout.CENTER);
+		add(chartAndTablePanel, BorderLayout.CENTER);	
 	}
-
+	
 	public IARODiagnosticsOverviewRoute getDiagnosticRoute() {
 		return diagnosticRoute;
 	}
@@ -633,7 +634,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	public void setTimeLineToTable(double timeStamp) {
 		// logger.info("enter setTimeLineTable()");
 		if (getAroTraceData() == null) {
-			logger.info("no analyze traces data");
+			LOGGER.info("no analyze traces data");
 		} else {
 			boolean bTCPTimeStampFound = false;
 			boolean bExactMatch = false;
@@ -702,7 +703,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		for (HttpRequestResponseInfoWithSession reqResSession : requestResponseWithSession) {
 			if (reqResSession.getInfo().equals(reqResInfo)) {
 				Session sessionTemp = reqResSession.getSession();
-				logger.info("local port = " + sessionTemp.getLocalPort());
+				LOGGER.info("local port = " + sessionTemp.getLocalPort());
 				setHighlightedTCP(reqResSession.getSession());
 				jHttpReqResPanel.setHighlightedRequestResponse(reqResInfo);
 				break;
@@ -715,7 +716,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		for (HttpRequestResponseInfoWithSession reqResSession : requestResponseWithSession) {
 			if (reqResInfo.getHostName() != null) {
 				if (reqResSession.getInfo().equals(reqResInfo)) {
-					logger.info("local port = " + reqResSession.getSession().getLocalPort());
+					LOGGER.info("local port = " + reqResSession.getSession().getLocalPort());
 				jHttpReqResPanel.setHighlightedRequestResponse(reqResInfo);
 					break;
 				}
@@ -747,10 +748,10 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 				// setHighlightedTCP(foundSession, timestamp);
 				setHighlightedTCP(foundSession);
 			} else {
-				logger.warn("No session found to route to Diagnostic Tab for timestamp " + timestamp);
+				LOGGER.warn("No session found to route to Diagnostic Tab for timestamp " + timestamp);
 			}
 		} else {
-			logger.warn("No timestamp for Diagnostic Tab routing");
+			LOGGER.warn("No timestamp for Diagnostic Tab routing");
 		}
 	}
 
@@ -781,7 +782,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			destIP = entry.getDestIP();
 		}
 		if (timestamp == -1 || destIP == null) {
-			logger.warn("invalid route information");
+			LOGGER.warn("invalid route information");
 			return;
 		}
 		for (Session session : sessionsSortedByTimestamp) {
@@ -793,7 +794,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 				}
 			}
 		}
-		logger.warn("No session found to route to Diagnostic Tab for timestamp " + timestamp);
+		LOGGER.warn("No session found to route to Diagnostic Tab for timestamp " + timestamp);
 	}
 
 	@Override

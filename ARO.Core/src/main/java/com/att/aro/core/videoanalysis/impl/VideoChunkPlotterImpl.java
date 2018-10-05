@@ -208,8 +208,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 					duplicateChunks.add(ve);
 					duplicateChunks.remove(removedChunk);
 					return true;
-				}
-				else if(ve.getEndTS() > removedChunk.getEndTS() && removedChunk.getSegment() == ve.getSegment()){
+				} else if(ve.getEndTS() > removedChunk.getEndTS() && removedChunk.getSegment() == ve.getSegment()){
 					//swap the closest		
 					minIndex = duplicateChunks.indexOf(removedChunk);
 					swapedTheMinimum=true;

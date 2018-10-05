@@ -32,10 +32,12 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
-import com.att.aro.core.impl.LoggerImpl;
 import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.utilities.AppSigningHelper;
@@ -46,8 +48,7 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
 
 public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscriber {
 	
-	LoggerImpl log = new LoggerImpl(this.getClass().getName());
-	
+	private static final Logger LOG = LogManager.getLogger(LiveScreenViewDialog.class.getName());
 	private static final long serialVersionUID = 1L;
 
 	private final JPanel contentPanel = new JPanel();
@@ -94,7 +95,7 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 
 		getContentPane().add(dashBoardPane(), BorderLayout.SOUTH);
 
-		log.info("subscribed");
+		LOG.info("subscribed");
 		setVisible(true);
 		collector.addVideoImageSubscriber(this);
 
@@ -176,7 +177,7 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 
 	@Override
 	public void receiveImage(BufferedImage image) {
-		log.debug("receiveImage");
+		LOG.debug("receiveImage");
 		if (isVisible()) {
 			if (startTime == 0) {
 				startTimer();
@@ -203,7 +204,7 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 
 		theTime = Util.formatHHMMSS(elapsed);
 		
-		log.info("elapsed = " + elapsed + "  time:" + theTime);
+		LOG.info("elapsed = " + elapsed + "  time:" + theTime);
 		timeBox.setText(theTime);
 
 	}

@@ -17,20 +17,19 @@ package com.att.aro.core.videoanalysis.impl;
 
 import java.io.IOException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class VideoUsagePrefsManagerImpl implements IVideoUsagePrefsManager {
-	
-	@InjectLogger
-	private static ILogger log;
-	
+
+	private static final Logger LOG = LogManager.getLogger(VideoUsagePrefsManagerImpl.class.getName());
+
 	@Autowired
 	VideoUsagePrefs videoUsagePrefs;
 
@@ -47,7 +46,7 @@ public class VideoUsagePrefsManagerImpl implements IVideoUsagePrefsManager {
 				videoUsagePrefs = mapper.readValue(videoPref, VideoUsagePrefs.class);
 
 			} catch (IOException e) {
-				log.error("VideoPreference Mapper Exception" + e.getMessage());
+				LOG.error("VideoPreference Mapper Exception" + e.getMessage());
 			}
 		}
 		return videoUsagePrefs;

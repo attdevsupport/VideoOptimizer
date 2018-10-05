@@ -473,9 +473,7 @@ public class RrcStateRangeFactoryImpl implements IRrcStateRangeFactory {
 						}
 					}
 //					break;
-				}
-
-				else if(promoState ==  RRCState.STATE_DCH) {
+				} else if(promoState ==  RRCState.STATE_DCH) {
 					double dchTail = dchDemotionQueue.getDCHTail(currTimeStamp); // ***
 																					// Dynamic
 																					// DCH
@@ -563,9 +561,7 @@ public class RrcStateRangeFactoryImpl implements IRrcStateRangeFactory {
 						}
 					}
 //					break;
-				}
-
-				else if(promoState == RRCState.STATE_FACH) {
+				} else if(promoState == RRCState.STATE_FACH) {
 					if (deltaTime <= fachIdleTimer) {
 						if (dir == PacketDirection.UPLINK) {
 							prevTimeStamp = addStateRangeEx(result, prevTimeStamp,
@@ -683,9 +679,7 @@ public class RrcStateRangeFactoryImpl implements IRrcStateRangeFactory {
 								state = RRCState.STATE_DCH;
 								dchDemotionQueue.init(currTimeStamp, currLen, dir);
 
-							}
-
-							else {
+							} else {
 								prevTimeStamp = addStateRangeEx(result, prevTimeStamp,
 										Double.MAX_VALUE, RRCState.STATE_FACH, currTimeStamp);
 								state = RRCState.STATE_FACH;

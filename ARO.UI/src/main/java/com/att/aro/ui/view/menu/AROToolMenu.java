@@ -29,10 +29,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.android.ddmlib.IDevice;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -58,7 +61,7 @@ import com.att.aro.ui.view.menu.tools.TimeRangeAnalysisDialog;
  */
 public class AROToolMenu implements ActionListener {
 	private static final String FILE_NAME = "Logcat_%s_%d.log";
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private static final Logger LOG = LogManager.getLogger(AROToolMenu.class);	
 	private IAdbService adbservice = ContextAware.getAROConfigContext().getBean(IAdbService.class);
 	private AWSDialog uploadDialog;
 
@@ -67,20 +70,22 @@ public class AROToolMenu implements ActionListener {
 	SharedAttributesProcesses parent;
 
 	private enum MenuItem {
-		menu_tools, 
-		menu_tools_wireshark, 
-		menu_tools_timerangeanalysis, 
-		menu_tools_dataDump, 
-		menu_tools_htmlExport, 
-		menu_tools_jsonExport, 
-		menu_tools_privateData, 
-		menu_tools_videoAnalysis, 
-		menu_tools_getErrorMsg, 
-		menu_tools_clearErrorMsg, 
+		menu_tools,
+		menu_tools_wireshark,
+		menu_tools_timerangeanalysis,
+		menu_tools_dataDump,
+		menu_tools_htmlExport,
+		menu_tools_jsonExport,
+		menu_tools_privateData,
+		menu_tools_videoAnalysis,
+		menu_tools_getErrorMsg,
+		menu_tools_clearErrorMsg,
 		menu_tools_videoParserWizard,
 		menu_tools_uploadTraceDialog,
 		menu_tools_downloadTraceDialog,
-
+		menu_tools_editMetadata,
+		menu_tools_ms_uploadTraceDialog,
+		menu_tools_ms_downloadTraceDialog
 	}
 
 	public AROToolMenu(SharedAttributesProcesses parent){
@@ -113,7 +118,14 @@ public class AROToolMenu implements ActionListener {
 				toolMenu.addSeparator();
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_uploadTraceDialog));
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_downloadTraceDialog));
- 			}
+				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_editMetadata));
+				if (SettingsImpl.getInstance().getAttribute("traceHandlerURL") != null
+					&& SettingsImpl.getInstance().checkAttributeValue("env", "dev")) {
+					toolMenu.addSeparator();
+					toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_ms_uploadTraceDialog));
+//					toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_ms_downloadTraceDialog));
+				}
+			}
 		}
 		return toolMenu;
 	}
@@ -127,7 +139,7 @@ public class AROToolMenu implements ActionListener {
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_htmlExport, aEvent)){
 			exportHtml();
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_jsonExport, aEvent)){
-			exportJson();			
+			exportJson();
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_privateData, aEvent)) {
 			openPrivateDataDialog();
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_getErrorMsg, aEvent)) {
@@ -155,24 +167,13 @@ public class AROToolMenu implements ActionListener {
 	
 	private void openPcapAnalysis() {
 		AROTraceData traceData = ((MainFrame)parent).getController().getTheModel();
-		if (traceData == null) {
-			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
-					ResourceBundleHelper.getMessageString("Error.notrace"),
-					ResourceBundleHelper.getMessageString("error.title"), JOptionPane.ERROR_MESSAGE);
+		if (!isTraceLoaded(traceData)) {
+			showNoTraceLoadedError();
 			return;
 		}
 
 		// Open PCAP analysis tool
 		IFileManager fileManager = ContextAware.getAROConfigContext().getBean(IFileManager.class);
-		if (traceData == null 
-			|| traceData.getAnalyzerResult() == null 
-			|| traceData.getAnalyzerResult().getTraceresult() == null
-			|| traceData.getAnalyzerResult().getTraceresult().getTraceDirectory() == null){
-					MessageDialogFactory.showMessageDialog(((MainFrame)parent).getJFrame(),
-					ResourceBundleHelper.getMessageString("menu.error.noTraceLoadedMessage"),
-					ResourceBundleHelper.getMessageString("menu.error.title"),
-					JOptionPane.ERROR_MESSAGE);	
-		} else {
 			File dir = fileManager.createFile(traceData.getAnalyzerResult().getTraceresult().getTraceDirectory());
 			File[] trafficFiles;
 			if (fileManager.isFile(dir.getAbsolutePath())){
@@ -190,11 +191,33 @@ public class AROToolMenu implements ActionListener {
 					MessageDialogFactory.showMessageDialog(((MainFrame)parent).getJFrame(), ResourceBundleHelper.getMessageString("menu.tools.error.noPcap"));
 				} catch (IOException e) {
 					MessageDialogFactory.showMessageDialog(((MainFrame)parent).getJFrame(), ResourceBundleHelper.getMessageString("menu.tools.error.noPcapApp"));
-				} 
+				}
 			}
-		}
+	}
+
+	private void showNoTraceLoadedError() {
+		MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
+				ResourceBundleHelper.getMessageString("menu.error.noTraceLoadedMessage"),
+				ResourceBundleHelper.getMessageString("menu.error.title"), JOptionPane.ERROR_MESSAGE);
 	}
 	
+	/**
+	 * Checks and returns tracePath availability 
+	 * Trace data is present only if trace path available
+	 * 
+	 * @param traceData
+	 * 
+	 */
+	private boolean isTraceLoaded(AROTraceData traceData) {
+		boolean isTracePathNotEmpty = true;
+		if (traceData == null || traceData.getAnalyzerResult() == null
+				|| traceData.getAnalyzerResult().getTraceresult() == null
+				|| traceData.getAnalyzerResult().getTraceresult().getTraceDirectory() == null) {
+			isTracePathNotEmpty = false;
+		}
+		return isTracePathNotEmpty;
+	}
+
 	/**
 	 * Returns a list of cap or pcap files in the specified folder
 	 * @param dir
@@ -209,7 +232,7 @@ public class AROToolMenu implements ActionListener {
 			public boolean accept(File dir, String name) {
 				if (name.indexOf("traffic")>-1)
 					return true;
-				else 
+				else
 					return false;
 		    }
 	    });
@@ -222,10 +245,7 @@ public class AROToolMenu implements ActionListener {
 			TimeRangeAnalysisDialog timeRangeDialog = new TimeRangeAnalysisDialog(mainFrame.getJFrame(), analysisData);
 			timeRangeDialog.setVisible(true);
 		} else {
-			MessageDialogFactory.showMessageDialog(((MainFrame)parent).getJFrame(),
-					ResourceBundleHelper.getMessageString("menu.error.noTraceLoadedMessage"),
-					ResourceBundleHelper.getMessageString("menu.error.title"),
-					JOptionPane.ERROR_MESSAGE);	
+			showNoTraceLoadedError();
 			}
 	}
 	
@@ -246,9 +266,7 @@ public class AROToolMenu implements ActionListener {
 		uploadDialog.setVisible(true);
 		uploadDialog.setAlwaysOnTop(true);
 	}
-
- 
-
+	
 	private void openRegexWizard(){
 		RegexWizard regexWizard = RegexWizard.getInstance();
 		if (regexWizard != null) {
@@ -259,14 +277,14 @@ public class AROToolMenu implements ActionListener {
 
 	private void clearErrorMessage() {
 		try {
-			log.debug("clearing logcat");
+			LOG.debug("clearing logcat");
 			getDevice();
 			String adbPath = adbservice.getAdbPath();
 			String[] command = new String[] { adbPath, "logcat", "-c" };
 			new ProcessBuilder(command).start();
 			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(), "Logcat clear Successful");
 		} catch (IOException e) {
-			log.error("Logcat clear failed", e);
+			LOG.error("Logcat clear failed", e);
 			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(), e.getMessage(),
 					getMsg("logcat.clear.failed"), JOptionPane.ERROR_MESSAGE);
 		}
@@ -274,7 +292,7 @@ public class AROToolMenu implements ActionListener {
 
 	private void collectErrorMessage() {
 		try {
-			log.debug("collecting logcat");
+			LOG.debug("collecting logcat");
 			String fileName = String.format(FILE_NAME, LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE),
 					LocalTime.now().toSecondOfDay());
 			File outFile = new File(getDevFolder(), fileName);
@@ -288,7 +306,7 @@ public class AROToolMenu implements ActionListener {
 					MessageFormat.format(getMsg("logcat.collection.success"), fileName) + ":\n" + device.getName(),
 					"Collection Successful", JOptionPane.INFORMATION_MESSAGE);
 		} catch (IOException | InterruptedException e) {
-			log.error("Logcat collection failed", e);
+			LOG.error("Logcat collection failed", e);
 			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(), e.getMessage(),
 					getMsg("logcat.collection.failed"), JOptionPane.ERROR_MESSAGE);
 		}
@@ -306,7 +324,7 @@ public class AROToolMenu implements ActionListener {
 	}
 	
 	private String getMsg(String token) {
-		return ResourceBundleHelper.getMessageString(token);		
+		return ResourceBundleHelper.getMessageString(token);
 	}
 
 	private boolean isDevDevice() {

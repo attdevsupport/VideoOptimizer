@@ -38,8 +38,10 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
@@ -49,9 +51,8 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
  */
 public class IosPasswordDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
-	
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
-	
+
+	private static final Logger LOG = LogManager.getLogger(IosPasswordDialog.class);	
 	private JPanel jContentPane;
 	private JPanel buttonPanel;
 	private JPanel jButtonGrid;
@@ -190,9 +191,9 @@ public class IosPasswordDialog extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					log.debug("Button.ok");
+					LOG.debug("Button.ok");
 					if(jPasswordField.getText().isEmpty()){						
-						log.info("Without sudo password, ARO cannot do important task such as packet capture, setting up Remote Virutal Interface and so on.");
+						LOG.info("Without sudo password, ARO cannot do important task such as packet capture, setting up Remote Virutal Interface and so on.");
 						JOptionPane.showMessageDialog(getOwner()
 						, ResourceBundleHelper.getMessageString("Error.sudopasswordissue")
 						, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
@@ -200,7 +201,7 @@ public class IosPasswordDialog extends JDialog {
 						, JOptionPane.ERROR_MESSAGE);
 						
 					}else{
-						log.debug("get pw for connecting Apple device");
+						LOG.debug("get pw for connecting Apple device");
 						setPassword(jPasswordField.getText());
 						IosPasswordDialog.this.dispose();
 						

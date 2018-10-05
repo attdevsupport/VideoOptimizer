@@ -20,13 +20,14 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.AnalyzerOS;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 
 public class VideoPlayerController implements Observer {
@@ -37,8 +38,7 @@ public class VideoPlayerController implements Observer {
 	private String traceDirectory;
 	private DiagnosticsTab diagnosticsTab;
 	private AnalyzerOS analyzerOS;
-	
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
+	private static final Logger LOGGER = LogManager.getLogger(VideoPlayerController.class);	
 	
 	public VideoPlayerController(DiagnosticsTab diagnosticTab, List<IVideoPlayer> videoPlayers) {
 		this.diagnosticsTab = diagnosticTab;
@@ -102,7 +102,7 @@ public class VideoPlayerController implements Observer {
 		traceDirectory = traceResult.getTraceDirectory();	
 
 		if (traceDirectory == null) {
-			logger.error("Trace dir is null, error launching video player.");
+			LOGGER.error("Trace dir is null, error launching video player.");
 			return;
 		}
 
@@ -142,7 +142,7 @@ public class VideoPlayerController implements Observer {
 		}
 
 		if (player == null) {
-			logger.error("Error launching video player - no appropriate Mp4 or Mov player found");
+			LOGGER.error("Error launching video player - no appropriate Mp4 or Mov player found");
 			return;
 		}
 		
@@ -158,7 +158,7 @@ public class VideoPlayerController implements Observer {
 	public void launchPlayer(int xPosition, int yPosition, int frameWidth, int frameHeight) {	
 
 		if (players == null || players.size() == 0) {
-			logger.error("No player available to launch");
+			LOGGER.error("No player available to launch");
 			return;
 		}
 		
@@ -171,7 +171,7 @@ public class VideoPlayerController implements Observer {
 		IVideoPlayer player = (IVideoPlayer) getDefaultPlayer();
 		
 		if (player == null) {
-			logger.error("Error launching player - player not available");
+			LOGGER.error("Error launching player - player not available");
 			return;		
 		} 
 		

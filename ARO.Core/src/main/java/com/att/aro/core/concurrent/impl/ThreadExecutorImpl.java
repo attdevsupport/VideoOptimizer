@@ -20,21 +20,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.concurrent.IThreadExecutor;
-import com.att.aro.core.model.InjectLogger;
 
 public class ThreadExecutorImpl implements IThreadExecutor {
-	
-	@InjectLogger
-	private static ILogger LOG;
-	
-	@Autowired
-	public void setLogger(ILogger logger) {
-		LOG = logger;
-	}
+
+	private static final Logger LOG = LogManager.getLogger(ThreadExecutorImpl.class.getName());
 	
 	ExecutorService service;
 	

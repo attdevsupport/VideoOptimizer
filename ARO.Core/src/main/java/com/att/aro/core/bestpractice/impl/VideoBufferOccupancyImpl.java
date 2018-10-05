@@ -24,12 +24,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.BufferOccupancyResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.BufferOccupancyBPResult;
 import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -56,10 +54,6 @@ import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
 
  */
 public class VideoBufferOccupancyImpl implements IBestPractice{
-
-	@InjectLogger
-	private static ILogger log;
-	
 	@Value("${bufferOccupancy.title}")
 	private String overviewTitle;
 	

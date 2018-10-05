@@ -20,6 +20,8 @@ import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.Random;
+import com.att.aro.core.SpringContextUtil;
+import com.att.aro.core.pojo.VersionInfo;
 
 public class GAUrlBuilder {
 	private static final String TRACKING_URL_PREFIX = "http://www.google-analytics.com/collect";
@@ -28,6 +30,7 @@ public class GAUrlBuilder {
 
 	private String googleAnalyticsTrackingCode;
 	private String appName = "";
+	private VersionInfo versionInfo =(VersionInfo) SpringContextUtil.getInstance().getContext().getBean(VersionInfo.class);
 	private String appVersion = "";
 	private String appCode = "1";
 	private StringBuffer defaultUrl = new StringBuffer();
@@ -39,15 +42,21 @@ public class GAUrlBuilder {
 			// ignore this
 		}
 	}
-
+	
+    @Deprecated
 	public GAUrlBuilder(String appName, String appVersion, String googleAnalyticsTrackingCode) {
 		this.appName = appName;
-		this.appVersion = appVersion;
+		this.appVersion = versionInfo.getVersion().trim().replaceAll(" ", "%20").replaceAll("#", "%23");
 		this.googleAnalyticsTrackingCode = googleAnalyticsTrackingCode;
 	}
 
+	public GAUrlBuilder(String appName, String googleAnalyticsTrackingCode) {
+		this.appName = appName;
+		this.appVersion = versionInfo.getVersion().trim().replaceAll(" ", "%20").replaceAll("#", "%23");
+		this.googleAnalyticsTrackingCode = googleAnalyticsTrackingCode;
+	}
 	public String buildURL(GAEntry focusPoint) {
-		StringBuffer url = new StringBuffer(getURLWithRequiredParams());
+		StringBuilder url = new StringBuilder(getURLWithRequiredParams());
 		url.append(getParametersForUrl(focusPoint));
 		return url.toString();
 	}
@@ -78,7 +87,7 @@ public class GAUrlBuilder {
 	}
 
 	private String getAppParams(GAEntry entry) {
-		StringBuffer appParams = new StringBuffer();
+		StringBuilder appParams = new StringBuilder();
 		HitType hitType = (entry.getHitType() == null ? HitType.SCREEN_VIEW : entry.getHitType());
 		appParams.append(appendString(GARequiredParameter.hittype.param(), hitType.getValue()));
 		appParams.append(appendString(GACommonParameter.applicationname.param(), encode(this.appName)));
@@ -88,12 +97,12 @@ public class GAUrlBuilder {
 	}
 
 	private String getExceptionParams() {
-		StringBuffer appParams = new StringBuffer();
+		StringBuilder appParams = new StringBuilder();
 		appParams.append(appendString(GACommonParameter.applicationname.param(), "ARO"));
 		if (encode(this.appName) != null && encode(this.appName).length() > 0) {
 			appParams.append(appendString(GACommonParameter.applicationversion.param(), encode(this.appName)));
 		} else {
-			appParams.append(appendString(GACommonParameter.applicationversion.param(), "5.1.0"));
+			appParams.append(appendString(GACommonParameter.applicationversion.param(), this.appVersion.trim()));
 		}
 		appParams.append(appendString(GARequiredParameter.hittype.param(), HitType.EXCEPTION.getValue()));
 		return appParams.toString();
@@ -114,7 +123,7 @@ public class GAUrlBuilder {
 	}
 
 	private String getParametersForUrl(GAEntry entry) {
-		StringBuffer paramsUrls = new StringBuffer();
+		StringBuilder paramsUrls = new StringBuilder();
 		if (checkNotForNull(entry.getExceptionDesc())) {
 			paramsUrls.append(getExceptionParams());
 		} else {
@@ -125,6 +134,8 @@ public class GAUrlBuilder {
 			if (entry.getHitType() != null) {
 				if (entry.getHitType() == HitType.SCREEN_VIEW) {
 					paramsUrls.append(appendString(GACommonParameter.ScreenName.param(), entry.getCategory()));
+				} else if (entry.getHitType() == HitType.TIMING) {
+					paramsUrls.append(getTimingParams(entry));
 				}
 			} else if (checkNotForNull(entry.getExceptionDesc())) {
 				if (entry.getDataSource() != null && GACommonParameter.datasource.param() != null)
@@ -173,6 +184,15 @@ public class GAUrlBuilder {
 		}
 
 		return paramsUrls.toString();
+	}
+
+	private String getTimingParams(GAEntry entry) {
+		StringBuilder appParams = new StringBuilder();
+		appParams.append(appendString(GACommonParameter.timingcategory.param(), entry.getTimingCategory()));
+		appParams.append(appendString(GACommonParameter.timingtime.param(), entry.getTimingValue()));
+		appParams.append(
+				appendString(GACommonParameter.timingvariablename.param(), entry.getTimingVariable()));
+		return appParams.toString();
 	}
 
 	private boolean checkNotForNull(String string) {

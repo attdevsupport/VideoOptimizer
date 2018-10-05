@@ -18,8 +18,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.ICpuTemperatureReader;
 import com.att.aro.core.peripheral.pojo.TemperatureEvent;
@@ -32,9 +33,8 @@ import com.att.aro.core.util.Util;
  */
 public class CpuTemperatureReaderImpl extends PeripheralBase implements ICpuTemperatureReader {
 
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(CpuTemperatureReaderImpl.class.getName());
+
 	@Override
 	public List<TemperatureEvent> readData(String directory, double startTime) {
 		List<TemperatureEvent> temperatureEvents = new ArrayList<TemperatureEvent>();
@@ -47,7 +47,7 @@ public class CpuTemperatureReaderImpl extends PeripheralBase implements ICpuTemp
 		try {
 			contents = filereader.readAllLine(filePath);
 		} catch (IOException e) {
-			logger.error("failed to read user event file: " + filePath);
+			LOGGER.error("failed to read user event file: " + filePath);
 		}
 		if(contents != null && contents.length > 0){
 			for (String contentBuf : contents) {
@@ -60,7 +60,7 @@ public class CpuTemperatureReaderImpl extends PeripheralBase implements ICpuTemp
 				// Parse entry
 				String splitContents[] = contentBuf.split(" ");	
 				if (splitContents.length <= 1) {
-					logger.warn("Found invalid user event entry: " + contentBuf);
+					LOGGER.warn("Found invalid user event entry: " + contentBuf);
 					continue;
 				}
 	

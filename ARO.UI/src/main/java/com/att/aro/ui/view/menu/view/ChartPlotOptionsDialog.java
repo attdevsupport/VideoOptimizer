@@ -42,6 +42,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.TitledBorder;
 
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.commonui.GUIPreferences;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -252,6 +253,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 						return;
 					}
 					guiPreferences.setChartPlotOptions(currentCheckedOptionList);
+					new Thread(() -> sendGAViews(currentCheckedOptionList)).start();
 					Component currentTab = parent.getCurrentTabComponent();
 					if (currentTab != null && currentTab instanceof DiagnosticsTab) {
 						parent.updateChartSelection(currentCheckedOptionList);
@@ -263,7 +265,15 @@ public class ChartPlotOptionsDialog extends JDialog {
 		}
 		return okButton;
 	}
+	
+	private void sendGAViews(List<ChartPlotOptions> currentCheckedOptionList) {
+		for (ChartPlotOptions option : currentCheckedOptionList) {
+			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
+					GoogleAnalyticsUtil.getAnalyticsEvents().getDiagnosticsViewsEvent(), option.name(), option.name());
+		}
 
+	}
+	
 	private boolean validatePlotOptions(List<ChartPlotOptions> currentCheckedOptionList) {
 		if (currentCheckedOptionList.size() > 12) {
 			JOptionPane.showMessageDialog(this, "Please select no more than 12 items.");

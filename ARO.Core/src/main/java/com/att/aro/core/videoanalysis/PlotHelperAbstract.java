@@ -23,11 +23,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.videoanalysis.impl.SortSelection;
 import com.att.aro.core.videoanalysis.impl.VideoEventComparator;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
@@ -44,9 +44,8 @@ public abstract class PlotHelperAbstract {
 
 	@Autowired
 	private IVideoUsagePrefsManager videoPrefManager;
-	
-	@InjectLogger
-	private static ILogger logger;
+
+	private static final Logger LOGGER = LogManager.getLogger(PlotHelperAbstract.class.getName());
 
 	protected VideoUsage videoUsage;
 
@@ -193,10 +192,10 @@ public abstract class PlotHelperAbstract {
 					}
 				} catch (NumberFormatException e) {
 					StackTraceElement[] stack = e.getStackTrace();
-					logger.error("NumberFormatException : " + e + " @ " + ((stack != null && stack.length > 0) ? stack[0] : ""));
+					LOGGER.error("NumberFormatException : " + e + " @ " + ((stack != null && stack.length > 0) ? stack[0] : ""));
 				} catch (Exception e) {
 					StackTraceElement[] stack = e.getStackTrace();
-					logger.error("Exception : " + e + " @ " + ((stack != null && stack.length > 0) ? stack[0] : ""));
+					LOGGER.error("Exception : " + e + " @ " + ((stack != null && stack.length > 0) ? stack[0] : ""));
 				}
 			}
 		}

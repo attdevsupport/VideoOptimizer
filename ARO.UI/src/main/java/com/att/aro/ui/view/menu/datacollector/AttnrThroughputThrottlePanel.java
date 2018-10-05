@@ -19,21 +19,22 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.Hashtable;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
@@ -42,10 +43,9 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class AttnrThroughputThrottlePanel extends JPanel implements ActionListener{
 	private static final long serialVersionUID = 1L;
 
-	private ILogger log = ContextAware.getAROConfigContext().getBean(ILogger.class);
-
-	private JCheckBox cbDlAttenuator;
-	private JCheckBox cbUlAttenuator;
+	private static final Logger LOG = LogManager.getLogger(AttnrThroughputThrottlePanel.class);	
+	private JCheckBox downloadCheckBox;
+	private JCheckBox uploadCheckBox;
 	private String downLink;
 	private String upLink;
 	private JLabel fsJLabel;
@@ -71,7 +71,11 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 	private int fpsUL = MAX_NUM;
 
 	private AttenuatorModel miniAtnr;
- 
+	
+	private enum SliderOption{
+		ULSlide, DLSlide;
+	}
+	
 	public AttnrThroughputThrottlePanel(AttenuatorModel miniAtnr){
 		setLayout(new GridBagLayout());
 		this.miniAtnr = miniAtnr;
@@ -84,13 +88,13 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 	public void actionPerformed(ActionEvent e) {
 		String ac = e.getActionCommand();
 		if (ac.equals(downLink)) {
-			if (cbDlAttenuator.isSelected()) {
+			if (downloadCheckBox.isSelected()) {
  				setDownload(true, MAX_NUM, MAX_NUM + " ", MAX_NUM, fpsDL);
 			} else {
  				setDownload(false, MAX_NUM, MAX_NUM + " ", MAX_NUM, fpsDL);
 			}
  		} else if (ac.equals(upLink)) {
-			if (cbUlAttenuator.isSelected()) {
+			if (uploadCheckBox.isSelected()) {
 				setUpload(true,MAX_NUM,MAX_NUM + " ",MAX_NUM,fpsUL);
 			} else {
 				setUpload(false,MAX_NUM,MAX_NUM + " ",MAX_NUM,fpsUL);
@@ -122,35 +126,95 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 		
 	}
 	
-	private class DLSliderListener implements ChangeListener {
-		public void stateChanged(ChangeEvent e) {
+	private class SliderMouseListener implements MouseMotionListener {
+		
+		@Override
+		public void mouseDragged(MouseEvent e) {
 			JSlider source = (JSlider) e.getSource();
-			if (!source.getValueIsAdjusting()) {
-				int fps_local = (int) source.getValue();
+			int fps_local = (int) source.getValue();
+			if(SliderOption.DLSlide.name().equals(source.getName())){
 				setFps(fps_local);
-				log.info("Set DelayTime: " + fpsDL);
+				LOG.info("Set DelayTime: " + fpsDL);
 				setThrottoleDL(fpsDL);
 				fsJLabel.setText(addUnit(Integer.toString(fpsDL)));
 				miniAtnr.setThrottleDL(fpsDL);
-			}
-		}
-	}
-
-	private class ULSliderListener implements ChangeListener {
-		public void stateChanged(ChangeEvent e) {
-			JSlider source = (JSlider) e.getSource();
-			if (!source.getValueIsAdjusting()) {
-				int fps_local = (int) source.getValue();
+			}else{
 				setUpFps(fps_local);
-				log.info("Set DelayTime: " + fpsUL);
+				LOG.info("Set DelayTime: " + fpsUL);
 				setThrottleUL(fpsUL);
 				fsUpJLabel.setText(addUnit(Integer.toString(fpsUL)));
 				miniAtnr.setThrottleUL(fpsUL);
- 				
 			}
+			
+		}
+
+		@Override
+		public void mouseMoved(MouseEvent e) {
+
 		}
 	}
 
+	private class SliderKeyListener extends KeyAdapter {
+		@Override
+		public void keyPressed(KeyEvent e) {
+			JSlider source = (JSlider) e.getSource();
+			if (source.getValueIsAdjusting()) {
+				return;
+			}
+			if (SliderOption.DLSlide.name().equals(source.getName())) {
+				if (e.getKeyCode() == KeyEvent.VK_LEFT) { // increase
+					int fps_local = keyEventTriggered(KeyEvent.VK_LEFT, (int) source.getValue(),
+							fsJLabel.getText().split(" ")[1]);
+					updateAttenuationValue(SliderOption.DLSlide, fps_local);
+				} else if (e.getKeyCode() == KeyEvent.VK_RIGHT) { // decrease
+					int fps_local = keyEventTriggered(KeyEvent.VK_RIGHT, (int) source.getValue(),
+							fsJLabel.getText().split(" ")[1]);
+					updateAttenuationValue(SliderOption.DLSlide, fps_local);
+				}
+			} else {
+				if (e.getKeyCode() == KeyEvent.VK_LEFT) {// increase
+					int fps_local = keyEventTriggered(KeyEvent.VK_LEFT, (int) source.getValue(),
+							fsUpJLabel.getText().split(" ")[1]);
+					updateAttenuationValue(SliderOption.ULSlide, fps_local);
+				} else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {// decrease
+					int fps_local = keyEventTriggered(KeyEvent.VK_RIGHT, (int) source.getValue(),
+							fsUpJLabel.getText().split(" ")[1]);
+					updateAttenuationValue(SliderOption.ULSlide, fps_local);
+				}
+			}
+		}
+	}
+	
+	private int keyEventTriggered(int keyEvent, int val, String unit){
+		double attenuationValue = Double.parseDouble(Integer.toString(val));
+		double increment = unit.trim().equals("kbps") ? 1.0 : 9.0;
+		if(keyEvent == KeyEvent.VK_LEFT){
+			attenuationValue = attenuationValue + increment;
+		}else if (keyEvent == KeyEvent.VK_RIGHT){
+			attenuationValue = attenuationValue - increment;
+		}	
+		int result = (int)attenuationValue;
+		return result;
+	}
+
+	private void updateAttenuationValue(SliderOption option, int value){
+		if(option == SliderOption.ULSlide){
+			delayULJSlider.setValue(value);
+			setUpFps(value);
+			LOG.info("Set DelayTime: " + fpsUL);
+			setThrottleUL(fpsUL);
+			fsUpJLabel.setText(addUnit(Integer.toString(fpsUL)));
+			miniAtnr.setThrottleUL(fpsUL);
+		}else if(option == SliderOption.DLSlide){
+			delayDLJSlider.setValue(value);
+			setFps(value);
+			LOG.info("Set DelayTime: " + fpsDL);
+			setThrottoleDL(fpsDL);
+			fsJLabel.setText(addUnit(Integer.toString(fpsDL)));
+			miniAtnr.setThrottleDL(fpsDL);
+		}
+	}
+	
 	private void getGBConstant() {
 		GridBagConstraints gbSetting1 = new GridBagConstraints();
 		gbSetting1.fill = GridBagConstraints.HORIZONTAL;
@@ -204,12 +268,12 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 		gbSetting8.gridx = 3;
 		gbSetting8.gridy = 3;
 		
-		add(cbDlAttenuator, gbSetting1);
+		add(downloadCheckBox, gbSetting1);
 		add(delayDLJSlider, gbSetting2);
 		//add(msJLabel, gbSetting4);
 		add(fsJLabel, gbSetting3);
 
-		add(cbUlAttenuator, gbSetting5);
+		add(uploadCheckBox, gbSetting5);
 		add(delayULJSlider, gbSetting6);
 		//add(msUpJLabel, gbSetting8);
 		add(fsUpJLabel, gbSetting7);
@@ -222,13 +286,13 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 		downLink = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.downlink");
 		upLink = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.uplink");
 
-		cbDlAttenuator = new JCheckBox(downLink);
-		cbDlAttenuator.setActionCommand(downLink);
-		cbDlAttenuator.addActionListener(this);
+		downloadCheckBox = new JCheckBox(downLink);
+		downloadCheckBox.setActionCommand(downLink);
+		downloadCheckBox.addActionListener(this);
 
-		cbUlAttenuator = new JCheckBox(upLink);
-		cbUlAttenuator.setActionCommand(upLink);
-		cbUlAttenuator.addActionListener(this);
+		uploadCheckBox = new JCheckBox(upLink);
+		uploadCheckBox.setActionCommand(upLink);
+		uploadCheckBox.addActionListener(this);
 
 		fsJLabel = new JLabel(addUnit(Integer.toString(MAX_NUM)));
 		
@@ -251,23 +315,27 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 				new JLabel(ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.2g")));
 
 		delayDLJSlider = new LogarithmicJSlider(DL_FPS_MID3,MAX_NUM,  MAX_NUM);// 100Mb = 1048576 kb
+		delayDLJSlider.setName(SliderOption.DLSlide.name());
 		delayDLJSlider.setLabelTable(labelTableDL);
 		delayDLJSlider.setPaintLabels(true);
 		delayDLJSlider.setPaintTicks(true);
 		delayDLJSlider.setMajorTickSpacing(100);
 		delayDLJSlider.setMinorTickSpacing(10);
 		delayDLJSlider.setEnabled(false);
-		delayDLJSlider.addChangeListener(new DLSliderListener());
+		delayDLJSlider.addMouseMotionListener(new SliderMouseListener());
+		delayDLJSlider.addKeyListener(new SliderKeyListener());
 		delayDLJSlider.setInverted(true);
  		
 		delayULJSlider = new LogarithmicJSlider(UL_FPS_MID3, MAX_NUM, MAX_NUM);// 100Mb = 1048576 kb
+		delayULJSlider.setName(SliderOption.ULSlide.name());
 		delayULJSlider.setLabelTable(labelTableUL);
 		delayULJSlider.setPaintLabels(true);
 		delayULJSlider.setPaintTicks(true);
 		delayULJSlider.setMajorTickSpacing(100);
 		delayULJSlider.setMinorTickSpacing(10);
 		delayULJSlider.setEnabled(false);
-		delayULJSlider.addChangeListener(new ULSliderListener());
+		delayULJSlider.addMouseMotionListener(new SliderMouseListener());
+		delayULJSlider.addKeyListener(new SliderKeyListener());
 		delayULJSlider.setInverted(true);
  		
 	}
@@ -283,12 +351,11 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 		}else{
 			return value.concat(" kbps");	
 		}
-		
 	}
 	
 	public void resetComponent(){
-		cbDlAttenuator.setSelected(false);
-		cbUlAttenuator.setSelected(false);
+		downloadCheckBox.setSelected(false);
+		uploadCheckBox.setSelected(false);
 		miniAtnr.setThrottleDLEnable(false);
 		miniAtnr.setThrottleULEnable(false);
 		delayDLJSlider.setValue(MAX_NUM);
@@ -320,6 +387,21 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 
 	public void setUpFps(int upFps) {
 		this.fpsUL = upFps;
+	}
+	public JCheckBox getUploadCheckBox() {
+		return uploadCheckBox;
+	}
+
+	public void setUploadCheckBox(JCheckBox uploadCheckBox) {
+		this.uploadCheckBox = uploadCheckBox;
+	}
+
+	public JCheckBox getDownloadCheckBox() {
+		return downloadCheckBox;
+	}
+
+	public void setDownloadCheckBox(JCheckBox downloadCheckBox) {
+		this.downloadCheckBox = downloadCheckBox;
 	}
 
 }

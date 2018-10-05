@@ -36,10 +36,10 @@ import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import org.jfree.util.Log;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
@@ -68,6 +68,7 @@ public class VlcjPlayer implements IVideoPlayer {
     private EmbeddedMediaPlayerComponent mediaPlayerComponent;
     private MediaPlayer player;
 	private JFrame frame;
+	private JPanel contentPane;
     private JButton playButton;	    
     private JSlider slider; 
     private JLabel playtimeLabel;
@@ -88,8 +89,7 @@ public class VlcjPlayer implements IVideoPlayer {
 
 	private static final String WIN_VLCLIBPATH = VideoUtil.WIN_VLCLIBPATH;
     private static final String LINUX_VLCLIBPATH = VideoUtil.LINUX_VLCLIBPATH;
-    
-    private static ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
+    private static final Logger LOGGER = LogManager.getLogger(VlcjPlayer.class);	
     private IExternalProcessRunner extRunner = ContextAware.getAROConfigContext().getBean(IExternalProcessRunner.class);
     private IFileManager fileManager = ContextAware.getAROConfigContext().getBean(IFileManager.class);
     
@@ -121,7 +121,7 @@ public class VlcjPlayer implements IVideoPlayer {
             }
         });
 
-        JPanel contentPane = new JPanel();
+        contentPane = new JPanel();
         contentPane.setLayout(new BorderLayout());
      
         if (!createMediaPlayerComponent()) {
@@ -301,7 +301,7 @@ public class VlcjPlayer implements IVideoPlayer {
 		String cmd = "lspci | grep VGA";
 		String line = extRunner.executeCmd(cmd);
 	
-		logger.debug("GPU info:" + line);
+		LOGGER.debug("GPU info:" + line);
 		
 		if (line.contains("Sky Lake")) {
 			return true;
@@ -375,7 +375,7 @@ public class VlcjPlayer implements IVideoPlayer {
 	public double getMediaTime() {	
 		
 		if (player == null) {
-			logger.debug("player is not available");
+			LOGGER.debug("player is not available");
 			return 0;
 		}
 		
@@ -388,7 +388,7 @@ public class VlcjPlayer implements IVideoPlayer {
 	public void setMediaTime(final double hairlineTime) {
         
 		if (player == null) {
-			logger.debug("player is not available");
+			LOGGER.debug("player is not available");
 			return;
 		}
 		
@@ -412,7 +412,7 @@ public class VlcjPlayer implements IVideoPlayer {
 	
 	private void updateUserInterfaceElements(final double hairlineTime){
 		if (player == null) {
-			logger.debug("player is not available");
+			LOGGER.debug("player is not available");
 			return;
 		}
 		
@@ -436,7 +436,7 @@ public class VlcjPlayer implements IVideoPlayer {
 	public double getDuration() {
 		
 		if (player == null) {
-			logger.debug("player is not available");
+			LOGGER.debug("player is not available");
 			return 0;
 		}
 		
@@ -448,7 +448,7 @@ public class VlcjPlayer implements IVideoPlayer {
 	public boolean isPlaying() {
 		
 		if (player == null) {
-			logger.debug("player is not available");
+			LOGGER.debug("player is not available");
 			return false;
 		}
 		
@@ -544,7 +544,7 @@ public class VlcjPlayer implements IVideoPlayer {
 	public void loadVideo(AbstractTraceResult traceResult) {
         
 		if (player == null) {
-			logger.debug("player is not available");
+			LOGGER.debug("player is not available");
 			return;
 		}
 		
@@ -584,6 +584,7 @@ public class VlcjPlayer implements IVideoPlayer {
 
     	frame.setLocation(Toolkit.getDefaultToolkit().getScreenSize().width - playerContentWidth, 0);
     	mediaPlayerComponent.setPreferredSize(new Dimension(playerContentWidth, playerContentHeight));
+    	contentPane.add(mediaPlayerComponent, BorderLayout.CENTER);
     	frame.pack();
     	
         player.startMedia(videoPath, videoOptions);

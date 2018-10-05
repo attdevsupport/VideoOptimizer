@@ -29,10 +29,11 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.ICacheAnalysis;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.CacheAnalysis;
@@ -46,6 +47,7 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfoWithSession;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Range;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 
 /**
  * Contains functionality that performs a cache analysis of the HTTP requests
@@ -55,13 +57,17 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 public class CacheAnalysisImpl implements ICacheAnalysis {
 	@Autowired
 	IHttpRequestResponseHelper rrhelper;
-	@InjectLogger
-	private static ILogger log;
+	private static final Logger LOG = LogManager.getLogger(CacheAnalysisImpl.class.getName());
 	int itindex = 0;
 	List<DuplicateEntry> dulpicateEntires;
+	@Value("${ga.request.timing.cacheAnalysisTimings.title}")
+	private String cacheAnalysisTitle;
+	@Value("${ga.request.timing.analysisCategory.title}")
+	private String analysisCategory;
 
 	@Override
 	public CacheAnalysis analyze(List<Session> sessionlist) {
+		long analysisStartTime = System.currentTimeMillis();
 		CacheAnalysis result = new CacheAnalysis();
 		long totalRequestResponseBytes = 0;
 		long totalRequestResponseDupBytes = 0;
@@ -281,6 +287,8 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		result.setDuplicateContentWithOriginals(duplicateContentWithOriginals);
 		result.setTotalRequestResponseBytes(totalRequestResponseBytes);
 		result.setTotalRequestResponseDupBytes(totalRequestResponseDupBytes);
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(cacheAnalysisTitle,
+				System.currentTimeMillis() - analysisStartTime, analysisCategory);
 		return result;
 	}
 
@@ -544,7 +552,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		try {
 			content = rrhelper.getContent(response, session);
 		} catch (Exception e) {
-			log.error("Error in retrieving Content");
+			LOG.error("Error in retrieving Content");
 		}
 		return content;
 	}

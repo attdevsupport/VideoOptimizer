@@ -10,19 +10,19 @@ import java.util.concurrent.Executors;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 
 public class UIParserAnalysis {
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(UIParserAnalysis.class.getName());
+
 	String xmlFolderPath = "";
 
 	public Map<String, UIParserNode> uiParseEventMap = new HashMap<String, UIParserNode>();
@@ -80,7 +80,7 @@ public class UIParserAnalysis {
 				}
 			}
 		} catch (Exception e) {
-			logger.error("Error while parsing UI xml", e);
+			LOGGER.error("Error while parsing UI xml", e);
 		}
 
 	}

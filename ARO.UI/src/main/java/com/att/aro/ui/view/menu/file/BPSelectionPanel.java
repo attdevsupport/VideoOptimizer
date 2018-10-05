@@ -21,7 +21,12 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.ScrollPane;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,12 +34,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.border.TitledBorder;
 
+import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
@@ -47,11 +55,12 @@ import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;;
  *
  */
 public class BPSelectionPanel extends JPanel {
-	public static final Logger LOGGER = Logger.getLogger(BPSelectionPanel.class.getName());
+	public static final Logger LOGGER = LogManager.getLogger(BPSelectionPanel.class.getName());
 	private static final long serialVersionUID = 1L;
 	private static Component panel;
 	private static BPSelectionPanel instance;
 	int noOfBestPractices = 0;
+	JButton selectButton;
 	
 
 	Map<String, JCheckBox> map = new HashMap<>();
@@ -72,15 +81,50 @@ public class BPSelectionPanel extends JPanel {
 		if (instance == null) {
 			instance = new BPSelectionPanel();
 		}
+		//FIXME REMOVE THIS AFTER 2.1 RELEASE, AND REFACTOR TO USE COMPONENT LISTENER
+		setSelectAllButton();
 		return instance;
 	}
 
 	private BPSelectionPanel() {
+		JPanel bpSelectionPanel = new JPanel(new GridBagLayout());
+		bpSelectionPanel.setAlignmentX(CENTER_ALIGNMENT);
+		JPanel selectButtonPanel = getSelectButtonPanel();
+		selectButtonPanel.setLayout(new BoxLayout(selectButtonPanel, BoxLayout.PAGE_AXIS));
+		selectButtonPanel.add(Box.createRigidArea(new Dimension(0, 5)));
 		JSplitPane bottomSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, getLine1(), getLine2());
 		bottomSplitPane.setDividerLocation(0.5);
-		this.add(bottomSplitPane);
+		bpSelectionPanel.add(selectButtonPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTH,
+				GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+		bpSelectionPanel.add(bottomSplitPane, new GridBagConstraints(0, 5, 1, 1, 1.0, 1.0, GridBagConstraints.NORTH,
+				GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+		this.add(bpSelectionPanel);
 
 		setSelectedBoxes();
+	}
+
+	private JPanel getSelectButtonPanel() {
+		JPanel selectButtonPanel = new JPanel();
+		selectButtonPanel.add(selectButton = getSelectButton("Select All",
+				(ActionEvent arg) -> selectDeselect(selectButton.getText())));
+		return selectButtonPanel;
+	}
+
+	private void selectDeselect(String text) {
+		if (text.equalsIgnoreCase("Select All")) {
+			setAllBoxes(true);
+			selectButton.setText("Deselect All");
+		} else {
+			setAllBoxes(false);
+			selectButton.setText("Select All");
+		}
+	}
+
+	private JButton getSelectButton(String text, ActionListener al) {
+		JButton button = new JButton();
+		button.setText(text);
+		button.addActionListener(al);
+		return button;
 	}
 
 	private JPanel getLine2() {
@@ -155,5 +199,33 @@ public class BPSelectionPanel extends JPanel {
 		for (BestPracticeType type : selected) {
 			map.get(type.name()).setSelected(state);
 		}
+	}
+
+	private void setAllBoxes(boolean state) {
+		BestPracticeType[] bpType = BestPracticeType.values();
+		for (int i = 0; i < bpType.length; i++) {
+			if (map.containsKey(bpType[i].name())) {
+				map.get(bpType[i].name()).setSelected(state);
+			}
+		}
+	}
+	
+	private static void setSelectAllButton() {
+		if (instance.isAllBoxesSelected()) {
+			instance.selectButton.setText("Deselect All");
+		} else {
+			instance.selectButton.setText("Select All");
+		}
+	}
+
+	private boolean isAllBoxesSelected() {
+		boolean isAllSelected = true;
+		BestPracticeType[] bpType = BestPracticeType.values();
+		for (int i = 0; i < bpType.length; i++) {
+			if (map.containsKey(bpType[i].name())) {
+				isAllSelected = isAllSelected && map.get(bpType[i].name()).isSelected();
+			}
+		}
+		return isAllSelected;
 	}
 }

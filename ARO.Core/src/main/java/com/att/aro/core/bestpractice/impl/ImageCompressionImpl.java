@@ -36,18 +36,18 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.ImageCompressionEntry;
 import com.att.aro.core.bestpractice.pojo.ImageCompressionResult;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -78,8 +78,7 @@ public class ImageCompressionImpl implements IBestPractice {
 		}
 	}
 
-	@InjectLogger
-	private static ILogger LOGGER;
+	private static final Logger LOGGER = LogManager.getLogger(ImageCompressionImpl.class.getName());
 
 	static String FILE_DESC = "_compressed_";
 

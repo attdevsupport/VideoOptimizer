@@ -19,8 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IBatteryInfoReader;
 import com.att.aro.core.peripheral.pojo.BatteryInfo;
@@ -34,9 +35,8 @@ import com.att.aro.core.util.Util;
  */
 public class BatteryInfoReaderImpl extends PeripheralBase implements IBatteryInfoReader {
 	
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(BatteryInfoReaderImpl.class.getName());
+
 	@Override
 	public List<BatteryInfo> readData(String directory, double startTime) {
 		List<BatteryInfo> batteryInfos = new ArrayList<BatteryInfo>();
@@ -52,7 +52,7 @@ public class BatteryInfoReaderImpl extends PeripheralBase implements IBatteryInf
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed to open file for battery info: " + filepath);
+			LOGGER.error("failed to open file for battery info: " + filepath);
 		}
 		if (lines != null) {
 			for (String strLineBuf : lines) {
@@ -76,10 +76,10 @@ public class BatteryInfoReaderImpl extends PeripheralBase implements IBatteryInf
 						previousState = Boolean.valueOf(strFields[3]);
 
 					} catch (Exception e) {
-						logger.warn("Unexpected error parsing battery event: " + strLineBuf, e);
+						LOGGER.warn("Unexpected error parsing battery event: " + strLineBuf, e);
 					}
 				} else {
-					logger.warn("Invalid battery_events entry: " + strLineBuf);
+					LOGGER.warn("Invalid battery_events entry: " + strLineBuf);
 				}
 			}
 		}

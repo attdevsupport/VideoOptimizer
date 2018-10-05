@@ -1,5 +1,4 @@
 package com.att.aro.core.packetanalysis.impl;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Matchers.any;
@@ -53,7 +52,6 @@ import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.peripheral.pojo.CpuActivity;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
-
 
 @SuppressWarnings("unchecked")
 public class PacketAnalyzerImplTest extends BaseTest {
@@ -109,7 +107,7 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		cpuList.add(new CpuActivity());
 		when(mockTraceDirResult.getCpuActivityList()).thenReturn(cpuList);
 		when(tracereader.readTraceDirectory(any(String.class))).thenReturn(mockTraceDirResult);
- 
+		
 		ProfileLTE profileLTE = new ProfileLTE();
 		when(profilefactory.createLTEdefault()).thenReturn(profileLTE);
 
@@ -225,10 +223,8 @@ public class PacketAnalyzerImplTest extends BaseTest {
 						
 		when(rrcstate.getStaterangelist()).thenReturn(rrcstatelist);
 		when(rrcstate.getTotalRRCEnergy()).thenReturn(1.0);
-		when(energymodelfactory.
-				create(any(Profile.class), any(double.class), any(List.class), 
-						any(List.class), any(List.class), any(List.class))).
-				thenReturn(energymodel);
+		when(energymodelfactory.create(any(Profile.class), any(double.class), any(List.class), any(List.class),
+				any(List.class), any(List.class))).thenReturn(energymodel);
 		BurstCollectionAnalysisData burstvalue = mock(BurstCollectionAnalysisData.class);
 		when(burstcollectionanalyzer.analyze(any(List.class), any(Profile.class), 
 				any(Map.class), any(List.class), any(List.class), any(List.class), any(List.class)))

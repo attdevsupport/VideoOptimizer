@@ -87,8 +87,7 @@ public abstract class AbstractBufferOccupancyCalculator extends PlotHelperAbstra
 				double possiblePlayStartTime = getChunkPlayStartTime(chunkDownload.get(0)); //chunkDownload.get(0));
 				if (possiblePlayStartTime != -1){
 					chunkPlayStartTime = possiblePlayStartTime;// + firstChunkArrivalTime;
-				}
-				else{
+				} else{
 					chunkPlayStartTime = aroManifest.getDelay() + firstChunkArrivalTime;
 				}
 				chunkPlaying = chunkDownload.get(0); // chunkDownload.get(0);getChunksBySegmentNumber()

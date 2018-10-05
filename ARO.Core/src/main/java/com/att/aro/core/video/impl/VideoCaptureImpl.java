@@ -21,16 +21,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.RawImage;
 import com.android.ddmlib.TimeoutException;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.concurrent.IThreadExecutor;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.video.IVideoCapture;
 import com.att.aro.core.video.IVideoWriter;
@@ -43,12 +43,11 @@ import com.att.aro.core.video.pojo.QuickTimeOutputStream.VideoFormat;
  */
 public class VideoCaptureImpl implements IVideoCapture {
 
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(VideoCaptureImpl.class.getName());
 
 	private List<IVideoImageSubscriber> vImageSubscribers = new ArrayList<IVideoImageSubscriber>();
 
-	private static final int MAX_FETCH_EXCEPTIONS = 5;
+	private static final int MAX_FETCH_EXCEPTIONS = 30;
 	private IVideoWriter videowriter;
 	private IDevice device;
 
@@ -168,36 +167,36 @@ public class VideoCaptureImpl implements IVideoCapture {
 						}
 
 					} catch (InterruptedException interruptedExp) {
-						logger.error(interruptedExp.getMessage());
+						LOGGER.error(interruptedExp.getMessage());
 
 					}
 
 				} catch (IOException ioExp) {
 					if (isUSBConnected) {
 						iExceptionCount++;
-						logger.error("IOException ", ioExp);
+						LOGGER.error("IOException ", ioExp);
 					}
 				} catch (TimeoutException timeOutExp) {
 					if (isUSBConnected) {
 						iExceptionCount++;
-						logger.error("Time out exception ", timeOutExp);
+						LOGGER.error("Time out exception ", timeOutExp);
 					}
 				} catch (AdbCommandRejectedException adbExp) {
 					if (isUSBConnected) {
-						logger.error("Device Offline!", adbExp);
+						LOGGER.error("Device Offline!", adbExp);
 						iExceptionCount++;
 					}
 				}
 				if (iExceptionCount > MAX_FETCH_EXCEPTIONS) {
 					allDone = true;
-					logger.error("Too many exceptions caught, now exiting video capture");
+					LOGGER.error("Too many exceptions caught, now exiting video capture");
 				}
 			}
 
 			try {
 				videowriter.close();
 			} catch (IOException ioExp) {
-				logger.warn("Exception closing video output stream", ioExp);
+				LOGGER.warn("Exception closing video output stream", ioExp);
 			}
 
 			hasExited = true;
@@ -255,7 +254,7 @@ public class VideoCaptureImpl implements IVideoCapture {
 				videowriter.close();
 				videoCaptureActive = false;
 			} catch (IOException e) {
-				logger.error(e.getMessage());
+				LOGGER.error(e.getMessage());
 			}
 		}
 	}

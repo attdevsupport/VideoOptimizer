@@ -19,8 +19,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.regex.Matcher;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.IParseHeaderLine;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpPattern;
@@ -28,10 +29,9 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.util.Util;
 
 public class ParseHeaderLineImpl implements IParseHeaderLine{
-	
-	@InjectLogger
-	private static ILogger logger;
-	
+
+	private static final Logger LOGGER = LogManager.getLogger(ParseHeaderLineImpl.class.getName());
+
 	private static final String CHARSET = "charset";
 	private static final String CHUNKED = "chunked";
 	private static final String NOCACHE = "no-cache";
@@ -82,7 +82,7 @@ public class ParseHeaderLineImpl implements IParseHeaderLine{
 				 * The value exceeds the Interger.MAX_VALUE i.e
 				 * 2^31-1=2147483647
 				 */
-				logger.info("Cannot parse the string to int for contentLength,because" + " The value to parse is :" + (headerLine.substring(matcher.end()).trim())
+				LOGGER.info("Cannot parse the string to int for contentLength,because" + " The value to parse is :" + (headerLine.substring(matcher.end()).trim())
 						+ " which is greater than the Integer.MAX_VALUE (2^31-1=2147483647).");
 			}
 
@@ -248,7 +248,7 @@ public class ParseHeaderLineImpl implements IParseHeaderLine{
 					 * The value exceeds the Interger.MAX_VALUE i.e
 					 * 2^31-1=2147483647. Continue.
 					 */
-					logger.info("Cannot parse the string to int for rangeLast,because" + " The value to parse is :" + matcher.group(2)
+					LOGGER.info("Cannot parse the string to int for rangeLast,because" + " The value to parse is :" + matcher.group(2)
 							+ " which is greater than the Integer.MAX_VALUE (2^31-1=2147483647).");
 
 				}
@@ -268,7 +268,7 @@ public class ParseHeaderLineImpl implements IParseHeaderLine{
 				try {
 					rrInfo.setReferrer(new URI(matcher.group(1).trim()));
 				} catch (URISyntaxException e) {
-					logger.warn("Invalid referrer URI: " + matcher.group(1));
+					LOGGER.warn("Invalid referrer URI: " + matcher.group(1));
 				}
 				return;
 			}

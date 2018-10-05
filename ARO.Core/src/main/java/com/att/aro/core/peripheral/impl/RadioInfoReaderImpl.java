@@ -18,8 +18,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IRadioInfoReader;
 import com.att.aro.core.peripheral.pojo.RadioInfo;
@@ -31,10 +32,9 @@ import com.att.aro.core.util.Util;
  *
  */
 public class RadioInfoReaderImpl extends PeripheralBase implements IRadioInfoReader {
-	
-	@InjectLogger
-	private static ILogger logger;
-	
+
+	private static final Logger LOGGER = LogManager.getLogger(RadioInfoReaderImpl.class.getName());
+
 	@Override
 	public List<RadioInfo> readData(String directory, double startTime) {
 		List<RadioInfo> radioInfos = new ArrayList<RadioInfo>();
@@ -46,7 +46,7 @@ public class RadioInfoReaderImpl extends PeripheralBase implements IRadioInfoRea
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed to read Radio info file: "+filepath);
+			LOGGER.error("failed to read Radio info file: "+filepath);
 		}
 		
 		Double lastDbmValue = null;
@@ -90,10 +90,10 @@ public class RadioInfoReaderImpl extends PeripheralBase implements IRadioInfoRea
 						lastDbmValue = radioInformation.getSignalStrength();
 	
 					} else {
-						logger.warn("Invalid radio_events entry: " + strLineBuf);
+						LOGGER.warn("Invalid radio_events entry: " + strLineBuf);
 					}
 				} catch (Exception e) {
-					logger.warn("Unexpected error parsing radio event: " + strLineBuf, e);
+					LOGGER.warn("Unexpected error parsing radio event: " + strLineBuf, e);
 				}
 			}
 		}

@@ -55,10 +55,12 @@ public class SSMAmz implements MpdBase{
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
 		strblr.append("SSMAmz :"); 
-		strblr.append(" majorVersion :"); strblr.append( majorVersion);
-		strblr.append(",  minorVersion :"); strblr.append( minorVersion);
-		strblr.append(",  duration :"); strblr.append( duration);
-//		strblr.append("\nstreamIndex:"); strblr.append(getStreamIndex());
+		strblr.append(" majorVersion :");
+		strblr.append(majorVersion);
+		strblr.append(",  minorVersion :");
+		strblr.append(minorVersion);
+		strblr.append(",  duration :");
+		strblr.append(duration);
 		
 		if (!streamIndex.isEmpty()) {
 			strblr.append("\n\tstreamIndex:");

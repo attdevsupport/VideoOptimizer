@@ -17,6 +17,8 @@ package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -25,12 +27,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.FlashResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -61,10 +61,9 @@ public class FlashImpl implements IBestPractice {
 	private String exportAllNumberOfFlashFiles;
 	
 	private IHttpRequestResponseHelper reqhelper;
-	
-	@InjectLogger
-	private static ILogger log;
-	
+
+	private static final Logger LOG = LogManager.getLogger(FlashImpl.class.getName());
+
 	@Autowired
 	public void setHttpRequestResponseHelper(IHttpRequestResponseHelper reqhelper){
 		this.reqhelper = reqhelper;
@@ -123,7 +122,7 @@ public class FlashImpl implements IBestPractice {
 		try {
 			flashDownloaded = reqhelper.getContentString(reqRessInfo, session);
 		} catch (Exception e) {
-			log.error("Failed to get content from HttpRequestResponseInfo", e);
+			LOG.error("Failed to get content from HttpRequestResponseInfo", e);
 		}
 		
 		if (flashDownloaded != null) {
@@ -131,7 +130,7 @@ public class FlashImpl implements IBestPractice {
 			try {
 				doc = Jsoup.parse(flashDownloaded);
 			} catch (Exception e) {
-				log.error("Failed to parse :"+flashDownloaded, e);
+				LOG.error("Failed to parse :"+flashDownloaded, e);
 				return result;
 			}
 			

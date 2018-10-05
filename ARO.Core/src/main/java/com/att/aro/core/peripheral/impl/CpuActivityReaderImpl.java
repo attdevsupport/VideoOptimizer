@@ -17,10 +17,10 @@ package com.att.aro.core.peripheral.impl;
 
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.ICpuActivityParser;
 import com.att.aro.core.peripheral.ICpuActivityReader;
@@ -38,24 +38,23 @@ public class CpuActivityReaderImpl extends PeripheralBase implements ICpuActivit
 	@Autowired
 	private ICpuActivityParser cpuActivityParser;
 	
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(CpuActivityReaderImpl.class.getName());
 
 	@Override
 	public CpuActivityList readData(String directory, double startTime) {
 		String cpuFileName = TraceDataConst.FileName.CPU_FILE;
 		CpuActivityList cpuActivityList = new CpuActivityList();
-		logger.debug("Reading CPU file...");
+		LOGGER.debug("Reading CPU file...");
 		String filepath = directory + Util.FILE_SEPARATOR + cpuFileName;
 		if (!filereader.fileExist(filepath)) {
-			logger.warn("cpu file not found: " + cpuFileName);
+			LOGGER.warn("cpu file not found: " + cpuFileName);
 			return cpuActivityList;
 		}
 		String[] lines;
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e) {
-			logger.error("Failed to read CPU activity file: " + filepath);
+			LOGGER.error("Failed to read CPU activity file: " + filepath);
 			return cpuActivityList;
 		}
 

@@ -158,23 +158,20 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 			for(int index=0;index<chunkPlay.size();index++){		
 				if(chunkPlay.get(index).getSegment() > chunkPlaying.getSegment()){
 					break;
-				}
-				else if(chunkPlay.get(index).getSegment() == chunkPlaying.getSegment() && completedDownloads.contains(chunkPlay.get(index)) && (!chunkPlay.get(index).equals(chunkPlaying))){
+				} else if(chunkPlay.get(index).getSegment() == chunkPlaying.getSegment() && completedDownloads.contains(chunkPlay.get(index)) && (!chunkPlay.get(index).equals(chunkPlaying))){
 					buffer = buffer - chunkPlay.get(index).getTotalBytes();
 					chunkPlay.remove(chunkPlay.get(index));
-				}
-				else if(chunkPlay.get(index).getSegment() == chunkPlaying.getSegment()&& (!completedDownloads.contains(chunkPlay.get(index))) && (!chunkPlay.get(index).equals(chunkPlaying))){
+				} else if(chunkPlay.get(index).getSegment() == chunkPlaying.getSegment()&& (!completedDownloads.contains(chunkPlay.get(index))) && (!chunkPlay.get(index).equals(chunkPlaying))){
 					chunkPlay.remove(chunkPlay.get(index));
 				}
 			}
-			if (buffer < 0)
+			if (buffer < 0) {
 				buffer = 0;
+			}
 			seriesDataSets.put(key, chunkPlayStartTime + "," + buffer);
 			key++;
 			
-		} 
-		else
-		{
+		} else {
 			buffer=0;
 		}
 		return buffer;

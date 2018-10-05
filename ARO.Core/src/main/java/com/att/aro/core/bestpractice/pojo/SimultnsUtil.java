@@ -23,15 +23,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.SessionValues;
 import com.att.aro.core.util.Util;
 
 public final class SimultnsUtil {
-	private static final ILogger LOGGER = new LoggerImpl(SimultnsUtil.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(SimultnsUtil.class.getName());
 	TreeMap<Double, String> ipMap = new TreeMap<Double, String>();
 
 	public Map<String, ArrayList<Session>> getDistinctMap(List<Session> sessions) {

@@ -40,10 +40,14 @@ public interface IGoogleAnalytics {
 
 	void sendExceptionEvents(String exceptionDesc, String source, boolean isFatal);
 
-	void sendCrashEvents(String crashDesc, String source);
+	void sendAnalyticsTimings(String timingLabel, long runTime, String timingCategory);
+
+	void sendCrashEvents(String crashDesc);
 	
 	void sendViews(String screen);
 
 	void close();
+
+	void sendErrorEvents(String errnName, String errDescription, boolean isFatal);
 
 }

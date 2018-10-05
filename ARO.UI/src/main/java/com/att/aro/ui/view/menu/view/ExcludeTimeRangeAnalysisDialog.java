@@ -33,14 +33,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import com.att.aro.core.ILogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.impl.PacketAnalyzerImpl;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.mvc.IAROView;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -57,8 +58,7 @@ public class ExcludeTimeRangeAnalysisDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 
 	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.00");
-	private static ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
-	
+	private static final Logger LOGGER = LogManager.getLogger(ExcludeTimeRangeAnalysisDialog.class);		
 	private JPanel timeRangeSelectionPanel;
 	private JPanel jDialogPanel;
 	private JButton startButton;
@@ -67,6 +67,7 @@ public class ExcludeTimeRangeAnalysisDialog extends JDialog {
 	private JTextField startTimeTextField;
 	private JTextField endTimeTextField;
 	private IAROView parent;
+	
 	
 	private double traceEndTime;
 	private double timeRangeStartTime;
@@ -118,7 +119,7 @@ public class ExcludeTimeRangeAnalysisDialog extends JDialog {
 	private void initialize() {
 		PacketAnalyzerResult traceresult = ((MainFrame)parent).getController().getTheModel().getAnalyzerResult();
 		if (traceresult==null){
-			logger.error("Trace result error! " );
+			LOGGER.error("Trace result error! " );
 			MessageDialogFactory.getInstance().showErrorDialog(ExcludeTimeRangeAnalysisDialog.this,"wrong.."); 
 		}else{
 			if(endTimeResetValue == 0.0){

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="debug" name="vo">
+	<Properties>
+		<Property name="fileName">${sys:user.home}/VideoOptimizerLibrary/log4j-application.log</Property>
+		<Property name="filePattern">${fileName}.%i</Property>
+	</Properties>
+	<CustomLevels>
+		<CustomLevel name="REPORT" intLevel="250" />
+	</CustomLevels>
+	<Appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss} [%t] %-5level %logger{36} - %msg%n" />
+		</Console>
+		<RollingFile name="LogFile" fileName="${fileName}" ignoreExceptions="false"
+			filePattern="${filePattern}">
+			<PatternLayout pattern="%d %p %c{1.} [%t] %m%n" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="5 MB" />
+			</Policies>
+			<DefaultRolloverStrategy max="10" />
+		</RollingFile>
+	</Appenders>
+	<Loggers>
+		<Root level="debug">
+			<AppenderRef level="debug" ref="Console" />
+			<AppenderRef level="debug" ref="LogFile" />
+		</Root>
+		<Logger name="org.springframework" level="error" />
+		<Logger name="com.sun" level="error" />
+	</Loggers>
+</Configuration>

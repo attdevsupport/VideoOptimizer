@@ -20,11 +20,12 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.att.aro.datacollector.ioscollector.app.IOSAppException;
 
 public class ProvProfile {
-	private static Logger LOGGER = Logger.getLogger(ProvProfile.class.getSimpleName());
+	private static Logger LOGGER = LogManager.getLogger(ProvProfile.class.getSimpleName());
 	private static final String PROV_FILE_APP_ID_KEY = "application-identifier";
 	private static final String PROV_FILE_TEAM_ID_KEY = "com.apple.developer.team-identifier";
 	private static final String PROV_FILE_EXPIRATION_KEY = "ExpirationDate";

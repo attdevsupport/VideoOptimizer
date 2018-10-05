@@ -53,13 +53,14 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
@@ -80,8 +81,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	private static final float PLAYBACK_RATE = 1.0f; // 5.0f
 	private static final String outVideoTimeFileName = "exVideo_time";
 
-	private ILogger logger = ContextAware.getAROConfigContext().getBean(ILogger.class);
-
+	private static final Logger LOGGER = LogManager.getLogger(AROVideoPlayer.class);	
 	private BufferedWriter mTraceVideoTimeStampWriter;
 	private OutputStream mTraceVideoTimeStampFile;
 	private Component visualComponent;
@@ -136,7 +136,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 				try {
 					file.delete();
 				} catch (Exception ex) {
-					logger.info("Exception in deleting exVideo_time file. ", ex);
+					LOGGER.info("Exception in deleting exVideo_time file. ", ex);
 				}
 				syncVideoClicked = true;
 				Time current = null;
@@ -171,7 +171,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 			writeVideoTraceTime(Double.toString(externalVideoStartTime));
 			closeVideoTraceTimeFile();
 		} catch (IOException ioex) {
-			logger.info("Exception in close exVideo_time file. ", ioex);
+			LOGGER.info("Exception in close exVideo_time file. ", ioex);
 
 		}
 	}
@@ -397,7 +397,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	public double getMediaTime() {
 		
 		if (videoPlayer == null) {
-			logger.debug("player is not available");
+			LOGGER.debug("player is not available");
 			return 0;
 		}
 		
@@ -433,7 +433,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 		try {
 			refresh();
 		} catch (IOException e) {
-			logger.error("Error launching player", e);
+			LOGGER.error("Error launching player", e);
 		}	
 	}
 

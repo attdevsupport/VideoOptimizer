@@ -20,8 +20,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IGpsInfoReader;
 import com.att.aro.core.peripheral.pojo.GpsInfo;
@@ -36,8 +37,7 @@ import com.att.aro.core.util.Util;
  */
 public class GpsInfoReaderImpl extends PeripheralBase implements IGpsInfoReader {
 	
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(GpsInfoReaderImpl.class.getName());
 
 	private double gpsActiveDuration = 0.0;
 
@@ -59,7 +59,7 @@ public class GpsInfoReaderImpl extends PeripheralBase implements IGpsInfoReader 
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed to read GPS info: " + filepath);
+			LOGGER.error("failed to read GPS info: " + filepath);
 		}
 		if (lines == null || lines.length < 1) {
 			return gpsInfos;
@@ -88,7 +88,7 @@ public class GpsInfoReaderImpl extends PeripheralBase implements IGpsInfoReader 
 							dLastActiveTimeStamp = beginTime;
 						}
 					} else {
-						logger.warn("Invalid GPS state: " + firstLine);
+						LOGGER.warn("Invalid GPS state: " + firstLine);
 						prevGpsState = GpsState.GPS_UNKNOWN;
 					}
 
@@ -97,7 +97,7 @@ public class GpsInfoReaderImpl extends PeripheralBase implements IGpsInfoReader 
 						dLastActiveTimeStamp = 0.0;
 					}
 				} catch (Exception e) {
-					logger.warn("Unexpected error parsing GPS event: " + firstLine, e);
+					LOGGER.warn("Unexpected error parsing GPS event: " + firstLine, e);
 				}
 			}
 			
@@ -118,7 +118,7 @@ public class GpsInfoReaderImpl extends PeripheralBase implements IGpsInfoReader 
 								dLastActiveTimeStamp = endTime;
 							}
 						} else {
-							logger.warn("Invalid GPS state: " + strLineBuf);
+							LOGGER.warn("Invalid GPS state: " + strLineBuf);
 							gpsState = GpsState.GPS_UNKNOWN;
 						}
 						gpsInfos.add(new GpsInfo(beginTime, endTime, prevGpsState));
@@ -131,10 +131,10 @@ public class GpsInfoReaderImpl extends PeripheralBase implements IGpsInfoReader 
 						beginTime = endTime;
 
 					} catch (Exception e) {
-						logger.warn("Unexpected error parsing GPS event: " + strLineBuf, e);
+						LOGGER.warn("Unexpected error parsing GPS event: " + strLineBuf, e);
 					}
 				} else {
-					logger.warn("Invalid GPS trace entry: " + strLineBuf);
+					LOGGER.warn("Invalid GPS trace entry: " + strLineBuf);
 				}
 
 			}

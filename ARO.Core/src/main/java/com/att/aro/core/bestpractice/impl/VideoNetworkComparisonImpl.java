@@ -19,16 +19,16 @@ package com.att.aro.core.bestpractice.impl;
 import java.text.MessageFormat;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoNetworkComparisonResult;
 import com.att.aro.core.bestpractice.pojo.VideoUsage;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
@@ -53,9 +53,8 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent;
  */
 public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IBestPractice {
 
-	@InjectLogger
-	private static ILogger logger;
- 
+	private static final Logger LOGGER = LogManager.getLogger(VideoNetworkComparisonImpl.class.getName());
+
 	@Value("${networkComparison.title}")
 	private String overviewTitle;
 
@@ -85,7 +84,7 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 		if(videoUsage!=null){
 			List<VideoEvent> filteredVideoSegment = filterVideoSegment(videoUsage);
 			if (filteredVideoSegment.isEmpty()) {
-				logger.debug("there is no filtered video segment available");
+				LOGGER.debug("there is no filtered video segment available");
 			} else {
 				avgBitRate = getAvgBitRate(summaryBitRate, filteredVideoSegment);
 			}
@@ -125,7 +124,7 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 				} else {
 					if (curMaxLength < tempLength) {
 						curMaxLength = tempLength;
-						logger.debug("packetInfo: " + packetInfo.getPacketId() + " packet Time: "
+						LOGGER.debug("packetInfo: " + packetInfo.getPacketId() + " packet Time: "
 								+ packetInfo.getTimeStamp() + " find the bigger max: " + curMaxLength);
 					}
 					tempLength = packetInfo.getPayloadLen();// reset value
@@ -144,7 +143,7 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 			summaryBitRate += videoEvent.getBitrate();
 		}
 		avgBitRate = summaryBitRate / (1024*filteredVideoSegment.size());//kbps
-		logger.debug("avgBitRate: "+avgBitRate);
+		LOGGER.debug("avgBitRate: "+avgBitRate);
 		return avgBitRate;
 	}
  	

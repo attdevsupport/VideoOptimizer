@@ -172,13 +172,13 @@ public class MessageDialogFactory extends JOptionPane{
 			window.setFocusable(true);
 		}
 
-		if (Util.isMacOS()) {
+		if (window !=null && Util.isMacOS()) {
 			window.setAlwaysOnTop(true);
 		}
 
 		showMessageDialog(window, message, ResourceBundleHelper.getMessageString("error.title"), ERROR_MESSAGE);
 
-		if (Util.isMacOS()) {
+		if (window != null && Util.isMacOS()) {
 			window.setAlwaysOnTop(false);
 		}
 

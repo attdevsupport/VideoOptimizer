@@ -19,22 +19,22 @@ import java.lang.reflect.Field;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.impl.LoggerImpl;
+
+
 
 @Component
 public class LoggerPostProcessor implements BeanPostProcessor {
-	private static final Logger LOG = LoggerFactory.getLogger(LoggerPostProcessor.class);
+	private static final Logger LOG = LogManager.getLogger(LoggerPostProcessor.class.getName());
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName)
 			throws BeansException {
 		Field[] fields = bean.getClass().getDeclaredFields();
 		for(Field field : fields){
-			if(ILogger.class.isAssignableFrom(field.getType()) && field.getAnnotation(InjectLogger.class) != null){
-				ILogger log = new LoggerImpl(bean.getClass().getName());
+			if(Logger.class.isAssignableFrom(field.getType()) && field.getAnnotation(InjectLogger.class) != null){
+				Logger log = LogManager.getLogger(bean.getClass().getName());
 				try {
 					field.setAccessible(true);
 					field.set(bean, log);

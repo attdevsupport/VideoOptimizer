@@ -20,6 +20,7 @@ import java.util.ResourceBundle;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.pojo.ErrorCode;
+import com.att.aro.core.util.GoogleAnalyticsUtil;
 
 /**
  * error code for ios Collector start from 500
@@ -33,6 +34,7 @@ public final class ErrorCodeRegistry {
 		error.setCode(500);
 		error.setName("Error.validatepassword");
 		error.setDescription("There was an error validating password.");
+		sendGAErrorCode(error);
 		return error;
 	}
 	public static ErrorCode getTraceDirExist(){
@@ -41,6 +43,7 @@ public final class ErrorCodeRegistry {
 		err.setName("Found existing trace directory that is not empty");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + 
 				" found an existing directory that contains files and did not want to override it. Some files may be hidden.");
+		sendGAErrorCode(err);
 		return err;
 	}
 	public static ErrorCode getNoDeviceConnected(){
@@ -49,6 +52,7 @@ public final class ErrorCodeRegistry {
 		err.setName("No iOS device found.");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + 
 				" cannot find any iOS deviced plugged into the machine.");
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -61,6 +65,7 @@ public final class ErrorCodeRegistry {
 		err.setName("Failed to create local trace directory");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + 
 				" tried to create local directory for saving trace data, but failed.");
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -73,6 +78,7 @@ public final class ErrorCodeRegistry {
 		err.setName("Failed to find XCode on local machine");
 		err.setDescription(ApplicationConfig.getInstance().getAppShortName() + 
 				" tried to load XCode on local machine, but failed because XCode is not installed.");
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -84,6 +90,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(506);
 		err.setName("Unsupported XCode Version");
 		err.setDescription(defaultBundle.getString("Error.xcodeversionunsupported"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -95,6 +102,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(507);
 		err.setName("Incorrect Serial Number");
 		err.setDescription(defaultBundle.getString("Error.incorrectserialnumber"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -107,6 +115,7 @@ public final class ErrorCodeRegistry {
 		err.setName("No sudo Password");
 		err.setDescription(MessageFormat.format(defaultBundle.getString("Error.nosudopassword"), 
 												ApplicationConfig.getInstance().getAppShortName()));
+		sendGAErrorCode(err);
 		return err;
 	}	
 	/**
@@ -118,6 +127,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(504);
 		err.setName("sudo Password Issue");
 		err.setDescription(defaultBundle.getString("Error.sudopasswordissue"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -129,6 +139,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(509);
 		err.setName("Device Info Issue");
 		err.setDescription(defaultBundle.getString("Error.deviceinfoissue"));
+		sendGAErrorCode(err);
 		return err;
 	}	
 	/**
@@ -140,6 +151,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(510);
 		err.setName("Device Version Issue");
 		err.setDescription(defaultBundle.getString("Error.deviceversionissue"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -152,6 +164,7 @@ public final class ErrorCodeRegistry {
 		err.setName("iOS Unsupported Version");
 		err.setDescription(MessageFormat.format(defaultBundle.getString("Error.iosunsupportedversion"), 
 												ApplicationConfig.getInstance().getAppShortName()));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -163,6 +176,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(512);
 		err.setName("rvi error");
 		err.setDescription(defaultBundle.getString("Error.rvierror"));
+		sendGAErrorCode(err);
 		return err;
 	}	
 	/**
@@ -174,6 +188,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(512);
 		err.setName("missing folder name");
 		err.setDescription(defaultBundle.getString("Error.foldernamerequired"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -185,6 +200,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(514);
 		err.setName("Failed to retrieve iOS device data");
 		err.setDescription(description);
+		sendGAErrorCode(err);
 		return err;
 	}	
 	/**
@@ -196,6 +212,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(515);
 		err.setName("Multiple Xcode Command Line Tools installed mismatch");
 		err.setDescription("You have multiple xcode versions. You will need to configure command-line tools.\nPlease use 'sudo xcode-select -s /PATH/To/Xcode.app'.");
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -207,6 +224,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(516);
 		err.setName("Failed to save app to local disk");
 		err.setDescription(defaultBundle.getString("Error.app.appsaving"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -218,6 +236,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(517);
 		err.setName("Failed to remove _CodeSignature folder");
 		err.setDescription(defaultBundle.getString("Error.app.removecodesignature"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -229,6 +248,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(518);
 		err.setName("Failed to create entitlements.plist for re-signing app");
 		err.setDescription(defaultBundle.getString("Error.app.createentitlements"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -240,6 +260,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(519);
 		err.setName("Failed to remove entitlements.plist");
 		err.setDescription(defaultBundle.getString("Error.app.removeentitlements"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -251,6 +272,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(520);
 		err.setName("Error updating file");
 		err.setDescription(defaultBundle.getString("Error.app.updatefile") + " (" + filename +")");
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -262,6 +284,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(521);
 		err.setName("Error signing file");
 		err.setDescription(defaultBundle.getString("Error.app.filesigning"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -273,6 +296,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(522);
 		err.setName("Failed to deploy/launch app");
 		err.setDescription(defaultBundle.getString("Error.app.deploymentfailed"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -284,6 +308,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(523);
 		err.setName("Failed to get provisioning profile property values");
 		err.setDescription(defaultBundle.getString("Error.app.getprovpropsfailed"));
+		sendGAErrorCode(err);
 		return err;
 	}	
 	/**
@@ -295,6 +320,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(524);
 		err.setName("Provisioning profile expired");
 		err.setDescription(defaultBundle.getString("Error.app.provprofileexpired"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -306,6 +332,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(525);
 		err.setName("Error unzipping app");
 		err.setDescription(defaultBundle.getString("Error.app.unzipapp"));
+		sendGAErrorCode(err);
 		return err;
 	}
 	/**
@@ -317,6 +344,7 @@ public final class ErrorCodeRegistry {
 		err.setCode(525);
 		err.setName("App trust error");
 		err.setDescription(defaultBundle.getString("Error.app.trust"));
+		sendGAErrorCode(err);
 		return err;
 	}
 
@@ -324,6 +352,11 @@ public final class ErrorCodeRegistry {
 		ErrorCode err = new ErrorCode();
 		err.setName("ImageDecoder Error");
 		err.setDescription(message);
+		sendGAErrorCode(err);
 		return err;
+	}
+	
+	private static void sendGAErrorCode(ErrorCode err){
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendErrorEvents(err.getName(),err.getDescription(), false);
 	}
 }

@@ -51,42 +51,40 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 2.0
+#### Video Optimizer 2.1
 
-**System Requirements for Video Optimizer 2.0:**
+**System Requirements for Video Optimizer 2.1:**
 
-Before you download Video Optimizer 2.0, make sure you meet the following system requirements for your operating system.
+Before you download Video Optimizer 2.1, make sure you meet the following system requirements for your operating system.
 
 1. 2GB or more for RAM
 2. Java 8 or above
 3. Android SDK Level 19 or above for collecting Android devices trace
 4. Latest Xcode for collecting iOS devices trace
-5. WinPcap and WireShark for Windows platform
+5. WinPcap for Windows platform
 6. FFMpeg library and VLC media player installed and configured for HD video
 7. Brew, Ifuse, Xfuse, WireShark  for MacOS platform
+8. Wireshark
 
 
 
-#### Video Optimizer 2.0 Features
+#### Video Optimizer 2.1 Features
 
-#### • iOS attenuator feature is now available both on the GUI and CLI versions. It currently supports static attenuation for the required speeds.
+#### • iOS Attenuator enhancements allows to now precisely apply cellular network simulation with throughput which is in ‘Kbps’ by setting up the MITM proxy on Mac.
 
-#### • Video analysis settings has been added to the Preferences within Video tab. A new option called “Near Stall” is included in video preferences.
+#### • Secure Collector now supports analysis for DIRECTV application
 
-#### •	Enhanced support for HLS video streaming.
+#### • Collection and Analysis of traces for Devices with Android OS version Pie (9.0)
 
-#### •	Modified Video Parser wizard to easily edit the capture group
 #### •	Other Enhancements include:
-#### - Refresh button is now moved to the TCP/UDP flow table in Diagnostic tab
-#### - Export JSON has been streamlined and enhanced with additional metadata
-#### - Percentage savings and verbiage updates have been added to the Best Practices such as Text file compression, Image format and Minify CSS, JS, and HTML
+#### - Allows to open recent files from the File menu
+#### - User will now be able Select/De-Select the Best Practices using one universal button in Preferences
 
 
-
-### What are the known issues in Release 2.0?
+### What are the known issues in Release 2.1?
 
 #### •	Application names, CPU usage, signal strength is not displayed for traces taken with Android Version Oreo and above.
-#### •	With iPhone X, intermittent delay in starting the trace.  
+#### •	Some iOS traces taken using HD show as low resolution. 
 
 ### •  Installation instruction
 + Please follow the order to compile projects

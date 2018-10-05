@@ -21,18 +21,17 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 /**
  * A bean class that provides access to IP Packet data.
  */
 public class IPPacket extends Packet implements Serializable {
 	private static final long serialVersionUID = 1L;
-	
-	@InjectLogger
-	private static ILogger logger;
-	
+
+	private static final Logger LOGGER = LogManager.getLogger(IPPacket.class.getName());
+
 	private byte ipVersion;
 	private byte priority;
 	private int packetLength;
@@ -120,13 +119,13 @@ public class IPPacket extends Packet implements Serializable {
 		try {
 			sourceIPAddress = InetAddress.getByAddress(buffer);
 		} catch (UnknownHostException e) {
-			logger.warn("Unable to determine source IP - " + e.getMessage());
+			LOGGER.warn("Unable to determine source IP - " + e.getMessage());
 		}
 		try {
 			bytes.get(buffer, 0, addrLgth);
 			destinationIPAddress = InetAddress.getByAddress(buffer);
 		} catch (UnknownHostException e) {
-			logger.warn("Unable to determine destination IP - " + e.getMessage());
+			LOGGER.warn("Unable to determine destination IP - " + e.getMessage());
 		}
 	}
 

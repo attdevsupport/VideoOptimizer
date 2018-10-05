@@ -27,11 +27,12 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -54,7 +55,7 @@ public class ContentViewer {
 	private ContentViewFrame imageMetaFrame;
 	
 	private IHttpRequestResponseHelper httpHelper = ContextAware.getAROConfigContext().getBean(IHttpRequestResponseHelper.class);
-	private static final Logger LOGGER = Logger.getLogger(ContentViewer.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(ContentViewer.class.getName());
 
 	/**
 	 * Returns an instance of the ContentViewer.
@@ -427,7 +428,7 @@ public class ContentViewer {
 			try {
 				fos.write(httpHelper.getContent(rrInfo,session));
 			} catch (ContentException exception) {
-				LOGGER.log(Level.SEVERE, "Unexpected error creating request/response string", exception);
+				LOGGER.error("Unexpected error creating request/response string", exception);
 
 				// If we get a ContentException, just save the bytes we have
 //				byte[] buffer = httpHelper.getStorageBuffer(rrInfo);

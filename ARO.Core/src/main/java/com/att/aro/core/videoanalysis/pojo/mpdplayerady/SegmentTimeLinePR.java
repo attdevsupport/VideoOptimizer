@@ -31,7 +31,8 @@ public class SegmentTimeLinePR {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("\n\t\t\t\t\tSegmentTimeLine");   strblr.append(segmentList);
+		strblr.append("\n\t\t\t\t\tSegmentTimeLine");
+		strblr.append(segmentList);
 		return strblr.toString();
 	}
 

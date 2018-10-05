@@ -11,6 +11,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Comparator;
+import org.apache.log4j.Level;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -215,7 +216,7 @@ public class UtilTest {
 	@Test
 	public void testGetLogLvl() {
 		assertNotNull(Util.getLoggingLvl("INFO"));
-		assertEquals(org.apache.log4j.Level.INFO, Util.getLoggingLvl("INFO"));
+		assertEquals(Level.INFO, Util.getLoggingLvl("INFO"));
 	}
 	
 	@Test
@@ -266,13 +267,13 @@ public class UtilTest {
 		long result;
 		
 		result = Util.parseForUTC("2018-01-11T22:14:59.000000Z");
-		assertEquals(1515708899000l, result);
+		assertEquals(1515708899000L, result);
 		
 		result = Util.parseForUTC("2018-01-11T22:14:59");
-		assertEquals(1515708899000l, result);
+		assertEquals(1515708899000L, result);
 		
 		result = Util.parseForUTC("2018-01-11 22:14:59");
-		assertEquals(1515708899000l, result);
+		assertEquals(1515708899000L, result);
 		
 	}
 }

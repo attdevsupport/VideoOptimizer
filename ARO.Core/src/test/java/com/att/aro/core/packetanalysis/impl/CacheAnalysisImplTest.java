@@ -119,8 +119,9 @@ public class CacheAnalysisImplTest extends BaseTest {
 		when(httpRequestInfoArray[20].getRequestType()).thenReturn(HttpRequestResponseInfo.HTTP_GET);
 		when(httpRequestInfoArray[21].getRequestType()).thenReturn(HttpRequestResponseInfo.HTTP_GET);
 		for (int i = 22; i < 60; i++) {
-			if (i % 2 == 1)
+			if (i % 2 == 1) {
 				when(httpRequestInfoArray[i].getRequestType()).thenReturn(HttpRequestResponseInfo.HTTP_GET);
+			}
 		}
 		Date date01 = new Date(1421384400000L); // Friday, January 16, 2015
 												// 5:00:00 AM GMT
@@ -258,8 +259,9 @@ public class CacheAnalysisImplTest extends BaseTest {
 		when(httpRequestInfoArray[20].getRequestType()).thenReturn(HttpRequestResponseInfo.HTTP_GET);
 		when(httpRequestInfoArray[21].getRequestType()).thenReturn(HttpRequestResponseInfo.HTTP_GET);
 		for (int i = 22; i < 60; i++) {
-			if (i % 2 == 1)
+			if (i % 2 == 1) {
 				when(httpRequestInfoArray[i].getRequestType()).thenReturn(HttpRequestResponseInfo.HTTP_GET);
+			}
 		}
 		Date date01 = new Date(1421384400000L); // Friday, January 16, 2015
 												// 5:00:00 AM GMT

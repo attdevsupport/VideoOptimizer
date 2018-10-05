@@ -34,6 +34,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.UIManager;
 
+import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.pojo.AROTraceData;
@@ -46,7 +47,7 @@ import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public abstract class AbstractBpDetailTablePanel extends TabPanelJPanel implements IAROExpandable, MouseListener {
-	private static final Logger LOGGER = Logger.getLogger(AbstractBpDetailTablePanel.class.getName()); 
+	private static final Logger LOGGER = LogManager.getLogger(AbstractBpDetailTablePanel.class.getName()); 
 	private static final long serialVersionUID = 1L;
 
 	final static int ROW_HEIGHT = 20;

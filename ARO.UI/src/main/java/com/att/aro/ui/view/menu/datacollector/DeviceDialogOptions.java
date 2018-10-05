@@ -17,6 +17,7 @@ package com.att.aro.ui.view.menu.datacollector;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -28,6 +29,7 @@ import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.border.Border;
@@ -40,6 +42,7 @@ import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.settings.impl.SettingsImpl;
+import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.datacollector.ioscollector.utilities.AppSigningHelper;
@@ -52,6 +55,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 	private DataCollectorSelectNStartDialog parent;
 	private IAroDevice selectedDevice;
+	private static final String SHARED_NETWORK_INTERFACE = "bridge100";
 
 	private String txtLREZ;
 	private String txtHDEF;
@@ -92,8 +96,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private AttnrPanel attnrGroupPanel;
 	private AttenuatorModel miniAtnr;
 
-	private boolean secure;
-
 	private IDataCollector collector;
 	private IDataCollector rootCollector;
 	private IDataCollector vpnCollector;
@@ -123,7 +125,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		contents.add(labelAttenuatorTitle, labelConstraints);
 		contents.add(getAttnrGroup(), optionConstraints);
 
- 
 		contents.add(labelVideoTitle, labelConstraints);
 		contents.add(getRadioGroupVideo(), optionConstraints);
 
@@ -202,9 +203,10 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		showHideOptions(e);
-		if(e.getActionCommand().equals(vpn) || e.getActionCommand().equals(ios) || e.getActionCommand().equals(rooted)) {
+		if(vpn.equals(e.getActionCommand())||ios.equals(e.getActionCommand())) {
 			setAttenuateSectionStatus();
-		}
+		}	
+		
 	}
 
 	private void showHideOptions(ActionEvent e) {
@@ -247,7 +249,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		else if (ac.equals(rooted)) {
 			collector = rootCollector;
 			if (btnRooted.isSelected()) {
- 
 				enableFullVideo(false);
 			}
 			return;
@@ -258,13 +259,12 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 				enableFullVideo(true);
 			}
-
 			return;
 
 		}
- 
 	}
 
+	
 	/**
 	 * set attenuate section enabled or disabled based on the selection of
 	 * Rooted or VPN or it is a IOS device
@@ -275,16 +275,21 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			attnrGroupPanel.setAttenuateEnable(true);
 			if(btniOS.isSelected()) {
 				attnrGroupPanel.getAttnrRadioGP().setRbAtnrLoadFileEnable(false);
+				if (NetworkUtil.isNetworkUp(SHARED_NETWORK_INTERFACE)) {
+					attnrGroupPanel.getAttnrRadioGP().getRadioAttnGroup()
+					.setSelected(attnrGroupPanel.getAttnrRadioGP().getSliderBtn().getModel(), true);
+					attnrGroupPanel.getAttnrRadioGP().getDefaultBtn().setEnabled(false);
+					this.parent.setPreferredSize(new Dimension(650, 520));
+
+				}else {
+					attnrGroupPanel.getAttnrRadioGP().getSliderBtn().setEnabled(false);
+					attnrGroupPanel.getAttnrRadioGP().getDefaultBtn().setEnabled(true);
+				}
 			}
 		} else {
 			attnrGroupPanel.setAttenuateEnable(false);
 		}
 	}
-
-	public boolean isSecure() {
-		return secure;
-	}
- 
 
 	public AttnrPanel getAttnrGroup() {
 		if (attnrGroupPanel == null) {
@@ -296,7 +301,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		}
 		return attnrGroupPanel;
 	}
-
 
 
 	private JPanel getRadioGroupVideo() {
@@ -326,7 +330,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		btnGrp.add(btniOS);
 		return btnGrp;
 	}
- 
 
 	private void loadRadioGroupCollector() {
 		rooted = ResourceBundleHelper.getMessageString("dlog.collector.option.rooted");
@@ -447,8 +450,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			btn_lrez.setSelected(true);
 			videoOption = VideoOption.LREZ;
 
-			showVideoOrientation(false); // false because LREZ is selected by
-											// default
+			showVideoOrientation(false); // false because LREZ is selected by default
 
 			btniOS.setEnabled(false);
 			btnVpn.setEnabled(true);
@@ -515,7 +517,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				enableFullVideo(false);
 				enableVpnCapture(false);
 			}
- 
+
 			setAttenuateSectionStatus();
 			break;
 
@@ -536,7 +538,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 		btnVpn.setEnabled(boolFlag);
 		btnVpn.setSelected(boolFlag);
-		
 
 	}
 

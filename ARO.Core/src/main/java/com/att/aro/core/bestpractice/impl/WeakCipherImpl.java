@@ -24,13 +24,11 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.WeakCipherEntry;
 import com.att.aro.core.bestpractice.pojo.WeakCipherResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
@@ -38,10 +36,6 @@ import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.util.WeakCipherUtil;
 
 public class WeakCipherImpl implements IBestPractice {
-
-	@InjectLogger
-	private static ILogger logger;
-	
 	@Value("${security.weakCipher.title}")
 	private String overviewTitle;
 	

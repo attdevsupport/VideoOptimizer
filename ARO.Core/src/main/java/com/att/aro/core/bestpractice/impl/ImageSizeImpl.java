@@ -22,6 +22,8 @@ import java.util.List;
 
 import javax.swing.ImageIcon;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -30,14 +32,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.HtmlImage;
 import com.att.aro.core.bestpractice.pojo.ImageSizeEntry;
 import com.att.aro.core.bestpractice.pojo.ImageSizeResult;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -72,8 +72,7 @@ public class ImageSizeImpl implements IBestPractice {
 	@Value("${exportall.csvNumberOfLargeImages}")
 	private String exportNumberOfLargeImages;
 
-	@InjectLogger
-	private static ILogger log;
+	private static final Logger LOG = LogManager.getLogger(ImageSizeImpl.class.getName());
 
 	private IHttpRequestResponseHelper reqhelper;
 
@@ -172,9 +171,9 @@ public class ImageSizeImpl implements IBestPractice {
 						try {
 							imageDownloaded = reqhelper.getContentString(hrri, tcpSession);
 						} catch (IOException e) {
-							log.warn("IOException, something is wrong.", e);
+							LOG.warn("IOException, something is wrong.", e);
 						} catch (Exception e) {
-							log.error("Failed to get content from HttpRequestResponseInfo", e);
+							LOG.error("Failed to get content from HttpRequestResponseInfo", e);
 						}
 
 						if ((imageToSearchFor != null && imageDownloaded != null) && (imageDownloaded.toLowerCase().contains(imageToSearchFor.toLowerCase()))) {
@@ -234,7 +233,7 @@ public class ImageSizeImpl implements IBestPractice {
 		try {
 			content = reqhelper.getContent(reqRessInfo, session);
 		} catch (Exception e) {
-			log.error("Failed to get content from HttpRequestResponseInfo: " + e.getMessage());
+			LOG.error("Failed to get content from HttpRequestResponseInfo: " + e.getMessage());
 		}
 		if (content != null) {
 			int widthRange = deviceScreenSizeRangeX;

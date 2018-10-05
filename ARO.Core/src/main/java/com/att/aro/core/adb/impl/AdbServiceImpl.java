@@ -18,6 +18,8 @@ package com.att.aro.core.adb.impl;
 
 import java.io.IOException;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.android.ddmlib.AndroidDebugBridge;
@@ -27,14 +29,12 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
-import com.att.aro.core.ILogger;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
-import com.att.aro.core.model.InjectLogger;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
 import com.att.aro.core.settings.Settings;
 import com.att.aro.core.settings.impl.SettingsImpl;
@@ -61,8 +61,7 @@ import com.att.aro.core.util.Util;
  */
 public class AdbServiceImpl implements IAdbService {
 
-	@InjectLogger
-	private ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(AdbServiceImpl.class.getName());
 	private IExternalProcessRunner extrunner;
 	private IFileManager fileManager;
 	private Settings configFile;
@@ -145,13 +144,13 @@ public class AdbServiceImpl implements IAdbService {
 
 			for (String path : paths) {
 				if (path != null && fileManager.fileExist(path)) {
-					logger.debug(path);
+					LOGGER.debug(path);
 					configFile.setAndSaveAttribute(getADBAttributeName(), path);
 					return Util.validateInputLink(path);
 				}
 			}
 
-			logger.error("failed to repair ADB path, no useful environmental variables (see: ANDROID_ADB, ANDROID_HOME)");
+			LOGGER.error("failed to repair ADB path, no useful environmental variables (see: ANDROID_ADB, ANDROID_HOME)");
 			return null;
 
 		}
@@ -246,15 +245,15 @@ public class AdbServiceImpl implements IAdbService {
 					adb = AndroidDebugBridge.createBridge(adbPath, true);
 				}
 				if (adb == null || !adb.hasInitialDeviceList()) {
-					logger.error("ADB bridge not working or failed to connect.");
+					LOGGER.error("ADB bridge not working or failed to connect.");
 					adb = null;
 				}
 			} else {
-				logger.info("Failed to create ADB Bridge, unable to connect.");
+				LOGGER.info("Failed to create ADB Bridge, unable to connect.");
 			}
 
 		} else {
-			logger.info("No ADB path found, failed to create ADB Bridge.");
+			LOGGER.info("No ADB path found, failed to create ADB Bridge.");
 		}
 		return adb;
 	}
@@ -266,7 +265,7 @@ public class AdbServiceImpl implements IAdbService {
 			lines = extrunner.runGetString("adb devices");
 			//logger.debug("result of command 'adb devices':"+ lines);
 		} catch (IOException e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 		}
 		if (lines.contains("command not found") 
 				|| lines.contains("not recognized") 
@@ -290,7 +289,7 @@ public class AdbServiceImpl implements IAdbService {
 	public IDevice[] getConnectedDevices() throws IOException{
 		AndroidDebugBridge adb = ensureADBServiceStarted();
 		if (adb == null) {
-			logger.debug("failed to connect to existing bridge, now trying running adb from environment");
+			LOGGER.debug("failed to connect to existing bridge, now trying running adb from environment");
 			throw new IOException("AndroidDebugBridge failed to start");
 		}
 
@@ -360,7 +359,7 @@ public class AdbServiceImpl implements IAdbService {
 		            , localFolder + "/" + file
 					, SyncService.getNullProgressMonitor());
 		} catch (SyncException | TimeoutException | IOException e) {
-			logger.error("pull " + file + ":" + e.getMessage());
+			LOGGER.error("pull " + file + ":" + e.getMessage());
 			return false;
 		}
 		return true;
@@ -387,8 +386,4 @@ public class AdbServiceImpl implements IAdbService {
 		return success;
 	}
 
-	@Autowired
-	public void setLogger(ILogger logger) {
-		this.logger = logger;
-	}
 }

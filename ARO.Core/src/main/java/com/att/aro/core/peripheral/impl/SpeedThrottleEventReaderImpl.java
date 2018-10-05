@@ -20,8 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.ISpeedThrottleEventReader;
 import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent;
@@ -34,8 +35,7 @@ import com.att.aro.core.util.Util;
 
 public class SpeedThrottleEventReaderImpl extends PeripheralBase implements ISpeedThrottleEventReader {
 	
-	@InjectLogger
-	private static ILogger logger;
+	private static final Logger LOGGER = LogManager.getLogger(SpeedThrottleEventReaderImpl.class.getName());
 	private static final String DELIMITER = ",";
 
 	@Override
@@ -50,7 +50,7 @@ public class SpeedThrottleEventReaderImpl extends PeripheralBase implements ISpe
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("Failed to open file for Speed Throttle Event: " + filepath, e1);
+			LOGGER.error("Failed to open file for Speed Throttle Event: " + filepath, e1);
 		}
 		if(lines != null && lines.length > 0){
 			for (String strLineBuf : lines) {
@@ -70,11 +70,11 @@ public class SpeedThrottleEventReaderImpl extends PeripheralBase implements ISpe
 			throttleEvent = new SpeedThrottleEvent(throttleFlow,delayTime,timeStamp);
 			
 		}catch(NumberFormatException numberException){
-			logger.error("Invalid number format : "+ line , numberException);
+			LOGGER.error("Invalid number format : "+ line , numberException);
 			return new SpeedThrottleEvent(SpeedThrottleFlow.DLT,0,0L);
 
 		}catch (Exception exception) {
-			logger.error("Invalid input: "+ line , exception);
+			LOGGER.error("Invalid input: "+ line , exception);
 			return new SpeedThrottleEvent(SpeedThrottleFlow.DLT,0,0L);
 		}
 

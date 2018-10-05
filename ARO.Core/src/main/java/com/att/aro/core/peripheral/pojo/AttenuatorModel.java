@@ -88,13 +88,13 @@ public class AttenuatorModel {
 		 * The method is used for recording the user's choice for throttle check box
 		 * @return boolean
 		 */
-		public boolean isThrottleDLEnable() {
+		public boolean isThrottleDLEnabled() {
 			return throttleDLEnable;
 		}
 		public void setThrottleDLEnable(boolean throttleDLEnable) {
 			this.throttleDLEnable = throttleDLEnable;
 		}
-		public boolean isThrottleULEnable() {
+		public boolean isThrottleULEnabled() {
 			return throttleULEnable;
 		}
 		public void setThrottleULEnable(boolean throttleULEnable) {

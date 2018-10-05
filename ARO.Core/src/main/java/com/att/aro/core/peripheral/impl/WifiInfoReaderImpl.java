@@ -22,8 +22,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.att.aro.core.ILogger;
-import com.att.aro.core.model.InjectLogger;
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IWifiInfoReader;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
@@ -37,9 +38,8 @@ import com.att.aro.core.util.Util;
  */
 public class WifiInfoReaderImpl extends PeripheralBase implements IWifiInfoReader {
 
-	@InjectLogger
-	private static ILogger logger;
-	
+	private static final Logger LOGGER = LogManager.getLogger(WifiInfoReaderImpl.class.getName());
+
 	private double wifiActiveDuration = 0.0;
 	private Pattern wifiPattern = Pattern.compile("\\S*\\s*\\S*\\s*(\\S*)\\s*(\\S*)\\s*(.*)");
 
@@ -67,7 +67,7 @@ public class WifiInfoReaderImpl extends PeripheralBase implements IWifiInfoReade
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e1) {
-			logger.error("failed to read Wifi info file: " + filepath);
+			LOGGER.error("failed to read Wifi info file: " + filepath);
 		}
 		if (lines != null && lines.length > 0) {
 			firstLine = lines[0];
@@ -85,7 +85,7 @@ public class WifiInfoReaderImpl extends PeripheralBase implements IWifiInfoReade
 							prevRssi = matcher.group(2);
 							prevSsid = matcher.group(3);
 						} else {
-							logger.warn("Unable to parse wifi connection params: " + firstLine);
+							LOGGER.warn("Unable to parse wifi connection params: " + firstLine);
 						}
 					} else if (TraceDataConst.WIFI_DISCONNECTED.equals(strFieldsFirstLine[1])) {
 						prevWifiState = WifiState.WIFI_DISCONNECTED;
@@ -96,7 +96,7 @@ public class WifiInfoReaderImpl extends PeripheralBase implements IWifiInfoReade
 					} else if (TraceDataConst.WIFI_SUSPENDED.equals(strFieldsFirstLine[1])) {
 						prevWifiState = WifiState.WIFI_SUSPENDED;
 					} else {
-						logger.warn("Unknown wifi state: " + firstLine);
+						LOGGER.warn("Unknown wifi state: " + firstLine);
 						prevWifiState = WifiState.WIFI_UNKNOWN;
 					}
 
@@ -109,11 +109,11 @@ public class WifiInfoReaderImpl extends PeripheralBase implements IWifiInfoReade
 					dLastTimeStamp = beginTime;
 //					}
 				} else {
-					logger.warn("Invalid WiFi trace entry: " + firstLine);
+					LOGGER.warn("Invalid WiFi trace entry: " + firstLine);
 				}
 
 			} catch (Exception e) {
-				logger.warn("Unexpected error parsing GPS event: " + firstLine, e);
+				LOGGER.warn("Unexpected error parsing GPS event: " + firstLine, e);
 			}
 
 			for (int i = 1; i < lines.length; i++) {
@@ -136,7 +136,7 @@ public class WifiInfoReaderImpl extends PeripheralBase implements IWifiInfoReade
 								rssi = matcher.group(2);
 								ssid = matcher.group(3);
 							} else {
-								logger.warn("Unable to parse wifi connection params: " + strLineBuf);
+								LOGGER.warn("Unable to parse wifi connection params: " + strLineBuf);
 							}
 						} else if (TraceDataConst.WIFI_DISCONNECTED.equals(strFields[1])) {
 							wifiState = WifiState.WIFI_DISCONNECTED;
@@ -147,7 +147,7 @@ public class WifiInfoReaderImpl extends PeripheralBase implements IWifiInfoReade
 						} else if (TraceDataConst.WIFI_SUSPENDED.equals(strFields[1])) {
 							wifiState = WifiState.WIFI_SUSPENDED;
 						} else {
-							logger.warn("Unknown wifi state: " + strLineBuf);
+							LOGGER.warn("Unknown wifi state: " + strLineBuf);
 							wifiState = WifiState.WIFI_UNKNOWN;
 						}
 
@@ -167,10 +167,10 @@ public class WifiInfoReaderImpl extends PeripheralBase implements IWifiInfoReade
 							prevSsid = ssid;
 						}
 					} else {
-						logger.warn("Invalid WiFi trace entry: " + strLineBuf);
+						LOGGER.warn("Invalid WiFi trace entry: " + strLineBuf);
 					}
 				} catch (Exception e) {
-					logger.warn("Unexpected error parsing GPS event: " + strLineBuf, e);
+					LOGGER.warn("Unexpected error parsing GPS event: " + strLineBuf, e);
 				}
 
 			}
