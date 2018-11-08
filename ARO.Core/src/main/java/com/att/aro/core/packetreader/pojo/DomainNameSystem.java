@@ -20,11 +20,16 @@ import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Set;
 
+import lombok.Data;
+import lombok.Getter;
+import lombok.AccessLevel;
+
 /**
  * Used to interpret DNS information from a packet containing DNS data
  * 
  * Date: April 4, 2014
  */
+@Data
 public class DomainNameSystem implements Serializable {
 	private static final long serialVersionUID = 1L;
 
@@ -32,46 +37,9 @@ public class DomainNameSystem implements Serializable {
 	private boolean response;
 	private String domainName;
 	private String cname;
-	private Set<InetAddress> ipAddresses;
+	@Getter(AccessLevel.NONE) private Set<InetAddress> ipAddresses;
 	
-	public DomainNameSystem(){}
-
-	public String getCname(){
-		return this.cname;
-	}
-	public void setCname(String cname){
-		this.cname = cname;
-	}
-	/**
-	 * @return the packet
-	 */
-	public IPPacket getPacket() {
-		return packet;
-	}
-	public void setPacket(IPPacket packet){
-		this.packet = packet;
-	}
-
-	/**
-	 * @return the response
-	 */
-	public boolean isResponse() {
-		return response;
-	}
-	public void setResponse(boolean value){
-		this.response = value;
-	}
-
-	/**
-	 * @return the domainName
-	 */
-	public String getDomainName() {
-		return domainName;
-	}
-	public void setDomainName(String name){
-		this.domainName = name;
-	}
-
+	
 	/**
 	 * @return the ipAddresses
 	 */
@@ -82,9 +50,5 @@ public class DomainNameSystem implements Serializable {
 			return Collections.emptySet();
 		}
 	}
-	public void setIpAddresses(Set<InetAddress> ipAddresses){
-		this.ipAddresses = ipAddresses;
-	}
-
 
 }

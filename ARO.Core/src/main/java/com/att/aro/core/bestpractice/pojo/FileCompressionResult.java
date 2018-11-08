@@ -72,4 +72,44 @@ public class FileCompressionResult extends AbstractBestPracticeResult{
 		this.exportAllKb = exportAllKb;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		FileCompressionResult compressionResult = (FileCompressionResult) obj;
+		if (compressionResult.getNoOfCompressedFiles() != noOfCompressedFiles
+				|| compressionResult.getNoOfUncompressedFiles() != noOfUncompressedFiles) {
+			return false;
+		}
+		if (compressionResult.getTotalUncompressedSize() != totalUncompressedSize) {
+			return false;
+		}
+		if (!compressionResult.getResults().containsAll(results)) {
+			return false;
+		}
+		if ((!compressionResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != compressionResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + noOfCompressedFiles;
+		result = prime * result + noOfUncompressedFiles;
+		result = prime * result + totalUncompressedSize;
+		for (TextFileCompressionEntry entry : results) {
+			result = prime * result + entry.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

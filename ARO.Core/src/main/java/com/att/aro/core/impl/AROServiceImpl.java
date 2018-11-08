@@ -147,6 +147,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice chunkPacing;
 	private IBestPractice videoRedundancy;
 	private IBestPractice videoConcurrentSession;
+	private IBestPractice videoVariableBitrate;
 
 	@Autowired
 	public void setPacketAnalyzer(IPacketAnalyzer packetanalyzer) {
@@ -387,6 +388,12 @@ public class AROServiceImpl implements IAROService {
 		this.videoConcurrentSession = videoConcurrentSession;
 	}
 
+	@Autowired
+	@Qualifier("videoVariableBitrate")
+	public void setVideoVariableBitrateImpl(IBestPractice videoVariableBitrate) {
+		this.videoVariableBitrate = videoVariableBitrate;
+	}
+	
 	@Autowired
 	@Qualifier("httpsUsage")
 	public void setHttpsUsage(IBestPractice httpsUsage) {
@@ -752,6 +759,8 @@ public class AROServiceImpl implements IAROService {
 			return videoRedundancy;
 		case VIDEO_CONCURRENT_SESSION:
 			return videoConcurrentSession;
+		case VIDEO_VARIABLE_BITRATE:
+			return videoVariableBitrate;
 		case HTTPS_USAGE:
 			return httpsUsage;
 		case TRANSMISSION_PRIVATE_DATA:

@@ -16,5 +16,5 @@
 package com.att.aro.core.bestpractice.pojo;
 
 public enum BPResultType {
-	PASS, FAIL, WARNING, SELF_TEST, NONE
+	PASS, FAIL, WARNING, SELF_TEST, CONFIG_REQUIRED, NONE
 }

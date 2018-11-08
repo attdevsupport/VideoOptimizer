@@ -29,7 +29,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
 import org.apache.log4j.Logger;
@@ -40,7 +39,6 @@ import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.AROMenuAdder;
 import com.att.aro.ui.commonui.ContextAware;
@@ -83,9 +81,7 @@ public class AROToolMenu implements ActionListener {
 		menu_tools_videoParserWizard,
 		menu_tools_uploadTraceDialog,
 		menu_tools_downloadTraceDialog,
-		menu_tools_editMetadata,
-		menu_tools_ms_uploadTraceDialog,
-		menu_tools_ms_downloadTraceDialog
+		menu_tools_editMetadata
 	}
 
 	public AROToolMenu(SharedAttributesProcesses parent){
@@ -114,18 +110,6 @@ public class AROToolMenu implements ActionListener {
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_clearErrorMsg));
 			}
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_videoParserWizard));
-			if("dev".equals(SettingsImpl.getInstance().getAttribute("env"))) {
-				toolMenu.addSeparator();
-				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_uploadTraceDialog));
-				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_downloadTraceDialog));
-				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_editMetadata));
-				if (SettingsImpl.getInstance().getAttribute("traceHandlerURL") != null
-					&& SettingsImpl.getInstance().checkAttributeValue("env", "dev")) {
-					toolMenu.addSeparator();
-					toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_ms_uploadTraceDialog));
-//					toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_ms_downloadTraceDialog));
-				}
-			}
 		}
 		return toolMenu;
 	}
@@ -266,7 +250,7 @@ public class AROToolMenu implements ActionListener {
 		uploadDialog.setVisible(true);
 		uploadDialog.setAlwaysOnTop(true);
 	}
-	
+
 	private void openRegexWizard(){
 		RegexWizard regexWizard = RegexWizard.getInstance();
 		if (regexWizard != null) {

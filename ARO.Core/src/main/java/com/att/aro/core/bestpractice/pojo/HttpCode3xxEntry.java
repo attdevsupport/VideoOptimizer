@@ -19,6 +19,11 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 
 
 public class HttpCode3xxEntry extends HttpEntry{
+	
+	public HttpCode3xxEntry(){
+		super();
+	}
+	
 	/**
 	 * Creates an instance of the the HttpCode3XXEntry test.
 	 * 

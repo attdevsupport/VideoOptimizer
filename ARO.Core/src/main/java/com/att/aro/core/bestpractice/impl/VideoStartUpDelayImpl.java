@@ -14,7 +14,6 @@
  * limitations under the License.
 */
 
-
 package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
@@ -53,7 +52,7 @@ import com.att.aro.core.videoanalysis.pojo.AROManifest;
  * Link: goes to a view of video startup delays.
  * 
  */
-public class VideoStartUpDelayImpl implements IBestPractice{
+public class VideoStartUpDelayImpl implements IBestPractice {
 	@Value("${startUpDelay.title}")
 	private String overviewTitle;
 
@@ -71,13 +70,13 @@ public class VideoStartUpDelayImpl implements IBestPractice{
 
 	@Value("${startUpDelay.results}")
 	private String textResults;
-	
+
 	@Value("${startUpDelay.init}")
-	private String textResultInit;
-	
-	@Value("${startUpDelay.empty}")
-	private String textResultEmpty;
-	
+	private String startUpDelayNotSet;
+
+	@Value("${videoSegment.empty}")
+	private String novalidManifestsFound;
+
 	@Autowired
 	private IVideoUsagePrefsManager videoPref;
 
@@ -105,12 +104,15 @@ public class VideoStartUpDelayImpl implements IBestPractice{
 		result.setDetailTitle(detailTitle);
 		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setOverviewTitle(overviewTitle);
-		// this VideoBestPractice is to be reported as a selftest until further notice
+		BPResultType bpResultType = BPResultType.SELF_TEST;
+		// this VideoBestPractice is to be reported as a selftest until further
+		// notice
 		if (manifestCollection == null || manifestCollection.isEmpty()) {
-			result.setResultText(textResultEmpty);
+			result.setResultText(novalidManifestsFound);
 		} else {
 			if (tracedata.getVideoUsage() != null && tracedata.getVideoUsage().getChunkPlayTimeList().isEmpty()) {
-				result.setResultText(MessageFormat.format(textResultInit, startupDelay, startupDelay == 1 ? "" : "s"));
+				result.setResultText(
+						MessageFormat.format(startUpDelayNotSet, startupDelay, startupDelay == 1 ? "" : "s"));
 			} else {
 				
 				for (AROManifest aroManifest : manifestCollection.values()) {
@@ -118,7 +120,7 @@ public class VideoStartUpDelayImpl implements IBestPractice{
 						startupDelay = aroManifest.getDelay();
 					}
 				}
-				isStartupDelaySet=true;
+				isStartupDelaySet = true;
 				result.setResultText(MessageFormat.format(textResults, startupDelay // 0
 						, startupDelay == 1 ? "" : "s" // 1
 						, definedDelay // 2
@@ -126,13 +128,18 @@ public class VideoStartUpDelayImpl implements IBestPractice{
 				));
 			}
 		}
-		
 		result.setStartUpDelay(startupDelay);
-		BPResultType bpResultType= BPResultType.PASS;
-		if(isStartupDelaySet){
-			 bpResultType = Util.checkPassFailorWarning(startupDelay,
-					 Double.parseDouble(videoPref.getVideoUsagePreference().getStartUpDelayWarnVal()),
-					 Double.parseDouble(videoPref.getVideoUsagePreference().getStartUpDelayFailVal()));
+
+		if (isStartupDelaySet) {
+			bpResultType = Util.checkPassFailorWarning(startupDelay,
+					Double.parseDouble(videoPref.getVideoUsagePreference().getStartUpDelayWarnVal()),
+					Double.parseDouble(videoPref.getVideoUsagePreference().getStartUpDelayFailVal()));
+		} else if (!isStartupDelaySet && Util.isTraceWithValidManifestsSelected(tracedata.getVideoUsage())) {
+			bpResultType = BPResultType.CONFIG_REQUIRED;
+			result.setResultText(
+					MessageFormat.format(startUpDelayNotSet, startupDelay, startupDelay == 1 ? "" : "s"));
+		} else if (!Util.isTraceWithValidManifestsSelected(tracedata.getVideoUsage())) {
+			result.setResultText(novalidManifestsFound);
 		}
 		result.setResultType(bpResultType);
 		return result;

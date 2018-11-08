@@ -81,4 +81,53 @@ public class ConnectionClosingResult extends AbstractBestPracticeResult {
 		return BestPracticeType.CONNECTION_CLOSING;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		ConnectionClosingResult connCloseResult = (ConnectionClosingResult) obj;
+		if (Double.doubleToLongBits(largestEnergyTime) != Double
+				.doubleToLongBits(connCloseResult.getLargestEnergyTime())
+				|| Double.doubleToLongBits(tcpControlEnergy) != Double
+						.doubleToLongBits(connCloseResult.getTcpControlEnergy())) {
+			return false;
+		}
+		if (Double.doubleToLongBits(tcpControlEnergyRatio) != Double
+				.doubleToLongBits(connCloseResult.getTcpControlEnergyRatio())
+				|| Double.doubleToLongBits(wastedBurstEnergy) != Double
+						.doubleToLongBits(connCloseResult.getWastedBurstEnergy())) {
+			return false;
+		}
+		if (connCloseResult.isConClosingProb() != conClosingProb) {
+			return false;
+		}
+		if ((!connCloseResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != connCloseResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(largestEnergyTime);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(tcpControlEnergy);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(tcpControlEnergyRatio);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(wastedBurstEnergy);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + Boolean.hashCode(conClosingProb);
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

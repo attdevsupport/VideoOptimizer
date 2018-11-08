@@ -28,6 +28,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +86,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	// local directory in user machine to pull trace from device to
 	private String localTraceFolder;
 	private static final int MILLISECONDSFORTIMEOUT = 300;
-	private static String APK_FILE_NAME = "VPNCollector-2.1.%s.apk";
+	private static String APK_FILE_NAME = "VPNCollector-2.2.%s.apk";
 	private static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 
 	private IAndroid android;
@@ -184,12 +185,12 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 	@Override
 	public int getMajorVersion() {
-		return 2;
+		return 1;
 	}
 
 	@Override
 	public String getMinorVersion() {
-		return "1.0";
+		return "4.0";
 	}
 
 	@Override
@@ -376,14 +377,21 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		int throttleDL = -1;
 		int throttleUL = -1;
 		boolean atnrProfile = false;
+		boolean secure = false;
+		boolean installCert = false;
 		String location = "";
+		String selectedAppName = "";
 		Orientation videoOrientation = Orientation.PORTRAIT;
 		
 		if (extraParams != null) {
 			atnr = (AttenuatorModel)getOrDefault(extraParams, "AttenuatorModel", atnr);
+ 			secure = (boolean) getOrDefault(extraParams, "secure", false);
+			if (secure) {
+				installCert = (boolean) getOrDefault(extraParams, "installCert", false);
+			}
 			videoOption = (VideoOption) getOrDefault(extraParams, "video_option", VideoOption.NONE);
 			videoOrientation = (Orientation) getOrDefault(extraParams, "videoOrientation", Orientation.PORTRAIT);
-  			
+			selectedAppName = (String) getOrDefault(extraParams, "selectedAppName", StringUtils.EMPTY);
 		}
 		
 		int bitRate = videoOption.getBitRate();
@@ -481,10 +489,11 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 //					+ " --ei delayDL " + delayTimeDL + " --ei delayUL " + delayTimeUL
 					+ " --ei throttleDL " + throttleDL + " --ei throttleUL " + throttleUL
 					+ (atnrProfile ? (" --ez profile " + atnrProfile + " --es profilename '" + location + "'") : "")
-					+ " --es video "+ videoOption.toString() 
+					+ " --ez secure " + secure + " --es video "+ videoOption.toString() 
 					+ " --ei bitRate " + bitRate + " --es screenSize " + screenSize 
-					+ " --es videoOrientation " + videoOrientation.toString() ;
-
+					+ " --es videoOrientation " + videoOrientation.toString() 
+					+ " --ez certInstall " + installCert
+					+ " --es selectedAppName " + (StringUtils.isEmpty(selectedAppName)?"EMPTY":selectedAppName) ;
 			LOG.info(cmd);
 			if (!android.runApkInDevice(this.device, cmd)) {
 				result.setError(ErrorCodeRegistry.getFaildedToRunVpnApk());

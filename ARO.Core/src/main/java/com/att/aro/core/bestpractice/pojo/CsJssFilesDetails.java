@@ -58,5 +58,34 @@ public class CsJssFilesDetails {
 		this.size = size;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		CsJssFilesDetails fileDetail = (CsJssFilesDetails) obj;
+		if (!fileDetail.getFileName().equals(fileName)) {
+			return false;
+		}
+		if (fileDetail.getSize() != size
+				|| Double.doubleToLongBits(fileDetail.getTimeStamp()) != Double.doubleToLongBits(timeStamp)) {
+			return false;
+		}
+		return true;
+	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(timeStamp);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + (int) size;
+		result = prime * result + fileName.hashCode();
+		return result;
+	}
 }

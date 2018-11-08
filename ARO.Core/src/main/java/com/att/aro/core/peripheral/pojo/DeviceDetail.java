@@ -20,6 +20,7 @@ package com.att.aro.core.peripheral.pojo;
  * Date: October 7, 2014
  */
 public class DeviceDetail {
+	
 	private String collectorName = "";
 	private String deviceModel = "";
 	private String deviceMake = "";
@@ -75,6 +76,83 @@ public class DeviceDetail {
 	}
 	public void setScreenSize(String screenSize) {
 		this.screenSize = screenSize;
+	}
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((collectorName == null) ? 0 : collectorName.hashCode());
+		result = prime * result + ((collectorVersion == null) ? 0 : collectorVersion.hashCode());
+		result = prime * result + ((deviceMake == null) ? 0 : deviceMake.hashCode());
+		result = prime * result + ((deviceModel == null) ? 0 : deviceModel.hashCode());
+		result = prime * result + ((osType == null) ? 0 : osType.hashCode());
+		result = prime * result + ((osVersion == null) ? 0 : osVersion.hashCode());
+		result = prime * result + ((screenSize == null) ? 0 : screenSize.hashCode());
+		result = prime * result + totalLines;
+		return result;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || getClass() != obj.getClass()) {
+			return false;
+		}
+		DeviceDetail other = (DeviceDetail) obj;
+		if (collectorName == null) {
+			if (other.collectorName != null) {
+				return false;
+			}
+		} else if (!collectorName.equals(other.collectorName)) {
+			return false;
+		}
+		if (collectorVersion == null) {
+			if (other.collectorVersion != null) {
+				return false;
+			}
+		} else if (!collectorVersion.equals(other.collectorVersion)) {
+			return false;
+		}
+		if (deviceMake == null) {
+			if (other.deviceMake != null) {
+				return false;
+			}
+		} else if (!deviceMake.equals(other.deviceMake)) {
+			return false;
+		}
+		if (deviceModel == null) {
+			if (other.deviceModel != null) {
+				return false;
+			}
+		} else if (!deviceModel.equals(other.deviceModel)) {
+			return false;
+		}
+		if (osType == null) {
+			if (other.osType != null) {
+				return false;
+			}
+		} else if (!osType.equals(other.osType)) {
+			return false;
+		}
+		if (osVersion == null) {
+			if (other.osVersion != null) {
+				return false;
+			}
+		} else if (!osVersion.equals(other.osVersion)){
+			return false;
+		}
+		if (screenSize == null) {
+			if (other.screenSize != null) {
+				return false;
+			}
+		} else if (!screenSize.equals(other.screenSize)) {
+			return false;
+		}
+		if (totalLines != other.totalLines) {
+			return false;
+		}
+		return true;
 	}
 	
 }

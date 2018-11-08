@@ -118,6 +118,8 @@ public class AROServiceImplTest extends BaseTest {
 	IBestPractice videoRedundancy;
 	@Mock(name = "videoConcurrentSession")
 	IBestPractice videoConcurrentSessions;
+	@Mock(name = "videoVariableBitrate")
+	IBestPractice videoVariableBitrate;
 	@Mock(name = "simultaneous")
 	IBestPractice simultaneous;
 	@Mock(name = "multipleSimultaneous")
@@ -212,6 +214,7 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.CHUNK_PACING);
 		req.add(BestPracticeType.VIDEO_REDUNDANCY);
 		req.add(BestPracticeType.VIDEO_CONCURRENT_SESSION);
+		req.add(BestPracticeType.VIDEO_VARIABLE_BITRATE);
 		req.add(BestPracticeType.HTTPS_USAGE);
 		req.add(BestPracticeType.TRANSMISSION_PRIVATE_DATA);
 		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
@@ -224,7 +227,7 @@ public class AROServiceImplTest extends BaseTest {
 		SettingsUtil.saveBestPractices(req);
 		try {
 			AROTraceData testResult = aro.analyzeFile(req, "traffic.cap");
-			assertEquals(44, testResult.getBestPracticeResults().size());
+			assertEquals(45, testResult.getBestPracticeResults().size());
 		} finally {
 			SettingsUtil.saveBestPractices(list);
 		}
@@ -282,6 +285,7 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.CHUNK_SIZE);
 		req.add(BestPracticeType.CHUNK_PACING);
 		req.add(BestPracticeType.VIDEO_REDUNDANCY);
+		req.add(BestPracticeType.VIDEO_VARIABLE_BITRATE);
 		req.add(BestPracticeType.HTTPS_USAGE);
 		req.add(BestPracticeType.TRANSMISSION_PRIVATE_DATA);
 		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
@@ -295,7 +299,7 @@ public class AROServiceImplTest extends BaseTest {
 		when(cacheAnalyzer.analyze(anyListOf(Session.class))).thenReturn(cacheAnalysis);
 		try {
 			AROTraceData testResult = aro.analyzeDirectory(req, Util.getCurrentRunningDir());
-			assertEquals(44, testResult.getBestPracticeResults().size());
+			assertEquals(45, testResult.getBestPracticeResults().size());
 		} finally {
 			SettingsUtil.saveBestPractices(list);
 		}

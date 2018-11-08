@@ -41,4 +41,42 @@ public class AdAnalyticsResult extends AbstractBestPracticeResult {
 	public void setBytes(double bytes) {
 		this.bytes = bytes;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj){
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		AdAnalyticsResult analyticResult = (AdAnalyticsResult) obj;
+		if(Double.doubleToLongBits(bytes) != Double.doubleToLongBits(analyticResult.getBytes())){
+			return false;
+		}
+		if(!results.containsAll(analyticResult.getResults())){
+			return false;
+		}	
+		if ((!analyticResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != analyticResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public int hashCode(){
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(bytes);
+		result = prime * result + (int)(temp ^ (temp >>> 32));
+		for(MultipleConnectionsEntry entry : getResults()){
+			result = prime * result + entry.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		
+		return result;
+	}
 }

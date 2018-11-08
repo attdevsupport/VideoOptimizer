@@ -356,9 +356,9 @@ public class ContentViewer {
 							 saveContentToFile(contentFile,session,httpReqResInfo);
 							bSavedOrCancelled = true;
 						} catch (Exception e) {
-							
-							 MessageDialogFactory .showMessageDialog(parent, MessageFormat.format(ResourceBundleHelper.getMessageString("fileChooser.errorWritingToFile"),contentFile.toString()));
-		
+							MessageDialogFactory.showMessageDialog(parent,
+									MessageFormat.format(ResourceBundleHelper.getMessageString("fileChooser.errorWritingToFile").concat(e.getMessage()),
+											contentFile.toString()));
 						}
 					}
 				}

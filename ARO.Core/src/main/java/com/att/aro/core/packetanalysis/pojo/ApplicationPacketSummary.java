@@ -15,13 +15,22 @@
 */
 package com.att.aro.core.packetanalysis.pojo;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+
 /**
  * A case class containing packet summary information for an application.
  */
+@NoArgsConstructor
+@Data
+@EqualsAndHashCode(callSuper=true)
 public class ApplicationPacketSummary extends PacketSummary {
+
 	private static final long serialVersionUID = 1L;
 
 	private String appName;
+	
 	
 	/**
 	 * Initializes an instance of the ApplicationPacketSummary class using the specified 
@@ -35,12 +44,4 @@ public class ApplicationPacketSummary extends PacketSummary {
 		this.appName = appName;
 	}
 
-	/**
-	 * Returns the application name.
-	 * @return The application name
-	 */
-	public String getAppName() {
-		return appName;
-	}
-	
 }

@@ -34,5 +34,34 @@ public class VideoChunkPacingResult extends AbstractBestPracticeResult {
 	public void setChunkPacing(double chunkPacing) {
 		this.chunkPacing = chunkPacing;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		VideoChunkPacingResult other = (VideoChunkPacingResult) obj;
+		if (Double.doubleToLongBits(other.getChunkPacing()) != Double.doubleToLongBits(chunkPacing)) {
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
+	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp = Double.doubleToLongBits(chunkPacing);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

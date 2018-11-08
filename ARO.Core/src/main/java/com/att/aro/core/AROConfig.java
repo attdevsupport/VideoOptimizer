@@ -188,7 +188,6 @@ import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
-
 /**
  * Spring configuration for ARO.Core<br>
  * Included are all the components to collect, open, analyze and generate
@@ -645,10 +644,10 @@ public class AROConfig {
 	public IExternalProcessRunner getExternalProcessRunnerImpl() {
 		return new ExternalProcessRunnerImpl();
 	}
+	
 	@Bean(name ="videoUsagePrefs")
 	public VideoUsagePrefs getVideoUsagePrefs(){
 		return new VideoUsagePrefs();
 	}
- 
 
 }

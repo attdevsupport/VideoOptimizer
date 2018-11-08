@@ -102,4 +102,47 @@ public class AsyncCheckInScriptResult extends AbstractBestPracticeResult {
 		this.exportAllSyncPacketCount = exportAllSyncPacketCount;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		AsyncCheckInScriptResult scriptResult = (AsyncCheckInScriptResult) obj;
+		if (scriptResult.getSyncLoadedScripts() != syncLoadedScripts
+				|| scriptResult.getSyncPacketCount() != syncPacketCount) {
+			return false;
+		}
+		if (scriptResult.getAsyncLoadedScripts() != asyncLoadedScripts
+				|| scriptResult.getAsyncPacketCount() != asyncPacketCount) {
+			return false;
+		}
+		if ((!scriptResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != scriptResult.getResultType()) {
+			return false;
+		}
+		if (!scriptResult.getResults().containsAll(results)) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + syncLoadedScripts;
+		result = prime * result + syncPacketCount;
+		result = prime * result + asyncLoadedScripts;
+		result = prime * result + asyncPacketCount;
+		for (AsyncCheckEntry entry : results) {
+			result = prime * result + entry.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+
+		return result;
+	}
 }

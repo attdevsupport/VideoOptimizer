@@ -34,6 +34,8 @@ public class MultipleConnectionsEntry {
 	@JsonIgnore
 	private HttpRequestResponseInfo httpReqRespInfo;
 
+	public MultipleConnectionsEntry(){}
+	
 	public MultipleConnectionsEntry(HttpRequestResponseInfo httpReqRespInfo, String domainName, int concurrentSessions,
 			double start, double end, String ipInside) {
 		this.httpReqRespInfo = httpReqRespInfo;
@@ -161,5 +163,35 @@ public class MultipleConnectionsEntry {
 
 	public double getByteCount() {
 		return byteCount;
+	}
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		MultipleConnectionsEntry entry = (MultipleConnectionsEntry) obj;
+		if((!ipValue.equals(entry.getIpValue())) || (!hostName.equals(entry.getHostName()))){
+			return false;
+		}
+		if(concurrentSessions != entry.getConcurrentSessions() || Double.doubleToLongBits(byteCount) != Double.doubleToLongBits(entry.getByteCount())){
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public int hashCode(){
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(byteCount);
+		result = prime * result + (int)(temp ^ (temp >>> 32));
+		result = prime * result + concurrentSessions;
+		result = prime * result + ipValue.hashCode();
+		result = prime * result + hostName.hashCode();
+		return result;
 	}
 }

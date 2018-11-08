@@ -110,4 +110,60 @@ public class AccessingPeripheralResult extends AbstractBestPracticeResult {
 		return BestPracticeType.ACCESSING_PERIPHERALS;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj){
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		AccessingPeripheralResult peripheralResult = (AccessingPeripheralResult) obj;
+		if (Double.doubleToLongBits(activeBluetoothDuration) != Double
+				.doubleToLongBits(peripheralResult.getActiveBluetoothDuration())
+				|| Double.doubleToLongBits(activeBluetoothRatio) != Double
+						.doubleToLongBits(peripheralResult.getActiveBluetoothRatio())) {
+			return false;
+		}
+		if (Double.doubleToLongBits(activeCameraDuration) != Double
+				.doubleToLongBits(peripheralResult.getActiveCameraDuration())
+				|| Double.doubleToLongBits(activeCameraRatio) != Double
+						.doubleToLongBits(peripheralResult.getActiveCameraRatio())) {
+			return false;
+		}
+		if (Double.doubleToLongBits(activeGPSDuration) != Double
+				.doubleToLongBits(peripheralResult.getActiveGPSDuration())
+				|| Double.doubleToLongBits(activeGPSRatio) != Double
+						.doubleToLongBits(peripheralResult.getActiveGPSRatio())) {
+			return false;
+		}
+		if ((!peripheralResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != peripheralResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public int hashCode(){
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(activeBluetoothDuration);
+		result = prime * result + (int)(temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(activeBluetoothRatio);
+		result = prime * result + (int)(temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(activeCameraDuration);
+		result = prime * result + (int)(temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(activeCameraRatio);
+		result = prime * result + (int)(temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(activeGPSDuration);
+		result = prime * result + (int)(temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(activeGPSRatio);
+		result = prime * result + (int)(temp ^ (temp >>> 32));
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		
+		return result;
+	}
 }

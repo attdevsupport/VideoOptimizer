@@ -16,7 +16,6 @@
 
 package com.att.aro.core.bestpractice.impl;
 
-
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,9 +69,12 @@ public class VideoStallImpl implements IBestPractice{
 	
 	@Value("${videoStall.results}")
 	private String textResults;
-	
-	@Value("${videoStall.init}")
-	private String textResultInit;
+
+	@Value("${startUpDelay.init}")
+	private String startUpDelayNotSet;
+
+	@Value("${videoSegment.empty}")
+	private String novalidManifestsFound;
 
 	@Autowired
 	private IVideoUsagePrefsManager videoPref;
@@ -113,16 +115,22 @@ public class VideoStallImpl implements IBestPractice{
 			} else if (warningCount > 0) {
 				stallState = BPResultType.WARNING;
 				count = warningCount;
-			} 
-		}else{
+			}
+		} else {
 			stallState = BPResultType.PASS;
 			count = passCount;
 		}
 
+		double startupDelay = videoPref.getVideoUsagePreference().getStartupDelay();
 		
-		if (tracedata.getVideoUsage() != null && tracedata.getVideoUsage().getChunkPlayTimeList().isEmpty()) {
+		if (Util.isTraceWithValidManifestsSelected(tracedata.getVideoUsage())
+				&& !Util.isStartupDelaySet(tracedata.getVideoUsage())) {
 			// Meaning startup delay is not set yet
-			result.setResultText(MessageFormat.format(textResultInit, stallCount));
+			stallState = BPResultType.CONFIG_REQUIRED;
+			result.setResultText(
+					MessageFormat.format(startUpDelayNotSet, startupDelay, startupDelay == 1 ? "" : "s"));
+		} else if (!Util.isTraceWithValidManifestsSelected(tracedata.getVideoUsage())) {
+			result.setResultText(MessageFormat.format(novalidManifestsFound, stallCount));
 			stallState = BPResultType.SELF_TEST;
 		} else {
 			result.setResultText(MessageFormat.format(this.textResults, stallCount, stallCount == 1 ? "" : "s",
@@ -134,7 +142,6 @@ public class VideoStallImpl implements IBestPractice{
 		result.setResults(stallResult);
 		return result;
 	}
-
 
 	private VideoStall updateStallResult(VideoStall stall) {
 		BPResultType bpResultType = Util.checkPassFailorWarning(stall.getDuration(),
@@ -151,5 +158,5 @@ public class VideoStallImpl implements IBestPractice{
 
 		return stall;
 	}
-	
-}//end class
+
+}// end class

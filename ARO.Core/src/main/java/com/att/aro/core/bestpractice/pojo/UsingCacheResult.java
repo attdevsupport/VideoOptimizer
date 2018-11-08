@@ -61,4 +61,33 @@ public class UsingCacheResult extends AbstractBestPracticeResult {
 		return BestPracticeType.USING_CACHE;//name is confusing, using cache-> cache control, ref. bestpractice.properties
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		UsingCacheResult other = (UsingCacheResult) obj;
+		if (Double.doubleToLongBits(other.getCacheHeaderRatio()) != Double.doubleToLongBits(cacheHeaderRatio)) {
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp = Double.doubleToLongBits(cacheHeaderRatio);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

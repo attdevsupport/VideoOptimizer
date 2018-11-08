@@ -868,6 +868,7 @@ public class VideoUsageAnalysisImpl implements IVideoUsageAnalysis {
 		if (thumbnail != null) {
 			metaData = extractMetadata(segName);
 			if (metaData != null) {
+				vManifest.setVideoMetaDataExtracted(true);
 				Double val = metaData.get("bitrate");
 				if (val != null) {
 					bitrate = val;
