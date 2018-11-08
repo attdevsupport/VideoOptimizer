@@ -34,6 +34,8 @@ public class ImageMdataEntry {
 	private double formattedSize;
 	private String percentSavings;
 
+	public ImageMdataEntry(){}
+	
 	public ImageMdataEntry(HttpRequestResponseInfo reqRespInfo, String domainName, String imagefile, double iSize,
 			double fSize, String savings) {
 
@@ -170,4 +172,48 @@ public class ImageMdataEntry {
 		this.httpRequestResponse = httpRequestResponse;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		ImageMdataEntry other = (ImageMdataEntry) obj;
+		if (Double.doubleToLongBits(other.getFormattedSize()) != Double.doubleToLongBits(formattedSize)) {
+			return false;
+		}
+		if (Double.doubleToLongBits(imageSize) != Double.doubleToLongBits(other.getImageSize())) {
+			return false;
+		}
+		if (Double.doubleToLongBits(timeStamp) != Double.doubleToLongBits(other.getTimeStamp())) {
+			return false;
+		}
+		if (!other.getHostName().equals(hostName) || (!other.getHttpObjectName().equals(httpObjName))) {
+			return false;
+		}
+		if (other.getHttpCode() != httpCode || (!other.getPercentSavings().equals(percentSavings))) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		result = prime * result + httpCode;
+		result = prime * result + hostName.hashCode();
+		result = prime * result + httpObjName.hashCode();
+		result = prime * result + percentSavings.hashCode();
+		temp = Double.doubleToLongBits(formattedSize);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(imageSize);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(timeStamp);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		return result;
+	}
 }

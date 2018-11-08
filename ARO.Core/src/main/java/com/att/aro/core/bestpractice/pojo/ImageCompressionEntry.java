@@ -30,6 +30,8 @@ public class ImageCompressionEntry {
 	private double sizeE;
 	private double sizeS;
 
+	public ImageCompressionEntry(){}
+	
 	public ImageCompressionEntry(HttpRequestResponseInfo reqResInf, String domainName, String imagefile, double iSize,
 			double sizeE, double sizeS) {
 
@@ -76,7 +78,7 @@ public class ImageCompressionEntry {
 	}
 
 
-	public void setOrgImageSize(long orgImageSize) {
+	public void setOrgImageSize(double orgImageSize) {
 		this.orgImageSize = orgImageSize;
 	
 	}
@@ -86,12 +88,16 @@ public class ImageCompressionEntry {
 		return sizeE;
 	}
 
+	public void setSizeE(double sizeE) {
+		this.sizeE = sizeE;
+	}
+
 	public double getSizeS() {
 		return sizeS;
 	}
 
 
-	public void setSizeS(long sizeS) {
+	public void setSizeS(double sizeS) {
 		this.sizeS = sizeS;
 	}
 
@@ -136,4 +142,47 @@ public class ImageCompressionEntry {
 		this.httpReqRes = httpRequestResponse;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		ImageCompressionEntry other = (ImageCompressionEntry) obj;
+		if (Double.doubleToLongBits(other.getOrgImageSize()) != Double.doubleToLongBits(orgImageSize)) {
+			return false;
+		}
+		if (Double.doubleToLongBits(other.getSizeE()) != Double.doubleToLongBits(sizeE) || Double.doubleToLongBits(other.getSizeS()) != Double.doubleToLongBits(sizeS)) {
+			return false;
+		}
+		if (other.getHttpCode() != imgHttpCode) {
+			return false;
+		}
+		if (!other.getHostName().equals(serverHostName)) {
+			return false;
+		}
+		if (!other.getHttpObjectName().equals(httpObjtName)) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(orgImageSize);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(sizeE);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(sizeS);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + imgHttpCode;
+		result = prime * result + serverHostName.hashCode();
+		result = prime * result + httpObjtName.hashCode();
+		return result;
+	}
 }

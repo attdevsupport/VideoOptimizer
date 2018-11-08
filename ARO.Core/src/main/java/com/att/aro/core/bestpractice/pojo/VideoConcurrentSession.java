@@ -20,6 +20,8 @@ public class VideoConcurrentSession {
 	Double concurrencyDuration;
 	String videoName = "";
 
+	public VideoConcurrentSession(){}
+	
 	public VideoConcurrentSession(int concurrentSessionCount, Double concurrencyDuration) {
 		this.concurrentSessionCount = concurrentSessionCount;
 		this.concurrencyDuration = concurrencyDuration;
@@ -44,5 +46,35 @@ public class VideoConcurrentSession {
 
 	public int getConcurrentSessionCount() {
 		return concurrentSessionCount;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		VideoConcurrentSession other = (VideoConcurrentSession) obj;
+		if (Double.doubleToLongBits(other.getConcurrencyDuration()) != Double.doubleToLongBits(concurrencyDuration)
+				|| other.getConcurrentSessionCount() != concurrentSessionCount) {
+			return false;
+		}
+		if (!other.getVideoName().equals(videoName)) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp = Double.doubleToLongBits(concurrencyDuration);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + concurrentSessionCount;
+		result = prime * result + videoName.hashCode();
+		return result;
 	}
 }

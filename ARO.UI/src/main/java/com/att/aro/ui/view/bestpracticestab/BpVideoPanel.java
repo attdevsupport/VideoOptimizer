@@ -40,7 +40,7 @@ public class BpVideoPanel extends BpDetail {
 		int row = 0;
 
 		addPanel(row++, new BpDetailItem("videoStall"       		, BestPracticeType.VIDEO_STALL,        
-				new BPVideoStallTablePanel()));
+				new BPVideoStallTablePanel(),aroView));
 		addPanel(row++, new BpDetailItem("startUpDelay"     		, BestPracticeType.STARTUP_DELAY, aroView));
 		addPanel(row++, new BpDetailItem("bufferOccupancy"  		, BestPracticeType.BUFFER_OCCUPANCY, aroView));
 		addPanel(row++, new BpDetailItem("networkComparison"		, BestPracticeType.NETWORK_COMPARISON ));
@@ -50,6 +50,7 @@ public class BpVideoPanel extends BpDetail {
 		addPanel(row++, new BpDetailItem("videoRedundancy"  		, BestPracticeType.VIDEO_REDUNDANCY   ));
 		addPanel(row++, new BpDetailItem("videoConcurrentSession"	, BestPracticeType.VIDEO_CONCURRENT_SESSION,
 				new BPVideoConcurrentSessionTablePanel()));
+		addPanel(row++, new BpDetailItem("videoVariableBitrate"     , BestPracticeType.VIDEO_VARIABLE_BITRATE));
 		fullPanel.add(dataPanel, BorderLayout.CENTER);
 		fullPanel.add(detailPanel, BorderLayout.SOUTH);
 		add(fullPanel);

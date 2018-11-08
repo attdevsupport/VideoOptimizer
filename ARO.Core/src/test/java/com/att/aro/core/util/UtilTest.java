@@ -276,4 +276,12 @@ public class UtilTest {
 		assertEquals(1515708899000L, result);
 		
 	}
+	
+	@Test
+	public void testWrapPasswordForEcho() throws Exception {
+		String raw = "\\one!two$three'four";
+		String converted = "$'\\x5cone\\x21two$three\\x27four'";
+		String result = Util.wrapPasswordForEcho(raw);
+		assertEquals(converted, result);
+	}
 }

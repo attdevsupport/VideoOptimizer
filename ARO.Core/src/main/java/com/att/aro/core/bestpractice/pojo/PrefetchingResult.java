@@ -58,4 +58,34 @@ public class PrefetchingResult extends AbstractBestPracticeResult {
 		return null; //BestPracticeType.PREFETCHING;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		PrefetchingResult other = (PrefetchingResult) obj;
+		if (other.getBurstCategoryCount() != burstCategoryCount
+				|| other.getUserInputBurstCount() != userInputBurstCount) {
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + burstCategoryCount;
+		result = prime * result + userInputBurstCount;
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

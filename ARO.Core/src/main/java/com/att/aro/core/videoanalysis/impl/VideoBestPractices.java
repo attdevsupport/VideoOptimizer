@@ -19,6 +19,7 @@ import com.att.aro.core.bestpractice.pojo.VideoRedundancyResult;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.VideoTcpConnectionResult;
+import com.att.aro.core.bestpractice.pojo.VideoVariableBitRateResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
@@ -47,6 +48,7 @@ public class VideoBestPractices implements IVideoBestPractices {
 		VideoChunkPacingResult videoChunkPacingResult = null;
 		VideoRedundancyResult videoRedundancyResult = null;
 		VideoConcurrentSessionResult videoConcurrentSessionResult = null;
+		VideoVariableBitRateResult videoVariableBitrateResult = null;
 		
 		List<BestPracticeType> requests = BestPracticeType.getByCategory(Category.VIDEO);
 		List<AbstractBestPracticeResult> bpResults = traceDataresult.getBestPracticeResults();
@@ -83,6 +85,9 @@ public class VideoBestPractices implements IVideoBestPractices {
 				case VIDEO_CONCURRENT_SESSION:
 					videoConcurrentSessionResult = (VideoConcurrentSessionResult)videoBPResult;
 					break;
+				case VIDEO_VARIABLE_BITRATE:
+					videoVariableBitrateResult = (VideoVariableBitRateResult) videoBPResult;
+					break;
 				default:
 					break;
 			}
@@ -110,6 +115,8 @@ public class VideoBestPractices implements IVideoBestPractices {
 				bpResults.set(bpResults.indexOf(bestPractice), videoRedundancyResult);
 			}else if(bestPractice instanceof VideoConcurrentSessionResult){
 				bpResults.set(bpResults.indexOf(bestPractice), videoConcurrentSessionResult);
+			}else if(bestPractice instanceof VideoVariableBitRateResult){
+				bpResults.set(bpResults.indexOf(bestPractice), videoVariableBitrateResult);
 			}
 		}
 		

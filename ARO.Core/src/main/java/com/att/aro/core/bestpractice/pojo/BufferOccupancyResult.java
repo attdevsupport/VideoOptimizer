@@ -78,4 +78,53 @@ public class BufferOccupancyResult extends AbstractBestPracticeResult {
 		this.avgBufferTime = avgBufferTime;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		BufferOccupancyResult bufferResult = (BufferOccupancyResult) obj;
+		if (Double.doubleToLongBits(avgBufferByte) != Double.doubleToLongBits(bufferResult.getAvgBufferByte())
+				|| Double.doubleToLongBits(avgBufferTime) != Double.doubleToLongBits(bufferResult.getAvgBufferTime())) {
+			return false;
+		}
+		if (Double.doubleToLongBits(maxBuffer) != Double.doubleToLongBits(bufferResult.getMaxBuffer())
+				|| Double.doubleToLongBits(maxBufferTime) != Double.doubleToLongBits(bufferResult.getMaxBufferTime())) {
+			return false;
+		}
+		if (Double.doubleToLongBits(minBufferByte) != Double.doubleToLongBits(bufferResult.getMinBufferByte())
+				|| Double.doubleToLongBits(minBufferTime) != Double.doubleToLongBits(bufferResult.getMinBufferTime())) {
+			return false;
+		}
+		if ((!bufferResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != bufferResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(avgBufferByte);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(avgBufferTime);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(maxBuffer);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(maxBufferTime);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(minBufferByte);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(minBufferTime);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

@@ -21,6 +21,10 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 public class AsyncCheckEntry extends HttpEntry {
 	private int contentLength;
 	
+	public AsyncCheckEntry(){
+		super();
+	}
+	
 	public AsyncCheckEntry(HttpRequestResponseInfo hrri,
 			HttpRequestResponseInfo lastRequestObj, String domainName) {
 		super(hrri, lastRequestObj, domainName);
@@ -35,6 +39,26 @@ public class AsyncCheckEntry extends HttpEntry {
 		this.contentLength = contentLength;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj){
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		AsyncCheckEntry checkEntry = (AsyncCheckEntry) obj;
+		if(checkEntry.getContentLength() != contentLength){
+			return false;
+		}
+		return true;
+	}
 	
-	
+	@Override
+	public int hashCode(){
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + contentLength;
+		return result;
+	}
 }

@@ -18,6 +18,7 @@ package com.att.aro.core.bestpractice.pojo;
 import java.math.BigDecimal;
 
 import com.att.aro.core.util.Util;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class HttpsUsageEntry {
 	private String ipAddress;
@@ -29,6 +30,8 @@ public class HttpsUsageEntry {
 	private BigDecimal totalTrafficInKB;
 	private int httpTrafficPercentage;
 
+	public HttpsUsageEntry(){}
+	
 	public HttpsUsageEntry(String ipAddress, String parentDomainName, int totalNumConnections,
 			int totalNumHttpConnections, int httpConnectionsPercentage2, BigDecimal totalTrafficInKB,
 			BigDecimal totalHttpTrafficInKB, int httpTrafficPercentage) {
@@ -51,6 +54,11 @@ public class HttpsUsageEntry {
 		return ipAddress;
 	}
 
+	@JsonProperty(value = "ipaddress")
+	public void setIpAddress(String ipAddress) {
+		this.ipAddress = ipAddress;
+
+	}
 	/**
 	 * Gets the parent domain name. This method will return the second-level
 	 * domain and the top-level domain. Output examples: "google.com",
@@ -116,5 +124,53 @@ public class HttpsUsageEntry {
 	 */
 	public Integer getTotalHttpTrafficPercentage() {
 		return httpTrafficPercentage;
+	}
+
+	@JsonProperty(value = "totalHttpTrafficPercentage")
+	public void setHttpTrafficPercentage(int httpTrafficPercentage) {
+		this.httpTrafficPercentage = httpTrafficPercentage;
+
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		HttpsUsageEntry other = (HttpsUsageEntry) obj;
+		if(other.getHttpConnectionsPercentage() != httpConnectionsPercentage || other.getTotalHttpTrafficPercentage() != httpTrafficPercentage){
+			return false;
+		}
+		if(other.getTotalNumConnections() != totalNumConnections || other.getTotalNumHttpConnections() != totalNumHttpConnections){
+			return false;
+		}
+		if(!other.getTotalHttpTrafficInKB().equals(Util.formatDecimal(totalHttpTrafficInKB, 3, 0))){
+			return false;
+		}
+		if(!other.getTotalTrafficInKB().equals(Util.formatDecimal(totalTrafficInKB, 3, 0))){
+			return false;
+		}
+		if(!other.getIPAddress().equals(ipAddress) || (!other.getParentDomainName().equals(parentDomainName))){
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + totalNumConnections;
+		result = prime * result + totalNumHttpConnections;
+		result = prime * result + httpTrafficPercentage;
+		result = prime * result + httpConnectionsPercentage;
+		result = prime * result + totalHttpTrafficInKB.hashCode();
+		result = prime * result + totalTrafficInKB.hashCode();
+		result = prime * result + ipAddress.hashCode();
+		result = prime * result + parentDomainName.hashCode();
+		return result;
 	}
 }

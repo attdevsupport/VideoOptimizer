@@ -49,6 +49,10 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 
+/**
+ *
+ *
+ */
 public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
 	private static final Logger LOG = LogManager.getLogger(ARODataCollectorMenu.class.getName());
@@ -134,6 +138,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 				
 				IAroDevices aroDevices = parent.getAroDevices();
 				IAroDevice device = null;
+			
 				
 				if (aroDevices.size() != 0) {
 					device = chooseDevice(aroDevices, collectors);
@@ -172,12 +177,11 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		int throttleUL = 0;
 		boolean throttleDLEnable = false;
 		boolean throttleULEnable = false;
-
 		boolean profileBoolean = false;
 		
 		String traceFolderName = "";
 		String profileLocation = "";
-		DataCollectorSelectNStartDialog dialog = new DataCollectorSelectNStartDialog(((MainFrame) parent).getJFrame(), deviceList, traceFolderName, collectors, true);
+		DataCollectorSelectNStartDialog dialog = new DataCollectorSelectNStartDialog(((MainFrame) parent).getJFrame(), parent, deviceList, traceFolderName, collectors, true);
 
 		if (dialog.getResponse()){
 			
@@ -242,7 +246,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			
-		}else {
+		} else {
 			traceFolderName = null;
 		}
 		
@@ -252,6 +256,10 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 	}
 	
 	
+	public SharedAttributesProcesses getParent() {
+		return parent;
+	}
+
 	/**
 	 * Check su password ask for password if empty
 	 * only valid for iOS and Mac OSX

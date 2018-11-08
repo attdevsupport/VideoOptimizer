@@ -101,6 +101,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private MitmAttenuatorImpl mitmAttenuator;
 	private boolean deviceDataPulled = true;
 	private boolean validPW;
+	private boolean secure = false;
 	
 	public IOSCollectorImpl() {
 		super();
@@ -255,7 +256,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			boolean liveViewVideo, String deviceId, Hashtable<String, Object> extraParams, String password) {
 		if(extraParams != null) {
 			this.videoOption = (VideoOption) extraParams.get("video_option");
-			this.attenuatorModel = (AttenuatorModel)extraParams.get("AttenuatorModel");
+			this.attenuatorModel = (AttenuatorModel)extraParams.get("AttenuatorModel");			
+ 			this.secure =  extraParams.get("secure") == null? false : (boolean) extraParams.get("secure");
 		}
  
 		Callable<StatusResult> launchAppCallable = () -> {
@@ -358,8 +360,9 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		
 		launchCollection(trafficFilePath, serialNumber, status);		
 		// Start Attenuation
-		if(attenuatorModel.isConstantThrottle()&&(attenuatorModel.isThrottleDLEnabled()||attenuatorModel.isThrottleULEnabled())) {
-			startAttenuatorCollection(datadir, attenuatorModel);
+		if(attenuatorModel.isConstantThrottle()
+				&&(attenuatorModel.isThrottleDLEnabled()||attenuatorModel.isThrottleULEnabled())) {
+			startAttenuatorCollection(datadir, attenuatorModel,secure);
 		}
 		
 		if (status.isSuccess()) {
@@ -438,7 +441,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		return status;
 	}
 	
-	private void startAttenuatorCollection(String trafficFilePath,AttenuatorModel attenuatorModel ) {
+	private void startAttenuatorCollection(String trafficFilePath,AttenuatorModel attenuatorModel,boolean secure) {
 
 		    int throttleDL = 0;
 			int throttleUL = 0;
@@ -449,11 +452,13 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			if(attenuatorModel.isThrottleULEnabled()){
 				throttleUL = attenuatorModel.getThrottleUL();
 			}
-			// mitm and pcap4j start
+ 			// mitm start
 			if(mitmAttenuator == null) {
 				mitmAttenuator = new MitmAttenuatorImpl();
-			} 
-			mitmAttenuator.startCollect(trafficFilePath,throttleDL,throttleUL);	
+			}
+			LOG.info("ios attenuation setting: "+" trafficFilePath: "+ trafficFilePath +" throttleDL: "+throttleDL
+					+"throttleUL: "+throttleUL + "secure :" + secure);
+			mitmAttenuator.startCollect(trafficFilePath,throttleDL,throttleUL,secure);	
 			
 		
 	}
@@ -706,7 +711,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private boolean isValidSudoPassword(String password) {
 
 		ExternalProcessRunner runner = new ExternalProcessRunner();
-		String cmd = "echo " + password + " | sudo -k -S cat /etc/sudoers 2>&1";
+		String cmd = "echo " + password + " | sudo -k -S file /etc/sudoers 2>&1";
 		String data = null;
 		try {
 			data = runner.runCmd(new String[] { "bash", "-c", cmd });

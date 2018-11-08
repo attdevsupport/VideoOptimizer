@@ -590,6 +590,16 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	public void setTraceDuration(long traceDuration) {
 		this.traceDuration = traceDuration;
 	}
+	
+	
+	/**
+	 * Find the list of all applications in the selected android device.
+	 * 
+	 * @return List of all applications in selected android device.
+	 */
+	public String[] getApplicationsList(String id) {
+		return context.getBean(IAdbService.class).getApplicationList(id);
+	}
 
 }
 

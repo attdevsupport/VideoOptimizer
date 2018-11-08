@@ -55,12 +55,14 @@
 		<exclude name="UseLocaleWithCaseConversions" />
 		<exclude name="AssignmentToNonFinalStatic" />
 		<exclude name="UncommentedEmptyConstructor" />
-		<exclude name="UncommentedEmptyMethod" />
+		<exclude name="UncommentedEmptyMethodBody" />
 		<exclude name="UseVarargs"/>
 		<exclude name="ConfusingTernary"/>
 		<exclude name="ConstructorCallsOverridableMethod" />
 		<exclude name="GodClass" />
 		<exclude name="ConfusingTernary" />
+		<exclude name="CommentRequired" />
+		<exclude name="CommentDefaultAccessModifier" />
 	</rule>
 	<rule ref="rulesets/java/design.xml/AvoidDeeplyNestedIfStmts">
 		<properties>

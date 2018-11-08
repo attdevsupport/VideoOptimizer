@@ -28,6 +28,8 @@ public class HttpEntry {
 	@JsonIgnore
 	private HttpRequestResponseInfo httpRequestResponse;
 	
+	public HttpEntry(){}
+	
 	public HttpEntry(HttpRequestResponseInfo hrri, HttpRequestResponseInfo lastRequestObj, String domainName) {
 		this.timeStamp = hrri.getTimeStamp();
 		this.httpCode = hrri.getStatusCode();
@@ -112,5 +114,35 @@ public class HttpEntry {
 	 */
 	public HttpRequestResponseInfo getHttpRequestResponse() {
 		return this.httpRequestResponse;
+	}	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		HttpEntry other = (HttpEntry) obj;
+		if (!other.getHostName().equals(getHostName())) {
+			return false;
+		}
+		if (!other.getHttpObjectName().equals(getHttpObjectName())) {
+			return false;
+		}
+		if (!other.getHttpCode().equals(getHttpCode())) {
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + getHostName().hashCode();
+		result = prime * result + getHttpObjectName().hashCode();
+		result = prime * result + (int) getHttpCode();
+		return result;
 	}
 }//end class

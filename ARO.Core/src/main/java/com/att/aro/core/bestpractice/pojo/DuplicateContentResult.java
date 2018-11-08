@@ -98,5 +98,53 @@ public class DuplicateContentResult extends AbstractBestPracticeResult{
 		return BestPracticeType.DUPLICATE_CONTENT;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		DuplicateContentResult dupContentResult = (DuplicateContentResult) obj;
+		if (Double.doubleToLongBits(duplicateContentBytesRatio) != Double
+				.doubleToLongBits(dupContentResult.getDuplicateContentBytesRatio())) {
+			return false;
+		}
+		if (dupContentResult.getDuplicateContentBytes() != duplicateContentBytes
+				|| dupContentResult.getTotalContentBytes() != totalContentBytes) {
+			return false;
+		}
+		if (dupContentResult.getDuplicateContentSizeOfUniqueItems() != duplicateContentSizeOfUniqueItems
+				|| dupContentResult.getDuplicateContentsize() != duplicateContentsize) {
+			return false;
+		}
+		if (!dupContentResult.getDuplicateContentList().containsAll(duplicateContentList)) {
+			return false;
+		}
+		if ((!dupContentResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != dupContentResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(duplicateContentBytesRatio);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + (int) duplicateContentBytes;
+		result = prime * result + (int) totalContentBytes;
+		result = prime * result + duplicateContentSizeOfUniqueItems;
+		result = prime * result + duplicateContentsize;
+		for (CacheEntry cacheEntry : duplicateContentList) {
+			result = prime * result + cacheEntry.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

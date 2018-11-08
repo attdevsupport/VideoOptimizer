@@ -17,7 +17,6 @@ package com.att.aro.ui.view.menu.datacollector;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -29,14 +28,12 @@ import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
-import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
 import org.apache.commons.lang.StringUtils;
-
 import com.att.aro.core.android.AndroidApiLevel;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
@@ -100,9 +97,10 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private IDataCollector rootCollector;
 	private IDataCollector vpnCollector;
 	private IDataCollector iosCollector;
-	private int api;
+	private int api;	
 
 	public DeviceDialogOptions(DataCollectorSelectNStartDialog parent, List<IDataCollector> collectors) {
+		
 		this.parent = parent;
 		videoOrient = Orientation.LANDSCAPE.toString().toLowerCase().equals(
 				SettingsImpl.getInstance().getAttribute("orientation")) ? Orientation.LANDSCAPE : Orientation.PORTRAIT;
@@ -256,12 +254,10 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		} else if (ac.equals(vpn)) {
 			collector = vpnCollector;
 			if (btnVpn.isSelected()) {
-
 				enableFullVideo(true);
 			}
 			return;
-
-		}
+		} 
 	}
 
 	
@@ -279,12 +275,14 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 					attnrGroupPanel.getAttnrRadioGP().getRadioAttnGroup()
 					.setSelected(attnrGroupPanel.getAttnrRadioGP().getSliderBtn().getModel(), true);
 					attnrGroupPanel.getAttnrRadioGP().getDefaultBtn().setEnabled(false);
-					this.parent.setPreferredSize(new Dimension(650, 520));
+					parent.resizeLarge();
 
 				}else {
 					attnrGroupPanel.getAttnrRadioGP().getSliderBtn().setEnabled(false);
 					attnrGroupPanel.getAttnrRadioGP().getDefaultBtn().setEnabled(true);
 				}
+			} else {
+					parent.resizeMedium();
 			}
 		} else {
 			attnrGroupPanel.setAttenuateEnable(false);
@@ -301,7 +299,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		}
 		return attnrGroupPanel;
 	}
-
 
 	private JPanel getRadioGroupVideo() {
 		loadRadioGroupVideo();
@@ -450,7 +447,8 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			btn_lrez.setSelected(true);
 			videoOption = VideoOption.LREZ;
 
-			showVideoOrientation(false); // false because LREZ is selected by default
+			showVideoOrientation(false); // false because LREZ is selected by
+											// default
 
 			btniOS.setEnabled(false);
 			btnVpn.setEnabled(true);
@@ -538,7 +536,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 		btnVpn.setEnabled(boolFlag);
 		btnVpn.setSelected(boolFlag);
-
+		
 	}
 
 	/**

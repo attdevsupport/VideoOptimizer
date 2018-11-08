@@ -51,11 +51,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 2.1
+#### Video Optimizer 2.2
 
-**System Requirements for Video Optimizer 2.1:**
+**System Requirements for Video Optimizer 2.2:**
 
-Before you download Video Optimizer 2.1, make sure you meet the following system requirements for your operating system.
+Before you download Video Optimizer 2.2, make sure you meet the following system requirements for your operating system.
 
 1. 2GB or more for RAM
 2. Java 8 or above
@@ -68,23 +68,32 @@ Before you download Video Optimizer 2.1, make sure you meet the following system
 
 
 
-#### Video Optimizer 2.1 Features
+#### Video Optimizer 2.2 Features
 
-#### • iOS Attenuator enhancements allows to now precisely apply cellular network simulation with throughput which is in ‘Kbps’ by setting up the MITM proxy on Mac.
+#### • New Best Practice “Variable Bitrate” is added to test if the video stream is using Variable bitrate or not.
 
-#### • Secure Collector now supports analysis for DIRECTV application
+#### • New ‘Configuration Required’ icon added to indicate if the Video Best Practice tests requires additional configuration
 
-#### • Collection and Analysis of traces for Devices with Android OS version Pie (9.0)
+#### • Time Range analysis has been re-designed with addition of Total Payload Data displayed in Best Practices trace summary and Time range analysis results section.
 
-#### •	Other Enhancements include:
-#### - Allows to open recent files from the File menu
-#### - User will now be able Select/De-Select the Best Practices using one universal button in Preferences
+#### • Attenuator enhancements to support Android 9 “Pie”
+
+#### • iOS Secure Collector (Beta version)
+
+#### • Android Secure Collector supports Pie version
+
+#### •	Other enhancements include:
+#### - Handling special characters in file names
+#### - Handling missing traces in the recent files
+#### - Updates to the iOS collector installation
+#### - Updates to Mac install Pre-requisites list
 
 
-### What are the known issues in Release 2.1?
+### What are the known issues in Release 2.2?
 
 #### •	Application names, CPU usage, signal strength is not displayed for traces taken with Android Version Oreo and above.
 #### •	Some iOS traces taken using HD show as low resolution. 
+#### •	No traffic file is displayed for iOS HD traces(intermittent). 
 
 ### •  Installation instruction
 + Please follow the order to compile projects
@@ -93,5 +102,5 @@ Before you download Video Optimizer 2.1, make sure you meet the following system
 + ../DataCollectors/ARO.IOSCollector
 + ../DataCollectors/ARO.NorootAndroidCollector
 + ../DataCollectors/ARO.RootedAndroidCollector
-+ ../ARO.Console  
-+ ../ARO.UI
++ ../ARO.UI 
++ ../ARO.Console 

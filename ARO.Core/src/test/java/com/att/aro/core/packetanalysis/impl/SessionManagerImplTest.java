@@ -5,13 +5,17 @@ package com.att.aro.core.packetanalysis.impl;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.ByteArrayOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +28,7 @@ import com.att.aro.core.BaseTest;
 import com.att.aro.core.packetanalysis.IRequestResponseBuilder;
 import com.att.aro.core.packetanalysis.ISessionManager;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
+import com.att.aro.core.packetanalysis.pojo.Reassembler;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.TcpInfo;
 import com.att.aro.core.packetreader.pojo.DomainNameSystem;
@@ -31,6 +36,8 @@ import com.att.aro.core.packetreader.pojo.IPPacket;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
+import com.att.aro.core.securedpacketreader.pojo.BidirDataChunk;
+import com.att.aro.core.securedpacketreader.pojo.MatchedRecord;
 
 /**
  * 
@@ -43,12 +50,21 @@ public class SessionManagerImplTest extends BaseTest{
 
 	@Mock
 	IRequestResponseBuilder requestResponseBuilder;
-	
+	byte[] pData;
+
 	@Before
 	public void setUp(){
 		
 		sessionMgr = context.getBean(ISessionManager.class);
 		MockitoAnnotations.initMocks(this);
+		
+		pData = new byte[5];	
+		pData[0] = 0x14; ///
+		pData[1] = 0x03;
+		pData[2] = 0x01;
+		pData[3] = 0x00;
+		pData[4] = 0x00;
+		//pData[5] = 0x01;
 	}
 	
 	@Test
@@ -541,5 +557,146 @@ public class SessionManagerImplTest extends BaseTest{
 		
 	}
 	
+	@Test
+	public void checkRecordsTest(){
+		Session session = Mockito.mock(Session.class);
+		List<MatchedRecord> mrList = new ArrayList<>();
+		MatchedRecord match = new MatchedRecord();
+		match.setBeginBDC(1);
+		mrList.add(match);
+		Mockito.when(session.getMrList()).thenReturn(mrList);
 		
+		
+		List<BidirDataChunk> bdcRaw =  new ArrayList<>();
+		BidirDataChunk data1 =  new BidirDataChunk();
+		BidirDataChunk data2 = new BidirDataChunk();
+		bdcRaw.add(data1);
+		bdcRaw.add(data2);
+		Mockito.when(session.getBdcRaw()).thenReturn(bdcRaw);
+		
+
+		SessionManagerImpl mgrImpl = (SessionManagerImpl)sessionMgr;
+		mgrImpl.checkRecords(session);
+	}
+	
+	/*@Test
+	public void checkTLSVersionTestFalse(){
+		int temp =0;
+		SessionManagerImpl mgrImpl = (SessionManagerImpl)sessionMgr;
+		int result = mgrImpl.checkTLSVersion(pData, temp);
+		assertEquals(0, result);
+	}
+	
+	@Test
+	public void checkTLSVersionTestTrue(){
+		SessionManagerImpl mgrImpl = (SessionManagerImpl)sessionMgr;
+		int temp = 0;
+		int result = mgrImpl.checkTLSVersion(pData, temp);
+		assertEquals(1, result);
+
+	}*/
+	
+	@Test
+	public void read24bitIntegerTest() {
+		byte pData[] = new byte[3]; 
+		int temp = 0;
+		
+		byte[] tmp = new byte[4];
+		tmp[3] = pData[temp + 2];
+		tmp[2] = pData[temp + 1];
+		tmp[1] = pData[temp];
+		tmp[0] = 0;
+		int expected = ByteBuffer.wrap(tmp).getInt();
+		SessionManagerImpl mgrImpl = (SessionManagerImpl)sessionMgr;
+		int actual = mgrImpl.read24bitInteger(pData, temp);
+		assertEquals(expected, actual);
+	}
+	
+	@Test
+	public void reAssembleSessionTest(){
+		TCPPacket pac = Mockito.mock(TCPPacket.class);
+		PacketInfo packetInfo = Mockito.mock(PacketInfo.class);
+		Reassembler reAsmSession = Mockito.mock(Reassembler.class);
+		Session session = Mockito.mock(Session.class);
+
+		Mockito.when(pac.getPayloadLen()).thenReturn(1);
+		Mockito.when(pac.getDataOffset()).thenReturn(1);
+		Mockito.when(pac.getData()).thenReturn(pData);
+		Mockito.when(pac.isDecrypted()).thenReturn(true);
+		
+		SortedMap<Integer, PacketInfo> map = new TreeMap<>();
+		Mockito.when(reAsmSession.getPacketOffsets()).thenReturn(map);
+		Mockito.when(reAsmSession.getStorage()).thenReturn(new ByteArrayOutputStream(5));
+		Mockito.when(session.isDecrypted()).thenReturn(true);
+		Mockito.when(reAsmSession.getPktRanges()).thenReturn(new ArrayList<>());
+		Mockito.when(packetInfo.getPacketId()).thenReturn(1);
+		Reassembler reass = Mockito.mock(Reassembler.class);
+		Mockito.when(session.getpStorageBothRAW()).thenReturn(reass);
+		Mockito.when(session.getpStorageBothRAW().getStorage()).thenReturn(new ByteArrayOutputStream(5));
+		Mockito.when(packetInfo.getDir()).thenReturn(PacketDirection.DOWNLINK);
+		
+		List<BidirDataChunk> bdc = new ArrayList<>();
+		BidirDataChunk back = new BidirDataChunk();
+		back.setDirection(PacketDirection.DOWNLINK);
+		bdc.add(back);
+		Mockito.when(session.getBdcRaw()).thenReturn(bdc);
+		
+	
+		Mockito.when(reAsmSession.getSeq()).thenReturn((long)2);
+		SessionManagerImpl mgrImpl = (SessionManagerImpl)sessionMgr;
+		mgrImpl.reAssembleSession(pac, packetInfo, reAsmSession, session);
+	}
+	
+	@Test
+	public void reAssembleSessionTest2(){
+		TCPPacket pac = Mockito.mock(TCPPacket.class);
+		PacketInfo packetInfo = Mockito.mock(PacketInfo.class);
+		Reassembler reAsmSession = Mockito.mock(Reassembler.class);
+		Session session = Mockito.mock(Session.class);
+
+		Mockito.when(pac.getPayloadLen()).thenReturn(1);
+		Mockito.when(pac.getDataOffset()).thenReturn(1);
+		Mockito.when(pac.getData()).thenReturn(pData);
+		Mockito.when(pac.isDecrypted()).thenReturn(true);
+		
+		SortedMap<Integer, PacketInfo> map = new TreeMap<>();
+		Mockito.when(reAsmSession.getPacketOffsets()).thenReturn(map);
+		Mockito.when(reAsmSession.getStorage()).thenReturn(new ByteArrayOutputStream(5));
+		Mockito.when(session.isDecrypted()).thenReturn(true);
+		Mockito.when(reAsmSession.getPktRanges()).thenReturn(new ArrayList<>());
+		Mockito.when(packetInfo.getPacketId()).thenReturn(1);
+		Reassembler reass = Mockito.mock(Reassembler.class);
+		Mockito.when(session.getpStorageBothRAW()).thenReturn(reass);
+		Mockito.when(session.getpStorageBothRAW().getStorage()).thenReturn(new ByteArrayOutputStream(5));
+		Mockito.when(packetInfo.getDir()).thenReturn(PacketDirection.DOWNLINK);
+		
+		List<BidirDataChunk> bdc = new ArrayList<>();
+		BidirDataChunk back = new BidirDataChunk();
+		back.setDirection(PacketDirection.UPLINK);
+		bdc.add(back);
+		Mockito.when(session.getBdcRaw()).thenReturn(bdc);
+		Mockito.when(reAsmSession.getSeq()).thenReturn((long)2);
+		SessionManagerImpl mgrImpl = (SessionManagerImpl)sessionMgr;
+		mgrImpl.reAssembleSession(pac, packetInfo, reAsmSession, session);
+	}
+
+	@Test
+	public void parseTest(){
+		Session session = Mockito.mock(Session.class);
+		List<PacketInfo> packetList = new ArrayList<>();
+		int nPass = 0;
+		List<MatchedRecord> mtList = new ArrayList<>();
+		MatchedRecord mtc = new MatchedRecord();
+		mtc.setDir(PacketDirection.DOWNLINK); /////
+		mtc.setUniDirOffset(0);
+		mtc.setBytes(1);
+		mtList.add(mtc);
+		Mockito.when(session.getMrList()).thenReturn(mtList);	
+		Mockito.when(session.getStorageDl()).thenReturn(pData);
+		
+		
+		
+		SessionManagerImpl mgrImpl = (SessionManagerImpl)sessionMgr;
+		mgrImpl.parse(session, packetList, nPass);
+	}
 }

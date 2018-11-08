@@ -67,6 +67,7 @@ public class BpFileImageFormatTablePanel extends AbstractBpImageFormatTablePanel
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);
+			contentTable.getTableHeader().setReorderingAllowed(false);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
 		}
 

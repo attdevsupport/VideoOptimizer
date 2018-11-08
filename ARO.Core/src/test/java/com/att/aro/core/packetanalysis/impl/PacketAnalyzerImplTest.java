@@ -98,7 +98,6 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		iPacketAnalyzer.setRrcStateMachineFactory(statemachinefactory);
 		iPacketAnalyzer.setProfileFactory(profilefactory);
 		TraceDirectoryResult mockTraceDirResult = mock(TraceDirectoryResult.class);
-
 		AnalysisFilter filter = mock(AnalysisFilter.class);
 		filter.setIpv4Sel(true);
 		filter.setIpv6Sel(true);
@@ -107,7 +106,7 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		cpuList.add(new CpuActivity());
 		when(mockTraceDirResult.getCpuActivityList()).thenReturn(cpuList);
 		when(tracereader.readTraceDirectory(any(String.class))).thenReturn(mockTraceDirResult);
-		
+
 		ProfileLTE profileLTE = new ProfileLTE();
 		when(profilefactory.createLTEdefault()).thenReturn(profileLTE);
 

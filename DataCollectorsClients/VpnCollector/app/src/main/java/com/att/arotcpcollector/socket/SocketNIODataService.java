@@ -276,7 +276,6 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 				session.setBusyWrite(true);
 				SocketDataWriterWorker worker = new SocketDataWriterWorker(tcpFactory, udpFactory);
 				worker.setSessionKey(sessionKey);
-				worker.setSecureEnable(isSecureEnable());
 				worker.setPrintLog(printLog);
 				workerPool.execute(worker);
 			}	 
@@ -286,7 +285,6 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 			session.setBusyRead(true);
 			SocketDataReaderWorker worker = new SocketDataReaderWorker(tcpFactory, udpFactory);
 			worker.setSessionKey(sessionKey);
-			worker.setSecureEnable(isSecureEnable());
 			worker.setPrintLog(printLog);
 			workerPool.execute(worker);
 		} 

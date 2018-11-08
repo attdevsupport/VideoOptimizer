@@ -32,4 +32,40 @@ public class FileOrderEntry extends HttpEntry {
 	public Object getSize() {
 		return contentLength;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		FileOrderEntry fileOrderEntry = (FileOrderEntry) obj;
+		if((int)fileOrderEntry.getSize() != contentLength){
+			return false;
+		}
+
+		if(fileOrderEntry.getHttpCode() != getHttpCode()){
+			return false;
+		}
+		if(!fileOrderEntry.getHttpObjectName().equals(getHttpObjectName())){
+			return false;
+		}
+		if(!fileOrderEntry.getHostName().equals(getHostName())){
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + contentLength;
+		result = prime * result + (int) getHttpCode();
+		result = prime * result + getHttpObjectName().hashCode();
+		result = prime * result + getHostName().hashCode();
+		return result;
+	}
 }

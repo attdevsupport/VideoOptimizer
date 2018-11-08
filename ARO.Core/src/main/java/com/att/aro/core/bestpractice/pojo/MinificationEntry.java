@@ -22,6 +22,8 @@ public class MinificationEntry extends HttpEntry {
 	private int savingsSizeInByte;
 	private int originalSizeInByte;
 	
+	public MinificationEntry(){}
+	
 	public MinificationEntry(HttpRequestResponseInfo hrri,
 			HttpRequestResponseInfo lastRequestObj, String domainName, int savingPercentage,int savingsSizeInByte, int originalSizeInByte) {
 		super(hrri, lastRequestObj, domainName);
@@ -54,4 +56,43 @@ public class MinificationEntry extends HttpEntry {
 		this.originalSizeInByte = originalSizeInByte;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		MinificationEntry other = (MinificationEntry) obj;
+		if (other.getOriginalSizeInByte() != originalSizeInByte || other.getSavingPercentage() != savingPercentage) {
+			return false;
+		}
+		if (other.getSavingsSizeInByte() != savingsSizeInByte) {
+			return false;
+		}
+		if (!other.getHostName().equals(getHostName())) {
+			return false;
+		}
+		if (!other.getHttpObjectName().equals(getHttpObjectName())) {
+			return false;
+		}
+		if (!other.getHttpCode().equals(getHttpCode())) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + originalSizeInByte;
+		result = prime * result + savingPercentage;
+		result = prime * result + savingsSizeInByte;
+		result = prime * result + getHostName().hashCode();
+		result = prime * result + getHttpObjectName().hashCode();
+		result = prime * result + (int) getHttpCode();
+		return result;
+	}
 }

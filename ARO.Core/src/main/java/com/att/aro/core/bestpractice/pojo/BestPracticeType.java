@@ -62,7 +62,7 @@ public enum BestPracticeType {
 			"Buffer Occupancy"), NETWORK_COMPARISON(VIDEO, "Network Comparison"), TCP_CONNECTION(VIDEO,
 					"TCP Connection"), CHUNK_SIZE(VIDEO, "Segment Size"), CHUNK_PACING(VIDEO,
 							"Segment Pacing"), VIDEO_REDUNDANCY(VIDEO, "Redundancy"),
-							VIDEO_CONCURRENT_SESSION(VIDEO, "Concurrent Session"),
+							VIDEO_CONCURRENT_SESSION(VIDEO, "Concurrent Session"), VIDEO_VARIABLE_BITRATE(VIDEO, "Variable Bitrate") ,
 
 	ACCESSING_PERIPHERALS(OTHER, "Accessing Peripheral Applications"),
 

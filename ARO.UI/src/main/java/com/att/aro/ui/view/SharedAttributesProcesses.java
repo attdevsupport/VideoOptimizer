@@ -68,6 +68,8 @@ public interface SharedAttributesProcesses extends IAROView {
 	List<IDataCollector> getAvailableCollectors();
 
 	CollectorStatus getCollectorStatus();
+	
+	String[] getApplicationsList(String id);
 
 
 	Frame getFrame();

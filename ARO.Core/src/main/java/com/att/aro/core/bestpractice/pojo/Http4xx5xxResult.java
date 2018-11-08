@@ -66,4 +66,35 @@ public class Http4xx5xxResult extends AbstractBestPracticeResult {
 	public int getErrorCount() {
 		return firstErrorRespMap4XX != null ? firstErrorRespMap4XX.size() : 0;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		Http4xx5xxResult other = (Http4xx5xxResult) obj;
+		if(!other.getHttpResCodelist().containsAll(httpResCodelist)){
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		for (Http4xx5xxStatusResponseCodesEntry entry : httpResCodelist) {
+			result = prime * result + entry.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

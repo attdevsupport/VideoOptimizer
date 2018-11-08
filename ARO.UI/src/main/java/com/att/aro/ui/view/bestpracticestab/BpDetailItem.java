@@ -16,6 +16,7 @@
 package com.att.aro.ui.view.bestpracticestab;
 
 import java.awt.BorderLayout;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -24,6 +25,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.print.PageFormat;
 import java.awt.print.PrinterException;
@@ -89,6 +92,13 @@ import com.att.aro.ui.view.menu.file.PreferencesDialog;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
 
 public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
+	private final class HyperlinkAdapter extends MouseAdapter {
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			routeHyperlink();
+		}
+	}
+
 	private static final long serialVersionUID = 1L;
 	JLabel imageLabel = null;
 	JLabel nameLabel = null;
@@ -114,7 +124,8 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 	static final Font TEXT_FONT = new Font("TextFont", Font.PLAIN, 12);
 	private static final int TEXT_WIDTH = 600;
 	private static final int FILE_PREFERENCE_VIDEO_INDEX = 2;
-	
+	private HyperlinkAdapter hyperlinkAdapter = new HyperlinkAdapter();
+
 	public BpDetailItem(String name, BestPracticeType bpType, AbstractBpDetailTablePanel resultsTablePanel) {
 		super();
 		this.bpType = bpType;
@@ -249,6 +260,16 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 		textPanel.setPreferredSize(dimTextPanel);
 		textPanel.setMinimumSize(dimTextPanel);
 	}
+	
+	private void openVideoPreferencesDialog() {
+		boolean isRelatedToStartupDelay = this.bpType == BestPracticeType.VIDEO_STALL
+				|| this.bpType == BestPracticeType.STARTUP_DELAY || this.bpType == BestPracticeType.BUFFER_OCCUPANCY;
+		if (isRelatedToStartupDelay && this.aroView != null) {
+			PreferencesDialog prefDialog = new PreferencesDialog(this.aroView, resultsTextLabel);
+			prefDialog.getTabbedPane().setSelectedIndex(FILE_PREFERENCE_VIDEO_INDEX);
+			prefDialog.setVisible(true);
+		}
+	}
 
 	public JPanel layoutPanel(String name) {
 		JScrollPane scroll;
@@ -280,7 +301,12 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 				@Override
 				public void hyperlinkUpdate(HyperlinkEvent e) {
 					if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-						performAction(e);
+						if(e.getDescription().equalsIgnoreCase("preferences")){
+							openVideoPreferencesDialog();
+						} else {
+							routeHyperlink();
+						}
+						
 					}
 				}
 			});
@@ -369,16 +395,20 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 		}
 	}
 
-	void performAction(HyperlinkEvent e) {
-		if (this.bpType == BestPracticeType.STARTUP_DELAY || this.bpType == BestPracticeType.BUFFER_OCCUPANCY) {
-			if (this.aroView != null) {
-				PreferencesDialog prefDialog = new PreferencesDialog(this.aroView, resultsTextLabel);
-				prefDialog.getTabbedPane().setSelectedIndex(FILE_PREFERENCE_VIDEO_INDEX);
-				prefDialog.setVisible(true);
-			}
+	void routeHyperlink() {
+		if (this.bpType == BestPracticeType.STARTUP_DELAY || this.bpType == BestPracticeType.BUFFER_OCCUPANCY
+				|| this.bpType == BestPracticeType.VIDEO_STALL) {
+			openSetStartupDelayWindow();
 		} else {
 			diagnosticsOverviewRoute.routeHyperlink(this.bpType);
 		}
+	}
+
+	void openSetStartupDelayWindow() {
+		if (this.diagnosticsOverviewRoute != null) {
+			diagnosticsOverviewRoute.launchSliderDialogFromDiagnosticTab();
+		}
+
 	}
 
 	/**
@@ -557,9 +587,11 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 			learnMoreURI = ResourceBundleHelper.getMessageString("videoConcurrentSession.url");
 			useVO = true;
 			break;
-		/*case AD_ANALYTICS:
-			learnMoreURI = ResourceBundleHelper.getMessageString("connections.adAnalytics.url");
-			break;*/
+		/*
+		 * case AD_ANALYTICS: learnMoreURI =
+		 * ResourceBundleHelper.getMessageString("connections.adAnalytics.url");
+		 * break;
+		 */
 		default:
 			break;
 		}
@@ -623,6 +655,8 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 				imageName = "Image.bpWarningDark";
 			} else if (resType.equals(BPResultType.SELF_TEST)) {
 				imageName = "Image.bpManual";
+			} else if (resType.equals(BPResultType.CONFIG_REQUIRED)) {
+				imageName = "Image.bpConfig";
 			}
 		}
 		return UIComponent.getInstance().getIconByKey(imageName);
@@ -641,6 +675,18 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 			if (bpr.getBestPracticeType().equals(this.bpType)) {
 				resultsTextLabel.setText(bpr.getResultText());
 				imageLabel.setIcon(loadImageIcon(bpr));
+				if (bpType == BestPracticeType.VIDEO_STALL || bpType == BestPracticeType.STARTUP_DELAY
+						|| bpType == BestPracticeType.BUFFER_OCCUPANCY) {
+					if (bpr.getResultType().equals(BPResultType.CONFIG_REQUIRED)) {
+						addConfigIconActions();
+					} else {
+						imageLabel.setToolTipText("");
+						if (imageLabel.getMouseListeners() != null && imageLabel.getMouseListeners().length > 1) {
+							imageLabel.setCursor(Cursor.getDefaultCursor());
+							imageLabel.removeMouseListener(hyperlinkAdapter);
+						}
+					}
+				}
 				BestPracticeType resultType = bpr.getBestPracticeType();
 				switch (resultType) {
 				case FILE_COMPRESSION:
@@ -803,13 +849,13 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 						((BPConnectionsSimultnsTablePanel) resultsTablePanel)
 								.setData(((MultiSimultnsConnectionResult) bpr).getResults());
 					return;
-				/*case AD_ANALYTICS:
-					if (bpr.getResultType() == BPResultType.NONE)
-						((BpConnectionsAdAnalyticsTablePanel) resultsTablePanel).setData(Collections.emptyList());
-					else
-						((BpConnectionsAdAnalyticsTablePanel) resultsTablePanel)
-								.setData(((AdAnalyticsResult) bpr).getResults());
-					return;*/
+				/*
+				 * case AD_ANALYTICS: if (bpr.getResultType() ==
+				 * BPResultType.NONE) ((BpConnectionsAdAnalyticsTablePanel)
+				 * resultsTablePanel).setData(Collections.emptyList()); else
+				 * ((BpConnectionsAdAnalyticsTablePanel) resultsTablePanel)
+				 * .setData(((AdAnalyticsResult) bpr).getResults()); return;
+				 */
 				case VIDEO_STALL:
 					if (bpr.getResultType() == BPResultType.NONE) {
 						((BPVideoStallTablePanel) resultsTablePanel).setData(Collections.emptyList());
@@ -829,6 +875,14 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 					return;
 				}
 			}
+		}
+	}
+
+	private void addConfigIconActions() {
+		imageLabel.setToolTipText(ResourceBundleHelper.getMessageString("startUpDelay.config"));
+		if (imageLabel.getMouseListeners() != null && imageLabel.getMouseListeners().length < 2) {
+			imageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+			imageLabel.addMouseListener(hyperlinkAdapter);
 		}
 	}
 

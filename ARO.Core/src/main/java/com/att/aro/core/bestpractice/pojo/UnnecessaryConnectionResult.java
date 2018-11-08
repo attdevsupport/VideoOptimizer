@@ -72,4 +72,45 @@ public class UnnecessaryConnectionResult extends AbstractBestPracticeResult{
 		return BestPracticeType.UNNECESSARY_CONNECTIONS;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		UnnecessaryConnectionResult other = (UnnecessaryConnectionResult) obj;
+		if (Double.doubleToLongBits(other.getTightlyCoupledBurstTime()) != Double
+				.doubleToLongBits(tightlyCoupledBurstTime)) {
+			return false;
+		}
+		if (other.getTightlyCoupledBurstCount() != tightlyCoupledBurstCount) {
+			return false;
+		}
+		if (!other.getTightlyCoupledBurstsDetails().containsAll(tightlyCoupledBurstsDetails)) {
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(tightlyCoupledBurstTime);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + tightlyCoupledBurstCount;
+		for (UnnecessaryConnectionEntry entry : tightlyCoupledBurstsDetails) {
+			result = prime * result + entry.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

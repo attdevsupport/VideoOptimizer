@@ -31,5 +31,35 @@ public class VideoStartUpDelayResult extends AbstractBestPracticeResult {
 	public void setStartUpDelay(double startUpDelay) {
 		this.startUpDelay = startUpDelay;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		VideoStartUpDelayResult startupDelay = (VideoStartUpDelayResult) obj;
+		if (Double.doubleToLongBits(this.startUpDelay) != Double.doubleToLongBits(startupDelay.getStartUpDelay())) {
+			return false;
+		}
+		if ((!startupDelay.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != startupDelay.getResultType()) {
+			return false;
+		}
+		return true;
+	}
 
+	@Override
+	public int hashCode(){
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(startUpDelay);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

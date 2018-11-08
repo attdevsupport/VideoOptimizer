@@ -15,10 +15,16 @@
 */
 package com.att.aro.core.packetanalysis.impl;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,14 +34,17 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.att.aro.core.packetanalysis.IByteArrayLineReader;
 import com.att.aro.core.packetanalysis.IRequestResponseBuilder;
 import com.att.aro.core.packetanalysis.ISessionManager;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
+import com.att.aro.core.packetanalysis.pojo.HttpPattern;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketRangeInStorage;
@@ -56,6 +65,7 @@ import com.att.aro.core.securedpacketreader.pojo.BidirDataChunk;
 import com.att.aro.core.securedpacketreader.pojo.CryptoEnum;
 import com.att.aro.core.securedpacketreader.pojo.MatchedRecord;
 import com.att.aro.core.securedpacketreader.pojo.SavedTLSSession;
+import com.att.aro.core.util.Util;
 
 //FIXME LOT OF TODOS IN HERE - RENAMING IT TO FROM TODO to TODOS FOR NOW
 public class SessionManagerImpl implements ISessionManager {
@@ -82,6 +92,18 @@ public class SessionManagerImpl implements ISessionManager {
 	ISSLKeyService sslKeyService;
 
 	private List<PacketInfo> packets;
+	private String tracePath = "";
+	
+	private IByteArrayLineReader storageReader;
+	
+	@Autowired
+	public void setByteArrayLineReader(IByteArrayLineReader reader){
+		this.storageReader = reader;
+	}
+
+	public void setiOSSecureTracePath(String tracePath) {
+		this.tracePath = tracePath+Util.FILE_SEPARATOR+ "iosSecure"+Util.FILE_SEPARATOR;
+	}
 
 	private static final int PROT_RECORD_TLS = 1;
 	private static final int PROT_RECORD_TLS_FIRST = 2; // first record
@@ -126,7 +148,7 @@ public class SessionManagerImpl implements ISessionManager {
 	public static final int ALERT_LEVEL_WARNING = 1;
 	public static final int ALERT_LEVEL_FATAL = 2;
 	public static final int ALERT_CLOSE_NOTIFY = 0;
-
+	
 	public List<Session> assembleSession(List<PacketInfo> packets) {
 		this.packets = packets;
 		Map<String, Session> allSessions = new LinkedHashMap<String, Session>();
@@ -312,7 +334,7 @@ public class SessionManagerImpl implements ISessionManager {
 	}
 
 	// parsing
-	private int parse(Session session, List<PacketInfo> packetList, int nPass) {
+	public int parse(Session session, List<PacketInfo> packetList, int nPass) {
 		// TLSHandshake handshake = new TLSHandshake();
 		// TLS_SESSION_INFO tsiServer = new TLS_SESSION_INFO(0);
 		// TLS_SESSION_INFO tsiClient = new TLS_SESSION_INFO(1);
@@ -1166,7 +1188,7 @@ public class SessionManagerImpl implements ISessionManager {
 		}
 	}
 
-	private void checkRecords(Session session) {
+	public void checkRecords(Session session) {
 		List<BidirDataChunk> bdcRaw = session.getBdcRaw();
 		List<MatchedRecord> mrList = session.getMrList();
 
@@ -1380,7 +1402,7 @@ public class SessionManagerImpl implements ISessionManager {
 		return true;
 	}
 
-	private int read24bitInteger(byte pData[], int temp) {
+	public int read24bitInteger(byte pData[], int temp) {
 		byte[] tmp = new byte[4];
 		tmp[3] = pData[temp + 2];
 		tmp[2] = pData[temp + 1];
@@ -1389,7 +1411,7 @@ public class SessionManagerImpl implements ISessionManager {
 		return ByteBuffer.wrap(tmp).getInt();
 	}
 
-	private int checkTLSVersion(byte[] pData, int temp) {
+	public int checkTLSVersion(byte[] pData, int temp) {
 		if ((pData[temp] != 0x03) || ((pData[temp + 1]) != 0x01)) {
 			return 0;
 		} else {
@@ -1686,13 +1708,16 @@ public class SessionManagerImpl implements ISessionManager {
 				lastPacket = packetInfo;
 			} // packet loop
 
-			pSes.setStorageDl(dol.getStorage().toByteArray());
+			pSes.setStorageDl(dol.getStorage().toByteArray());			
 			pSes.setPacketOffsetsDl(dol.getPacketOffsets());
 			pSes.setPktRangesDl(dol.getPktRanges());
 			pSes.setStorageUl(upl.getStorage().toByteArray());
 			pSes.setPacketOffsetsUl(upl.getPacketOffsets());
 			pSes.setPktRangesUl(upl.getPktRanges());
-
+			
+			populateDomainName(pSes);
+			replaceCleariOSContent(pSes);
+			
 			for (PacketInfo pinfo : dol.getOoid()) {
 				if (pinfo.getPacket().getPayloadLen() > 0) {
 					pinfo.setTcpInfo(TcpInfo.TCP_DATA_DUP);
@@ -1706,6 +1731,78 @@ public class SessionManagerImpl implements ISessionManager {
 			}
 		} // END: Reassemble sessions
 			// -logger.info("END: Reassemble sessions");
+	}
+
+	private void populateDomainName(Session session) {
+		if(session.getStorageUl()!=null && session.getRemoteHostName()==null) {
+			storageReader.init(session.getStorageUl());
+			String line;
+			try {
+				line = storageReader.readLine();
+				while (line != null && line.length() == 0) {
+					line = storageReader.readLine();
+				}
+				if (line != null) {
+					Matcher matcher = HttpPattern.strReRequestType.matcher(line);
+					if (matcher.lookingAt()) {
+						URI sessionURI = new URI(matcher.group(2));
+						if(sessionURI.getHost() != null) {
+							session.setDomainName(sessionURI.getHost());
+						} else {
+							line = storageReader.readLine();
+							matcher = HttpPattern.strReRequestHost.matcher(line);
+							if (matcher.lookingAt()) {
+								String hostName = line.substring(matcher.end()).trim();
+
+								// Strip port info if included
+								int index = hostName.indexOf(':');
+								if (index >= 0) {
+									hostName = hostName.substring(0, index);
+								}
+								session.setDomainName(hostName);
+							}
+						}
+					}				
+				}
+			} catch (IOException ioe) {
+				LOGGER.error("Error", ioe);
+			} catch (URISyntaxException urie) {
+				LOGGER.error("Error", urie);
+			}
+		}
+	}
+
+	private void replaceCleariOSContent(Session session) {
+		
+		if(session.getDomainName()==null) { 
+			return;
+		}
+ 		String sessionKey = session.getDomainName()+"_"+session.getLocalPort();
+ 		File clearSessionRecFileDL = new File(this.tracePath + sessionKey+"_DL");
+ 		File clearSessionRecFileUL = new File(this.tracePath + sessionKey+"_UL");
+		LOGGER.debug("replaceCleariOSContent: "+  sessionKey);
+
+		if(clearSessionRecFileDL.exists()) {
+			LOGGER.debug("readtempFile1: " +  clearSessionRecFileDL.getAbsolutePath());
+ 			try { 
+				session.setStorageDl( Files.readAllBytes(clearSessionRecFileDL.toPath()));
+			} catch (FileNotFoundException fne) {
+				LOGGER.error("Error", fne);
+			} catch (IOException ioe) {
+				LOGGER.error("Error", ioe);
+			}			
+		}
+		
+		if(clearSessionRecFileUL.exists()) {
+			LOGGER.debug("readtempFile2: " +  clearSessionRecFileUL.getAbsolutePath());
+ 			try { 
+				session.setStorageUl(Files.readAllBytes(clearSessionRecFileUL.toPath()));
+			} catch (FileNotFoundException fnfe) {
+				LOGGER.error("Error", fnfe);
+			} catch (IOException ioe) {
+				LOGGER.error("Error", ioe);
+			}
+ 		}
 	}
 
 	private void iteratePackets(List<PacketInfo> packets, Map<String, Session> allSessions, List<PacketInfo> dnsPackets,
@@ -1837,7 +1934,7 @@ public class SessionManagerImpl implements ISessionManager {
 		}
 	}
 
-	private Reassembler reAssembleSession(TCPPacket pac, PacketInfo packetInfo, Reassembler reAsmSession,
+	public Reassembler reAssembleSession(TCPPacket pac, PacketInfo packetInfo, Reassembler reAsmSession,
 			Session session) {
 
 		if (pac.getPayloadLen() > 0) {

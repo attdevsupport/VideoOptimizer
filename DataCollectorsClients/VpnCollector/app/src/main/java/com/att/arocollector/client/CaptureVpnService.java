@@ -16,6 +16,7 @@
 
 package com.att.arocollector.client;
 
+import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -29,10 +30,12 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.VpnService;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -733,6 +736,7 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 	 * @return
 	 * @throws IOException
 	 */
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
 	boolean startVpnService() throws IOException {
 		// If the old interface has exactly the same parameters, use it!
 		if (mInterface != null) {
@@ -750,6 +754,17 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 				.addDnsServer("8.8.8.8")
 				.addDnsServer("8.8.4.4")
 				.setMtu(MAX_PACKET_SIZE);
+
+		if(!TextUtils.isEmpty(theIntent.getStringExtra(BundleKeyUtil.SELECTED_APP_NAME))) {
+			try {
+				if(!theIntent.getStringExtra(BundleKeyUtil.SELECTED_APP_NAME).equals("EMPTY")) {
+					builder.addAllowedApplication(theIntent.getStringExtra(BundleKeyUtil.SELECTED_APP_NAME));
+				}
+			} catch (NameNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+
 		if (mInterface != null) {
 			try {
 				mInterface.close();

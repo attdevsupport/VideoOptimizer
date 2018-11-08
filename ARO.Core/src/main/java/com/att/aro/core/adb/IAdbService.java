@@ -16,6 +16,7 @@
 package com.att.aro.core.adb;
 
 import java.io.IOException;
+import java.util.List;
 
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.FileListingService.FileEntry;
@@ -79,6 +80,13 @@ public interface IAdbService {
 	 * @throws Exception if AndroidDebugBridge is invalid or fails to connect
 	 */
 	IDevice[] getConnectedDevices() throws IOException;
+	
+	/**
+	 * Find the list of all applications in the selected android device.
+	 * 
+	 * @return List of all applications in selected android device.
+	 */
+	String[] getApplicationList(String id);
 
 	/**
 	 * traverse Android filesystem to locate file/folder

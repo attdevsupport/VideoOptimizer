@@ -15,6 +15,9 @@
 */
 package com.att.aro.core.util;
 
+import static org.apache.commons.lang.StringEscapeUtils.escapeCsv;
+import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
+
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -38,6 +41,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
@@ -45,10 +49,12 @@ import org.apache.log4j.Logger;
 
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
+import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.settings.impl.SettingsImpl;
+import com.att.aro.core.videoanalysis.pojo.AROManifest;
 
 public final class Util {
 	public static final String DUMPCAP = "dumpCap";
@@ -62,7 +68,7 @@ public final class Util {
 	public static final String FILE_SEPARATOR = System.getProperty("file.separator");
 	public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 	public static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
-	
+	private static final String QUOTE = "\"";
 	private static final double TIME_CORRECTION = 1.0E9;
 	private static Comparator<String> comparator;
 	private static Comparator<String> floatValComparator;
@@ -932,14 +938,19 @@ public final class Util {
 	 */
 	public static Map<String, String> getRecentOpenMenuItems() {
 		Map<String, String> recentMenuItems = new LinkedHashMap<String, String>();
-		if (SettingsImpl.getInstance().getAttribute(RECENT_MENU) != null) {
-			String[] menuItem = SettingsImpl.getInstance().getAttribute(RECENT_MENU).split(",");
-			if (menuItem != null) {
-				for (int i = 0; i < menuItem.length; i++) {
-					if (menuItem[i] != null) {
-						String recentMenuItem = getTraceName(menuItem[i]);
-						if (!recentMenuItem.isEmpty()) {
-							recentMenuItems.put(recentMenuItem, menuItem[i]);
+		String recentTraces = SettingsImpl.getInstance().getAttribute("RECENT_MENU");
+		if (!StringUtils.isEmpty(recentTraces)) {
+			if (recentTraces.charAt(0) != '\"') {
+				SettingsImpl.getInstance().setAndSaveAttribute("RECENT_MENU", "");
+			} else {
+				String[] recentItems = getRecentlyOpenedTraces();
+				if (recentItems != null) {
+					for (int i = 0; i < recentItems.length; i++) {
+						if (recentItems[i] != null) {
+							String recentMenuItem = getTraceName(recentItems[i]);
+							if (!recentMenuItem.isEmpty() && new File(recentItems[i]).exists()) {
+								recentMenuItems.put(recentMenuItem, recentItems[i]);
+							}
 						}
 					}
 				}
@@ -948,6 +959,15 @@ public final class Util {
 		return recentMenuItems;
 	}
 
+	public static String[] getRecentlyOpenedTraces() {
+		String recentMenuConfig = SettingsImpl.getInstance().getAttribute("RECENT_MENU");
+		String[] recentMenuItem = recentMenuConfig.split("(?<!\\\\)\",\"");
+		recentMenuItem[0] = recentMenuItem[0].replaceFirst("\"", "");
+		int len = recentMenuItem.length - 1;
+		recentMenuItem[len] = (recentMenuItem[len].charAt(recentMenuItem[len].length() - 1) == '\"'
+				? recentMenuItem[len].substring(0, recentMenuItem[len].length() - 1) : recentMenuItem[len]);
+		return recentMenuItem;
+	}
 	/***
 	 * Extracts the trace name from the tracepath
 	 * 
@@ -965,10 +985,11 @@ public final class Util {
 		return traceName;
 	}
 	
-	/**
-	 * Convert and wrap password for echo through bash to sudo
+	/**<pre>
+	 * Convert and wrap password for echo through bash to sudo.
+	 * The order of conversion is important, whack(\) must be converted first!
 	 * 
-	 * \ is converted to \\
+	 * \ is converted to \x5c
 	 * ! is converted to \x21
 	 * ' is converted to \x27
 	 * null converted to empty string, does not need wrapping
@@ -980,6 +1001,73 @@ public final class Util {
 		if (password == null) {
 			return "";
 		}
-		return "$'" + password.replace("\\\\", "\\\\\\\\").replace("!", "\\\\x21").replace("'", "\\\\x27") + "'";
+		return "$'" + password.replace("\\", "\\x5c").replace("!", "\\x21").replace("'", "\\x27") + "'";
 	}
+
+	/***
+	 * Updates the recent trace Directory to the RECENT_MENU in
+	 * config.properties Makes sure there are only 5 or less items in the
+	 * attribute
+	 * 
+	 * @param traceDirectory
+	 */
+	public static void updateRecentItem(String traceDirectory) {
+		StringBuilder recentMenuBuilder = new StringBuilder();
+		String value = escapeCsv(escapeJava(traceDirectory));
+		if (value.startsWith(QUOTE)) {
+			recentMenuBuilder.append(value);
+		} else {
+			recentMenuBuilder.append(QUOTE);
+			recentMenuBuilder.append(value);
+			recentMenuBuilder.append(QUOTE);
+		}
+		int counter = 1;
+		String recentMenuConfig = SettingsImpl.getInstance().getAttribute("RECENT_MENU");
+		if (recentMenuConfig != null && !recentMenuConfig.isEmpty()) {
+			if (recentMenuConfig.charAt(0) == '\"') {
+				String[] recentMenu = getRecentlyOpenedTraces();
+				if (recentMenu != null) {
+					for (int i = 0; i < recentMenu.length; i++) {
+						if (counter < 5) {
+							if (!recentMenu[i].equals(traceDirectory) && new File(recentMenu[i]).exists()) {
+								recentMenuBuilder.append(",");
+								String recentValue = escapeCsv(escapeJava(recentMenu[i]));
+								if (recentValue.startsWith(QUOTE)) {
+									recentMenuBuilder.append(recentValue);
+								} else {
+									recentMenuBuilder.append(QUOTE);
+									recentMenuBuilder.append(recentValue);
+									recentMenuBuilder.append(QUOTE);
+								}
+								counter++;
+							}
+						}
+					}
+				}
+			}
+		}
+		SettingsImpl.getInstance().setAndSaveAttribute("RECENT_MENU", recentMenuBuilder.toString());
+	}
+	
+	public static boolean isStartupDelaySet(VideoUsage videoUsage) {
+		boolean isStartupDelaySet = true;
+		if (videoUsage != null && MapUtils.isEmpty(videoUsage.getChunkPlayTimeList())) {
+			isStartupDelaySet = false;
+		}
+		return isStartupDelaySet;
+	}
+
+	public static boolean isTraceWithValidManifestsSelected(VideoUsage videoUsage) {
+		boolean isTraceWithValidManifestsSelected = false;
+		if (videoUsage != null && !MapUtils.isEmpty(videoUsage.getAroManifestMap())) {
+			for (AROManifest aroManifest : videoUsage.getManifests()) {
+				if (aroManifest != null && true == aroManifest.isSelected() && aroManifest.isValid()) {
+					isTraceWithValidManifestsSelected = true;
+				}
+			}
+			
+		}
+		return isTraceWithValidManifestsSelected;
+	}
+	
 }

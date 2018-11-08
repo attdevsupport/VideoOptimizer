@@ -25,6 +25,8 @@ public class UnnecessaryConnectionEntry {
 	private int burstCount;
 	private double totalKB;
 	
+	public UnnecessaryConnectionEntry(){}
+	
 	public UnnecessaryConnectionEntry(double lTime, double hTime, int bCount, double tKB){
 		this.lowTime = lTime;
 		this.highTime = hTime;
@@ -58,6 +60,29 @@ public class UnnecessaryConnectionEntry {
 		return totalKB;
 	}
 
-	
-	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		UnnecessaryConnectionEntry other = (UnnecessaryConnectionEntry) obj;
+		if (Double.doubleToLongBits(other.getTotalKB()) != Double.doubleToLongBits(totalKB)
+				|| other.getBurstCount() != burstCount) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp = Double.doubleToLongBits(totalKB);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + burstCount;
+		return result;
+	}
 }

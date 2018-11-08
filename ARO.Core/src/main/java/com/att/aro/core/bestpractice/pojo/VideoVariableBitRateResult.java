@@ -17,8 +17,17 @@
 
 package com.att.aro.core.bestpractice.pojo;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-public class VideoNearStallResult {
+@Data
+@EqualsAndHashCode(callSuper=false)
+public class VideoVariableBitRateResult extends AbstractBestPracticeResult{
+
+	@Override
+	public BestPracticeType getBestPracticeType() {
+		return BestPracticeType.VIDEO_VARIABLE_BITRATE;
+	}
 
 }
 

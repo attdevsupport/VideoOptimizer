@@ -627,6 +627,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	}
 
 	private void doEnter() {
+		prevXrefMap = resultsTable.getVideoDataTagsMap();
 		if (requestFocusON) {
 			pattern = generateRegexPattern(getRequestHighlightedText());
 			regexRequestField.setText(regexRequestField.getText() + pattern);
@@ -665,8 +666,6 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 					savedVoConfig.getRegex(), savedVoConfig.getHeaderRegex(), savedVoConfig.getResponseRegex(), savedVoConfig.getXref(), savedVoConfig.getXrefMap());
 			prevXrefMap = new HashMap<>(videoConfig.getXrefMap());
 			errorOccured = false;
-		}else{
-			prevXrefMap = resultsTable.getVideoDataTagsMap();
 		}
 	}
 

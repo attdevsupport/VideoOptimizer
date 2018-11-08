@@ -48,5 +48,32 @@ public class EmptyUrlResult extends AbstractBestPracticeResult {
 		this.exportAllEmptyUrlFiles = exportAllEmptyUrlFiles;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		EmptyUrlResult emptyUrlResult = (EmptyUrlResult) obj;
+		if (emptyUrlResult.getNumberOfFailedFiles() != numberOfFailedFiles) {
+			return false;
+		}
+		if ((!emptyUrlResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != emptyUrlResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + numberOfFailedFiles;
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

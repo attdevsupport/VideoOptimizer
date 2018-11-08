@@ -52,4 +52,39 @@ public class VideoStallResult extends AbstractBestPracticeResult {
 			this.videoStallList.clear();
 		}
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		VideoStallResult other = (VideoStallResult) obj;
+		if (other.getStallResult() != videoStalls) {
+			return false;
+		}
+		if (!other.getResults().containsAll(videoStallList)) {
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + videoStalls;
+		for (VideoStall stall : videoStallList) {
+			result = prime * result + stall.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

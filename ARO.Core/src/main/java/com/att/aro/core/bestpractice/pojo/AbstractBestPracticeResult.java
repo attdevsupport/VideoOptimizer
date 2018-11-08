@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * practice.
  * Date: November 6, 2014
  */
-@JsonIgnoreProperties({"overviewTitle", "detailTitle", "isSelfTestBn", "aboutText", "learnMoreUrl", "resultText", "selfTest", "bestPracticeType"})
+@JsonIgnoreProperties(ignoreUnknown = true, value = {"overviewTitle", "detailTitle", "isSelfTestBn", "aboutText", "learnMoreUrl", "resultText", "selfTest", "bestPracticeType"})
 public abstract class AbstractBestPracticeResult {
 	private String overviewTitle = "";
 	private String detailTitle = "";
@@ -31,7 +31,8 @@ public abstract class AbstractBestPracticeResult {
 	private String aboutText = "";
 	private String learnMoreUrl = "";
 	private String resultText = "";
-
+	private String bestPracticeDescription = "";
+	
 	protected BPResultType resultType = BPResultType.PASS;
 
 	/**
@@ -181,6 +182,12 @@ public abstract class AbstractBestPracticeResult {
 	public abstract BestPracticeType getBestPracticeType();
 	
 	public String getBestPracticeDescription() {
-		return getBestPracticeType().getCategory().getDescription() + " - " + getBestPracticeType().getDescription();
+		bestPracticeDescription = getBestPracticeType().getCategory().getDescription() + " - "
+				+ getBestPracticeType().getDescription();
+		return bestPracticeDescription;
+	}
+	
+	public void setBestPracticeDescription(String bpDescription){
+		bestPracticeDescription = bpDescription;
 	}
 }

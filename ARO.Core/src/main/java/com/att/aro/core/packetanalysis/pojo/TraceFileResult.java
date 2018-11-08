@@ -36,5 +36,31 @@ public class TraceFileResult extends AbstractTraceResult {
 	public TraceResultType getTraceResultType() {
 		return TraceResultType.TRACE_FILE;
 	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((getTraceResultType() == null) ? 0 : getTraceResultType().hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!super.equals(obj)) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		TraceFileResult other = (TraceFileResult) obj;
+		if(!other.getTraceResultType().equals(getTraceResultType())){
+			return false;
+		}
+		return true;
+	}
 
 }

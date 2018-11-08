@@ -50,4 +50,32 @@ public class FlashResult extends AbstractBestPracticeResult {
 		this.exportAllNumberOfFlashFiles = exportAllNumberOfFlashFiles;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		FlashResult flashResult = (FlashResult) obj;
+		if (flashResult.getNumberOfFlash() != numberOfFlash) {
+			return false;
+		}
+		if ((!flashResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != flashResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + numberOfFlash;
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

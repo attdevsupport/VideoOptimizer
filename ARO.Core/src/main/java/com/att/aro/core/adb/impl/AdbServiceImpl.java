@@ -17,8 +17,11 @@
 package com.att.aro.core.adb.impl;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -384,6 +387,23 @@ public class AdbServiceImpl implements IAdbService {
 		}
 
 		return success;
+	}
+
+	@Override
+	public String[] getApplicationList(String id) {
+		if(StringUtils.isEmpty(id)) {
+			return new String[] {"Select a device"};
+		} else {
+			String response = extrunner.executeCmd(getAdbPath() + " -s " + id + " shell pm list packages");
+			String[] responseParts = response.split("\n");
+			List<String> applications = new ArrayList<>();
+			for(int i = 0; i < responseParts.length; i++) {
+				if(responseParts[i] != null || responseParts[i].length() > 8) {
+	                applications.add(responseParts[i].substring(8, responseParts[i].length()));
+	          }
+			}
+			return applications.toArray(new String[applications.size()]);
+		}
 	}
 
 }

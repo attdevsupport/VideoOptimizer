@@ -47,6 +47,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 	private JLabel httpsDataNotAnalyzedLabel;
 	private JLabel durationLabel;
 	private JLabel totalDataLabel;
+	private JLabel totalPayloadDataLabel;
 	private JLabel energyConsumedLabel;
 	private JLabel summaryFillerHeaderLabel;
 	private JLabel testFillerHeaderLabel;
@@ -90,7 +91,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
         summaryFillerHeaderLabel       = new JLabel();
         testFillerHeaderLabel          = new JLabel();
         totalDataLabel                 = new JLabel();
-        
+        totalPayloadDataLabel 		   = new JLabel();
 		JLabel appScoreLabel           = new JLabel();
 		JLabel causesScoreLabel        = new JLabel();
 		JLabel effectsScoreLabel       = new JLabel();
@@ -113,6 +114,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
         testFillerHeaderLabel     .setFont(TEXT_FONT);
         totalAppScoreLabel        .setFont(TEXT_FONT);
         totalDataLabel            .setFont(TEXT_FONT);
+        totalPayloadDataLabel	  .setFont(TEXT_FONT);
         totalhttpsDataLabel       .setFont(TEXT_FONT);
         
         downlinkLabel			  .setFont(TEXT_FONT);
@@ -144,6 +146,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 
 			addLabelLineName(durationLabel             , "bestPractices.duration"               , ++idx ,2, weightX, insets, TEXT_FONT);     //
 			addLabelLineName(totalDataLabel            , "bestPractices.totalDataTransfered"    , ++idx ,2, weightX, insets, TEXT_FONT);     //
+			addLabelLineName(totalPayloadDataLabel     , "bestPractices.totalPayloadData"       , ++idx ,2, weightX, insets, TEXT_FONT);     //
 			addLabelLineName(energyConsumedLabel       , "bestPractices.energyConsumed"         , ++idx ,2, weightX, insets, TEXT_FONT);     //
 			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     //
 			
@@ -179,7 +182,11 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 		totalDataLabel.setText(MessageFormat.format(
 				ResourceBundleHelper.getMessageString("bestPractices.totalDataTransferedValue"),
 				intFormat.format(analyzerResults.getStatistic().getTotalByte())));
-		
+		// Total Payload Data Transferred\:
+		totalPayloadDataLabel.setText(
+				MessageFormat.format(ResourceBundleHelper.getMessageString("bestPractices.totalPayloadDataValue"),
+						intFormat.format(analyzerResults.getStatistic().getTotalPayloadBytes())));
+
 		// Duration:
 		String duration = decFormat.format(analyzerResults.getTraceresult().getTraceDuration() / 60);
 		durationLabel.setText(MessageFormat.format(

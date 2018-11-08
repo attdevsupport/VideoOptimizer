@@ -250,7 +250,7 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"chunkPacing"                        //  #bp
 				  ,"videoRedundancy"                    //  #bp
 				  ,"videoConcurrentSession"				//  #bp
-				  
+				  ,"videoVariableBitrate"
 				  ,"other.accessingPeripherals"         //  #bp    Other: Accessing Peripheral Applications
 			//	  ,"#smallrequest"                      //  #bp    File Download: Minimize Number of Small Requests
 			};
@@ -300,6 +300,8 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 			imageName = "Image.bpWarningDark";
 		} else if (resType.equals(BPResultType.SELF_TEST)) {
 			imageName = "Image.bpManual";
+		} else if (resType.equals(BPResultType.CONFIG_REQUIRED)) {
+			imageName = "Image.bpConfig";
 		}
 		
 		return UIComponent.getInstance().getIconByKey(imageName);

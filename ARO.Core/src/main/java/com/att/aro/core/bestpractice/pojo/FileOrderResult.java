@@ -92,4 +92,38 @@ public class FileOrderResult extends AbstractBestPracticeResult{
 		this.fileOrderCount = fileOrderCount;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		FileOrderResult fileOrderResult = (FileOrderResult) obj;
+		if (fileOrderCount != fileOrderResult.getFileOrderCount()) {
+			return false;
+		}
+		if (!fileOrderResult.getResults().containsAll(results)) {
+			return false;
+		}
+		if ((!fileOrderResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != fileOrderResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + fileOrderCount;
+		for (FileOrderEntry entry : results) {
+			result = prime * result + entry.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }
