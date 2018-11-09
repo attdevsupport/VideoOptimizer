@@ -101,7 +101,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private MitmAttenuatorImpl mitmAttenuator;
 	private boolean deviceDataPulled = true;
 	private boolean validPW;
-	private boolean secure = false;
 	
 	public IOSCollectorImpl() {
 		super();
@@ -257,7 +256,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if(extraParams != null) {
 			this.videoOption = (VideoOption) extraParams.get("video_option");
 			this.attenuatorModel = (AttenuatorModel)extraParams.get("AttenuatorModel");			
- 			this.secure =  extraParams.get("secure") == null? false : (boolean) extraParams.get("secure");
 		}
  
 		Callable<StatusResult> launchAppCallable = () -> {
@@ -362,7 +360,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		// Start Attenuation
 		if(attenuatorModel.isConstantThrottle()
 				&&(attenuatorModel.isThrottleDLEnabled()||attenuatorModel.isThrottleULEnabled())) {
-			startAttenuatorCollection(datadir, attenuatorModel,secure);
+			startAttenuatorCollection(datadir, attenuatorModel);
 		}
 		
 		if (status.isSuccess()) {
@@ -441,7 +439,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		return status;
 	}
 	
-	private void startAttenuatorCollection(String trafficFilePath,AttenuatorModel attenuatorModel,boolean secure) {
+	private void startAttenuatorCollection(String trafficFilePath,AttenuatorModel attenuatorModel) {
 
 		    int throttleDL = 0;
 			int throttleUL = 0;
@@ -457,8 +455,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				mitmAttenuator = new MitmAttenuatorImpl();
 			}
 			LOG.info("ios attenuation setting: "+" trafficFilePath: "+ trafficFilePath +" throttleDL: "+throttleDL
-					+"throttleUL: "+throttleUL + "secure :" + secure);
-			mitmAttenuator.startCollect(trafficFilePath,throttleDL,throttleUL,secure);	
+					+"throttleUL: "+throttleUL);
+			mitmAttenuator.startCollect(trafficFilePath,throttleDL,throttleUL);	
 			
 		
 	}

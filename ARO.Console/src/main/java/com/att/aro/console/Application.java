@@ -484,16 +484,7 @@ public final class Application implements IAROView {
 		String throttleDL = cmds.getThrottleDL();
 		return ThrottleUtil.getInstance().parseNumCvtUnit(throttleDL);
 	}
-	
 
-	private boolean getSecureOption() {
-		return cmds.isSecure();
-	}
-	
-	private boolean getCertInstallOption() {
-		return cmds.isCertInstall();
-	}
-	
 	void printError(ErrorCode error) {
 		err("Error code: " + error.getCode());
 		err(", Error name: " + error.getName());
@@ -572,10 +563,6 @@ public final class Application implements IAROView {
 				Hashtable<String,Object> extras = new Hashtable<String,Object>();
 				extras.put("video_option", getVideoOption());
 				extras.put("AttenuatorModel", model);
-				if (getSecureOption()) {
-					extras.put("secure", getSecureOption());
-					extras.put("installCert", getCertInstallOption());
-				}
 				result = runCommand(cmds, collector, cmds.getSudo(), extras);
 			} finally {
 				restoreSystemOut(outSave);
@@ -739,8 +726,6 @@ public final class Application implements IAROView {
 						?"\n  --video [hd|sd|slow|no]: optional command to record video when running collector. Default: no."
 						:"\n  --video [yes|no]: optional command to record video when running collector. Default: no."
 						)
-				.append("\n  --secure: optional command to enable secure collector.")
-				.append("\n  --certInstall: optional command to install certificate if secure collector is enabled.")
 				.append("\n  --throttleUL [number in kbps/mbps]: optional command for throttle uplink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --throttleDL [number in kbps/mbps]: optional command for throttle downlink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --profile [file_path]: optional command that provides a file with attenuation sequence")
@@ -752,10 +737,6 @@ public final class Application implements IAROView {
 				.append("\nRun Android collector to capture trace with video:")
 				.append("\n    slow video is 1-2 frames per second: ")
 				.append("\n  --startcollector rooted_android --output /User/documents/test --video slow")
-				
-				.append("\nRun Non-rooted Android collector to capture trace with video using secure collector:")
-				.append("\n    --certInstall option requires --secure option to be enabled")
-				.append("\n  --startcollector vpn_android --output /User/documents/test --video slow --secure --certInstall")
 				
 				.append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation applied:")
 				.append("\n    throttle uplink throughput can accept 64k - 100m (102400k)")

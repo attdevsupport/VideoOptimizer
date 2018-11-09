@@ -57,12 +57,6 @@ public class Commands {
 	@Parameter(names="--verbose", description="verbose output - more than just the important messages")
 	private boolean verbose = false;
 	
-	@Parameter(names="--secure", description="enable secure collector")
-	private boolean secure = false;
-	
-	@Parameter(names="--certInstall", description="install certificate if secure is enabled")
-	private boolean certInstall = false;
-	
 	@Parameter(names="--throttleUL", description="enable throttle upload throughtput (64k - 100m (102400k))")
 	private String throttleUL = "-1";	
 	
@@ -168,22 +162,6 @@ public class Commands {
 	public boolean isListDevices() {
 		return listdevices;
 	}
-	
-	public boolean isSecure() {
-		return secure;
-	}
-
-	public void setSecure(boolean secure) {
-		this.secure = secure;
-	}
-	
-	public boolean isCertInstall() {
-		return certInstall;
-	}
-
-	public void setCertInstall(boolean certInstall) {
-		this.certInstall = certInstall;
-	}
 
 	public String getThrottleUL() {
 		return throttleUL;
@@ -250,12 +228,6 @@ public class Commands {
 		}
 		if (verbose) {
 			sb.append(", verbose");
-		}
-		if (secure) {
-			sb.append(", secure");
-		}
-		if (certInstall) {
-			sb.append(", certInstall");
 		}
 		if (attenuationprofile != null) {
 			sb.append(", attenuationprofile:" + getAttenuationprofile());

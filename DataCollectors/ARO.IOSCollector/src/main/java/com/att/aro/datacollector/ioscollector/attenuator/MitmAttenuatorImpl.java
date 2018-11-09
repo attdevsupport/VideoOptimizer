@@ -19,7 +19,7 @@ public class MitmAttenuatorImpl {
 	private Thread proxyThread;
 	public static final String COLLECT_OPTIONS = "collect_options";
 
-    public void startCollect(String trafficFilePath,int throttleReadStream, int throttleWriteStream,boolean secure) {
+    public void startCollect(String trafficFilePath,int throttleReadStream, int throttleWriteStream) {
 		LOG.info("Launch mitm and pcap4j thread pool");
  
 		int throttleReadStreambps =  throttleReadStream*128;
@@ -33,7 +33,6 @@ public class MitmAttenuatorImpl {
 		littleproxy.setThrottleReadStream(throttleReadStreambps);
 	    littleproxy.setThrottleWriteStream(throttleWriteStreambps);
 	    littleproxy.setTRACE_FILE_PATH(trafficFilePath);
-	    littleproxy.setSecureEnable(secure);
  		proxyThread = new Thread(littleproxy, "littleProxy");
   		pool = Executors.newFixedThreadPool(2);
  		pool.execute(littleproxy);
