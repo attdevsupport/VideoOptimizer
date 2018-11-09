@@ -97,6 +97,7 @@ Before you download Video Optimizer 2.2, make sure you meet the following system
 
 ### •  Installation instruction
 + Please follow the order to compile projects
++ ../ARO.Parent
 + ../ARO.Core
 + ../ARO.Analytics
 + ../DataCollectors/ARO.IOSCollector
