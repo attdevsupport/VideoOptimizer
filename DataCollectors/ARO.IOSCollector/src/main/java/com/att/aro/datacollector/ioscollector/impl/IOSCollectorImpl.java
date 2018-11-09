@@ -905,5 +905,4 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	public String getPassword() {
 		return sudoPassword;
 	}
-
 }
