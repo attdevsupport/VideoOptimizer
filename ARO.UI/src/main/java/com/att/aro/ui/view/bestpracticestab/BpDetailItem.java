@@ -587,11 +587,10 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 			learnMoreURI = ResourceBundleHelper.getMessageString("videoConcurrentSession.url");
 			useVO = true;
 			break;
-		/*
-		 * case AD_ANALYTICS: learnMoreURI =
-		 * ResourceBundleHelper.getMessageString("connections.adAnalytics.url");
-		 * break;
-		 */
+		case VIDEO_VARIABLE_BITRATE:
+			learnMoreURI = ResourceBundleHelper.getMessageString("videoVariableBitrate.url");
+			useVO = true;
+			break;
 		default:
 			break;
 		}
