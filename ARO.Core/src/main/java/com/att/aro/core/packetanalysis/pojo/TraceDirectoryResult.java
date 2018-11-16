@@ -271,6 +271,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	 */
 	@JsonIgnore
 	private NetworkType networkType;
+	
 	public CollectOptions getCollectOptions() {
 		return collectOptions;
 	}
@@ -814,8 +815,54 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	 */
 	@Override
 	public TraceResultType getTraceResultType() {
-		return TraceResultType.TRACE_DIRECTORY;
+		this.traceResultType = TraceResultType.TRACE_DIRECTORY;
+		return traceResultType;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((collectOptions == null) ? 0 : collectOptions.hashCode());
+		result = prime * result + ((deviceDetail == null) ? 0 : deviceDetail.hashCode());
+		result = prime * result + deviceScreenSizeX;
+		result = prime * result + deviceScreenSizeY;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (!super.equals(obj)) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		TraceDirectoryResult other = (TraceDirectoryResult) obj;
+		if (collectOptions == null) {
+			if (other.collectOptions != null) {
+				return false;
+			}
+		} else if (!collectOptions.equals(other.collectOptions)) {
+			return false;
+		}
+		if (deviceDetail == null) {
+			if (other.deviceDetail != null) {
+				return false;
+			}
+		} else if (!deviceDetail.equals(other.deviceDetail)) {
+			return false;
+		}
+		if (deviceScreenSizeX != other.deviceScreenSizeX) {
+			return false;
+		}
+		if (deviceScreenSizeY != other.deviceScreenSizeY) {
+			return false;
+		}
+		return true;
+	}
 	
 }

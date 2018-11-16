@@ -41,7 +41,7 @@ public class AROTraceData {
 	private ErrorCode error = null;
 	private List<AbstractBestPracticeResult> bestPracticeResults;
 	private PacketAnalyzerResult analyzerResult;
-
+	private String errorDescription = "";
 
 	/**
 	 * Returns the PacketAnalyzerResult, an object that contains the analyzed trace.
@@ -117,8 +117,12 @@ public class AROTraceData {
 	}
 
 	public String getErrorDescription() {
-		return error == null ? "Trace ran successfully" : error.getDescription();
+		errorDescription = (error == null ? "Trace ran successfully" : error.getDescription());
+		return errorDescription;
 	}
 
+	public void setErrorDescription(String errorDescription) {
+		this.errorDescription = errorDescription;
+	}
 
 }

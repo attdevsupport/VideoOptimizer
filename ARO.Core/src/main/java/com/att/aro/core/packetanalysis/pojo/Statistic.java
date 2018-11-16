@@ -21,6 +21,10 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Statistic contains an accumulation of certain statistics pertaining to some
  * collection of packets. This is usually used for holding statistical data for
@@ -40,6 +44,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * 
  * Date: October 24, 2014
  */
+
+@EqualsAndHashCode
 public class Statistic {
 	/**
 	 * Total bytes
@@ -86,10 +92,14 @@ public class Statistic {
 	 */
 	private Set<String> appName;
 	
+	@Getter @Setter
+	private int totalPayloadBytes;
+	
 	/**
 	 * ip Packet Summary List
 	 */
 	@JsonIgnore
+	@EqualsAndHashCode.Exclude
 	private List<IPPacketSummary> ipPacketSummary = null;
 	
 	/**
@@ -108,6 +118,7 @@ public class Statistic {
 	 * </pre>
 	 */
 	@JsonIgnore
+	@EqualsAndHashCode.Exclude
 	private Map<Integer, Integer> packetSizeToCountMap = null;
 
 	/**
@@ -308,7 +319,5 @@ public class Statistic {
 	public void setTCPPacketDuration(double packetTCPDuration) {
 		this.packetTCPDuration = packetTCPDuration;
 	}
-	
-	
 
 }

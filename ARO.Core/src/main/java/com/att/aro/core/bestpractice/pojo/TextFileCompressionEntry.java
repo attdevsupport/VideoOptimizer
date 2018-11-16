@@ -21,6 +21,8 @@ public class TextFileCompressionEntry extends HttpEntry {
 	private int contentLength;
 	private int savingsTextPercentage; //US432352 changes
 	
+	public TextFileCompressionEntry(){}
+	
 	public TextFileCompressionEntry(HttpRequestResponseInfo hrri,
 			HttpRequestResponseInfo lastRequestObj, String domainName) {
 		super(hrri, lastRequestObj, domainName);
@@ -49,4 +51,40 @@ public class TextFileCompressionEntry extends HttpEntry {
 		this.savingsTextPercentage = savingsPercentage;
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		TextFileCompressionEntry other = (TextFileCompressionEntry) obj;
+		if (!other.getHostName().equals(getHostName())) {
+			return false;
+		}
+		if (!other.getHttpObjectName().equals(getHttpObjectName())) {
+			return false;
+		}
+		if (!other.getHttpCode().equals(getHttpCode())) {
+			return false;
+		}
+		if (other.getContentLength() != contentLength
+				|| other.getSavingsTextPercentage() != savingsTextPercentage) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + contentLength;
+		result = prime * result + savingsTextPercentage;
+		result = prime * result + getHostName().hashCode();
+		result = prime * result + getHttpObjectName().hashCode();
+		result = prime * result + (int) getHttpCode();
+		return result;
+	}
 }

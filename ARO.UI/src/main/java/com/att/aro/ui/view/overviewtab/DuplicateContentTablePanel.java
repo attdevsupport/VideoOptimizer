@@ -46,6 +46,7 @@ import org.apache.log4j.Logger;
 import com.att.aro.core.packetanalysis.pojo.CacheEntry;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.ContentViewer;
 import com.att.aro.ui.commonui.MessageDialogFactory;
@@ -191,7 +192,7 @@ public class DuplicateContentTablePanel extends TabPanelJPanel implements MouseL
 							if(cEntry != null){
 								if(!cEntry.getResponse().getContentType().contains("video")){
 									if(cEntry.getResponse().getRawSize() < 5242880){
-									ContentViewer.getInstance().viewContent(cEntry.getRequest().getSession(),
+									ContentViewer.getInstance().viewContent(getSession(cEntry),
 											cEntry.getResponse());
 									} else {
 									MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()), ResourceBundleHelper.getMessageString("Error.fileSize"));
@@ -205,6 +206,14 @@ public class DuplicateContentTablePanel extends TabPanelJPanel implements MouseL
 						 	MessageDialogFactory.showMessageDialog(DuplicateContentTablePanel.this.getTopLevelAncestor(), ioExp);
 							
 						}
+					}
+
+					private Session getSession(CacheEntry cEntry) {
+						Session session = cEntry.getRequest().getSession();
+						if(session==null){
+							session=cEntry.getSession();
+						}
+						return session;
 					}
 				});
 		}

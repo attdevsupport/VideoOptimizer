@@ -95,7 +95,8 @@ public class AROManifest {
 	private boolean selected = false;
 	private boolean activeState = true;
 	private VideoEventData ved;
-
+	private boolean videoMetaDataExtracted = false;
+	
 	/**
 	 * Initializes an instance of the VideoEvent class, using the specified event type, 
 	 * press time, and release time.
@@ -591,6 +592,14 @@ public class AROManifest {
 
 	public void setVed(VideoEventData ved) {
 		this.ved = ved;
+	}
+
+	public boolean isVideoMetaDataExtracted() {
+		return videoMetaDataExtracted;
+	}
+
+	public void setVideoMetaDataExtracted(boolean videoMetaDataExtracted) {
+		this.videoMetaDataExtracted = videoMetaDataExtracted;
 	}
 
 }

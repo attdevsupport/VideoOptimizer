@@ -18,10 +18,13 @@ package com.att.aro.ui.view.menu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.File;
 import java.text.MessageFormat;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -66,7 +69,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 
 	private JMenu fileMenu = null;
 	private SharedAttributesProcesses parent;
-
+	private JMenu recentMenu;
 	private TabPanelCommon tabPanelCommon = new TabPanelCommon();
 	private JMenuItem printItem;
 	Map<String, String> recentMenuItems = new LinkedHashMap<>();
@@ -104,14 +107,36 @@ public class AROFileMenu implements ActionListener, MenuListener {
 
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_open));
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_pcap));
-			JMenu recentMenu = menuAdder.getMenuInstance(ResourceBundleHelper.getMessageString("menu.file.recent"));
-			recentMenuItems = Util.getRecentOpenMenuItems();
-			if (recentMenuItems != null) {
-				for (Map.Entry<String, String> entry : recentMenuItems.entrySet()) {
-					recentMenu.add(menuAdder.getMenuItemInstance(entry.getKey(),
-							ResourceBundleHelper.getMessageString("menu.file.recent")));
+			recentMenu = menuAdder.getMenuInstance(ResourceBundleHelper.getMessageString("menu.file.recent"));
+			recentMenu.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseEntered(MouseEvent e) {
+					boolean getRecentMenuItems = false;
+					if (recentMenuItems.isEmpty() || recentMenuItems.size() != Util.getRecentOpenMenuItems().size()) {
+						getRecentMenuItems = true;
+					}
+					if (!getRecentMenuItems) {
+						Set<String> keyset = Util.getRecentOpenMenuItems().keySet();
+						Iterator<String> iterator = keyset.iterator();
+						for (String key : recentMenuItems.keySet()) {
+							String keyValue = iterator.hasNext() ? iterator.next() : null;
+							if (!key.equals(keyValue)) {
+								getRecentMenuItems = true;
+								break;
+							}
+						}
+					}
+					if (getRecentMenuItems) {
+						recentMenuItems = Util.getRecentOpenMenuItems();
+						recentMenu.removeAll();
+						for (Map.Entry<String, String> entry : recentMenuItems.entrySet()) {
+							recentMenu.add(menuAdder.getMenuItemInstance(entry.getKey(),
+									ResourceBundleHelper.getMessageString("menu.file.recent")));
+						}
+					}
 				}
-			}
+			});
+		
 			fileMenu.add(recentMenu);
 			fileMenu.addSeparator();
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_pref));

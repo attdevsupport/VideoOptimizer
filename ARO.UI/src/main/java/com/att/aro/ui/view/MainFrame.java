@@ -61,21 +61,18 @@ import com.att.aro.core.datacollector.pojo.CollectorStatus;
 import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
-import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.VersionInfo;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
-import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.CrashHandler;
 import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.PcapConfirmationImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.VideoOption;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.mvc.AROController;
 import com.att.aro.ui.collection.AROCollectorSwingWorker;
 import com.att.aro.ui.commonui.ARODiagnosticsOverviewRouteImpl;
@@ -107,7 +104,6 @@ import com.att.aro.view.images.Images;
 
 public class MainFrame implements SharedAttributesProcesses {
 	private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("messages"); //$NON-NLS-1$
-
 	public static final String FILE_SEPARATOR = System.getProperty("file.separator");
 	String voPath = System.getProperty("user.dir");
 
@@ -551,11 +547,12 @@ public class MainFrame implements SharedAttributesProcesses {
 					TraceDirectoryResult traceResults = (TraceDirectoryResult) traceData.getAnalyzerResult()
 							.getTraceresult();
 					(new Thread(() -> sendGATraceParams(traceResults))).start();	
-					updateRecentItem(traceResults.getTraceDirectory());
+					Util.updateRecentItem(traceResults.getTraceDirectory());
 					frmApplicationResourceOptimizer.setJMenuBar(mainMenu.getAROMainFileMenu());
 					frmApplicationResourceOptimizer.getJMenuBar().updateUI();
 				}
 			} else if (traceData.getError() != null) {
+				Util.updateRecentItem(tracePath);
 				tracePath = null;
 				if (aroSwingWorker != null) {
 					aroSwingWorker.cancel(true);
@@ -837,33 +834,9 @@ public class MainFrame implements SharedAttributesProcesses {
 	public VideoTab getVideoTab(){
 		return videoTab;
 	}
-
-
-	/***
-	 * Updates the recent trace Directory to the RECENT_MENU in
-	 * config.properties Makes sure there are only 5 or less items in the
-	 * attribute
-	 * 
-	 * @param traceDirectory
-	 */
-	public void updateRecentItem(String traceDirectory) {
-		StringBuilder recentMenuBuilder = new StringBuilder();
-		recentMenuBuilder.append(traceDirectory);
-		int counter = 1;
-		if (SettingsImpl.getInstance().getAttribute("RECENT_MENU") != null) {
-			String[] recentMenu = SettingsImpl.getInstance().getAttribute("RECENT_MENU").split(",");
-			if (recentMenu != null) {
-				for (int i = 0; i < recentMenu.length; i++) {
-					if (counter < 5) {
-						if (!recentMenu[i].equals(traceDirectory)) {
-							recentMenuBuilder.append(",");
-							recentMenuBuilder.append(recentMenu[i]);
-							counter++;
-						}
-					}
-				}
-			}
-		}
-		SettingsImpl.getInstance().setAndSaveAttribute("RECENT_MENU", recentMenuBuilder.toString());
+	
+	@Override
+	public String[] getApplicationsList(String id) {
+		return aroController.getApplicationsList(id);
 	}
 }

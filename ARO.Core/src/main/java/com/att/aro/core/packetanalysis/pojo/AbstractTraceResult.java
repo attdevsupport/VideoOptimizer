@@ -199,6 +199,7 @@ public abstract class AbstractTraceResult {
 
 	@JsonIgnore
 	private List<VideoEvent> videoEvents;
+	protected TraceResultType traceResultType;
 
 	/**
 	 * Constructor, Initializes all base tracedata objects.
@@ -233,6 +234,8 @@ public abstract class AbstractTraceResult {
 	 * @return TraceResultType type of trace
 	 */
 	public abstract TraceResultType getTraceResultType();
+
+	
 
 	/**
 	 * @return a list of all packets
@@ -376,6 +379,14 @@ public abstract class AbstractTraceResult {
 	 */
 	public void setTraceFile(String traceFile) {
 		this.traceFile = traceFile;
+	}
+
+	/**
+	 * Set the trace result type
+	 * @param traceResultType
+	 */
+	public void setTraceResultType(TraceResultType traceResultType) {
+		this.traceResultType = traceResultType;
 	}
 	
 	/**
@@ -602,5 +613,47 @@ public abstract class AbstractTraceResult {
 	public void setDeviceKeywordInfos(Map<String, String> keywordInfos) {
 		this.deviceKeywordInfos = keywordInfos;
 	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((traceDateTime == null) ? 0 : traceDateTime.hashCode());
+		long temp;
+		temp = Double.doubleToLongBits(traceDuration);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + ((traceFile == null) ? 0 : traceFile.hashCode());
+		return result;
+	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || getClass() != obj.getClass()) {
+			return false;
+		}
+		AbstractTraceResult other = (AbstractTraceResult) obj;
+		if (traceDateTime == null) {
+			if (other.traceDateTime != null) {
+				return false;
+			}
+		} else if (!traceDateTime.equals(other.traceDateTime)) {
+			return false;
+		}
+		if (Double.doubleToLongBits(traceDuration) != Double.doubleToLongBits(other.traceDuration)) {
+			return false;
+		}
+		if (traceFile == null) {
+			if (other.traceFile != null) {
+				return false;
+			}
+		} else if (!traceFile.equals(other.traceFile)) {
+			return false;
+		}
+		return true;
+	}
+
+	
 }

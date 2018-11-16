@@ -1,26 +1,14 @@
-/*
- *  Copyright 2018 AT&T
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
-*/
 package com.att.aro.datacollector.ioscollector.attenuator;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.littleshoot.proxy.HttpFiltersSource;
 import org.littleshoot.proxy.HttpProxyServer;
 import org.littleshoot.proxy.HttpProxyServerBootstrap;
 import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 import org.littleshoot.proxy.impl.ThreadPoolConfiguration;
+
+import io.netty.util.AttributeKey;
 
 public class LittleProxyWrapper implements Runnable {
 	
@@ -30,7 +18,21 @@ public class LittleProxyWrapper implements Runnable {
 	private int defaultPort = 8080;
 	private int throttleReadStream = -1;
 	private int throttleWriteStream = -1;
-	
+	private  HttpFiltersSource filtersSource;
+
+	private static final AttributeKey<String> CONNECTED_URL = AttributeKey.valueOf("connected_url");
+
+  	private String TRACE_FILE_PATH =   "";
+
+ 	
+	public String getTRACE_FILE_PATH() {
+		return TRACE_FILE_PATH;
+	}
+
+	public void setTRACE_FILE_PATH(String tRACE_FILE_PATH) {
+		TRACE_FILE_PATH = tRACE_FILE_PATH;
+	}
+
 	public int getThrottleReadStream() {
 		return throttleReadStream;
 	}
@@ -53,36 +55,36 @@ public class LittleProxyWrapper implements Runnable {
 	}
 
 	private void littleProxyLauncher() {
-		
+		LOG.info("About to start...");
+
 		try {
 			ThreadPoolConfiguration config = new ThreadPoolConfiguration();
 			config.withClientToProxyWorkerThreads(1);
 			config.withAcceptorThreads(2);
 			config.withProxyToServerWorkerThreads(1);
 			LOG.info("About to start server on port: " + defaultPort);
+	        	        
 			HttpProxyServerBootstrap bootstrap = DefaultHttpProxyServer
 					.bootstrapFromFile("./littleproxy.properties")
 					.withPort(defaultPort)
 					.withAllowLocalOnly(false)
 					.withThreadPoolConfiguration(config)
-					.withThrottling(getThrottleReadStream(), getThrottleWriteStream())
-					;
-			
-			LOG.info("About to start...");
-			proxyServer = bootstrap.start();
-
+					.withThrottling(getThrottleReadStream(), getThrottleWriteStream());
+			proxyServer = bootstrap.start();	        
+	        
 		} catch (Exception e) {
 			LOG.error(e.getMessage(), e);
  		}
 
 	}
-	
+
 	public void stop() {
+	
 		if(proxyServer!=null) {
+			LOG.info("stop little proxy");
 			proxyServer.stop();
 		}
-	}
-	
-	
+
+	}	
 
 }

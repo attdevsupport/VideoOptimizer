@@ -20,7 +20,6 @@ import org.springframework.context.ApplicationContext;
 import com.att.aro.console.util.ThrottleUtil;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.pojo.ErrorCode;
-import com.att.aro.core.util.NetworkUtil;
 
 /**
  * validate commands against arguments
@@ -66,7 +65,7 @@ public class Validator {
 					) {
 				return ErrorCodeRegistry.getInvalidVideoOption();
 			}
-						
+			
 			ErrorCode uplinkErrorCode = validateUplink(cmd);
 			if (uplinkErrorCode != null) {
 				return uplinkErrorCode;
@@ -78,8 +77,7 @@ public class Validator {
 		}
 		return null;
 	}
-	
- 	
+
 	private ErrorCode validateUplink(Commands cmd) {
 		if (cmd.getThrottleUL() != "-1") {
 			if (("ios".equals(cmd.getStartcollector()) ||"vpn_android".equals(cmd.getStartcollector())) 

@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>com.att.aro</groupId>
 		<artifactId>vo-parent</artifactId>
-		<version>2.1.0</version>
+		<version>2.2.0</version>
 		<relativePath>../ARO.Parent</relativePath>
 	</parent>
 
@@ -18,9 +18,9 @@
 		<ga.id>dev</ga.id>
 		<build.number>dev</build.number>
 		<maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
-		<maven.deploy.skip>false</maven.deploy.skip>
+		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
-
+	
 	<repositories>
 		<repository>
 			<id>central</id>
@@ -349,6 +349,17 @@
 			<artifactId>sikulixapi</artifactId>
 			<version>1.1.1</version>
 		</dependency>
+		<dependency>
+		    <groupId>org.projectlombok</groupId>
+		    <artifactId>lombok</artifactId>
+		    <version>1.18.2</version>
+		    <scope>provided</scope>
+		</dependency>
+		<dependency>
+			 <groupId>org.meanbean</groupId>
+			 <artifactId>meanbean</artifactId>
+			 <version>2.0.3</version>
+		</dependency>
 
 	</dependencies>
 
@@ -438,6 +449,20 @@
 					<packaging>jar</packaging>
 					<version>1.1</version>
 			        <file>lib/jai-imageio-jpeg2000-1.1.jar</file>
+			      </configuration>
+			    </execution>
+			    <execution>
+		    		<id>4</id>
+			      <phase>pre-clean</phase>
+			      <goals>
+			        <goal>install-file</goal>
+			      </goals>
+			      <configuration>
+					<groupId>org.apache.commons</groupId>
+					<artifactId>commons-imaging</artifactId>
+					<packaging>jar</packaging>
+					<version>1.0-SNAPSHOT</version>
+			        <file>lib/commons-imaging-1.0-SNAPSHOT.jar</file>
 			      </configuration>
 			    </execution>
 			    

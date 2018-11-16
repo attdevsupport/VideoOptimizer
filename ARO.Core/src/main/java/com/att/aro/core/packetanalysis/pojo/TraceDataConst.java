@@ -303,6 +303,11 @@ public class TraceDataConst {
 		 *The name of the user speed throttle event trace file
 		 */
 		public static final String SPEED_THROTTLE_EVENT = "speedthrottle_logs";
+		
+		/**
+		 *Folder where the user can save an AMVOTS email response.
+		 */
+		public static final String AMVOTS_RESPONSE_FOLDER = "downloads";
 	}
 	
 	/**

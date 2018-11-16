@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -166,7 +166,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				result.setAttenautionEvent(tempResult.getAttenautionEvent());
 			}
 		}
- 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(pktAnalysisTitle,
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(pktAnalysisTitle,
 				System.currentTimeMillis() - bpStartTime, analysisCategory);
 		return finalResult(result,profile,filter);
 	}
@@ -205,8 +205,8 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		// Fix for Sev 2 Time Range Analysis Issue - DE187848
 		if(result != null) {
 			result.setAllpackets(filteredPackets);
+			sessionmanager.setiOSSecureTracePath(result.getTraceDirectory());//for iOS trace
 		}
- 		
 		List<Session> sessionlist = sessionmanager.assembleSession(filteredPackets);
 		List<PacketInfo> filteredPacketsNoDNSUDP = new ArrayList<PacketInfo>();
 		for(Session session: sessionlist){
@@ -216,18 +216,20 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				}
 			}
 		}
-		int totaltemp = 0;
-		for(Session byteCountSession:sessionlist){
-			totaltemp += byteCountSession.getBytesTransferred();
-		}
 		Statistic stat = this.getStatistic(filteredPacketsNoDNSUDP);
 		if (result != null && stat.getAppName() != null && stat.getAppName().size() == 1 && stat.getAppName().contains("Unknown")){
 			stat.setAppName(new HashSet<String>(result.getAppInfos()));
 		}
 		
-		stat.setTotalByte(totaltemp);//to make sure match the same number with 4.1.1.
-		//stat is used to get some info for RrcStateMachine etc
-		
+		int totBytes = 0;
+		int totPayloadBytes = 0;
+		for(PacketInfo pkt : filteredPackets){
+			totBytes += pkt.getLen();
+			totPayloadBytes += pkt.getPayloadLen();
+		}
+		stat.setTotalByte(totBytes);
+		stat.setTotalPayloadBytes(totPayloadBytes);
+		//stat is used to get some info for RrcStateMachine etc	
 		
 		if (result!=null){
 			LOGGER.debug("Starting pre processing in PAI");

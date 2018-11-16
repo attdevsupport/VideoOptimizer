@@ -69,6 +69,22 @@ public final class ErrorCodeRegistry {
 		sendGAErrorCode(err);
 		return err;
 	}
+	public static ErrorCode getSecureEnableRequired() {
+		ErrorCode err = new ErrorCode();
+		err.setCode(306);
+		err.setName("Secure not enabled");
+		err.setDescription("Certificate installation requires enable secure collector using '--secure' option.");
+		sendGAErrorCode(err);
+		return err;
+	}
+	public static ErrorCode getSecureNotApplicable() {
+		ErrorCode err = new ErrorCode();
+		err.setCode(307);
+		err.setName("Secure not applicable");
+		err.setDescription("--secure option is not applicable for ios and rooted android device.");
+		sendGAErrorCode(err);
+		return err;
+	}
 	public static ErrorCode getAttenuatorNotApplicable() {
 		ErrorCode err = new ErrorCode();
 		err.setCode(308);
@@ -105,7 +121,7 @@ public final class ErrorCodeRegistry {
 	public static ErrorCode getNetworkNotActivatedError() {
 		ErrorCode err = new ErrorCode();
 		err.setCode(312);
-		err.setName("No Sharing Internet detected");
+		err.setName("No Internet sharing detected");
 		err.setDescription("Please turn on the WIFI sharing!");
 		sendGAErrorCode(err);
 		return err;

@@ -61,6 +61,8 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 		this.session = session;
 	}
 
+	public CacheEntry(){}
+	
 	/**
 	 * Initializes an instance of the CacheEntry class using the specified HTTP request 
 	 * and response information, and cache diagnosis value.
@@ -302,4 +304,42 @@ public class CacheEntry implements Serializable, Comparable<CacheEntry> {
 	public void setCacheCount(int cacheCount) {
 		this.cacheCount = cacheCount;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		CacheEntry cacheEntry = (CacheEntry) obj;
+		if (cacheEntry.getRawBytes() != rawBytes || cacheEntry.getBytesInCache() != bytesInCache) {
+			return false;
+		}
+		if (cacheEntry.getBytesNotInCache() != bytesNotInCache || cacheEntry.getContentLength() != contentLength) {
+			return false;
+		}
+		if (cacheEntry.getCacheCount() != cacheCount || (!cacheEntry.getHttpObjectName().equals(httpObjectName))) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) rawBytes;
+		result = prime * result + (int) bytesInCache;
+		result = prime * result + (int) bytesNotInCache;
+		result = prime * result + (int) contentLength;
+		result = prime * result + cacheCount;
+		result = prime * result + (httpObjectName != null ? httpObjectName.hashCode() : 0);
+		result = prime * result + (diagnosis != null ? diagnosis.name().hashCode() : 0);
+		result = prime * result + (request != null ? request.hashCode() : 0);
+		result = prime * result + (response != null ? response.hashCode() : 0);
+		result = prime * result + (session != null ? session.hashCode() : 0);
+		return result;
+	}		
 }

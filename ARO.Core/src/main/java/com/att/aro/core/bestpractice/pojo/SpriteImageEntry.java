@@ -71,5 +71,32 @@ public class SpriteImageEntry {
 	public void setHttpRequestResponse(HttpRequestResponseInfo httpRequestResponse) {
 		this.httpRequestResponse = httpRequestResponse;
 	}
-	
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		SpriteImageEntry other = (SpriteImageEntry) obj;
+		if (other.getFileSize() != fileSize) {
+			return false;
+		}
+		if (!other.getHostName().equals(hostName) || (!other.getHttpObjectName().equals(httpObjectName))) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + fileSize;
+		result = prime * result + hostName.hashCode();
+		result = prime * result + httpObjectName.hashCode();
+		return result;
+	}
 }

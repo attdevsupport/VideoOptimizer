@@ -60,6 +60,7 @@ import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.menu.datacollector.AttnrRadioGroupPanel;
 import com.att.aro.ui.view.menu.datacollector.DeviceDialogOptions;
 import com.att.aro.ui.view.menu.datacollector.DeviceTablePanel;
@@ -71,9 +72,10 @@ import com.att.aro.ui.view.menu.datacollector.HelpDialog;
  * Collector on the device emulator when the Start button is clicked.
  */
 public class DataCollectorSelectNStartDialog extends JDialog implements KeyListener{
-	private static final Dimension PREFERRED_SIZE_LARGE = new Dimension(650, 520);
+	private static final Dimension PREFERRED_SIZE_LARGE = new Dimension(650, 575);
 	private static final Dimension PREFERRED_SIZE_MEDIUM = new Dimension(650, 440);
 	private static final Dimension PREFERRED_SIZE_SMALL = new Dimension(650, 400);
+	private static final Dimension PREFERRED_SIZE_ULTRA = new Dimension(650, 675);
 
 	private static final long serialVersionUID = 1L;
 	
@@ -101,6 +103,8 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	private JLabel lblNewLabel;
 
 	private JLabel helpLabel;
+	
+	private SharedAttributesProcesses mainframeParent;
 
 	/**
 	 * Initializes a new instance of the DataCollectorStartDialog class using
@@ -116,7 +120,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 * @wbp.parser.constructor
 	 */
 	public DataCollectorSelectNStartDialog(Frame owner) {
-		this(owner, null, null, null, true);
+		this(owner, null, null, null, null, true);
 	}
 
 	/**
@@ -139,9 +143,9 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 *            A boolean value that indicates whether to record video for
 	 *            this trace or not.
 	 */
-	public DataCollectorSelectNStartDialog(Frame owner, ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo) {
+	public DataCollectorSelectNStartDialog(Frame owner, SharedAttributesProcesses mainframeParent, ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo) {
 		super(owner);
-		initialize(deviceList, traceFolderName, collectors, recordVideo);
+		initialize(mainframeParent, deviceList, traceFolderName, collectors, recordVideo);
 	}
 
 	/**
@@ -149,11 +153,12 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 * 
 	 * @return void
 	 */
-	private void initialize(ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo) {
+	private void initialize(SharedAttributesProcesses mainframeParent, ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo) {
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("StartCollectorWindow");
 		this.setModal(true);
 		this.setTitle(ResourceBundleHelper.getMessageString("dlog.collector.title"));
 		
+		this.setMainframeParent(mainframeParent);
 		this.deviceList = deviceList;
 		this.collectors = collectors;
 		
@@ -180,7 +185,6 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 			jContentPane.add(getDeviceSelectionPanel(), BorderLayout.PAGE_START);
 			jContentPane.add(getTraceOptionsPanel(),BorderLayout.CENTER);
 			jContentPane.add(getButtonPanel(), BorderLayout.PAGE_END);
-			jContentPane.setPreferredSize(PREFERRED_SIZE_MEDIUM);
 		}
 		return jContentPane;
 	}
@@ -188,16 +192,25 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	public void resizeLarge() {
 		jContentPane.setPreferredSize(PREFERRED_SIZE_LARGE);
 		this.pack();
+		this.setLocationRelativeTo(getOwner());
 	}
 	
 	public void resizeMedium() {
 		jContentPane.setPreferredSize(PREFERRED_SIZE_MEDIUM);
 		this.pack();
+		this.setLocationRelativeTo(getOwner());
 	}
 	
 	public void resizeSmall() {
 		jContentPane.setPreferredSize(PREFERRED_SIZE_SMALL);
 		this.pack();
+		this.setLocationRelativeTo(getOwner());
+	}
+	
+	public void resizeUltra() {
+		jContentPane.setPreferredSize(PREFERRED_SIZE_ULTRA);
+		this.pack();
+		this.setLocationRelativeTo(getOwner());
 	}
 	
 	/**
@@ -564,6 +577,14 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 			});
 		}
 		return helpLabel;
+	}
+
+	public SharedAttributesProcesses getMainframeParent() {
+		return mainframeParent;
+	}
+
+	public void setMainframeParent(SharedAttributesProcesses mainframeParent) {
+		this.mainframeParent = mainframeParent;
 	}
 
 }

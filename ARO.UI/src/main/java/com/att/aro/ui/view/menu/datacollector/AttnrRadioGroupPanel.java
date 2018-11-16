@@ -131,15 +131,20 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 				miniAtnr.setConstantThrottle(false);
 				miniAtnr.setFreeThrottle(false);
 				miniAtnr.setLoadProfile(true);
-				startDialog.resizeMedium();
+				resizeStartDialog();
 			}else if(attnrNone.equals(itemStr)) {
+				resizeStartDialog();
 				reset();
-	
 			}else {
+				resizeStartDialog();
 				reset();
 	
 			}
 		}
+	}
+
+	private void resizeStartDialog() {
+		startDialog.resizeMedium();
 	}
 
 
@@ -182,7 +187,6 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 		miniAtnr.setConstantThrottle(false);
 		miniAtnr.setFreeThrottle(true);
 		miniAtnr.setLoadProfile(false);
-		startDialog.resizeMedium();
 		defaultBtn.setSelected(true);
 	}
 

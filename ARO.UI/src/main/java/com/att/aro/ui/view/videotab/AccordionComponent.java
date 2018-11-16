@@ -92,10 +92,6 @@ public class AccordionComponent extends JPanel implements ActionListener {
 	private static final int HEIGHT_WIN = 28;
 	private int tableHeight = HEIGHT_MAC;
 
-	private JButton uploadButton;
-
-	private TraceDirectoryResult traceDirectoryResult;
-
 	public AccordionComponent(AROManifest aroManifest, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute, AROTraceData analyzerResult, SharedAttributesProcesses aroView) {
 		this(true, aroView, aroManifest, analyzerResult);
 		
@@ -151,7 +147,6 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		return titlePanel;
 	}
 
-
 	private Component getEnableCheckBox() {
 		enableCheckBox = new JCheckBox();
 		boolean selected = aroManifest.getVideoEventList() != null? true:false;
@@ -178,7 +173,6 @@ public class AccordionComponent extends JPanel implements ActionListener {
 
 		return enableCheckBox;
 	}
-
 
 	public void updateTitleButton(AROTraceData traceData) {
 		if (titlePanel != null) {

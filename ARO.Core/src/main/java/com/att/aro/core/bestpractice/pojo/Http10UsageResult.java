@@ -53,5 +53,33 @@ public class Http10UsageResult extends AbstractBestPracticeResult {
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.HTTP_1_0_USAGE;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		Http10UsageResult other = (Http10UsageResult) obj;
+		if (other.getHttp10HeaderCount() != http10HeaderCount) {
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
+	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + http10HeaderCount;
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

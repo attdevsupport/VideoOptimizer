@@ -39,6 +39,7 @@ public class JSonReportImpl implements IReport {
 			return false;
 		}
 		ObjectMapper mapper = new ObjectMapper();
+		mapper.enableDefaultTyping();
 		try {
 			mapper.writeValue(filereader.createFile(resultFilePath), results);
 			return true;

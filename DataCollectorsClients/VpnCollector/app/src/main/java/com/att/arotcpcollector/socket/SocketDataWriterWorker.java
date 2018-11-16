@@ -19,6 +19,8 @@ import android.util.Log;
 
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
+import com.att.arotcpcollector.ip.IPv4Header;
+import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
 import com.att.arotcpcollector.util.PacketUtil;
@@ -37,7 +39,6 @@ public class SocketDataWriterWorker implements Runnable {
 	private SessionManager sessionMngr;
 	private String sessionKey = "";
 	private SocketData pcapData; // for traffic.cap
-	private boolean secureEnable = false;
 	private boolean printLog = false;
 
 	public SocketDataWriterWorker(TCPPacketFactory tcpFactory, UDPPacketFactory udpFactory) {
@@ -153,7 +154,9 @@ public class SocketDataWriterWorker implements Runnable {
 
 			byte[] clearData = session.getClearSendingData();
 
-		}  catch (IOException e) {
+		} catch (NotYetConnectedException ex) {
+			Log.e(TAG, "socket not connected");
+		} catch (IOException e) {
 			//close connection with vpn client
 			byte[] rstdata = tcpFactory.createRstData(session.getLastIPheader(), session.getLastTCPheader(), 0);
 			Log.i("TCPTRACK"+session.getDestPort(), "<RST");
@@ -164,15 +167,6 @@ public class SocketDataWriterWorker implements Runnable {
 			session.setAbortingConnection(true);
 		}
 
-	}
-
-
-	public void setSecureEnable(boolean Secure){
-		this.secureEnable = Secure;
-	}
-	
-	public boolean isSecureEnable() {
-		return secureEnable;
 	}
 
 	public boolean isPrintLog() {

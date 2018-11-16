@@ -1,18 +1,3 @@
-/*
- *  Copyright 2018 AT&T
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
-*/
 package com.att.aro.datacollector.ioscollector.attenuator;
 
 import java.io.BufferedWriter;
@@ -31,9 +16,7 @@ public class MitmAttenuatorImpl {
 	private static final Logger LOG = LogManager.getLogger(MitmAttenuatorImpl.class.getName());
 	private ExecutorService pool;
 	private LittleProxyWrapper littleproxy ;
-	private Pcap4JWrapper pcap4J;
 	private Thread proxyThread;
-	private Thread pcap4jThread;
 	public static final String COLLECT_OPTIONS = "collect_options";
 
     public void startCollect(String trafficFilePath,int throttleReadStream, int throttleWriteStream) {
@@ -49,20 +32,15 @@ public class MitmAttenuatorImpl {
 		littleproxy = new LittleProxyWrapper();
 		littleproxy.setThrottleReadStream(throttleReadStreambps);
 	    littleproxy.setThrottleWriteStream(throttleWriteStreambps);
-		pcap4J = new Pcap4JWrapper();
-		pcap4J.setPCAP_FILE_PATH(trafficFilePath);
-		proxyThread = new Thread(littleproxy, "littleProxy");
- 		pcap4jThread = new Thread(pcap4J, "pcap4j");
- 		pool = Executors.newFixedThreadPool(2);
+	    littleproxy.setTRACE_FILE_PATH(trafficFilePath);
+ 		proxyThread = new Thread(littleproxy, "littleProxy");
+  		pool = Executors.newFixedThreadPool(2);
  		pool.execute(littleproxy);
- 		pool.execute(pcap4J);
      }
     
     public void stopCollect() {
 		LOG.info( "Thread name is: " + proxyThread.getName());
-		LOG.info( "Thread name is: "+ pcap4jThread.getName());
 		littleproxy.stop();
-		pcap4J.stopPcap4jWrapper();
     		pool.shutdown();
     		try {
     			// Wait a while for existing tasks to terminate

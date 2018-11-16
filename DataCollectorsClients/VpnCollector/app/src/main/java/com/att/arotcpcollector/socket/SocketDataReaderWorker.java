@@ -20,6 +20,7 @@ import android.util.Log;
 import com.att.arocollector.attenuator.AttenuatorManager;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
+import com.att.arotcpcollector.ip.IPPacketFactory;
 import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
@@ -46,7 +47,6 @@ public class SocketDataReaderWorker implements Runnable {
 	private SessionManager sessionManager;
 	private String sessionKey = "";
 	private SocketData pcapData; // for traffic.cap
- 	private boolean secureEnable = false;
 	private boolean printLog = false;
 
 	public SocketDataReaderWorker() {
@@ -130,17 +130,6 @@ public class SocketDataReaderWorker implements Runnable {
 					if (len > 0) { // -1 indicates end of stream
 						// send packet to client app
 						session.setLastAccessed(System.currentTimeMillis());
-						if (isSecureEnable()) {
-							byte[] packet = new byte[buffer.position()];
-							buffer.flip();
-							buffer.get(packet);
-
-							buffer.clear();
-							if (packet.length>DataConst.MAX_RECEIVE_BUFFER_SIZE){
-								buffer = ByteBuffer.allocate(packet.length);
-							}
-							buffer.put(packet);
-						}
 						//***************
 						sendToRequester(buffer, channel, len, session);
 						buffer.clear();
@@ -195,11 +184,6 @@ public class SocketDataReaderWorker implements Runnable {
 			sess.setHasReceivedLastSegment(true);
 		} else {
 			sess.setHasReceivedLastSegment(false);
-		}
-		
-		//Fix: For Data Size that may exceed fixed buffer size during a Secure Transmission
-		if(isSecureEnable() && datasize < buffer.capacity()){
-			sess.setHasReceivedLastSegment(true);
 		}
 
 		buffer.limit(datasize);
@@ -345,14 +329,6 @@ public class SocketDataReaderWorker implements Runnable {
 
 	public void setSessionKey(String sessionKey) {
 		this.sessionKey = sessionKey;
-	}
-
-	public void setSecureEnable(boolean Secure){
-		this.secureEnable = Secure;
-	}
-
-	public boolean isSecureEnable() {
-		return secureEnable;
 	}
 
 	public boolean isPrintLog() {

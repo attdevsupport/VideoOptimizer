@@ -18,7 +18,7 @@ package com.att.aro.core.bestpractice.pojo;
 import java.util.List;
 
 public class ImageFormatResult extends AbstractBestPracticeResult {
-	private List<ImageMdataEntry> results = null;
+	private List<ImageMdataEntry> imgMdataresults = null;
 
 	@Override
 	public BestPracticeType getBestPracticeType() {
@@ -26,15 +26,45 @@ public class ImageFormatResult extends AbstractBestPracticeResult {
 	}
 
 	public List<ImageMdataEntry> getResults() {
-		return results;
+		return imgMdataresults;
 	}
 
 	public void setResults(List<ImageMdataEntry> results) {
-		this.results = results;
+		this.imgMdataresults = results;
 	}
 
 	public int getErrorCount() {
-		return results != null ? results.size() : 0;
+		return imgMdataresults != null ? imgMdataresults.size() : 0;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		ImageFormatResult other = (ImageFormatResult) obj;
+		if (!other.getResults().containsAll(imgMdataresults)) {
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
 	}
 	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		for (ImageMdataEntry entry : imgMdataresults) {
+			result = prime * result + entry.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

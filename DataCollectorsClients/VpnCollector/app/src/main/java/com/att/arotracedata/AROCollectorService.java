@@ -88,6 +88,20 @@ public class AROCollectorService extends Service {
 	/** ARO Data Collector utilities class object */
 	private AROCollectorUtils mAroUtils;
 
+	/** Event names, counters, maps, states for displaying and storing on Flurry Analytics */
+	/*
+	public static FlurryEvent bluetoothFlurryEvent = null;
+	public static FlurryEvent networkTypeFlurryEvent = null;
+	public static FlurryEvent networkInterfaceFlurryEvent = null;
+	public static FlurryEvent wifiFlurryEvent = null;
+	public static FlurryEvent batteryFlurryEvent = null;
+	public static FlurryEvent gpsFlurryEvent = null;
+	public static FlurryEvent cameraFlurryEvent = null;
+
+	public static FlurryEvent backgroundAppsFlurryEvent = null; // log Flurry event at end of trace
+	public static FlurryEvent makeModelEvent = null; // log Flurry event at end of trace
+*/
+ 
 	// Output stream and Buffer Writer for peripherals traces files 
 	private OutputStream mActiveProcessOutputFile;
 	private BufferedWriter mActiveProcessTraceWriter;;
@@ -238,13 +252,14 @@ public class AROCollectorService extends Service {
 				int delayTimeUL = intent.getIntExtra(BundleKeyUtil.UL_DELAY, 0);
 				int throttleDL = intent.getIntExtra(BundleKeyUtil.DL_THROTTLE, AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
 				int throttleUL = intent.getIntExtra(BundleKeyUtil.UL_THROTTLE,AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
+				boolean secure = intent.getBooleanExtra(BundleKeyUtil.SECURE, false);
 				boolean atnrProfile = intent.getBooleanExtra(BundleKeyUtil.ATTENUATION_PROFILE,false);
                 String atnrProfileName = intent.getStringExtra(BundleKeyUtil.ATTENUATION_PROFILE_NAME);
 				String videoOrientation = intent.getStringExtra(BundleKeyUtil.VIDEO_ORIENTATION);
 
 				Log.i(TAG, "Wrote into file Down Stream Delay: "+delayTimeDL);
 				Log.i(TAG, "Wrote into file Up Stream Delay: "+delayTimeUL);
-				recordCollectOptions(delayTimeDL, delayTimeUL, throttleDL,throttleUL,atnrProfile, atnrProfileName, videoOrientation);
+				recordCollectOptions(delayTimeDL, delayTimeUL, throttleDL,throttleUL,atnrProfile, atnrProfileName, secure, videoOrientation);
 			}
 
 			initializeFlurryObjects();
@@ -406,11 +421,12 @@ public class AROCollectorService extends Service {
 
 	}
 
-	private void recordCollectOptions(int delayTimeDL, int delayTimeUL, int throttleDL, int throttleUL, boolean atnrProfile,String atnrProfileName, String videoOrientation){
+	private void recordCollectOptions(int delayTimeDL, int delayTimeUL, int throttleDL, int throttleUL, boolean atnrProfile,String atnrProfileName, boolean secureable, String videoOrientation){
 		Log.i(TAG, "set Down stream Delay Time: "+ delayTimeDL
 				+ " set Up stream Delay Time: "+delayTimeUL
-				+ " set Profile: "+atnrProfile
-				+ " set Profile name: "+ atnrProfileName);
+                + " set Profile: "+atnrProfile
+                + " set Profile name: "+ atnrProfileName
+				+ " set Secure Boolean: "+ secureable);
 		File file = new File(traceDir, COLLECT_OPTIONS);
 		Log.i(TAG, "create file:" + file.getAbsolutePath());
 		try(BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
@@ -419,9 +435,10 @@ public class AROCollectorService extends Service {
 					+ "usDelay=" + delayTimeUL + System.lineSeparator()
 					+ "throttleDL=" + throttleDL + System.lineSeparator()
 					+ "throttleUL=" + throttleUL + System.lineSeparator()
+					+ "secure=" + secureable + System.lineSeparator()
 					+ "orientation=" + videoOrientation + System.lineSeparator()
 					+ "attnrProfile="+ atnrProfile + System.lineSeparator()
-					+ "attnrProfileName="+ atnrProfileName
+                    + "attnrProfileName="+ atnrProfileName
 			);
 			bw.close();
 		} catch (IOException e) {
@@ -430,7 +447,8 @@ public class AROCollectorService extends Service {
 			return;
 		}
 
-	}	/**
+	}
+	/**
 	 * Reads a device Info from the device file in trace folder.
 	 * 
 	 * @throws IOException

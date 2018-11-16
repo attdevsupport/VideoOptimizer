@@ -244,7 +244,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 			aroVideoPanel.add(visualComponent, BorderLayout.CENTER);
 			visualComponent.setVisible(true);
 		}
-		
+
 		videoPlayer.addControllerListener(new ControllerListener() {
 			@Override
 			public void controllerUpdate(ControllerEvent evt) {
@@ -252,7 +252,8 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 					if ((evt instanceof StartEvent) && showInfoMsg && tdResult.isExVideoTimeFileNotFound()) {
 						if (!syncVideoClicked) {
 							MessageDialogFactory.showMessageDialog(AROVideoPlayer.this,
-									"The Analyzer loaded an external video. The video may not be in Sync with the traces.", "Information", 1);
+									"The Analyzer loaded an external video. The video may not be in Sync with the traces.",
+									"Information", 1);
 							showInfoMsg = false;
 						} else {
 							showInfoMsg = false;
@@ -336,11 +337,11 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 		if ((videoPlayer != null) && (videoPlayer.getDuration() != null)) {
 			double videoTime = hairlineTime - this.videoOffset;
 			if ((videoTime < 0.0)) {
-				videoPlayer.stop();
-				videoPlayer.setMediaTime(new Time(0.0));
 				SwingUtilities.invokeLater(new Runnable() {
 					@Override
-					public void run() {
+					public void run() {			
+						videoPlayer.stop();
+						videoPlayer.setMediaTime(new Time(0.0));
 						aroAdvancedTab.setTimeLineLinkedComponents(hairlineTime, false);
 					}
 				});

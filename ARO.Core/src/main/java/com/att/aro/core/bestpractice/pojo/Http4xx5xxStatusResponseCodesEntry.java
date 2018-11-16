@@ -18,9 +18,13 @@ package com.att.aro.core.bestpractice.pojo;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 
 public class Http4xx5xxStatusResponseCodesEntry extends HttpEntry {
-		
+	
+	public Http4xx5xxStatusResponseCodesEntry() {
+		super();
+	}
+	
 	public Http4xx5xxStatusResponseCodesEntry(HttpRequestResponseInfo hrri, HttpRequestResponseInfo lastRequestObj, String domainName){
 		super(hrri, lastRequestObj, domainName);
 	}
-	
+
 }

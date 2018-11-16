@@ -80,7 +80,6 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 	private StartUpDelayWarningDialog startUpDelayWarningDialog = null;
 	private String warningMessage;
 	int graphPanelIndex = 0;
-
 	/**
 	 * Create the panel.
 	 */

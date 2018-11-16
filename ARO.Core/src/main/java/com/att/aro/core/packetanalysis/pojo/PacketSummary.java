@@ -17,40 +17,19 @@ package com.att.aro.core.packetanalysis.pojo;
 
 import java.io.Serializable;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
  * A Base class containing packet summary information.
  */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class PacketSummary implements Serializable {
 	private static final long serialVersionUID = 1L;
-
 	private int packetCount;
 	private long totalBytes;
-
-	/**
-	 * Initializes an instance of the PacketSummary class, 
-	 * using the specified packet count and total number of bytes.
-	 * @param packetCount - The number of packets.
-	 * @param totalBytes - The total number of bytes in the packets.
-	 */
-	public PacketSummary(int packetCount, long totalBytes) {
-		this.packetCount = packetCount;
-		this.totalBytes = totalBytes;
-	}
 	
-	/**
-	 * Returns the packet count.
-	 * @return The number of packets.
-	 */
-	public int getPacketCount() {
-		return packetCount;
-	}
-
-	/**
-	 * Returns the total bytes.
-	 * @return The total number of bytes in the packets.
-	 */
-	public long getTotalBytes() {
-		return totalBytes;
-	}
-
 }

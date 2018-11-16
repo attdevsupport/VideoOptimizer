@@ -50,6 +50,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 
 	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.00");
+	private static final double ROUNDING_VALUE = 0.01;
 	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 
 	private JPanel timeRangeSelectionPanel;
@@ -80,7 +81,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 		super(owner);
 		this.traceEndTime = analysisData.getTraceresult().getTraceDuration();
 		this.timeRangeStartTime = 0.0;
-		this.timeRangeEndTime = traceEndTime;
+		this.timeRangeEndTime = traceEndTime + ROUNDING_VALUE;
 		this.analysisData = analysisData;
 		initialize();
 	}
@@ -200,7 +201,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 
 						// Rounding traceEndTime as getEndTimeTextField() to
 						// handle time comparison
-						Double traceEndTimeRounded = Double.valueOf(DECIMAL_FORMAT.format(traceEndTime));
+						Double traceEndTimeRounded = Double.valueOf(DECIMAL_FORMAT.format(traceEndTime + ROUNDING_VALUE));
 						if (startTime < endTime) {
 							if (startTime >= 0.0 && startTime <= traceEndTimeRounded && endTime >= 0.0 && endTime <= traceEndTimeRounded) {
 

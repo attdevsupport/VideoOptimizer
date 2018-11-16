@@ -63,4 +63,34 @@ public class CacheControlResult extends AbstractBestPracticeResult{
 		return BestPracticeType.CACHE_CONTROL;//cache control-> using cache(content expired) ref. bestpractice.properties
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		CacheControlResult cacheResult = (CacheControlResult) obj;
+		if (cacheResult.getHitExpired304Count() != hitExpired304Count
+				|| cacheResult.getHitNotExpiredDupCount() != hitNotExpiredDupCount) {
+			return false;
+		}
+		if ((!cacheResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != cacheResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + hitExpired304Count;
+		result = prime * result + hitNotExpiredDupCount;
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

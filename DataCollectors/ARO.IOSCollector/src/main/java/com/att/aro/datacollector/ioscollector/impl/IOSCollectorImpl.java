@@ -255,7 +255,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			boolean liveViewVideo, String deviceId, Hashtable<String, Object> extraParams, String password) {
 		if(extraParams != null) {
 			this.videoOption = (VideoOption) extraParams.get("video_option");
-			this.attenuatorModel = (AttenuatorModel)extraParams.get("AttenuatorModel");
+			this.attenuatorModel = (AttenuatorModel)extraParams.get("AttenuatorModel");			
 		}
  
 		Callable<StatusResult> launchAppCallable = () -> {
@@ -358,7 +358,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		
 		launchCollection(trafficFilePath, serialNumber, status);		
 		// Start Attenuation
-		if(attenuatorModel.isConstantThrottle()&&(attenuatorModel.isThrottleDLEnabled()||attenuatorModel.isThrottleULEnabled())) {
+		if(attenuatorModel.isConstantThrottle()
+				&&(attenuatorModel.isThrottleDLEnabled()||attenuatorModel.isThrottleULEnabled())) {
 			startAttenuatorCollection(datadir, attenuatorModel);
 		}
 		
@@ -438,7 +439,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		return status;
 	}
 	
-	private void startAttenuatorCollection(String trafficFilePath,AttenuatorModel attenuatorModel ) {
+	private void startAttenuatorCollection(String trafficFilePath,AttenuatorModel attenuatorModel) {
 
 		    int throttleDL = 0;
 			int throttleUL = 0;
@@ -449,10 +450,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			if(attenuatorModel.isThrottleULEnabled()){
 				throttleUL = attenuatorModel.getThrottleUL();
 			}
-			// mitm and pcap4j start
+ 			// mitm start
 			if(mitmAttenuator == null) {
 				mitmAttenuator = new MitmAttenuatorImpl();
-			} 
+			}
+			LOG.info("ios attenuation setting: "+" trafficFilePath: "+ trafficFilePath +" throttleDL: "+throttleDL
+					+"throttleUL: "+throttleUL);
 			mitmAttenuator.startCollect(trafficFilePath,throttleDL,throttleUL);	
 			
 		
@@ -706,7 +709,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private boolean isValidSudoPassword(String password) {
 
 		ExternalProcessRunner runner = new ExternalProcessRunner();
-		String cmd = "echo " + password + " | sudo -k -S cat /etc/sudoers 2>&1";
+		String cmd = "echo " + password + " | sudo -k -S file /etc/sudoers 2>&1";
 		String data = null;
 		try {
 			data = runner.runCmd(new String[] { "bash", "-c", cmd });
@@ -902,5 +905,4 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	public String getPassword() {
 		return sudoPassword;
 	}
-
 }

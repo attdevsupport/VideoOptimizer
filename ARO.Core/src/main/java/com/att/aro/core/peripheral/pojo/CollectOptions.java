@@ -113,5 +113,66 @@ public class CollectOptions {
 	public void setAttnrProfileName(String attnrProfileName) {
 		this.attnrProfileName = attnrProfileName;
 	}
+
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (attnrProfile ? 1231 : 1237);
+		result = prime * result + ((attnrProfileName == null) ? 0 : attnrProfileName.hashCode());
+		result = prime * result + dsDelay;
+		result = prime * result + ((orientation == null) ? 0 : orientation.hashCode());
+		result = prime * result + ((secureStatus == null) ? 0 : secureStatus.hashCode());
+		result = prime * result + throttleDL;
+		result = prime * result + throttleUL;
+		result = prime * result + totalLines;
+		result = prime * result + usDelay;
+		return result;
+	}
+
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || getClass() != obj.getClass()){
+			return false;
+		}
+		CollectOptions other = (CollectOptions) obj;
+		if (attnrProfile != other.attnrProfile) {
+			return false;
+		}
+		if (attnrProfileName == null) {
+			if (other.attnrProfileName != null) {
+				return false;
+			}
+		} else if (!attnrProfileName.equals(other.attnrProfileName)) {
+			return false;
+		}
+		if (dsDelay != other.dsDelay) {
+			return false;
+		}
+		if (orientation != other.orientation) {
+			return false;
+		}
+		if (secureStatus != other.secureStatus) {
+			return false;
+		}
+		if (throttleDL != other.throttleDL) {
+			return false;
+		}
+		if (throttleUL != other.throttleUL) {
+			return false;
+		}
+		if (totalLines != other.totalLines) {
+			return false;
+		}
+		if (usDelay != other.usDelay) {
+			return false;
+		}
+		return true;
+	}
  
 }

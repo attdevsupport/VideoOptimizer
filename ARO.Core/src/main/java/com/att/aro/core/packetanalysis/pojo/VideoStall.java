@@ -66,8 +66,46 @@ public class VideoStall {
 	public VideoEvent getSegmentTryingToPlay() {
 		return segmentTryingToPlay;
 	}
-	
-	/*public double getStallTriggerTime(){
-		return this.stallTriggerTime;
-	}*/
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		VideoStall other = (VideoStall) obj;
+		if (Double.doubleToLongBits(other.getDuration()) != Double.doubleToLongBits(duration)) {
+			return false;
+		}
+		if (Double.doubleToLongBits(other.getStallEndTimeStamp()) != Double.doubleToLongBits(stallEndTimeStamp)
+				|| Double.doubleToLongBits(other.getStallStartTimeStamp()) != Double
+						.doubleToLongBits(stallStartTimeStamp)) {
+			return false;
+		}
+		if (!other.getStallState().equals(stallState)) {
+			return false;
+		}
+		if (!other.getSegmentTryingToPlay().equals(segmentTryingToPlay)) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(duration);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(stallEndTimeStamp);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(stallStartTimeStamp);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + stallState.hashCode();
+		result = prime * result + segmentTryingToPlay.hashCode();
+		return result;
+	}
 }

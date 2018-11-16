@@ -63,4 +63,42 @@ public class WiFiOffloadingResult extends AbstractBestPracticeResult {
 		return null;//BestPracticeType.WIFI_OFFLOADING;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		WiFiOffloadingResult other = (WiFiOffloadingResult) obj;
+		if (Double.doubleToLongBits(other.getLargestBurstBeginTime()) != Double.doubleToLongBits(largestBurstBeginTime)
+				|| Double.doubleToLongBits(other.getLargestBurstDuration()) != Double
+						.doubleToLongBits(largestBurstDuration)) {
+			return false;
+		}
+		if(other.getLongBurstCount() != longBurstCount){
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(largestBurstBeginTime);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		temp = Double.doubleToLongBits(largestBurstDuration);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + longBurstCount;
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

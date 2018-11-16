@@ -59,4 +59,42 @@ public class VideoRedundancyResult extends AbstractBestPracticeResult {
 		this.countDuplicate = countDuplicate;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		VideoRedundancyResult other = (VideoRedundancyResult) obj;
+		if (Double.doubleToLongBits(other.getRedundantPercentage()) != Double.doubleToLongBits(redundantPercentage)) {
+			return false;
+		}
+		if (other.getCountDuplicate() != countDuplicate || other.getCountRedundant() != countRedundant) {
+			return false;
+		}
+		if (other.getCountSegment() != countSegment) {
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp = Double.doubleToLongBits(redundantPercentage);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + countDuplicate;
+		result = prime * result + countRedundant;
+		result = prime * result + countSegment;
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }

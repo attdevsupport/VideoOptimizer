@@ -8,7 +8,7 @@ android {
         applicationId "com.att.arocollector"
         def jenkinsBuildNumber = System.getenv("BUILD_NUMBER") as Integer ?: 1
         def releaseBuildId = jenkinsBuildNumber - 1
-        versionName "2.1." + releaseBuildId
+        versionName "2.2.1"
         minSdkVersion 19
         targetSdkVersion 21
 //        jackOptions {

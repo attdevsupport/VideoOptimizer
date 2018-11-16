@@ -20,8 +20,10 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class VideoConcurrentSessionResult extends AbstractBestPracticeResult {
-	private int maxConcurrentSessionsCount;
+	private int maxConcurrentSessionsCount = 0;
 	@Nonnull private List<VideoConcurrentSession> manifestConcurrency = new ArrayList<VideoConcurrentSession>();
 
 	@Override
@@ -32,7 +34,7 @@ public class VideoConcurrentSessionResult extends AbstractBestPracticeResult {
 	public int getMaxConcurrentSessionCount() {
 		return maxConcurrentSessionsCount;
 	}
-
+	@JsonProperty(value = "maxConcurrentSessionCount")
 	public void setMaxConcurrentSessionsCount(int maxConcurrentSessionsCount) {
 		this.maxConcurrentSessionsCount = maxConcurrentSessionsCount;
 	}
@@ -47,5 +49,40 @@ public class VideoConcurrentSessionResult extends AbstractBestPracticeResult {
 		}else{
 			this.manifestConcurrency.clear();
 		}
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		VideoConcurrentSessionResult other = (VideoConcurrentSessionResult) obj;
+		if (other.getMaxConcurrentSessionCount() != this.maxConcurrentSessionsCount) {
+			return false;
+		}
+		if (!other.getResults().containsAll(manifestConcurrency)) {
+			return false;
+		}
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != other.getResultType()) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + maxConcurrentSessionsCount;
+		for (VideoConcurrentSession session : manifestConcurrency) {
+			result = prime * result + session.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
 	}
 }

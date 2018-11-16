@@ -67,6 +67,7 @@ import com.att.aro.core.bestpractice.impl.VideoRedundancyImpl;
 import com.att.aro.core.bestpractice.impl.VideoStallImpl;
 import com.att.aro.core.bestpractice.impl.VideoStartUpDelayImpl;
 import com.att.aro.core.bestpractice.impl.VideoTcpConnectionImpl;
+import com.att.aro.core.bestpractice.impl.VideoVariableBitRateImpl;
 import com.att.aro.core.bestpractice.impl.WeakCipherImpl;
 import com.att.aro.core.bestpractice.impl.WiFiOffloadingImpl;
 
@@ -325,6 +326,11 @@ public class AROBestPracticeConfig {
 	@Bean(name = "videoConcurrentSession")
 	IBestPractice getVideoConcurrentSession() {
 		return new VideoConcurrentSessionImpl();
+	}
+	
+	@Bean(name = "videoVariableBitrate")
+	IBestPractice getVideoVariableBitrate(){
+		return new VideoVariableBitRateImpl();
 	}
 	// End of Video
 

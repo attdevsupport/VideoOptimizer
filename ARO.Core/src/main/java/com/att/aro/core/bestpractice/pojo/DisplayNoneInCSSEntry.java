@@ -88,4 +88,35 @@ public class DisplayNoneInCSSEntry {
 	public HttpRequestResponseInfo getHttpRequestResponse() {
 		return httpRequestResponse;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		DisplayNoneInCSSEntry entry = (DisplayNoneInCSSEntry) obj;
+		if (!entry.getHostName().equals(hostName)) {
+			return false;
+		}
+		if (((int) entry.getSize() != contentLength)
+				|| Double.doubleToLongBits(timeStamp) != Double.doubleToLongBits((double) entry.getTimeStamp())) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		long temp;
+		temp = Double.doubleToLongBits(timeStamp);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + hostName.hashCode();
+		result = prime * result + contentLength;
+		return result;
+	}
 }

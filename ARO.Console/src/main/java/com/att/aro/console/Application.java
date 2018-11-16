@@ -27,7 +27,6 @@ import java.io.PrintStream;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.Scanner;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Appender;
@@ -485,8 +484,8 @@ public final class Application implements IAROView {
 		String throttleDL = cmds.getThrottleDL();
 		return ThrottleUtil.getInstance().parseNumCvtUnit(throttleDL);
 	}
-	
- 	void printError(ErrorCode error) {
+
+	void printError(ErrorCode error) {
 		err("Error code: " + error.getCode());
 		err(", Error name: " + error.getName());
 		errln(", Error description: " + error.getDescription());
@@ -550,22 +549,21 @@ public final class Application implements IAROView {
 			
 			AttenuatorModel model = getAttenuateModel(cmds);
 	 		//If the user want to collect regular iOS collection, they can proceed
-			if(DataCollectorType.IOS.equals(collector.getType()) && 
-					(model.isThrottleDLEnabled()||model.isThrottleULEnabled())) {	
-	 			if(isIOSAttenuationConfirmed()&&NetworkUtil.isNetworkUp("bridge100")){
-	 				model.setConstantThrottle(true);
-	 				println("Collection proceeded.");			
-	 			}else {
-					printError(ErrorCodeRegistry.getNetworkNotActivatedError());
-					System.exit(1); 
-	 			}
-			} 
+			if (DataCollectorType.IOS.equals(collector.getType())
+					&& (model.isThrottleDLEnabled() || model.isThrottleULEnabled())) {
+				if (isIOSAttenuationConfirmed() && NetworkUtil.isNetworkUp("bridge100")) {
+					model.setConstantThrottle(true);
+					println("Collection proceeded.");
+				} else {
+					System.exit(1);
+				}
+			}
 			videoOption = configureVideoOption(cmds.getVideo());			
 			try {
 				Hashtable<String,Object> extras = new Hashtable<String,Object>();
 				extras.put("video_option", getVideoOption());
 				extras.put("AttenuatorModel", model);
- 				result = runCommand(cmds, collector, cmds.getSudo(), extras);
+				result = runCommand(cmds, collector, cmds.getSudo(), extras);
 			} finally {
 				restoreSystemOut(outSave);
 			}
@@ -611,13 +609,11 @@ public final class Application implements IAROView {
 	 * prints hotspot information in console, and gets user confirmation for hot spot setup environment 
 	 * to proceed with MITM throttle.
 	 */
-	private boolean isIOSAttenuationConfirmed( ) {
-
-			println(MacHotspotUtil.getStatusMessage());
-			println("Please enter Y/y and hit enter to proceed." );
- 			String inputStr = readInput();
-			return (inputStr != null && inputStr.length() == 1 
-					&& 'y'== inputStr.toLowerCase().charAt(0));  
+	private boolean isIOSAttenuationConfirmed() {
+		println(MacHotspotUtil.getStatusMessage());
+		println("Please enter Yes/No and hit enter to proceed.");
+		String inputStr = readInput();
+		return (inputStr != null && "yes".equals(inputStr.trim().toLowerCase()));
 	}
 
 	private StatusResult runCommand(Commands cmds, IDataCollector collector, String password,
@@ -730,6 +726,8 @@ public final class Application implements IAROView {
 						?"\n  --video [hd|sd|slow|no]: optional command to record video when running collector. Default: no."
 						:"\n  --video [yes|no]: optional command to record video when running collector. Default: no."
 						)
+				.append("\n  --secure: optional command to enable secure collector.")
+				.append("\n  --certInstall: optional command to install certificate if secure collector is enabled.")
 				.append("\n  --throttleUL [number in kbps/mbps]: optional command for throttle uplink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --throttleDL [number in kbps/mbps]: optional command for throttle downlink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --profile [file_path]: optional command that provides a file with attenuation sequence")
@@ -741,7 +739,6 @@ public final class Application implements IAROView {
 				.append("\nRun Android collector to capture trace with video:")
 				.append("\n    slow video is 1-2 frames per second: ")
 				.append("\n  --startcollector rooted_android --output /User/documents/test --video slow")
-								
 				.append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation applied:")
 				.append("\n    throttle uplink throughput can accept 64k - 100m (102400k)")
 				.append("\n    throttle downlink throughput can accept 64k - 100m (102400k)")

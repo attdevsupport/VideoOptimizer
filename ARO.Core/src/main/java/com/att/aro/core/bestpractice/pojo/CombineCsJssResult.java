@@ -92,5 +92,45 @@ public class CombineCsJssResult extends AbstractBestPracticeResult {
 	public void setFilesDetails(List<CsJssFilesDetails> filesDetails) {
 		this.filesDetails = filesDetails;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null || obj.getClass() != this.getClass()) {
+			return false;
+		}
+		CombineCsJssResult csJssResult = (CombineCsJssResult) obj;
+		if (csJssResult.getInefficientCssRequests() != inefficientCssRequests
+				|| csJssResult.getInefficientJsRequests() != inefficientJsRequests) {
+			return false;
+		}
+		if (filesDetails == null) {
+			if (csJssResult.getFilesDetails() != null) {
+				return false;
+			}
+		} else if (!csJssResult.getFilesDetails().containsAll(filesDetails)) {
+			return false;
+		}
+		if ((!csJssResult.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
+				|| getResultType() != csJssResult.getResultType()) {
+			return false;
+		}
+		return true;
+	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + inefficientCssRequests;
+		result = prime * result + inefficientJsRequests;
+		for (CsJssFilesDetails fileDetail : filesDetails) {
+			result = prime * result + fileDetail.hashCode();
+		}
+		result = prime * result + getBestPracticeDescription().hashCode();
+		result = prime * result + getBestPracticeType().hashCode();
+		return result;
+	}
 }
