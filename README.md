@@ -51,11 +51,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 2.2
+#### Video Optimizer 2.2.1
 
-**System Requirements for Video Optimizer 2.2:**
+**System Requirements for Video Optimizer 2.2.1:**
 
-Before you download Video Optimizer 2.2, make sure you meet the following system requirements for your operating system.
+Before you download Video Optimizer 2.2.1, make sure you meet the following system requirements for your operating system.
 
 1. 2GB or more for RAM
 2. Java 8 or above
@@ -68,7 +68,7 @@ Before you download Video Optimizer 2.2, make sure you meet the following system
 
 
 
-#### Video Optimizer 2.2 Features
+#### Video Optimizer 2.2.1 Features
 
 #### • New Best Practice “Variable Bitrate” is added to test if the video stream is using Variable bitrate or not.
 
@@ -89,7 +89,7 @@ Before you download Video Optimizer 2.2, make sure you meet the following system
 #### - Updates to Mac install Pre-requisites list
 
 
-### What are the known issues in Release 2.2?
+### What are the known issues in Release 2.2.1?
 
 #### •	Application names, CPU usage, signal strength is not displayed for traces taken with Android Version Oreo and above.
 #### •	Some iOS traces taken using HD show as low resolution. 
