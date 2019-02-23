@@ -17,14 +17,10 @@ package com.att.aro.ui.view.waterfalltab;
 
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-/**
- *
- *
- */
 public enum Waterfall {
 
 	BEFORE, DNS_LOOKUP, INITIAL_CONNECTION, SSL_NEGOTIATION, REQUEST_TIME, TIME_TO_FIRST_BYTE, CONTENT_DOWNLOAD, 
-	AFTER, AFTER_3XX, AFTER_4XX, HTTP_3XX_REDIRECTION, HTTP_4XX_CLIENTERROR;
+	AFTER, AFTER_3XX, AFTER_4XX, HTTP_3XX_REDIRECTION, HTTP_4XX_CLIENTERROR, INACTIVE;
 
 	@Override
 	public String toString() {
@@ -45,6 +41,8 @@ public enum Waterfall {
 			return ResourceBundleHelper.getMessageString("waterfall.3xxResult");
 		case HTTP_4XX_CLIENTERROR : 
 			return ResourceBundleHelper.getMessageString("waterfall.4xxResult");
+		case INACTIVE :
+			return ResourceBundleHelper.getMessageString("waterfall.inactiveConnection");
 		default :
 			return super.toString();
 		}

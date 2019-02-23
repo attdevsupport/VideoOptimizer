@@ -15,7 +15,6 @@
  */
 package com.att.aro.core.bestpractice.impl;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,7 +25,6 @@ import java.util.TreeMap;
 
 import org.springframework.beans.factory.annotation.Value;
 
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
@@ -80,7 +78,7 @@ public class SimultnsConnImpl implements IBestPractice {
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		return result;
 	}
@@ -103,7 +101,7 @@ public class SimultnsConnImpl implements IBestPractice {
 			MultipleConnectionsEntry simultnsConnEntry = simultnsUtil.getTimeMap(ipEntry.getValue(), maxConnections,
 					false);
 			if (simultnsConnEntry != null) {
-				simultnsConnectionEntryMap.put(simultnsConnEntry.getTimeStamp(), simultnsConnEntry);
+				simultnsConnectionEntryMap.put(simultnsConnEntry.getStartTimeStamp(), simultnsConnEntry);
 			}
 		}
 	}

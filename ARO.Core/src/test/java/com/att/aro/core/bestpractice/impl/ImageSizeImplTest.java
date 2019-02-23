@@ -59,7 +59,6 @@ public class ImageSizeImplTest extends BaseTest {
 				"Images that are not correctly sized for mobile can cause extreme delays in rendering.  Before delivering content to a mobile, resize it to fit the available area.",
 				result.getAboutText());
 		assertEquals("Resize Images for Mobile", result.getDetailTitle());
-		assertEquals("http://developer.att.com/ARO/BestPractices/ResizeMobileImages", result.getLearnMoreUrl());
 		assertEquals("File Download: Resize Images for Mobile", result.getOverviewTitle());
 		assertEquals(
 				"Your trace passes. There are no image files that are 110% larger than the area specified for them.",
@@ -112,7 +111,6 @@ public class ImageSizeImplTest extends BaseTest {
 				"Images that are not correctly sized for mobile can cause extreme delays in rendering.  Before delivering content to a mobile, resize it to fit the available area.",
 				result.getAboutText());
 		assertEquals("Resize Images for Mobile", result.getDetailTitle());
-		assertEquals("http://developer.att.com/ARO/BestPractices/ResizeMobileImages", result.getLearnMoreUrl());
 		assertEquals("File Download: Resize Images for Mobile", result.getOverviewTitle());
 		assertEquals(
 				"Your trace passes. There are no image files that are 110% larger than the area specified for them.",
@@ -146,7 +144,6 @@ public class ImageSizeImplTest extends BaseTest {
 				"Images that are not correctly sized for mobile can cause extreme delays in rendering.  Before delivering content to a mobile, resize it to fit the available area.",
 				result.getAboutText());
 		assertEquals("Resize Images for Mobile", result.getDetailTitle());
-		assertEquals("http://developer.att.com/ARO/BestPractices/ResizeMobileImages", result.getLearnMoreUrl());
 		assertEquals("File Download: Resize Images for Mobile", result.getOverviewTitle());
 		assertEquals(
 				"Your trace passes. There are no image files that are 110% larger than the area specified for them.",

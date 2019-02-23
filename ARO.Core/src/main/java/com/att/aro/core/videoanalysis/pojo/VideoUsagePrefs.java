@@ -69,26 +69,16 @@ public class VideoUsagePrefs {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(VIDEO_PREFERENCE);
-		strblr.append(": duplicateHandling = ");
-		strblr.append(getDuplicateHandling());
-		strblr.append(", startupDelay = ");
-		strblr.append(getStartupDelay());
-		strblr.append(", maxBuffer = ");
-		strblr.append(getMaxBuffer());
-		strblr.append(", stallTriggerTime = ");
-		strblr.append(getStallTriggerTime());
-		strblr.append(", startUpDelayWarnVal = ");
-		strblr.append(getStartUpDelayWarnVal());
-		strblr.append(", startUpDelayFail = ");
-		strblr.append(getStartUpDelayFailVal());
-		strblr.append(", stallDurationWarnVal = ");
-		strblr.append(getStallDurationWarnVal());
-		strblr.append(", stallDurationFailVal = ");
-		strblr.append(getStallDurationFailVal());
-		strblr.append(", segmentRedundancyWarnVal = ");
-		strblr.append(getSegmentRedundancyWarnVal());
-		strblr.append(", segmentRedundancyFailVal = ");
-		strblr.append(getSegmentRedundancyFailVal());
+		strblr.append(": duplicateHandling = ")		.append(getDuplicateHandling());
+		strblr.append(", startupDelay = ")			.append(getStartupDelay());
+		strblr.append(", maxBuffer = ")				.append(getMaxBuffer());
+		strblr.append(", stallTriggerTime = ")		.append(getStallTriggerTime());
+		strblr.append(", startUpDelayWarnVal = ")	.append(getStartUpDelayWarnVal());
+		strblr.append(", startUpDelayFail = ")		.append(getStartUpDelayFailVal());
+		strblr.append(", stallDurationWarnVal = ")	.append(getStallDurationWarnVal());
+		strblr.append(", stallDurationFailVal = ")	.append(getStallDurationFailVal());
+		strblr.append(", segmentRedundancyWarnVal = ").append(getSegmentRedundancyWarnVal());
+		strblr.append(", segmentRedundancyFailVal = ").append(getSegmentRedundancyFailVal());
 		return strblr.toString();
 	}
 

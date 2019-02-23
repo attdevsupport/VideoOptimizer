@@ -34,18 +34,13 @@ import com.att.aro.ui.view.menu.help.DependenciesDialog;
  */
 public class AROHelpMenu implements ActionListener{
 	private static AROHelpMenu instance = null;
-
-	private static final String faqUriString = "http://developer.att.com/ARO/FAQ";
-//	private static final String aroGuidesUriString = "https://developer.att.com/application-resource-optimizer/docs#help";
-	private static final String forumUriString = "http://developer.att.com/ARO/forum";
-	private static final String supportUriString = "http://developer.att.com/ARO/support";
-//	private static final String downloadUriString =
-//			"https://developer.att.com/application-resource-optimizer/get-aro/download";
-	private static final String learnmoreUriString = "http://developer.att.com/ARO";
 	
-	private static final String VO_USER_GUIDE_URL = "http://developer.att.com/VideoOptimizer/testguide";
-	private static final String VO_DOWNLOAD_URL = "http://developer.att.com/video-optimizer/get-video-optimizer/download";
-	
+	private static final String faqUriString = ResourceBundleHelper.getURLResource("help.faq.url");
+	private static final String forumUriString = ResourceBundleHelper.getURLResource("help.forum.url");
+	private static final String supportUriString = ResourceBundleHelper.getURLResource("about.support.url");
+	private static final String learnmoreUriString = ResourceBundleHelper.getURLResource("help.learnmore.url");	
+	private static final String VO_USER_GUIDE_URL = ResourceBundleHelper.getURLResource("help.userguide.url");
+	private static final String VO_DOWNLOAD_URL = ResourceBundleHelper.getURLResource("app.download.url");
 
 	private final AROMenuAdder menuAdder = new AROMenuAdder(this);
 

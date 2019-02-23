@@ -17,13 +17,17 @@
 package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
-import org.apache.log4j.Logger;
+import javax.annotation.Nonnull;
+
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
@@ -38,30 +42,25 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
 /**
  * 
- * VBP #8
- * Redundant Versions of Same Video Content
+ * VBP #8 Redundant Versions of Same Video Content
  * 
- * Criteria:
- *  ARO will identify and compare redundant content sent in additional versions with alternative quality.
- *  
- * Metric:
- *  Count how many additional versions for each chunk/segment. Example Segment 5 has 3 different quality levels, this would be counted as 2 redundant versions.
- *  
- * About:
- *  HTTP Streaming generates multiple versions of the same content in different quality
- *  , which allows the client to display the most appropriate version. 
- *  Understanding the number and quality of these versions can help a developer avoid overkill.
- *  
- * Result:
- *  (orig) There were X different versions of the same video segment. The optimal number of number of alternative versions could improve efficiency, while reducing congestion and preparation effort.
- *  
- *  videoRedundancy.results=There {0} {1} {2} version{3} of the same video. The optimal number of alternative versions could improve efficiency, while reducing congestion and preparation effort.
- *  videoRedundancy.pass=There were {0} different versions and passes the test.
+ * Criteria: ARO will identify and compare redundant content sent in additional versions with alternative quality.
+ * 
+ * Metric: Count how many additional versions for each chunk/segment. Example Segment 5 has 3 different quality levels, this would be counted as 2 redundant
+ * versions.
+ * 
+ * About: HTTP Streaming generates multiple versions of the same content in different quality , which allows the client to display the most appropriate version.
+ * Understanding the number and quality of these versions can help a developer avoid overkill.
+ * 
+ * Result: (orig) There were X different versions of the same video segment. The optimal number of number of alternative versions could improve efficiency,
+ * while reducing congestion and preparation effort.
+ * 
+ * videoRedundancy.results=There {0} {1} {2} version{3} of the same video. The optimal number of alternative versions could improve efficiency, while reducing
+ * congestion and preparation effort. videoRedundancy.pass=There were {0} different versions and passes the test.
  *
- * Link:
- *  goes to a view of all versions of identical content.
+ * Link: goes to a view of all versions of identical content.
  */
-public class VideoRedundancyImpl implements IBestPractice{
+public class VideoRedundancyImpl implements IBestPractice {
 
 	private static final Logger LOG = LogManager.getLogger(VideoRedundancyImpl.class.getName());
 
@@ -82,85 +81,158 @@ public class VideoRedundancyImpl implements IBestPractice{
 
 	@Value("${videoRedundancy.results}")
 	private String textResults;
-	
+
+	@Value("${video.noData}")
+	private String noData;
+
 	@Autowired
 	private IVideoUsagePrefsManager videoPref;
 
+	@Value("${videoSegment.empty}")
+	private String novalidManifestsFound;
+	@Value("${videoManifest.multipleManifestsSelected}")
+	private String multipleManifestsSelected;	
+	@Value("${videoManifest.noManifestsSelected}")
+	private String noManifestsSelected;
+	@Value("${videoManifest.invalid}")
+	private String invalidManifestsFound;
+	@Value("${videoManifest.noManifestsSelectedMixed}")
+	private String noManifestsSelectedMixed;
+
+	private VideoRedundancyResult result;
+
+	private int selectedManifestCount;
+	private boolean hasSelectedManifest;
+	@Nonnull
+	private BPResultType bpResultType;
+
+	int countRedundant = 0;
+	int countSegment = 0;
+	int redundantPercentage = 0;
+	int countDuplicate = 0;
+
+	@Nonnull
+	private SortedMap<Double, AROManifest> manifestCollection;
+	
+	@Nonnull
+	VideoUsage videoUsage;
+
+	private int invalidCount;
+	
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 
-		VideoRedundancyResult result = new VideoRedundancyResult();
+		result = new VideoRedundancyResult();
 
-		result.setSelfTest(true);
-		result.setAboutText(aboutText);
-		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
-		result.setOverviewTitle(overviewTitle);
+		init(result);
 
-		VideoUsage videoUsage = tracedata.getVideoUsage();
-		int countRedundant = 0;
-		int countSegment = 0;
-		int redundantPercentage = 0;
-		int countDuplicate = 0;
-		
+		videoUsage = tracedata.getVideoUsage();
+		manifestCollection = new TreeMap<>();
+
 		if (videoUsage != null) {
-			// count duplicate chunks (same segment number)
-			for (AROManifest aroManifest : videoUsage.getManifests()) {
-				if (aroManifest != null && aroManifest.isSelected()) {
-					VideoEvent preStuff = null;
-					for (VideoEvent stuff : aroManifest.getVideoEventsBySegment()) {
-						countSegment++;
-						if (aroManifest instanceof ManifestDash && stuff.getSegment() == 0) {
-							continue;
-						}
-						if (preStuff != null 
-								&& preStuff.getSegment() == stuff.getSegment() 
-								&& !preStuff.getQuality().equals(stuff.getQuality())
-							) {
-							LOG.debug("Redundant :\t" + preStuff + "\n\t\t" + stuff);
-							countRedundant++;
-							countSegment--;
-						} else if (preStuff != null 
-								&& preStuff.getSegment() == stuff.getSegment() 
-								&& preStuff.getQuality().equals(stuff.getQuality())
-							) {
-							LOG.debug("Duplicate :\t" + preStuff + "\n\t\t" + stuff);
-							countDuplicate ++;
-							countSegment--;
-						}
-						preStuff = stuff;
+			manifestCollection = videoUsage.getAroManifestMap();
+		}
+
+		if (MapUtils.isNotEmpty(manifestCollection)) {
+			bpResultType = BPResultType.CONFIG_REQUIRED;
+
+			selectedManifestCount = videoUsage.getSelectedManifestCount();
+			hasSelectedManifest = (selectedManifestCount > 0);
+			invalidCount = videoUsage.getInvalidManifestCount();
+
+			if (selectedManifestCount == 0) {
+				if (invalidCount == manifestCollection.size()) {
+					result.setResultText(invalidManifestsFound);
+				} else if (invalidCount > 0) {
+					result.setResultText(noManifestsSelectedMixed);
+				} else {
+					result.setResultText(noManifestsSelected);
+				}
+			} else if (selectedManifestCount > 1) {
+				result.setResultText(multipleManifestsSelected);
+			} else if (hasSelectedManifest) {
+				for (AROManifest aroManifest : manifestCollection.values()) {
+					if (aroManifest.isSelected()) {
+						countDuplicateChunks(aroManifest);
+						break;
 					}
 				}
+
+				redundantPercentage = calculateRedundantPercentage(countRedundant, countSegment);
+				bpResultType = Util.checkPassFailorWarning(redundantPercentage
+						, videoPref.getVideoUsagePreference().getSegmentRedundancyWarnVal()
+						, videoPref.getVideoUsagePreference().getSegmentRedundancyFailVal());
+				result.setResultType(bpResultType);
+
+				if (redundantPercentage != 0.0) {
+					result.setResultText(MessageFormat.format(textResults, (String.format("%d", redundantPercentage))));
+				} else {
+					result.setResultText(MessageFormat.format(textResultPass, redundantPercentage));
+				}
+				result.setRedundantPercentage(redundantPercentage);
+				result.setSegmentCount(countSegment);
+				result.setRedundantCount(countRedundant);
+				result.setDuplicateCount(countDuplicate);
+				result.setSelfTest(true);
 			}
-			
-			redundantPercentage = calculateRedundantPercentage(countRedundant, countSegment);
-			BPResultType bpResultType = BPResultType.PASS;
-
-			bpResultType = Util.checkPassFailorWarning(redundantPercentage,
-					videoPref.getVideoUsagePreference().getSegmentRedundancyWarnVal(),
-					videoPref.getVideoUsagePreference().getSegmentRedundancyFailVal());
-			result.setResultType(bpResultType);
-
-			if (redundantPercentage != 0.0) {
-				result.setResultText(
-						MessageFormat.format(textResults, (String.format("%d", redundantPercentage))));
-			} else {
-				result.setResultText(MessageFormat.format(textResultPass, redundantPercentage));
-			}
-
+		} else {
+			result.setSelfTest(false);
+			result.setResultText(noData);
+			bpResultType = BPResultType.NO_DATA;
 		}
-		result.setRedundantPercentage(redundantPercentage);
-		result.setSegmentCount(countSegment);
-		result.setRedundantCount(countRedundant);
-		result.setDuplicateCount(countDuplicate);
+		result.setResultType(bpResultType);
 		return result;
 	}
 
-	
+	public void countDuplicateChunks(AROManifest aroManifest) {
+		VideoEvent preStuff = null;
+		Double prevSegment = null;
+		String prevQuality = "";
+		for (VideoEvent videoEvent : aroManifest.getVideoEventsBySegment()) {
+			double segment = videoEvent.getSegment();
+			String quality = videoEvent.getQuality();
+			if (aroManifest instanceof ManifestDash && segment == 0) {
+				continue;
+			}
+			countSegment++;
+			if (prevSegment != null && prevSegment == segment) {
+				countSegment--;
+				if (prevQuality.equals(quality)) {
+					LOG.debug("Duplicate :\t" + preStuff + "\n\t\t" + videoEvent);
+					countDuplicate++;
+				} else {
+					LOG.debug("Redundant :\t" + preStuff + "\n\t\t" + videoEvent);
+					countRedundant++;
+				}
+			}
+			preStuff = videoEvent;
+			prevSegment = segment;
+			prevQuality = quality;
+		}
+	}
+
+	private void init(VideoRedundancyResult result) {
+		bpResultType = BPResultType.SELF_TEST;
+		selectedManifestCount = 0;
+		hasSelectedManifest = false;
+		
+		countRedundant = 0;
+		countSegment = 0;
+		redundantPercentage = 0;
+		countDuplicate = 0;
+
+		result.setAboutText(aboutText);
+		result.setDetailTitle(detailTitle);
+		result.setOverviewTitle(overviewTitle);
+		result.setLearnMoreUrl(learnMoreUrl);
+	}
+
 	/**
 	 * 
-	 * @param countRedundant - number of Redundant Segments
-	 * @param countSegment - number of non duplicate Segments
+	 * @param countRedundant
+	 *            - number of Redundant Segments
+	 * @param countSegment
+	 *            - number of non duplicate Segments
 	 * @return percentage of Redundant Segments over the non duplicate Segments
 	 */
 	private int calculateRedundantPercentage(int countRedundant, int countSegment) {

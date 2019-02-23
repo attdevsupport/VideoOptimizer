@@ -56,6 +56,7 @@ import org.apache.log4j.LogManager;
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
@@ -65,6 +66,7 @@ import com.att.aro.ui.view.menu.datacollector.AttnrRadioGroupPanel;
 import com.att.aro.ui.view.menu.datacollector.DeviceDialogOptions;
 import com.att.aro.ui.view.menu.datacollector.DeviceTablePanel;
 import com.att.aro.ui.view.menu.datacollector.HelpDialog;
+import com.att.aro.ui.view.menu.datacollector.IOSStepsDialog;
 
 /**
  * Represents the dialog that is used to start the ARO Data Collector. The
@@ -291,7 +293,9 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 * @return javax.swing.JButton
 	 */
 	private JButton getStartButton() {
-		if (startButton == null) {
+			if(startButton != null){
+				return startButton;
+			}
 			startButton = new JButton();
 			startButton.setText(ResourceBundleHelper.getMessageString("Button.start"));
 			startButton.addActionListener(new ActionListener() {
@@ -311,6 +315,14 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 							return;
 						}
 					}	
+					
+					boolean attnEnabled = deviceOptionPanel.getAttnrGroup().getAttnrRadioGP().getSliderBtn().isSelected();
+					
+					if (deviceTablePanel.getSelection().isPlatform(Platform.iOS) && attnEnabled
+							&& (!deviceOptionPanel.isSharedNetworkActive())) {
+						 new IOSStepsDialog(DataCollectorSelectNStartDialog.this);
+						return;
+					}
 					// don't allow whitespace
 					traceFolderName = traceFolderName.replaceAll("\\s", "");					
 					if (!traceFolderName.isEmpty()) {
@@ -351,8 +363,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 			} else {
 				startButton.setEnabled(false);
 			}
-		}
-		return startButton;
+			return startButton;
 	}
 	
 

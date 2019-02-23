@@ -17,6 +17,7 @@ package com.att.aro.core.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.concurrent.CancellationException;
 
 import org.apache.log4j.LogManager;
 
@@ -26,9 +27,11 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
 	@Override
 	public void uncaughtException(Thread thread, Throwable throwable) {
-		IGoogleAnalytics googleAnalytics = GoogleAnalyticsUtil.getGoogleAnalyticsInstance();
-		googleAnalytics.sendCrashEvents(convertTracetoString("", throwable));
-		LogManager.getLogger(CrashHandler.class.getName()).error("Uncaught ARO Exception:", throwable);	
+		if (!throwable.getClass().equals(CancellationException.class)) {
+			IGoogleAnalytics googleAnalytics = GoogleAnalyticsUtil.getGoogleAnalyticsInstance();
+			googleAnalytics.sendCrashEvents(convertTracetoString("", throwable));
+			LogManager.getLogger(CrashHandler.class.getName()).error("Uncaught ARO Exception:", throwable);
+		}
 	}
 
 	public static String convertTracetoString(String message, Throwable throwable){

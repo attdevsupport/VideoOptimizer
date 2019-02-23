@@ -20,8 +20,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.TreeMap;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
@@ -30,6 +30,7 @@ import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.packetreader.pojo.Packet;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 import com.att.aro.core.videoanalysis.pojo.amazonvideo.MpdBase;
@@ -56,7 +57,7 @@ public class AROManifest {
 	double requestTime;
 	double timeLength;		                           // in milliseconds                        
 	double beginTime;		                           // timestamp of manifest request          
-	double endTime;			                           // timestamp of manifest session end ?why 
+	double endTime;			                           // timestamp of manifest download completed
 	URI uri;				                           // URI of GET request                     
 	String uriStr = "";
 	private double segmentCount;			           // segments range from 0 to segmentCount
@@ -82,7 +83,15 @@ public class AROManifest {
 	
 	TreeMap<Integer, String> durationList = new TreeMap<>();
 	
+	/**
+	 * delay is point in seconds video.mp4 or mov for when first segment starts to play
+	 */
 	double delay;
+	
+	/**
+	 * The delay from request of manifest to first segment starts to play
+	 */
+	double startupDelay;
 
 	boolean valid = true;
 	
@@ -95,8 +104,17 @@ public class AROManifest {
 	private boolean selected = false;
 	private boolean activeState = true;
 	private VideoEventData ved;
-	private boolean videoMetaDataExtracted = false;
 	
+	/**
+	 * Segment associated with StartupDelay
+	 */
+	private VideoEvent videoEvent;
+	
+	/**
+	 * Indicates if video segment metadata such as bitrate has been extracted successfully
+	 */
+	private boolean videoMetaDataExtracted = false;
+
 	/**
 	 * Initializes an instance of the VideoEvent class, using the specified event type, 
 	 * press time, and release time.
@@ -119,7 +137,7 @@ public class AROManifest {
 	 * @param releaseTime The time at which the chunk finished downloading.
 	 */
 	public AROManifest(VideoType videoType, HttpRequestResponseInfo resp, VideoEventData ved, String videoPath) {
-
+		
 		this.videoType = videoType;
 		this.endTime = 0;
 		this.timeLength = 0;
@@ -131,10 +149,32 @@ public class AROManifest {
 		if (resp != null) {
 			PacketInfo fdp = resp.getAssocReqResp().getFirstDataPacket();
 			this.requestTime = fdp != null ? fdp.getPacket().getTimeStamp() : 0; // milliseconds UTC
-			this.beginTime = resp.getTimeStamp();
-			this.session = resp.getSession();
-			this.uri = resp.getAssocReqResp().getObjUri();
+			if (this.beginTime == 0) {
+				this.beginTime = resp.getTimeStamp();
+			}
+			if (resp.getLastDataPacket() != null) {
+				setEndTime(this.beginTime + estimateResponseEnd(resp));
+				this.session = resp.getSession();
+				this.uri = resp.getAssocReqResp().getObjUri();
+			}
 		}
+	}
+
+	/**
+	 * Estimate Response download time duration (delta)
+	 * @param resp
+	 * @return duration delta
+	 */
+	public double estimateResponseEnd(HttpRequestResponseInfo resp) {
+		double delta = 0;
+		Packet packet = resp.getLastDataPacket().getPacket().getNextPacketInSession();
+		if (packet != null) {
+			delta = packet.getTimeStamp() - resp.getLastDataPacket().getPacket().getTimeStamp();
+		}
+		if (delta == 0.0) {
+			delta = .004;
+		}
+		return delta;
 	}
 
 	public void updateManifest(MpdBase manifest) {
@@ -209,7 +249,7 @@ public class AROManifest {
 	 */
 	public void addVideoEvent(double segment, double timestamp, VideoEvent videoEvent) {
 
-		String key = String.format("%010.4f:%08.0f", timestamp, segment );
+		String key = generateEventKey(segment, timestamp);
 		videoEventList.put(key, videoEvent);
 		this.selected=true;
 		if (segment != -1) {
@@ -217,6 +257,22 @@ public class AROManifest {
 			key = generateVideoEventKey(segment, timestamp, videoEvent.getQuality());
 			segmentEventList.put(key, videoEvent);
 		}
+	}
+
+	/**
+	 * <pre>
+	 * Generates a key
+	 *	 s = segment len = 10
+	 *	 t = timestamp len = 11
+	 *   format sssssssssstttttttt
+	 *   
+	 * @param segment
+	 * @param timestamp
+	 * @param quality
+	 * @return
+	 */
+	public static String generateEventKey(double segment, double timestamp) {
+		return String.format("%010.4f:%08.0f", timestamp, segment );
 	}
 
 	/**
@@ -243,7 +299,7 @@ public class AROManifest {
 	}
 	
 	/**
-	 * Retrive VideoEvents by segment
+	 * Retrieve VideoEvents by segment
 	 * @return
 	 */
 	public Collection<VideoEvent> getVideoEventsBySegment(){
@@ -303,8 +359,25 @@ public class AROManifest {
 		this.uri = url;
 	}
 
+	/**
+	 * @return delay is point in seconds, video.mp4 or mov, for when first segment starts to play
+	 */
 	public double getDelay() {
 		return delay;
+	}
+
+	/**
+	 * Set segment associated with StartupDelay
+	 */
+	public void setVideoEventSegment(VideoEvent videoEvent) {
+		this.videoEvent = videoEvent;
+	}
+
+	/**
+	 * Set segment associated with StartupDelay
+	 */
+	public VideoEvent getVideoEventSegment() {
+		return this.videoEvent;
 	}
 
 	/**
@@ -314,6 +387,14 @@ public class AROManifest {
 	 */
 	public void setDelay(double delay) {
 		this.delay = delay;
+	}
+
+	public void setStartupDelay(double startupDelay) {
+		this.startupDelay = startupDelay;
+	}
+
+	public double getStartupDelay() {
+		return startupDelay;
 	}
 
 	public Session getSession() {
@@ -388,7 +469,7 @@ public class AROManifest {
 	}
 
 	public double getSegmentCount() {
-		return segmentCount;
+		return segmentCount > 0 ? segmentCount : segmentEventList.size();
 	}
 
 	public void setSegmentCount(double segmentCount) {
@@ -598,8 +679,15 @@ public class AROManifest {
 		return videoMetaDataExtracted;
 	}
 
+	/**<pre>
+	 * Set to true if videoMetaDataExtracted is true
+	 * Will not set to false, guards against unsetting if last segment cannot be read for metadata
+	 * 
+	 * @param videoMetaDataExtracted
+	 */
 	public void setVideoMetaDataExtracted(boolean videoMetaDataExtracted) {
-		this.videoMetaDataExtracted = videoMetaDataExtracted;
+		if (!this.videoMetaDataExtracted) {
+			this.videoMetaDataExtracted = videoMetaDataExtracted;
+		}
 	}
-
 }

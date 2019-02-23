@@ -16,7 +16,6 @@
 package com.att.aro.core.adb;
 
 import java.io.IOException;
-import java.util.List;
 
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.FileListingService.FileEntry;
@@ -48,8 +47,12 @@ public interface IAdbService {
 	/**
 	 * @return the adb file path
 	 */
-	String getAdbPath();
+	String getAdbPath(boolean unfiltered);
 
+	/**
+	 * @return the adb file path
+	 */
+    String getAdbPath();
 	/**
 	 * adb path might have been set but the file does not exist or has been
 	 * deleted

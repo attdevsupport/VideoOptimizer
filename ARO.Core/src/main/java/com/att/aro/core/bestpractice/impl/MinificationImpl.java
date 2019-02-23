@@ -90,7 +90,7 @@ public class MinificationImpl implements IBestPractice {
 
 	@Value("${exportall.csvNumberOfMinifyFiles}")
 	private String exportAllNumberOfMinifyFiles;
-
+	
 	private IHttpRequestResponseHelper reqhelper;
 
 	class Worker implements Callable<MinificationEntry>{
@@ -203,8 +203,7 @@ public class MinificationImpl implements IBestPractice {
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAllNumberOfMinifyFiles(exportAllNumberOfMinifyFiles);
 		return result;

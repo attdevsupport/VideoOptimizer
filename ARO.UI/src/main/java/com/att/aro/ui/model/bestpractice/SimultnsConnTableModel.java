@@ -92,7 +92,7 @@ public class SimultnsConnTableModel extends DataTableModel<MultipleConnectionsEn
 	protected Object getColumnValue(MultipleConnectionsEntry item, int columnIndex) {
 		switch (columnIndex) {
 		case COL_1:
-			return item.getTimeStamp();
+			return item.getStartTimeStamp();
 		case COL_2:
 			return item.getIpValue();
 		case COL_3:

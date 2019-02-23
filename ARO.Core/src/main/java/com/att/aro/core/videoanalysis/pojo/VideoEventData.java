@@ -3,132 +3,108 @@ package com.att.aro.core.videoanalysis.pojo;
 import com.att.aro.core.packetanalysis.pojo.ByteRange;
 
 public class VideoEventData {
-	
-	String cdn;
-	String name;
-	Integer segment;
-	String segmentReference;
-	String byteStart;
-	String byteEnd;
-	String quality;
-	String segmentStartTime;
-	String bitrate;
-	String mdatSize;
-	String manifestType;
-	String duration;
-	String rateCode;
-	String position;
-	double timestamp;
-	String dateTime;
-	ByteRange byteRange = null;
-	double dtTime;
-	String extension = "";
-	String contentType;
-	double contentLength;
-	double contentSize;
-	double contentStart;
-	double contentEnd;
-	private String failure ="";
+	                                         
+	private String cdn;
+	private String name;
+	private Integer segment;
+	private String segmentReference;
+	private String byteStart;
+	private String byteEnd;
+	private String quality;
+	private String segmentStartTime;
+	private String bitrate;
+	private String mdatSize;
+	private String manifestType;
+	private String duration;
+	private String rateCode;
+	private String position;
+	private double timestamp;
+	private String dateTime;
+	private ByteRange byteRange = null;
+	private double dtTime;
+	private String extension = "";
+	private String contentType;
+	private double contentLength;
+	private double contentSize;
+	private double contentStart;
+	private double contentEnd;
+	private String failure = "";
 
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(60);
 		strblr.append("VideoEventData ");
 		if (cdn != null) {
-			strblr.append("\n\t cdn : ");
-			strblr.append(cdn);
+			strblr.append("\n\t cdn : ").append(cdn);
 		}
 		if (name != null) {
-			strblr.append("\n\t name : ");
-			strblr.append(name);
+			strblr.append("\n\t name : ").append(name);
 		}
 		if (!extension.isEmpty()) {
-			strblr.append("\n\t extension : ");
-			strblr.append(extension);
+			strblr.append("\n\t extension : ").append(extension);
 		}
 		if (segment != null) {
-			strblr.append("\n\t segment : ");
-			strblr.append(segment);
+			strblr.append("\n\t segment : ").append(segment);
 		}
 		if (segmentReference != null) {
-			strblr.append("\n\t segmentReference : ");
-			strblr.append(segmentReference);
+			strblr.append("\n\t segmentReference : ").append(segmentReference);
 		}
 		if (byteStart != null) {
-			strblr.append("\n\t byteStart : ");
-			strblr.append(byteStart);
+			strblr.append("\n\t byteStart : ").append(byteStart);
 		}
 		if (byteEnd != null) {
-			strblr.append("\n\t byteEnd : ");
-			strblr.append(byteEnd);
+			strblr.append("\n\t byteEnd : ").append(byteEnd);
 		}
 		if (quality != null) {
-			strblr.append("\n\t quality : ");
-			strblr.append(quality);
+			strblr.append("\n\t quality : ").append(quality);
 		}
 		if (segmentStartTime != null) {
-			strblr.append("\n\t segmentStartTime : ");
-			strblr.append(segmentStartTime);
+			strblr.append("\n\t segmentStartTime : ").append(segmentStartTime);
 		}
 		if (bitrate != null) {
-			strblr.append("\n\t bitrate : ");
-			strblr.append(bitrate);
+			strblr.append("\n\t bitrate : ").append(bitrate);
 		}
 		if (mdatSize != null) {
-			strblr.append("\n\t mdatSize : ");
-			strblr.append(mdatSize);
+			strblr.append("\n\t mdatSize : ").append(mdatSize);
 		}
 		if (duration != null) {
-			strblr.append("\n\t duration : ");
-			strblr.append(duration);
+			strblr.append("\n\t duration : ").append(duration);
 		}
 		if (rateCode != null) {
-			strblr.append("\n\t rateCode : ");
-			strblr.append(rateCode);
+			strblr.append("\n\t rateCode : ").append(rateCode);
 		}
 		if (position != null) {
-			strblr.append("\n\t position : ");
-			strblr.append(position);
+			strblr.append("\n\t position : ").append(position);
 		}
 		if (timestamp != 0) {
-			strblr.append("\n\t timestamp : ");
-			strblr.append(String.format("%d", ((Double) timestamp).intValue()));
+			strblr.append("\n\t timestamp : ").append(String.format("%d", ((Double) timestamp).intValue()));
 		}
 		if (dateTime != null) {
-			strblr.append("\n\t dateTime : ");
-			strblr.append(dateTime);
+			strblr.append("\n\t dateTime : ").append(dateTime);
 		}
 		if (dtTime > 0) {
-			strblr.append("\n\t dtTime : ");
-			strblr.append(String.format("%.0f", dtTime));
+			strblr.append("\n\t dtTime : ").append(String.format("%.0f", dtTime));
 		}
 		if (byteRange != null) {
-			strblr.append("\n\t byteRange : ");
-			strblr.append(byteRange);
+			strblr.append("\n\t byteRange : ").append(byteRange);
 		}
 		if (contentType != null) {
-			strblr.append("\n\t contentType : ");
-			strblr.append(contentType);
+			strblr.append("\n\t contentType : ").append(contentType);
 		}
 		if (contentLength != 0) {
-			strblr.append("\n\t contentLength : ");
-			strblr.append(contentLength);
+			strblr.append("\n\t contentLength : ").append(contentLength);
 		}
 		if (contentSize != 0) {
-			strblr.append("\n\t contentSize : ");
-			strblr.append(contentSize);
+			strblr.append("\n\t contentSize : ").append(contentSize);
 		}
 		if (contentStart != 0) {
-			strblr.append("\n\t contentStart : ");
-			strblr.append(contentStart);
+			strblr.append("\n\t contentStart : ").append(contentStart);
 		}
 		if (contentEnd != 0) {
-			strblr.append("\n\t contentEnd : ");
-			strblr.append(contentEnd);
+			strblr.append("\n\t contentEnd : ").append(contentEnd);
 		}
 		if (!failure.isEmpty()) {
-			strblr.append("\n\t failure : ");
-			strblr.append(failure);
+			strblr.append("\n\t failure : ").append(failure);
 		}
 
 		strblr.append(" }");

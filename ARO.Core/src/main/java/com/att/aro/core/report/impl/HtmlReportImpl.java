@@ -240,7 +240,7 @@ public class HtmlReportImpl implements IReport {
 			StringBuffer temp = new StringBuffer(65);
 			temp.append(tableLIne()+"<tr><th rowspan=\"2\">" + 
 			"<a href =\""+ bpResults.get(row).getLearnMoreUrl()+"\" target=\"_blank\" >"+
-					bpResults.get(row).getBestPracticeType().getDescription()
+				bpResults.get(row).getBestPracticeType().getDescription()
 					+ "<a></th>");
 			sbTemps.add(temp);
 		}
@@ -252,13 +252,13 @@ public class HtmlReportImpl implements IReport {
 			StringBuffer temp = sbTemps.get(row);
 			BPResultType result = bpResults.get(row).getResultType();
 			if (result.equals(BPResultType.PASS)) {				
-				temp.append("<td class='success'>"+result + tableChange()+"<tr><td class='success'>"+bpResults.get(row).getResultText()+tableSeperate());
+				temp.append("<td class='success'>"+result + tableChange()+"<tr><td class='success'>"+formatResultText(bpResults.get(row).getResultText())+tableSeperate());
 			} else if (result.equals(BPResultType.FAIL)) {
-				temp.append("<td class='danger'>"+ result + tableChange()+"<tr><td class='danger'>"+bpResults.get(row).getResultText()+tableSeperate());
+				temp.append("<td class='danger'>"+ result + tableChange()+"<tr><td class='danger'>"+formatResultText(bpResults.get(row).getResultText())+tableSeperate());
 			} else if (result.equals(BPResultType.WARNING)) {
-				temp.append("<td class='warning'>"+result + tableChange()+"<tr><td class='warning'>"+bpResults.get(row).getResultText()+tableSeperate());
+				temp.append("<td class='warning'>"+result + tableChange()+"<tr><td class='warning'>"+formatResultText(bpResults.get(row).getResultText())+tableSeperate());
 			} else {
-				temp.append("<td class='info'>"+result + tableChange()+"<tr><td class='info'>"+bpResults.get(row).getResultText()+tableSeperate());
+				temp.append("<td class='info'>"+result + tableChange()+"<tr><td class='info'>"+formatResultText(bpResults.get(row).getResultText())+tableSeperate());
 			}			
 			
 		}
@@ -278,6 +278,37 @@ public class HtmlReportImpl implements IReport {
 		return finalBpRows.toString();
 	}
 	
+	private String formatResultText(String description) {
+
+		if (description.contains("To change targeted delay")) {
+			description = description.substring(0, description.indexOf("To change targeted delay"));
+		}
+
+		if (description.contains("&nbsp;")) {
+			description = description.replace("&nbsp;", " ");
+		}
+		if (description.contains("</b>")) {
+			description = removeHtmlCharacter(description, "</b>");
+		}
+		if (description.contains("<b>")) {
+			description = removeHtmlCharacter(description, "<b>");
+		}
+		if (description.contains("</a>")) {
+			description = removeHtmlCharacter(description, "</a>");
+		}
+
+		if (description.contains("<a href=")) {
+			description = description.substring(0, description.indexOf("<a href="))
+					+ description.substring(description.indexOf(">")+1);
+		}
+
+		return description;
+	}
+
+	public String removeHtmlCharacter(String text ,String htmlCharacter) {	
+		return text.replace(htmlCharacter, "");
+	}
+
 	private String lineSeperator(){
 		return "line.separator";
 	}

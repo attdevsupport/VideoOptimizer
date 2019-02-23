@@ -398,8 +398,8 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 	private void launchVidCapture() {
 
 		setState(State.Recording);
-		
-		String cmd = adbservice.getAdbPath()
+		String path = adbservice.getAdbPath();
+		String cmd = path
 					+ " -s "
 					+ aroDevice.getId()
 					+ " shell"

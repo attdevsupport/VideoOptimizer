@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -102,7 +102,6 @@ import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.util.Util;
-
 public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	private static final Logger LOGGER = LogManager.getLogger(TraceDataReaderImpl.class.getName());
 
@@ -685,8 +684,8 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 				int localOffset = Calendar.getInstance().getTimeZone().getRawOffset() / 1000;
 				int collectorOffset = captureOffset * 60 * -1;
 				tzDiff = collectorOffset - localOffset;
-
 			}
+			result.setPcapTimeOffset(pcapTime0 - tzDiff);
 
 			int packetIdx = 0;
 			List<String> appInfos = result.getAppInfos();
@@ -1005,6 +1004,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 		List<RadioInfo> radioInfos = radioinforeader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setRadioInfos(radioInfos);
+
 	}
 
 }// end class

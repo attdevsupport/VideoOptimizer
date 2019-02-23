@@ -131,7 +131,6 @@ public class BPSelectionPanel extends JPanel {
 		noOfBestPractices = 0;
 		JPanel line2 = new JPanel();
 		line2.add(getGroupedBPPanel(Category.HTML), BorderLayout.NORTH);
-		line2.add(getGroupedBPPanel(Category.SECURITY), BorderLayout.NORTH);
 		line2.add(getGroupedBPPanel(Category.VIDEO), BorderLayout.NORTH);
 		line2.add(getGroupedBPPanel(Category.OTHER), BorderLayout.NORTH);
 		line2.setPreferredSize(new Dimension(350,90 + 23 * noOfBestPractices));
@@ -143,7 +142,8 @@ public class BPSelectionPanel extends JPanel {
 		JPanel line1 = new JPanel();
 		line1.add(getGroupedBPPanel(Category.FILE), BorderLayout.NORTH);
 		line1.add(getGroupedBPPanel(Category.CONNECTIONS), BorderLayout.NORTH);
-		line1.setPreferredSize(new Dimension(350,205 + 23 * noOfBestPractices));
+		line1.add(getGroupedBPPanel(Category.SECURITY), BorderLayout.NORTH);
+		line1.setPreferredSize(new Dimension(350,160 + 23 * noOfBestPractices));
 		return line1;
 	}
 

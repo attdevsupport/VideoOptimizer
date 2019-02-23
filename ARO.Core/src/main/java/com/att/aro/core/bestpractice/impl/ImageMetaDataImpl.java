@@ -68,6 +68,9 @@ public class ImageMetaDataImpl implements IBestPractice {
 
 	@Value("${exportall.csvNumberOfMdataImages}")
 	private String exportNumberOfMdataImages;
+	
+	@Value("${bestPractices.noData}")
+	private String noData;
 
 	private static final Logger LOG = LogManager.getLogger(ImageMetaDataImpl.class.getName());
 
@@ -78,60 +81,62 @@ public class ImageMetaDataImpl implements IBestPractice {
 		ImageMdtaResult result = new ImageMdtaResult();
 		List<String> imageList = new ArrayList<String>();
 		List<ImageMdataEntry> entrylist = new ArrayList<ImageMdataEntry>();
-		// boolean isMetadataPresent = false;
-		for (Session session : tracedata.getSessionlist()) {
+		
+		String imagePath = tracedata.getTraceresult().getTraceDirectory()
+				+ System.getProperty("file.separator") + "Image" + System.getProperty("file.separator");
+		
+		if (Util.isFilesforAnalysisAvailable(new File(imagePath))) {
+			for (Session session : tracedata.getSessionlist()) {
 
-			for (HttpRequestResponseInfo req : session.getRequestResponseInfo()) {
+				for (HttpRequestResponseInfo req : session.getRequestResponseInfo()) {
 
-				if (req.getDirection() == HttpDirection.RESPONSE && req.getContentType() != null
-						&& req.getContentType().contains("image/")) {
+					if (req.getDirection() == HttpDirection.RESPONSE && req.getContentType() != null
+							&& req.getContentType().contains("image/")) {
 
-					String tracePath = tracedata.getTraceresult().getTraceDirectory()
-							+ System.getProperty("file.separator");
-					String imagePath = tracePath + "Image" + System.getProperty("file.separator");
-					String imgFile = "";
+						String extractedImageName = ImageHelper.extractFullNameFromRRInfo(req);
+						int pos = extractedImageName.lastIndexOf('.') + 1;
 
-					String extractedImageName = ImageHelper.extractFullNameFromRRInfo(req);
-					int pos = extractedImageName.lastIndexOf('.') + 1;
-
-					// List<String> imageList = new ArrayList<String>();
-					File folder = new File(imagePath);
-					File[] listOfFiles = folder.listFiles();
-					if(listOfFiles != null) {
-						runTestForFiles(imageList, entrylist, session, req, imagePath, imgFile, extractedImageName, pos,
-								listOfFiles);
+						// List<String> imageList = new ArrayList<String>();
+						File folder = new File(imagePath);
+						File[] listOfFiles = folder.listFiles();
+						if (listOfFiles != null) {
+							runTestForFiles(imageList, entrylist, session, req, imagePath, extractedImageName,
+									pos, listOfFiles);
+						}
 					}
 				}
 			}
-		}
 
-		result.setResults(entrylist);
-		String text = "";
-		if (entrylist.isEmpty()) {
-			result.setResultType(BPResultType.PASS);
-			text = MessageFormat.format(textResultPass, entrylist.size());
-			result.setResultText(text);
+			result.setResults(entrylist);
+			String text = "";
+			if (entrylist.isEmpty()) {
+				result.setResultType(BPResultType.PASS);
+				text = MessageFormat.format(textResultPass, entrylist.size());
+				result.setResultText(text);
+			} else {
+				result.setResultType(BPResultType.FAIL);
+				text = MessageFormat.format(textResults, ApplicationConfig.getInstance().getAppShortName(),
+						entrylist.size());
+				result.setResultText(text);
+			}
 		} else {
-			result.setResultType(BPResultType.FAIL);
-			text = MessageFormat.format(textResults, 
-										ApplicationConfig.getInstance().getAppShortName(), 
-										entrylist.size());
-			result.setResultText(text);
+			result.setResultText(noData);
+			result.setResultType(BPResultType.NO_DATA);
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setExportNumberOfMdataImages(String.valueOf(entrylist.size()));
 		return result;
 	}
 
 	private void runTestForFiles(List<String> imageList, List<ImageMdataEntry> entrylist, Session session,
-			HttpRequestResponseInfo req, String imagePath, String imgFile, String extractedImageName, int pos,
+			HttpRequestResponseInfo req, String imagePath,  String extractedImageName, int pos,
 			File[] listOfFiles) {
 		String imgFullName = "";
 		String imgExtn = "";
+		String imgFile = "";
 
 		// check folder exists
 		for (int i = 0; i < listOfFiles.length; i++) {

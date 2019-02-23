@@ -33,6 +33,6 @@ public class BundleKeyUtil {
 	public static String VIDEO_ORIENTATION = "videoOrientation";
 	public static String CERT_INSTALL = "certInstall";
 	public static String PRINT_LOG = "printLog";
-	public static String SELECTED_APP_NAME = "selectedAppName";
+
 
 }

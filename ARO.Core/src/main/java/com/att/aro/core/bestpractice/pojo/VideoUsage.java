@@ -52,6 +52,66 @@ public class VideoUsage extends AbstractBestPracticeResult {
 	@Nonnull
 	private List<VideoEvent> duplicateChunks = new ArrayList<>();
 	
+	private Boolean validatedCount = false;
+	private int segmentCount = 0;
+	private int selectedManifestCount = 0;
+	private int validSegmentCount = 0;
+	private int nonValidSegmentCount = 0;
+	private int invalidManifestCount = 0;
+
+	public void setValidatedCount(Boolean validatedCount) {
+		this.validatedCount = validatedCount;
+	}
+
+	public boolean isValidatedCount(){
+		return validatedCount;
+	}
+	
+	public int getInvalidManifestCount() {
+		return invalidManifestCount;
+	}
+
+	public int getSegmentCount() {
+		return segmentCount;
+	}
+
+	public int getSelectedManifestCount() {
+		return selectedManifestCount;
+	}
+
+	public int getValidSegmentCount() {
+		return validSegmentCount;
+	}
+
+	public int getNonValidSegmentCount() {
+		return nonValidSegmentCount;
+	}
+
+	public void scanManifests() {
+		synchronized (aroManifestMap) {
+			validatedCount = false;
+			segmentCount = 0;
+			selectedManifestCount = 0;
+			invalidManifestCount = 0;
+			validSegmentCount = 0;
+			nonValidSegmentCount = 0;
+
+			for (AROManifest aroManifest : aroManifestMap.values()) {
+				if (aroManifest.isValid()) {
+					validSegmentCount += aroManifest.getSegmentCount();
+				} else {
+					nonValidSegmentCount += aroManifest.getSegmentCount();
+					invalidManifestCount++;
+				}
+				if (aroManifest.isSelected()) {
+					selectedManifestCount++;
+					segmentCount += aroManifest.getSegmentCount();
+				}
+			}
+		}
+		validatedCount = true;
+	}
+
 	public List<VideoEvent> getChunksBySegmentNumber() {
 		return chunksBySegment;
 	}
@@ -249,4 +309,5 @@ public class VideoUsage extends AbstractBestPracticeResult {
 			this.duplicateChunks = duplicateChunks;
 		}
 	}
+	
 }

@@ -49,17 +49,13 @@ public class BpDetailConnectionsPanel extends BpDetail {
 		addPanel(row++, new BpDetailItem("connections.simultaneous", BestPracticeType.SIMUL_CONN, new BPConnectionsSimultnsTablePanel()));
 		
 		addPanel(row++, new BpDetailItem("connections.multiSimultaneous", BestPracticeType.MULTI_SIMULCONN, new BPConnectionsSimultnsTablePanel()));
-		//addPanel(row++, new BpDetailItem("connections.adAnalytics", BestPracticeType.AD_ANALYTICS, new BpConnectionsAdAnalyticsTablePanel()));
 		
 		addPanel(row++, new BpDetailItem("connections.periodic", BestPracticeType.PERIODIC_TRANSFER));
 		
 		addPanel(row++, new BpDetailItem("connections.screenRotation", BestPracticeType.SCREEN_ROTATION));
 		
 		addPanel(row++, new BpDetailItem("connections.connClosing", BestPracticeType.CONNECTION_CLOSING));
-		
-//		disabled until further notice, or decision on how to conduct bp test
-//		addPanel(row++, new BpDetailItem("connections.offloadingToWifi", BestPracticeType.WIFI_OFFLOADING));
-		
+				
 		addPanel(row++, new BpDetailItem("connections.http4xx5xx", BestPracticeType.HTTP_4XX_5XX, new BpConnectionsHttp4xx5xxTablePanel()));
 		
 		addPanel(row++, new BpDetailItem("connections.http3xx", BestPracticeType.HTTP_3XX_CODE, new BpConnectionsHttp3xxTablePanel()));

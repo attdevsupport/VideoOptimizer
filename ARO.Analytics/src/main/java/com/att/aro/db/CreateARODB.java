@@ -31,7 +31,7 @@ public class CreateARODB {
 	private String dbFolder = System.getProperty( "user.home" ) + "/orient/db";
 	//this file is created when a new instance of ODatabaseObject is created
 	private String runningFile = dbFolder + "/db.wmr";
-	private String url =  "local:" + dbFolder;
+	private String url =  "plocal:" + dbFolder;
 	private String user = "admin";
 	private String pass = "admin";
 	private static Object syncObj = new Object();

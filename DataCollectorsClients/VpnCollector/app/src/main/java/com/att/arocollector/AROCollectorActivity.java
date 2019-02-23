@@ -40,6 +40,7 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.security.KeyChain;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -63,6 +64,7 @@ import com.att.arotracedata.AROCpuTraceService;
 import com.att.arotracedata.AROGpsMonitorService;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,6 +73,9 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+
+import javax.security.cert.CertificateException;
+import javax.security.cert.X509Certificate;
 
 public class AROCollectorActivity extends Activity {
 
@@ -91,10 +96,7 @@ public class AROCollectorActivity extends Activity {
 	private VideoCapture videoCapture;
 	private MediaProjectionManager mediaProjectionManager;
 	private boolean printLog = false;
-	private String selectedApp = "";
 	private File tempCertFile;
-	private String CERTFILE = "cacert.pem";
-	private int RSRC = R.raw.cacert;
 	private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
 	@Override
@@ -141,8 +143,6 @@ public class AROCollectorActivity extends Activity {
 		Log.d(TAG,"Upload speed throttle value: "+ throttleUl + " kbps");
 
 		printLog = intent.getBooleanExtra(BundleKeyUtil.PRINT_LOG, false);
-
-		selectedApp = intent.getStringExtra(BundleKeyUtil.SELECTED_APP_NAME);
 
 		setVideoOption(intent);
 
@@ -316,7 +316,6 @@ public class AROCollectorActivity extends Activity {
 					captureVpnServiceIntent = new Intent(getApplicationContext(), CaptureVpnService.class);
 					captureVpnServiceIntent.putExtra("TRACE_DIR", Config.TRACE_DIR);
 					captureVpnServiceIntent.putExtra(BundleKeyUtil.PRINT_LOG, printLog);
-					captureVpnServiceIntent.putExtra(BundleKeyUtil.SELECTED_APP_NAME, selectedApp);
 
 					if(isExternalStorageWritable()){
 						Log.i(TAG, "TRACE_DIR: "+ Config.TRACE_DIR +"trace directory: "+
@@ -332,8 +331,6 @@ public class AROCollectorActivity extends Activity {
 
 					if (doVideoCapture()) {
 						getVideoCapturePermission();
-					} else {
-						pushAppToBackStack();
 					}
 
 				} else if (resultCode == RESULT_CANCELED) {

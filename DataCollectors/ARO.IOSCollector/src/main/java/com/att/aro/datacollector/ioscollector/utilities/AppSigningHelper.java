@@ -107,14 +107,14 @@ public final class AppSigningHelper {
 	}
 
 	public void deployAndLaunchApp() throws IOSAppException {
-		String cmdOutput = extProcRunner.executeCmdRunner(IDEVICE_INSTALLER + " --install " + APP_PATH, true, "success");
+		String cmdOutput = extProcRunner.executeCmdRunner(IDEVICE_INSTALLER + " --install " + Util.wrapText(APP_PATH), true, "success");
 		verifyAppDeployed(cmdOutput);
 		extractPackageName();
 		launchApp();
 	}
 	
 	private void extractPackageName() throws IOSAppException {
-		String command = "codesign -dv " + APP_PATH;
+		String command = "codesign -dv " + Util.wrapText(APP_PATH);
 		String res = extProcRunner.executeCmd(command);
 		StringReader sr = new StringReader(res);
 		Properties p = new Properties();
@@ -236,7 +236,7 @@ public final class AppSigningHelper {
 		// new content will be appended to the old file
 		extProcRunner.executeCmd(Commands.removeFileOrDir(ENTITLEMENTS_PLIST_PATH));
 		verifyEntitlementsPlistRemoved();
-		extProcRunner.executeCmd(Commands.createEntitlementsPlist());
+		extProcRunner.executeCmd(Commands.createEntitlementsPlist());            
 		verifyEntitlementsPlistCreated();
 
 		try {
@@ -390,36 +390,34 @@ public final class AppSigningHelper {
 		
 		static String unzipFile() {
 			StringBuilder strBuilder = new StringBuilder();
-			strBuilder.append("unzip " + Util.getVideoOptimizerLibrary() + Util.FILE_SEPARATOR + VO_ZIP_FILE);
+			strBuilder.append("unzip " + Util.wrapText(Util.getVideoOptimizerLibrary() + Util.FILE_SEPARATOR + VO_ZIP_FILE));
 			strBuilder.append(" -d ");
-			strBuilder.append(Util.getVideoOptimizerLibrary());
+			strBuilder.append(Util.wrapText(Util.getVideoOptimizerLibrary()));
 			return strBuilder.toString();
 		}
 		
 		static String removeFileOrDir(String path) {
 			StringBuilder strBuilder = new StringBuilder();
 			strBuilder.append("rm -rf ");		
-			strBuilder.append(path);
+			strBuilder.append(Util.wrapText(path));
 			return strBuilder.toString();
 		}
 		
 		static String createEntitlementsPlist() {
 			StringBuilder strBuilder = new StringBuilder();
 			strBuilder.append("codesign -d --entitlements :");		
-			strBuilder.append(ENTITLEMENTS_PLIST_PATH);
+			strBuilder.append(Util.wrapText(ENTITLEMENTS_PLIST_PATH));
 			strBuilder.append(" ");
-			strBuilder.append(APP_PATH);
+			strBuilder.append(Util.wrapText(APP_PATH));
 			return strBuilder.toString();
 		}		
 		
 		static String copyProvProfile(String devProvProfilePath) {
 			StringBuilder strBuilder = new StringBuilder();
 			strBuilder.append("cp ");
-			strBuilder.append(devProvProfilePath);
+			strBuilder.append(Util.wrapText(devProvProfilePath));
 			strBuilder.append(" ");
-			strBuilder.append(APP_PATH);
-			strBuilder.append(Util.FILE_SEPARATOR);
-			strBuilder.append(PROVISIONING_PROFILE_NAME);
+			strBuilder.append(Util.wrapText(APP_PATH + Util.FILE_SEPARATOR + PROVISIONING_PROFILE_NAME));
 			return strBuilder.toString();
 		}
 			
@@ -430,9 +428,9 @@ public final class AppSigningHelper {
 			strBuilder.append("\" -i ");
 			strBuilder.append(id);
 			strBuilder.append(" --entitlements ");
-			strBuilder.append(ENTITLEMENTS_PLIST_PATH);
+			strBuilder.append(Util.wrapText(ENTITLEMENTS_PLIST_PATH));
 			strBuilder.append(" ");
-			strBuilder.append(APP_PATH);
+			strBuilder.append(Util.wrapText(APP_PATH));
 			return strBuilder.toString();
 		}
 		
@@ -443,11 +441,9 @@ public final class AppSigningHelper {
 			strBuilder.append("\" -i ");
 			strBuilder.append(id);
 			strBuilder.append(" --entitlements ");
-			strBuilder.append(ENTITLEMENTS_PLIST_PATH);
+			strBuilder.append(Util.wrapText(ENTITLEMENTS_PLIST_PATH));
 			strBuilder.append(" ");
-			strBuilder.append(APP_PATH);
-			strBuilder.append(Util.FILE_SEPARATOR);
-			strBuilder.append("Frameworks/*");
+			strBuilder.append(Util.wrapText(APP_PATH + Util.FILE_SEPARATOR + "Frameworks/*"));
 			return strBuilder.toString();
 		}
 		
@@ -458,25 +454,23 @@ public final class AppSigningHelper {
 			strBuilder.append("\" -i ");
 			strBuilder.append(id);
 			strBuilder.append(" --entitlements ");
-			strBuilder.append(ENTITLEMENTS_PLIST_PATH);
+			strBuilder.append(Util.wrapText(ENTITLEMENTS_PLIST_PATH));
 			strBuilder.append(" ");
-			strBuilder.append(APP_PATH);
-			strBuilder.append(Util.FILE_SEPARATOR);
-			strBuilder.append(filename);
+			strBuilder.append(Util.wrapText(APP_PATH + Util.FILE_SEPARATOR + filename));
 			return strBuilder.toString();
 		}
 
 		static String listDirectory(String path) {
 			StringBuilder strBuilder = new StringBuilder();
 			strBuilder.append("ls ");
-			strBuilder.append(path);
+			strBuilder.append(Util.wrapText(path));
 			return strBuilder.toString();
 		}	
 		
 		static String getNumOfFilesInDir(String dirPath) {
 			StringBuilder strBuilder = new StringBuilder();
 			strBuilder.append("ls -1 ");
-			strBuilder.append(dirPath);
+			strBuilder.append(Util.wrapText(dirPath));
 			strBuilder.append(" | wc -l");
 			return strBuilder.toString();
 		}		
@@ -488,7 +482,7 @@ public final class AppSigningHelper {
 			strBuilder.append(" ");
 			strBuilder.append(value);
 			strBuilder.append("\" ");
-			strBuilder.append(filePath);
+			strBuilder.append(Util.wrapText(filePath));
 			return strBuilder.toString();
 		}
 	}

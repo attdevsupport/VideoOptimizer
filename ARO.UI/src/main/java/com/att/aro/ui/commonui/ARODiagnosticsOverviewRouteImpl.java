@@ -60,6 +60,7 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 	private final JTabbedPane jtabbedPane;
 	private static final int OVERVIEW_INDEX = 1;
 	private static final int DIAGNOSTIC_INDEX = 2;
+	private static final int WATERFALL_INDEX = 5;
 
 	public ARODiagnosticsOverviewRouteImpl(JTabbedPane jtabbedPane) {
 		this.jtabbedPane = jtabbedPane;
@@ -400,11 +401,16 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		} else if (routeInfo instanceof ImageCompressionEntry) {
 			diagnosticsTab.setHighlightedTCP(((ImageCompressionEntry) routeInfo).getHttpRequestResponse());
 		} else if (routeInfo instanceof MultipleConnectionsEntry) {
-			if (((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo().getSession() != null) {
-				diagnosticsTab.setHighlightedSessionTCP(((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo());
+			if (((MultipleConnectionsEntry) routeInfo).isMultiple()) {
+				jtabbedPane.setSelectedIndex(WATERFALL_INDEX);
 			} else {
-				diagnosticsTab.setHighlightedTCP(((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo());
+				if (((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo().getSession() != null) {
+					diagnosticsTab.setHighlightedSessionTCP(((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo());
+				} else {
+					diagnosticsTab.setHighlightedTCP(((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo());
+				}
 			}
+
 		} else if (routeInfo instanceof SpriteImageEntry) {
 			diagnosticsTab.setHighlightedTCP(((SpriteImageEntry) routeInfo).getHttpRequestResponse());
 		} else if (routeInfo instanceof UnnecessaryConnectionEntry) {
@@ -447,5 +453,10 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 			jtabbedPane.setSelectedIndex(oldPanelIndex);
 			LOG.error("Overview Tab cannot handle a type of " + routeInfo.getClass().getSimpleName() + " for updating");
 		}
+	}
+
+	@Override
+	public JTabbedPane getJtabbedPane() {
+		return jtabbedPane;
 	}
 }

@@ -15,6 +15,10 @@
 */
 package com.att.aro.core.pojo;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
  * Models errors.
  * <pre>
@@ -24,58 +28,13 @@ package com.att.aro.core.pojo;
  *     String description   // A useful description of ErrorCode
  * </pre>
  */
-public class ErrorCode {
-	
-	/**
-	 * An int to identify an ErrorCode
-	 */
+@NoArgsConstructor
+@AllArgsConstructor
+@Data
+public class ErrorCode {	
 	private int code;
-	
-	/**
-	 * A descriptive name for ErrorCode
-	 */
 	private String name;
-	
-	/**
-	 * A useful description of ErrorCode
-	 */
 	private String description;
-
-	/**
-	 * 
-	 * @return code
-	 */
-	public int getCode() {
-		return code;
-	}
-
-	public void setCode(int code) {
-		this.code = code;
-	}
-
-	/**
-	 * 
-	 * @return name of ErrorCode
-	 */
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	/**
-	 * 
-	 * @return description of ErrorCode
-	 */
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
 
 	@Override
 	public String toString() {

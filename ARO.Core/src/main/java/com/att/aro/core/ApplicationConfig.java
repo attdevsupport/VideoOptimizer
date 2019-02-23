@@ -36,14 +36,6 @@ public class ApplicationConfig {
 	private String appShortName;
 	@Value("${app.combined.name}")
 	private String appCombinedName;
-	@Value("${app.url.base}")
-	private String appUrlBase;
-	@Value("${app.url.base.new}")
-	private String appUrlBaseNew;
-	@Value("${app.url.base.vanity}")
-	private String vanityUrlBase;
-	@Value("${app.url.download}")
-	private String appUrlDownload;
 	@Value("${vpn.collector.name}")
 	private String vpnCollectorName;
 
@@ -92,56 +84,11 @@ public class ApplicationConfig {
 	}
 
 	/**
-	 * url base path, which will be changed based on application name sample:
-	 * https://www.att.com/{0}/bestpractices {0} could be ARO
-	 *
-	 * @return
-	 */
-	public String getAppUrlBase() {
-		return appUrlBase;
-	}
-
-	/**
-	 * url base path, which will be changed based on application name sample:
-	 * https://www.att.com/{0}/bestpractices {0} could be VO
-	 *
-	 * @return
-	 */
-	public String getAppUrlBaseNew() {
-		return appUrlBaseNew;
-	}
-
-	/**
-	 * download url, which will be changed based on application name sample in
-	 * application.properties file
-	 *
-	 * @return
-	 */
-	public String getAppUrlDownload() {
-		return appUrlDownload;
-	}
-
-	/**
 	 * get vpn apk collector name
 	 *
 	 * @return
 	 */
 	public String getVPNCollectorName() {
 		return vpnCollectorName;
-	}
-
-	/**
-	 * @return the vanityUrlBase
-	 */
-	public String getVanityUrlBase() {
-		return vanityUrlBase;
-	}
-
-	/**
-	 * @param vanityUrlBase
-	 *            the vanityUrlBase to set
-	 */
-	public void setVanityUrlBase(String vanityUrlBase) {
-		this.vanityUrlBase = vanityUrlBase;
 	}
 }

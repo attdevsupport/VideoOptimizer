@@ -18,6 +18,7 @@ package com.att.aro.ui.view.menu.view;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dialog;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -127,7 +128,7 @@ public class FilterProcessesDialog extends JDialog {
 		this.setContentPane(getJContentPane());
 		this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		this.pack();
-		this.setModal(true);
+		this.setModalityType(Dialog.DEFAULT_MODALITY_TYPE);
 		this.setLocationRelativeTo(super.getOwner());
 		getRootPane().setDefaultButton(okButton);
 		enableEscKeyCloseDialog = new EnableEscKeyCloseDialog(getRootPane(), this);

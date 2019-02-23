@@ -16,10 +16,11 @@ import com.att.aro.core.bestpractice.pojo.VideoChunkSizeResult;
 import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
 import com.att.aro.core.bestpractice.pojo.VideoNetworkComparisonResult;
 import com.att.aro.core.bestpractice.pojo.VideoRedundancyResult;
+import com.att.aro.core.bestpractice.pojo.VideoResolutionQualityResult;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.VideoTcpConnectionResult;
-import com.att.aro.core.bestpractice.pojo.VideoVariableBitRateResult;
+import com.att.aro.core.bestpractice.pojo.VideoVariableBitrateResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
@@ -28,6 +29,7 @@ public class VideoBestPractices implements IVideoBestPractices {
 	
 	@Autowired
 	private IAROService aroService;
+	private VideoResolutionQualityResult videoResolutionQualityResult;
 
 	public AROTraceData analyze(AROTraceData traceDataresult) {
 		PacketAnalyzerResult result = null;
@@ -48,7 +50,7 @@ public class VideoBestPractices implements IVideoBestPractices {
 		VideoChunkPacingResult videoChunkPacingResult = null;
 		VideoRedundancyResult videoRedundancyResult = null;
 		VideoConcurrentSessionResult videoConcurrentSessionResult = null;
-		VideoVariableBitRateResult videoVariableBitrateResult = null;
+		VideoVariableBitrateResult videoVariableBitrateResult = null;
 		
 		List<BestPracticeType> requests = BestPracticeType.getByCategory(Category.VIDEO);
 		List<AbstractBestPracticeResult> bpResults = traceDataresult.getBestPracticeResults();
@@ -86,7 +88,10 @@ public class VideoBestPractices implements IVideoBestPractices {
 					videoConcurrentSessionResult = (VideoConcurrentSessionResult)videoBPResult;
 					break;
 				case VIDEO_VARIABLE_BITRATE:
-					videoVariableBitrateResult = (VideoVariableBitRateResult) videoBPResult;
+					videoVariableBitrateResult = (VideoVariableBitrateResult)videoBPResult;
+					break;
+				case VIDEO_RESOLUTION_QUALITY:
+					videoResolutionQualityResult = (VideoResolutionQualityResult)videoBPResult;
 					break;
 				default:
 					break;
@@ -115,8 +120,10 @@ public class VideoBestPractices implements IVideoBestPractices {
 				bpResults.set(bpResults.indexOf(bestPractice), videoRedundancyResult);
 			}else if(bestPractice instanceof VideoConcurrentSessionResult){
 				bpResults.set(bpResults.indexOf(bestPractice), videoConcurrentSessionResult);
-			}else if(bestPractice instanceof VideoVariableBitRateResult){
+			}else if(bestPractice instanceof VideoVariableBitrateResult){
 				bpResults.set(bpResults.indexOf(bestPractice), videoVariableBitrateResult);
+			}else if(bestPractice instanceof VideoResolutionQualityResult){
+				bpResults.set(bpResults.indexOf(bestPractice), videoResolutionQualityResult);
 			}
 		}
 		

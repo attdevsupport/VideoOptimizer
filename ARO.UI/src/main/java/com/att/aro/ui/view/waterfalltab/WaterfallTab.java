@@ -28,44 +28,39 @@ import com.att.aro.ui.commonui.UIComponent;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.AROModelObserver;
 
-/**
- *
- *
- */
-public class WaterfallTab extends TabPanelJPanel{
+public class WaterfallTab extends TabPanelJPanel {
 	private static final long serialVersionUID = 1L;
-	
-	AROModelObserver waterfallObservable;
-	private IARODiagnosticsOverviewRoute route;
 
-	public WaterfallTab(IARODiagnosticsOverviewRoute route){
+	private AROModelObserver waterfallObservable;
+	private IARODiagnosticsOverviewRoute route;
+	private WaterfallPanel panel;
+
+	public WaterfallTab(IARODiagnosticsOverviewRoute route) {
 		super();
 		this.route = route;
 	}
-	public JPanel layoutDataPanel(){
-		
+
+	public JPanel layoutDataPanel() {
 		this.setLayout(new BorderLayout());
-		//Get the blue header panel with ATT logo.
-		String headerTitle = MessageFormat.format(ResourceBundleHelper.getMessageString("Waterfall.title"), 
-													ApplicationConfig.getInstance().getAppBrandName(),
-													ApplicationConfig.getInstance().getAppShortName());
+		// Get the blue header panel with ATT logo.
+		String title = ResourceBundleHelper.getMessageString("Waterfall.title");
+		String brandName = ApplicationConfig.getInstance().getAppBrandName();
+		String shortName = ApplicationConfig.getInstance().getAppShortName();
+		String headerTitle = MessageFormat.format(title, brandName, shortName);
 		this.add(UIComponent.getInstance().getLogoHeader(headerTitle), BorderLayout.NORTH);
-		WaterfallPanel wfPanel = new WaterfallPanel(this);
-		this.add(wfPanel.layoutDataPanel(), BorderLayout.CENTER);
+		panel = new WaterfallPanel(this);
+		this.add(panel.layoutDataPanel(), BorderLayout.CENTER);
 		waterfallObservable = new AROModelObserver();
-		waterfallObservable.registerObserver(wfPanel);
-		
+		waterfallObservable.registerObserver(panel);
 		return this;
-		
 	}
-	
-	public void refresh(AROTraceData aModel){
-		waterfallObservable.refreshModel(aModel);
+
+	public void refresh(AROTraceData data) {
+		waterfallObservable.refreshModel(data);
 	}
-	public void updateMainFrame(Object object){
-		
+
+	public void updateMainFrame(Object object) {
 		route.updateDiagnosticsTab(object);
-		
 	}
 
 }

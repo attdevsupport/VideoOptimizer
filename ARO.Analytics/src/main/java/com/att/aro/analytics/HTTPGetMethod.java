@@ -29,7 +29,6 @@ import org.apache.log4j.LogManager;
  * Created by Harikrishna Yaramachu on 3/18/14.
  */
 public class HTTPGetMethod {
-	@SuppressWarnings("unused")
 	private static final Logger LOGGER = LogManager.getLogger(HTTPGetMethod.class.getSimpleName());
 	private static final String GET_METHOD_NAME = "GET";
 	private static String applicationName = "VideoOptimizer";

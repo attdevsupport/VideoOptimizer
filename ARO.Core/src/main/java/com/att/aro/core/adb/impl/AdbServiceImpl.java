@@ -68,10 +68,8 @@ public class AdbServiceImpl implements IAdbService {
 	private IExternalProcessRunner extrunner;
 	private IFileManager fileManager;
 	private Settings configFile;
-	String adbPath = null;
-	
-
 	private IAndroid android;
+	
 	@Autowired
 	public void setAndroid(IAndroid android){
 		this.android = android;
@@ -126,9 +124,13 @@ public class AdbServiceImpl implements IAdbService {
 	 */
 	@Override
 	public String getAdbPath() {
-		return verifyAdbPath(getAROConfigFileLocation());
+		return verifyAdbPath(getAROConfigFileLocation(), false);
 	}
 
+	@Override
+	public String getAdbPath(boolean unfiltered) {
+		return verifyAdbPath(getAROConfigFileLocation(), unfiltered);
+	}
 	/**
 	 * <pre>Confirm adbPath, attempt repair from environmental variables. 
 	 *  ANDROID_HOME - path to the android sdk
@@ -136,7 +138,7 @@ public class AdbServiceImpl implements IAdbService {
 	 * @param adbPath path where adb should be found
 	 * @return path if adb is found, false if adb cannot be located
 	 */
-	private String verifyAdbPath(String adbPath) {
+	private String verifyAdbPath(String adbPath, boolean unfiltered) {
 
 		if (adbPath == null || !fileManager.fileExist(adbPath)) {
 
@@ -157,9 +159,7 @@ public class AdbServiceImpl implements IAdbService {
 			return null;
 
 		}
-
-		return Util.validateInputLink(adbPath);
-
+		return (Util.isMacOS() && !unfiltered) ? Util.escapeChars(adbPath) : Util.validateInputLink(adbPath);
 	}
 	
 	/**
@@ -237,7 +237,7 @@ public class AdbServiceImpl implements IAdbService {
 			return adb;
 		}
 
-		String adbPath = getAdbPath();
+		String adbPath = getAdbPath(true);
 		if (adbPath != null && adbPath.length() > 3) {
 
 			adb = initCreateBridge(adbPath);
@@ -394,12 +394,13 @@ public class AdbServiceImpl implements IAdbService {
 		if(StringUtils.isEmpty(id)) {
 			return new String[] {"Select a device"};
 		} else {
-			String response = extrunner.executeCmd(getAdbPath() + " -s " + id + " shell pm list packages");
+			String path = getAdbPath();
+			String response = extrunner.executeCmd(path + " -s " + id + " shell pm list packages");
 			String[] responseParts = response.split("\n");
 			List<String> applications = new ArrayList<>();
 			for(int i = 0; i < responseParts.length; i++) {
-				if(responseParts[i] != null || responseParts[i].length() > 8) {
-	                applications.add(responseParts[i].substring(8, responseParts[i].length()));
+				if(responseParts[i] != null && responseParts[i].length() > 8) {
+	                applications.add(responseParts[i].substring(8, responseParts[i].length()).trim());
 	          }
 			}
 			return applications.toArray(new String[applications.size()]);

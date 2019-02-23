@@ -77,7 +77,7 @@ public class Validator {
 		}
 		return null;
 	}
-
+	
 	private ErrorCode validateUplink(Commands cmd) {
 		if (cmd.getThrottleUL() != "-1") {
 			if (("ios".equals(cmd.getStartcollector()) ||"vpn_android".equals(cmd.getStartcollector())) 

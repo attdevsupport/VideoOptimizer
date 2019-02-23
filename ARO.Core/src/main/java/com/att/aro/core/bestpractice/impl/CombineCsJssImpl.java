@@ -156,8 +156,7 @@ public class CombineCsJssImpl implements IBestPractice {
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAllInefficientCssRequest(exportAllInefficientCssRequest);
 		result.setExportAllInefficientJsRequest(exportAllInefficientJsRequest);

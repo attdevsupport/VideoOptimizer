@@ -16,14 +16,19 @@
 package com.att.aro.ui.view.waterfalltab;
 
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -37,26 +42,24 @@ import com.att.aro.core.packetanalysis.pojo.RequestResponseTimeline;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
- * Popup window that appears on the waterfall diagram when a user selects a 
- * request/response in order to view details.
- * 
- *
+ * Popup window for waterfall diagram to view request/response details.
  *
  */
 public class WaterfallPopup extends JDialog{
 	
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	private static final String W_NA = ResourceBundleHelper.getMessageString("waterfall.na");
 	private static final String W_SECONDS = ResourceBundleHelper.getMessageString("waterfall.seconds");
 	private static final String WM_SECONDS = ResourceBundleHelper.getMessageString("waterfall.ms");
 	private static final String W_KB = ResourceBundleHelper.getMessageString("waterfall.kb");
 	private static final int MAX_CHARS_TO_DISPLAY = 1000;
+	private static final int GAP_SIZE = 10;
 	
 	private JTabbedPane tabbedPane;
 	private JPanel detailsPanel;
+	private JPanel buttonPanel;
+	private JPanel jButtonGrid;
+	private JButton okButton;
 	private JLabel urlValueLabel = new JLabel();
 	private JLabel ipValueLabel = new JLabel();
 	private JLabel hostValueLabel = new JLabel();
@@ -81,12 +84,62 @@ public class WaterfallPopup extends JDialog{
 		this.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
 		this.setSize(new Dimension(600, 400));
 		this.setMinimumSize(getDetailsPanel().getPreferredSize());
-		
+		this.add(getButtonPanel(), BorderLayout.SOUTH);
+		this.setModalityType(Dialog.DEFAULT_MODALITY_TYPE);
 		//TODO need set the parent window
 		this.setLocationRelativeTo(this); 
 	}
 	
+	/**
+	 * Initializes button panel
+	 * 
+	 * @return javax.swing.JPanel
+	 */
+	private JPanel getButtonPanel() {
+		if (buttonPanel == null) {
+			buttonPanel = new JPanel();
+			buttonPanel.setLayout(new BorderLayout());
+			buttonPanel.add(getJButtonGrid(), BorderLayout.EAST);
+		}
+		return buttonPanel;
+	}
 	
+	/**
+	 * Initializes jButtonGrid
+	 * 
+	 * @return javax.swing.JPanel
+	 */
+	private JPanel getJButtonGrid() {
+		if (jButtonGrid == null) {
+			GridLayout gridLayout = new GridLayout();
+			gridLayout.setRows(1);
+			gridLayout.setHgap(GAP_SIZE);
+			jButtonGrid = new JPanel();
+			jButtonGrid.setBorder(BorderFactory.createEmptyBorder(GAP_SIZE, GAP_SIZE, GAP_SIZE, GAP_SIZE));
+			jButtonGrid.setLayout(gridLayout);
+			jButtonGrid.add(getOkButton(), null);
+		}
+		return jButtonGrid;
+	}
+	
+	/**
+	 * Initializes and returns the OK Button
+	 */
+	private JButton getOkButton() {
+		if (okButton == null) {
+			okButton = new JButton();
+			okButton.setText("OK");
+			okButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					dispose();
+				}
+			});
+		}
+		return okButton;
+	}
+
+
 	/**
 	 * 
 	 * @return the tabbedPane
@@ -174,12 +227,11 @@ public class WaterfallPopup extends JDialog{
 		if (req == null) {
 			this.setVisible(false);
 		} else {
-			
+			this.setAlwaysOnTop(true);
 			this.setTitle(MessageFormat.format(ResourceBundleHelper.getMessageString("waterfall.popupTitle"), index));
 			
 			// Check to see if request/response is already displayed
 			if (req.equals(reqResp)) {
-//				logger.exiting("WaterfallPopup", "refresh");
 				return;
 			}
 
@@ -226,7 +278,6 @@ public class WaterfallPopup extends JDialog{
 			getResponsePanel().refresh(resp);
 		} 
 		this.reqResp = req;
-		//logger.exiting("WaterfallPopup", "refresh");
 	}
 	
 

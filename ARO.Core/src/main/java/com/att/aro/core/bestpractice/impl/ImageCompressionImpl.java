@@ -36,12 +36,11 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
@@ -99,6 +98,9 @@ public class ImageCompressionImpl implements IBestPractice {
 
 	@Value("${imageCompression.results}")
 	private String textResults;
+	
+	@Value("${bestPractices.noData}")
+	private String noData;
 
 	@Autowired
 	private IFileManager filemanager;
@@ -119,40 +121,44 @@ public class ImageCompressionImpl implements IBestPractice {
 		orginalImagesSize = 0L;
 		midQualImgsSize = 0L;
 
-		boolean isImagesCompressed = isImagesCompressed();
+		if (Util.isFilesforAnalysisAvailable(new File(imageFolderPath))) {
+			boolean isImagesCompressed = isImagesCompressed();
 
-		if (!isImagesCompressed) {
-			compressImages();
-		}
-		List<ImageCompressionEntry> entrylist = getEntryList();
-
-		result.setResults(entrylist);
-		String text = "";
-		String totalSavings = "";
-		if (entrylist.isEmpty()) {
-			result.setResultType(BPResultType.PASS);
-			text = MessageFormat.format(textResultPass, entrylist.size());
-			result.setResultText(text);
-		} else {
-			result.setResultType(BPResultType.FAIL);
-			long savings = orginalImagesSize - midQualImgsSize;
-			if (savings > 1024) {
-				totalSavings = Long.toString(savings / 1024) + " KB";
-			} else {
-				totalSavings = Long.toString(savings) + " B";
+			if (!isImagesCompressed) {
+				compressImages();
 			}
-			text = MessageFormat.format(textResults, totalSavings);
-			result.setResultText(text);
+			List<ImageCompressionEntry> entrylist = getEntryList();
+
+			result.setResults(entrylist);
+			String text = "";
+			String totalSavings = "";
+			if (entrylist.isEmpty()) {
+				result.setResultType(BPResultType.PASS);
+				text = MessageFormat.format(textResultPass, entrylist.size());
+				result.setResultText(text);
+			} else {
+				result.setResultType(BPResultType.FAIL);
+				long savings = orginalImagesSize - midQualImgsSize;
+				if (savings > 1024) {
+					totalSavings = Long.toString(savings / 1024) + " KB";
+				} else {
+					totalSavings = Long.toString(savings) + " B";
+				}
+				text = MessageFormat.format(textResults, totalSavings);
+				result.setResultText(text);
+			}
+		} else {
+			result.setResultText(noData);
+			result.setResultType(BPResultType.NO_DATA);
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		return result;
 	}
 
 	private boolean isImagesCompressed() {
-
 		if (filemanager.directoryExist(imageCompressionFolderPath)) {
 			File folder = new File(imageFolderPath);
 			File[] listOfFiles = folder.listFiles();

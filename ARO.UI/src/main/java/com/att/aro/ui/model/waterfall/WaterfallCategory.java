@@ -48,14 +48,30 @@ public class WaterfallCategory implements Comparable<WaterfallCategory> {
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
-	public String toString() {
-		return MessageFormat.format(
-				ResourceBundleHelper.getMessageString("waterfall.categoryText"),
-				index,
-				(reqResp != null && reqResp.getHostName() != null ? reqResp.getHostName() : ResourceBundleHelper.getMessageString("waterfall.unknownHost")),
-				(reqResp != null && reqResp.getObjName() != null ? reqResp.getObjName() : ""));
+	public String toString() {	
+		String objName = null;
+		if(reqResp != null) {
+			objName = reqResp.getObjName();
+		}
+		
+		objName = objName != null ? objName : ""; 
+		String waterfallCategory = ResourceBundleHelper.getMessageString("waterfall.categoryText");
+		return MessageFormat.format(waterfallCategory, index, (getHostName()), objName);
 	}
 
+	public String getHostName(){
+		String hostName;
+		if(reqResp != null && reqResp.getHostName() != null){
+			hostName = reqResp.getHostName();
+		}else if(reqResp != null && reqResp.getSession() != null && reqResp.getSession().getRemoteIP() != null){
+			hostName = reqResp.getSession().getRemoteIP().toString();
+		}else if(this.session != null && this.session.getDomainName() != null){
+			hostName = this.session.getDomainName();
+		}else{
+			hostName = ResourceBundleHelper.getMessageString("waterfall.unknownHost");
+		}
+		return hostName;
+	}
 	/**
 	 * Tooltip to be displayed for this item
 	 * @return
@@ -68,7 +84,7 @@ public class WaterfallCategory implements Comparable<WaterfallCategory> {
 		if (reqResp.isSsl()) {
 			return ResourceBundleHelper.getMessageString("waterfall.https");
 		} else {
-			return reqResp.getObjUri() != null ? reqResp.getObjUri().toString() : ResourceBundleHelper.getMessageString("waterfall.unknownHost");
+			return getHostName();
 		}
 	}
 

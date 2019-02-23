@@ -20,6 +20,8 @@ import java.util.Collection;
 
 import javax.swing.JTable;
 
+import org.apache.commons.collections.CollectionUtils;
+
 import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.ImageBPTable;
@@ -50,7 +52,7 @@ public class BpFileImageMDataTablePanel extends AbstractImageBpDetailTablePanel 
 	 */
 	public void setData(Collection<ImageMdataEntry> data) {
 		
-		setVisible(!data.isEmpty());
+		setVisible(CollectionUtils.isNotEmpty(data));
 
 		setScrollSize(MINIMUM_ROWS);
 		((ImageBPTableModel)tableModel).setData(data);

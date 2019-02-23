@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -148,6 +148,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice videoRedundancy;
 	private IBestPractice videoConcurrentSession;
 	private IBestPractice videoVariableBitrate;
+	private IBestPractice videoResolutionQuality;
 
 	@Autowired
 	public void setPacketAnalyzer(IPacketAnalyzer packetanalyzer) {
@@ -395,6 +396,12 @@ public class AROServiceImpl implements IAROService {
 	}
 	
 	@Autowired
+	@Qualifier("videoResolutionQuality")
+	public void setVideoResolutionQualityImpl(IBestPractice videoResolutionQuality) {
+		this.videoResolutionQuality = videoResolutionQuality;
+	}
+	
+	@Autowired
 	@Qualifier("httpsUsage")
 	public void setHttpsUsage(IBestPractice httpsUsage) {
 		this.httpsUsage = httpsUsage;
@@ -562,34 +569,35 @@ public class AROServiceImpl implements IAROService {
 			AnalysisFilter filter) throws IOException {
 		AROTraceData data = new AROTraceData();
 		PacketAnalyzerResult result = null;
-		try {
-			result = packetanalyzer.analyzeTraceDirectory(traceDirectory, profile, filter);
-		} catch (FileNotFoundException ex) {
-			data.setError(ErrorCodeRegistry.getTraceDirNotFound());
-			return data;
-		}
-		if (result == null) {
-			data.setError(ErrorCodeRegistry.getTraceDirectoryNotAnalyzed());
+		if (!filemanager.fileExist(traceDirectory + Util.FILE_SEPARATOR + "traffic.cap")) {
+			data.setError(ErrorCodeRegistry.getTrafficFileNotFound());
 			data.setSuccess(false);
 		} else {
-			if (result.getTraceresult() == null) {
-				// we set this on purpose
+			try {
+				result = packetanalyzer.analyzeTraceDirectory(traceDirectory, profile, filter);
+			} catch (FileNotFoundException ex) {
+				data.setError(ErrorCodeRegistry.getTraceDirNotFound());
+				return data;
+			}
+			if (result == null) {
+				data.setError(ErrorCodeRegistry.getTraceDirectoryNotAnalyzed());
 				data.setSuccess(false);
-				data.setError(ErrorCodeRegistry.getUnRecognizedPackets());
-			} else if (result.getTraceresult().getAllpackets() == null
-					|| result.getTraceresult().getAllpackets().size() == 0) {
-				data.setSuccess(false);
-				if (filemanager.fileExist(traceDirectory + Util.FILE_SEPARATOR + "traffic.cap")) {
+			} else {
+				if (result.getTraceresult() == null) {
+					// we set this on purpose
+					data.setSuccess(false);
+					data.setError(ErrorCodeRegistry.getUnRecognizedPackets());
+				} else if (result.getTraceresult().getAllpackets() == null
+						|| result.getTraceresult().getAllpackets().size() == 0) {
+					data.setSuccess(false);
 					data.setError(ErrorCodeRegistry.getPacketsNotFound());
 				} else {
-					data.setError(ErrorCodeRegistry.getTrafficFileNotFound());
+					List<AbstractBestPracticeResult> bestPractices = analyze(result, requests);
+					bestPractices.addAll(createEmptyResults());
+					data.setAnalyzerResult(result);
+					data.setBestPracticeResults(bestPractices);
+					data.setSuccess(true);
 				}
-			} else {
-				List<AbstractBestPracticeResult> bestPractices = analyze(result, requests);
-				bestPractices.addAll(createEmptyResults());
-				data.setAnalyzerResult(result);
-				data.setBestPracticeResults(bestPractices);
-				data.setSuccess(true);
 			}
 		}
 		return data;
@@ -636,8 +644,8 @@ public class AROServiceImpl implements IAROService {
 		List<AbstractBestPracticeResult> resultlist = new ArrayList<AbstractBestPracticeResult>();
 		IBestPractice worker = null;
 		if (requests.contains(BestPracticeType.USING_CACHE) || requests.contains(BestPracticeType.CACHE_CONTROL)
-				|| requests.contains(BestPracticeType.DUPLICATE_CONTENT)) {
-			this.createCacheAnalysis(result);
+				 || requests.contains(BestPracticeType.DUPLICATE_CONTENT)) {
+					this.createCacheAnalysis(result);
 		}
 		for (BestPracticeType type : requests) {
 			worker = getBPWorker(type);
@@ -761,6 +769,8 @@ public class AROServiceImpl implements IAROService {
 			return videoConcurrentSession;
 		case VIDEO_VARIABLE_BITRATE:
 			return videoVariableBitrate;
+		case VIDEO_RESOLUTION_QUALITY:
+			return videoResolutionQuality;
 		case HTTPS_USAGE:
 			return httpsUsage;
 		case TRANSMISSION_PRIVATE_DATA:

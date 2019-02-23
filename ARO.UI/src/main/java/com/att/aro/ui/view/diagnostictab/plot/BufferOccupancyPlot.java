@@ -108,11 +108,10 @@ public class BufferOccupancyPlot implements IPlot {
 					Number timestamp = dataset.getX(series, item);
 					Number bufferSize = dataset.getY(series, item);
 					StringBuffer tooltipValue = new StringBuffer();
-					tooltipValue.append(String.format("%.2f", bufferSize)+","+String.format("%.2f", timestamp));
+					tooltipValue.append(String.format("%.2f", (double) bufferSize / 1024) + "," + String.format("%.2f", timestamp));
  
 				    String[] value = tooltipValue.toString().split(",");
 					return (MessageFormat.format(BUFFEROCCUPANCY_TOOLTIP,value[0],value[1]));
-					//return "BufferSize: " + String.format("%.2f", bufferSize) + "KB \n Timestamp: " + String.format("%.2f", timestamp)+"S";
 				}
 
 			});

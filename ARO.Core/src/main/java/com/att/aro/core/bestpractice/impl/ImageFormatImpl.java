@@ -30,12 +30,11 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
@@ -51,7 +50,6 @@ import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
 import com.luciad.imageio.webp.WebPWriteParam;
 import com.sun.media.imageio.plugins.jpeg2000.J2KImageWriteParam;
-
 
 //FIXME ADD UNIT TESTS
 public class ImageFormatImpl implements IBestPractice {
@@ -76,9 +74,12 @@ public class ImageFormatImpl implements IBestPractice {
 	@Value("${imageFormat.results}")
 	private String textResults;
 
+	@Value("${bestPractices.noData}")
+	private String noData;
+
 	@Autowired
 	private IFileManager filemanager;
-	
+
 	long orginalImagesSize = 0L;
 	long convImgsSize = 0L;
 	PacketAnalyzerResult tracedataResult = null;
@@ -94,51 +95,58 @@ public class ImageFormatImpl implements IBestPractice {
 		imageFolderPath = tracePath + "Image" + System.getProperty("file.separator");
 		orginalImagesSize = 0L;
 		convImgsSize = 0L;
-		if (isAndroid()) {
-			convExtn = "webp";
-		} else {
-			convExtn = "jp2";
-		}
-
-		if (!isImagesConverted()) {
-			try {
-				formatImages();
-			} catch (Exception imgException) {
-				LOGGER.error("Image Format  exception : ", imgException);
-			}
-		}
-
-		List<ImageMdataEntry> entrylist = getEntryList();
-
-		result.setResults(entrylist);
-		String text = "";
-		String totalSavings = "";
 		
-		if (entrylist.isEmpty()) {
-			result.setResultType(BPResultType.PASS);
-			text = MessageFormat.format(textResultPass, entrylist.size());
-			result.setResultText(text);
-		} else {
-			result.setResultType(BPResultType.FAIL);
-			long savings = orginalImagesSize - convImgsSize;
-			long savingsKB = savings / 1024;
-			int digits = (int) (Math.log10(savingsKB) + 1);
-			if (digits > 3) {
-				totalSavings = String.format("%.1f", ((double) savings / 1048576)) + "MB";
+		
+		if (Util.isFilesforAnalysisAvailable(new File(imageFolderPath))) {
+			if (isAndroid()) {
+
+				convExtn = "webp";
 			} else {
-				totalSavings = Long.toString(savingsKB) + "KB";
+				convExtn = "jp2";
 			}
-			String percentageSaving = String.valueOf(Math.round(((double) savings / orginalImagesSize) * 100));
-			text = MessageFormat.format(textResults,entrylist.size(), totalSavings, percentageSaving);
-			result.setResultText(text);
+
+			if (!isImagesConverted()) {
+				try {
+					formatImages();
+				} catch (Exception imgException) {
+					LOGGER.error("Image Format  exception : ", imgException);
+				}
+			}
+
+			List<ImageMdataEntry> entrylist = getEntryList();
+
+			result.setResults(entrylist);
+			String text = "";
+			String totalSavings = "";
+
+			if (entrylist.isEmpty()) {
+				result.setResultType(BPResultType.PASS);
+				text = MessageFormat.format(textResultPass, entrylist.size());
+				result.setResultText(text);
+			} else {
+				result.setResultType(BPResultType.FAIL);
+				long savings = orginalImagesSize - convImgsSize;
+				long savingsKB = savings / 1024;
+				int digits = (int) (Math.log10(savingsKB) + 1);
+				if (digits > 3) {
+					totalSavings = String.format("%.1f", ((double) savings / 1048576)) + "MB";
+				} else {
+					totalSavings = Long.toString(savingsKB) + "KB";
+				}
+				String percentageSaving = String.valueOf(Math.round(((double) savings / orginalImagesSize) * 100));
+				text = MessageFormat.format(textResults, entrylist.size(), totalSavings, percentageSaving);
+				result.setResultText(text);
+			}
+		} else {
+			result.setResultText(noData);
+			result.setResultType(BPResultType.NO_DATA);
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		return result;
 	}
-
 
 	public boolean isAndroid() {
 		boolean isAndroid = false;
@@ -223,7 +231,7 @@ public class ImageFormatImpl implements IBestPractice {
 					}
 				}
 			}
-			}
+		}
 		return imgEntryList;
 	}
 
@@ -251,7 +259,7 @@ public class ImageFormatImpl implements IBestPractice {
 				}
 			}
 		}
-		
+
 		try {// Time out after 10 minutes
 			exec.shutdown();
 			exec.awaitTermination(10, TimeUnit.MINUTES);
@@ -268,7 +276,7 @@ public class ImageFormatImpl implements IBestPractice {
 
 			RenderedImage renderedImage = ImageIO.read(new File(orgImagePath));
 			formattedImagePath = imageFolderPath + "Format" + System.getProperty("file.separator")
-			+ imgfile.substring(0, imgfile.lastIndexOf(".") + 1) + convExtn;
+					+ imgfile.substring(0, imgfile.lastIndexOf(".") + 1) + convExtn;
 			imageOutputStream = ImageIO.createImageOutputStream(new File(formattedImagePath));
 
 			if (renderedImage != null) {
@@ -299,7 +307,7 @@ public class ImageFormatImpl implements IBestPractice {
 				}
 			}
 			imageOutputStream.close();
-		
+
 		} catch (IOException e) {
 			LOGGER.error("Format Image exception : ", e);
 		}

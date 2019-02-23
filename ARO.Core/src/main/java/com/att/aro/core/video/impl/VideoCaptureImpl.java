@@ -174,6 +174,11 @@ public class VideoCaptureImpl implements IVideoCapture {
 				} catch (IOException ioExp) {
 					if (isUSBConnected) {
 						iExceptionCount++;
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							LOGGER.error("Thread Interrupted Exception at LiveScreen Capture: ", e);
+						}
 						LOGGER.error("IOException ", ioExp);
 					}
 				} catch (TimeoutException timeOutExp) {

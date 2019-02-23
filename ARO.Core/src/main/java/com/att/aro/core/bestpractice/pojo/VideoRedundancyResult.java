@@ -23,6 +23,16 @@ public class VideoRedundancyResult extends AbstractBestPracticeResult {
 	private int countDuplicate;
 	
 	@Override
+	public String toString() {
+		StringBuilder temp = new StringBuilder(super.toString());
+		temp.append("\n\tRedundantPercentage : ").append(redundantPercentage);
+		temp.append("\n\tCountSegment        : ").append(countSegment);
+		temp.append("\n\tCountRedundant      : ").append(countRedundant);
+		temp.append("\n\tCountDuplicate      : ").append(countDuplicate);
+		return temp.toString();
+	}
+	
+	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.VIDEO_REDUNDANCY;
 	}

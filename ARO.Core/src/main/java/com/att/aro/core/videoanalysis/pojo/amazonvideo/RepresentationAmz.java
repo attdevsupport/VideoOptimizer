@@ -24,6 +24,8 @@ public class RepresentationAmz {
 
 	String bandwidth = "";
 	String url = "";
+	String width = "";
+	String height = "";
 	EncodedSegmentListAmz encodedSegment;
 	SegmentListAmz segmentList;
 
@@ -39,10 +41,8 @@ public class RepresentationAmz {
 			strblr.append(encodedSegment);
 		}
 		if (segmentList != null) {
-//			for (SegmentListAmz segment : segmentList) {
-				strblr.append("\n\t\t\t\tSegmentListAmz :");
-				strblr.append(segmentList);
-//			}
+			strblr.append("\n\t\t\t\tSegmentListAmz :");
+			strblr.append(segmentList);
 		}
 		return strblr.toString();
 	}
@@ -58,6 +58,24 @@ public class RepresentationAmz {
 
 	public String getBandwidth() {
 		return bandwidth;
+	}
+
+	@XmlAttribute
+	public void setWidth(String width) {
+		this.width = width;
+	}
+
+	public String getWidth() {
+		return width;
+	}
+
+	@XmlAttribute
+	public void setHeight(String height) {
+		this.height = height;
+	}
+
+	public String getHeight() {
+		return height;
 	}
 
 	@XmlAttribute

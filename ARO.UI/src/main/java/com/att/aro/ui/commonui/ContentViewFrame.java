@@ -157,7 +157,11 @@ public class ContentViewFrame extends JFrame {
 				imagelJLabel.setVerticalAlignment(JLabel.CENTER);
 				result = imagelJLabel;
 			} else {
-				JTextArea contentTxtArea = new JTextArea(httpHelper.getContentString(rrInfo, session));
+				String contentString = httpHelper.getContentString(rrInfo, session);
+				if(contentString.length() > 100*1000) {//100kb
+					contentString = insertPeriodically(contentString, 1000);
+				}
+				JTextArea contentTxtArea = new JTextArea(contentString);
 				contentTxtArea.setLineWrap(true);
 				contentTxtArea.setEditable(false);
 				result = contentTxtArea;
@@ -167,6 +171,23 @@ public class ContentViewFrame extends JFrame {
 		return contentComponent;
 	}
 
+	//Ref https://stackoverflow.com/questions/537174/putting-char-into-a-java-string-for-each-n-characters
+	//TODO Add new lines at the end of element instead of every x characters
+	private String insertPeriodically(String text, int period) {
+		String insert = "\n";
+		StringBuilder builder = new StringBuilder(text.length() + insert.length() * (text.length() / period) + 1);
+		int index = 0;
+		String prefix = "";
+		while (index < text.length()) {
+			// Don't put the insert in the very first iteration.
+			// This is easier than appending it *after* each substring
+			builder.append(prefix);
+			prefix = insert;
+			builder.append(text.substring(index, Math.min(index + period, text.length())));
+			index += period;
+		}
+		return builder.toString();
+	}
 	
 	private JScrollPane getMetadatContentComponent() throws ContentException,
 			IOException, Exception {

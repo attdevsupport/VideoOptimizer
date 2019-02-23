@@ -33,7 +33,6 @@ import java.text.MessageFormat;
 import java.util.Collection;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -47,16 +46,13 @@ import javax.swing.table.JTableHeader;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.IVideoBestPractices;
+import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
-import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
-import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
@@ -174,17 +170,22 @@ public class AccordionComponent extends JPanel implements ActionListener {
 		return enableCheckBox;
 	}
 
-	public void updateTitleButton(AROTraceData traceData) {
+	public void updateTitleButton(AROTraceData analyzerResult) {
 		if (titlePanel != null) {
-			analyzerResult = traceData;
-			for (AROManifest manifest : analyzerResult.getAnalyzerResult().getVideoUsage().getManifests()) {
-				
-				if (manifest.equals(aroManifest) 
-						&& ((!aroManifest.getVideoEventsBySegment().isEmpty()) 
-								&& ((VideoEvent) aroManifest.getVideoEventsBySegment().toArray()[0]).getSegment() >= 0)) {
-					aroManifest.setSelected(manifest.isSelected());
-					enableCheckBox.setSelected(aroManifest.isSelected());
-					break;
+			if (analyzerResult.getAnalyzerResult() != null) {
+				VideoUsage videoUsage = analyzerResult.getAnalyzerResult().getVideoUsage();
+				for (AROManifest manifest : videoUsage.getManifests()) {
+
+					if (manifest.equals(aroManifest)
+							&& ((!aroManifest.getVideoEventsBySegment().isEmpty()) && ((VideoEvent) aroManifest.getVideoEventsBySegment().toArray()[0]).getSegment() >= 0)) {
+						aroManifest.setSelected(manifest.isSelected());
+						enableCheckBox.setSelected(aroManifest.isSelected());
+						videoUsage.setValidatedCount(false);
+						break;
+					}
+				}
+				if (videoUsage.isValidatedCount()) {
+					videoUsage.scanManifests();
 				}
 			}
 		}
@@ -193,17 +194,21 @@ public class AccordionComponent extends JPanel implements ActionListener {
 	private IVideoBestPractices videoBestPractices = ContextAware.getAROConfigContext().getBean(IVideoBestPractices.class);
 
 	protected void reAnalyze() {
-		((MainFrame)aroView).getDiagnosticTab().getGraphPanel().refresh(analyzerResult);
+		VideoUsage videoUsage = analyzerResult.getAnalyzerResult().getVideoUsage();
+		if (videoUsage != null) {
+			videoUsage.scanManifests();
+		}
+		((MainFrame) aroView).getDiagnosticTab().getGraphPanel().refresh(analyzerResult);
 		analyzerResult = videoBestPractices.analyze(analyzerResult);
-		((MainFrame)aroView).getDiagnosticTab().getGraphPanel().setTraceData(analyzerResult);
-		((MainFrame)aroView).getVideoTab().refreshLocal(analyzerResult);
+		((MainFrame) aroView).getDiagnosticTab().getGraphPanel().setTraceData(analyzerResult);
+		((MainFrame) aroView).getVideoTab().refreshLocal(analyzerResult);
 	}
 
 	private void updateHiddenPanelContent(boolean manifestFlag) {
 		String text = "";
-		if(Util.isWindowsOS()){
+		if (Util.isWindowsOS()) {
 			tableHeight = HEIGHT_WIN;
-		}else if(Util.isLinuxOS()){
+		} else if (Util.isLinuxOS()) {
 			tableHeight = HEIGHT_LINUX;
 		}
 		if (manifestFlag) {

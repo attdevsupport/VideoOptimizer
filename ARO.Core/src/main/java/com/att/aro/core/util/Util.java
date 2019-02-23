@@ -46,6 +46,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.codehaus.plexus.util.FileUtils;
 
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
@@ -54,12 +55,11 @@ import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.settings.impl.SettingsImpl;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
 
 public final class Util {
 	public static final String DUMPCAP = "dumpCap";
 	public static final String FFMPEG = "ffmpeg";
-	public static final String RECENT_MENU = "RECENT_MENU";
+	public static final String RECENT_TRACES = "RECENT_TRACES";
 	public static final String FFPROBE = "ffprobe";
 	public static final String IDEVICESCREENSHOT = "iDeviceScreenshot";
 
@@ -856,10 +856,6 @@ public final class Util {
 		}
 		return logLevel;
 	}
-	
-	public static boolean checkDevMode() {
-		return SettingsImpl.getInstance().checkAttributeValue("env", "dev");
-	}
 
 	public static Comparator<String> getFloatSorter() {
 		if (floatValComparator == null) {
@@ -922,26 +918,42 @@ public final class Util {
 	}
 
 	public static String validateInputLink(String inputValue) {
-		if (StringUtils.isNotBlank(inputValue)) {
-			if (inputValue.trim().indexOf(" ") > 0) {
-				inputValue = "\"" + inputValue + "\"";
-			}
+		if (StringUtils.isNotBlank(inputValue) && Util.isWindowsOS()) {
+			inputValue = wrapText(inputValue);
 		}
 		return inputValue;
 	}
 
+	public static String escapeChars(String inputValue) {
+		String result = inputValue;
+		char[] chArray = inputValue.toCharArray();
+		for (int i = 0; i < chArray.length; i++) {
+			int ascii = (int) chArray[i];
+			// number ranges in the condition check showing special characters
+			// ascii value ranges
+			if ((ascii >= 32 && ascii <= 45) || (ascii >= 58 && ascii <= 64) || (ascii >= 91 && ascii <= 96)
+					|| (ascii >= 123 && ascii <= 126)) {
+				if (!result.contains("\\" + chArray[i])) {
+					result = result.replace("" + chArray[i], "\\" + chArray[i]);
+				}
+			}
+		}
+
+		return result;
+	}
+
 	/***
-	 * Reads the RECENT_MENU parameter from the config.properties and creates a
+	 * Reads the RECENT_TRACES parameter from the config.properties and creates a
 	 * map with folder as key and tracepath as value
 	 * 
 	 * @return Map<String, String
 	 */
 	public static Map<String, String> getRecentOpenMenuItems() {
 		Map<String, String> recentMenuItems = new LinkedHashMap<String, String>();
-		String recentTraces = SettingsImpl.getInstance().getAttribute("RECENT_MENU");
+		String recentTraces = SettingsImpl.getInstance().getAttribute(RECENT_TRACES);
 		if (!StringUtils.isEmpty(recentTraces)) {
 			if (recentTraces.charAt(0) != '\"') {
-				SettingsImpl.getInstance().setAndSaveAttribute("RECENT_MENU", "");
+				SettingsImpl.getInstance().setAndSaveAttribute(RECENT_TRACES, "");
 			} else {
 				String[] recentItems = getRecentlyOpenedTraces();
 				if (recentItems != null) {
@@ -960,7 +972,7 @@ public final class Util {
 	}
 
 	public static String[] getRecentlyOpenedTraces() {
-		String recentMenuConfig = SettingsImpl.getInstance().getAttribute("RECENT_MENU");
+		String recentMenuConfig = SettingsImpl.getInstance().getAttribute(RECENT_TRACES);
 		String[] recentMenuItem = recentMenuConfig.split("(?<!\\\\)\",\"");
 		recentMenuItem[0] = recentMenuItem[0].replaceFirst("\"", "");
 		int len = recentMenuItem.length - 1;
@@ -1004,8 +1016,14 @@ public final class Util {
 		return "$'" + password.replace("\\", "\\x5c").replace("!", "\\x21").replace("'", "\\x27") + "'";
 	}
 
+	public static String wrapText(String path){
+		if(path == null){
+			return "";
+		}
+		return "\"" + path + "\"";
+	}
 	/***
-	 * Updates the recent trace Directory to the RECENT_MENU in
+	 * Updates the recent trace Directory to the RECENT_TRACES in
 	 * config.properties Makes sure there are only 5 or less items in the
 	 * attribute
 	 * 
@@ -1014,6 +1032,7 @@ public final class Util {
 	public static void updateRecentItem(String traceDirectory) {
 		StringBuilder recentMenuBuilder = new StringBuilder();
 		String value = escapeCsv(escapeJava(traceDirectory));
+		
 		if (value.startsWith(QUOTE)) {
 			recentMenuBuilder.append(value);
 		} else {
@@ -1021,17 +1040,18 @@ public final class Util {
 			recentMenuBuilder.append(value);
 			recentMenuBuilder.append(QUOTE);
 		}
+		
 		int counter = 1;
-		String recentMenuConfig = SettingsImpl.getInstance().getAttribute("RECENT_MENU");
+		String recentMenuConfig = SettingsImpl.getInstance().getAttribute(RECENT_TRACES);
 		if (recentMenuConfig != null && !recentMenuConfig.isEmpty()) {
 			if (recentMenuConfig.charAt(0) == '\"') {
 				String[] recentMenu = getRecentlyOpenedTraces();
 				if (recentMenu != null) {
 					for (int i = 0; i < recentMenu.length; i++) {
 						if (counter < 5) {
-							if (!recentMenu[i].equals(traceDirectory) && new File(recentMenu[i]).exists()) {
+							if (!recentMenu[i].equals(value) && new File(recentMenu[i]).exists()) {
 								recentMenuBuilder.append(",");
-								String recentValue = escapeCsv(escapeJava(recentMenu[i]));
+								String recentValue = recentMenu[i];
 								if (recentValue.startsWith(QUOTE)) {
 									recentMenuBuilder.append(recentValue);
 								} else {
@@ -1046,7 +1066,7 @@ public final class Util {
 				}
 			}
 		}
-		SettingsImpl.getInstance().setAndSaveAttribute("RECENT_MENU", recentMenuBuilder.toString());
+		SettingsImpl.getInstance().setAndSaveAttribute("RECENT_TRACES", recentMenuBuilder.toString());
 	}
 	
 	public static boolean isStartupDelaySet(VideoUsage videoUsage) {
@@ -1056,18 +1076,35 @@ public final class Util {
 		}
 		return isStartupDelaySet;
 	}
-
-	public static boolean isTraceWithValidManifestsSelected(VideoUsage videoUsage) {
-		boolean isTraceWithValidManifestsSelected = false;
-		if (videoUsage != null && !MapUtils.isEmpty(videoUsage.getAroManifestMap())) {
-			for (AROManifest aroManifest : videoUsage.getManifests()) {
-				if (aroManifest != null && true == aroManifest.isSelected() && aroManifest.isValid()) {
-					isTraceWithValidManifestsSelected = true;
+	
+	public static boolean isFilesforAnalysisAvailable(File folderPath) {
+		boolean isFilesforAnalysisAvailable = false;
+		if (folderPath != null && folderPath.exists() && folderPath.isDirectory()) {
+			File[] listOfFiles = folderPath.listFiles();
+			if (listOfFiles != null && listOfFiles.length != 0) {
+				for (int i = 0; i < listOfFiles.length; i++) {
+					if (listOfFiles[i].isFile() && listOfFiles[i].getPath().lastIndexOf(".jp") > 0) {
+						isFilesforAnalysisAvailable = isJPG(listOfFiles[i],
+								listOfFiles[i].getPath().substring(listOfFiles[i].getPath().lastIndexOf(".jp") + 1));
+						if (isFilesforAnalysisAvailable) {
+							break;
+						}
+					}
 				}
 			}
-			
 		}
-		return isTraceWithValidManifestsSelected;
+		return isFilesforAnalysisAvailable;
 	}
-	
+
+	public static boolean hasTrafficFile(File traceFile) {
+		if (traceFile != null && traceFile.isDirectory()) {
+			String[] fileList = traceFile.list();
+			if (fileList != null && fileList.length != 0) {
+				if (FileUtils.fileExists(traceFile.getAbsolutePath() + FILE_SEPARATOR + "traffic.cap")) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }

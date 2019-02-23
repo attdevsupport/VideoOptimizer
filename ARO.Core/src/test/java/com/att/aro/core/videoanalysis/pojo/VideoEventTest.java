@@ -30,7 +30,6 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetreader.pojo.Packet;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
-import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 
 public class VideoEventTest {
@@ -44,18 +43,9 @@ public class VideoEventTest {
 		Packet packet = new Packet(10, 10, 3, 3, new byte[]{0x01});
 		PacketInfo packetInfo = new PacketInfo(packet);
 		response.setLastDataPacket(packetInfo);
-		VideoEvent ve = new VideoEvent(new VideoEventData()
-				,new byte []{(byte)0x01}
-				, new AROManifest(VideoType.DASH, resp, Util.getVideoOptimizerLibrary())
-				, 1.0
-				, "4"
-				, rangeList
-				, 10.0
-				, 10.0
-				, 10.0
-				, 10.0
-				, response
-				);
+		VideoEventData ved = new VideoEventData();
+		AROManifest manifest = new AROManifest(VideoType.DASH, resp, "VOLibrary");
+		VideoEvent ve = new VideoEvent(ved, "A".getBytes(), manifest, 1.0, "4", rangeList, 10.0, 10.0, 10.0, 10.0, response);
 		return ve;
 	}
 	

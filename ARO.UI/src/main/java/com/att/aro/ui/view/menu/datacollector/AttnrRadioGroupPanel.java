@@ -21,10 +21,6 @@ import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.text.MessageFormat;
-import java.util.List;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JPanel;
@@ -32,7 +28,7 @@ import javax.swing.JRadioButton;
 
 import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
-import com.att.aro.core.util.NetworkUtil;
+import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -40,8 +36,6 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 
 	private static final long serialVersionUID = 1L;
-	private static final String SHARED_NETWORK_INTERFACE = "bridge100";
-	private static final String PORT_NUMBER = "8080";
 
 	private String attnrSlider;
 	private String attnrLoadFile;
@@ -115,12 +109,18 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 				miniAtnr.setConstantThrottle(true);
 				miniAtnr.setFreeThrottle(false);
 				miniAtnr.setLoadProfile(false);
-				startDialog.resizeLarge();
-				if(DataCollectorType.IOS.equals(deviceInfo.getCollector().getType())) {
-				MessageDialogFactory.getInstance().showInformationDialog(this, messageComposed(),
-						ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.title"));
-			}
-
+				if(ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
+					startDialog.resizeUltra();
+				} else {
+					startDialog.resizeLarge();
+				}
+				DataCollectorType collectorType = deviceInfo.getCollector().getType();
+				if(DataCollectorType.IOS.equals(collectorType) && deviceInfo.isSharedNetworkActive()){
+					MessageDialogFactory.getInstance().showInformationDialog(this, deviceInfo.messageComposed(),
+							DeviceDialogOptions.ATTENUATION_TITLE);
+				}else if(DataCollectorType.IOS.equals(collectorType)) {
+					new IOSStepsDialog(startDialog);
+				}
 			}else if(attnrLoadFile.equals(itemStr)) {
 				parentPanel.getAttnrHolder().remove(getThroughputPanel());
 				getThroughputPanel().resetComponent();
@@ -144,7 +144,11 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 	}
 
 	private void resizeStartDialog() {
-		startDialog.resizeMedium();
+		if(ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
+			startDialog.resizeLarge();
+		} else {
+			startDialog.resizeMedium();
+		}
 	}
 
 
@@ -188,37 +192,6 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 		miniAtnr.setFreeThrottle(true);
 		miniAtnr.setLoadProfile(false);
 		defaultBtn.setSelected(true);
-	}
-
-	private String messageComposed() {
-		return MessageFormat.format(
-				ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.reminder"),
-				ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.warning"),
-				ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.status"),
-				detectWifiSharedActive(), ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.ip"),
-				detectWifiShareIP(), ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.port"),
-				PORT_NUMBER);
-
-	}
-
-	private String detectWifiShareIP() {
-		if (NetworkUtil.isNetworkUp(SHARED_NETWORK_INTERFACE)) {
-			List<InetAddress> listIp = NetworkUtil.listNetIFIPAddress(SHARED_NETWORK_INTERFACE);
-			for (InetAddress ip : listIp) {
-				if (ip instanceof Inet4Address) {
-					String ipString = ip.toString().replaceAll("/", "");
-					return ipString;
-				}
-			}
-		}
-		return "N/A ";
-	}
-
-	private String detectWifiSharedActive() {
-		if (NetworkUtil.isNetworkUp(SHARED_NETWORK_INTERFACE)) {
-			return "Active";
-		}
-		return "InActive";
 	}
 	
 	public JRadioButton getSliderBtn() {

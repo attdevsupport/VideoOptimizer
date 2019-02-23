@@ -301,11 +301,13 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 		Session session = Mockito.mock(Session.class);
 		PacketInfo pi1 = Mockito.mock(PacketInfo.class);
 		Mockito.when(pi1.getTimeStamp()).thenReturn(1000.0d);
-
+		Mockito.when(pi1.getTcpFlagString()).thenReturn("F");
+		
 		TCPPacket mTcpPacket = Mockito.mock(TCPPacket.class);
 		
 		PacketInfo pi2 = Mockito.mock(PacketInfo.class);
 		Mockito.when(pi2.getPacket()).thenReturn(mTcpPacket);
+		Mockito.when(pi2.getTcpFlagString()).thenReturn("");
 
 		Mockito.when(session.isUDP()).thenReturn(false);
 

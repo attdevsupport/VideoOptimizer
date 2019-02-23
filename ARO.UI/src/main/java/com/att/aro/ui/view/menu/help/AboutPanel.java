@@ -123,8 +123,7 @@ public class AboutPanel extends JPanel {
 	 * Creates the release note click-able label on the about dialog
 	 */
 	private JLabel getJReleaseNotePanel() {
-		final String url = MessageFormat.format(RES_BUN.getString("About.releaseNotesUrl"), 
-												ApplicationConfig.getInstance().getVanityUrlBase());
+		final String url = ResourceBundleHelper.getURLResource("about.releasenotes.url");
 		
 		HyperlinkLabel releaseNoteLabel = new HyperlinkLabel(url, SwingConstants.CENTER);
 		Font font = releaseNoteLabel.getFont();
@@ -146,8 +145,7 @@ public class AboutPanel extends JPanel {
      * Creates the support click-able label on the about dialog
      */
     private JLabel getJSupportPanel() {
-    	final String url = MessageFormat.format(RES_BUN.getString("About.supportUrl"), 
-    											ApplicationConfig.getInstance().getAppUrlBase());
+    	final String url = ResourceBundleHelper.getURLResource("about.support.url");
     	
         HyperlinkLabel supportLabel = new HyperlinkLabel(url, SwingConstants.CENTER);
         Font font = supportLabel.getFont();

@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -24,6 +25,7 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.PeriodicTransferResult;
 import com.att.aro.core.configuration.pojo.Profile;
+import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.ICacheAnalysis;
 import com.att.aro.core.packetanalysis.IPacketAnalyzer;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
@@ -40,6 +42,7 @@ import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.util.Util;
 
 public class AROServiceImplTest extends BaseTest {
+	private static final int TOTAL_BPTESTS = 46;
 	@InjectMocks
 	AROServiceImpl aro;
 	@Mock
@@ -48,6 +51,8 @@ public class AROServiceImplTest extends BaseTest {
 	ICacheAnalysis cacheAnalyzer;
 	@Mock
 	IBestPractice worker;
+	@Mock
+	IFileManager fileManager;
 	@Mock
 	transient VersionInfo info;
 	@Mock(name = "periodicTransfer")
@@ -130,10 +135,12 @@ public class AROServiceImplTest extends BaseTest {
 	IBestPractice httpsUsage;
 	@Mock(name = "transmissionPrivateData")
 	IBestPractice transmissionPrivateData;
+	
 
 	@Before
 	public void setup() {
 		aro = new AROServiceImpl();
+		fileManager = mock(IFileManager.class);
 		MockitoAnnotations.initMocks(this);
 	}
 
@@ -227,7 +234,7 @@ public class AROServiceImplTest extends BaseTest {
 		SettingsUtil.saveBestPractices(req);
 		try {
 			AROTraceData testResult = aro.analyzeFile(req, "traffic.cap");
-			assertEquals(45, testResult.getBestPracticeResults().size());
+			assertEquals(TOTAL_BPTESTS, testResult.getBestPracticeResults().size());
 		} finally {
 			SettingsUtil.saveBestPractices(list);
 		}
@@ -299,7 +306,7 @@ public class AROServiceImplTest extends BaseTest {
 		when(cacheAnalyzer.analyze(anyListOf(Session.class))).thenReturn(cacheAnalysis);
 		try {
 			AROTraceData testResult = aro.analyzeDirectory(req, Util.getCurrentRunningDir());
-			assertEquals(45, testResult.getBestPracticeResults().size());
+			assertEquals(null, testResult.getBestPracticeResults());
 		} finally {
 			SettingsUtil.saveBestPractices(list);
 		}
@@ -311,7 +318,7 @@ public class AROServiceImplTest extends BaseTest {
 		when(packetanalyzer.analyzeTraceDirectory(any(String.class), any(Profile.class), any(AnalysisFilter.class)))
 				.thenReturn(null);
 		AROTraceData testResult = aro.analyzeDirectory(req, Util.getCurrentRunningDir());
-		assertEquals(103, testResult.getError().getCode());
+		assertEquals(108, testResult.getError().getCode());
 		assertFalse(testResult.isSuccess());
 	}
 }

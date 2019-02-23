@@ -63,6 +63,8 @@ import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.VideoOption;
 
+import lombok.Getter;
+
 public class AROController implements PropertyChangeListener, ActionListener {
 
 	private IAROView theView;
@@ -79,7 +81,10 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	private Date traceStartTime;
 	private long traceDuration;
 	private Hashtable<String, Object> extraParams;
-	private PacketAnalyzerResult currentTraceInitialAnalyzerResult;	
+	private PacketAnalyzerResult currentTraceInitialAnalyzerResult;
+	
+	@Getter
+	private boolean isRooted = false;
 	
 	/**
 	 * Constructor to instantiate an ARO API instance.
@@ -261,11 +266,19 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		
 		try{
 			if (path != null) {
-				theModel = runAnalyzer(path, profile, filter);
-				if (filter == null && theModel.isSuccess()) { //when the first loading traces, set the filter				
-					initializeFilter();
+				AROTraceData model = runAnalyzer(path, profile, filter);
+				if (!model.isSuccess()) {
+					AROTraceData tempModel = theModel;
+					theModel = model;
+					theView.refresh();
+					theModel = tempModel;
+				} else {
+					theModel = model;
+					if (filter == null) { // when the first loading traces, set the filter
+						initializeFilter();
+					}
+					theView.refresh();
 				}
-				theView.refresh();
 			}
 		} catch(Exception ex){
 			LOG.info("Error Log:" + ex.getMessage());
@@ -497,6 +510,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		if (device.isPlatform(IAroDevice.Platform.Android)) {
 			if (device.isRooted()) {
 				LOG.debug("rooted device");
+				isRooted  = true;
 				collector = context.getBean(IDataCollectorManager.class).getRootedDataCollector();
 			} else {
 				LOG.debug("non-rooted device");
@@ -531,7 +545,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			return;
 		}
 		LOG.debug("stopCollector() check if running");
-		if (collector.isTrafficCaptureRunning(1)) { //FIXME THINKS THE CAPTURE IS RUNNING AFTER STOP
+		if (collector.isTrafficCaptureRunning(1) && !collectorstatus.equals(CollectorStatus.CANCELLED)) { //FIXME THINKS THE CAPTURE IS RUNNING AFTER STOP
 			StatusResult result = collector.stopCollector();
 			LOG.info("stopped collector, result:" + result);
 			if (collector.getType().equals(DataCollectorType.IOS) && (!collector.isDeviceDataPulledStatus())) {

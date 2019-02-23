@@ -101,13 +101,13 @@ public class RemoteVirtualInterface {
 		String disconnect = "-x";
 
 		for (int attempt = 0; attempt < 10; attempt++) {
-			if (rviConnect(connect, serialNumber)) {
+			if (rviConnection(connect, serialNumber)) {
 				success = true;
 				LOG.info("RVI is started ok.");
 				break;
 			} else {
 				LOG.info("RVI failed :" + attempt + " time(s)");
-				rviConnect(disconnect, serialNumber);
+				rviConnection(disconnect, serialNumber);
 				Thread.sleep(500);
 			}
 		}		
@@ -144,16 +144,18 @@ public class RemoteVirtualInterface {
 	 *            of iOS device
 	 * @return true if succeeded, false if failed
 	 */
-	private boolean rviConnect(String mode, String serialNumber) {
+	private boolean rviConnection(String mode, String serialNumber) {
 		String cmdResponse;
 		try {
 			cmdResponse = runner.runCmd("rvictl " + mode + " " + serialNumber );
+			LOG.debug("cmd : " + "rvictl " + mode + " " + serialNumber);
+			LOG.debug("cmdResponse : "+cmdResponse);
 		} catch (IOException e) {
 			LOG.error("IOException", e);
 			return false;
 		}
-		if (cmdResponse != null && cmdResponse.contains("[SUCCEEDED]")) {
-			//data.trim();
+		if (cmdResponse != null && cmdResponse.contains("[SUCCEEDED]")
+				&& !cmdResponse.contains("Stopping")) {
 			String[] splitResponse = cmdResponse.split("interface");
 			if (splitResponse.length > 1) {
 				setRviName(splitResponse[1].trim());
@@ -177,7 +179,7 @@ public class RemoteVirtualInterface {
 		String response = null;
 		try {
 			do {
-				rviConnect("-x", serialNumber);
+				rviConnection("-x", serialNumber);
 				response = runner.runCmd("rvictl -l");
 			} while (!response.trim().equals("Could not get list of devices"));
 		} catch (IOException e) {

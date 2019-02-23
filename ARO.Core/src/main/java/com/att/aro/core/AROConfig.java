@@ -163,6 +163,8 @@ import com.att.aro.core.securedpacketreader.impl.TLSHandshakeImpl;
 import com.att.aro.core.securedpacketreader.impl.TLSSessionInfoImpl;
 import com.att.aro.core.settings.Settings;
 import com.att.aro.core.settings.impl.SettingsImpl;
+import com.att.aro.core.tracemetadata.IMetaDataHelper;
+import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
 import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.PcapConfirmationImpl;
@@ -188,6 +190,7 @@ import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
+
 /**
  * Spring configuration for ARO.Core<br>
  * Included are all the components to collect, open, analyze and generate
@@ -200,7 +203,7 @@ import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 @ComponentScan("com.att.aro")
 @Import(AROBestPracticeConfig.class)
 @PropertySource({ "classpath:bestpractices.properties", "classpath:analytics.properties",
-		"classpath:build.properties" })
+		"classpath:build.properties", "classpath:url.properties" })
 @ImportResource({ "classpath*:plugins-analytics.xml", "classpath*:plugins.xml", "classpath*:plugin-manager.xml",
 		"classpath*:plugins-noroot.xml" })
 public class AROConfig {
@@ -605,7 +608,7 @@ public class AROConfig {
 		return new BufferInSecondsCalculatorImpl();
 	}
 
-	@Bean
+	@Bean(name = "videoUsagePrefsManagerImpl")
 	public IVideoUsagePrefsManager getVideoUsagePrefsManagerImpl() {
 		return new VideoUsagePrefsManagerImpl();
 	}
@@ -649,5 +652,12 @@ public class AROConfig {
 	public VideoUsagePrefs getVideoUsagePrefs(){
 		return new VideoUsagePrefs();
 	}
+	
+	@Bean(name="metaDataHelper")
+	public IMetaDataHelper getMetaDataHelper(){
+		return new MetaDataHelper();
+	}
+	
+
 
 }

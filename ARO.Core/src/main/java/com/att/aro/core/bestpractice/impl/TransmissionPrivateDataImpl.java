@@ -75,12 +75,6 @@ public class TransmissionPrivateDataImpl implements IBestPractice {
 	@Qualifier("patternSearchingHandler")
 	private ISearchingHandler regexHandler;
 	
-//	@Value("#{'${regex.phone.number}'.split(';')}")
-//	private List<String> phoneNumberRegex;
-	
-//	@Value("#{'${regex.date.birth}'.split(';')}")
-//	private List<String> dateBirthRegex;
-	
 	@Value("#{'${regex.credit.card.american.express}'.split(';')}")
 	private List<String> creditCardAmericanExpress;
 	
@@ -296,8 +290,7 @@ public class TransmissionPrivateDataImpl implements IBestPractice {
 		result.setOverviewTitle(overviewTitle);
 		result.setDetailTitle(detailedTitle);
 		result.setAboutText(aboutText);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setResults(new LinkedList<>(entries));
 		result.setResultText(testResultText);
 		

@@ -202,6 +202,11 @@ public abstract class AbstractTraceResult {
 	protected TraceResultType traceResultType;
 
 	/**
+	 * time offset of first pcap packet from timeFile start of trace
+	 */
+	private double pcapTimeOffset;
+
+	/**
 	 * Constructor, Initializes all base tracedata objects.
 	 */
 	public AbstractTraceResult() {
@@ -655,5 +660,19 @@ public abstract class AbstractTraceResult {
 		return true;
 	}
 
+	/**
+	 * set time offset of first pcap packet from timeFile start of trace
+	 * @param offset
+	 */
+	public void setPcapTimeOffset(double offset) {
+		this.pcapTimeOffset = offset;
+	}
+
+	/**
+	 * @return time offset of first pcap packet from timeFile start of trace
+	 */
+	public double getPcapTimeOffset() {
+		return pcapTimeOffset;
+	}
 	
 }

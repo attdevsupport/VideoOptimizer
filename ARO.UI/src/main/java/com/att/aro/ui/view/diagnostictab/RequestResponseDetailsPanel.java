@@ -28,7 +28,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
-import java.text.MessageFormat;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -128,8 +127,11 @@ public class RequestResponseDetailsPanel extends  JPanel {
 
 							boolean isApplicationZip = httpRRInfo != null && httpRRInfo.getContentType() != null
 									&& httpRRInfo.getContentType().contains("application/zip");
-							getViewBtn().setEnabled(!isApplicationZip && !isVideo && validResponse);
-							getSaveBtn().setEnabled(!isApplicationZip && validResponse);
+							
+							boolean isContentTypeAvailable = httpRRInfo != null && httpRRInfo.getContentType() != null;
+							
+							getViewBtn().setEnabled(!isApplicationZip && !isVideo && validResponse && isContentTypeAvailable);
+							getSaveBtn().setEnabled(!isApplicationZip && validResponse && isContentTypeAvailable);
 						}
 					});
 			jRequestResponseTable.addMouseListener(new MouseAdapter() {
@@ -236,9 +238,6 @@ public class RequestResponseDetailsPanel extends  JPanel {
 				new MessageDialogFactory().showErrorDialog(new Window(new Frame()),
 						ResourceBundleHelper.getMessageString("Error.fileSize"));
 			}
-		} else {
-			new MessageDialogFactory().showErrorDialog(new Window(new Frame()), MessageFormat.format(
-					ResourceBundleHelper.getMessageString("Error.videofile"), rrInfo.getContentType()));
 		}
 	}
 }

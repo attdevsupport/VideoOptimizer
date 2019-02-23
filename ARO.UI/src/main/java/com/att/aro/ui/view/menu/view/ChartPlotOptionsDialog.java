@@ -18,6 +18,7 @@ package com.att.aro.ui.view.menu.view;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -169,6 +170,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 	private void initialize() {
 		this.setTitle(ResourceBundleHelper.getMessageString(DialogItem.chart_options_dialog_title));
 		this.setContentPane(getJContentPane());
+		this.setModalityType(Dialog.DEFAULT_MODALITY_TYPE);
 		if (isUserPrefsSelected(ChartPlotOptions.DEFAULT_VIEW)) {
 			enableOptions(false);
 		}
@@ -249,7 +251,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					currentCheckedOptionList = getCheckedOptions();
-					if (!validatePlotOptions(currentCheckedOptionList)) {
+					if (!validateSelectedOptions(currentCheckedOptionList)) {
 						return;
 					}
 					guiPreferences.setChartPlotOptions(currentCheckedOptionList);
@@ -274,9 +276,9 @@ public class ChartPlotOptionsDialog extends JDialog {
 
 	}
 	
-	private boolean validatePlotOptions(List<ChartPlotOptions> currentCheckedOptionList) {
-		if (currentCheckedOptionList.size() > 12) {
-			JOptionPane.showMessageDialog(this, "Please select no more than 12 items.");
+	private boolean validateSelectedOptions(List<ChartPlotOptions> currentCheckedOptionList) {
+		if (currentCheckedOptionList.size() > 11) {
+			JOptionPane.showMessageDialog(this, "Please select no more than 11 items.");
 			return false;
 		}
 		return true;
@@ -346,63 +348,96 @@ public class ChartPlotOptionsDialog extends JDialog {
 					new Font("Dialog", Font.BOLD, 12), new Color(51, 51, 51)));
 			jAdvancedOptionsPanel.add(jGPSStateCheckBox = getJCheckBox(jGPSStateCheckBox,
 					DialogItem.chart_options_dialog_gps, ChartPlotOptions.GPS), getGridBagConstraints(0));
+			addActionListener(jGPSStateCheckBox);
 			jAdvancedOptionsPanel.add(jRadioStateCheckBox = getJCheckBox(jRadioStateCheckBox,
 					DialogItem.chart_options_dialog_radio, ChartPlotOptions.RADIO), getGridBagConstraints(1));
+			addActionListener(jRadioStateCheckBox);
 			jAdvancedOptionsPanel.add(jBluetoothCheckBox = getJCheckBox(jBluetoothCheckBox,
 					DialogItem.chart_options_dialog_bluetooth, ChartPlotOptions.BLUETOOTH), getGridBagConstraints(2));
+			addActionListener(jBluetoothCheckBox);
 			jAdvancedOptionsPanel.add(jCameraStateCheckBox = getJCheckBox(jCameraStateCheckBox,
 					DialogItem.chart_options_dialog_camera, ChartPlotOptions.CAMERA), getGridBagConstraints(3));
+			addActionListener(jCameraStateCheckBox);
 			jAdvancedOptionsPanel.add(jScreenStateCheckBox = getJCheckBox(jScreenStateCheckBox,
 					DialogItem.chart_options_dialog_screen, ChartPlotOptions.SCREEN), getGridBagConstraints(4));
+			addActionListener(jScreenStateCheckBox);
 			jAdvancedOptionsPanel.add(jBatteryStateCheckBox = getJCheckBox(jBatteryStateCheckBox,
 					DialogItem.chart_options_dialog_battery, ChartPlotOptions.BATTERY), getGridBagConstraints(5));
+			addActionListener(jBatteryStateCheckBox);
 			jAdvancedOptionsPanel.add(
 					jWakelockStateCheckBox = getJCheckBox(jWakelockStateCheckBox,
 							DialogItem.chart_options_dialog_wakelock, ChartPlotOptions.WAKELOCK),
 					getGridBagConstraints(6));
+			addActionListener(jWakelockStateCheckBox);
 			jAdvancedOptionsPanel.add(jWifiStateCheckBox = getJCheckBox(jWifiStateCheckBox,
 					DialogItem.chart_options_dialog_wifi, ChartPlotOptions.WIFI), getGridBagConstraints(7));
+			addActionListener(jWifiStateCheckBox);
 			jAdvancedOptionsPanel.add(jAlarmTriggeredCheckBox = getJCheckBox(jAlarmTriggeredCheckBox,
 					DialogItem.chart_options_dialog_alarm, ChartPlotOptions.ALARM), getGridBagConstraints(8));
+			addActionListener(jAlarmTriggeredCheckBox);
 			jAdvancedOptionsPanel.add(jNetworkTypeCheckBox = getJCheckBox(jNetworkTypeCheckBox,
 					DialogItem.chart_options_dialog_network, ChartPlotOptions.NETWORK_TYPE), getGridBagConstraints(9));
+			addActionListener(jNetworkTypeCheckBox);
 			jAdvancedOptionsPanel.add(
 					jSpeedThrottleCheckBox = getJCheckBox(jSpeedThrottleCheckBox,
 							DialogItem.chart_options_dialog_attenation, ChartPlotOptions.SPEED_THROTTLE),
 					getGridBagConstraints(10));
+			addActionListener(jSpeedThrottleCheckBox);
 			jAdvancedOptionsPanel.add(jThroughputCheckBox = getJCheckBox(jThroughputCheckBox,
 					DialogItem.chart_options_dialog_throughput, ChartPlotOptions.THROUGHPUT),
 					getGridBagConstraints(11));
+			addActionListener(jThroughputCheckBox);
 			jAdvancedOptionsPanel.add(jUplinkCheckBox = getJCheckBox(jUplinkCheckBox,
 					DialogItem.chart_options_dialog_ulpackets, ChartPlotOptions.UL_PACKETS), getGridBagConstraints(12));
+			addActionListener(jUplinkCheckBox);
 			jAdvancedOptionsPanel.add(jDownlinkCheckBox = getJCheckBox(jDownlinkCheckBox,
 					DialogItem.chart_options_dialog_dlpackets, ChartPlotOptions.DL_PACKETS), getGridBagConstraints(13));
+			addActionListener(jDownlinkCheckBox);
 			jAdvancedOptionsPanel.add(jBurstsCheckBox = getJCheckBox(jBurstsCheckBox,
 					DialogItem.chart_options_dialog_bursts, ChartPlotOptions.BURSTS), getGridBagConstraints(14));
+			addActionListener(jBurstsCheckBox);
 			jAdvancedOptionsPanel.add(jUserInputCheckBox = getJCheckBox(jUserInputCheckBox,
 					DialogItem.chart_options_dialog_userinput, ChartPlotOptions.USER_INPUT), getGridBagConstraints(15));
+			addActionListener(jUserInputCheckBox);
 			jAdvancedOptionsPanel.add(jRRCStateCheckBox = getJCheckBox(jRRCStateCheckBox,
 					DialogItem.chart_options_dialog_rrc, ChartPlotOptions.RRC), getGridBagConstraints(16));
+			addActionListener(jRRCStateCheckBox);
 			jAdvancedOptionsPanel.add(jCPUStateCheckBox = getJCheckBox(jCPUStateCheckBox,
 					DialogItem.chart_options_dialog_cpu, ChartPlotOptions.CPU), getGridBagConstraints(17));
+			addActionListener(jCPUStateCheckBox);
 			jAdvancedOptionsPanel
 					.add(jVideoBufferTimeOccupancyCheckBox = getJCheckBox(jVideoBufferTimeOccupancyCheckBox,
 							DialogItem.chart_options_dialog_bufferTime_occupancy,
 							ChartPlotOptions.BUFFER_TIME_OCCUPANCY), getGridBagConstraints(18));
+			addActionListener(jVideoBufferTimeOccupancyCheckBox);
 			jAdvancedOptionsPanel.add(
 					jVideoBufferOccupancyCheckBox = getJCheckBox(jVideoBufferOccupancyCheckBox,
 							DialogItem.chart_options_dialog_buffer_occupancy, ChartPlotOptions.BUFFER_OCCUPANCY),
 					getGridBagConstraints(19));
+			addActionListener(jVideoBufferOccupancyCheckBox);
 			jAdvancedOptionsPanel.add(
 					jVideoVideoChunksCheckBox = getJCheckBox(jVideoVideoChunksCheckBox,
 							DialogItem.chart_options_dialog_video_chunks, ChartPlotOptions.VIDEO_CHUNKS),
 					getGridBagConstraints(20));
+			addActionListener(jVideoVideoChunksCheckBox);
 			jAdvancedOptionsPanel.add(
 					jTemperatureStateCheckBox = getJCheckBox(jTemperatureStateCheckBox,
 							DialogItem.chart_options_dialog_temperature, ChartPlotOptions.TEMPERATURE),
 					getGridBagConstraints(21));
+			addActionListener(jTemperatureStateCheckBox);
 		}
 		return jAdvancedOptionsPanel;
+	}
+
+	private void addActionListener(JCheckBox checkBox) {
+		checkBox.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if(checkBox.isSelected() && !validateSelectedOptions(getCheckedOptions())) {
+					checkBox.setSelected(false);
+				}
+				}
+		});
 	}
 
 	/**

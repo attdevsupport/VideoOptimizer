@@ -43,7 +43,7 @@ public class AccessingPeripheralImplTest extends BaseTest {
 		Mockito.when((TraceDirectoryResult) tracedata.getTraceresult()).thenReturn(traceResult);
 		acPrphlImpl = (AccessingPeripheralImpl) context.getBean("accessingPeripheral");
 		AbstractBestPracticeResult testResult = acPrphlImpl.runTest(tracedata);
-		assertEquals(BPResultType.PASS, testResult.getResultType());
+		assertEquals(BPResultType.NO_DATA, testResult.getResultType());
 	}
 
 	@Test
@@ -59,7 +59,7 @@ public class AccessingPeripheralImplTest extends BaseTest {
 		Mockito.when(analysisFilter.getTimeRange()).thenReturn(timeRange);
 		acPrphlImpl = (AccessingPeripheralImpl) context.getBean("accessingPeripheral");
 		AbstractBestPracticeResult testResult = acPrphlImpl.runTest(tracedata);
-		assertEquals(BPResultType.WARNING, testResult.getResultType());
+		assertEquals(BPResultType.NO_DATA, testResult.getResultType());
 	}
 
 }

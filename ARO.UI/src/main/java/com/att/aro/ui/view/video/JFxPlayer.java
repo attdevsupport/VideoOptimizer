@@ -208,6 +208,7 @@ public class JFxPlayer implements IVideoPlayer {
 	public void clear() {
 		
 		if (playerControl != null) {
+			mediaPlayer = null;
 			playerControl.dispose();
 		}
 		
@@ -246,7 +247,7 @@ public class JFxPlayer implements IVideoPlayer {
 				}
 			});
 		}
-		if (playerControl != null) {
+		if (playerControl != null && mediaPlayer != null) {
 			playerControl.setMediaTime(videoTime);
 		}
 	}

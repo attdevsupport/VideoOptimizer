@@ -21,7 +21,10 @@ import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
+import com.att.aro.core.tracemetadata.IMetaDataHelper;
+import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * AROTraceData contains
@@ -42,6 +45,8 @@ public class AROTraceData {
 	private List<AbstractBestPracticeResult> bestPracticeResults;
 	private PacketAnalyzerResult analyzerResult;
 	private String errorDescription = "";
+	private IMetaDataHelper metaDataHelper = SpringContextUtil.getInstance().getContext()
+			.getBean(IMetaDataHelper.class);
 
 	/**
 	 * Returns the PacketAnalyzerResult, an object that contains the analyzed trace.
@@ -125,4 +130,12 @@ public class AROTraceData {
 		this.errorDescription = errorDescription;
 	}
 
+	@JsonProperty("traceMetadata")
+	public MetaDataModel getMetaDataModel() {
+		MetaDataModel metadataModel = null;
+		if (analyzerResult != null && analyzerResult.getTraceresult() instanceof TraceDirectoryResult) {
+			metadataModel = metaDataHelper.initMetaData((TraceDirectoryResult) analyzerResult.getTraceresult());
+		}
+		return (metadataModel == null ? new MetaDataModel() : metadataModel);
+	}
 }

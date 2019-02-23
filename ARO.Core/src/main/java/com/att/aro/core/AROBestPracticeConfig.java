@@ -48,7 +48,6 @@ import com.att.aro.core.bestpractice.impl.ImageUIComparatorImpl;
 import com.att.aro.core.bestpractice.impl.MinificationImpl;
 import com.att.aro.core.bestpractice.impl.MultipleSimultnsConnImpl;
 import com.att.aro.core.bestpractice.impl.PeriodicTransferImpl;
-import com.att.aro.core.bestpractice.impl.PrefetchingImpl;
 import com.att.aro.core.bestpractice.impl.ScreenRotationImpl;
 import com.att.aro.core.bestpractice.impl.ScriptsImpl;
 import com.att.aro.core.bestpractice.impl.SimultnsConnImpl;
@@ -59,17 +58,17 @@ import com.att.aro.core.bestpractice.impl.UnnecessaryConnectionImpl;
 import com.att.aro.core.bestpractice.impl.UnsecureSSLVersionImpl;
 import com.att.aro.core.bestpractice.impl.UsingCacheImpl;
 import com.att.aro.core.bestpractice.impl.VideoBufferOccupancyImpl;
-import com.att.aro.core.bestpractice.impl.VideoChunkPacingImpl;
-import com.att.aro.core.bestpractice.impl.VideoChunkSizeImpl;
 import com.att.aro.core.bestpractice.impl.VideoConcurrentSessionImpl;
 import com.att.aro.core.bestpractice.impl.VideoNetworkComparisonImpl;
 import com.att.aro.core.bestpractice.impl.VideoRedundancyImpl;
+import com.att.aro.core.bestpractice.impl.VideoResolutionQualityImpl;
+import com.att.aro.core.bestpractice.impl.VideoSegmentPacingImpl;
+import com.att.aro.core.bestpractice.impl.VideoSegmentSizeImpl;
 import com.att.aro.core.bestpractice.impl.VideoStallImpl;
 import com.att.aro.core.bestpractice.impl.VideoStartUpDelayImpl;
 import com.att.aro.core.bestpractice.impl.VideoTcpConnectionImpl;
-import com.att.aro.core.bestpractice.impl.VideoVariableBitRateImpl;
+import com.att.aro.core.bestpractice.impl.VideoVariableBitrateImpl;
 import com.att.aro.core.bestpractice.impl.WeakCipherImpl;
-import com.att.aro.core.bestpractice.impl.WiFiOffloadingImpl;
 
 /**
  * Spring configuration for all best practices.
@@ -137,19 +136,9 @@ public class AROBestPracticeConfig {
 		return new ConnectionClosingImpl();
 	}
 
-	@Bean(name = "wifiOffloading")
-	IBestPractice getWiFiOffloading() {
-		return new WiFiOffloadingImpl();
-	}
-
 	@Bean(name = "screenRotation")
 	IBestPractice getScreenRotation() {
 		return new ScreenRotationImpl();
-	}
-
-	@Bean(name = "prefetching")
-	IBestPractice getPrefetching() {
-		return new PrefetchingImpl();
 	}
 
 	@Bean(name = "accessingPeripheral")
@@ -310,12 +299,12 @@ public class AROBestPracticeConfig {
 
 	@Bean(name = "chunkSize")
 	IBestPractice getChunkSize() {
-		return new VideoChunkSizeImpl();
+		return new VideoSegmentSizeImpl();
 	}
 
 	@Bean(name = "chunkPacing")
 	IBestPractice getChunkPacing() {
-		return new VideoChunkPacingImpl();
+		return new VideoSegmentPacingImpl();
 	}
 
 	@Bean(name = "videoRedundancy")
@@ -330,7 +319,12 @@ public class AROBestPracticeConfig {
 	
 	@Bean(name = "videoVariableBitrate")
 	IBestPractice getVideoVariableBitrate(){
-		return new VideoVariableBitRateImpl();
+		return new VideoVariableBitrateImpl();
+	}
+	
+	@Bean(name = "videoResolutionQuality")
+	IBestPractice getVideoResolutionQuality() {
+		return new VideoResolutionQualityImpl();
 	}
 	// End of Video
 

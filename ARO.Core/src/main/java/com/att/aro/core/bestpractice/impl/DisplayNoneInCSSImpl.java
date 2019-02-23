@@ -121,8 +121,7 @@ public class DisplayNoneInCSSImpl implements IBestPractice {
 		result.setResults(results);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAll(exportAll);
 		return result;

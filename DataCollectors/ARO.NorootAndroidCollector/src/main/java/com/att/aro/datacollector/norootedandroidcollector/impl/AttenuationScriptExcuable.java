@@ -23,6 +23,7 @@ import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.util.Util;
 
 public class AttenuationScriptExcuable implements Runnable {
 	private static Logger LOGGER;	
@@ -82,7 +83,8 @@ public class AttenuationScriptExcuable implements Runnable {
 	public void run() {
  		
 		//Command to start script here
-		String cmd =this.adbService.getAdbPath()
+		String path = adbService.getAdbPath();
+		String cmd = path
 				+ " -s "
 				+ this.aroDevice.getId()
 				+ " shell"

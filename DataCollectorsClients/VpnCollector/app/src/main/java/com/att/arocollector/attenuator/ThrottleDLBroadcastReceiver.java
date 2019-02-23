@@ -22,6 +22,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.view.Gravity;
 import android.widget.Toast;
 
 import com.att.arocollector.R;
@@ -54,7 +55,8 @@ public class ThrottleDLBroadcastReceiver extends BroadcastReceiver {
         Log.i(TAG, "Download stream speed throttle for: " + dlMs + " kbps");
         AttenuatorManager.getInstance().setThrottleDL(dlMs);
         String text = "Download stream throttle for " + AttenuatorUtil.getInstance().messageConvert(dlMs);
-        Toast toast = Toast.makeText(context, text, Toast.LENGTH_SHORT);
+        Toast toast = Toast.makeText(context, text, Toast.LENGTH_LONG);
+        toast.setGravity(Gravity.TOP,0,0);
         toast.show();
 
         NotificationManager mNotificationManager =

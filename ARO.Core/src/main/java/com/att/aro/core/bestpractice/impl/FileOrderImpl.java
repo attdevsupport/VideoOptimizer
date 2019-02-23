@@ -68,7 +68,7 @@ public class FileOrderImpl implements IBestPractice {
 
 	@Value("${exportall.csvFileOrderCount}")
 	private String exportAll;
-
+	
 	private IHttpRequestResponseHelper reqhelper;
 
 	@Autowired
@@ -120,8 +120,7 @@ public class FileOrderImpl implements IBestPractice {
 		result.setResults(results);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setTextResult(textResult);
 		result.setExportAll(exportAll);
