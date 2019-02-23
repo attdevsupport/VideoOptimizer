@@ -51,49 +51,42 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 2.2
+#### Video Optimizer 2.3
 
-**System Requirements for Video Optimizer 2.2:**
+**System Requirements for Video Optimizer 2.3:**
 
-Before you download Video Optimizer 2.2, make sure you meet the following system requirements for your operating system.
+Before you download Video Optimizer 2.3, make sure you meet the following system requirements for your operating system.
 
-1. 2GB or more for RAM
+1. At least 2GB of RAM
 2. Java 8 or above
-3. Android SDK Level 19 or above for collecting Android devices trace
+3. For Android developers, Android SDK Level 19 or above
 4. Latest Xcode for collecting iOS devices trace
 5. WinPcap for Windows platform
-6. FFMpeg library and VLC media player installed and configured for HD video
-7. Brew, Ifuse, Xfuse, WireShark  for MacOS platform
-8. Wireshark
+6. FFMpeg library
+7. VLC media player for Windows and Linux platform
+8. Brew, Ifuse, OSXfuse for MacOS platform
+9. Wireshark
 
 
 
-#### Video Optimizer 2.2 Features
+#### Video Optimizer 2.3 Features
 
-#### • New Best Practice “Variable Bitrate” is added to test if the video stream is using Variable bitrate or not.
+#### • New Video Best Practice “Resolution and Perception” tests for video resolution greater than 720p
 
-#### • New ‘Configuration Required’ icon added to indicate if the Video Best Practice tests requires additional configuration
+#### • New "No data" icon added to indicate that a Best Practice is not applicable when a trace does not have relevant data available for analysis.
 
-#### • Time Range analysis has been re-designed with addition of Total Payload Data displayed in Best Practices trace summary and Time range analysis results section.
-
-#### • Attenuator enhancements to support Android 9 “Pie”
-
-#### • iOS Secure Collector (Beta version)
-
-#### • Android Secure Collector supports Pie version
+#### • Waterfall Tab enhancements - Displays appropriate domain names and IP addresses, and highlights the Maximum number of Simultaneous Connections for the trace.
 
 #### •	Other enhancements include:
-#### - Handling special characters in file names
-#### - Handling missing traces in the recent files
-#### - Updates to the iOS collector installation
-#### - Updates to Mac install Pre-requisites list
+#### - Startup Delay compares video startup delay graphically against 3 reference apps
+#### - Handling special characters and spaces in adb path and other applicable locations.
+#### - Android versions Oreo and above to stop vpn collector on the device if there is an existing collector instance running on the device.
+#### - Updates content viewer.
 
 
-### What are the known issues in Release 2.2?
+### What are the known issues in Release 2.3?
 
 #### •	Application names, CPU usage, signal strength is not displayed for traces taken with Android Version Oreo and above.
-#### •	Some iOS traces taken using HD show as low resolution. 
-#### •	No traffic file is displayed for iOS HD traces(intermittent). 
 
 ### •  Installation instruction
 + Please follow the order to compile projects
