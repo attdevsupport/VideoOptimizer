@@ -81,7 +81,6 @@ Before you download Video Optimizer 2.3, make sure you meet the following system
 #### - Startup Delay compares video startup delay graphically against 3 reference apps
 #### - Handling special characters and spaces in adb path and other applicable locations.
 #### - Android versions Oreo and above to stop vpn collector on the device if there is an existing collector instance running on the device.
-#### - Updates content viewer.
 
 
 ### What are the known issues in Release 2.3?
