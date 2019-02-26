@@ -83,6 +83,7 @@ Before you download Video Optimizer 2.3, make sure you meet the following system
 #### - Android versions Oreo and above to stop vpn collector on the device if there is an existing collector instance running on the device.
 
 
+
 ### What are the known issues in Release 2.3?
 
 #### •	Application names, CPU usage, signal strength is not displayed for traces taken with Android Version Oreo and above.
