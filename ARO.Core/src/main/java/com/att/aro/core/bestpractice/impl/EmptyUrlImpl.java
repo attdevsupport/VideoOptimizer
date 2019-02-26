@@ -17,8 +17,8 @@ package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -26,7 +26,6 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
@@ -55,7 +54,7 @@ public class EmptyUrlImpl implements IBestPractice {
 	@Value("${empty.url.desc}")
 	private String aboutText;
 	
-	@Value("${empty.url.url}")
+	@Value("${emptyUrl.url}")
 	private String learnMoreUrl;
 	
 	@Value("${empty.url.pass}")
@@ -98,8 +97,7 @@ public class EmptyUrlImpl implements IBestPractice {
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAllEmptyUrlFiles(exportAllEmptyUrlFiles);
 		return result;

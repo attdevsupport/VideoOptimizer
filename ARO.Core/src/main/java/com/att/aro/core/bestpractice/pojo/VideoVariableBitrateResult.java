@@ -22,12 +22,16 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
-public class VideoVariableBitRateResult extends AbstractBestPracticeResult{
+public class VideoVariableBitrateResult extends AbstractBestPracticeResult{
 
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.VIDEO_VARIABLE_BITRATE;
 	}
 
+	@Override
+	public String toString() {
+		return super.toString();
+	}
 }
 

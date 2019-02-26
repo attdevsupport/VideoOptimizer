@@ -484,7 +484,7 @@ public final class Application implements IAROView {
 		String throttleDL = cmds.getThrottleDL();
 		return ThrottleUtil.getInstance().parseNumCvtUnit(throttleDL);
 	}
-
+	
 	void printError(ErrorCode error) {
 		err("Error code: " + error.getCode());
 		err(", Error name: " + error.getName());
@@ -504,6 +504,7 @@ public final class Application implements IAROView {
 	 * @param context
 	 * @param cmds
 	 */
+	@SuppressWarnings("null")//ignoring incorrect eclipse warning
 	void runDataCollector(ApplicationContext context, Commands cmds) {
 		if (cmds.getOutput() != null) {
 			// LOGGER.info("runDataCollector");
@@ -718,7 +719,7 @@ public final class Application implements IAROView {
 				.append("\n  --ask [auto|rooted_android|vpn_android|ios]: asks for a device then runs the collector.")
 				.append("\n  --output [fullpath including filename] : output to a file or trace folder")
 				.append("\n  --overwrite [yes/no] : overwrite a trace folder - optional - will default to no if not specified")
-				.append("\n  --deviceid [device id]: optional device id of Android or Serial Number for IOS.")
+				.append("\n  --deviceid [device id]: device id of Android(optional) and  udid/Device identifier for IOS(required).")
 				.append("\n    If not declared first device found is used.")
 				.append("\n  --format [json|html]: optional type of report to generate. Default: json.")
 				.append(
@@ -726,8 +727,6 @@ public final class Application implements IAROView {
 						?"\n  --video [hd|sd|slow|no]: optional command to record video when running collector. Default: no."
 						:"\n  --video [yes|no]: optional command to record video when running collector. Default: no."
 						)
-				.append("\n  --secure: optional command to enable secure collector.")
-				.append("\n  --certInstall: optional command to install certificate if secure collector is enabled.")
 				.append("\n  --throttleUL [number in kbps/mbps]: optional command for throttle uplink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --throttleDL [number in kbps/mbps]: optional command for throttle downlink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --profile [file_path]: optional command that provides a file with attenuation sequence")
@@ -739,6 +738,7 @@ public final class Application implements IAROView {
 				.append("\nRun Android collector to capture trace with video:")
 				.append("\n    slow video is 1-2 frames per second: ")
 				.append("\n  --startcollector rooted_android --output /User/documents/test --video slow")
+			
 				.append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation applied:")
 				.append("\n    throttle uplink throughput can accept 64k - 100m (102400k)")
 				.append("\n    throttle downlink throughput can accept 64k - 100m (102400k)")
@@ -749,7 +749,10 @@ public final class Application implements IAROView {
 				
 				.append("\nRun iOS collector to capture trace with video: ")
 				.append("\n    trace will be overwritten if it exists: ")
-				.append("\n  --startcollector ios --overwrite yes --output /Users/{user}/tracefolder --video hd --sudo password")
+				.append("\n  --startcollector ios --deviceid udid/deviceIdentifier --overwrite yes --output /Users/{user}/tracefolder --video hd --sudo password")
+				
+				.append("\nRun iOS collector to capture trace with video and uplink/downlink attenuation applied: ")
+				.append("\n  --startcollector ios --deviceid udid/deviceIdentifier --output /user/documents/(trace name) --video slow --throttleUL 2m --throttleDL 64k --sudo password")
 				
 				.append("\nAsk user for device and Run Android collector to capture trace with video: ")
 				.append("\n  --ask rooted_android --output /User/documents/test --video sd")

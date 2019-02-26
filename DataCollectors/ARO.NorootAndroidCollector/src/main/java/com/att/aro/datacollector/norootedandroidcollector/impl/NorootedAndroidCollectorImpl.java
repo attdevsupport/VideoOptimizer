@@ -56,6 +56,7 @@ import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
+import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.util.AttnScriptUtil;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.StringParse;
@@ -86,8 +87,9 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	// local directory in user machine to pull trace from device to
 	private String localTraceFolder;
 	private static final int MILLISECONDSFORTIMEOUT = 300;
-	private static String APK_FILE_NAME = "VPNCollector-2.2.%s.apk";
+	private static String APK_FILE_NAME = "VPNCollector-2.3.%s.apk";
 	private static final String ARO_PACKAGE_NAME = "com.att.arocollector";
+	private static final String ARO_PACKAGE_NAME_GREP = "[c]om.att.arocollector";
 
 	private IAndroid android;
 	private boolean usingScreenRecorder = false;
@@ -105,6 +107,18 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			"gps_events", "network_details", "prop", "radio_events", "screen_events", "screen_rotations",
 			"user_input_log_events", "alarm_info_start", "alarm_info_end", "batteryinfo_dump", "dmesg", "video_time",
 			"wifi_events", "traffic.cap", "collect_options", "location_events","attenuation_logs" };
+	
+	private String traceDesc = "";
+	private String traceType = "";
+	private String targetedApp = "";
+	private String appProducer = "";
+	
+	private IMetaDataHelper metaDataHelper;
+	
+	@Autowired
+	public void setMetaDataHelper(IMetaDataHelper metaDataHelper) {
+		this.metaDataHelper = metaDataHelper;
+	}
 
 	@Autowired
 	public void setAndroid(IAndroid android) {
@@ -377,21 +391,19 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		int throttleDL = -1;
 		int throttleUL = -1;
 		boolean atnrProfile = false;
-		boolean secure = false;
-		boolean installCert = false;
 		String location = "";
 		String selectedAppName = "";
 		Orientation videoOrientation = Orientation.PORTRAIT;
 		
 		if (extraParams != null) {
 			atnr = (AttenuatorModel)getOrDefault(extraParams, "AttenuatorModel", atnr);
- 			secure = (boolean) getOrDefault(extraParams, "secure", false);
-			if (secure) {
-				installCert = (boolean) getOrDefault(extraParams, "installCert", false);
-			}
 			videoOption = (VideoOption) getOrDefault(extraParams, "video_option", VideoOption.NONE);
 			videoOrientation = (Orientation) getOrDefault(extraParams, "videoOrientation", Orientation.PORTRAIT);
 			selectedAppName = (String) getOrDefault(extraParams, "selectedAppName", StringUtils.EMPTY);
+			traceDesc = (String) getOrDefault(extraParams, "traceDesc", StringUtils.EMPTY);
+			traceType = (String) getOrDefault(extraParams, "traceType", StringUtils.EMPTY);
+			targetedApp = (String) getOrDefault(extraParams, "targetedApp", StringUtils.EMPTY);
+			appProducer = (String) getOrDefault(extraParams, "appProducer", StringUtils.EMPTY);
 		}
 		
 		int bitRate = videoOption.getBitRate();
@@ -443,6 +455,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		if (isVpnActivated()) {
 			LOG.error("unknown collection still running on device");
 			result.setError(ErrorCodeRegistry.getCollectorAlreadyRunning());
+			result.setSuccess(false);
 			return result;
 		}
 
@@ -489,10 +502,9 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 //					+ " --ei delayDL " + delayTimeDL + " --ei delayUL " + delayTimeUL
 					+ " --ei throttleDL " + throttleDL + " --ei throttleUL " + throttleUL
 					+ (atnrProfile ? (" --ez profile " + atnrProfile + " --es profilename '" + location + "'") : "")
-					+ " --ez secure " + secure + " --es video "+ videoOption.toString() 
+					+ " --es video "+ videoOption.toString() 
 					+ " --ei bitRate " + bitRate + " --es screenSize " + screenSize 
 					+ " --es videoOrientation " + videoOrientation.toString() 
-					+ " --ez certInstall " + installCert
 					+ " --es selectedAppName " + (StringUtils.isEmpty(selectedAppName)?"EMPTY":selectedAppName) ;
 			LOG.info(cmd);
 			if (!android.runApkInDevice(this.device, cmd)) {
@@ -858,6 +870,15 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		LOG.debug("pulling trace to local dir");
 		new LogcatCollector(adbService, device.getSerialNumber()).collectLogcat(localTraceFolder, "Logcat.log");
 		result = pullTrace(this.mDataDeviceCollectortraceFileNames);
+		
+		if(result.isSuccess()) {
+			try {
+				metaDataHelper.initMetaData(localTraceFolder, traceDesc, traceType, targetedApp, appProducer);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
 				GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
 				GoogleAnalyticsUtil.getAnalyticsEvents().getEndTrace()); // GA Request
@@ -934,7 +955,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	 * @return
 	 */
 	private boolean isCollectorRunning() {
-		String cmd = "ps | grep " + ARO_PACKAGE_NAME;
+		String cmd = "ps -ef | grep " + ARO_PACKAGE_NAME_GREP;
 		String[] lines = android.getShellReturn(this.device, cmd);
 		boolean found = false;
 		for (String line : lines) {
@@ -984,26 +1005,26 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 		if (Util.isWindowsOS()) {
 			deviceTracePath = "/sdcard/ARO/";
-			setCommand = adbService.getAdbPath() + " -s " + device.getSerialNumber() + " pull " + deviceTracePath + ". "
-					+ localTraceFolder + "/ARO ";
+			setCommand = Util.wrapText(adbService.getAdbPath() + " -s " + device.getSerialNumber() + " pull " + deviceTracePath + ". "
+					+ Util.wrapText(localTraceFolder + "/ARO"));
 			commandFailure = runCommand(setCommand);
 
 			if (!commandFailure) {
-				setCommand = "move " + localTraceFolder + "\\ARO\\* " + localTraceFolder;
+				setCommand = Util.wrapText("move " + Util.wrapText(localTraceFolder + "\\ARO\\*") + " " + Util.wrapText(localTraceFolder));
 				commandFailure = runCommand(setCommand);
 			}
 			if (!commandFailure) {
-				setCommand = "rd " + localTraceFolder + "\\ARO";
+				setCommand = Util.wrapText("rd " + Util.wrapText(localTraceFolder + "\\ARO"));
 				runCommand(setCommand);
 			}
 			if(!commandFailure) {
-				setCommand = "rmdir /S /Q " + localTraceFolder + "\\ARO";
+				setCommand = Util.wrapText("rmdir /S /Q " + Util.wrapText(localTraceFolder + "\\ARO"));
 			}
 		} else {
 
 			deviceTracePath = "/sdcard/ARO/";
 			setCommand = adbService.getAdbPath() + " -s " + device.getSerialNumber() + " pull " + deviceTracePath + ". "
-					+ localTraceFolder;
+					+ Util.wrapText(localTraceFolder);
 			commandFailure = runCommand(setCommand);
 		}
 		if (commandFailure) {

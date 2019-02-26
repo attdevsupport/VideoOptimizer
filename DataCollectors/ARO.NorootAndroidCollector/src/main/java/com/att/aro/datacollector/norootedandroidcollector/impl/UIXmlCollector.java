@@ -25,6 +25,7 @@ import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.util.Util;
 
 /**
  * Initiates uidump.sh & parse the output file
@@ -74,7 +75,8 @@ public class UIXmlCollector implements Runnable {
 	private boolean launchAROUIXmlScript() {
 		setCurrentState(State.CAPTURING);
 		// Command to start script here
-		String cmd = this.adbservice.getAdbPath() + " -s " + this.aroDevice.getId() + " shell" + " sh "
+		String path = adbservice.getAdbPath();
+		String cmd = path+ " -s " + this.aroDevice.getId() + " shell" + " sh "
 				+ remoteExecutable + " " + remoteFilesPath + " " + killUiXmlPayload;
 		boolean iscommandSuccessful = false;
 		try {

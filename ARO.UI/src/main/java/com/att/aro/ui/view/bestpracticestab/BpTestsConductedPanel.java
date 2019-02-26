@@ -217,14 +217,10 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"connections.connectionOpening"      //  #bp 10   Connections: Connection Opening
 				  ,"connections.unnecssaryConn"         //  #bp 11   Connections: Unnecessary Connections - Multiple Simultaneous Connections
 				  ,"connections.simultaneous"  			//  #bp      Connections: Multiple Connections to One Endpoint
-				  ,"connections.multiSimultaneous"  			//  #bp      Connections: Multiple Connections to many Servers
-				// ,"connections.adAnalytics"
+				  ,"connections.multiSimultaneous"  	//  #bp      Connections: Multiple Connections to many Servers
 				  ,"connections.periodic"               //  #bp 12   Connections: Inefficient Connections - Periodic Transfers
 				  ,"connections.screenRotation"         //  #bp 13   Connections: Inefficient Connections - Screen Rotation
 				  ,"connections.connClosing"            //  #bp 14   Connections: Inefficient Connections - Connection Closing Problems
-				 /*
-				 * ,"connections.offloadingToWifi" // #bp 15 Connections: Inefficient Connections - Offloading to WiFi when Possible
-				 */
 				  ,"connections.http4xx5xx"             //  #bp 16   Connections: 400, 500 HTTP Status Response Codes
 				  ,"connections.http3xx"                //  #bp 17   Connections: 301, 302 HTTP Status Response Codes
 				  ,"3rd.party.scripts"         	        //  #bp 18   Connections: 3rd Party Scripts
@@ -241,16 +237,18 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"security.weakCipher"				//  #bp 18	 Security: Weak Cipher
 				  ,"security.forwardSecrecy"			//  #bp 19	 Security: Forward Secrecy
 				  
-				  ,"videoStall"                         //  #bp
-				  ,"startUpDelay"                       //  #bp
-				  ,"bufferOccupancy"                    //  #bp
-				  ,"networkComparison"                  //  #bp
-				  ,"tcpConnection"                      //  #bp
-				  ,"chunkSize"                          //  #bp
-				  ,"chunkPacing"                        //  #bp
-				  ,"videoRedundancy"                    //  #bp
-				  ,"videoConcurrentSession"				//  #bp
+				  ,"videoStall"
+				  ,"startUpDelay"
+				  ,"bufferOccupancy"
+				  ,"networkComparison"
+				  ,"tcpConnection"
+				  ,"segmentSize"
+				  ,"segmentPacing"
+				  ,"videoRedundancy"
+				  ,"videoConcurrentSession"
 				  ,"videoVariableBitrate"
+				  ,"videoResolutionQuality"
+				  
 				  ,"other.accessingPeripherals"         //  #bp    Other: Accessing Peripheral Applications
 			//	  ,"#smallrequest"                      //  #bp    File Download: Minimize Number of Small Requests
 			};
@@ -302,6 +300,8 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 			imageName = "Image.bpManual";
 		} else if (resType.equals(BPResultType.CONFIG_REQUIRED)) {
 			imageName = "Image.bpConfig";
+		} else if (resType.equals(BPResultType.NO_DATA)) {
+			imageName = "Image.bpNoData";
 		}
 		
 		return UIComponent.getInstance().getIconByKey(imageName);

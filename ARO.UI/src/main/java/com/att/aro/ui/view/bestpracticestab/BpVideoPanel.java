@@ -39,18 +39,18 @@ public class BpVideoPanel extends BpDetail {
 		setBackground(new Color(238,238,238));
 		int row = 0;
 
-		addPanel(row++, new BpDetailItem("videoStall"       		, BestPracticeType.VIDEO_STALL,        
-				new BPVideoStallTablePanel(),aroView));
-		addPanel(row++, new BpDetailItem("startUpDelay"     		, BestPracticeType.STARTUP_DELAY, aroView));
-		addPanel(row++, new BpDetailItem("bufferOccupancy"  		, BestPracticeType.BUFFER_OCCUPANCY, aroView));
-		addPanel(row++, new BpDetailItem("networkComparison"		, BestPracticeType.NETWORK_COMPARISON ));
-		addPanel(row++, new BpDetailItem("tcpConnection"    		, BestPracticeType.TCP_CONNECTION     ));
-		addPanel(row++, new BpDetailItem("chunkSize"        		, BestPracticeType.CHUNK_SIZE         ));
-		addPanel(row++, new BpDetailItem("chunkPacing"      		, BestPracticeType.CHUNK_PACING       ));
-		addPanel(row++, new BpDetailItem("videoRedundancy"  		, BestPracticeType.VIDEO_REDUNDANCY   ));
-		addPanel(row++, new BpDetailItem("videoConcurrentSession"	, BestPracticeType.VIDEO_CONCURRENT_SESSION,
-				new BPVideoConcurrentSessionTablePanel()));
-		addPanel(row++, new BpDetailItem("videoVariableBitrate"     , BestPracticeType.VIDEO_VARIABLE_BITRATE));
+		addPanel(row++, new BpDetailItem("videoStall"             , BestPracticeType.VIDEO_STALL		, new BPVideoStallTablePanel(), aroView));
+		addPanel(row++, new BpDetailItem("startUpDelay"           , BestPracticeType.STARTUP_DELAY		, new StartupDelayComparisonPanel(), aroView));
+		addPanel(row++, new BpDetailItem("bufferOccupancy"        , BestPracticeType.BUFFER_OCCUPANCY	, aroView));
+		addPanel(row++, new BpDetailItem("networkComparison"      , BestPracticeType.NETWORK_COMPARISON ));
+		addPanel(row++, new BpDetailItem("tcpConnection"          , BestPracticeType.TCP_CONNECTION     ));
+		addPanel(row++, new BpDetailItem("segmentSize"            , BestPracticeType.CHUNK_SIZE         ));
+		addPanel(row++, new BpDetailItem("segmentPacing"          , BestPracticeType.CHUNK_PACING       ));
+		addPanel(row++, new BpDetailItem("videoRedundancy"        , BestPracticeType.VIDEO_REDUNDANCY   ));
+		addPanel(row++, new BpDetailItem("videoConcurrentSession" , BestPracticeType.VIDEO_CONCURRENT_SESSION, new BPVideoConcurrentSessionTablePanel()));
+		addPanel(row++, new BpDetailItem("videoVariableBitrate"   , BestPracticeType.VIDEO_VARIABLE_BITRATE));
+		addPanel(row++, new BpDetailItem("videoResolutionQuality" , BestPracticeType.VIDEO_RESOLUTION_QUALITY));
+		
 		fullPanel.add(dataPanel, BorderLayout.CENTER);
 		fullPanel.add(detailPanel, BorderLayout.SOUTH);
 		add(fullPanel);

@@ -190,4 +190,19 @@ public abstract class AbstractBestPracticeResult {
 	public void setBestPracticeDescription(String bpDescription){
 		bestPracticeDescription = bpDescription;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder strblr = new StringBuilder();
+		strblr.append("ResultType :").append(resultType)
+		.append("\n\tOverviewTitle :").append(overviewTitle)
+		.append("\n\tDetailTitle   :").append(detailTitle)
+		.append("\n\tIsSelfTestBn  :").append(isSelfTestBn)
+		.append("\n\tAboutText     :").append(aboutText)
+		.append("\n\tLearnMoreUrl  :").append(learnMoreUrl)
+		.append("\n\tResultText    :").append(resultText)
+		.append("\n\tBestPracticeDescription :").append(bestPracticeDescription);
+
+		return strblr.toString();
+	}
 }

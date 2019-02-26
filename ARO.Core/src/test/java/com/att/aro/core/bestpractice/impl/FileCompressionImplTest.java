@@ -71,7 +71,6 @@ public class FileCompressionImplTest extends BaseTest{
 		assertEquals("Sending compressed files over the network will speed delivery, and unzipping files on a device is a very low overhead operation. Ensure that all your text files are compressed while being sent over the network.",result.getAboutText());
 		assertEquals("FILE_COMPRESSION", result.getBestPracticeType().toString());
 		assertEquals("Text File Compression",result.getDetailTitle());
-		assertEquals("http://developer.att.com/ARO/BestPractices/TextFileCompression",result.getLearnMoreUrl());
 		assertEquals("File Download: Text File Compression",result.getOverviewTitle());
 		assertEquals(ApplicationConfig.getInstance().getAppShortName() + " detected 100% (977KB of 977KB) of text files were sent without compression. Adding compression will speed the delivery of your content to your customers. (Note: Only files larger than 850 bytes are flagged.)",result.getResultText());
 		assertEquals("FAIL",result.getResultType().toString());		
@@ -116,7 +115,6 @@ public class FileCompressionImplTest extends BaseTest{
 		assertEquals("Sending compressed files over the network will speed delivery, and unzipping files on a device is a very low overhead operation. Ensure that all your text files are compressed while being sent over the network.",result.getAboutText());
 		assertEquals("FILE_COMPRESSION", result.getBestPracticeType().toString());
 		assertEquals("Text File Compression",result.getDetailTitle());
-		assertEquals("http://developer.att.com/ARO/BestPractices/TextFileCompression",result.getLearnMoreUrl());
 		assertEquals("File Download: Text File Compression",result.getOverviewTitle());
 		assertEquals(ApplicationConfig.getInstance().getAppShortName() + " detected 0 text files above 850 bytes were sent without compression. Adding compression will speed the delivery of your content to your customers. (Note: Only files larger than 850 bytes are flagged.)",result.getResultText());
 		assertEquals("PASS",result.getResultType().toString());		
@@ -162,7 +160,6 @@ public class FileCompressionImplTest extends BaseTest{
 		assertEquals("Sending compressed files over the network will speed delivery, and unzipping files on a device is a very low overhead operation. Ensure that all your text files are compressed while being sent over the network.",result.getAboutText());
 		assertEquals("FILE_COMPRESSION", result.getBestPracticeType().toString());
 		assertEquals("Text File Compression",result.getDetailTitle());
-		assertEquals("http://developer.att.com/ARO/BestPractices/TextFileCompression",result.getLearnMoreUrl());
 		assertEquals("File Download: Text File Compression",result.getOverviewTitle());
 		assertEquals(ApplicationConfig.getInstance().getAppShortName() + " detected 100% (0KB of 0KB) of text files were sent without compression. Adding compression will speed the delivery of your content to your customers. (Note: Only files larger than 850 bytes are flagged.)",result.getResultText());
 		assertEquals("WARNING",result.getResultType().toString());

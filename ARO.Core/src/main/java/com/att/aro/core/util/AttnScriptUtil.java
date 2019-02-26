@@ -104,7 +104,6 @@ public class AttnScriptUtil {
 		bodyScript.append("check_aro\n");
 		bodyScript.append(
 				"am broadcast -a com.att.arocollector.throttle.dl --ei dlms " + throttleProfile.getThrottleDL() + "\n");
-		bodyScript.append("sleep 1 \n");
 		bodyScript.append(
 				"am broadcast -a com.att.arocollector.throttle.ul --ei ulms " + throttleProfile.getThrottleUL() + "\n");
 		bodyScript.append("sleep " + throttleProfile.getTimeDuration() + "\n");

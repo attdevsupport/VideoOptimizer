@@ -78,7 +78,7 @@ public class FileCompressionImpl implements IBestPractice {
 	
 	@Value("${exportall.csvTextFileCompressionKb}")
 	private String exportAllKb;
-	
+
 	private IHttpRequestResponseHelper reqhelper;
 	@Autowired
 	public void setHttpRequestResponseHelper(IHttpRequestResponseHelper reqhelper){
@@ -150,8 +150,7 @@ public class FileCompressionImpl implements IBestPractice {
 		result.setResultText(text);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl,
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAll(exportAll);
 		result.setExportAllKb(exportAllKb);

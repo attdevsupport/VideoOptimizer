@@ -17,6 +17,9 @@ package com.att.aro.core.packetanalysis.pojo;
 
 import java.io.Serializable;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Used to store time information for stages of a request/response
  * Date: April 24, 2014
@@ -31,7 +34,10 @@ public class RequestResponseTimeline implements Serializable {
 	private double requestDuration;
 	private double timeToFirstByte;
 	private double contentDownloadDuration;
-
+	@Getter @Setter
+	private Double inactiveConnectionDuration;
+	@Getter @Setter
+	private double lastRespPacketTime;
 	/**
 	 * Initializing constructor.  All times are in seconds.
 	 * @param startTime Trace time when request/response started
@@ -43,7 +49,8 @@ public class RequestResponseTimeline implements Serializable {
 	 * @param contentDownloadDuration duration of response download
 	 */
 	public RequestResponseTimeline(double startTime, Double dnsLookupDuration, Double initialConnDuration,
-			Double sslNegotiationDuration, double requestDuration, double timeToFirstByte, double contentDownloadDuration) {
+			Double sslNegotiationDuration, double requestDuration, double timeToFirstByte,
+			double contentDownloadDuration, Double inactiveConnectionDuration) {
 		this.startTime = startTime;
 		this.dnsLookupDuration = dnsLookupDuration;
 		this.initialConnDuration = initialConnDuration;
@@ -51,6 +58,7 @@ public class RequestResponseTimeline implements Serializable {
 		this.requestDuration = requestDuration;
 		this.timeToFirstByte = timeToFirstByte;
 		this.contentDownloadDuration = contentDownloadDuration;
+		this.inactiveConnectionDuration = inactiveConnectionDuration;
 	}
 
 	/**
@@ -110,8 +118,10 @@ public class RequestResponseTimeline implements Serializable {
 		return (dnsLookupDuration != null ? dnsLookupDuration.doubleValue() : 0.0)
 				+ (initialConnDuration != null ? initialConnDuration.doubleValue() : 0.0)
 				+ (sslNegotiationDuration != null ? sslNegotiationDuration.doubleValue() : 0.0)
+				+ (inactiveConnectionDuration != null ? inactiveConnectionDuration.doubleValue() : 0.0)
 				+ requestDuration
 				+ timeToFirstByte
 				+ contentDownloadDuration;
-	}
+	}	
+	
 }

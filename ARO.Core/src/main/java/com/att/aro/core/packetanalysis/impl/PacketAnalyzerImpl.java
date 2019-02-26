@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -63,6 +63,7 @@ import com.att.aro.core.packetreader.pojo.IPPacket;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.settings.SettingsUtil;
+import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 
 /**
@@ -91,13 +92,14 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 	private String pktAnalysisTitle;
 	@Value("${ga.request.timing.analysisCategory.title}")
 	private String analysisCategory;
+	@Autowired
+	private IMetaDataHelper metaDataHelper;
 
 	private static final Logger LOGGER = LogManager.getLogger(PacketAnalyzerImpl.class.getName());
 
 	public PacketAnalyzerImpl(){
 	}
 	
-
 	@Autowired
 	public void setTraceReader(ITraceDataReader tracereader){
 		this.tracereader = tracereader;
@@ -166,6 +168,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				result.setAttenautionEvent(tempResult.getAttenautionEvent());
 			}
 		}
+		result.setMetaData(metaDataHelper.initMetaData(result));
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(pktAnalysisTitle,
 				System.currentTimeMillis() - bpStartTime, analysisCategory);
 		return finalResult(result,profile,filter);
@@ -223,9 +226,11 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		
 		int totBytes = 0;
 		int totPayloadBytes = 0;
-		for(PacketInfo pkt : filteredPackets){
-			totBytes += pkt.getLen();
-			totPayloadBytes += pkt.getPayloadLen();
+		if (!CollectionUtils.isEmpty(filteredPackets)) {
+			for (PacketInfo pkt : filteredPackets) {
+				totBytes += pkt.getLen();
+				totPayloadBytes += pkt.getPayloadLen();
+			}
 		}
 		stat.setTotalByte(totBytes);
 		stat.setTotalPayloadBytes(totPayloadBytes);
@@ -256,7 +261,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 					data.setVideoUsage(videoUsageAnalyzer.clearData());
 				}
 			} catch (Exception ex) {
-				LOGGER.error("Error in Video usage analysis :" + ex.getLocalizedMessage(), ex);
+				LOGGER.error("Error in Video usage analysis :" + ex.getMessage(), ex);
 			}
 			
 			data.setBurstCollectionAnalysisData(burstcollectiondata);

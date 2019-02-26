@@ -627,7 +627,11 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	}
 
 	private void doEnter() {
-		prevXrefMap = resultsTable.getVideoDataTagsMap();
+		if (errorOccured) {
+			errorOccured = false;
+		} else {
+			prevXrefMap = resultsTable.getVideoDataTagsMap();
+		}
 		if (requestFocusON) {
 			pattern = generateRegexPattern(getRequestHighlightedText());
 			regexRequestField.setText(regexRequestField.getText() + pattern);
@@ -665,7 +669,6 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 			videoConfig = new VideoAnalysisConfig(savedVoConfig.getVideoType(), savedVoConfig.getDesc(), savedVoConfig.getType(), 
 					savedVoConfig.getRegex(), savedVoConfig.getHeaderRegex(), savedVoConfig.getResponseRegex(), savedVoConfig.getXref(), savedVoConfig.getXrefMap());
 			prevXrefMap = new HashMap<>(videoConfig.getXrefMap());
-			errorOccured = false;
 		}
 	}
 
@@ -939,7 +942,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 					}
 					position = -1;
 				} else {
-					if ((idy < newTags.length && posList == null) || ((idy < newTags.length && (!posList.contains(idy))))) {
+					if (idy < newTags.length && (posList == null || !posList.contains(idy))) {
 						newTags[idy++] = videoDataTags[idx];
 					} else if (posList != null && posList.contains(idy) && insert) {
 						idy++;

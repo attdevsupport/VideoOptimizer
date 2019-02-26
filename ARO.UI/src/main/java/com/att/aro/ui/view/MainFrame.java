@@ -556,6 +556,12 @@ public class MainFrame implements SharedAttributesProcesses {
 				tracePath = null;
 				if (aroSwingWorker != null) {
 					aroSwingWorker.cancel(true);
+					
+					try {
+						Thread.sleep(150);
+					} catch (Exception exc) {
+						LOG.info("Thread sleep exception");
+					}
 				}
 				MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(),
 						traceData.getError().getDescription());

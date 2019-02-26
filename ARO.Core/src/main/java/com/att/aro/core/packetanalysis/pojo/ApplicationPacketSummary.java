@@ -17,7 +17,9 @@ package com.att.aro.core.packetanalysis.pojo;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * A case class containing packet summary information for an application.
@@ -29,6 +31,8 @@ public class ApplicationPacketSummary extends PacketSummary {
 
 	private static final long serialVersionUID = 1L;
 
+	@Getter
+	@Setter
 	private String appName;
 	
 	

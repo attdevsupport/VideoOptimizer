@@ -116,8 +116,7 @@ public class AsyncCheckInScriptImpl implements IBestPractice {
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAllSyncPacketCount(exportAllSyncPacketCount);
 		return result;

@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 
@@ -200,14 +200,20 @@ public class IOSDeviceInfo {
 	private String getScreensize(String deviceType) {
 		this.foundrealscreensize = true;
 		if (deviceType != null) {
-			if (deviceType.contains("iPhone5") || deviceType.contains("iPhone6")) {
-				return "640*1136";
-			} else if (deviceType.contains("iPhone4")) {
-				return "640*960";
-			} else if (deviceType.contains("iPad2")) {
-				return "768*1024";
-			} else if (deviceType.contains("iPad3")) {
-				return "1536*2048";
+			if (deviceType.contains("iPhone5") || deviceType.contains("iPhone6")) {return "640*1136";
+			} else if (deviceType.contains("iPhone7,2"))   {return "750*1334";	// iPhone 6
+			} else if (deviceType.contains("iPhone7,2"))   {return "750*1334";	// iPhone 6
+			} else if (deviceType.contains("iPhone8,1"))   {return "1080*1920";	// iPhone 6+
+			} else if (deviceType.contains("iPhone8,1"))   {return "750*1334";	// iPhone 6s
+			} else if (deviceType.contains("iPhone8,4"))   {return "640*1136";	// iPhone SE
+			} else if (deviceType.contains("iPhone8,2"))   {return "1080*1920";	// iPhone 6s+
+			} else if (deviceType.contains("iPhone9,1")  || deviceType.contains("iPhone9,3") )  {return "750*1334";
+			} else if (deviceType.contains("iPhone9,2")  || deviceType.contains("iPhone9,4") )  {return "1080*1920";
+			} else if (deviceType.contains("iPhone10,1") || deviceType.contains("iPhone10,4") ) {return "750*1334";
+			} else if (deviceType.contains("iPhone10,2") || deviceType.contains("iPhone10,5") ) {return "1080*1920";
+			} else if (deviceType.contains("iPhone10,3") || deviceType.contains("iPhone10,6") ) {return "1125*2436";
+			} else if (deviceType.contains("iPad2"))   {return "768*1024";
+			} else if (deviceType.contains("iPad3"))   {return "1536*2048";
 			}
 		}
 		this.foundrealscreensize = false;

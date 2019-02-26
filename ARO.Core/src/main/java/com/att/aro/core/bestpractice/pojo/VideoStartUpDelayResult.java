@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +16,21 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.Nonnull;
+
+import com.att.aro.core.videoanalysis.pojo.VideoStartup;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class VideoStartUpDelayResult extends AbstractBestPracticeResult {
 
 	private double startUpDelay;
+	
+	@Nonnull
+	private List<VideoStartup> results  = new ArrayList<>();
 	
 	@Override
 	public BestPracticeType getBestPracticeType() {
@@ -32,11 +45,28 @@ public class VideoStartUpDelayResult extends AbstractBestPracticeResult {
 		this.startUpDelay = startUpDelay;
 	}
 	
+	/**
+	 * 
+	 * @return List of VideoStartup(s)
+	 */
+	@JsonIgnore
+	public List<VideoStartup> getResults() {
+		return results;
+	}
+
+	public void setResults(List<VideoStartup> videoStartupList) {
+		if (videoStartupList != null) {
+			this.results = videoStartupList;
+		} else {
+			this.results.clear();
+		}
+	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
-}
+		}
 		if (obj == null || obj.getClass() != this.getClass()) {
 			return false;
 		}
@@ -44,8 +74,7 @@ public class VideoStartUpDelayResult extends AbstractBestPracticeResult {
 		if (Double.doubleToLongBits(this.startUpDelay) != Double.doubleToLongBits(startupDelay.getStartUpDelay())) {
 			return false;
 		}
-		if ((!startupDelay.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
-				|| getResultType() != startupDelay.getResultType()) {
+		if ((!startupDelay.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim())) || getResultType() != startupDelay.getResultType()) {
 			return false;
 		}
 		return true;
@@ -62,4 +91,15 @@ public class VideoStartUpDelayResult extends AbstractBestPracticeResult {
 		result = prime * result + getBestPracticeType().hashCode();
 		return result;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder strblr = new StringBuilder("Video Startup Delay Results:\n");
+		strblr.append(super.toString());
+		strblr.append("Results :").append(getResultType());
+		strblr.append("\nStartup Delay :").append(startUpDelay);
+		strblr.append("\nStartup Comparison :").append(results);
+		return strblr.toString();
+	}
+
 }

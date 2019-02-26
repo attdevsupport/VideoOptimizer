@@ -231,7 +231,7 @@ public class UtilTest {
 		String adblink = "C:\\Program Files\\test\\adbfolder";
 		String validatedLink = Util.validateInputLink(adblink);
 		assertNotNull(validatedLink);
-		assertTrue(validatedLink.contains("\""));
+		assertTrue(validatedLink.contains(" "));
 	}
 	@Test
 	public void getEditCap(){

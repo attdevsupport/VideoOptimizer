@@ -20,8 +20,10 @@ public final class SettingsUtil {
 		List<BestPracticeType> obpList = new ArrayList<>();
 		if (sel != null && sel.length() > 2) {
 			List<String> obpStrList = Arrays.asList(sel.replaceAll("\\[|\\]", "").split(", "));
-			obpList = obpStrList.stream().filter((s) -> BestPracticeType.isValid(s))
-					.map((s) -> BestPracticeType.valueOf(s)).collect(Collectors.toList());
+			obpList = obpStrList.stream()
+					.filter((s) -> BestPracticeType.isValid(s))
+					.map((s) -> BestPracticeType.valueOf(s))
+					.collect(Collectors.toList());
 		}
 		List<BestPracticeType> bpList = getUnselectedBestPractices(obpList);
 		return bpList;

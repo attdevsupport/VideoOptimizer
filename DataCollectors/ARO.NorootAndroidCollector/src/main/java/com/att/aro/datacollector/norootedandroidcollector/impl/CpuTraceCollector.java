@@ -23,6 +23,7 @@ import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.util.Util;
 
 /** 
  * Initiates processcpumon.sh if the Android OS version is 7.0 or above
@@ -80,9 +81,9 @@ public class CpuTraceCollector implements Runnable {
 	 */
 	private void launchAROCpuTraceScript(){
 		setCurrentState(State.Capturing);
-		
 		//Command to start script here
-		String cmd = this.adbservice.getAdbPath()
+		String path = adbservice.getAdbPath();
+		String cmd = path
 				+ " -s "
 				+ this.aroDevice.getId()
 				+ " shell"

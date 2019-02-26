@@ -23,6 +23,7 @@ import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.util.Util;
 
 /** 
  * Initiates userinput.sh & parse the output file
@@ -81,9 +82,9 @@ public class UserInputTraceCollector implements Runnable {
 	 */
 	private void launchAROUserInputTraceScript(){
 		setCurrentState(State.Capturing);
-		
 		//Command to start script here
-		String cmd = this.adbservice.getAdbPath()
+		String path = adbservice.getAdbPath();
+		String cmd = path
 				+ " -s "
 				+ this.aroDevice.getId()
 				+ " shell"

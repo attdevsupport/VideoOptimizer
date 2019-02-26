@@ -150,6 +150,42 @@ public class ManifestDash extends AROManifest {
 		return bitrate;
 	}
 
+	/**
+	 * Parse out Height from manifest
+	 * 
+	 * @param baseURL
+	 * @return
+	 */
+	public double getHeight(String baseURL) {
+		String contentType = StringParse.findLabeledDataFromString("_", "_", baseURL);
+		if (mpdOut != null) {
+			List<RepresentationAmz> videoRepresentationAmz = findAdaptationSet(mpdOut, contentType);
+			if (videoRepresentationAmz != null) {
+				for (RepresentationAmz representationAmz : videoRepresentationAmz) {
+					if (representationAmz.getUrl().endsWith(baseURL)) {
+						return valueOfDouble(representationAmz.getHeight());
+					}
+				}
+			}
+		}
+		return 0;
+	}
+
+	/**
+	 * Convert String to Double with a default of zero 
+	 * 
+	 * @param strNumber
+	 * @return value or 0 if not parsable
+	 */
+	private double valueOfDouble(String strNumber) {
+		try {
+			return Double.valueOf(strNumber);
+		} catch (NumberFormatException e) {
+			LOG.error("NumberFormatException: '" + strNumber + "' not parsable into Double");
+			return 0;
+		}
+	}
+
 	private List<RepresentationAmz> findAdaptationSet(MPDAmz mpdOut, String contentType) {
 		List<PeriodAmz> period = mpdOut.getPeriod();
 		for (PeriodAmz periodAmz : period) {

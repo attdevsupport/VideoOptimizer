@@ -5,7 +5,7 @@
 
 	<groupId>com.att.aro</groupId>
 	<artifactId>vo-parent</artifactId>
-	<version>2.2.0</version>
+	<version>2.3.0</version>
 	<packaging>pom</packaging>
 
 	<name>VO Parent</name>
@@ -13,11 +13,10 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
-		
+
 	<repositories>
-			<repository>
+		<repository>
 				<id>central</id>
 				<name>MavenCentral Repository</name>
 				<url>http://repo1.maven.org/maven2</url>
@@ -43,7 +42,7 @@
 				<name>Sonatype Flex</name>
 				<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 			</repository>
-		</repositories>	
+	</repositories>
 
 	<dependencyManagement>
 		<dependencies>

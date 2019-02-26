@@ -32,37 +32,55 @@ import java.util.stream.Collectors;
  *
  */
 public enum BestPracticeType {
-	FILE_COMPRESSION(FILE, "Text File Compression"), DUPLICATE_CONTENT(FILE, "Duplicate Content"), 
-	USING_CACHE(FILE, "Cache Control"), CACHE_CONTROL(FILE, "Content Expiration"), COMBINE_CS_JSS(FILE,
-					"Combine JS and CSS Requests"), IMAGE_SIZE(FILE, "Resize Images for Mobile"), IMAGE_MDATA(FILE,
-							"Image Metadata"), IMAGE_CMPRS(FILE, "Image Compression"), IMAGE_FORMAT(FILE,
-									"Image Format"),IMAGE_COMPARE(FILE, "Image Comparison"), MINIFICATION(FILE, "Minify CSS, JS, HTML"), SPRITEIMAGE(FILE,
-											"Use CSS Sprites for Images"),
+	FILE_COMPRESSION(FILE, "Text File Compression")
+	, DUPLICATE_CONTENT(FILE, "Duplicate Content")
+	, USING_CACHE(FILE, "Cache Control")
+	, CACHE_CONTROL(FILE, "Content Expiration")
+	, COMBINE_CS_JSS(FILE, "Combine JS and CSS Requests")
+	, IMAGE_SIZE(FILE, "Resize Images for Mobile")
+	, IMAGE_MDATA(FILE, "Image Metadata")
+	, IMAGE_CMPRS(FILE, "Image Compression")
+	, IMAGE_FORMAT(FILE, "Image Format")
+	, IMAGE_COMPARE(FILE, "Image Comparison")
+	, MINIFICATION(FILE, "Minify CSS, JS, HTML")
+	, SPRITEIMAGE(FILE, "Use CSS Sprites for Images"),
 
-	CONNECTION_OPENING(CONNECTIONS, "Connection opening"), UNNECESSARY_CONNECTIONS(CONNECTIONS,
-			"Unnecessary Connections - Multiple Simultaneous Connections"),SIMUL_CONN(CONNECTIONS,
-					"Multiple Simultaneous Connections to One Endpoint"), MULTI_SIMULCONN(CONNECTIONS,
-							"Multiple Simultaneous Connections to Many Endpoints"), PERIODIC_TRANSFER(CONNECTIONS,
-										"Inefficient Connections - Periodic Transfers"), SCREEN_ROTATION(CONNECTIONS,
-							"Inefficient Connections - Screen Rotation"), CONNECTION_CLOSING(CONNECTIONS,
-									"Inefficient Connections - Connection Closing Problems"), HTTP_4XX_5XX(CONNECTIONS,
-											"400, 500 HTTP Status Response Codes"), HTTP_3XX_CODE(CONNECTIONS,
-													"301, 302 HTTP Status Response Codes"), SCRIPTS_URL(CONNECTIONS,
-															"3rd Party Scripts"),
+	CONNECTION_OPENING(CONNECTIONS, "Connection opening")
+	, UNNECESSARY_CONNECTIONS(CONNECTIONS, "Unnecessary Connections - Multiple Simultaneous Connections")
+	, SIMUL_CONN(CONNECTIONS, "Multiple Simultaneous Connections to One Endpoint")
+	, MULTI_SIMULCONN(CONNECTIONS, "Multiple Simultaneous Connections to Many Endpoints")
+	, PERIODIC_TRANSFER(CONNECTIONS, "Inefficient Connections - Periodic Transfers")
+	, SCREEN_ROTATION(CONNECTIONS, "Inefficient Connections - Screen Rotation")
+	, CONNECTION_CLOSING(CONNECTIONS, "Inefficient Connections - Connection Closing Problems")
+	, HTTP_4XX_5XX(CONNECTIONS, "400, 500 HTTP Status Response Codes")
+	, HTTP_3XX_CODE(CONNECTIONS, "301, 302 HTTP Status Response Codes")
+	, SCRIPTS_URL(CONNECTIONS, "3rd Party Scripts"),
 
-	ASYNC_CHECK(HTML, "Asynchronous Load of JavaScript in HTML"), HTTP_1_0_USAGE(HTML, "HTTP 1.0 Usage"), FILE_ORDER(
-			HTML, "File Order"), EMPTY_URL(HTML, "Empty Source and Link Attributes"), FLASH(HTML,
-					"Flash"), DISPLAY_NONE_IN_CSS(HTML, "\"display:none\" in CSS"),
+	ASYNC_CHECK(HTML, "Asynchronous Load of JavaScript in HTML")
+	, HTTP_1_0_USAGE(HTML, "HTTP 1.0 Usage")
+	, FILE_ORDER(HTML, "File Order")
+	, EMPTY_URL(HTML, "Empty Source and Link Attributes")
+	, FLASH(HTML, "Flash")
+	, DISPLAY_NONE_IN_CSS(HTML, "\"display:none\" in CSS"),
 
-	HTTPS_USAGE(SECURITY, "HTTPS Usage"), TRANSMISSION_PRIVATE_DATA(SECURITY,
-			"Transmission of Private Data"), UNSECURE_SSL_VERSION(SECURITY, "Unsecure SSL Version"), WEAK_CIPHER(
-					SECURITY, "Weak Cipher"), FORWARD_SECRECY(SECURITY, "Forward Secrecy"),
+	HTTPS_USAGE(SECURITY, "HTTPS Usage")
+	, TRANSMISSION_PRIVATE_DATA(SECURITY, "Transmission of Private Data")
+	, UNSECURE_SSL_VERSION(SECURITY, "Unsecure SSL Version")
+	, WEAK_CIPHER(SECURITY, "Weak Cipher")
+	, FORWARD_SECRECY(SECURITY, "Forward Secrecy"),
 
-	VIDEO_STALL(VIDEO, "Stalls"), STARTUP_DELAY(VIDEO, "Start-up Delay"), BUFFER_OCCUPANCY(VIDEO,
-			"Buffer Occupancy"), NETWORK_COMPARISON(VIDEO, "Network Comparison"), TCP_CONNECTION(VIDEO,
-					"TCP Connection"), CHUNK_SIZE(VIDEO, "Segment Size"), CHUNK_PACING(VIDEO,
-							"Segment Pacing"), VIDEO_REDUNDANCY(VIDEO, "Redundancy"),
-							VIDEO_CONCURRENT_SESSION(VIDEO, "Concurrent Session"), VIDEO_VARIABLE_BITRATE(VIDEO, "Variable Bitrate") ,
+	VIDEO_STALL(VIDEO, "Stalls")
+	, STARTUP_DELAY(VIDEO, "Start-up Delay")
+	, BUFFER_OCCUPANCY(VIDEO, "Buffer Occupancy")
+	, NETWORK_COMPARISON(VIDEO, "Network Comparison")
+	, TCP_CONNECTION(VIDEO, "TCP Connection")
+	, CHUNK_SIZE(VIDEO, "Segment Size")
+	, CHUNK_PACING(VIDEO, "Segment Pacing")
+	, VIDEO_REDUNDANCY(VIDEO, "Redundancy")
+	, VIDEO_CONCURRENT_SESSION(VIDEO, "Concurrent Session")
+	, VIDEO_VARIABLE_BITRATE(VIDEO, "Variable Bitrate") 
+	, VIDEO_RESOLUTION_QUALITY(VIDEO, "Video Resolution and Perception") 
+	,
 
 	ACCESSING_PERIPHERALS(OTHER, "Accessing Peripheral Applications"),
 

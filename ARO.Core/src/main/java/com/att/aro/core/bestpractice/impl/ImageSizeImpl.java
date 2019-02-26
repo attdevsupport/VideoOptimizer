@@ -71,7 +71,7 @@ public class ImageSizeImpl implements IBestPractice {
 
 	@Value("${exportall.csvNumberOfLargeImages}")
 	private String exportNumberOfLargeImages;
-
+	
 	private static final Logger LOG = LogManager.getLogger(ImageSizeImpl.class.getName());
 
 	private IHttpRequestResponseHelper reqhelper;
@@ -144,8 +144,7 @@ public class ImageSizeImpl implements IBestPractice {
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setExportNumberOfLargeImages(exportNumberOfLargeImages);
 		return result;

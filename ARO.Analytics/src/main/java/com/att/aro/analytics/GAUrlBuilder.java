@@ -42,13 +42,6 @@ public class GAUrlBuilder {
 			// ignore this
 		}
 	}
-	
-    @Deprecated
-	public GAUrlBuilder(String appName, String appVersion, String googleAnalyticsTrackingCode) {
-		this.appName = appName;
-		this.appVersion = versionInfo.getVersion().trim().replaceAll(" ", "%20").replaceAll("#", "%23");
-		this.googleAnalyticsTrackingCode = googleAnalyticsTrackingCode;
-	}
 
 	public GAUrlBuilder(String appName, String googleAnalyticsTrackingCode) {
 		this.appName = appName;

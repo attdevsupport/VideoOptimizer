@@ -23,16 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.LogManager;
-
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.SessionValues;
-import com.att.aro.core.util.Util;
 
 public final class SimultnsUtil {
-	private static final Logger LOGGER = LogManager.getLogger(SimultnsUtil.class.getName());
 	TreeMap<Double, String> ipMap = new TreeMap<Double, String>();
 
 	public Map<String, ArrayList<Session>> getDistinctMap(List<Session> sessions) {
@@ -93,16 +88,6 @@ public final class SimultnsUtil {
 			TreeMap<Double, Double> timeMap, boolean isManyEndpoints,
 			TreeMap<Double, HttpRequestResponseInfo> reqRespTimeMap, String ipInside) {
 		int startTimePointer = start.length, endTimePointer = end.length;
-		if (isManyEndpoints && Util.checkDevMode()) {
-			LOGGER.debug("Start : ");
-			for (int startCounter = 0; startCounter < start.length; startCounter++) {
-				LOGGER.debug(String.valueOf(start[startCounter]));
-			}
-			LOGGER.debug("End : ");
-			for (int endCounter = 0; endCounter < start.length; endCounter++) {
-				LOGGER.debug(String.valueOf(end[endCounter]));
-			}
-		}
 		Arrays.sort(start);
 		Arrays.sort(end);
 		MultipleConnectionsEntry simultnsConnEntry = null;
@@ -122,12 +107,12 @@ public final class SimultnsUtil {
 							simultnsConnectionEntryMap.replace(domainVal,
 									new MultipleConnectionsEntry(reqRespTimeMap.get(startTime),
 											domainVal.substring(domainVal.lastIndexOf('/') + 1, domainVal.length()),
-											currentOverlap, startTime, timeMap.get(startTime), ipInside));
+											currentOverlap, startTime, timeMap.get(startTime), ipInside, isManyEndpoints));
 						} else {
 							simultnsConnectionEntryMap.put(domainVal,
 									new MultipleConnectionsEntry(reqRespTimeMap.get(startTime),
 											domainVal.substring(domainVal.lastIndexOf('/') + 1, domainVal.length()),
-											currentOverlap, startTime, timeMap.get(startTime), ipInside));
+											currentOverlap, startTime, timeMap.get(startTime), ipInside, isManyEndpoints));
 						}
 					} else {
 						String domain = "";
@@ -140,7 +125,7 @@ public final class SimultnsUtil {
 						simultnsConnectionEntryMap.put(domainVal,
 								new MultipleConnectionsEntry(reqRespTimeMap.get(startTime),
 										domain.substring(domain.lastIndexOf('/') + 1, domain.length()),
-										currentOverlap, startTime, timeMap.get(startTime), ipMap.get(startTime)));
+										currentOverlap, startTime, timeMap.get(startTime), ipMap.get(startTime), isManyEndpoints));
 					}
 					if (maxOverlap < currentOverlap) {
 						maxOverlap = currentOverlap;

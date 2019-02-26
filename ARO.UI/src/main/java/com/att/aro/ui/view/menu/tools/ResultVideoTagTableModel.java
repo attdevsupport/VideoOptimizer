@@ -57,6 +57,7 @@ public class ResultVideoTagTableModel extends AbstractTableModel {
 	public Object getValueAt(int row, int col) {
 		Object str = data[row][col];
 		if (col == 0 && str != null && str instanceof HashMap) {
+			@SuppressWarnings("unchecked")
 			HashMap<RegexMatchLbl, String> value = (HashMap<RegexMatchLbl, String>) str;
 			String cellValue = value.values().stream().findFirst().get();
 			return cellValue;
@@ -130,6 +131,7 @@ public class ResultVideoTagTableModel extends AbstractTableModel {
 			if(!(data[idx][0] instanceof HashMap)) {
 				continue;
 			}
+			@SuppressWarnings("unchecked")
 			Map<RegexMatchLbl, String> value = (HashMap<RegexMatchLbl, String>) data[idx][0];
 			if (value != null) {
 				RegexMatchLbl lbl = value.keySet().stream().findFirst().get();

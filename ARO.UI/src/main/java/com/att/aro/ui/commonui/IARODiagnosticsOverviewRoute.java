@@ -15,6 +15,8 @@
  */
 package com.att.aro.ui.commonui;
 
+import javax.swing.JTabbedPane;
+
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.ui.model.DataTableModel;
 
@@ -65,4 +67,10 @@ public interface IARODiagnosticsOverviewRoute {
 	 * 
 	 */
 	public void launchSliderDialogFromDiagnosticTab();
+	/**
+	 * <p>
+	 * Interface to route to the video Tab & launch slider dialog 
+	 * 
+	 */
+	public JTabbedPane getJtabbedPane();
 }

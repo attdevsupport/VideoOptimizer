@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.ApplicationConfig;
@@ -97,8 +97,8 @@ public class HttpsUsageImpl implements IBestPractice {
 		}
 		result.setOverviewTitle(overviewTitle);
 		result.setDetailTitle(detailedTitle);
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setAboutText(aboutText);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
 		result.setResults(httpsUsageEntries);
 		result.setResultText(testResultText);
 		result.setExportAll(exportAll);

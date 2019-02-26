@@ -20,8 +20,9 @@ public class VideoConcurrentSession {
 	Double concurrencyDuration;
 	String videoName = "";
 
-	public VideoConcurrentSession(){}
-	
+	public VideoConcurrentSession() {
+	}
+
 	public VideoConcurrentSession(int concurrentSessionCount, Double concurrencyDuration) {
 		this.concurrentSessionCount = concurrentSessionCount;
 		this.concurrencyDuration = concurrencyDuration;
@@ -52,7 +53,7 @@ public class VideoConcurrentSession {
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
-}
+		}
 		if (obj == null || obj.getClass() != this.getClass()) {
 			return false;
 		}

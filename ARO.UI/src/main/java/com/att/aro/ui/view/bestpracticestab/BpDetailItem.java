@@ -32,7 +32,6 @@ import java.awt.print.PageFormat;
 import java.awt.print.PrinterException;
 import java.io.IOException;
 import java.net.URI;
-import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,6 +41,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
@@ -50,7 +50,9 @@ import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
-import com.att.aro.core.ApplicationConfig;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.AsyncCheckEntry;
 import com.att.aro.core.bestpractice.pojo.AsyncCheckInScriptResult;
@@ -78,8 +80,10 @@ import com.att.aro.core.bestpractice.pojo.UnnecessaryConnectionResult;
 import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionResult;
 import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
+import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.WeakCipherResult;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.videoanalysis.pojo.VideoStartup;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.BrowserGenerator;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
@@ -87,9 +91,12 @@ import com.att.aro.ui.commonui.IAROExpandable;
 import com.att.aro.ui.commonui.UIComponent;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
+import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.ui.view.menu.file.BPSelectionPanel;
 import com.att.aro.ui.view.menu.file.PreferencesDialog;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
+import com.att.aro.ui.view.videotab.AccordionComponent;
+import com.att.aro.ui.view.videotab.VideoTab;
 
 public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 	private final class HyperlinkAdapter extends MouseAdapter {
@@ -109,6 +116,8 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 	JTextPane aboutTextLabel = null;
 	JLabel resultsLabel = null;
 	JTextPane resultsTextLabel = null;
+	
+	private AbstractChartPanel resultsChartPanel;
 	private AbstractBpDetailTablePanel resultsTablePanel;
 	private AbstractImageBpDetailTablePanel imgMdataResultsTablePanel;
 	private AbstractBpImageCompressionTablePanel imageCompressionResultsTablePanel;
@@ -124,8 +133,17 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 	static final Font TEXT_FONT = new Font("TextFont", Font.PLAIN, 12);
 	private static final int TEXT_WIDTH = 600;
 	private static final int FILE_PREFERENCE_VIDEO_INDEX = 2;
+	private static final int VIDEO_TAB_INDEX = 3;
 	private HyperlinkAdapter hyperlinkAdapter = new HyperlinkAdapter();
+	private static final Logger LOG = LogManager.getLogger(BpDetailItem.class.getName());
 
+	/**
+	 * This will show a table
+	 * 
+	 * @param name
+	 * @param bpType
+	 * @param resultsTablePanel
+	 */
 	public BpDetailItem(String name, BestPracticeType bpType, AbstractBpDetailTablePanel resultsTablePanel) {
 		super();
 		this.bpType = bpType;
@@ -151,6 +169,22 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 		nameTextLabel = new JLabel();
 		this.resultsTablePanel = resultsTablePanel;
 		add(layoutPanel(name), BorderLayout.CENTER);
+	}
+	
+	public BpDetailItem(String name, BestPracticeType bpType, AbstractChartPanel resultsChart,
+			MainFrame aroView) {
+		super();
+		this.aroView = aroView;
+		this.bpType = bpType;
+		imageLabel = new JLabel(loadImageIcon(null));
+		nameLabel = new JLabel();
+		aboutLabel = new JLabel();
+		resultsLabel = new JLabel();
+		nameTextLabel = new JLabel();
+		this.resultsTablePanel = null;
+		this.resultsChartPanel = resultsChart;
+		add(layoutPanel(name), BorderLayout.CENTER);
+	
 	}
 
 	public BpDetailItem(String name, BestPracticeType bpType, MainFrame aroView) {
@@ -271,6 +305,12 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 		}
 	}
 
+	private void openVideoTab() {
+		if (diagnosticsOverviewRoute != null && diagnosticsOverviewRoute.getJtabbedPane() != null) {
+			JTabbedPane voTabbedPane = diagnosticsOverviewRoute.getJtabbedPane();
+			voTabbedPane.setSelectedIndex(VIDEO_TAB_INDEX);
+		}
+	}
 	public JPanel layoutPanel(String name) {
 		JScrollPane scroll;
 		if (dataPanel == null) {
@@ -280,15 +320,11 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 			int idx = 0;
 			//
 			nameLabel.setText(ResourceBundleHelper.getMessageString("bestPractices.test"));
-			// nameTextLabel =
-			// createJTextPane(ResourceBundleHelper.getMessageString(name +
-			// ".detailedTitle"));
 			nameTextLabel.setText(ResourceBundleHelper.getMessageString(name + ".detailedTitle"));
 			aboutLabel.setText(ResourceBundleHelper.getMessageString("bestPractices.About"));
 			aboutTextLabel = createJTextArea(ResourceBundleHelper.getMessageString(name + ".desc"), getLearnMoreURI());
 			resultsLabel.setText(ResourceBundleHelper.getMessageString("bestPractices.results"));
 			resultsTextLabel = createJTextPane("");
-			// setwidth(nameTextLabel , 180);
 			setwidth(aboutTextLabel, TEXT_WIDTH);
 			resultsTextLabel.setPreferredSize(null);
 			resultsTextLabel.setSize(TEXT_WIDTH, 9999);
@@ -303,23 +339,25 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 					if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
 						if(e.getDescription().equalsIgnoreCase("preferences")){
 							openVideoPreferencesDialog();
-						} else {
+						} else if(e.getDescription().equalsIgnoreCase("selectManifest")){
+							openVideoTab();
+						}else {
 							routeHyperlink();
 						}
 						
 					}
 				}
 			});
+			
 			// Icon
 			dataPanel.add(imageLabel, new GridBagConstraints(0, idx, 1, 4, 0.0, 0.0, GridBagConstraints.NORTH,
 					GridBagConstraints.NONE, imageInsets, 0, 0));
+			
 			// Text:
 			dataPanel.add(nameLabel, new GridBagConstraints(1, idx, 1, 1, 0.0, 0.0, GridBagConstraints.SOUTHWEST,
 					GridBagConstraints.NONE, startInsets, 0, 0));
+			
 			// about: detailedTitle - desc
-			// dataPanel.add(aboutLabel, new GridBagConstraints(1, ++idx, 1, 1,
-			// 0.0, 0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE,
-			// insets, 0, 0));
 			nameLabel.setFont(new Font("TimesRoman", Font.PLAIN, 16));
 			nameTextLabel.setFont(new Font("TimesRoman", Font.PLAIN, 16));
 			scroll = new JScrollPane(nameTextLabel);
@@ -334,6 +372,7 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 			removeMouseWheelListeners(scroll);
 			dataPanel.add(scroll, new GridBagConstraints(2, idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST,
 					GridBagConstraints.HORIZONTAL, insets, 0, 0));
+			
 			// Results
 			dataPanel.add(resultsLabel, new GridBagConstraints(1, ++idx, 1, 1, 0.0, 0.0, GridBagConstraints.NORTHWEST,
 					GridBagConstraints.NONE, insets, 0, 0));
@@ -342,6 +381,7 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 			removeMouseWheelListeners(scroll);
 			dataPanel.add(scroll, new GridBagConstraints(2, idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST,
 					GridBagConstraints.BOTH, insets, 0, 0));
+			
 			// PrivateData Button
 			if (name.equalsIgnoreCase("security.transmissionPrivateData")) {
 				buttonPrivateData.setText("Add Private Data Tracking");
@@ -363,6 +403,12 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 				dataPanel.add(scroll, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST,
 						GridBagConstraints.NORTHWEST, insets, 0, 0));
 			}
+			
+			// Chart
+			if (resultsChartPanel != null) {
+				dataPanel.add(resultsChartPanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
+			}
+
 			// Table
 			if (resultsTablePanel != null) {
 				dataPanel.add(resultsTablePanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0,
@@ -435,8 +481,7 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 						try {
 							BrowserGenerator.openBrowser(url);
 						} catch (IOException e1) {
-							// MessageDialogFactory.showUnexpectedExceptionDialog(parent,
-							// e1);
+							LOG.error(e1.getMessage());
 						}
 					}
 				}
@@ -455,152 +500,146 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 
 	private URI getLearnMoreURI() {
 		String learnMoreURI = "";
-		boolean useVO = false;
 		switch (bpType) {
 		case FILE_COMPRESSION:
-			learnMoreURI = ResourceBundleHelper.getMessageString("textFileCompression.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("textFileCompression.url");
 			break;
 		case DUPLICATE_CONTENT:
-			learnMoreURI = ResourceBundleHelper.getMessageString("caching.duplicateContent.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("caching.duplicateContent.url");
 			break;
 		case USING_CACHE:
-			learnMoreURI = ResourceBundleHelper.getMessageString("caching.usingCache.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("caching.usingCache.url");
 			break;
 		case CACHE_CONTROL:
-			learnMoreURI = ResourceBundleHelper.getMessageString("caching.cacheControl.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("caching.cacheControl.url");
 			break;
 		case COMBINE_CS_JSS:
-			learnMoreURI = ResourceBundleHelper.getMessageString("combinejscss.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("combinejscss.url");
 			break;
 		case IMAGE_SIZE:
-			learnMoreURI = ResourceBundleHelper.getMessageString("imageSize.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("imageSize.url");
 			break;
 		case IMAGE_MDATA:
-			learnMoreURI = ResourceBundleHelper.getMessageString("imageMetadata.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("imageMetadata.url");
 			break;
 		case IMAGE_CMPRS:
-			learnMoreURI = ResourceBundleHelper.getMessageString("imageCompression.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("imageCompression.url");
 			break;
 		case IMAGE_FORMAT:
-			learnMoreURI = ResourceBundleHelper.getMessageString("imageFormat.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("imageFormat.url");
 			break;
 		case IMAGE_COMPARE:
-			learnMoreURI = ResourceBundleHelper.getMessageString("uiComparator.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("uiComparator.url");
 			break;
 		case MINIFICATION:
-			learnMoreURI = ResourceBundleHelper.getMessageString("minification.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("minification.url");
 			break;
 		case SPRITEIMAGE:
-			learnMoreURI = ResourceBundleHelper.getMessageString("spriteimages.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("spriteimages.url");
 			break;
 		case UNNECESSARY_CONNECTIONS:
-			learnMoreURI = ResourceBundleHelper.getMessageString("connections.unnecssaryConn.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("connections.unnecssaryConn.url");
 			break;
 		case SCRIPTS_URL:
-			learnMoreURI = ResourceBundleHelper.getMessageString("3rd.party.scripts.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("3rd.party.scripts.url");
 			break;
 		case SCREEN_ROTATION:
-			learnMoreURI = ResourceBundleHelper.getMessageString("connections.screenRotation.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("connections.screenRotation.url");
 			break;
 		case PERIODIC_TRANSFER:
-			learnMoreURI = ResourceBundleHelper.getMessageString("connections.periodic.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("connections.periodic.url");
 			break;
 		case HTTP_4XX_5XX:
-			learnMoreURI = ResourceBundleHelper.getMessageString("connections.http4xx5xx.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("connections.http4xx5xx.url");
 			break;
 		case HTTP_3XX_CODE:
-			learnMoreURI = ResourceBundleHelper.getMessageString("connections.http3xx.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("connections.http3xx.url");
 			break;
 		case HTTP_1_0_USAGE:
-			learnMoreURI = ResourceBundleHelper.getMessageString("html.httpUsage.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("html.httpUsage.url");
 			break;
 		case FLASH:
-			learnMoreURI = ResourceBundleHelper.getMessageString("flash.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("flash.url");
 			break;
 		case FILE_ORDER:
-			learnMoreURI = ResourceBundleHelper.getMessageString("html.fileorder.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("html.fileorder.url");
 			break;
 		case EMPTY_URL:
-			learnMoreURI = ResourceBundleHelper.getMessageString("empty.url.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("emptyUrl.url");
 			break;
 		case DISPLAY_NONE_IN_CSS:
-			learnMoreURI = ResourceBundleHelper.getMessageString("html.displaynoneincss.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("html.displaynoneincss.url");
 			break;
 		case CONNECTION_OPENING:
-			learnMoreURI = ResourceBundleHelper.getMessageString("connections.connectionOpening.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("connections.connectionOpening.url");
 			break;
 		case CONNECTION_CLOSING:
-			learnMoreURI = ResourceBundleHelper.getMessageString("connections.connClosing.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("connections.connClosing.url");
 			break;
 		case ASYNC_CHECK:
-			learnMoreURI = ResourceBundleHelper.getMessageString("html.asyncload.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("html.asyncload.url");
 			break;
 		case ACCESSING_PERIPHERALS:
-			learnMoreURI = ResourceBundleHelper.getMessageString("other.accessingPeripherals.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("other.accessingPeripherals.url");
 			break;
 		case HTTPS_USAGE:
-			learnMoreURI = ResourceBundleHelper.getMessageString("security.httpsUsage.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("security.httpsUsage.url");
 			break;
 		case TRANSMISSION_PRIVATE_DATA:
-			learnMoreURI = ResourceBundleHelper.getMessageString("security.transmissionPrivateData.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("security.transmissionPrivateData.url");
 			break;
 		case UNSECURE_SSL_VERSION:
-			learnMoreURI = ResourceBundleHelper.getMessageString("security.unsecureSSLVersion.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("security.unsecureSSLVersion.url");
 			break;
 		case WEAK_CIPHER:
-			learnMoreURI = ResourceBundleHelper.getMessageString("security.weakCipher.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("security.weakCipher.url");
 			break;
 		case FORWARD_SECRECY:
-			learnMoreURI = ResourceBundleHelper.getMessageString("security.forwardSecrecy.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("security.forwardSecrecy.url");
 			break;
 		case VIDEO_STALL:
-			learnMoreURI = ResourceBundleHelper.getMessageString("videoStall.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("videoStall.url");
 			break;
 		case STARTUP_DELAY:
-			learnMoreURI = ResourceBundleHelper.getMessageString("startUpDelay.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("startUpDelay.url");
 			break;
 		case BUFFER_OCCUPANCY:
-			learnMoreURI = ResourceBundleHelper.getMessageString("bufferOccupancy.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("bufferOccupancy.url");
 			break;
 		case NETWORK_COMPARISON:
-			learnMoreURI = ResourceBundleHelper.getMessageString("networkComparison.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("networkComparison.url");
 			break;
 		case TCP_CONNECTION:
-			learnMoreURI = ResourceBundleHelper.getMessageString("tcpConnection.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("tcpConnection.url");
 			break;
 		case CHUNK_SIZE:
-			learnMoreURI = ResourceBundleHelper.getMessageString("chunkSize.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("segmentSize.url");
 			break;
 		case CHUNK_PACING:
-			learnMoreURI = ResourceBundleHelper.getMessageString("chunkPacing.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("segmentPacing.url");
 			break;
 		case VIDEO_REDUNDANCY:
-			learnMoreURI = ResourceBundleHelper.getMessageString("videoRedundancy.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("videoRedundancy.url");
 			break;
 		case SIMUL_CONN:
-			learnMoreURI = ResourceBundleHelper.getMessageString("connections.simultaneous.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("connections.simultaneous.url");
 			break;
 		case MULTI_SIMULCONN:
-			learnMoreURI = ResourceBundleHelper.getMessageString("connections.multiSimultaneous.url");
+			learnMoreURI = ResourceBundleHelper.getURLResource("connections.multiSimultaneous.url");
 			break;
 		case VIDEO_CONCURRENT_SESSION:
-			learnMoreURI = ResourceBundleHelper.getMessageString("videoConcurrentSession.url");
-			useVO = true;
+			learnMoreURI = ResourceBundleHelper.getURLResource("videoConcurrentSession.url");
 			break;
 		case VIDEO_VARIABLE_BITRATE:
-			learnMoreURI = ResourceBundleHelper.getMessageString("videoVariableBitrate.url");
-			useVO = true;
+			learnMoreURI = ResourceBundleHelper.getURLResource("videoVariableBitrate.url");
+			break;
+		case VIDEO_RESOLUTION_QUALITY:
+			learnMoreURI = ResourceBundleHelper.getURLResource("videoResolutionQuality.url");
 			break;
 		default:
 			break;
 		}
-		String learnMoreURL = "";
-		if (useVO) {
-			learnMoreURL = MessageFormat.format(learnMoreURI, ApplicationConfig.getInstance().getAppUrlBaseNew());
-		} else {
-			learnMoreURL = MessageFormat.format(learnMoreURI, ApplicationConfig.getInstance().getAppUrlBase());
-		}
-		return URI.create(learnMoreURL);
+		return URI.create(learnMoreURI);
 	}
 
 	/**
@@ -656,6 +695,8 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 				imageName = "Image.bpManual";
 			} else if (resType.equals(BPResultType.CONFIG_REQUIRED)) {
 				imageName = "Image.bpConfig";
+			} else if (resType.equals(BPResultType.NO_DATA)) {
+				imageName = "Image.bpNoData";
 			}
 		}
 		return UIComponent.getInstance().getIconByKey(imageName);
@@ -674,7 +715,9 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 			if (bpr.getBestPracticeType().equals(this.bpType)) {
 				resultsTextLabel.setText(bpr.getResultText());
 				imageLabel.setIcon(loadImageIcon(bpr));
-				if (bpType == BestPracticeType.VIDEO_STALL || bpType == BestPracticeType.STARTUP_DELAY
+				
+				if (bpType == BestPracticeType.VIDEO_STALL 
+						|| bpType == BestPracticeType.STARTUP_DELAY
 						|| bpType == BestPracticeType.BUFFER_OCCUPANCY) {
 					if (bpr.getResultType().equals(BPResultType.CONFIG_REQUIRED)) {
 						addConfigIconActions();
@@ -686,6 +729,7 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 						}
 					}
 				}
+				
 				BestPracticeType resultType = bpr.getBestPracticeType();
 				switch (resultType) {
 				case FILE_COMPRESSION:
@@ -703,20 +747,20 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 								.setData(((DuplicateContentResult) bpr).getDuplicateContentList());
 					return;
 				case IMAGE_SIZE:
-					if (bpr.getResultType() == BPResultType.NONE)
+					if (bpr.getResultType() == BPResultType.NONE || bpr.getResultType() == BPResultType.NO_DATA)
 						((BpFileImageSizeTablePanel) resultsTablePanel).setData(Collections.emptyList());
 					else
 						((BpFileImageSizeTablePanel) resultsTablePanel).setData(((ImageSizeResult) bpr).getResults());
 					return;
 				case IMAGE_MDATA:
-					if (bpr.getResultType() == BPResultType.NONE)
+					if (bpr.getResultType() == BPResultType.NONE || bpr.getResultType() == BPResultType.NO_DATA)
 						((BpFileImageMDataTablePanel) imgMdataResultsTablePanel).setData(Collections.emptyList());
 					else
 						((BpFileImageMDataTablePanel) imgMdataResultsTablePanel)
 								.setData(((ImageMdtaResult) bpr).getResults());
 					return;
 				case IMAGE_CMPRS:
-					if (bpr.getResultType() == BPResultType.NONE)
+					if (bpr.getResultType() == BPResultType.NONE || bpr.getResultType() == BPResultType.NO_DATA)
 						((BpFileImageCompressionTablePanel) imageCompressionResultsTablePanel)
 								.setData(Collections.emptyList());
 					else
@@ -724,14 +768,14 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 								.setData(((ImageCompressionResult) bpr).getResults());
 					return;
 				case IMAGE_FORMAT:
-					if (bpr.getResultType() == BPResultType.NONE)
+					if (bpr.getResultType() == BPResultType.NONE || bpr.getResultType() == BPResultType.NO_DATA)
 						((BpFileImageFormatTablePanel) imageFormatResultsTablePanel).setData(Collections.emptyList());
 					else
 						((BpFileImageFormatTablePanel) imageFormatResultsTablePanel)
 								.setData(((ImageFormatResult) bpr).getResults());
 					return;
 				case IMAGE_COMPARE:
-					if (bpr.getResultType() == BPResultType.NONE) {
+					if (bpr.getResultType() == BPResultType.NONE || bpr.getResultType() == BPResultType.NO_DATA) {
 						((BpFileImageComparisionTablePanel) imageComparisonResultsTablePanel)
 								.setData(Collections.emptyList());
 					} else {
@@ -848,22 +892,25 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 						((BPConnectionsSimultnsTablePanel) resultsTablePanel)
 								.setData(((MultiSimultnsConnectionResult) bpr).getResults());
 					return;
-				/*
-				 * case AD_ANALYTICS: if (bpr.getResultType() ==
-				 * BPResultType.NONE) ((BpConnectionsAdAnalyticsTablePanel)
-				 * resultsTablePanel).setData(Collections.emptyList()); else
-				 * ((BpConnectionsAdAnalyticsTablePanel) resultsTablePanel)
-				 * .setData(((AdAnalyticsResult) bpr).getResults()); return;
-				 */
 				case VIDEO_STALL:
-					if (bpr.getResultType() == BPResultType.NONE) {
+					if (bpr.getResultType() == BPResultType.NONE || bpr.getResultType() == BPResultType.NO_DATA) {
 						((BPVideoStallTablePanel) resultsTablePanel).setData(Collections.emptyList());
 					} else {
 						((BPVideoStallTablePanel) resultsTablePanel).setData(((VideoStallResult) bpr).getResults());
 					}
 					return;
+
+				case STARTUP_DELAY:
+					StartupDelayComparisonPanel startupDelayPanel = (StartupDelayComparisonPanel) resultsChartPanel;
+					List<VideoStartup> results = Collections.emptyList();
+					if (bpr.getResultType() != BPResultType.NONE) {
+						results = ((VideoStartUpDelayResult) bpr).getResults();
+					}
+					startupDelayPanel.setData(results);
+					return;
+
 				case VIDEO_CONCURRENT_SESSION:
-					if (bpr.getResultType() == BPResultType.NONE) {
+					if (bpr.getResultType() == BPResultType.NONE || bpr.getResultType() == BPResultType.NO_DATA) {
 						((BPVideoConcurrentSessionTablePanel) resultsTablePanel).setData(Collections.emptyList());
 					} else {
 						((BPVideoConcurrentSessionTablePanel) resultsTablePanel)

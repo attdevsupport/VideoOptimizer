@@ -27,6 +27,7 @@ import javax.swing.event.MenuListener;
 
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
+import com.att.aro.mvc.AROController;
 import com.att.aro.ui.commonui.AROMenuAdder;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
@@ -59,6 +60,8 @@ public class AROViewMenu implements ActionListener, MenuListener {
 			menuAdder.getMenuItemInstance(MenuItem.menu_view_options);
 
 	private FilterProcessesDialog filterProcessDialog;
+
+	private AROController voController;
 	
 	private enum MenuItem {
 		menu_view,
@@ -72,11 +75,12 @@ public class AROViewMenu implements ActionListener, MenuListener {
 
 	public AROViewMenu(SharedAttributesProcesses parent) {
 		this.parent = parent;
+		voController = ((MainFrame)parent).getController();
 	}
 	
 
-	public JMenu getMenu(){
-		if(viewMenu == null){
+	public JMenu getMenu() {
+		if (viewMenu == null) {
 			viewMenu = new JMenu(ResourceBundleHelper.getMessageString(MenuItem.menu_view));
 			viewMenu.setMnemonic(KeyEvent.VK_UNDEFINED);
 
@@ -89,15 +93,20 @@ public class AROViewMenu implements ActionListener, MenuListener {
 			viewMenu.add(menuViewApps);
 			menuViewApps.setEnabled(parent.isModelPresent());
 			viewMenu.add(menuToolsExcludetimerangeanalysis);
+			
 			menuToolsExcludetimerangeanalysis.setEnabled(parent.isModelPresent());
-			menuViewProcesses.setEnabled(parent.isModelPresent()&&cpuDataExists());
-			viewMenu.add(menuViewProcesses);			
+			menuViewProcesses.setEnabled(parent.isModelPresent() && cpuDataExists() && isRootedTrace());
+			viewMenu.add(menuViewProcesses);
 			viewMenu.addSeparator();
 			viewMenu.add(menuViewOptions);
 		}
-		
 		return viewMenu;
 	}
+
+	private boolean isRootedTrace() {
+		return voController.isRooted();
+	}
+
 
 	@Override
 	public void actionPerformed(ActionEvent aEvent) {
@@ -120,7 +129,6 @@ public class AROViewMenu implements ActionListener, MenuListener {
 				}
 			}
 			menuViewOptionsDialog.setVisible(true);
-			menuViewOptions.setEnabled(false);
 		}
 	}
 
@@ -131,7 +139,7 @@ public class AROViewMenu implements ActionListener, MenuListener {
 		menuViewVideo.setSelected(parent.isVideoPlayerSelected());
 		menuViewApps.setEnabled(parent.isModelPresent());
 		menuToolsExcludetimerangeanalysis.setEnabled(parent.isModelPresent());
-		menuViewProcesses.setEnabled(parent.isModelPresent()&&cpuDataExists());
+		menuViewProcesses.setEnabled(parent.isModelPresent() && cpuDataExists() && isRootedTrace());
 	}
 	@Override
 	public void menuDeselected(MenuEvent e) { // NoOp
@@ -142,7 +150,7 @@ public class AROViewMenu implements ActionListener, MenuListener {
 
 	private boolean cpuDataExists() {
 		boolean exists = false;
-		PacketAnalyzerResult analysisData = ((MainFrame)parent).getController().getTheModel().getAnalyzerResult();
+		PacketAnalyzerResult analysisData = voController.getTheModel().getAnalyzerResult();
 		if (analysisData != null) {
 			CpuActivityList cpuAList = analysisData.getTraceresult().getCpuActivityList();
 			exists = !cpuAList.getAllProcesses().isEmpty();

@@ -434,11 +434,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 		// Adding the TCP packets to the trace for getting redoing the analysis
 		if (packetsForSelectedSession.size() > 0) {
-			if (tcpsessionsList.size() == getAllTcpSessions()) { // For select
-																	// all use
-																	// all
-																	// exiting
-																	// packets
+			if (tcpsessionsList.size() == getAllTcpSessions()) {
+				// For select all use all exiting packets
 				filteredSessionTraceData.getAnalyzerResult().getTraceresult().setAllpackets(getAllPackets());
 				selectedAllPackets = true;
 			} else {
@@ -1081,6 +1078,11 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		return plot;
 	}
 
+	/**
+	 * 
+	 * @param graphCrosshairSetting a timestamp
+	 * @param centerChartOnCrosshair boolean
+	 */
 	public void setGraphView(double graphCrosshairSetting, boolean centerChartOnCrosshair) {
 		setCrossHair(graphCrosshairSetting);
 		if (centerChartOnCrosshair) {
@@ -1090,14 +1092,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	}
 
 	private void resetScrollPosition() {
-		// SwingUtilities.invokeLater(new Runnable() {
-		// @Override
-		// public void run() {
-		// getPane().getHorizontalScrollBar().setValue(getCrosshairViewPos());
 		chartPanelScrollPane().getHorizontalScrollBar().setValue(getCrosshairViewPos());
-		// }
-		// });
-		// update the handle position
 		getHandlePanel().setHandlePosition(getHandleCoordinate());
 	}
 
@@ -1160,6 +1155,9 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		return new Float(new Float(chartPanelScrollPane().getWidth()) / new Float(getScrollMax()));
 	}
 
+	/**
+	 * @param crossHairValue a timestamp in seconds from start of trace
+	 */
 	private void setCrossHair(double crossHairValue) {
 		// set the cross hair values of plot and sub-plots
 		Plot mainplot = getAdvancedGraph().getPlot();
@@ -1310,15 +1308,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		final double lastChartX = new Double(
 				plot.getDomainAxis().java2DToValue(point.getX(), plotArea, plot.getDomainAxisEdge()));
 
-		// setCrossHair(lastChartX);
-
-		// SwingUtilities.invokeLater(new Runnable() {
-		// @Override
-		// public void run() {
-		// setCrossHair(lastChartX);
-		// }
-		// });
-
 		for (GraphPanelListener gpl : listeners) {
 			gpl.graphPanelClicked(lastChartX);
 
@@ -1372,7 +1361,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("StartupDelayDialog");
 		IVideoPlayer player = parent.getVideoPlayer();
 		double maxDuration = player.getDuration();
-		if (maxDuration != -1) {
+		if (maxDuration >= 0) {
 			JDialog dialog = new SliderDialogBox(this, maxDuration, chunkInfo, indexKey, vcPlot.getAllChunks());
 			dialog.pack();
 			dialog.setSize(dialog.getPreferredSize());

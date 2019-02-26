@@ -7,7 +7,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@SuppressWarnings("unused")
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = AROConfig.class)
 public class BaseTest {

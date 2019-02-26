@@ -21,17 +21,20 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 /**
  *
  *
  */
 public class ResourceBundleHelper {
 	
+	private static final Logger LOG = LogManager.getLogger(ResourceBundleHelper.class.getName());
+
 	/**
 	 * The default resource bundle
 	 */
-	
-	
 	private static ResourceBundle defaultBundle = ResourceBundle
 			.getBundle("messages");
 
@@ -40,6 +43,11 @@ public class ResourceBundleHelper {
 	 * just need to switch the language and didn't switch other things
 	 */
 	private static ResourceBundle messageBundle = ResourceBundle.getBundle("messages");
+
+	/**
+	 * The URL resource bundle
+	 */
+	private static ResourceBundle urlBundle = ResourceBundle.getBundle("url");
 
 	/**
 	 * The build resource bundle
@@ -74,10 +82,24 @@ public class ResourceBundleHelper {
 	 * @param key
 	 * @return
 	 */
-	public static String getMessageString(String key){
-		return messageBundle.getString(key);
+	public static String getMessageString(String key) {
+		try {
+			return messageBundle.getString(key);
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOG.error("Failed to retrieve " + key, e);
+			return key + ":failed";
+		}
 	}
-
+	
+	public static String getURLResource(String key){
+		return urlBundle.getString(key);
+	}
+	
+	public static ResourceBundle getURLBundle(){
+		return urlBundle;
+	}
+	
 	public static String getKeyFromEnum(Enum<?> enumParm) {
 		return enumParm.name().replaceAll("_", ".");
 	}
@@ -190,6 +212,4 @@ public class ResourceBundleHelper {
 		}
 		return result;
 	}
-
-
 }

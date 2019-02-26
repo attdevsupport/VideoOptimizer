@@ -26,8 +26,7 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
 public class AccordionTableModel extends AbstractTableModel {
 	private static final long serialVersionUID = 1L;
-	String[] columnNames = { "Segment No.", "DL Start Time", "DL End Time", "Quality", "Bitrate", "Total Bytes",
-			"Duration" };
+	String[] columnNames = { "Segment No.", "DL Start Time", "DL End Time", "Quality", "Resolution", "Bitrate", "Total Bytes", "Duration" };
 	List<VideoEvent> videoEventList;
 
 	AccordionTableModel(Collection<VideoEvent> videoEventList) {
@@ -54,6 +53,7 @@ public class AccordionTableModel extends AbstractTableModel {
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
 		Object value = "";
+		DecimalFormat decimalFormat = new DecimalFormat("0.##");
 		VideoEvent videoSegment = this.videoEventList.get(rowIndex);
 		switch (columnIndex) {
 		case 0:
@@ -69,15 +69,22 @@ public class AccordionTableModel extends AbstractTableModel {
 			value = videoSegment.getQuality();
 			break;
 		case 4:
-			value = String.format("%.0f", videoSegment.getBitrate());
+			if (videoSegment.getResolutionHeight() != 0) {
+				value = decimalFormat.format(videoSegment.getResolutionHeight());
+			} else {
+				value = "unknown";
+			}
 			break;
 		case 5:
-			value = String.format("%.0f", videoSegment.getTotalBytes());
+			value = String.format("%.0f", videoSegment.getBitrate());
 			break;
 		case 6:
-			DecimalFormat decimalFormat = new DecimalFormat("0.##");
+			value = String.format("%.0f", videoSegment.getTotalBytes());
+			break;
+		case 7:
 			value = decimalFormat.format(videoSegment.getDuration());
 			break;
+
 		}
 		return value;
 	}

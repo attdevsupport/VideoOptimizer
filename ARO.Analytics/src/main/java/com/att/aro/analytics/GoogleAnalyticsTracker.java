@@ -50,7 +50,7 @@ public class GoogleAnalyticsTracker {
      * @param googleAnalyticsTrackingCode
      */
     public GoogleAnalyticsTracker(String appName, String appVersion, String googleAnalyticsTrackingCode, int maxDBRecords){ //ARO, version Name, UA-48887240-1
-    	this.urlBuildingStrategy = new GAUrlBuilder(appName, appVersion, googleAnalyticsTrackingCode);
+    	this.urlBuildingStrategy = new GAUrlBuilder(appName, googleAnalyticsTrackingCode);
         HTTPGetMethod.setApplicationName(appName);
         this.maxDBRecords = maxDBRecords;
         this.gaTracker = this;

@@ -62,11 +62,13 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 
 	int videoWidth = 0;
 	int videoHeight = 0;
+	private String udid = "";
 
-	public VideoCaptureMacOS(File file) throws IOException {
+	public VideoCaptureMacOS(File file, String udid) throws IOException {
 		subscribers = new ArrayList<ImageSubscriber>();
 		((VideoWriterImpl) this.videowriter).setFileManager(new FileManagerImpl());
 		this.videowriter.init(file.getAbsolutePath(), VideoFormat.JPG, 0.2f, 10);
+		this.udid  = udid;
 
 		//		qos = new QuickTimeOutputStream(file,
 		//				QuickTimeOutputStream.VideoFormat.JPG);
@@ -104,7 +106,7 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 		LOG.info("Init Screencapture...");
 		LOG.info("workingfolder :"+this.workingFolder);
 
-		smanage = new ScreenshotManager(this.workingFolder);
+		smanage = new ScreenshotManager(this.workingFolder, this.udid);
 		smanage.start();
 		LOG.info("started ScreenshotManager.");
 		int timeoutcounter = 0;

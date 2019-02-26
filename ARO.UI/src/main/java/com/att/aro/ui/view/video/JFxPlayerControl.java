@@ -376,6 +376,8 @@ public class JFxPlayerControl {
  		if (duration == null) {
  			LOGGER.error("Duration info not ready, need to wait for player to be ready");
  			return 0;
+ 		}else if(mediaPlayer == null){
+ 			return -1.0;
  		}
  		return mediaPlayer.getMedia().getDuration().toSeconds();
  	}
@@ -385,7 +387,10 @@ public class JFxPlayerControl {
  	}
  	
  	protected void dispose() {
- 		mediaPlayer.dispose();
+		if (mediaPlayer != null) {
+			mediaPlayer.dispose();
+			mediaPlayer = null;
+		}
  	}
 
 }

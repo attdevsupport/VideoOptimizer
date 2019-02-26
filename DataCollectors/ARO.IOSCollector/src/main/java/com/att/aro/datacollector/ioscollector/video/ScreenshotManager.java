@@ -29,6 +29,8 @@ import java.util.Hashtable;
 
 import javax.media.jai.NullOpImage;
 import javax.media.jai.OpImage;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
@@ -49,6 +51,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 	int counter = 0;
 	int count = 0;
 	String imagefolder = "";
+	String udid = "";
 	boolean isready = true;
 	volatile boolean isReadyForRead = false;
 
@@ -58,9 +61,10 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 		isready = isReady;
 	}
 
-	public ScreenshotManager(String folder) {
+	public ScreenshotManager(String folder, String udid) {
 		imagefolder = folder + Util.FILE_SEPARATOR + "tmp";
 		tmpfolder = new File(imagefolder);
+		this.udid= udid;
 		if (!tmpfolder.exists()) {
 			LOG.debug("tmpfolder.mkdirs()" + imagefolder);
 			tmpfolder.mkdirs();
@@ -86,6 +90,9 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 				} catch (IOException e) {
 					LOG.error("Failed to create image folder", e);
 				}
+			}
+			if(StringUtils.isNotBlank(udid) && !exepath.contains("-u")){
+				exepath = exepath + " -u "+ udid; 
 			}
 			String[] cmds = new String[] { "bash", "-c", exepath + " " + img };
 			ProcessBuilder builder = new ProcessBuilder(cmds);

@@ -118,8 +118,7 @@ public class WeakCipherImpl implements IBestPractice {
 		result.setOverviewTitle(overviewTitle);
 		result.setDetailTitle(detailedTitle);
 		result.setAboutText(aboutText);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setResults(new LinkedList<>(entries));
 		result.setResultText(testResultText);
 		

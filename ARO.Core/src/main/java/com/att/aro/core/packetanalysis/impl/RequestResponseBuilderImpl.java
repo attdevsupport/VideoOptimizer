@@ -26,8 +26,10 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -73,7 +75,12 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 	}
 
 	public List<HttpRequestResponseInfo> createRequestResponseInfo(Session session) throws IOException {
-	
+		Double sslNegotiationDuration = null;
+		Double inactiveConnectionDuration = null;
+		double contentDownloadDuration = 0;
+		double requestDuration = 0;
+		double timeToFirstByte = 0;
+		
 		result = new ArrayList<HttpRequestResponseInfo>();
 		this.session = session;
 		extractHttpRequestResponseInfo(PacketDirection.UPLINK);
@@ -105,7 +112,15 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 			if (handshake != null) {
 				sslNegTime = handshake.getTimeStamp();
 			}
-
+			Double openConnectionTime = null;
+			List<PacketInfo> packetInfoList = session.getPackets();
+			List<PacketInfo> filteredPkts = packetInfoList.stream().filter(
+					pktInfo -> (pktInfo.getTcpFlagString().contains("F") || pktInfo.getTcpFlagString().contains("R")))
+					.collect(Collectors.toList());
+			if(CollectionUtils.isNotEmpty(filteredPkts)){
+				openConnectionTime = filteredPkts.get(0).getTimeStamp(); 
+			}
+			
 			// Associate requests/responses
 			List<HttpRequestResponseInfo> reqs = new ArrayList<HttpRequestResponseInfo>(result.size());
 			for (HttpRequestResponseInfo rrinfo : result) {
@@ -121,68 +136,76 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 
 			// Build waterfall for each request/response pair
 			for (HttpRequestResponseInfo rrinfo : result) {
-				if (rrinfo.getDirection() != HttpDirection.REQUEST 
-				 || rrinfo.getAssocReqResp() == null) {
+				if (rrinfo.getDirection() != HttpDirection.REQUEST || rrinfo.getAssocReqResp() == null
+						|| rrinfo.getFirstDataPacket() == null || rrinfo.getLastDataPacket() == null) {
 					// Only process non-HTTPS request/response pairs
 					continue;
 				}
 				
 				double startTime = -1;
-				//check firstDataPacket and lastDataPacket
-				if (rrinfo.getFirstDataPacket() != null 
-				 && rrinfo.getLastDataPacket() != null) {
-					double firstReqPacket = rrinfo.getFirstDataPacket().getTimeStamp();
-					double lastReqPacket = rrinfo.getLastDataPacket().getTimeStamp();
-					
-					HttpRequestResponseInfo resp = rrinfo.getAssocReqResp();
-					
-					// check getAssocReqResp firstDataPacket and lastDataPacket packet
-					if(resp != null && resp.getFirstDataPacket() !=null && resp.getLastDataPacket() != null) {
-						double firstRespPacket = resp.getFirstDataPacket().getTimeStamp();
-						double lastRespPacket = resp.getLastDataPacket().getTimeStamp();
-	
-						// Add DNS and initial connect to fist req/resp pair only
-						Double dnsDuration = null;
-						if (dns != null) {
-							startTime = dns.doubleValue();
-							if (synTime != null) {
-								dnsDuration = synTime.doubleValue() - dns.doubleValue();
-							} else {
-								dnsDuration = firstReqPacket - dns.doubleValue();
-							}
-							
-							// Prevent from being added again
-							dns = null;
-						}
-						
-						Double initConnDuration = null;
-						if (synTime != null) {
-							initConnDuration = firstReqPacket - synTime;
-							if (startTime < 0.0) {
-								startTime = synTime.doubleValue();
-							}
-							
-							// Prevent from being added again
-							synTime = null;
-						}
-						
-						// Calculate request time
-						if (startTime < 0.0) {
-							startTime = firstReqPacket;
-						}
-						
-						// Store waterfall in request/response
-						if (sslNegTime != null) {
-							rrinfo.setWaterfallInfos(new RequestResponseTimeline(startTime, dnsDuration, initConnDuration, sslNegTime - firstReqPacket, 0, 0, lastRespPacket - sslNegTime));
-						} else {
-							if (firstRespPacket >= lastReqPacket) {
-								rrinfo.setWaterfallInfos(new RequestResponseTimeline(startTime, dnsDuration, initConnDuration, null, lastReqPacket - firstReqPacket, firstRespPacket - lastReqPacket, lastRespPacket - firstRespPacket));
-							} else {
-								rrinfo.setWaterfallInfos( new RequestResponseTimeline(startTime, dnsDuration, initConnDuration, null, 0, 0, lastRespPacket - firstReqPacket));
-							}
-						}
-					}// end  (resp != null && resp.getFirstDataPacket() !=null && resp.getLastDataPacket() != null)
-				}// check firstDataPacket and lastDataPacket rr check end
+				double firstReqPacket = rrinfo.getFirstDataPacket().getTimeStamp();
+				double lastReqPacket = rrinfo.getLastDataPacket().getTimeStamp();
+
+				HttpRequestResponseInfo resp = rrinfo.getAssocReqResp();
+
+				// check getAssocReqResp firstDataPacket and lastDataPacket packet
+				if (resp == null || resp.getFirstDataPacket() == null || resp.getLastDataPacket() == null) {
+					continue;
+				}
+				double firstRespPacket = resp.getFirstDataPacket().getTimeStamp();
+				double lastRespPacket = resp.getLastDataPacket().getTimeStamp();
+
+				// Add DNS and initial connect to fist req/resp pair only
+				Double dnsDuration = null;
+				if (dns != null) {
+					startTime = dns.doubleValue();
+					if (synTime != null) {
+						dnsDuration = synTime.doubleValue() - dns.doubleValue();
+					} else {
+						dnsDuration = firstReqPacket - dns.doubleValue();
+					}
+
+					// Prevent from being added again
+					dns = null;
+				}
+
+				Double initConnDuration = null;
+				if (synTime != null) {
+					initConnDuration = firstReqPacket - synTime;
+					if (startTime < 0.0) {
+						startTime = synTime.doubleValue();
+					}
+
+					// Prevent from being added again
+					synTime = null;
+				}
+
+				// Calculate request time
+				if (startTime < 0.0) {
+					startTime = firstReqPacket;
+				}
+
+				// Store waterfall in request/response
+				if (sslNegTime != null) {
+					sslNegotiationDuration = sslNegTime - firstReqPacket;
+					contentDownloadDuration = lastRespPacket - sslNegTime;
+				} else {
+					if (firstRespPacket >= lastReqPacket) {
+						contentDownloadDuration = lastRespPacket - firstRespPacket;
+						requestDuration = lastReqPacket - firstReqPacket;
+						timeToFirstByte = firstRespPacket - lastReqPacket;
+					} else {
+						contentDownloadDuration = lastRespPacket - firstReqPacket;
+					}
+
+				}
+				inactiveConnectionDuration = openConnectionTime != null ? (openConnectionTime - lastRespPacket) : null;
+				RequestResponseTimeline reqRespTimeline = new RequestResponseTimeline(startTime, dnsDuration,
+						initConnDuration, sslNegotiationDuration, requestDuration, timeToFirstByte,
+						contentDownloadDuration, inactiveConnectionDuration);
+				rrinfo.setWaterfallInfos(reqRespTimeline);
+				rrinfo.getWaterfallInfos().setLastRespPacketTime(lastRespPacket);
+
 			}
 		} /* by pass for UDP sessions.*/
 		return Collections.unmodifiableList(result);

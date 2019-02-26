@@ -101,6 +101,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private MitmAttenuatorImpl mitmAttenuator;
 	private boolean deviceDataPulled = true;
 	private boolean validPW;
+	private String udId = "";
 	
 	public IOSCollectorImpl() {
 		super();
@@ -252,7 +253,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	@Override
 	public StatusResult startCollector(boolean commandLine, String folderToSaveTrace, VideoOption videoOption,
-			boolean liveViewVideo, String deviceId, Hashtable<String, Object> extraParams, String password) {
+			boolean liveViewVideo, String udId, Hashtable<String, Object> extraParams, String password) {
 		if(extraParams != null) {
 			this.videoOption = (VideoOption) extraParams.get("video_option");
 			this.attenuatorModel = (AttenuatorModel)extraParams.get("AttenuatorModel");			
@@ -270,6 +271,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		}
 
 		isCapturingVideo = isVideo();
+		this.udId = udId;
 
 		this.isCommandLine = commandLine;
 		if (isCommandLine) {
@@ -302,9 +304,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			return status;
 		}
 
-		String[] deviceIds = getDeviceSerialNumber(status);
-		String udid = deviceIds != null ? deviceIds[0] : null;
-		if (udid == null || udid.length() < 2) {
+		if (udId == null || udId.length() < 2) {
 			// Failed to get Serial Number of Device, connect an IOS device to
 			// start.
 			LOG.error(defaultBundle.getString("Error.serialnumberconnection"));
@@ -333,7 +333,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 		// device info
 		String deviceDetails = datadir + Util.FILE_SEPARATOR + "device_details";
-		status = checkDeviceInfo(status, udid, deviceDetails);
+		status = checkDeviceInfo(status, udId, deviceDetails);
 		if (!status.isSuccess()) {
 			return status; // device info error
 		}
@@ -343,7 +343,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				GoogleAnalyticsUtil.getAnalyticsEvents().getStartTrace(),
 				deviceinfo != null && deviceinfo.getDeviceVersion() != null ? deviceinfo.getDeviceVersion()
 						: "Unknown"); // GA Request
-		final String serialNumber = udid;
 
 		if ("".equals(this.sudoPassword)|| !validPW ) {
 			if (isCommandLine) {
@@ -356,12 +355,13 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			}
 		}
 		
-		launchCollection(trafficFilePath, serialNumber, status);		
+		launchCollection(trafficFilePath, udId, status);		
 		// Start Attenuation
-		if(attenuatorModel.isConstantThrottle()
-				&&(attenuatorModel.isThrottleDLEnabled()||attenuatorModel.isThrottleULEnabled())) {
+		if((attenuatorModel.isConstantThrottle()
+				&&(attenuatorModel.isThrottleDLEnabled()||attenuatorModel.isThrottleULEnabled()))) {
 			startAttenuatorCollection(datadir, attenuatorModel);
 		}
+		
 		
 		if (status.isSuccess()) {
 			try {
@@ -471,7 +471,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			final String videofilepath = datadir + Util.FILE_SEPARATOR + TraceDataConst.FileName.VIDEO_MOV_FILE;
 			videofile = new File(videofilepath);
 			try {
-				videoCapture = new VideoCaptureMacOS(videofile);
+				videoCapture = new VideoCaptureMacOS(videofile, udId);
 			} catch (IOException e) {
 				LOG.error(rvi.getErrorMessage());
 				status.setSuccess(false);
@@ -905,4 +905,5 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	public String getPassword() {
 		return sudoPassword;
 	}
+
 }

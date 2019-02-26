@@ -1,8 +1,21 @@
 package com.att.aro.core.videoanalysis.pojo;
 
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.util.StringParse;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Setter;
 
 /**
  * Handles HLS manifests. Encapsulates both parent and multiple child manifests.
@@ -12,8 +25,17 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
  */
 public class ManifestHLS extends AROManifest {
 
+	protected static final Logger LOG = LogManager.getLogger(AROManifest.class.getName());	
+
 	private static final String EXTEN_TS = ".ts";
 	int segCount = 0;
+	
+	/**
+	 * Map containing HLS "Child" manifests.
+	 * Child manifests cover a particular quality (track) level for information about segments
+	 */
+	@Setter(AccessLevel.NONE)
+	private SortedMap<String, ChildManifest> childMap = new TreeMap<>();
 	
 	@Override
 	public int getSegIncremental() {
@@ -66,27 +88,39 @@ public class ManifestHLS extends AROManifest {
 	 */
 	@Override
 	public void adhocSegment(VideoEventData ved) {
-		if (ved.getDateTime() != null) {
-			String segName = String.format("%s.%s", ved.getDateTime(), ved.getExtension());
-			int lineSeg = -1;
-			Integer seg = segmentList.get(segName);
-			if (seg == null) {
-				lineSeg = getSegIncremental();
-				ved.setSegment(lineSeg);
-			} else {
-				lineSeg = seg;
-			}
-			segmentList.put(segName, lineSeg);
-			durationList.put(lineSeg, String.valueOf(getDuration()));
+		String key;
+		if (ved.getSegmentReference() != null) {
+			key = ved.getSegmentReference();
+		} else if (ved.getDateTime() != null) {
+			key  = String.format("%s.%s", ved.getDateTime(), ved.getExtension());
+		} else {
+			return;
 		}
+		if (key != null && !segmentList.containsKey(key)) {
+			key = String.format("%s.%s", ved.getDateTime(), ved.getExtension());
+		}
+		int lineSeg = -1;
+		Integer seg = segmentList.get(key);
+		if (seg == null) {
+			lineSeg = getSegIncremental();
+			ved.setSegment(lineSeg);
+		} else {
+			lineSeg = seg;
+			ved.setSegment(seg);
+		}
+		segmentList.put(key, lineSeg);
+		durationList.put(lineSeg, String.valueOf(getDuration()));
 	}
-
+	
 	public void parseManifestData(byte[] data) {
 		if (data == null || data.length == 0) {
 			return;
 		}
 		String strData = new String(data);
-		String[] sData = (new String(data)).split("[\n\r]");
+		String[] sData = (new String(data)).split("\r\n");
+		if (sData == null || sData.length == 1) {
+			sData = (new String(data)).split("[\n\r]");
+		}
 
 		LOG.info("import Manifest:\n"+strData);
 		
@@ -110,11 +144,23 @@ public class ManifestHLS extends AROManifest {
 		 * set videoName ( if not set already )
 		 */
 		if (bitrateMap.isEmpty()) {
+			Double bandwidth;
+			String resolution;
 			for (int itr = 0; itr < sData.length; itr++) {
 				String line = sData[itr];
-				// bandwidth
-				Double bandWidth = StringParse.findLabeledDoubleFromString("BANDWIDTH=", line);
-				if (bandWidth != null && ++itr < sData.length ) {
+
+				// video bandwidth
+				bandwidth = StringParse.findLabeledDoubleFromString("BANDWIDTH=", line);
+				resolution = StringParse.findLabeledDataFromString("RESOLUTION=", ",", line);
+
+				ChildManifest childManifest = null;
+				if (StringUtils.isNotEmpty(resolution)) {
+					String[] resolutionNumbers = resolution.split("[Xx]");
+					if (resolutionNumbers.length == 2) {
+						childManifest = new ChildManifest(bandwidth, resolutionNumbers[0], resolutionNumbers[1]);
+					}
+				}
+				if (bandwidth != null && ++itr < sData.length) {
 
 					String nameLine = sData[itr];
 
@@ -159,8 +205,11 @@ public class ManifestHLS extends AROManifest {
 						}
 					}
 
-					bitrateMap.put(format.toUpperCase(), bandWidth);
-				} 
+					bitrateMap.put(format.toUpperCase(), bandwidth);
+					if (childManifest != null) {
+						childMap.put(format.toUpperCase(), childManifest);
+					}
+				}
 			}
 		} else {
 			String val = StringParse.findLabeledDataFromString("_", "\\.", sData[sData.length - 2]);
@@ -177,14 +226,52 @@ public class ManifestHLS extends AROManifest {
 		
 		loadSegments(sData);
 	}
-
+	
+	/**
+	 * Returns screen height based on quality code
+	 * 
+	 * @param quality
+	 * @return
+	 */
+	public int getHeight(String quality) {
+		if (quality != null) {
+			ChildManifest temp = childMap.get(quality);
+			if (temp == null) {
+				return 0;
+			}
+			return temp.getPixelHeight();
+		}
+		return 0;
+	}
 
 	/**
+	 * Returns screen width based on quality code
+	 * 
+	 * @param quality
+	 * @return
+	 */
+	public int getWidth(String quality) {
+		ChildManifest temp = childMap.get(quality);
+		if (temp == null) {
+			return 0;
+		}
+		return temp.getPixelWidth();
+	}
+
+	public SortedMap<String, ChildManifest> getChildMap() {
+		return childMap;
+	}
+	
+	public ChildManifest getChildMap(String key) {
+		return childMap.get(key);
+	}
+	
+	/**
 	 * Load transportStreams(.ts) into segment list
+	 * from HLS child manifests
 	 * 
 	 * @param sData
 	 */
-	@SuppressWarnings("PMD.EmptyCatchBlock")
 	private void loadSegments(String[] sData) {
 		String[] parsData;
 		Integer lineSeg = 0;
@@ -195,13 +282,19 @@ public class ManifestHLS extends AROManifest {
 				parsData = stringParse.parse(line, "#EXTINF:(.+),");
 				if (parsData != null) {
 					segDuration = parsData[0];
+					continue;
 				}
 			}
 			if (line.contains(EXTEN_TS) && !segmentList.containsKey(line)) {
-				parsData = stringParse.parse(line, "([a-zA-Z0-9]*\\..+)");
-				if (parsData != null && !segmentList.containsKey(parsData[0])) {
+				parsData = stringParse.parse(line, "([a-zA-Z0-9-]*)-(\\d+)-([a-zA-Z0-9]*\\..+)");
+				int part = 1;
+				if (parsData == null) {
+					parsData = stringParse.parse(line, "([a-zA-Z0-9]*\\..+)");
+					part = 0;
+				}
+				if (parsData != null && !segmentList.containsKey(parsData[part])) {
 					lineSeg = getSegIncremental();
-					segmentList.put(parsData[0], lineSeg);
+					segmentList.put(parsData[part], lineSeg);
 					durationList.put(lineSeg, segDuration);
 					if (getDuration() == 0) {
 						try {
@@ -218,6 +311,29 @@ public class ManifestHLS extends AROManifest {
 		}
 	}
 
+	/**<pre>
+	 * Contains:
+	 * 	 - width and height in pixels
+	 *   - bandwidth
+	 */
+	@Data
+	@AllArgsConstructor
+	public class ChildManifest {
+		double bandwidth;
+		int pixelWidth;
+		int pixelHeight;
+
+		public ChildManifest(double bandwidth, String pixelWidth, String pixelHeight) {
+			setBandwidth(bandwidth);
+			try {
+				setPixelWidth(Integer.valueOf(pixelWidth));
+				setPixelHeight(Integer.valueOf(pixelHeight));
+			} catch (NumberFormatException e) {
+				LOG.error(String.format("failed to parse \"%s\" or \"%s\"", pixelWidth, pixelHeight));
+			}
+		}
+	}
+	
 	@Override
 	public Integer getSegment(String segName) {
 		if (!segmentList.isEmpty()) {
@@ -230,13 +346,16 @@ public class ManifestHLS extends AROManifest {
 		return -1;
 	}
 	
-//	@Override
-	
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("ManifestHLS:");
 		strblr.append(super.toString());
-
+		if (MapUtils.isNotEmpty(childMap)) {
+			strblr.append("\n\t, Quality:");
+			for (String key : childMap.keySet()) {
+				strblr.append("\n\t\t").append(key).append(':').append(childMap.get(key));
+			}
+		}
 		return strblr.toString();
 	}
 

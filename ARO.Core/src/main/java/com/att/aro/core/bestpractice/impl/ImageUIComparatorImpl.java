@@ -39,8 +39,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +51,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
@@ -86,6 +85,9 @@ public class ImageUIComparatorImpl implements IBestPractice {
 	private String textResults;
 	@Value("${exportall.csvNumberOfUIComparatorImages}")
 	private String numberOfImages;
+	@Value("${bestPractices.noData}")
+	private String noData;
+
 	long orginalImagesSize = 0L;
 	long convImgsSize = 0L;
 	PacketAnalyzerResult tracedataResult = null;
@@ -100,42 +102,51 @@ public class ImageUIComparatorImpl implements IBestPractice {
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 		ImageComparatorResult result = new ImageComparatorResult();
-		originalImageDimensionMap.clear();
 		tracedataResult = tracedata;
 		String tracePath = tracedata.getTraceresult().getTraceDirectory() + System.getProperty("file.separator");
-		uiComparatorFolderPath = tracePath + "UIComparator" + System.getProperty("file.separator");
 		imageFolderPath = tracePath + "Image" + System.getProperty("file.separator");
-		File uiComparatorFolder = new File(uiComparatorFolderPath);
-		String windowsCompFolderPath = tracePath + "ARO" + System.getProperty("file.separator") + "UIComparator"
-				+ System.getProperty("file.separator");
-		if (new File(windowsCompFolderPath).exists()) {
-			moveUIXmlFolder(new File(windowsCompFolderPath), uiComparatorFolder,tracePath + "ARO" + System.getProperty("file.separator"));
-		}
-		entrylist = new ArrayList<ImageMdataEntry>();
-		if (new File(imageFolderPath).exists()) {
-			if (uiComparatorFolder.exists() && uiComparatorFolder.isDirectory()) {
-				getImageList();
-				Map<String, Integer> xmlUIMap = getUIXmlMap(filemanager.createFile(uiComparatorFolderPath));
-				Map<String, String> imageNameMap = parseImageNames(tracePath);
-				Map<String, Integer> imageDimensionMap = updateImageDimensionMap(imageNameMap);
-				compareImages(imageDimensionMap, xmlUIMap, imageNameMap);
+		
+		if (Util.isFilesforAnalysisAvailable(new File(imageFolderPath))) {
+			
+			originalImageDimensionMap.clear();
+			uiComparatorFolderPath = tracePath + "UIComparator" + System.getProperty("file.separator");
+
+			File uiComparatorFolder = new File(uiComparatorFolderPath);
+			String windowsCompFolderPath = tracePath + "ARO" + System.getProperty("file.separator") + "UIComparator"
+					+ System.getProperty("file.separator");
+			if (new File(windowsCompFolderPath).exists()) {
+				moveUIXmlFolder(new File(windowsCompFolderPath), uiComparatorFolder,
+						tracePath + "ARO" + System.getProperty("file.separator"));
 			}
-		}
-		result.setResults(entrylist);
-		String text = "";
-		if (entrylist.isEmpty()) {
-			result.setResultType(BPResultType.PASS);
-			text = MessageFormat.format(textResultPass, entrylist.size());
-			result.setResultText(text);
+			entrylist = new ArrayList<ImageMdataEntry>();
+			if (new File(imageFolderPath).exists()) {
+				if (uiComparatorFolder.exists() && uiComparatorFolder.isDirectory()) {
+					getImageList();
+					Map<String, Integer> xmlUIMap = getUIXmlMap(filemanager.createFile(uiComparatorFolderPath));
+					Map<String, String> imageNameMap = parseImageNames(tracePath);
+					Map<String, Integer> imageDimensionMap = updateImageDimensionMap(imageNameMap);
+					compareImages(imageDimensionMap, xmlUIMap, imageNameMap);
+				}
+			}
+			result.setResults(entrylist);
+			String text = "";
+			if (entrylist.isEmpty()) {
+				result.setResultType(BPResultType.PASS);
+				text = MessageFormat.format(textResultPass, entrylist.size());
+				result.setResultText(text);
+			} else {
+				result.setResultType(BPResultType.FAIL);
+				text = MessageFormat.format(textResults, entrylist.size());
+				result.setResultText(text);
+				result.setNumberOfImages(String.valueOf(entrylist.size()));
+			}
 		} else {
-			result.setResultType(BPResultType.FAIL);
-			text = MessageFormat.format(textResults, entrylist.size());
-			result.setResultText(text);
-			result.setNumberOfImages(String.valueOf(entrylist.size()));
+			result.setResultText(noData);
+			result.setResultType(BPResultType.NO_DATA);
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		return result;
 	}
@@ -209,10 +220,6 @@ public class ImageUIComparatorImpl implements IBestPractice {
 										&& !emptyBounds.equalsIgnoreCase(eElement.getAttribute("bounds"))) {
 									int imageDimension = getXYPoints(eElement.getAttribute("bounds"));
 									if (imageDimension > 0) {
-										if (Util.checkDevMode()) {
-											LOG.debug("XML : " + uiXMLFile.getName() + " IMG : "
-													+ eElement.getAttribute("content-desc"));
-										}
 										uiXmlMap.put(eElement.getAttribute("content-desc"), imageDimension);
 									}
 								}
@@ -299,9 +306,14 @@ public class ImageUIComparatorImpl implements IBestPractice {
 						Elements links = doc.select("img[src]");
 						for (org.jsoup.nodes.Element link : links) {
 							if (!link.attr("src").isEmpty() && !link.attr("alt").isEmpty()
-									&& link.attr("src").lastIndexOf('.') > 0) {
-								imageDownloadName = link.attr("src").substring(link.attr("src").lastIndexOf('/') + 1,
+									&& link.attr("src").lastIndexOf('.') > 0 && link.attr("src").lastIndexOf('/')>0
+									&& link.attr("src").lastIndexOf('.') > link.attr("src").lastIndexOf('/')) {
+								try{
+									imageDownloadName = link.attr("src").substring(link.attr("src").lastIndexOf('/') + 1,
 										link.attr("src").lastIndexOf('.'));
+								} catch (Exception e) {
+									LOG.error(e.toString());
+								} 
 								imageUIName = link.attr("alt");
 								if (!imageNameMap.containsValue(imageUIName)
 										&& !imageNameMap.containsKey(imageDownloadName)) {

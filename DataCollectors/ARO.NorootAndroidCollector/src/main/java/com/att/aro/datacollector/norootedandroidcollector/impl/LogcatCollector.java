@@ -47,7 +47,7 @@ public class LogcatCollector {
 
 	public void clearLogcat() {
 		try {
-			String adbPath = adbService.getAdbPath();
+			String adbPath = adbService.getAdbPath(true);
 			String[] command = new String[] { adbPath, "-s", serialNumber, "logcat", "-c" };
 			new ProcessBuilder(command).start();
 			LOGGER.info("Logcat clear Successful");
@@ -59,7 +59,7 @@ public class LogcatCollector {
 	public void collectLogcat(String folder, String fileName) {
 		try {
 			File outFile = new File(folder, fileName);
-			String adbPath = adbService.getAdbPath();
+			String adbPath = adbService.getAdbPath(true);
 			String[] command = new String[] { adbPath, "logcat", "-d", "2", "com.att.arocollector:I" };
 			ProcessBuilder procBuilder = new ProcessBuilder(command);
 			Process process = procBuilder.redirectOutput(outFile).start();

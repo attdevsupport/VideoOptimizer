@@ -24,6 +24,9 @@ import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.text.MessageFormat;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -34,6 +37,7 @@ import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
 import org.apache.commons.lang.StringUtils;
+
 import com.att.aro.core.android.AndroidApiLevel;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
@@ -49,10 +53,13 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
-
+	public static final String INSTRUCTION_TITLE = ResourceBundleHelper.getMessageString("dlog.collector.option.ios.instruction.title");
+	public static final String ATTENUATION_TITLE = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.title");
+	
 	private DataCollectorSelectNStartDialog parent;
 	private IAroDevice selectedDevice;
 	private static final String SHARED_NETWORK_INTERFACE = "bridge100";
+	private static final String PORT_NUMBER = "8080";
 
 	private String txtLREZ;
 	private String txtHDEF;
@@ -101,7 +108,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 	public DeviceDialogOptions(DataCollectorSelectNStartDialog parent, List<IDataCollector> collectors) {
 		
-		this.parent = parent;
+		this.parent = parent;	
 		videoOrient = Orientation.LANDSCAPE.toString().toLowerCase().equals(
 				SettingsImpl.getInstance().getAttribute("orientation")) ? Orientation.LANDSCAPE : Orientation.PORTRAIT;
 
@@ -256,10 +263,38 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			if (btnVpn.isSelected()) {
 				enableFullVideo(true);
 			}
+
 			return;
-		} 
+		}
 	}
 
+	public String messageComposed() {
+		return MessageFormat.format(
+				ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.reminder"),
+				ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.warning"),
+				ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.status"),
+				isSharedNetworkActive(), ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.ip"),
+				detectWifiShareIP(), ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.port"),
+				PORT_NUMBER);
+
+	}
+
+	private String detectWifiShareIP() {
+		if (NetworkUtil.isNetworkUp(SHARED_NETWORK_INTERFACE)) {
+			List<InetAddress> ipList = NetworkUtil.listNetIFIPAddress(SHARED_NETWORK_INTERFACE);
+			for (InetAddress ip : ipList) {
+				if (ip instanceof Inet4Address) {
+					String ipString = ip.toString().replaceAll("/", "");
+					return ipString;
+				}
+			}
+		}
+		return "N/A";
+	}
+
+	public boolean isSharedNetworkActive() {
+		return NetworkUtil.isNetworkUp(SHARED_NETWORK_INTERFACE);
+	}
 	
 	/**
 	 * set attenuate section enabled or disabled based on the selection of
@@ -271,19 +306,9 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			attnrGroupPanel.setAttenuateEnable(true);
 			if(btniOS.isSelected()) {
 				attnrGroupPanel.getAttnrRadioGP().setRbAtnrLoadFileEnable(false);
-				if (NetworkUtil.isNetworkUp(SHARED_NETWORK_INTERFACE)) {
-					attnrGroupPanel.getAttnrRadioGP().getRadioAttnGroup()
-					.setSelected(attnrGroupPanel.getAttnrRadioGP().getSliderBtn().getModel(), true);
-					attnrGroupPanel.getAttnrRadioGP().getDefaultBtn().setEnabled(false);
-					parent.resizeLarge();
-
-				}else {
-					attnrGroupPanel.getAttnrRadioGP().getSliderBtn().setEnabled(false);
-					attnrGroupPanel.getAttnrRadioGP().getDefaultBtn().setEnabled(true);
-				}
-			} else {
-					parent.resizeMedium();
-			}
+				attnrGroupPanel.getAttnrRadioGP().getDefaultBtn().setEnabled(true);
+			}		
+			parent.resizeMedium();	
 		} else {
 			attnrGroupPanel.setAttenuateEnable(false);
 		}
@@ -515,7 +540,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				enableFullVideo(false);
 				enableVpnCapture(false);
 			}
-
+			
 			setAttenuateSectionStatus();
 			break;
 
@@ -533,10 +558,8 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	}
 
 	private void enableVpnCapture(boolean boolFlag) {
-
 		btnVpn.setEnabled(boolFlag);
 		btnVpn.setSelected(boolFlag);
-		
 	}
 
 	/**
@@ -601,5 +624,4 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	public void setMiniAtnr(AttenuatorModel miniAtnr) {
 		this.miniAtnr = miniAtnr;
 	}
-
 }

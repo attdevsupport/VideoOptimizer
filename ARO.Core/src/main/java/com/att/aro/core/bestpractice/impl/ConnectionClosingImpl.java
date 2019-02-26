@@ -55,7 +55,7 @@ public class ConnectionClosingImpl implements IBestPractice {
 	
 	@Value("${exportall.csvConnClosingDesc}")
 	private String exportAllConnClosingDesc;
-	
+
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 		double wastedBurstEnergy = 0.0;
@@ -103,8 +103,7 @@ public class ConnectionClosingImpl implements IBestPractice {
 		result.setLargestEnergyTime(largestEnergyTime);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
-		result.setLearnMoreUrl(MessageFormat.format(learnMoreUrl, 
-													ApplicationConfig.getInstance().getAppUrlBase()));
+		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setExportAllConnClosingDesc(exportAllConnClosingDesc);
 		

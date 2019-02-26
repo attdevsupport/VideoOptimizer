@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,13 +57,15 @@ public class VideoEvent {
 	private ArrayList<ByteRange> rangeList;
 	private double segment;
 	private String quality;
+	private double resolutionHeight = 0;
 	private double startTS;
 	private double endTS;
 	private double duration;
 	private double segmentStartTime;
+	private double playTime;
 
 	private VideoEventData ved;
-	
+
 	/**
 	 * The VideoEvent.VideoEventType Enumeration specifies constant values that describe 
 	 * different types of user generated events. This enumeration is part of the VideoEvent 
@@ -75,32 +78,22 @@ public class VideoEvent {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("VideoType :"); 
-		strblr.append(eventType.toString());
-		strblr.append(", file:");
-		strblr.append(response.getAssocReqResp().getFileName());
-		strblr.append(", Segment:");
-		strblr.append(segment);
-		strblr.append(", Session:");
-		strblr.append(String.format("%.4f", getSession().getSessionStartTime()));
-		strblr.append(", SegmentStartTime:");
-		strblr.append(String.format("%.0f", segmentStartTime));
-		strblr.append(", Quality:");
-		strblr.append(quality);
+		strblr.append("VideoType :").append(eventType.toString());
+		strblr.append(", file:").append(response.getAssocReqResp().getFileName());
+		strblr.append(", Segment:").append(segment);
+		strblr.append(", Session:").append(String.format("%.4f", getSession().getSessionStartTime()));
+		strblr.append(", SegmentStartTime:").append(String.format("%.03f", segmentStartTime));
+		strblr.append(", PlayTime:").append(String.format("%.03f", playTime));
+		strblr.append(", Quality:").append(quality);
 		if (!rangeList.isEmpty() && rangeList.get(0).isValidRange()) {
-			strblr.append(", Byte Range:");
-			strblr.append(rangeList);
+			strblr.append(", Byte Range:").append(rangeList);
 		}
-		strblr.append(", bitrate:");
-		strblr.append(bitrate);
-		strblr.append(", duration:");
-		strblr.append(String.format("%.6f", duration * 1e0));
-		strblr.append(", dlSize:");
-		strblr.append(response.getContentLength());
-		strblr.append(", mdatSize:");
-		strblr.append(mdatSize);
-		strblr.append(", endTS:");
-		strblr.append(String.format("%.6f", endTS * 1e0));
+		strblr.append(", bitrate:").append(bitrate);
+		strblr.append(", resolutionHeight:").append(resolutionHeight);
+		strblr.append(", duration:").append(String.format("%.6f", duration * 1e0));
+		strblr.append(", dlSize:").append(response.getContentLength());
+		strblr.append(", mdatSize:").append(mdatSize);
+		strblr.append(", endTS:").append(String.format("%.6f", endTS * 1e0));
 		return strblr.toString();
 	}
 	
@@ -278,6 +271,28 @@ public class VideoEvent {
 		return segmentStartTime;
 	}
 
+	public void setSegmentStartTime(double segmentStartTime) {
+		this.segmentStartTime = segmentStartTime;
+	}
+
+	
+	/** 
+	 * Get the actual time that segment plays
+	 * 
+	 * @return seconds from start of trace
+	 */
+	public double getPlayTime() {
+		return playTime;
+	}
+
+	/** 
+	 * Set the actual time that segment plays
+	 * @param playTime in seconds from start of trace
+	 */
+	public void setPlayTime(double playTime) {
+		this.playTime = playTime;
+	}
+
 	/**
 	 * Returns a quality reference. Warning not always a number
 	 * @return
@@ -382,6 +397,9 @@ public class VideoEvent {
 			if (Double.doubleToLongBits(this.getBeginByte()) != Double.doubleToLongBits(veObj.getBeginByte())){
 				return false;
 			}
+			if (Double.doubleToLongBits(this.getResolutionHeight()) != Double.doubleToLongBits(veObj.getResolutionHeight())){
+				return false;
+			}
 			return true;
 		}
 		return false;
@@ -396,9 +414,18 @@ public class VideoEvent {
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		temp = Double.doubleToLongBits(endTS);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
-		result = prime * result + (int)segment;
+		result = prime * result + (int) segment;
 		temp = Double.doubleToLongBits(startTS);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		return result;
 	}
+
+	public void setResolutionHeight(double resolutionHeight) {
+		this.resolutionHeight = resolutionHeight;
+	}
+	
+	public double getResolutionHeight() {
+		return this.resolutionHeight;
+	}
+	
 }
