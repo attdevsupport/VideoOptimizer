@@ -19,6 +19,8 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
+
 public final class StringParse implements IStringParse{
 
 	public static Double findLabeledDoubleFromString(String fieldSearch, byte[] data) {
@@ -68,16 +70,8 @@ public final class StringParse implements IStringParse{
 	 * @return String value, empty if not found
 	 */
 	public static Double findLabeledDoubleFromString(String fieldSearch, String sData) {
-		Double value = null;
 		String sValue = findLabeledDataFromString(fieldSearch, sData);
-		if (!sValue.isEmpty()) {
-			try {
-				value = Double.valueOf(sValue);
-			} catch (NumberFormatException e) {
-				value = null;
-			}
-		}
-		return value;
+		return stringToDouble(sValue);
 	}
 
 	/**
@@ -88,8 +82,20 @@ public final class StringParse implements IStringParse{
 	 * @return String value, empty if not found
 	 */
 	public static Double findLabeledDoubleFromString(String fieldSearch, String delimeter, String sData) {
-		Double value = null;
 		String sValue = findLabeledDataFromString(fieldSearch, delimeter, sData);
+		return stringToDouble(sValue);
+	}
+
+	/**
+	 * <pre>
+	 * Convert string to Double
+	 * 
+	 * @param strValue
+	 * @param defaultValue
+	 * @return Double or null if fails to parse
+	 */
+	public static Double stringToDouble(String sValue) {
+		Double value = null;
 		if (!sValue.isEmpty()) {
 			try {
 				value = Double.valueOf(sValue);
@@ -98,6 +104,19 @@ public final class StringParse implements IStringParse{
 			}
 		}
 		return value;
+	}
+	
+	/**
+	 * <pre>
+	 * Convert string to Double or defaultValue if fails to parse
+	 * 
+	 * @param strValue
+	 * @param defaultValue
+	 * @return Double
+	 */
+	public static Double stringToDouble(String strValue, double defaultValue) {
+		Double value = stringToDouble(strValue);
+		return value != null ? value : defaultValue;
 	}
 
 	/**

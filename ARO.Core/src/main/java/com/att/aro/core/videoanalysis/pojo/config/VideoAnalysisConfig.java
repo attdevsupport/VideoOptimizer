@@ -8,10 +8,10 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.att.aro.core.videoanalysis.impl.RegexMatchLbl;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /*
  * <pre>
@@ -62,8 +62,16 @@ public class VideoAnalysisConfig {
 	private Pattern responsePattern;
 	private boolean validated = false;
 	private Map<RegexMatchLbl, VideoDataTags[]> xrefMap;
+	
 	public VideoAnalysisConfig() {
-		// dummy constructor to make json happy
+		setVideoType(VideoType.UNKNOWN);
+		setDesc("");
+		setType("");
+		setRegex("");
+		setHeaderRegex("");
+		setResponseRegex("");
+		setXref(new VideoDataTags[] {});
+		setXrefMap(new HashMap<RegexMatchLbl, VideoDataTags[]>());
 	}
 
 	public VideoAnalysisConfig(VideoType videoType, String desc, String type, String regex, String headerRegex, String responseRegex, VideoDataTags[] xref) throws PatternSyntaxException {
@@ -74,6 +82,7 @@ public class VideoAnalysisConfig {
 		setHeaderRegex(headerRegex != null ? headerRegex : "");
 		setResponseRegex(responseRegex != null ? responseRegex : "");
 		setXref(xref);
+		setXrefMap(new HashMap<RegexMatchLbl, VideoDataTags[]>());
 	}
 
 	public VideoAnalysisConfig(VideoType videoType, String desc, String type, String regex, String headerRegex,
@@ -188,22 +197,17 @@ public class VideoAnalysisConfig {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(60);
-		strblr.append("VideoAnalysisConfig : desc = ");
-		strblr.append(desc);
-		strblr.append("\n\t, regex = ");
-		strblr.append(regex);
+		strblr.append("VideoAnalysisConfig : desc = ").append(desc)
+		.append("\n\t, regex = ").append(regex);
 		if (headerRegex != null && !headerRegex.isEmpty()) {
-			strblr.append("\n\t, headerRegex = ");
-			strblr.append(headerRegex);
+			strblr.append("\n\t, headerRegex = ").append(headerRegex);
 		}
 		if (responseRegex != null && !responseRegex.isEmpty()) {
-			strblr.append("\n\t, responseRegex = ");
-			strblr.append(responseRegex);
+			strblr.append("\n\t, responseRegex = ").append(responseRegex);
 		}
 		strblr.append("\n\t, xref ");
 		for (VideoDataTags ref : xref) {
-			strblr.append(',');
-			strblr.append(ref.toString());
+			strblr.append(',').append(ref.toString());
 		}
 		return strblr.toString();
 	}

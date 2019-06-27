@@ -29,6 +29,14 @@ public class ByteRange {
 		this.endByte = Integer.valueOf(byteEnd);
 	}
 
+	public ByteRange(String range) {
+		String[] strArray = range.split("-");
+		if (strArray != null) {
+			this.beginByte = Integer.valueOf(strArray[0]);
+			this.endByte = Integer.valueOf(strArray[1]);
+		}
+	}
+
 	public Integer getBeginByte() {
 		return beginByte;
 	}

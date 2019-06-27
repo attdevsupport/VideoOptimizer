@@ -121,12 +121,12 @@ public class AttenuatorPlot implements IPlot {
 
 					if (AttnrEventFlow.DL.equals(event.getAtnrFL())) {
 						double tempTime1 = (event.getTimeStamp() - firstTimeDTamp) / 1000;
-						seriesDL.add(tempTime1, (double)event.getDelayTime());
-						LOGGER.info("Time stamp: " + tempTime1+ " " +event.getDelayTime());
+						seriesDL.add(tempTime1, (double) event.getDelayTime());
+						LOGGER.info("Time stamp: " + tempTime1 + " " + event.getDelayTime());
 					} else if (AttnrEventFlow.UL.equals(event.getAtnrFL())) {
 						double tempTime2 = (event.getTimeStamp() - firstTimeUTemp) / 1000;
-						seriesUP.add(tempTime2, (double)event.getDelayTime());
-						LOGGER.info("Time stamp: " + tempTime2+ " " +event.getDelayTime());
+						seriesUP.add(tempTime2, (double) event.getDelayTime());
+						LOGGER.info("Time stamp: " + tempTime2 + " " + event.getDelayTime());
 					} else {
 						LOGGER.info("wrong record for attenuation event");
 					}

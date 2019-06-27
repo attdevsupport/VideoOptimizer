@@ -146,14 +146,14 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 			if (response.isNoStore() || request.isNoStore() || HttpRequestResponseInfo.HTTP_POST.equals(requestType)
 					|| HttpRequestResponseInfo.HTTP_PUT.equals(requestType)) {
 				cacheEntries.remove(getObjFullName(request, response));
-				dupEntries.remove(getObjDuplicateName(request));
+				dupEntries.remove(getObjDuplicateName(request, response));
 				diagnosisResults
 						.add(new CacheEntry(request, response, Diagnosis.CACHING_DIAG_NOT_CACHABLE, 0, firstPacket));
 				continue;
 			}
 			// [C] Does it hit the cache?
 			CacheEntry cacheEntry = cacheEntries.get(getObjFullName(request, response));
-			CacheEntry cacheDuplicateEntry = dupEntries.get(getObjDuplicateName(request));
+			CacheEntry cacheDuplicateEntry = dupEntries.get(getObjDuplicateName(request, response));
 			CacheEntry newCacheEntry;
 			if (cacheEntry == null) {
 				Diagnosis diagnosis = Diagnosis.CACHING_DIAG_CACHE_MISSED;
@@ -279,7 +279,8 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		duplicateContentWithOriginals.addAll(dupsWithOrig);
 		Collections.sort(duplicateContentWithOriginals);
 		duplicateContentBytesRatio = totalRequestResponseBytes != 0
-				? (double) totalRequestResponseDupBytes / totalRequestResponseBytes : 0.0;
+				? (double) totalRequestResponseDupBytes / totalRequestResponseBytes
+				: 0.0;
 		result.setCacheExpirationResponses(cacheExpirationResponses);
 		result.setDiagnosisResults(diagnosisResults);
 		result.setDuplicateContent(duplicateContent);
@@ -362,11 +363,10 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		HttpRequestResponseInfo request = cacheEntry.getRequest();
 		HttpRequestResponseInfo response = cacheEntry.getResponse();
 		/*
-		 * Cases when an object expires (t=time, s=server, c=client) (1)
-		 * "no-cache" header in request/response (2) t >= s.expire (3) t >=
-		 * c.date + c.max_age (4) t >= s.date + s.max_age (overrides 1) (5)
-		 * s.age >= s.expire - s.date (6) s.age >= s.max_age (overrides 4) (7)
-		 * s.age >= c.max_age
+		 * Cases when an object expires (t=time, s=server, c=client) (1) "no-cache"
+		 * header in request/response (2) t >= s.expire (3) t >= c.date + c.max_age (4)
+		 * t >= s.date + s.max_age (overrides 1) (5) s.age >= s.expire - s.date (6)
+		 * s.age >= s.max_age (overrides 4) (7) s.age >= c.max_age
 		 */
 		if (request.isNoCache() || request.isPragmaNoCache() || response.isNoCache() || response.isPragmaNoCache()) {
 			return CacheExpiration.CACHE_EXPIRED;
@@ -413,8 +413,8 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 	}
 
 	/**
-	 * This method checks a response's byte range to see if it falls fully in
-	 * the specified ranges to determine if the response was a full cache hit
+	 * This method checks a response's byte range to see if it falls fully in the
+	 * specified ranges to determine if the response was a full cache hit
 	 *
 	 * @param request
 	 * @param response
@@ -459,11 +459,12 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 	}
 
 	private String getObjFullName(HttpRequestResponseInfo request, HttpRequestResponseInfo response) {
-		return request.getHostName() + "|" + request.getObjName() + "|" + response.getEtag();
+		return request.getHostName() + "|" + request.getObjName() + "|" + response.getEtag() + "|"
+				+ response.getContentLength();
 	}
 
-	private String getObjDuplicateName(HttpRequestResponseInfo request) {
-		return request.getHostName() + "|" + request.getObjName();
+	private String getObjDuplicateName(HttpRequestResponseInfo request, HttpRequestResponseInfo response) {
+		return request.getHostName() + "|" + request.getObjName() + "|" + response.getContentLength();
 	}
 
 	/**
@@ -506,8 +507,8 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		} else {
 			rangeEntries.remove(objFullName);
 		}
-		cacheEntries.put(objFullName, cacheEntry);
-		dupEntries.put(getObjDuplicateName(cacheEntry.getRequest()), cacheEntry);
+		cacheEntries.put(objFullName + cacheEntry.getContentLength(), cacheEntry);
+		dupEntries.put(getObjDuplicateName(cacheEntry.getRequest(), cacheEntry.getResponse()), cacheEntry);
 	}
 
 	/**

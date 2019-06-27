@@ -25,5 +25,6 @@ public enum VideoDataTags {
 	, Position
 	, RateCode
 	, SegmentStartTime
+	, SegmentAutoCount
 	, unknown
 }

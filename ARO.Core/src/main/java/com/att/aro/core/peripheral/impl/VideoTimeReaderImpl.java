@@ -15,7 +15,10 @@
  */
 package com.att.aro.core.peripheral.impl;
 
+
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,12 +26,19 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 
+import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.IVideoTimeReader;
 import com.att.aro.core.peripheral.pojo.VideoTime;
+import com.att.aro.core.util.StringParse;
 import com.att.aro.core.util.Util;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Method to read times from the video time trace file and store video time
@@ -37,8 +47,16 @@ import com.att.aro.core.util.Util;
  */
 public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeReader {
 
-	private static final Logger LOGGER = LogManager.getLogger(VideoTimeReaderImpl.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(VideoTimeReaderImpl.class.getName());	
+	private static final String VALIDATED = "//Validated-";
 
+	@Autowired
+	private IExternalProcessRunner extrunner;
+	
+	@Getter @Setter
+	private String[] videoTimeContent = null;
+	private String nativeVideoFileOnDevice = "video.mp4";
+	
 	@Override
 	public VideoTime readData(String directory, Date traceDateTime) {
 		boolean exVideoFound = false;
@@ -46,29 +64,26 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		double videoStartTime = 0.0;
 		boolean nativeVideo = false;
 		String exVideoDisplayFileName = "exvideo.mov";
-		String filepath = directory + Util.FILE_SEPARATOR + exVideoDisplayFileName;
-		String nativeVideoFileOnDevice = "video.mp4";
+		String filePath = directory + Util.FILE_SEPARATOR + exVideoDisplayFileName;
 		String nativeVideoDisplayfile = "video.mov";
 		
-		if (filereader.fileExist(filepath) || isExternalVideoSourceFilePresent(nativeVideoFileOnDevice, nativeVideoDisplayfile, false, directory)) {
+		if (filereader.fileExist(filePath) || isExternalVideoSourceFilePresent(nativeVideoFileOnDevice, nativeVideoDisplayfile, false, directory)) {
 			exVideoFound = true;
 			exVideoTimeFileNotFound = false;
-			filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.EXVIDEO_TIME_FILE;
+			filePath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.EXVIDEO_TIME_FILE;
 
-			if (!filereader.fileExist(filepath)) {
+			if (!filereader.fileExist(filePath)) {
 				exVideoTimeFileNotFound = true;
 				exVideoFound = false;
 			} else {
-				videoStartTime += readVideoStartTime(filepath, traceDateTime);
+				videoStartTime += readVideoStartTime(filePath, traceDateTime);
 			}
 		} else {
 			exVideoFound = false;
 			exVideoTimeFileNotFound = false;
 			nativeVideo = true;
-			filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.VIDEO_TIME_FILE;
-			if (filereader.fileExist(filepath)) {
-				videoStartTime += readVideoStartTime(filepath, traceDateTime);
-			}
+			filePath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.VIDEO_TIME_FILE;
+			videoStartTime = updateVideoStartTimeForMP4(directory, filePath, traceDateTime);
 		}
 		VideoTime vtime = new VideoTime();
 		vtime.setExVideoFound(exVideoFound);
@@ -78,11 +93,66 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		return vtime;
 	}
 	
+	public double updateVideoStartTimeForMP4(String directory, String filepath, Date traceDateTime) {
+		double videoStartTime = readVideoStartTime(filepath, traceDateTime);
+		String videoPath = directory + Util.FILE_SEPARATOR + nativeVideoFileOnDevice;
+		if (filereader.fileExist(videoPath)) {
+			String[] lines = getVideoTimeContent();
+			if (lines != null && lines.length > 1) {
+				String line = lines[1];
+				if (!line.startsWith(VALIDATED)) {
+					double startTime = getFfmpegVideoStartTime(videoPath);
+					videoStartTime = startTime != -1 ? startTime : videoStartTime;
+					updateVideoTimeFile(videoStartTime, filepath);
+				}
+			} else {
+				double startTime = getFfmpegVideoStartTime(videoPath);
+				videoStartTime = startTime != -1 ? startTime : videoStartTime;
+				updateVideoTimeFile(videoStartTime, filepath);
+			}
+		}
+		return videoStartTime;
+	}
+	
+	public double getFfmpegVideoStartTime(String videoPath) {
+		double ffmpegStartTime = -1;
+		String cmd = Util.getFFMPEG() + " -i " + "\"" + videoPath + "\"";
+		String result = extrunner.executeCmd(cmd);
+		String[] timestamp = StringParse.findLabeledDataFromString("Duration: ", ",", result).split(":");
+		double duration = (StringUtils.isEmpty(timestamp[0])? 0 : Integer.parseInt(timestamp[0])) * 3600 + (timestamp.length <= 1 || StringUtils.isEmpty(timestamp[1])? 0 : Integer.parseInt(timestamp[1]) * 60)
+				+ (timestamp.length <= 2 || StringUtils.isEmpty(timestamp[2])? 0.0 : Double.parseDouble(timestamp[2]));
+		if (result.contains("creation_time")) {
+			String creationTime = StringParse.findLabeledDataFromString("creation_time   :", "\n", result).trim();
+			long creationtimeStamp = Util.parseForUTC(creationTime);
+			creationtimeStamp = creationtimeStamp / 1000;
+			ffmpegStartTime = creationtimeStamp - duration;
+		}
+
+		return ffmpegStartTime;
+	}
+
+	public void updateVideoTimeFile(double newVideoStartTime, String filePath) {
+		try {
+			BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(filePath));
+			bufferedWriter.write(String.valueOf(newVideoStartTime));
+			bufferedWriter.newLine();
+			bufferedWriter.append(VALIDATED);
+			for (String line : videoTimeContent) {
+				bufferedWriter.append(line);
+			}
+			bufferedWriter.close();
+		} catch (IOException e) {
+			LOGGER.error("Failed to write to video time file", e);
+		}
+
+	}
+	
 	double readVideoStartTime(String filepath, Date traceDateTime){
 		double videoStartTime = 0;
 		String[] lines = null;
 		try {
 			lines = filereader.readAllLine(filepath);
+			setVideoTimeContent(lines);
 		} catch (IOException e1) {
 			LOGGER.error("failed reading video time file", e1);
 		}

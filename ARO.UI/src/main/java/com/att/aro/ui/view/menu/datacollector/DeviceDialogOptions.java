@@ -27,20 +27,28 @@ import java.awt.event.KeyEvent;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.text.MessageFormat;
+import java.util.Hashtable;
 import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.JComboBox;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
+import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.android.AndroidApiLevel;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.NetworkUtil;
@@ -49,6 +57,7 @@ import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.datacollector.ioscollector.utilities.AppSigningHelper;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
 
 public class DeviceDialogOptions extends JPanel implements ActionListener {
 
@@ -60,6 +69,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private IAroDevice selectedDevice;
 	private static final String SHARED_NETWORK_INTERFACE = "bridge100";
 	private static final String PORT_NUMBER = "8080";
+
 
 	private String txtLREZ;
 	private String txtHDEF;
@@ -92,23 +102,42 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private Label labelAttenuatorTitle;
 	private Label labelVideoTitle;
 	private Label labelVideoOrientTitle;
+	
+	private Label labelTraceDescTitle;
+	private Label labelTargetedAppTitle;
+	private Label labelAppProducerTitle;
+	private Label labelTraceTypeTitle;
+	private Label labelAppSelectorTitle;
+	
+	private JTextField traceDescField;
+	private JTextField targetedAppField;
+	private JTextField appProducerField;
+	private JTextField traceTypeField;
+	private JComboBox<String> appSelector;
 
 	private GridBagLayout contentLayout;
 	private GridBagConstraints labelConstraints;
 	private GridBagConstraints optionConstraints;
 
 	private AttnrPanel attnrGroupPanel;
-	private AttenuatorModel miniAtnr;
+	private AttenuatorModel attenuatorModel;
 
 	private IDataCollector collector;
 	private IDataCollector rootCollector;
 	private IDataCollector vpnCollector;
 	private IDataCollector iosCollector;
-	private int api;	
+	private int api;
+	
+	private boolean testEnvironment = false;
+	
 
 	public DeviceDialogOptions(DataCollectorSelectNStartDialog parent, List<IDataCollector> collectors) {
 		
-		this.parent = parent;	
+		this.parent = parent;
+		if(ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
+			testEnvironment = true;
+		}
+		
 		videoOrient = Orientation.LANDSCAPE.toString().toLowerCase().equals(
 				SettingsImpl.getInstance().getAttribute("orientation")) ? Orientation.LANDSCAPE : Orientation.PORTRAIT;
 
@@ -135,8 +164,53 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 		contents.add(labelVideoOrientTitle, labelConstraints);
 		contents.add(videoOrientRadioGrpPanel, optionConstraints);
+		
+		
+		if(testEnvironment) {
+			parent.resizeLarge();
+			
+			initializeFields();
+			
+			contents.add(labelTraceDescTitle, labelConstraints);
+			contents.add(traceDescField, optionConstraints);
+			
+			contents.add(labelTargetedAppTitle, labelConstraints);
+			contents.add(targetedAppField, optionConstraints);
+			
+			contents.add(labelAppProducerTitle, labelConstraints);
+			contents.add(appProducerField, optionConstraints);
+			
+			contents.add(labelTraceTypeTitle, labelConstraints);
+			contents.add(traceTypeField, optionConstraints);
+			
+			contents.add(labelAppSelectorTitle, labelConstraints);
+			contents.add(appSelector, optionConstraints);
+		}
 
 		return contents;
+	}
+
+	private void initializeFields() {
+		String[] response = getApplicationList();
+		
+		traceDescField = new JTextField(20);
+		targetedAppField = new JTextField(20);
+		appProducerField = new JTextField(20);
+		traceTypeField = new JTextField(20);
+		appSelector = new JComboBox<String>(response);
+		appSelector.insertItemAt(StringUtils.EMPTY, 0);
+		appSelector.setSelectedIndex(0);
+		AutoCompleteDecorator.decorate(appSelector);
+	}
+
+	private String[] getApplicationList() {
+		String[] response;
+		if(selectedDevice!=null && selectedDevice.getPlatform().equals(IAroDevice.Platform.Android)) {
+			response = ((MainFrame) parent.getMainframeParent()).getApplicationsList(selectedDevice.getId());
+		} else {
+			response = ((MainFrame) parent.getMainframeParent()).getApplicationsList("");
+		}
+		return response;
 	}
 
 	private void setUpLayoutProperties() {
@@ -156,13 +230,26 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private void setUpLabels() {
 		String collectorTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.collector.title");
 		String attenuatorTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.title");
+		String secureTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.secure.title");
 		String videoTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.video.title");
 		String videoOrientTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.video.orient.title");
+		
+		String traceDesc = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.trace.desc.title");
+		String targetedApp = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.targeted.app.title");
+		String appProducer = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.app.producer.title");
+		String traceType = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.trace.type.title");
+		String appSelector = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.app.selection.title");
 
 		labelCollectorTitle = new Label(collectorTitle);
 		labelAttenuatorTitle = new Label(attenuatorTitle);
 		labelVideoTitle = new Label(videoTitle);
 		labelVideoOrientTitle = new Label(videoOrientTitle);
+		
+		labelTraceDescTitle = new Label(traceDesc);
+		labelTargetedAppTitle = new Label(targetedApp);
+		labelAppProducerTitle = new Label(appProducer);
+		labelTraceTypeTitle = new Label(traceType);
+		labelAppSelectorTitle = new Label(appSelector);
 	}
 
 	/**
@@ -210,10 +297,52 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		showHideOptions(e);
 		if(vpn.equals(e.getActionCommand())||ios.equals(e.getActionCommand())) {
 			setAttenuateSectionStatus();
-		}	
-		
+		} else if (rooted.equals(e.getActionCommand())) {
+			disableAttenuateSection();
+			videoOrient = Orientation.PORTRAIT;
+			showVideoOrientation(false);
+		} else if(txtHDEF.equals(e.getActionCommand()) && btniOS.isSelected())	{
+			if(!AppSigningHelper.getInstance().isLatestProvisionProfile()) {
+				JOptionPane.showMessageDialog(parent
+						, ResourceBundleHelper.getMessageString("Error.app.provisionexpired")
+						, MessageFormat.format(ResourceBundleHelper.getMessageString("Error.app.provisionprofile.precheck"), 
+												ApplicationConfig.getInstance().getAppShortName())
+						, JOptionPane.ERROR_MESSAGE);
+				btn_lrez.doClick();								 
+			}else if(!AppSigningHelper.getInstance().isSameDevice(selectedDevice.getId())) {
+				JOptionPane.showMessageDialog(parent
+						, ResourceBundleHelper.getMessageString("Error.app.devicenotmatch")
+						, MessageFormat.format(ResourceBundleHelper.getMessageString("Error.app.provisionprofile.precheck"), 
+												ApplicationConfig.getInstance().getAppShortName())
+						, JOptionPane.ERROR_MESSAGE);
+				
+				btn_lrez.doClick();
+				 
+			} else if(!AppSigningHelper.getInstance().isAppIdMatch()) {
+				JOptionPane.showMessageDialog(parent
+						, ResourceBundleHelper.getMessageString("Error.app.appidnotmatch")
+						, MessageFormat.format(ResourceBundleHelper.getMessageString("Error.app.provisionprofile.precheck"), 
+												ApplicationConfig.getInstance().getAppShortName())
+						, JOptionPane.ERROR_MESSAGE);
+				btn_lrez.doClick();
+						 
+			}  else if(!AppSigningHelper.getInstance().verifyIDeviceInstaller()) {
+				JOptionPane.showMessageDialog(parent
+						, ResourceBundleHelper.getMessageString("Error.app.noideviceinstaller")
+						, MessageFormat.format(ResourceBundleHelper.getMessageString("Error.app.noprerequisitelib"), 
+												ApplicationConfig.getInstance().getAppShortName())
+						, JOptionPane.ERROR_MESSAGE);
+				btn_lrez.doClick();	
+			} else if(!AppSigningHelper.getInstance().verifyIFuse()) {
+				JOptionPane.showMessageDialog(parent
+						, ResourceBundleHelper.getMessageString("Error.app.noifuse")
+						, MessageFormat.format(ResourceBundleHelper.getMessageString("Error.app.noprerequisitelib"), 
+												ApplicationConfig.getInstance().getAppShortName())
+						, JOptionPane.ERROR_MESSAGE);
+				btn_lrez.doClick();	
+			}
+		}
 	}
-
 	private void showHideOptions(ActionEvent e) {
 		String ac = e.getActionCommand();
 
@@ -255,6 +384,9 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			collector = rootCollector;
 			if (btnRooted.isSelected()) {
 				enableFullVideo(false);
+				if(btn_hdef.isSelected() || btn_sdef.isSelected()) {
+					btn_lrez.setSelected(true);
+				}			
 			}
 			return;
 
@@ -265,7 +397,8 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			}
 
 			return;
-		}
+
+		} 
 	}
 
 	public String messageComposed() {
@@ -302,28 +435,41 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	 */
 	private void setAttenuateSectionStatus() {
 		if (btnVpn.isSelected()||btniOS.isSelected()) {
-			attnrGroupPanel.getAttnrRadioGP().reset();
 			attnrGroupPanel.setAttenuateEnable(true);
 			if(btniOS.isSelected()) {
-				attnrGroupPanel.getAttnrRadioGP().setRbAtnrLoadFileEnable(false);
+				
 				attnrGroupPanel.getAttnrRadioGP().getDefaultBtn().setEnabled(true);
-			}		
-			parent.resizeMedium();	
+				if (attnrGroupPanel.getAttnrRadioGP().getLoadFileBtn().isSelected()) {
+					attnrGroupPanel.getAttnrRadioGP().reset();
+				}
+				attnrGroupPanel.getAttnrRadioGP().setRbAtnrLoadFileEnable(false);
+			}
 		} else {
 			attnrGroupPanel.setAttenuateEnable(false);
+		}
+	}
+	
+	private void disableAttenuateSection() {
+		attnrGroupPanel.getAttnrRadioGP().reset();
+		attnrGroupPanel.setAttenuateEnable(false);
+		if (testEnvironment) {
+			parent.resizeLarge();
+		} else {
+			parent.resizeMedium();
 		}
 	}
 
 	public AttnrPanel getAttnrGroup() {
 		if (attnrGroupPanel == null) {
-			miniAtnr = new AttenuatorModel();
+			attenuatorModel = new AttenuatorModel();
 			
-			attnrGroupPanel = new AttnrPanel(this,parent, miniAtnr);
+			attnrGroupPanel = new AttnrPanel(this,parent, attenuatorModel);
 			Border loweredetched = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
 			attnrGroupPanel.setBorder(loweredetched);
 		}
 		return attnrGroupPanel;
 	}
+
 
 	private JPanel getRadioGroupVideo() {
 		loadRadioGroupVideo();
@@ -435,53 +581,51 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		switch (selectedIAroDevice.getPlatform()) {
 
 		case iOS:
+			
 			setVisible(true);
 			collector = iosCollector;
-
-			btniOS.setEnabled(true);			
+			
+			btniOS.setEnabled(true);
 			btniOS.setSelected(true);
 			btnVpn.setEnabled(false);
 			btnRooted.setEnabled(false);
 			
-			String ver = selectedDevice.getApi();
-			int major = StringUtils.isBlank(ver) ? 0 : Integer.valueOf(ver.split("\\.")[0]);
-			boolean hdVideo = (major >= 11) ? true : false;
-			if (hdVideo && AppSigningHelper.isCertInfoPresent()) {
-				btn_hdef.setEnabled(true);
-				btn_sdef.setEnabled(false);
-				btn_lrez.setEnabled(false);
-				btn_hdef.setSelected(true);
-				btn_none.setEnabled(false);
-				videoOption = VideoOption.HDEF;
-			} else {
-				enableFullVideo(false);
-				// set default video
+			enableIOSVideoOptions();
+			showVideoOrientation(false);
+			
+			// Set Default Video
+			if (!btn_lrez.isSelected() && !btn_hdef.isSelected() && !btn_none.isSelected() && !btn_sdef.isSelected()) {
 				btn_lrez.setSelected(true);
 				videoOption = VideoOption.LREZ;
 			}
+			
+			if(selectedDevice.getProductName()==null||selectedDevice.getModel()==null) {
+				collector = null;
+			}
 
-			showVideoOrientation(false);
 			setAttenuateSectionStatus();
 			break;
 
 		case Android:
+			
 			api = getApi(selectedIAroDevice);
+			
 			setVisible(true);
 			enableFullVideo(true);
-			// set default video
-			btn_lrez.setSelected(true);
-			videoOption = VideoOption.LREZ;
-
-			showVideoOrientation(false); // false because LREZ is selected by
-											// default
-
 			btniOS.setEnabled(false);
 			btnVpn.setEnabled(true);
 			btnRooted.setEnabled(true);
+ 
 			
-			String abi = selectedIAroDevice.getAbi();
+			// Set Default Video
+			if (!btn_lrez.isSelected() && !btn_hdef.isSelected() && !btn_none.isSelected() && !btn_sdef.isSelected()) {
+				btn_lrez.setSelected(true);
+				videoOption = VideoOption.LREZ;
+				showVideoOrientation(false);
+			}
+ 
 			if (selectedIAroDevice.isEmulator()) {
-				if (abi.contains("x86")) {
+				if (selectedIAroDevice.getAbi().contains("x86")) {
 					setRootState(true);
 					collector = null;
 					btnRooted.setEnabled(false);
@@ -495,17 +639,41 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 					btnRooted.setEnabled(true);
 				}
 			} else if (selectedIAroDevice.isRooted()) {
+				
+				collector = rootCollector;
+				
 				setRootState(true);
 				btnRooted.setEnabled(true);
 				btnVpn.setEnabled(true);
 				btnRooted.setSelected(true);
-				collector = rootCollector;
+				if (testEnvironment) {
+					String[] response = getApplicationList();
+					appSelector.removeAllItems();
+					appSelector.insertItemAt(StringUtils.EMPTY, 0);
+					for(String item : response) {
+						appSelector.addItem(item);
+					}
+					appSelector.setSelectedIndex(0);
+				}
+ 
+				
 			} else {
+				
+				collector = vpnCollector;
+				
 				setRootState(false);
 				btnRooted.setEnabled(false);
 				btnVpn.setEnabled(true);
 				btnVpn.setSelected(true);
-				collector = vpnCollector;
+				if (testEnvironment) {
+					String[] response = getApplicationList();
+					appSelector.removeAllItems();
+					appSelector.insertItemAt(StringUtils.EMPTY, 0);
+					for(String item : response) {
+						appSelector.addItem(item);
+					}
+					appSelector.setSelectedIndex(0);
+				}
 			}
 
 			// quick hack to allow or disallow full-motion video
@@ -527,8 +695,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 							&& !selectedIAroDevice.getModel().equals("LG-K425"));
 					enableVpnCapture(true);
 				} else {
-					// Not able to confirm if media projection works on the
-					// device, so disable options
+					// Not able to confirm if media projection works on the device, so disable options
 					enableFullVideo(!selectedIAroDevice.getModel().equals("SAMSUNG-SM-J320A"));
 					enableVpnCapture(true);
 				}
@@ -537,10 +704,10 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 					enableFullVideo(false);		
 				}
 			} else {
-				enableFullVideo(false);
+				// enableFullVideo(false);
 				enableVpnCapture(false);
 			}
-			
+ 
 			setAttenuateSectionStatus();
 			break;
 
@@ -550,16 +717,42 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		return (collector != null);
 	}
 
-	private int getApi(IAroDevice aroDevice) {
-		if (aroDevice == null) {
-			return 0;
+	private void enableIOSVideoOptions() {
+		
+		btn_none.setEnabled(true);
+		btn_lrez.setEnabled(true);
+		btn_sdef.setEnabled(false);
+		
+		if(AppSigningHelper.getInstance().isCertInfoPresent()) {
+			btn_hdef.setEnabled(true);
+		} else {
+			btn_hdef.setEnabled(false);
 		}
-		return aroDevice.getApi() == null ? 0 : Integer.valueOf(aroDevice.getApi());
+		
+		if (btn_sdef.isSelected()) {
+			btn_lrez.setSelected(true);
+		}
+	}
+
+	private int getApi(IAroDevice aroDevice) {
+		int apiNumber = 0;
+		if (aroDevice != null ) {
+			String stringApi = aroDevice.getApi();
+			if (Platform.iOS.equals(aroDevice.getPlatform())) { //iOS api format x.x.x		 		
+				apiNumber = Double.valueOf(stringApi.substring(0,stringApi.indexOf('.'))).intValue();
+			} else if (Platform.Android.equals(aroDevice.getPlatform())) { //android is integer
+				apiNumber = Integer.valueOf(stringApi);
+			}
+		}
+		return apiNumber;
 	}
 
 	private void enableVpnCapture(boolean boolFlag) {
+
 		btnVpn.setEnabled(boolFlag);
 		btnVpn.setSelected(boolFlag);
+ 
+
 	}
 
 	/**
@@ -570,6 +763,12 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private void enableFullVideo(boolean boolFlag) {
 		btn_hdef.setEnabled(boolFlag);
 		btn_sdef.setEnabled(boolFlag);
+		
+		if (btn_none.isSelected() || btn_lrez.isSelected()) {
+			showVideoOrientation(false);
+		} else if (selectedDevice.isPlatform(Platform.Android) && boolFlag) {
+			showVideoOrientation(boolFlag);
+		}
 	}
 
 	/**
@@ -582,8 +781,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		labelVideoOrientTitle.setVisible(boolFlag);
 		videoOrientRadioGrpPanel.setVisible(boolFlag);
 
-		// Reset selection to settings every time we disable the video
-		// orientation option
+		// Reset selection to settings every time we disable the video orientation option
 		if (!boolFlag) {
 			(videoOrient == Orientation.LANDSCAPE ? btn_landscape : btn_portrait).setSelected(true);
 		}
@@ -612,16 +810,171 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		return videoOption;
 	}
 
+	public void setVideoOption(VideoOption videoOption) {
+		this.videoOption = videoOption;
+	}
+	
 	public Orientation getVideoOrientation() {
 		SettingsImpl.getInstance().setAndSaveAttribute("orientation", videoOrient.toString().toLowerCase());
 		return videoOrientRadioGrpPanel.isVisible() && btn_landscape.isSelected()
 				? Orientation.LANDSCAPE : Orientation.PORTRAIT;
 	}
 
-	public AttenuatorModel getMiniAtnr() {
-		return miniAtnr;
+	public AttenuatorModel getAttenuatorModel() {
+		return attenuatorModel;
 	}
-	public void setMiniAtnr(AttenuatorModel miniAtnr) {
-		this.miniAtnr = miniAtnr;
+	public void setAttenuatorModel(AttenuatorModel attenuatorModel) {
+		this.attenuatorModel = attenuatorModel;
+	}
+	
+	
+	
+	public String getTraceDesc() {
+		return traceDescField.getText();
+	}
+	
+	public String getTraceType() {
+		return traceTypeField.getText();
+	}
+
+	public String getTargetedApp() {
+		return targetedAppField.getText();
+	}
+
+	public String getAppProducer() {
+		return appProducerField.getText();
+	}
+	
+	public String getAppSelected() {
+		return (String) (appSelector.getSelectedItem()!=null? appSelector.getSelectedItem() : "");
+	}
+
+	public boolean isTestEnvironment() {
+		return testEnvironment;
+	}
+
+	public JComboBox<String> getAppSelector() {
+		return appSelector;
+	}
+
+	public void setAppSelector(JComboBox<String> appSelector) {
+		this.appSelector = appSelector;
+	}
+
+	public Label getLabelAppSelectorTitle() {
+		return labelAppSelectorTitle;
+	}
+
+	public void setLabelAppSelectorTitle(Label labelAppSelectorTitle) {
+		this.labelAppSelectorTitle = labelAppSelectorTitle;
+	}
+
+	public void reselectPriorOptions (Hashtable<String, Object> previousOptions) {
+		if (MapUtils.isNotEmpty(previousOptions) && previousOptions.containsKey("device")) {
+			IAroDevice device = (IAroDevice) previousOptions.get("device");
+
+			for (String key : previousOptions.keySet()) {
+				switch (key) {
+					case "video_option":
+						enableVideoOptions((VideoOption) previousOptions.get(key));
+						break;
+					case "videoOrientation":
+						enableVideoOritenation((Orientation) previousOptions.get(key));
+						break;
+					case "AttenuatorModel":
+						enableAttenuatorOptions((AttenuatorModel) previousOptions.get("AttenuatorModel"));
+						break;
+					case "traceType":
+						traceTypeField.setText((String) previousOptions.get(key));
+						break;
+					case "traceDesc":
+						traceDescField.setText((String) previousOptions.get(key));
+						break;
+					case "targetedApp":
+						targetedAppField.setText((String) previousOptions.get(key));
+						break;
+					case "appProducer":
+						appProducerField.setText((String) previousOptions.get(key));
+						break;
+					case "selectedAppName":
+						if (device.getId().equals(selectedDevice.getId())) {
+							appSelector.setSelectedItem((String) previousOptions.get(key));
+						}
+						break;
+					case "TraceFolderName":
+						parent.setTraceFolderName((String) previousOptions.get(key));
+					default:
+						break;
+				}
+			}
+
+		}
+	}
+
+	private void enableAttenuatorOptions(AttenuatorModel attenuatorModel) {
+		this.attenuatorModel = attenuatorModel;
+		attnrGroupPanel.setAttenuateEnable(true);
+		attnrGroupPanel.reselectPriorOptions(attenuatorModel, selectedDevice.isPlatform(Platform.iOS));
+	}
+ 
+
+	private void enableVideoOritenation(Orientation videoOrientation) {
+		if (Platform.iOS.equals(selectedDevice.getPlatform())) {
+			showVideoOrientation(false);
+		}
+		this.videoOrient = videoOrientation;
+		labelVideoOrientTitle.setVisible(true);
+		switch (videoOrientation) {
+			case LANDSCAPE:
+				btn_landscape.setSelected(true);
+				break;
+			case PORTRAIT:
+				btn_portrait.setSelected(true);
+				break;
+			default:
+				break;
+		}
+	}
+
+	private void enableVideoOptions(VideoOption videoOption) {
+		this.videoOption = videoOption;
+		switch (videoOption) {
+			case HDEF:
+				if (Platform.iOS.equals(selectedDevice.getPlatform()) && !AppSigningHelper.getInstance().isCertInfoPresent()) {
+					btn_lrez.setSelected(true);
+					btn_hdef.setEnabled(false);
+					btn_sdef.setEnabled(false);
+					showVideoOrientation(false);
+					break;
+				}
+				this.videoOrientRadioGrpPanel.setVisible(true);
+				btn_hdef.setSelected(true);
+				break;
+			case KITCAT_HDEF:
+				this.videoOrientRadioGrpPanel.setVisible(true);
+				btn_hdef.setSelected(true);
+				break;
+			case KITCAT_SDEF:
+				this.videoOrientRadioGrpPanel.setVisible(true);
+				btn_sdef.setSelected(true);
+				break;
+			case LREZ:
+				btn_lrez.setSelected(true);
+				showVideoOrientation(false);
+				break;
+			case NONE:
+				btn_none.setSelected(true);
+				break;
+			case SDEF:
+				if (Platform.iOS.equals(selectedDevice.getPlatform())) {
+					btn_none.setSelected(true);
+					break;
+				}
+				this.videoOrientRadioGrpPanel.setVisible(true);
+				btn_sdef.setSelected(true);
+				break;
+			default:
+				break;
+		}
 	}
 }

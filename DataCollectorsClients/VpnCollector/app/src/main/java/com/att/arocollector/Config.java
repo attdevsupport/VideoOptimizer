@@ -15,15 +15,15 @@
  */
 package com.att.arocollector;
 
-import java.io.File;
 import android.media.MediaRecorder;
 import android.os.Environment;
+
+import java.io.File;
 
 public class Config {
 
 	public static class Permission {
 		public static final int VPN_PERMISSION_REQUEST_CODE = 0;
-	    public static final int CERT_INSTALL_REQUEST_CODE = 1;
 		public static final int VIDEO_PERMISSION_REQUEST_CODE = 2;
 	}
 

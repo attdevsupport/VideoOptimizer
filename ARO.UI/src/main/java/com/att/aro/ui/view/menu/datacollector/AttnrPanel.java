@@ -29,14 +29,14 @@ public class AttnrPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private AttnrRadioGroupPanel attnrRadioGPanel;
 	private AttnrPanelHolder attnrHolderPanel;
-	private AttenuatorModel miniAtnr;
+	private AttenuatorModel attenuatorModel;
 	private DataCollectorSelectNStartDialog parent;
 	private DeviceDialogOptions deviceInfo;
 	
-	public AttnrPanel(DeviceDialogOptions deviceInfo,DataCollectorSelectNStartDialog parent, AttenuatorModel miniAtnr){
+	public AttnrPanel(DeviceDialogOptions deviceInfo, DataCollectorSelectNStartDialog parent, AttenuatorModel attenuatorModel){
 		setLayout(new GridBagLayout());
 		this.parent = parent;
-		this.miniAtnr = miniAtnr;
+		this.attenuatorModel = attenuatorModel;
 		this.deviceInfo = deviceInfo;
  		add(getAttnrRadioGP(), new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.WEST,
 				GridBagConstraints.VERTICAL, new Insets(0, 0, 0, 0), 0, 0));		
@@ -46,7 +46,7 @@ public class AttnrPanel extends JPanel {
 	
 	public AttnrRadioGroupPanel getAttnrRadioGP(){
 		if(attnrRadioGPanel == null){
-			attnrRadioGPanel = new AttnrRadioGroupPanel(this,miniAtnr, parent, deviceInfo);
+			attnrRadioGPanel = new AttnrRadioGroupPanel(this,attenuatorModel, parent, deviceInfo);
 		}
 		return attnrRadioGPanel;
 	}
@@ -63,5 +63,10 @@ public class AttnrPanel extends JPanel {
 			getAttnrRadioGP().reset();
 		}
 		getAttnrRadioGP().enableComponents(getAttnrRadioGP(), isEnabled);
+	}
+
+	public void reselectPriorOptions(AttenuatorModel attenuatorModel, boolean isIOS) {
+		this.attenuatorModel = attenuatorModel;
+		attnrRadioGPanel.reselectPriorOptions(attenuatorModel, isIOS);
 	}
 }

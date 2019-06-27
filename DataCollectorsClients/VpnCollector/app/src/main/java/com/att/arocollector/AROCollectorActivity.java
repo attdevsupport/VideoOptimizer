@@ -40,7 +40,6 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.security.KeyChain;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -64,7 +63,6 @@ import com.att.arotracedata.AROCpuTraceService;
 import com.att.arotracedata.AROGpsMonitorService;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,9 +71,6 @@ import java.net.NetworkInterface;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
-import javax.security.cert.CertificateException;
-import javax.security.cert.X509Certificate;
 
 public class AROCollectorActivity extends Activity {
 
@@ -96,6 +91,7 @@ public class AROCollectorActivity extends Activity {
 	private VideoCapture videoCapture;
 	private MediaProjectionManager mediaProjectionManager;
 	private boolean printLog = false;
+	private String selectedApp = "";
 	private File tempCertFile;
 	private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
@@ -144,6 +140,8 @@ public class AROCollectorActivity extends Activity {
 
 		printLog = intent.getBooleanExtra(BundleKeyUtil.PRINT_LOG, false);
 
+		selectedApp = intent.getStringExtra(BundleKeyUtil.SELECTED_APP_NAME);
+
 		setVideoOption(intent);
 
 		bitRate = intent.getIntExtra(BundleKeyUtil.BIT_RATE, 0);
@@ -191,10 +189,6 @@ public class AROCollectorActivity extends Activity {
 
 			String display =
 					"App Build Date: "+ appBuildDate + "\n"
-//					+" DownStream Delay Time: " + AttenuatorManager.getInstance().getDelayDl() + " ms\n"
-//					+" UpStream Delay Time: " + AttenuatorManager.getInstance().getDelayUl() + " ms\n"
-//					+" DownStream Throttle: " + AttenuatorManager.getInstance().getThrottleDL() + " kbps\n"
-//					+" Upstream Throttle: " + AttenuatorManager.getInstance().getThrottleUL() + " kbps\n"
 					+ AttenuatorUtil.getInstance().notificationMessage() + "\n"
 					+" Version: " + packageInfo.versionName + " (" + (valu ? "Debug" : "Production") + ")";
 
@@ -290,8 +284,7 @@ public class AROCollectorActivity extends Activity {
 	 * @param context
 	 * @param networkInterfaceName
 	 * @return true if interface exists and is active
-	 * @throws Exception
-	 */
+ 	 */
 	private boolean checkForActiveInterface(Context context, String networkInterfaceName) throws Exception {
 
 		List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
@@ -313,9 +306,11 @@ public class AROCollectorActivity extends Activity {
 			case Config.Permission.VPN_PERMISSION_REQUEST_CODE:
 				if (resultCode == RESULT_OK) {
 
+
 					captureVpnServiceIntent = new Intent(getApplicationContext(), CaptureVpnService.class);
 					captureVpnServiceIntent.putExtra("TRACE_DIR", Config.TRACE_DIR);
 					captureVpnServiceIntent.putExtra(BundleKeyUtil.PRINT_LOG, printLog);
+					captureVpnServiceIntent.putExtra(BundleKeyUtil.SELECTED_APP_NAME, selectedApp);
 
 					if(isExternalStorageWritable()){
 						Log.i(TAG, "TRACE_DIR: "+ Config.TRACE_DIR +"trace directory: "+
@@ -331,6 +326,8 @@ public class AROCollectorActivity extends Activity {
 
 					if (doVideoCapture()) {
 						getVideoCapturePermission();
+					}else{
+						pushAppToBackStack();
 					}
 
 				} else if (resultCode == RESULT_CANCELED) {
@@ -353,18 +350,6 @@ public class AROCollectorActivity extends Activity {
 						resultCode, data);
 				videoCapture = new VideoCapture(getApplicationContext(), getWindowManager(), mediaProjection, bitRate, screenSize, videoOrient);
 				videoCapture.start();
-				break;
-
-			case Config.Permission.CERT_INSTALL_REQUEST_CODE:
-				if (resultCode == RESULT_OK) {
-					if (tempCertFile != null) {
-						tempCertFile.delete();
-						tempCertFile = null;
-					}
-					pushAppToBackStack();
-				} else {
-					pushAppToBackStack();
-				}
 				break;
 
 			default:
@@ -681,7 +666,8 @@ public class AROCollectorActivity extends Activity {
 				filepath.delete();
 			}
 			filepath.createNewFile();
-			try(InputStream iStream = this.getResources().openRawResource(rsrc);
+			try(
+				InputStream iStream = this.getResources().openRawResource(rsrc);
 				OutputStream oStream = new FileOutputStream(filepath)) {
 				final byte[] buffer = new byte[1024];
 				int length;

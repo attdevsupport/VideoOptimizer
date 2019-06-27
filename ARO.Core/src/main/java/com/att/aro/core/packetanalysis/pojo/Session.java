@@ -1065,14 +1065,12 @@ public class Session implements Serializable, Comparable<Session> {
 	@Override
 	public String toString() {
 		StringBuilder tos = new StringBuilder(24);
-		tos.append("seq:");
-		tos.append(getSessionStartTime());
-		tos.append(", lPort:"); 
-		tos.append(getLocalPort());
+		tos.append("seq:").append(getSessionStartTime());
+		tos.append(", abs:").append(getSessionStartTime());
+		tos.append(", lPort:").append(getLocalPort());
 //		tos.append(getTsTLSHandshakeBegin());
 		if (mrList!=null){
-			tos.append(", mrListSZ:");
-			tos.append(mrList.size());
+			tos.append(", mrListSZ:").append(mrList.size());
 		}
 		tos.append(", count:");
 		if (getPackets() != null) {

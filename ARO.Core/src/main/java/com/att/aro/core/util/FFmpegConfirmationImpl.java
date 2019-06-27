@@ -1,12 +1,9 @@
 package com.att.aro.core.util;
 
-import java.io.IOException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.commandline.IExternalProcessRunner;
-import com.att.aro.core.packetanalysis.IVideoUsageAnalysis;
-import com.att.aro.core.util.Util;
+import com.att.aro.core.videoanalysis.impl.VideoPrefsController;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 
 public class FFmpegConfirmationImpl {
@@ -17,7 +14,7 @@ public class FFmpegConfirmationImpl {
 	private IExternalProcessRunner extProcessRunner;
 
 	@Autowired
-	private IVideoUsageAnalysis videoUsage;
+	private VideoPrefsController videoPrefsController;
 
 	private String result;
 
@@ -26,13 +23,13 @@ public class FFmpegConfirmationImpl {
 			String cmd = Util.getFFMPEG() + " -version";
 			result = extProcessRunner.executeCmd(cmd);
 			String[] lines = result.split("\\n");
-			// Check & launch dialog if dont show again is false
-			if (lines.length != 0 && lines != null) {
-				if (!lines[0].contains("ffmpeg version")) { // ffmpeg not
-															// installed
+			if (lines != null && lines.length != 0) {
+				if (!lines[0].contains("ffmpeg version")) {
+					// ffmpeg not installed
 					return false;
 				}
-			} else { // ffmpeg not installed
+			} else {
+				// ffmpeg is not installed
 				return false;
 			}
 		}
@@ -44,8 +41,7 @@ public class FFmpegConfirmationImpl {
 	}
 
 	public boolean ffmpegDontShowAgainStatus() {
-		videoUsage.loadPrefs();
-		videoUsagePrefs = videoUsage.getVideoUsagePrefs();
+		videoUsagePrefs = videoPrefsController.loadPrefs();
 		if (videoUsagePrefs != null) {
 			return videoUsagePrefs.isFfmpegConfirmationShowAgain();
 		}
@@ -53,19 +49,9 @@ public class FFmpegConfirmationImpl {
 	}
 
 	public boolean saveFfmpegDontShowAgainStatus(boolean status) {
-
+		videoUsagePrefs = videoPrefsController.loadPrefs();
 		videoUsagePrefs.setFfmpegConfirmationShowAgain(status);
-
-		ObjectMapper mapper = new ObjectMapper();
-		String temp;
-
-		try {
-			temp = mapper.writeValueAsString(videoUsagePrefs);
-		} catch (IOException e) {
-			return false;
-		}
-		videoUsage.getPrefs().setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
-		return true;
+		return videoPrefsController.save();
 	}
 
 }

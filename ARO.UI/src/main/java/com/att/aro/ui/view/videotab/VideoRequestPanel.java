@@ -123,7 +123,6 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 						RegexWizard regexWizard = RegexWizard.getInstance();
 						regexWizard.setRequest(request);
 						regexWizard.setVisible(true);
-						regexWizard.setAlwaysOnTop(true);
 					}
 				}
 			});
@@ -153,13 +152,11 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
 		requestURL = new ArrayList<>();
-		if (analyzerResult != null && analyzerResult.getAnalyzerResult() != null && analyzerResult.getAnalyzerResult().getVideoUsage() != null) {
-			for ( HttpRequestResponseInfo req : analyzerResult.getAnalyzerResult().getVideoUsage().getRequestMap().values()) {
-//				if (!req.getObjName().contains(".m3u8") && !req.getObjName().contains(".mpd")) {
-					requestURL.add(req);
-//				}
+		if (analyzerResult != null && analyzerResult.getAnalyzerResult() != null && analyzerResult.getAnalyzerResult().getStreamingVideoData() != null) {
+			for (HttpRequestResponseInfo req : analyzerResult.getAnalyzerResult().getStreamingVideoData().getRequestMap().values()) {
+				requestURL.add(req);
 			}
-		} 
+		}
 		requestPanel.remove(requestListPanel);
 		requestPanel.add(getRequestListPanel(),
 				new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));

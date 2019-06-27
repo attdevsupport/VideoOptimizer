@@ -17,43 +17,44 @@
 
 package com.att.aro.core.videoanalysis.impl;
 
+import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
-import com.att.aro.core.packetanalysis.IVideoUsageAnalysis;
+import com.att.aro.core.packetanalysis.IVideoTrafficCollector;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.videoanalysis.IVideoTabHelper;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 
-public class VideoTabHelperImpl implements IVideoTabHelper{
+public class VideoTabHelperImpl implements IVideoTabHelper {
 
 	@Autowired
-	private IVideoUsageAnalysis videoUsageImpl;
-		
+	private IVideoTrafficCollector videoTrafficCollectorImpl;
+
 	@Override
-	public TreeMap<Double, HttpRequestResponseInfo> getRequestListMap(){
-		if(videoUsageImpl.getVideoUsage() == null) {
+	public SortedMap<Double, HttpRequestResponseInfo> getRequestListMap() {
+		if (videoTrafficCollectorImpl.getStreamingVideoData() == null) {
 			return new TreeMap<Double, HttpRequestResponseInfo>();
 		}
-		return videoUsageImpl.getVideoUsage().getRequestMap();
+		return videoTrafficCollectorImpl.getStreamingVideoData().getRequestMap();
 	}
 
 	@Override
-	public void resetRequestMapList(){
-		if(videoUsageImpl.getVideoUsage() != null){
-			videoUsageImpl.getVideoUsage().setRequestMap(new TreeMap<Double, HttpRequestResponseInfo>());
+	public void resetRequestMapList() {
+		if (videoTrafficCollectorImpl.getStreamingVideoData() != null) {
+			videoTrafficCollectorImpl.getStreamingVideoData().getRequestMap().clear();
 		}
 	}
-	
+
 	@Override
 	public boolean isStartUpDelaySet() {
 		boolean result = false;
-		if (videoUsageImpl != null && videoUsageImpl.getVideoUsage() != null) {
-			VideoUsage videousage = videoUsageImpl.getVideoUsage();
-			result = ((!videousage.getChunkPlayTimeList().isEmpty()) ? true : false);
+		if (videoTrafficCollectorImpl != null && videoTrafficCollectorImpl.getStreamingVideoData() != null) {
+			StreamingVideoData streamingVideoData = videoTrafficCollectorImpl.getStreamingVideoData();
+			result = MapUtils.isNotEmpty(streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList());
 		}
 		return result;
 	}
 }
-

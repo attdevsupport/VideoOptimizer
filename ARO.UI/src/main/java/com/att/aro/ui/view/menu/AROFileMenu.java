@@ -256,7 +256,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 //			chooser.addChoosableFileFilter(pcapfilter);
 			chooser.setFileFilter(pcapfilter);
 		}
-		if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+		if (chooser.showOpenDialog(parent.getCurrentTabComponent()) == JFileChooser.APPROVE_OPTION) {
 			tracePath = chooser.getSelectedFile();
 		}
 		return tracePath;

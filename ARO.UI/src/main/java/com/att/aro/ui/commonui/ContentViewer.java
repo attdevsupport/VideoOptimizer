@@ -81,20 +81,8 @@ public class ContentViewer {
 	public void viewContent(Session session, HttpRequestResponseInfo httpReqResInfo) throws IOException, Exception {
 		if (httpReqResInfo != null) {
 			try {
-				ContentViewFrame frame = viewerMap.get(httpReqResInfo);
-				//TODO Remove frame caching
-				if (frame == null) {
-					frame = new ContentViewFrame(session, httpReqResInfo);
-					frame.addWindowListener(new WindowAdapter() {
 
-						@Override
-						public void windowClosing(WindowEvent e) {
-							viewerMap.remove(((ContentViewFrame) e.getWindow()).getRrInfo());
-						}
-
-					});
-					viewerMap.put(httpReqResInfo, frame);
-				}
+				ContentViewFrame frame = new ContentViewFrame(session, httpReqResInfo);
 				frame.setState(Frame.NORMAL);
 				frame.setVisible(true);
 			} catch (ContentException e) {
@@ -107,23 +95,8 @@ public class ContentViewer {
 	public void viewImage(String imageFile, String orginalImage, String title) throws IOException, Exception {
 
 		try {
-			ContentViewFrame frame = imageViewerMap.get(orginalImage);
-
-			if (frame == null) {
-				frame = new ContentViewFrame(imageFile);
-				imageViewerMap.put(orginalImage, frame);
-				frame.addWindowListener(new WindowAdapter() {
-
-					@Override
-					public void windowClosing(WindowEvent e) {
-						imageViewerMap.remove(((ContentViewFrame) e.getWindow()).getOrgImageInfo());
-					}
-
-				});
-			}
-
+			ContentViewFrame frame = new ContentViewFrame(imageFile);
 			frame.setTitle(title);
-
 			frame.setState(Frame.NORMAL);
 			frame.setVisible(true);
 		} catch (ContentException e) {

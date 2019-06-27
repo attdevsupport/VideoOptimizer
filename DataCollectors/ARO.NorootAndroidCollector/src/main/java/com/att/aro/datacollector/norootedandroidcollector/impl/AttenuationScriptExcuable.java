@@ -23,7 +23,6 @@ import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
-import com.att.aro.core.util.Util;
 
 public class AttenuationScriptExcuable implements Runnable {
 	private static Logger LOGGER;	

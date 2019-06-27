@@ -59,7 +59,6 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 		videoSummary_mbytesTotal
 	}
 	
-	private Insets insets = new Insets(10, 1, 10, 1);
 	JTable bufferTable;
 	String[][] bufferData;
 	private static final long serialVersionUID = 1L;
@@ -74,14 +73,9 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 		JLabel titleLabel = getTitle();
 		JScrollPane bufferPane = getBufferTable();
 		int line = 0;
-		Insets insets2 = new Insets(0, 1, 10, 1);
-		add(titleLabel, new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.HORIZONTAL, insets2, 0, 0));
-		insets2 = new Insets(10, 1, 15, 1);
-		add(bufferPane, new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.HORIZONTAL, insets, 0, 0));
-		add(layoutDataPanel(), new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
-				GridBagConstraints.HORIZONTAL, insets2, 0, 0));
+		add(titleLabel		 , new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0, 1, 10, 1), 0, 0));
+		add(bufferPane		 , new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(10, 1, 10, 1), 0, 0));
+		add(layoutDataPanel(), new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(10, 1, 15, 1), 0, 0));
 	}
 
 	public JLabel getTitle() {
@@ -115,20 +109,20 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 		return (new JScrollPane(bufferTable));
 	}
 	
-	public void updateBufferTableData(List<VideoBufferData> bufferDataList){
-		if(bufferDataList == null || bufferDataList.size() == 0){
+	public void updateBufferTableData(List<VideoBufferData> bufferDataList) {
+		if (bufferDataList == null || bufferDataList.size() == 0) {
 			return;
 		}
-		
-		int rowIdx=0;
-		for(VideoBufferData bf: bufferDataList){
+
+		int rowIdx = 0;
+		for (VideoBufferData bf : bufferDataList) {
 			int colIdx = 1;
-			if(rowIdx == 1 || bf.getBufferType().equals(ResourceBundleHelper.getMessageString("videoSummary.buffer.time"))){
+			if (rowIdx == 1 || bf.getBufferType().equals(ResourceBundleHelper.getMessageString("videoSummary.buffer.time"))) {
 				rowIdx = 1;
 			}
-			bufferData[rowIdx][colIdx++]=decimalFormat.format(bf.getAverage());
-			bufferData[rowIdx][colIdx++]=decimalFormat.format(bf.getMinimum());
-			bufferData[rowIdx][colIdx++]=decimalFormat.format(bf.getMaximum());
+			bufferData[rowIdx][colIdx++] = decimalFormat.format(bf.getAverage());
+			bufferData[rowIdx][colIdx++] = decimalFormat.format(bf.getMinimum());
+			bufferData[rowIdx][colIdx++] = decimalFormat.format(bf.getMaximum());
 		}
 	}
 	
@@ -155,60 +149,76 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 	}
 	
 	private void clearVideoSummary() {
-		for(int rowIdx = 0; rowIdx <= 1; rowIdx++){
-			for(int colIdx = 1; colIdx <= 3; colIdx++){
-				bufferData[rowIdx][colIdx]="";
+		for (int rowIdx = 0; rowIdx <= 1; rowIdx++) {
+			for (int colIdx = 1; colIdx <= 3; colIdx++) {
+				bufferData[rowIdx][colIdx] = "";
 			}
 		}
-		for(LabelKeys keys : LabelKeys.values()){
+		for (LabelKeys keys : LabelKeys.values()) {
 			tabPanelCommon.setText(keys, "");
 		}
 	}
 	
-	public void refreshSummaryInfo(AROTraceData trace){
-		
+	public void refreshSummaryInfo(AROTraceData trace) {
+
 		if (null == trace) {
 			return;
 		}
-		
+
 		videoResultSummary = new VideoResultSummary(trace);
 		updateBufferTableData(videoResultSummary.getVideoBufferDataList());
 
 		tabPanelCommon.setText(LabelKeys.videoSummary_stalls, String.valueOf(videoResultSummary.getStalls()));
-		if(!videoResultSummary.isStartupDelayStatus()){
-			tabPanelCommon.setText(LabelKeys.videoSummary_startUpDelay,ResourceBundleHelper.getMessageString("videoSummary.startupDelayStatus"));
-		}else{
-			tabPanelCommon.setText(LabelKeys.videoSummary_startUpDelay,
-					MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.seconds"),
-							decimalFormat.format(videoResultSummary.getStartUpDelay()), videoResultSummary.getStartUpDelay() == 1 ? "" : "s"));
+		if (!videoResultSummary.isStartupDelayStatus()) {
+			tabPanelCommon.setText(LabelKeys.videoSummary_startUpDelay
+					, ResourceBundleHelper.getMessageString("videoSummary.startupDelayStatus"));
+		} else {
+			tabPanelCommon.setText(LabelKeys.videoSummary_startUpDelay
+					, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.seconds")
+							, decimalFormat.format(videoResultSummary.getStartUpDelay())
+							, videoResultSummary.getStartUpDelay() == 1 ? "" : "s"));
 		}
-		tabPanelCommon.setText(LabelKeys.videoSummary_bufferOccupancy,
-				MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb"),
-						decimalFormat.format(videoResultSummary.getBufferOccupancy())));
-		tabPanelCommon.setText(LabelKeys.videoSummary_networkComparison,
-				MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.average.kbps"),
-						decimalFormat.format(videoResultSummary.getNtkComparison())));
-		tabPanelCommon.setText(LabelKeys.videoSummary_tcpConnections,
-				String.valueOf(videoResultSummary.getTcpConnection()));
-		tabPanelCommon.setText(LabelKeys.videoSummary_segmentSize,
-				MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.kb"),
-						decimalFormat.format(videoResultSummary.getSegmentSize())));
-		tabPanelCommon.setText(LabelKeys.videoSummary_segmentPacing,
-				MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.seconds"),
-						decimalFormat.format(videoResultSummary.getSegmentPacing()), videoResultSummary.getSegmentPacing() == 1 ? "" : "s"));
-		tabPanelCommon.setText(LabelKeys.videoSummary_redundancy, String.format("%.0f", videoResultSummary.getRedundancy()) + "%");
-		tabPanelCommon.setText(LabelKeys.videoSummary_duplicate, String.valueOf(videoResultSummary.getDuplicate()));
-		tabPanelCommon.setText(LabelKeys.videoSummary_concurrentSessions,
-				String.valueOf(videoResultSummary.getConcurrentSessions()));
+		
+		tabPanelCommon.setText(LabelKeys.videoSummary_bufferOccupancy
+				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb")
+						, decimalFormat.format(videoResultSummary.getBufferOccupancy())));
+		
+		tabPanelCommon.setText(LabelKeys.videoSummary_networkComparison
+				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.average.kbps")
+						, decimalFormat.format(videoResultSummary.getNtkComparison())));
+		
+		tabPanelCommon.setText(LabelKeys.videoSummary_tcpConnections
+				, String.valueOf(videoResultSummary.getTcpConnection()));
+		
+		tabPanelCommon.setText(LabelKeys.videoSummary_segmentSize
+				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.kb")
+						, decimalFormat.format(videoResultSummary.getSegmentSize())));
+		
+		tabPanelCommon.setText(LabelKeys.videoSummary_segmentPacing
+				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.seconds")
+						, decimalFormat.format(videoResultSummary.getSegmentPacing())
+						, videoResultSummary.getSegmentPacing() == 1 ? "" : "s"));
+		
+		tabPanelCommon.setText(LabelKeys.videoSummary_redundancy
+				, String.format("%.0f", videoResultSummary.getRedundancy()) + "%");
+		
+		tabPanelCommon.setText(LabelKeys.videoSummary_duplicate
+				, String.valueOf(videoResultSummary.getDuplicate()));
+		
+		tabPanelCommon.setText(LabelKeys.videoSummary_concurrentSessions
+				, String.valueOf(videoResultSummary.getConcurrentSessions()));
+		
 		tabPanelCommon.setText(LabelKeys.videoSummary_ipSessions, String.valueOf(videoResultSummary.getIpSessions()));
 		tabPanelCommon.setText(LabelKeys.videoSummary_ipAddresses, String.valueOf(videoResultSummary.getIpAddress()));
-		tabPanelCommon.setText(LabelKeys.videoSummary_segmentCount,
-				String.valueOf(videoResultSummary.getSegmentCount()));
-		tabPanelCommon.setText(LabelKeys.videoSummary_mbytesOfMovie,
-				MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb"),
-						decimalFormat.format(videoResultSummary.getMovieMBytes())));
-		tabPanelCommon.setText(LabelKeys.videoSummary_mbytesTotal,
-				MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb"), decimalFormat.format(videoResultSummary.getTotalMBytes())));
+		tabPanelCommon.setText(LabelKeys.videoSummary_segmentCount, String.valueOf(videoResultSummary.getSegmentCount()));
+		
+		tabPanelCommon.setText(LabelKeys.videoSummary_mbytesOfMovie
+				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb")
+						, decimalFormat.format(videoResultSummary.getMovieMBytes())));
+		
+		tabPanelCommon.setText(LabelKeys.videoSummary_mbytesTotal
+				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb")
+						, decimalFormat.format(videoResultSummary.getTotalMBytes())));
 	}
 
 	@Override

@@ -24,6 +24,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Shape;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
@@ -65,7 +66,6 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.Range;
 import org.jfree.data.xy.XYDataset;
 
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.IBurstCollectionAnalysis;
 import com.att.aro.core.packetanalysis.IPacketAnalyzer;
 import com.att.aro.core.packetanalysis.IRrcStateMachineFactory;
@@ -78,9 +78,10 @@ import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoFormat;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.GUIPreferences;
@@ -125,15 +126,9 @@ import com.att.aro.view.images.Images;
  */
 public class GraphPanel extends JPanel implements ActionListener, ChartMouseListener {
 	private static final long serialVersionUID = 1L;
-	// private static final ILogger LOGGER =
-	// ContextAware.getAROConfigContext().getBean(ILogger.class);
-	private IRrcStateMachineFactory statemachinefactory;// =
-														// ContextAware.getAROConfigContext().getBean(IRrcStateMachineFactory.class);
-	private IBurstCollectionAnalysis burstcollectionanalyzer;// =
-																// ContextAware.getAROConfigContext().getBean(IBurstCollectionAnalysis.class);
-	private IPacketAnalyzer packetanalyzer;// =
-											// ContextAware.getAROConfigContext().getBean(IPacketAnalyzer.class);
-
+	private IRrcStateMachineFactory statemachinefactory;
+	private IBurstCollectionAnalysis burstcollectionanalyzer;
+	private IPacketAnalyzer packetanalyzer;
 	private static final String ZOOM_IN_ACTION = "zoomIn";
 	private static final String ZOOM_OUT_ACTION = "zoomOut";
 	private static final String SAVE_AS_ACTION = "saveGraph";
@@ -321,7 +316,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		subplotMap.put(ChartPlotOptions.RRC, new GraphPanelPlotLabels(
 				ResourceBundleHelper.getMessageString("chart.rrc"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
 		subplotMap.put(ChartPlotOptions.ALARM, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.alarm"), getBarPlot().drawXYBarPlot(Color.gray, true), 2));
+				ResourceBundleHelper.getMessageString("chart.alarm"), getBarPlot().drawXYBarPlot(Color.gray, true), 1));
 		subplotMap.put(ChartPlotOptions.GPS, new GraphPanelPlotLabels(
 				ResourceBundleHelper.getMessageString("chart.gps"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
 		subplotMap.put(ChartPlotOptions.BUFFER_OCCUPANCY, new GraphPanelPlotLabels(
@@ -342,10 +337,10 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 						getBarPlot().drawXYBarPlot(new Color(34, 177, 76), false), 1));
 		subplotMap.put(ChartPlotOptions.BATTERY,
 				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.battery"),
-						getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.red, MIN_BATTERY, MAX_BATTERY), 2));
+						getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.red, MIN_BATTERY, MAX_BATTERY), 1));
 		subplotMap.put(ChartPlotOptions.TEMPERATURE,
 				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.temperature"),
-						getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.green, MIN_TEMPERATURE, MAX_TEMPERATURE), 2));
+						getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.green, MIN_TEMPERATURE, MAX_TEMPERATURE), 1));
 		subplotMap.put(ChartPlotOptions.WAKELOCK,
 				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.wakelock"),
 						getBarPlot().drawXYBarPlot(Color.yellow, false), 1));
@@ -372,8 +367,12 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		subplotMap.put(ChartPlotOptions.SPEED_THROTTLE,new GraphPanelPlotLabels(
 				ResourceBundleHelper.getMessageString("chart.attenuation"),getBarPlot().drawStepChartPlot(),2));
 		
+		Dimension screenDimension = Toolkit.getDefaultToolkit().getScreenSize();
+		double screenHeight = screenDimension.getHeight();
+		
 		setLayout(new BorderLayout());
-		setMinimumSize(new Dimension(300, 280));
+		//setMinimumSize(new Dimension(300, 280));
+		setPreferredSize(new Dimension(300, (int)screenHeight/3));
 		add(getZoomSavePanel(), BorderLayout.EAST);
 		add(getPane(), BorderLayout.CENTER);
 		setGraphPanelBorder(true);
@@ -707,59 +706,37 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					}
 					XYPlot bufferOccupancyPlot = getSubplotMap().get(ChartPlotOptions.BUFFER_OCCUPANCY).getPlot();
 					XYPlot bufferTimePlot = getSubplotMap().get(ChartPlotOptions.BUFFER_TIME_OCCUPANCY).getPlot();
-					// videoChunkPlotDataItem = false;
 					this.chunkInfo.clear();
 					vcPlot.setBufferOccupancyPlot(bufferOccupancyPlot);
 					vcPlot.setBufferTimePlot(bufferTimePlot);
-					// vcPlot.setFirstChunkPlayTime(0);
-					AROManifest selectedManifest=null;
+					VideoStream selectedStream=null;
 					int count=0;
-					VideoUsage videoUsage = aroTraceData.getAnalyzerResult().getVideoUsage();
-					if (videoUsage != null) {
-						for (AROManifest manifest : videoUsage.getManifests()) {
-							if (manifest != null && manifest.isSelected()) {
-								selectedManifest = manifest;
+					StreamingVideoData streamingVideoData = aroTraceData.getAnalyzerResult().getStreamingVideoData();
+					if (streamingVideoData != null) {
+						for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
+							if (videoStream != null && videoStream.isSelected()) {
+								selectedStream = videoStream;
 								count++;
 							}
 						}
-						if (count == 1 && selectedManifest != null && selectedManifest.getDelay() != 0) {
-							VideoEvent firstSegment = (VideoEvent) selectedManifest.getVideoEventsBySegment().toArray()[0];
-
-							Map<AROManifest, VideoEvent> firstSelectedSegments = null;
-							if (vcPlot.getVideoChunkPlotterReference() != null && aroTraceData.getAnalyzerResult().getVideoUsage().getChunkPlayTimeList() != null) {
-								firstSelectedSegments = aroTraceData.getAnalyzerResult().getVideoUsage().getFirstSelectedSegment();
-							}
-							if (firstSelectedSegments != null) {
-								for (AROManifest manifest : firstSelectedSegments.keySet()) {
-									if (manifest.equals(selectedManifest)) {
-										firstSegment = firstSelectedSegments.get(manifest);
-										break;
-									}
-								}
-							} else 
-								if (selectedManifest.getVideoFormat() == VideoFormat.MPEG4) {
-								for (VideoEvent video : selectedManifest.getVideoEventsBySegment()) {
-									if (video.getSegment() != 0) {
+						if (count == 1 && selectedStream != null && selectedStream.getManifest().getDelay() != 0) {
+							VideoEvent firstSegment = (VideoEvent) selectedStream.getVideoEventsBySegment().toArray()[0];
+							if (selectedStream.getManifest().getVideoFormat() == VideoFormat.MPEG4) {
+								for (VideoEvent video : selectedStream.getVideoEventsBySegment()) {
+									if (video.getSegmentID() != 0) {
 										firstSegment = video;
 										break;
 									}
 								}
 							}
-
-							vcPlot.refreshPlot(getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot(), aroTraceData, selectedManifest.getDelay() + firstSegment.getEndTS(),
+							vcPlot.refreshPlot(getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot(),
+									aroTraceData, selectedStream.getManifest().getDelay() + firstSegment.getEndTS(),
 									firstSegment);
 						} else {
 							vcPlot.populate(entry.getValue().getPlot(), aroTraceData);
 						}
-						SliderDialogBox.segmentListChosen = new ArrayList<>();
 					}
 					break;
-				/*
-				 * case BUFFER_OCCUPANCY: if(boPlot==null){ boPlot = new
-				 * BufferOccupancyPlot(); }
-				 * boPlot.populate(entry.getValue().getPlot(),aroTraceData);
-				 * break;
-				 */
 				default:
 					break;
 				}
@@ -823,9 +800,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 	public void layoutGraphLabels() {
 		CombinedDomainXYPlot combinedPlot = getPlot();
-		int height = getChartPanel().getBounds().height - 15;// - 20;
-
-		// logger.info("height: "+ height);
+		int height = getChartPanel().getBounds().height - 15;
+		
 		// find weights and use them to determine how may divisions are needed.
 		int plotWeightedDivs = 0;
 		List<?> plots = combinedPlot.getSubplots();
@@ -842,13 +818,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		int division = Math.round(((float) height) / ((float) plotWeightedDivs));
 
 		// working from top to bottom, set the y-coord. for the first XYPlot
-		int currentY = getLabelsPanel().getBounds().y + getChartPanel().getBounds().y; // getLabelsPanel().getBounds().y
-																						// +
-																						// 4
-																						// +
-																						// getChartPanel().getBounds().y;
+		int currentY = getLabelsPanel().getBounds().y + getChartPanel().getBounds().y;
 		// loop on the list of Plots
-		// logger.info("size: "+ graphHelper.getPlotOrder().size());
 		for (ChartPlotOptions option : graphHelper.getPlotOrder()) {
 			GraphPanelPlotLabels subplot = getSubplotMap().get(option);
 			if (subplot != null && subplot.getLabel().isVisible()) {
@@ -860,11 +831,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			}
 		}
 
-		getAxisLabel().setBounds(3, height + 4, 100, 15); // + 3
-															// +getChartPanel().getBounds().y
-		// logger.info("axis label height: " + (height + 3 +
-		// getChartPanel().getBounds().y) );
-
+		getAxisLabel().setBounds(3, height + 4, 100, 20);
 	}
 
 	private JPanel getZoomSavePanel() {
@@ -1038,7 +1005,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private JPanel getLabelsPanel() {
 		if (graphLabelsPanel == null) {
 			graphLabelsPanel = new JPanel();
-			graphLabelsPanel.setPreferredSize(new Dimension(100, 110));
+			graphLabelsPanel.setPreferredSize(new Dimension(100, 280)); //110));
 			graphLabelsPanel.setLayout(null);// in order to set label position,
 												// it has to set null
 			axisLabel = new JLabel(ResourceBundleHelper.getMessageString("chart.timeline"));

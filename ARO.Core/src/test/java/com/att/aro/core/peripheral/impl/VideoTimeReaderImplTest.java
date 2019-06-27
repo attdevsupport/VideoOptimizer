@@ -15,11 +15,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.att.aro.core.BaseTest;
+import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.peripheral.pojo.VideoTime;
+import com.att.aro.core.util.Util;
 
 public class VideoTimeReaderImplTest extends BaseTest {
 
@@ -27,12 +31,15 @@ public class VideoTimeReaderImplTest extends BaseTest {
 	VideoTimeReaderImpl videoTimeReaderImpl;
 
 	@InjectMocks
-	private FileManagerImpl filereader;
+	private FileManagerImpl fileReader;
 
+	@Mock
+	private IExternalProcessRunner extRunner;
+	
 	@Before
 	public void setup() {
 		MockitoAnnotations.initMocks(this);
-		videoTimeReaderImpl.setFileReader(filereader);
+		videoTimeReaderImpl.setFileReader(fileReader);
 		tracePath = folder.getRoot().toString();
 		
 	}
@@ -50,7 +57,8 @@ public class VideoTimeReaderImplTest extends BaseTest {
 	private File VIDEO_TIME_FILE;
 	private File EXVIDEO_TIME_FILE;
 	private String tracePath;
-
+	private File nativeVideoFileOnDevice;
+	
 	/**
 	 * create & populate file
 	 * 
@@ -188,5 +196,27 @@ public class VideoTimeReaderImplTest extends BaseTest {
 		r = videoTimeReaderImpl.isExternalVideoSourceFilePresent("video.mp4", "video.mov", true, tracePath);
 		assertTrue("should have found \"video.mov\"", r);
 
+	}
+	
+	/**
+	 *  test to compute & update video start time from the video.mp4 ffmpeg result
+	 */
+	@Test
+	public void readData5(){
+		Date traceDateTime = new Date((long) 1414092264446.0);
+		VideoTime videoTime = null;
+
+		nativeVideoFileOnDevice = makeFile("video.mp4", null);
+		VIDEO_TIME_FILE = makeFile("video_time", new String[] { "1.41409226371E9 1.414092261198E9" });
+		String result = " Duration: 00:05:53.95, \n creation_time   : 2019-01-21 22:24:10" ;
+		String cmd = Util.getFFMPEG() + " -i " + "\"" + nativeVideoFileOnDevice.getAbsolutePath() +"\"";
+		Mockito.when(extRunner.executeCmd(cmd)).thenReturn(result);
+		videoTime = videoTimeReaderImpl.readData(tracePath, traceDateTime);
+		assertEquals(1.54810909605E9, videoTime.getVideoStartTime(), 0);
+		
+		nativeVideoFileOnDevice.delete();
+		nativeVideoFileOnDevice = null;
+		VIDEO_TIME_FILE.delete();
+		VIDEO_TIME_FILE = null;
 	}
 }

@@ -18,12 +18,11 @@ package com.att.aro.core.videoanalysis;
 import java.util.List;
 import java.util.Map;
 
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 public abstract class AbstractBufferOccupancyCalculator extends PlotHelperAbstract {
-	// Map<Integer, String> populateBufferOccupancyDataSet(VideoUsage videoUsage, Map<VideoEvent,Double> chunkPlayTimeList);
 	
 	protected double chunkPlayTimeDuration = -1;
 	protected double chunkPlayStartTime = -1;
@@ -57,51 +56,49 @@ public abstract class AbstractBufferOccupancyCalculator extends PlotHelperAbstra
 	}
 	
 	protected void addToChunkPlayTimeList(VideoEvent chunkPlaying, double possibleStartPlayTimeAfterStall){
-		videoUsage.getChunkPlayTimeList().put(chunkPlaying, possibleStartPlayTimeAfterStall);
+		streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList().put(chunkPlaying, possibleStartPlayTimeAfterStall);
 	}
 	
 	protected void setNextPlayingChunk(int currentVideoSegmentIndex,List<VideoEvent> filteredChunk) {	
 		int index = currentVideoSegmentIndex;
 		chunkPlaying = filteredChunk.get(currentVideoSegmentIndex);
-		while(previousChunk != null && previousChunk.getSegment() == chunkPlaying.getSegment() && currentVideoSegmentIndex < filteredChunk.size()-1){
+		while(previousChunk != null && previousChunk.getSegmentID() == chunkPlaying.getSegmentID() && currentVideoSegmentIndex < filteredChunk.size()-1){
 			index= index+1;
 			chunkPlaying = filteredChunk.get(index);
 		}
 		previousChunk = chunkPlaying;
 		chunkPlayTimeDuration = getChunkPlayTimeDuration(chunkPlaying);
-		int diff = (int) (chunkPlaying.getSegment() - previousChunk.getSegment()) > 1
-				? (int) (chunkPlaying.getSegment() - previousChunk.getSegment()) : 1;
+		int diff = (int) (chunkPlaying.getSegmentID() - previousChunk.getSegmentID()) > 1
+				? (int) (chunkPlaying.getSegmentID() - previousChunk.getSegmentID()) : 1;
 		chunkPlayStartTime = chunkPlayEndTime + (diff - 1) * chunkPlayTimeDuration;
 		chunkPlayEndTime = chunkPlayStartTime + chunkPlayTimeDuration;
 		chunkByteRange = (chunkPlaying.getTotalBytes());
 	}
 
-	protected void runInit(VideoUsage videoUsage, Map<VideoEvent, AROManifest> veManifestList, List<VideoEvent> chunkDownload){
+	protected void runInit(StreamingVideoData streamingVideoData, Map<VideoEvent, VideoStream> veManifestList,
+			List<VideoEvent> chunkDownload) {
 		int firstChunk = 0;
 
-		for (AROManifest aroManifest : veManifestList.values()) {
+		for (VideoStream videoStream : veManifestList.values()) {
 
 			if (firstChunk == 0) {
 				previousChunk = chunkDownload.get(0);
-				firstChunkArrivalTime = chunkDownload.get(0).getEndTS(); // chunkDownload.get(0).getEndTS();
-				double possiblePlayStartTime = getChunkPlayStartTime(chunkDownload.get(0)); //chunkDownload.get(0));
+				firstChunkArrivalTime = chunkDownload.get(0).getEndTS();
+				double possiblePlayStartTime = getChunkPlayStartTime(chunkDownload.get(0));
 				if (possiblePlayStartTime != -1){
-					chunkPlayStartTime = possiblePlayStartTime;// + firstChunkArrivalTime;
+					chunkPlayStartTime = possiblePlayStartTime;
 				} else{
-					chunkPlayStartTime = aroManifest.getDelay() + firstChunkArrivalTime;
+					chunkPlayStartTime = videoStream.getManifest().getDelay() + firstChunkArrivalTime;
 				}
-				chunkPlaying = chunkDownload.get(0); // chunkDownload.get(0);getChunksBySegmentNumber()
-				setVideoUsage(videoUsage);
-				chunkPlayTimeDuration = getChunkPlayTimeDuration(chunkPlaying);//, videoUsage);
+				chunkPlaying = chunkDownload.get(0);
+				setStreamingVideoData(streamingVideoData);
+				chunkPlayTimeDuration = getChunkPlayTimeDuration(chunkPlaying);
 				chunkPlayEndTime = chunkPlayStartTime + chunkPlayTimeDuration;
 				firstChunk++;
 
-				startPoint = chunkDownload.get(0).getDLTimeStamp(); // chunkDownload.get(0).getDLTimeStamp();
+				startPoint = chunkDownload.get(0).getDLTimeStamp();
 				break;
 			}	
     	}	
-	}
-	
-	
-	
+	}	
 }

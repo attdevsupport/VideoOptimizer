@@ -1,18 +1,21 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     repositories {
-        mavenCentral name: "atlassian proxy", url:"http://mavencentral.it.att.com:8084/nexus/content/repositories/atlassian/"
+        jcenter()
+        maven {
+            url "https://maven.google.com"
+        }
+        google()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.2'
+        classpath 'com.android.tools.build:gradle:3.4.1'
     }
 }
 
 allprojects {
     repositories {
-        mavenCentral name: "default", url:"http://mavencentral.it.att.com:8084/nexus/content/repositories/central"
-        mavenCentral name: "apache-releases", url:"http://mavencentral.it.att.com:8084/nexus/content/repositories/apache-releases/"
-        mavenCentral name: "aro-rel", url:"http://mavencentral.it.att.com:8084/nexus/content/repositories/aro-releases"
+        jcenter()
+        google()
     }
 }

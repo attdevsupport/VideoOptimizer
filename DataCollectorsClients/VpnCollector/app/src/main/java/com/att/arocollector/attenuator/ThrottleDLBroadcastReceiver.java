@@ -22,7 +22,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
-import android.view.Gravity;
 import android.widget.Toast;
 
 import com.att.arocollector.R;
@@ -42,7 +41,7 @@ public class ThrottleDLBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        int dlMs = intent.getIntExtra("dlms", AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
+        int downloadThrottleKbps = intent.getIntExtra("dlms", AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
 
         if (mBuilder == null) {
             mBuilder = new Notification.Builder(context)
@@ -52,17 +51,17 @@ public class ThrottleDLBroadcastReceiver extends BroadcastReceiver {
                     .setOngoing(true)
                     .setContentText(AttenuatorUtil.getInstance().notificationMessage());
         }
-        Log.i(TAG, "Download stream speed throttle for: " + dlMs + " kbps");
-        AttenuatorManager.getInstance().setThrottleDL(dlMs);
-        String text = "Download stream throttle for " + AttenuatorUtil.getInstance().messageConvert(dlMs);
-        Toast toast = Toast.makeText(context, text, Toast.LENGTH_LONG);
-        toast.setGravity(Gravity.TOP,0,0);
-        toast.show();
-
+        Log.i(TAG, "Download stream speed throttle for: " + downloadThrottleKbps + " kbps");
+        AttenuatorManager.getInstance().setThrottleDL(downloadThrottleKbps);
+        String text = "Download stream throttle for " + AttenuatorUtil.getInstance().messageConvert(downloadThrottleKbps);
         NotificationManager mNotificationManager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder.setContentText(AttenuatorUtil.getInstance().notificationMessage());
         mNotificationManager.notify(notifyID, mBuilder.build());
+
+        Toast toast = Toast.makeText(context, text, Toast.LENGTH_SHORT);
+        toast.show();
+
     }
 
 }

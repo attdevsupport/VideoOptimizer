@@ -20,7 +20,6 @@ import android.util.Log;
 import com.att.arocollector.attenuator.AttenuatorManager;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
-import com.att.arotcpcollector.ip.IPPacketFactory;
 import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
@@ -130,7 +129,7 @@ public class SocketDataReaderWorker implements Runnable {
 					if (len > 0) { // -1 indicates end of stream
 						// send packet to client app
 						session.setLastAccessed(System.currentTimeMillis());
-						//***************
+
 						sendToRequester(buffer, channel, len, session);
 						buffer.clear();
 

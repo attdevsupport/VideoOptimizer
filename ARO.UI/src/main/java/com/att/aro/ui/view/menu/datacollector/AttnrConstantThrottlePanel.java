@@ -67,11 +67,11 @@ public class AttnrConstantThrottlePanel extends JPanel implements ActionListener
 	private static final int UL_FPS_4G = 27;
 	private static final int UL_FPS_3G = 77;
 	private static final int UL_FPS_MID3 = 84;
-	private AttenuatorModel miniAtnr;
+	private AttenuatorModel attenuatorModel;
  
-	public AttnrConstantThrottlePanel(AttenuatorModel miniAtnr){
+	public AttnrConstantThrottlePanel(AttenuatorModel attenuatorModel){
 		setLayout(new GridBagLayout());
-		this.miniAtnr = miniAtnr;
+		this.attenuatorModel = attenuatorModel;
 		loadRadioGroupAttenuate();
  		getGBConstant();
 	}
@@ -122,7 +122,7 @@ public class AttnrConstantThrottlePanel extends JPanel implements ActionListener
 				LOG.info("Set DelayTime: " + fpsDL);
 				setDelayTime(fpsDL);
 				fsJLabel.setText(fpsDL + " ");
-				miniAtnr.setDelayDS(fpsDL);
+				attenuatorModel.setDelayDS(fpsDL);
 			}
 		}
 	}
@@ -136,7 +136,7 @@ public class AttnrConstantThrottlePanel extends JPanel implements ActionListener
 				LOG.info("Set DelayTime: " + fpsUL);
 				setDelayUpTime(fpsUL);
 				fsUpJLabel.setText(fpsUL + " ");
-				miniAtnr.setDelayUS(fpsUL);
+				attenuatorModel.setDelayUS(fpsUL);
 			}
 		}
 	}
@@ -269,8 +269,8 @@ public class AttnrConstantThrottlePanel extends JPanel implements ActionListener
 		delayDLJSlider.setEnabled(false);
 		delayULJSlider.setValue(0);
 		delayULJSlider.setEnabled(false);		
-		miniAtnr.setDelayDS(0);
-		miniAtnr.setDelayUS(0);
+		attenuatorModel.setDelayDS(0);
+		attenuatorModel.setDelayUS(0);
 	}
 	
 	

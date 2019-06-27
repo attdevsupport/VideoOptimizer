@@ -38,16 +38,16 @@ public class AttnrLoadProfilePanel extends JPanel implements ActionListener {
 	private JButton loadProfileButton;
 	private JLabel labelLoadFile;
 	private String loadFile;
- 	private AttenuatorModel miniAtnr;
+ 	private AttenuatorModel attenuatorModel;
 	
-	public AttnrLoadProfilePanel(AttenuatorModel miniAtnr) {
+	public AttnrLoadProfilePanel(AttenuatorModel attenuatorModel) {
 		setLayout(new GridBagLayout());
-		this.miniAtnr = miniAtnr;
+		this.setAttenuatorModel(attenuatorModel);
 		loadFile = ResourceBundleHelper.getMessageString("menu.profile.load");
 		loadProfileButton = new JButton(loadFile);
 		loadProfileButton.addActionListener(this);
 		labelLoadFile = new JLabel(Util.getVideoOptimizerLibrary()+System.getProperty("file.separator")+"Default_Profile.txt");
-		miniAtnr.setLocalPath(labelLoadFile.getText());// set initial profile 
+		attenuatorModel.setLocalPath(labelLoadFile.getText());// set initial profile 
  		add(loadProfileButton, new GridBagConstraints(0, 0, 1, 1, 0.1, 1.0, GridBagConstraints.CENTER,
 				GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
 		add(labelLoadFile, new GridBagConstraints(1, 0, 1, 1, 1, 1.0, GridBagConstraints.CENTER,
@@ -71,18 +71,29 @@ public class AttnrLoadProfilePanel extends JPanel implements ActionListener {
 				tracePath = chooser.getSelectedFile();
 				String tempPath = tracePath.getAbsolutePath(); 
 				labelLoadFile.setText(tempPath);
-				miniAtnr.setLocalPath(labelLoadFile.getText());				
-				miniAtnr.setLoadProfile(true);				
+				getAttenuatorModel().setLocalPath(labelLoadFile.getText());				
+				getAttenuatorModel().setLoadProfile(true);				
 			}
  		}
 	}
 
 	public void resetComponent() {
-		
 		labelLoadFile.setText(Util.getVideoOptimizerLibrary()+System.getProperty("file.separator")+"Default_Profile.txt");
-		miniAtnr.setLocalPath(labelLoadFile.getText());
-		miniAtnr.setLoadProfile(false);
+		getAttenuatorModel().setLocalPath(labelLoadFile.getText());
+		getAttenuatorModel().setLoadProfile(false);
+	}
 
+	public void reselectPriorOptions(AttenuatorModel attenuatorModel) {
+		this.setAttenuatorModel(attenuatorModel);
+		labelLoadFile.setText(getAttenuatorModel().getLocalPath());
+	}
+
+	public AttenuatorModel getAttenuatorModel() {
+		return attenuatorModel;
+	}
+
+	public void setAttenuatorModel(AttenuatorModel attenuatorModel) {
+		this.attenuatorModel = attenuatorModel;
 	}
 
 }

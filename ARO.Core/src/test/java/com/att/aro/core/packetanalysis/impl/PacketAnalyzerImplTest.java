@@ -52,8 +52,6 @@ import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.peripheral.pojo.CpuActivity;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
-import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
-import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 
 @SuppressWarnings("unchecked")
 public class PacketAnalyzerImplTest extends BaseTest {
@@ -100,8 +98,7 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		iPacketAnalyzer.setRrcStateMachineFactory(statemachinefactory);
 		iPacketAnalyzer.setProfileFactory(profilefactory);
 		TraceDirectoryResult mockTraceDirResult = mock(TraceDirectoryResult.class);
-		MetaDataHelper metaDataHelper = mock(MetaDataHelper.class);
-		MetaDataModel metaDataModel = new MetaDataModel();
+
 		AnalysisFilter filter = mock(AnalysisFilter.class);
 		filter.setIpv4Sel(true);
 		filter.setIpv6Sel(true);
@@ -110,7 +107,6 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		cpuList.add(new CpuActivity());
 		when(mockTraceDirResult.getCpuActivityList()).thenReturn(cpuList);
 		when(tracereader.readTraceDirectory(any(String.class))).thenReturn(mockTraceDirResult);
-		when(metaDataHelper.initMetaData(any(TraceDirectoryResult.class))).thenReturn(metaDataModel);
 
 		ProfileLTE profileLTE = new ProfileLTE();
 		when(profilefactory.createLTEdefault()).thenReturn(profileLTE);

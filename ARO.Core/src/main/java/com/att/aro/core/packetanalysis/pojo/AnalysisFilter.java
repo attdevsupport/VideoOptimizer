@@ -21,6 +21,9 @@ import java.net.InetAddress;
 import java.util.Collection;
 import java.util.Map;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Represents a filter used for filtering information from a trace analysis
  * based on a specified time range and set of ApplicationSelection objects.
@@ -36,8 +39,9 @@ public class AnalysisFilter implements Serializable {
 	private boolean ipv4Sel = true;
 	private boolean ipv6Sel = true;
 	private boolean udpSel = true; 
-	
-	
+	@Getter @Setter
+	private boolean dnsSelection = true;
+
 	public AnalysisFilter(Map<String, ApplicationSelection> appSelections, TimeRange timeRange, Map<InetAddress, String> domainNames){
 		this.appSelections = appSelections;
 		this.timeRange = timeRange;

@@ -37,12 +37,12 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.impl.BufferInSecondsCalculatorImpl;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -68,12 +68,12 @@ public class BufferInSecondsPlot implements IPlot{
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
 		if(analysis != null){
-			VideoUsage videoUsage = analysis.getAnalyzerResult().getVideoUsage();
+			StreamingVideoData streamingVideoData = analysis.getAnalyzerResult().getStreamingVideoData();
 			bufferFillDataCollection.removeAllSeries();
 			seriesBufferFill = new XYSeries("Buffer Against Play Time");
 			seriesDataSets = new TreeMap<>();
 			
-			seriesDataSets = bufferInSecondsCalculatorImpl.populate(videoUsage,chunkPlayTimeList);
+			seriesDataSets = bufferInSecondsCalculatorImpl.populate(streamingVideoData, chunkPlayTimeList);
 			//updating video stall result in packetAnalyzerResult
 			analysis.getAnalyzerResult().setVideoStalls(bufferInSecondsCalculatorImpl.getVideoStallResult());
 			analysis.getAnalyzerResult().setNearStalls(bufferInSecondsCalculatorImpl.getVideoNearStallResult());
@@ -81,16 +81,23 @@ public class BufferInSecondsPlot implements IPlot{
 			bufferTimeList.clear();
 			double xCoordinate,yCoordinate;
 			String ptCoordinate[] = new String[2]; // to hold x & y values
-			if(!seriesDataSets.isEmpty()){
-
-				for(int key :seriesDataSets.keySet()){
+			double videoPlayStartTime = 0;
+			for (VideoEvent key : chunkPlayTimeList.keySet()) {
+				videoPlayStartTime = chunkPlayTimeList.get(key);
+				break;
+			}
+			List<VideoEvent> filteredSegments = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments();
+			double lastArrivedSegmentTimeStamp = filteredSegments.get(filteredSegments.size() - 1).getEndTS();
+			if (!seriesDataSets.isEmpty()) {
+				for (int key : seriesDataSets.keySet()) {
 					ptCoordinate = seriesDataSets.get(key).trim().split(",");
 					xCoordinate = Double.parseDouble(ptCoordinate[0]);
 					yCoordinate = Double.parseDouble(ptCoordinate[1]);
-					bufferTimeList.add(yCoordinate);
-					
-					seriesBufferFill.add(xCoordinate,yCoordinate);
-				}			
+					if (xCoordinate >= videoPlayStartTime && xCoordinate <= lastArrivedSegmentTimeStamp) {
+						bufferTimeList.add(yCoordinate);
+					}
+					seriesBufferFill.add(xCoordinate, yCoordinate);
+				}
 			}
 			
 			Collections.sort(bufferTimeList);
@@ -113,7 +120,7 @@ public class BufferInSecondsPlot implements IPlot{
 
 					Map<Double, Long> segmentEndTimeMap = bufferInSecondsCalculatorImpl.getSegmentEndTimeMap();
 					Map<Long, Double> segmentStartTimeMap = bufferInSecondsCalculatorImpl.getSegmentStartTimeMap();
-					double firstSegmentNo = videoUsage.getChunksBySegmentNumber().get(0).getSegment();
+					double firstSegmentNo = streamingVideoData.getStreamingVideoCompiled().getChunksBySegment().get(0).getSegmentID();
 
 					DecimalFormat decimalFormat = new DecimalFormat("0.##");
 					if (segmentStartTimeMap == null || segmentStartTimeMap.isEmpty()) {

@@ -1004,7 +1004,6 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 		List<RadioInfo> radioInfos = radioinforeader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setRadioInfos(radioInfos);
-
 	}
 
 }// end class

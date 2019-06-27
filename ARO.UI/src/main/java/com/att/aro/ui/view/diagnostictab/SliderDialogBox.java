@@ -26,6 +26,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,13 +61,13 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.IVideoBestPractices;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoFormat;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -84,6 +85,7 @@ public class SliderDialogBox extends JDialog {
 	private JSlider slider;
 	private JButton okButton;
 	private int maxValue;
+	private int minValue;
 	private IVideoPlayer player;
 	private double startTime;
 	private VideoChunksPlot vcPlot;
@@ -94,39 +96,41 @@ public class SliderDialogBox extends JDialog {
 	private JTable jTable;
 	private List<JTableItems> listSegments = new ArrayList<>();
 	private List<VideoEvent> allChunks = new ArrayList<>();
-	public static List<JTableItems> segmentListChosen; // = new ArrayList<>();
+	private JTableItems segmentChosen;
 	private int selectedIndex = 0;
 	private JButton plusTunerBtn;
 	private JButton minusTunerBtn;
 	private JPanel panel;
 	private JLabel imgLabel = new JLabel();
-	private VideoUsage videoUsage;
+	private StreamingVideoData streamingVideoData;
 	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 	private JComboBox<ComboManifest> jcb;
 	private DefaultTableModel tableModel;
 	private PlotHelperAbstract videoChunkPlotter = ContextAware.getAROConfigContext().getBean("videoChunkPlotterImpl",
 			PlotHelperAbstract.class);
+	private JTextField startTimeField;
+
 	private static final Logger LOG = LogManager.getLogger(SliderDialogBox.class.getName());
-		
+	
 	class ComboManifest {
-		AROManifest manifest;
+		VideoStream videoStream;	
 		String manifestName;
 
 		public ComboManifest() {
 			this.manifestName = resourceBundle.getString("sliderdialog.manifestselection.default");
 		}
 
-		public ComboManifest(AROManifest manifest) {
-			if (manifest.isSelected()) {
-				this.manifest = manifest;
-				this.manifestName = manifest.getVideoName() + ", "
+		public ComboManifest(VideoStream videoStream) {
+			if (videoStream.isSelected()) {
+				this.videoStream = videoStream;
+				this.manifestName = videoStream.getManifest().getVideoName() + ", "
 						+ resourceBundle.getString("sliderdialog.manifest.segmentcount")
-						+ String.valueOf(manifest.getVideoEventList().size());
+						+ String.valueOf(videoStream.getVideoEventList().size());
 			}
 		}
 
-		public AROManifest getManifest() {
-			return this.manifest;
+		public VideoStream getVideoStream() {
+			return this.videoStream;
 		}
 
 		@Override
@@ -139,10 +143,11 @@ public class SliderDialogBox extends JDialog {
 		private String value;
 		private VideoEvent videoEvent;
 		private boolean isSelected;
-
-		JTableItems(VideoEvent videoEvent) {
+		private int row;
+		
+		JTableItems(VideoEvent videoEvent, int row) {
 			StringBuffer sb = new StringBuffer();
-			sb.append("Segment: ").append(videoEvent.getSegment());
+			sb.append("Segment ID: ").append(videoEvent.getSegmentID());
 			sb.append(", Quality: ").append(videoEvent.getQuality());
 			sb.append(", DL Time Range: ").append(String.format("%.2f - %.2f", videoEvent.getStartTS(), videoEvent.getEndTS()));
 			if (videoEvent.getPlayTime() != 0) {
@@ -151,6 +156,7 @@ public class SliderDialogBox extends JDialog {
 				sb.append(", mSec: ").append(String.format("%.2f", videoEvent.getSegmentStartTime()));
 			}
 			this.value = sb.toString();
+			this.row = row;
 			this.videoEvent = videoEvent;
 		}
 
@@ -160,6 +166,10 @@ public class SliderDialogBox extends JDialog {
 
 		public VideoEvent getVideoEvent() {
 			return videoEvent;
+		}
+
+		public int getRow() {
+			return row;
 		}
 
 		@Override
@@ -179,8 +189,9 @@ public class SliderDialogBox extends JDialog {
 		createSliderDialog(maxVideoTime, player, vcPlot, indexKey);
 		if (selectedIndex >= 0 && selectedIndex < jTable.getRowCount()) {
 			jTable.setRowSelectionInterval(selectedIndex, selectedIndex);
-			if (videoChunkPlotter.getVideoUsage().getChunkPlayTimeList().keySet() != null) {
-				for (VideoEvent veSegment : videoChunkPlotter.getVideoUsage().getChunkPlayTimeList().keySet()) {
+			jTable.getModel().setValueAt(true, selectedIndex, 0);
+			if (videoChunkPlotter.getStreamingVideoData().getStreamingVideoCompiled().getChunkPlayTimeList().keySet() != null) {
+				for (VideoEvent veSegment : videoChunkPlotter.getStreamingVideoData().getStreamingVideoCompiled().getChunkPlayTimeList().keySet()) {
 					for (int index = 0; index < listSegments.size(); index++) {
 						JTableItems item = listSegments.get(index);
 						if (item.getVideoEvent().equals(veSegment)) {
@@ -208,24 +219,20 @@ public class SliderDialogBox extends JDialog {
 	}
 
 	public void populateList() {
-		for (VideoEvent ve : allChunks) {
-			boolean added = false;
-			for (JTableItems item : segmentListChosen) {
-				if (ve.equals(item.getVideoEvent())) {
-					listSegments.add(item);
-					added = true;
-				}
-			}
-			if (added == false) {
-				listSegments.add(new JTableItems(ve));
+		for (int index = 0; index < allChunks.size(); index++) {
+			VideoEvent ve = allChunks.get(index);
+			if (segmentChosen != null && ve.equals(segmentChosen.getVideoEvent())) {
+				listSegments.add(segmentChosen);
+			} else {
+				listSegments.add(new JTableItems(ve, index));
 			}
 		}
 		Collections.sort(listSegments, new Comparator<JTableItems>() {
 			@Override
 			public int compare(JTableItems o1, JTableItems o2) {
-				if (o1.getVideoEvent().getSegment() < o2.getVideoEvent().getSegment()) {
+				if (o1.getVideoEvent().getSegmentID() < o2.getVideoEvent().getSegmentID()) {
 					return -1;
-				} else if (o1.getVideoEvent().getSegment() > o2.getVideoEvent().getSegment()) {
+				} else if (o1.getVideoEvent().getSegmentID() > o2.getVideoEvent().getSegmentID()) {
 					return 1;
 				} else {
 					return 0;
@@ -253,18 +260,18 @@ public class SliderDialogBox extends JDialog {
 		panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		add(panel);
-		videoUsage = mainFrame.getController().getTheModel().getAnalyzerResult().getVideoUsage();
+		streamingVideoData = mainFrame.getController().getTheModel().getAnalyzerResult().getStreamingVideoData();
 		jcb = new JComboBox<ComboManifest>();
 		jcb.addItem(new ComboManifest());
 		int manifestsSelectedCount = 0;
 		int manifestIdxSelected = 0;
 		int selectedIndex = 1;
-		for (AROManifest manifest : videoUsage.getManifests()) {
-			if (manifest.isSelected()) {
+		for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
+			if (videoStream.isSelected()) {
 				manifestsSelectedCount++;
 				selectedIndex = manifestIdxSelected;
 				manifestIdxSelected++;
-				jcb.addItem(new ComboManifest(manifest));
+				jcb.addItem(new ComboManifest(videoStream));
 			}
 		}
 		jcb.addActionListener(new ActionListener() {
@@ -273,18 +280,18 @@ public class SliderDialogBox extends JDialog {
 				@SuppressWarnings("unchecked")
 				JComboBox<ComboManifest> comboBox = (JComboBox<ComboManifest>) e.getSource();
 				ComboManifest comboManifest = (ComboManifest) comboBox.getSelectedItem();
-				AROManifest manifest = comboManifest.getManifest();
-				if (null != manifest) {
+				VideoStream videoStream = comboManifest.getVideoStream();
+				if (null != videoStream) {
 					allChunks.clear();
 					allChunks = new ArrayList<VideoEvent>();
-					if (manifest.getVideoFormat() == VideoFormat.MPEG4) {
-						for (VideoEvent videoEvent : manifest.getVideoEventsBySegment()) {
-							if (videoEvent.getSegment() != 0) {
+					if (videoStream.getManifest().getVideoFormat() == VideoFormat.MPEG4) {
+						for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
+							if (videoEvent.getSegmentID() != 0) {
 								allChunks.add(videoEvent);
 							}
 						}
 					} else {
-						allChunks = new ArrayList<VideoEvent>(manifest.getVideoEventsBySegment());
+						allChunks = new ArrayList<VideoEvent>(videoStream.getVideoEventsBySegment());
 					}
 					listSegments.clear();
 					populateList();
@@ -340,24 +347,23 @@ public class SliderDialogBox extends JDialog {
 		if (manifestsSelectedCount == 1) {
 			jcb.setSelectedIndex(selectedIndex + 1);
 		}
-		// Mouse click listener for check boxes which are on column 0 of the
-		// JTable
+		//Listener for mouse click
 		jTable.addMouseListener(getCheckboxListener());
-		
-		// Set slider from TimeStamp
+
+		// Listener for list selection on jTable
 		jTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
-				int index = jTable.getSelectedRow();
-				if (index >= 0 && index < listSegments.size()) {
-					JTableItems itemObject = listSegments.get(index);
+				int row = jTable.getSelectedRow();
+				if (row >= 0 && row < listSegments.size()) {
+					JTableItems itemObject = listSegments.get(row);
 					resizedThumbnail = itemObject.getVideoEvent().getImageOriginal();
-					ImageIcon img = new ImageIcon(resizedThumbnail);// thumbnail);
+					ImageIcon img = new ImageIcon(resizedThumbnail);
 					img = new ImageIcon(img.getImage().getScaledInstance(-1, 300, Image.SCALE_DEFAULT));
-					imgLabel.setIcon(img);// = new JLabel(img);
-					double timestamp = itemObject.getVideoEvent().getPlayTime() != 0 
-									 ? itemObject.getVideoEvent().getPlayTime() 
-									 : itemObject.getVideoEvent().getEndTS();
+					imgLabel.setIcon(img);
+					double timestamp = itemObject.getVideoEvent().getPlayTime() != 0
+							? itemObject.getVideoEvent().getPlayTime() : itemObject.getVideoEvent().getEndTS();
 					slider.setValue((int) Math.round(timestamp * 25));
 					panel.setSize(panel.getPreferredSize());
 					panel.revalidate();
@@ -365,12 +371,13 @@ public class SliderDialogBox extends JDialog {
 					parentDialog.setSize(parentDialog.getPreferredSize());
 					parentDialog.revalidate();
 				}
+				selectSegment();
 			}
 		});
 		
-		JScrollPane listScrollPanel = new JScrollPane(jTable); // listComponent);
+		JScrollPane listScrollPanel = new JScrollPane(jTable);
 		listScrollPanel.setPreferredSize(new Dimension(500, 100));
-		comboPanel.add(listScrollPanel); // comboBox); //,constraint);
+		comboPanel.add(listScrollPanel);
 		if (manifestIdxSelected > 1) {
 			JLabel warningLabel = new JLabel(resourceBundle.getString("sliderdialog.manifest.warning"));
 			comboPanel.add(warningLabel, BorderLayout.EAST);
@@ -390,15 +397,40 @@ public class SliderDialogBox extends JDialog {
 		constraint.gridx = 0;
 		constraint.gridy = 0;
 		constraint.weightx = 2;
-		setMaxValue(max);
+		double initialValue = getPlayer().getVideoOffset();
+		this.maxValue = setMaxMinValue(max + initialValue, true);
+		this.minValue = setMaxMinValue(initialValue, false);
 		this.player = player;
 		
 		// define slider
-		slider = new JSlider(JSlider.HORIZONTAL, 0, getMaxValue(), 0);
+		slider = new JSlider(JSlider.HORIZONTAL, minValue, maxValue, minValue);
 		slider.setPaintLabels(true);
 		slider.setPaintTicks(true);
 		slider.addChangeListener(getSliderListener());
+		slider.addMouseMotionListener(new MouseMotionListener() {
+			@Override
+			public void mouseMoved(MouseEvent e) {
+			}
+			
+			@Override
+			public void mouseDragged(MouseEvent e) {
+				ComboManifest comboBoxItem = (ComboManifest) jcb.getSelectedItem();
+				if (segmentChosen == null 
+						|| (!segmentChosen.isSelected) 
+						&& (comboBoxItem.getVideoStream() == null)) {
+					showWarningMessage();
+				}
+			}
+		});	
 		sliderPanel.add(slider, constraint);
+		
+		startTimeField = getStartTimeDisplay();
+		constraint.fill = GridBagConstraints.HORIZONTAL;
+		constraint.gridx = 1;
+		constraint.gridy = 0;
+		constraint.insets = new Insets(0, 0, 0, 1);
+		constraint.weightx = 0.35;
+		sliderPanel.add(startTimeField, constraint);
 		
 		minusTunerBtn = getTunerButton("-");
 		constraint.fill = GridBagConstraints.HORIZONTAL;
@@ -434,6 +466,10 @@ public class SliderDialogBox extends JDialog {
 		panel.validate();
 	}
 
+	/**
+	 * Tracks slider movement
+	 * @return
+	 */
 	public ChangeListener getSliderListener() {
 		return new ChangeListener() {
 			@Override
@@ -444,11 +480,14 @@ public class SliderDialogBox extends JDialog {
 				}
 				if (executeEvent) {
 					double value = ((JSlider) e.getSource()).getValue();
-					// double seconds = value / 10;
-					double seconds = value * 0.04; /// 100;
+					double seconds = value * 0.04;
+					double videoOffset = getPlayer().getVideoOffset();
+					// forward to video player
 					getPlayer().setMediaTime(seconds);
 					double mediaTime = getPlayer().getMediaTime();
-					setStartTime(mediaTime + getPlayer().getVideoOffset());
+					setStartTime(mediaTime + videoOffset);
+					startTimeField.setText(String.format("%.03f", mediaTime + videoOffset));
+					startTimeField.revalidate();
 
 				}
 			}
@@ -459,52 +498,60 @@ public class SliderDialogBox extends JDialog {
 		return new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (jTable.getSelectedRow() != -1) {
-					JTableItems selectedItem = listSegments.get(jTable.getSelectedRow()); // comboBox.getSelectedItem();
+				ComboManifest comboBoxItem = (ComboManifest) jcb.getSelectedItem();		
+				if (segmentChosen != null && segmentChosen.isSelected && (comboBoxItem.getVideoStream() != null)) {
 					dispose();
-			
+					
 					try {
-						if (getStartTime() >= selectedItem.getVideoEvent().getEndTS() && selectedItem.isSelected) {
-							ComboManifest comboManifest = (ComboManifest) jcb.getSelectedItem();
-							if (comboManifest.getManifest() != null) {
-								AROManifest manifest = comboManifest.getManifest();
-								updateFirstSelectedSegmentsList(manifest, selectedItem.getVideoEvent());
+						LOGGER.info("startTimeField :" + startTimeField.getText());
+						setStartTime(Double.valueOf(startTimeField.getText()));
+					} catch (NumberFormatException e1) {
+						// covers user entered bad data, just go with getStartTime()
+					}
+					
+					try {
+						if (getStartTime() >= segmentChosen.getVideoEvent().getEndTS() && segmentChosen.isSelected) {
+							ComboManifest selectedStream = (ComboManifest) jcb.getSelectedItem();
+							if (selectedStream.getVideoStream() != null) {
+								VideoStream videoStream = selectedStream.getVideoStream();
 
-								selectedItem.getVideoEvent().setPlayTime(getStartTime());
-								manifest.setDelay(getStartTime() - selectedItem.getVideoEvent().getEndTS());
-								manifest.setVideoEventSegment(selectedItem.getVideoEvent());
-								manifest.setStartupDelay(selectedItem.getVideoEvent().getSegmentStartTime() - manifest.getRequestTime());
+								segmentChosen.getVideoEvent().setPlayTime(getStartTime());
 
-								LOGGER.info(String.format("Manifest delay play = %.03f", manifest.getStartupDelay()));
-								LOGGER.info(String.format("Segment playTime = %.03f", selectedItem.getVideoEvent().getPlayTime()));
+								videoStream.getManifest().setDelay(getStartTime() - segmentChosen.getVideoEvent().getEndTS());
+								videoStream.getManifest().setStartupVideoEvent(segmentChosen.getVideoEvent());
+								videoStream.getManifest().setStartupDelay(segmentChosen.getVideoEvent().getSegmentStartTime() - videoStream.getManifest().getRequestTime());
+
+								LOGGER.info(String.format("Segment playTime = %.03f", segmentChosen.getVideoEvent().getPlayTime()));
+								startTimeField.setText(String.format("%.03f", segmentChosen.getVideoEvent().getPlayTime()));
 								revalidate();
-
-								for (AROManifest aroManifest : videoUsage.getManifests()) {
-									if (aroManifest.equals(manifest)) {
-										aroManifest.setSelected(true);
+								for (VideoStream stream : streamingVideoData.getVideoStreamMap().values()) {
+									if (stream.equals(videoStream)) {
+										stream.setSelected(true);
 									} else {
-										aroManifest.setSelected(false);
+										stream.setSelected(false);
 									}
 								}
 							} else {
-								for (AROManifest aroManifest : videoUsage.getManifests()) {
-									if (aroManifest.isSelected()) {
-										aroManifest.setDelay(getStartTime() - selectedItem.getVideoEvent().getEndTS());
+								for (VideoStream stream : streamingVideoData.getVideoStreamMap().values()) {
+									if (stream.isSelected()) {
+										stream.getManifest().setDelay(getStartTime() - segmentChosen.getVideoEvent().getEndTS());
 									}
 								}
 							}
 								
 							AROTraceData aroTraceData = mainFrame.getController().getTheModel();
 							
-							videoUsage.scanManifests();
+							streamingVideoData.scanVideoStreams();
 							
 							IVideoBestPractices videoBestPractices = ContextAware.getAROConfigContext().getBean(IVideoBestPractices.class);
 							videoBestPractices.analyze(aroTraceData);
 							
 							mainFrame.getDiagnosticTab().getGraphPanel().refresh(aroTraceData);
 							getGraphPanel().setTraceData(aroTraceData);
-							AROTraceData traceData = vcPlot.refreshPlot(getGraphPanel().getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot(),
-									getGraphPanel().getTraceData(), getStartTime(), selectedItem.getVideoEvent());
+							AROTraceData traceData = vcPlot.refreshPlot(getGraphPanel().getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot()
+																			, getGraphPanel().getTraceData()
+																			, getStartTime()
+																			, segmentChosen.getVideoEvent());
 							getGraphPanel().setTraceData(traceData);
 							mainFrame.getVideoTab().refresh(traceData);
 						}
@@ -513,50 +560,52 @@ public class SliderDialogBox extends JDialog {
 						MessageDialogFactory.showMessageDialog(parentPanel, "Error in drawing buffer graphs", "Failed to generate buffer plots", JOptionPane.ERROR_MESSAGE);
 					}
 				} else {
-					JOptionPane.showMessageDialog(null, "Please select a segment first in order to set the start up delay.", "Warning", JOptionPane.WARNING_MESSAGE);
+					showWarningMessage();
 				}
 			}
 		};
 	}
 
+	public void showWarningMessage(){
+		JOptionPane.showMessageDialog(SliderDialogBox.this, "Please select a segment and a manifest first in order to set the start up delay.", "Warning", JOptionPane.WARNING_MESSAGE);
+	}
+	
 	public MouseAdapter getCheckboxListener() {
 		return new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				int row = jTable.getSelectedRow();
-				int column = jTable.getSelectedColumn();
-				if (row < 0 || column < 0 || listSegments.isEmpty()) {
-					return;
-				}
-				JTableItems selectedChunk = listSegments.get(row);
-				if (column == 0 && (!selectedChunk.isSelected)) {
-					// add the selected segment
-					boolean found = false;
-					for (JTableItems segment : segmentListChosen) {
-						if (segment.getVideoEvent().equals(selectedChunk.getVideoEvent())) {
-							found = true;
-							break;
-						}
-					}
-					if (found == false) {
-						segmentListChosen.add(selectedChunk);
-					}
-				} else if (column == 0) {// remove the selected segment
-					boolean found = false;
-					for (JTableItems segment : segmentListChosen) {
-						if (segment.getVideoEvent().equals(selectedChunk.getVideoEvent())) {
-							found = true;
-							break;
-						}
-					}
-					if (found == true) {
-						segmentListChosen.remove(selectedChunk);
-					}
-				}
+				selectSegment();
 			}
 		};
 	}
-
+	
+	public void selectSegment(){
+		int column = jTable.getSelectedColumn();
+		int row = jTable.getSelectedRow();
+		if (row < 0 || listSegments.isEmpty()) {
+			return;
+		}
+		
+		JTableItems selectedChunk = listSegments.get(row);	
+		ComboManifest comboBoxItem = (ComboManifest) jcb.getSelectedItem();		
+		if (column != 1 && (!selectedChunk.isSelected)) {
+			if (comboBoxItem.getVideoStream() != null) {
+				// capture the selected segment
+				if (segmentChosen != null) {
+					jTable.getModel().setValueAt(false, segmentChosen.getRow(), 0);
+					jTable.getModel().setValueAt(true, row, 0);
+				}
+				segmentChosen = selectedChunk;
+			} else {			
+				jTable.getModel().setValueAt(false, selectedChunk.getRow(), 0);
+				showWarningMessage();
+			}
+		} else if (column == 0 && segmentChosen != null) {// remove the selected segment
+			jTable.getModel().setValueAt(false, segmentChosen.getRow(), 0);
+			segmentChosen = null;
+		}
+	}
+	
 	public JTextField getStartTimeDisplay() {
 		JTextField startTimeField = new JTextField("       0");
 		startTimeField.addActionListener(new ActionListener() {
@@ -581,12 +630,6 @@ public class SliderDialogBox extends JDialog {
 		return startTimeField;
 	}
 
-	public void updateFirstSelectedSegmentsList(AROManifest manifest, VideoEvent videoEvent) {
-		if (videoChunkPlotter.getVideoUsage() != null) {
-			videoChunkPlotter.getVideoUsage().getFirstSelectedSegment().put(manifest, videoEvent);
-		}
-	}
-
 	public GraphPanel getGraphPanel() {
 		return this.parentPanel;
 	}
@@ -595,9 +638,14 @@ public class SliderDialogBox extends JDialog {
 		return maxValue;
 	}
 
-	public void setMaxValue(double max) {
-		int limit = (int) Math.ceil(max);
-		this.maxValue = limit * 25;
+	public int setMaxMinValue(double value, boolean max) {
+		int limit;
+		if (max) {
+			limit = (int) Math.ceil(value);
+		} else {
+			limit = (int) Math.floor(value);
+		}
+		return limit * 25;
 	}
 
 	public IVideoPlayer getPlayer() {

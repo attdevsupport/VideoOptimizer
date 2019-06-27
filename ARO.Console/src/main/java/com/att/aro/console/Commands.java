@@ -162,7 +162,7 @@ public class Commands {
 	public boolean isListDevices() {
 		return listdevices;
 	}
-
+	
 	public String getThrottleUL() {
 		return throttleUL;
 	}

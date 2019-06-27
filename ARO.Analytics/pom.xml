@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>2.3.0</version>
+        <version>2.4.0</version>
         <relativePath>../ARO.Parent</relativePath>
     </parent>
 
@@ -22,13 +22,30 @@
 		<repository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
-			<url>http://repo1.maven.org/maven2</url>
+			<url>https://repo1.maven.org/maven2/</url>
+		</repository>
+		<repository>
+			<id>apache-releases</id>
+			<name>Apache Releases</name>
+			<url>https://repository.apache.org/content/repositories/releases</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
 		</repository>
 		<repository>
 			<id>apache-snapshots</id>
-			<name>Apache Snapshot</name>
-			<url>https://repository.apache.org/content/repositories/snapshots/</url>
-		</repository>
+			<name>Apache Snapshots</name>
+			<url>https://repository.apache.org/content/repositories/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>		
 		<repository>
 			<id>sonatype-public</id>
 			<name>Sonatype Public</name>
@@ -39,14 +56,14 @@
 			<name>Sonatype Flex</name>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</repository>
+
 	</repositories>
-	
 	<pluginRepositories>
 		<pluginRepository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
 			<url>http://repo1.maven.org/maven2</url>
-		</pluginRepository>	
+		</pluginRepository>
 	</pluginRepositories>
 
 	<!-- dependencies -->
@@ -54,7 +71,7 @@
     <dependency>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-core</artifactId>
-        <version>2.3.0</version>
+        <version>2.4.0</version>
     </dependency>	
 		<dependency>
 			<groupId>com.orientechnologies</groupId>
@@ -92,6 +109,7 @@
 		    <version>3.0.4</version>
 		</dependency>
 	</dependencies>
+
 
 	<!-- build -->
 	<build>

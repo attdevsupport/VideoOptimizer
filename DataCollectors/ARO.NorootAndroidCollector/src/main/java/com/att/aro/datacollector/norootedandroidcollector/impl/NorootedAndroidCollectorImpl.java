@@ -56,7 +56,6 @@ import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
-import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.util.AttnScriptUtil;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.StringParse;
@@ -87,7 +86,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	// local directory in user machine to pull trace from device to
 	private String localTraceFolder;
 	private static final int MILLISECONDSFORTIMEOUT = 300;
-	private static String APK_FILE_NAME = "VPNCollector-2.3.%s.apk";
+	private static String APK_FILE_NAME = "VPNCollector-2.4.%s.apk";
 	private static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 	private static final String ARO_PACKAGE_NAME_GREP = "[c]om.att.arocollector";
 
@@ -112,13 +111,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	private String traceType = "";
 	private String targetedApp = "";
 	private String appProducer = "";
-	
-	private IMetaDataHelper metaDataHelper;
-	
-	@Autowired
-	public void setMetaDataHelper(IMetaDataHelper metaDataHelper) {
-		this.metaDataHelper = metaDataHelper;
-	}
 
 	@Autowired
 	public void setAndroid(IAndroid android) {
@@ -397,6 +389,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		
 		if (extraParams != null) {
 			atnr = (AttenuatorModel)getOrDefault(extraParams, "AttenuatorModel", atnr);
+
 			videoOption = (VideoOption) getOrDefault(extraParams, "video_option", VideoOption.NONE);
 			videoOrientation = (Orientation) getOrDefault(extraParams, "videoOrientation", Orientation.PORTRAIT);
 			selectedAppName = (String) getOrDefault(extraParams, "selectedAppName", StringUtils.EMPTY);
@@ -870,14 +863,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		LOG.debug("pulling trace to local dir");
 		new LogcatCollector(adbService, device.getSerialNumber()).collectLogcat(localTraceFolder, "Logcat.log");
 		result = pullTrace(this.mDataDeviceCollectortraceFileNames);
-		
-		if(result.isSuccess()) {
-			try {
-				metaDataHelper.initMetaData(localTraceFolder, traceDesc, traceType, targetedApp, appProducer);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
 		
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
 				GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),

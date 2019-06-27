@@ -54,8 +54,6 @@ public class AROViewMenu implements ActionListener, MenuListener {
 			menuAdder.getMenuItemInstance(MenuItem.menu_view_apps);
 	private final JMenuItem menuToolsExcludetimerangeanalysis =
 			menuAdder.getMenuItemInstance(MenuItem.menu_tools_excludetimerangeanalysis);
-	private final JMenuItem menuViewProcesses =
-			menuAdder.getMenuItemInstance(MenuItem.menu_view_processes);
 	private final JMenuItem menuViewOptions =
 			menuAdder.getMenuItemInstance(MenuItem.menu_view_options);
 
@@ -68,7 +66,6 @@ public class AROViewMenu implements ActionListener, MenuListener {
 		menu_view_video,
 		menu_view_apps,
 		menu_tools_excludetimerangeanalysis,
-		menu_view_processes,
 		menu_view_options
 	}
 
@@ -95,8 +92,6 @@ public class AROViewMenu implements ActionListener, MenuListener {
 			viewMenu.add(menuToolsExcludetimerangeanalysis);
 			
 			menuToolsExcludetimerangeanalysis.setEnabled(parent.isModelPresent());
-			menuViewProcesses.setEnabled(parent.isModelPresent() && cpuDataExists() && isRootedTrace());
-			viewMenu.add(menuViewProcesses);
 			viewMenu.addSeparator();
 			viewMenu.add(menuViewOptions);
 		}
@@ -118,10 +113,6 @@ public class AROViewMenu implements ActionListener, MenuListener {
 		} else if(menuAdder.isMenuSelected(
 				MenuItem.menu_tools_excludetimerangeanalysis, aEvent)) {
 			new ExcludeTimeRangeAnalysisDialog(parent).setVisible(true);
-		} else if (menuAdder.isMenuSelected(MenuItem.menu_view_processes, aEvent)) {
-			filterProcessDialog = (filterProcessDialog != null) ? filterProcessDialog
-					: new FilterProcessesDialog(parent, menuViewProcesses);
-			filterProcessDialog.setVisible(true);
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_view_options, aEvent)) {
 			synchronized(this) {
 				if(menuViewOptionsDialog == null) {
@@ -139,8 +130,7 @@ public class AROViewMenu implements ActionListener, MenuListener {
 		menuViewVideo.setSelected(parent.isVideoPlayerSelected());
 		menuViewApps.setEnabled(parent.isModelPresent());
 		menuToolsExcludetimerangeanalysis.setEnabled(parent.isModelPresent());
-		menuViewProcesses.setEnabled(parent.isModelPresent() && cpuDataExists() && isRootedTrace());
-	}
+		}
 	@Override
 	public void menuDeselected(MenuEvent e) { // NoOp
 	}

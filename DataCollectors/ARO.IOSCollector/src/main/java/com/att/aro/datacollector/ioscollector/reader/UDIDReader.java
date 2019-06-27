@@ -17,27 +17,30 @@ package com.att.aro.datacollector.ioscollector.reader;
 
 import java.io.IOException;
 
+import org.springframework.context.ApplicationContext;
+
+import com.att.aro.core.SpringContextUtil;
+import com.att.aro.core.commandline.IExternalProcessRunner;
+
 /**
  * Execute Mac command to get Serial Number of connected iPhone/iPad/iPod.
- * Obviously, this class should be used on Mac OS only.
+ * Obviously, this class pertains only to Mac OSX.
  *
  */
 public class UDIDReader {
-	ExternalProcessRunner runner = null;
+
+	private IExternalProcessRunner runner;
 
 	public UDIDReader() {
-		runner = new ExternalProcessRunner();
+		ApplicationContext context = SpringContextUtil.getInstance().getContext();
+		runner = context.getBean(IExternalProcessRunner.class);
 	}
 
-	public UDIDReader(ExternalProcessRunner runner) {
-		this.runner = runner;
-	}
-
-	/**
-	 * Get Serial Number or UDID of IOS device connected to Mac OS machine.
+	/**<pre>
+	 * Get Serial Number or UDID or ECID of IOS device connected to Mac OS machine. 
+	 * UDID codes are 40 characters long, ECID codes are shorter and contain a hyphen.
 	 */
 	public String getSerialNumber() throws IOException {
-		String cmd = "system_profiler SPUSBDataType | sed -n -e '/iPad/,/Serial/p' -e '/iPhone/,/Serial/p' -e '/iPod/,/Serial/p' | grep \"Serial Number:\" | awk -F \": \" '{print $2}'";
-		return runner.runCmd(new String[] { "bash", "-c", cmd });
+		return runner.executeCmd("idevice_id -l");
 	}
 }

@@ -21,7 +21,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ComponentListener;
-import java.io.File;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 
@@ -30,16 +29,20 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
-import com.att.aro.core.packetanalysis.IVideoUsageAnalysis;
+import com.att.aro.core.packetanalysis.IVideoTrafficCollector;
+import com.att.aro.core.packetanalysis.impl.VideoTrafficCollectorImpl;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.settings.SettingsUtil;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.impl.VideoPrefsController;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
@@ -56,19 +59,19 @@ import com.att.aro.ui.view.bestpracticestab.BpHeaderPanel;
 import com.att.aro.ui.view.diagnostictab.ChartPlotOptions;
 import com.att.aro.ui.view.diagnostictab.GraphPanel;
 import com.att.aro.ui.view.statistics.DateTraceAppDetailPanel;
-import com.att.aro.ui.view.video.VideoUtil;
 import com.att.aro.view.images.Images;
 
 public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
-
+	private static final Logger LOG = LogManager.getLogger(VideoTab.class.getName());
+	
 	private static final long serialVersionUID = 1L;
 	AROModelObserver bpObservable;
 	private JPanel container;
 	private JPanel mainPanel;
 	private IARODiagnosticsOverviewRoute overviewRoute = null;
 	private MainFrame aroView;
-	private IVideoUsageAnalysis videoUsageAnalysis = ContextAware.getAROConfigContext().getBean(IVideoUsageAnalysis.class);
-	private VideoUsagePrefs videoUsagePrefs;
+	private VideoTrafficCollectorImpl videoStreamingAnalysis = (VideoTrafficCollectorImpl) ContextAware.getAROConfigContext().getBean(IVideoTrafficCollector.class);
+	private VideoPrefsController videoPrefsController = ContextAware.getAROConfigContext().getBean(VideoPrefsController.class);
 	private Insets insets = new Insets(10, 1, 10, 1);
 	private Insets headInsets = new Insets(10, 1, 0, 1);
 	private Insets noInsets = new Insets(0, 0, 0, 0);
@@ -80,6 +83,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 	private StartUpDelayWarningDialog startUpDelayWarningDialog = null;
 	private String warningMessage;
 	int graphPanelIndex = 0;
+ 	
 	/**
 	 * Create the panel.
 	 */
@@ -154,8 +158,8 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		return mainPanel;
 	}
 	
-	public void addGraphPanel(){
-		if(mainPanel != null){
+	public void addGraphPanel() {
+		if (mainPanel != null) {
 			mainPanel.add(buildGraphPanel(), new GridBagConstraints(
 					0, graphPanelIndex
 					, 1, 1
@@ -168,65 +172,40 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		aroView.getDiagnosticTab().getGraphPanel().setChartOptions(ChartPlotOptions.getVideoDefaultView());
 	}
 	
-	private boolean isVideoAvailable(AbstractTraceResult traceResult) {
-		String traceDirectory = traceResult.getTraceDirectory();	
-		TraceResultType traceResultType = traceResult.getTraceResultType();
-		if (traceResultType == TraceResultType.TRACE_FILE
-				|| !(VideoUtil.mp4VideoExists(traceDirectory) || VideoUtil.movVideoExists(traceDirectory))) {
-			return false;
-		}else{
-			return true;
-		}
-	}
-
-	public void openStartUpDelayWarningDialog(String tracePath) {
-		if(tracePath == null) {
-			return;
-		}
-		File trace = new File(tracePath);
-		if (trace.exists() && trace.isDirectory() && VideoUtil.mp4VideoExists(tracePath)) {
-			openStartUpDelayWarningDialog();
-		}
-	}
-	
 	private void openStartUpDelayWarningDialog() {
 		boolean startUpReminder = true;
-		boolean videoAnalyzed = CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(),
-				BestPracticeType.getByCategory(Category.VIDEO));
+		boolean videoAnalyzed = CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), BestPracticeType.getByCategory(Category.VIDEO));
 		boolean startupDelayAnalyzed = SettingsUtil.retrieveBestPractices().contains(BestPracticeType.STARTUP_DELAY);
-		if (videoAnalyzed && startupDelayAnalyzed && isStartUpReminderRequired() && aroView != null
-				&& aroView.getCurrentTabComponent() == aroView.getVideoTab()) {
-			if(null == startUpDelayWarningDialog){
+		if (videoAnalyzed && startupDelayAnalyzed && isStartUpReminderRequired() && aroView != null && aroView.getCurrentTabComponent() == aroView.getVideoTab()) {
+			if (null == startUpDelayWarningDialog) {
 				startUpDelayWarningDialog = new StartUpDelayWarningDialog(aroView, overviewRoute);
-			}else if(null != videoUsageAnalysis){
-				videoUsageAnalysis.loadPrefs();
-				startUpReminder = videoUsageAnalysis.getVideoUsagePrefs().isStartupDelayReminder();
+			} else if (null != videoStreamingAnalysis) {
+				VideoUsagePrefs videoPrefs = videoPrefsController.loadPrefs();
+				startUpReminder = videoPrefs.isStartupDelayReminder();
 			}
 			startUpDelayWarningDialog.setDialogInfo(warningMessage, startUpReminder);
 			startUpDelayWarningDialog.setVisible(true);
-			startUpDelayWarningDialog.setAlwaysOnTop(true);
 		}
 	}
 	
-	private boolean isStartUpReminderRequired(){
+	private boolean isStartUpReminderRequired() {
 		boolean preferenceStartUpReminder = false;
 		boolean startupDelaySet = false;
 		int manifestsSelected = 0;
 		boolean moreManifestsSelected = false;
 		boolean result = true;
 		
-		if (null != videoUsageAnalysis) {
-			videoUsageAnalysis.loadPrefs();
-			videoUsagePrefs = videoUsageAnalysis.getVideoUsagePrefs();
-			preferenceStartUpReminder = videoUsagePrefs.isStartupDelayReminder();
+		if (null != videoStreamingAnalysis) {
+			VideoUsagePrefs videoPrefs = videoPrefsController.loadPrefs();
+			preferenceStartUpReminder = videoPrefs.isStartupDelayReminder();
 
-			if (videoUsageAnalysis.getVideoUsage() != null && CollectionUtils.isNotEmpty(videoUsageAnalysis.getVideoUsage().getManifests())) {
-				for (AROManifest aroManifest : videoUsageAnalysis.getVideoUsage().getManifests()) {
-					if (aroManifest != null && true == aroManifest.isSelected()) {
+			if (videoStreamingAnalysis.getStreamingVideoData() != null && CollectionUtils.isNotEmpty(videoStreamingAnalysis.getStreamingVideoData().getVideoStreamMap().values())) {
+				for (VideoStream videoStream : videoStreamingAnalysis.getStreamingVideoData().getVideoStreamMap().values()) {
+					if (videoStream != null && true == videoStream.isSelected()) {
 						// if any of the manifest file is selected
-						manifestsSelected = manifestsSelected + 1;
+						manifestsSelected++;
 						// User updated the startup delay
-						if (aroManifest.getDelay() > 0 && false == startupDelaySet) {
+						if (videoStream.getManifest().getDelay() > 0 && false == startupDelaySet) {
 							startupDelaySet = true;
 						}
 					}
@@ -277,6 +256,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		
 		return topPanel;
 	}
+ 
 
 	private JPanel getSummaryPane() {
 		JPanel summaryPane = new JPanel(new GridBagLayout());
@@ -290,7 +270,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		Insets inset = new Insets(0, 1, 10, 1);
 		summaryPane.add(videoSummaryPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.HORIZONTAL, inset, 0, 0));
-
+ 
 		return summaryPane;
 	}
 	
@@ -384,10 +364,16 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 			trace = result.getTraceDirectory() != null ? result.getTraceDirectory() : result.getTraceFile();
 			lastOpenedTrace = newTraceTime;
 			bpObservable.refreshModel(analyzerResult);
-			updateUI();
+ 			updateUI();
 		}
-		if (isVideoAvailable(result)) {
-			openStartUpDelayWarningDialog();
+		//open set start up popup, if only start up delay is not already set 
+		GraphPanel graphPanel = aroView.getDiagnosticTab().getGraphPanel();
+		try {
+			if (graphPanel.getVcPlot().getStartUpDelayCollection().isEmpty() && result.getTraceResultType() == TraceResultType.TRACE_DIRECTORY) {
+				openStartUpDelayWarningDialog();
+			}
+		} catch (Exception e) {
+			LOG.error("Refresh error:", e);
 		}
 	}
 	

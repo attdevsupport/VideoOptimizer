@@ -26,6 +26,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.LogManager;
@@ -43,13 +45,15 @@ import com.att.aro.core.packetanalysis.IPktAnazlyzerTimeRangeUtil;
 import com.att.aro.core.packetanalysis.IRrcStateMachineFactory;
 import com.att.aro.core.packetanalysis.ISessionManager;
 import com.att.aro.core.packetanalysis.ITraceDataReader;
-import com.att.aro.core.packetanalysis.IVideoUsageAnalysis;
+import com.att.aro.core.packetanalysis.IVideoTrafficCollector;
 import com.att.aro.core.packetanalysis.pojo.AbstractRrcStateMachine;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.ApplicationPacketSummary;
 import com.att.aro.core.packetanalysis.pojo.BurstCollectionAnalysisData;
 import com.att.aro.core.packetanalysis.pojo.EnergyModel;
+import com.att.aro.core.packetanalysis.pojo.HttpDirection;
+import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.IPPacketSummary;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketCounter;
@@ -63,7 +67,6 @@ import com.att.aro.core.packetreader.pojo.IPPacket;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.settings.SettingsUtil;
-import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 
 /**
@@ -71,84 +74,93 @@ import com.att.aro.core.util.GoogleAnalyticsUtil;
  * Date: November 7, 2014
  */
 public class PacketAnalyzerImpl implements IPacketAnalyzer {
-	
+
+	private static final Logger LOGGER = LogManager.getLogger(PacketAnalyzerImpl.class.getName());
+
+	private final static int DNS_PORT = 53;
 	private ITraceDataReader tracereader;
-	
+
 	private ISessionManager sessionmanager;
-	
+
 	private IRrcStateMachineFactory statemachinefactory;
-	
+
 	private IProfileFactory profilefactory;
-	
+
 	private IEnergyModelFactory energymodelfactory;
-	
+
 	private IBurstCollectionAnalysis burstcollectionanalyzer;
-	
+
 	private IPktAnazlyzerTimeRangeUtil pktTimeUtil;
 
-	private IVideoUsageAnalysis videoUsageAnalyzer;
-	
+	private IVideoTrafficCollector videoTrafficCollector;
+
+	@Autowired
+	private ImageExtractor imageExtractor;
+
+	@Autowired
+	private HtmlExtractor htmlExtractor;
+
 	@Value("${ga.request.timing.pktAnalysisTimings.title}")
 	private String pktAnalysisTitle;
 	@Value("${ga.request.timing.analysisCategory.title}")
 	private String analysisCategory;
-	@Autowired
-	private IMetaDataHelper metaDataHelper;
 
-	private static final Logger LOGGER = LogManager.getLogger(PacketAnalyzerImpl.class.getName());
+	private SortedMap<Double, HttpRequestResponseInfo> requestMap = new TreeMap<>();
 
-	public PacketAnalyzerImpl(){
-	}
-	
 	@Autowired
-	public void setTraceReader(ITraceDataReader tracereader){
-		this.tracereader = tracereader;
+	public void setTraceReader(ITraceDataReader traceReader) {
+		this.tracereader = traceReader;
 	}
+
 	@Autowired
-	public void setSessionManager(ISessionManager sessionmanager){
-		this.sessionmanager = sessionmanager;
+	public void setSessionManager(ISessionManager sessionManager) {
+		this.sessionmanager = sessionManager;
 	}
+
 	@Autowired
-	public void setRrcStateMachineFactory(IRrcStateMachineFactory rrcstatemachinefactory){
-		this.statemachinefactory = rrcstatemachinefactory;
+	public void setRrcStateMachineFactory(IRrcStateMachineFactory rrcStateMachineFactory) {
+		this.statemachinefactory = rrcStateMachineFactory;
 	}
+
 	@Autowired
-	public void setProfileFactory(IProfileFactory profilefactory){
-		this.profilefactory = profilefactory;
+	public void setProfileFactory(IProfileFactory profileFactory) {
+		this.profilefactory = profileFactory;
 	}
+
 	@Autowired
-	public void setEnergyModelFactory(IEnergyModelFactory energymodelfactory){
-		this.energymodelfactory = energymodelfactory;
+	public void setEnergyModelFactory(IEnergyModelFactory energyModelFactory) {
+		this.energymodelfactory = energyModelFactory;
 	}
+
 	@Autowired
-	public void setBurstCollectionAnalayzer(IBurstCollectionAnalysis burstcollectionanalysis){
-		this.burstcollectionanalyzer = burstcollectionanalysis;
+	public void setBurstCollectionAnalayzer(IBurstCollectionAnalysis burstCollectionAnalysis) {
+		this.burstcollectionanalyzer = burstCollectionAnalysis;
 	}
+
 	@Autowired
-	public void setPktTimeRangeUtil(IPktAnazlyzerTimeRangeUtil pktUtil){
+	public void setPktTimeRangeUtil(IPktAnazlyzerTimeRangeUtil pktUtil) {
 		this.pktTimeUtil = pktUtil;
 	}
+
 	@Autowired
-	public void setVideoUsageAnalayzer(IVideoUsageAnalysis videoUsageAnalyzer){
-		this.videoUsageAnalyzer = videoUsageAnalyzer;
+	public void setVideoStreamingAnalysis(IVideoTrafficCollector videoTrafficCollector) {
+		this.videoTrafficCollector = videoTrafficCollector;
 	}
 
-
 	@Override
-	public PacketAnalyzerResult analyzeTraceFile(String traceFilePath, Profile profile,
-			AnalysisFilter filter) throws IOException{
+	public PacketAnalyzerResult analyzeTraceFile(String traceFilePath, Profile profile, AnalysisFilter filter) throws IOException {
 		TraceFileResult result = tracereader.readTraceFile(traceFilePath);
-		
-		return finalResult(result,profile,filter);
+
+		return finalResult(result, profile, filter);
 	}
+
 	@Override
-	public PacketAnalyzerResult analyzeTraceDirectory(String traceDirectory, Profile profile,
-			AnalysisFilter filter) throws FileNotFoundException{
+	public PacketAnalyzerResult analyzeTraceDirectory(String traceDirectory, Profile profile, AnalysisFilter filter) throws FileNotFoundException {
 		long bpStartTime = System.currentTimeMillis();
 		TraceDirectoryResult result = tracereader.readTraceDirectory(traceDirectory);
-		if(filter !=null){
+		if (filter != null) {
 			TimeRange tempTimeRange = filter.getTimeRange();
-			if(tempTimeRange != null){
+			if (tempTimeRange != null) {
 				TraceDirectoryResult tempResult = (TraceDirectoryResult) pktTimeUtil.getTimeRangeResult(result, tempTimeRange);
 				result.setAlarmInfos(tempResult.getAlarmInfos());
 				result.setBatteryInfos(tempResult.getBatteryInfos());
@@ -162,35 +174,32 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				result.setTemperatureInfos(tempResult.getTemperatureInfos());
 				result.setLocationEventInfos(tempResult.getLocationEventInfos());
 				result.setWifiInfos(tempResult.getWifiInfos());
-				result.getCpuActivityList().updateTimeRange(
-						tempTimeRange.getBeginTime(), tempTimeRange.getEndTime());
+				result.getCpuActivityList().updateTimeRange(tempTimeRange.getBeginTime(), tempTimeRange.getEndTime());
 				result.setDeviceKeywordInfos(tempResult.getDeviceKeywordInfos());
 				result.setAttenautionEvent(tempResult.getAttenautionEvent());
 			}
 		}
-		result.setMetaData(metaDataHelper.initMetaData(result));
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(pktAnalysisTitle,
-				System.currentTimeMillis() - bpStartTime, analysisCategory);
-		return finalResult(result,profile,filter);
+		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(pktAnalysisTitle, System.currentTimeMillis() - bpStartTime, analysisCategory);
+		return finalResult(result, profile, filter);
 	}
 
-	protected PacketAnalyzerResult finalResult(AbstractTraceResult result, Profile profile, AnalysisFilter filter){
+	protected PacketAnalyzerResult finalResult(AbstractTraceResult result, Profile profile, AnalysisFilter filter) {
 		PacketAnalyzerResult data = new PacketAnalyzerResult();
-		List<PacketInfo> filteredPackets;  // List of packets included in analysis (application filtered)
+		List<PacketInfo> filteredPackets; // List of packets included in analysis (application filtered)
 		Profile aProfile = profile;
-		if(aProfile == null){
-			aProfile = profilefactory.createLTEdefault();//if the user doesn't load any profile.....
+		if (aProfile == null) {
+			aProfile = profilefactory.createLTEdefault();// if the user doesn't load any profile.....
 			aProfile.setName("AT&T LTE");
 		}
-		
+
 		// for the situation, filter out all no-ip packets and caused the allpackets is empty, need to refactor
-		if (result!=null && result.getAllpackets()!=null && result.getAllpackets().size()==0){
+		if (result != null && result.getAllpackets() != null && result.getAllpackets().size() == 0) {
 			data.setTraceresult(result);
 			return data;
 		}
-		
+
 		TimeRange timeRange = null;
-		
+
 		filteredPackets = new ArrayList<PacketInfo>();
 		if (filter == null) {
 			if (result != null) {
@@ -198,32 +207,33 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			}
 		} else {// do the filter
 			timeRange = filter.getTimeRange();
-			if (result!=null) {
+			if (result != null) {
 				filteredPackets = filterPackets(filter, result.getAllpackets());
 			}
 		}
- 				
- 		// Set the Abstract Trace Data with the filtered packets - All packets are not necessary.
+
+		// Set the Abstract Trace Data with the filtered packets - All packets are not necessary.
 		// Fix for Sev 2 Issue correcting the throughput graph - DE187846
 		// Fix for Sev 2 Time Range Analysis Issue - DE187848
-		if(result != null) {
+		if (result != null) {
 			result.setAllpackets(filteredPackets);
-			sessionmanager.setiOSSecureTracePath(result.getTraceDirectory());//for iOS trace
+			sessionmanager.setiOSSecureTracePath(result.getTraceDirectory());// for iOS trace
 		}
-		List<Session> sessionlist = sessionmanager.assembleSession(filteredPackets);
+		List<Session> sessionList = sessionmanager.assembleSession(filteredPackets);
+		generateRequestMap(sessionList);
 		List<PacketInfo> filteredPacketsNoDNSUDP = new ArrayList<PacketInfo>();
-		for(Session session: sessionlist){
-			for(PacketInfo packet:session.getPackets()){
+		for (Session session : sessionList) {
+			for (PacketInfo packet : session.getPackets()) {
 				if (packet.getPacket() instanceof TCPPacket) {
 					filteredPacketsNoDNSUDP.add(packet);
 				}
 			}
 		}
 		Statistic stat = this.getStatistic(filteredPacketsNoDNSUDP);
-		if (result != null && stat.getAppName() != null && stat.getAppName().size() == 1 && stat.getAppName().contains("Unknown")){
+		if (result != null && stat.getAppName() != null && stat.getAppName().size() == 1 && stat.getAppName().contains("Unknown")) {
 			stat.setAppName(new HashSet<String>(result.getAppInfos()));
 		}
-		
+
 		int totBytes = 0;
 		int totPayloadBytes = 0;
 		if (!CollectionUtils.isEmpty(filteredPackets)) {
@@ -234,39 +244,49 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		}
 		stat.setTotalByte(totBytes);
 		stat.setTotalPayloadBytes(totPayloadBytes);
-		//stat is used to get some info for RrcStateMachine etc	
-		
-		if (result!=null){
+		// stat is used to get some info for RrcStateMachine etc
+
+		if (result != null) {
 			LOGGER.debug("Starting pre processing in PAI");
-			AbstractRrcStateMachine statemachine = statemachinefactory.create(filteredPackets, aProfile,
-					stat.getPacketDuration(), result.getTraceDuration(), stat.getTotalByte(), timeRange);
-			
-			EnergyModel energymodel = energymodelfactory.create(aProfile, statemachine.getTotalRRCEnergy(),
-					result.getGpsInfos(), result.getCameraInfos(), result.getBluetoothInfos(), result.getScreenStateInfos());
-			
-			BurstCollectionAnalysisData burstcollectiondata = burstcollectionanalyzer.analyze(filteredPackets,
-					aProfile, stat.getPacketSizeToCountMap(), statemachine.getStaterangelist(),
-					result.getUserEvents(), result.getCpuActivityList().getCpuActivities(), sessionlist);
+			AbstractRrcStateMachine statemachine = statemachinefactory.create(filteredPackets, aProfile, stat.getPacketDuration(), result.getTraceDuration(), stat.getTotalByte(),
+					timeRange);
+
+			EnergyModel energymodel = energymodelfactory.create(aProfile, statemachine.getTotalRRCEnergy(), result.getGpsInfos(), result.getCameraInfos(),
+					result.getBluetoothInfos(), result.getScreenStateInfos());
+
+			BurstCollectionAnalysisData burstcollectiondata = burstcollectionanalyzer.analyze(filteredPackets, aProfile, stat.getPacketSizeToCountMap(),
+					statemachine.getStaterangelist(), result.getUserEvents(), result.getCpuActivityList().getCpuActivities(), sessionList);
 			data.clearBPResults();
 			try {
-				List<BestPracticeType> imgVidBP = BestPracticeType.getByCategory(BestPracticeType.Category.VIDEO);
-				imgVidBP.add(BestPracticeType.IMAGE_MDATA);
-				imgVidBP.add(BestPracticeType.IMAGE_CMPRS);
-				imgVidBP.add(BestPracticeType.IMAGE_FORMAT);
-				imgVidBP.add(BestPracticeType.IMAGE_COMPARE);
-				if (CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), imgVidBP)) {
-					videoUsageAnalyzer.clearData();
-					data.setVideoUsage(videoUsageAnalyzer.analyze(result, sessionlist));
+				List<BestPracticeType> videoBPList = BestPracticeType.getByCategory(BestPracticeType.Category.VIDEO);
+				if (CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), videoBPList)) {
+					videoTrafficCollector.clearData();
+					data.setStreamingVideoData(videoTrafficCollector.collect(result, sessionList, requestMap));
 				} else {
-					data.setVideoUsage(videoUsageAnalyzer.clearData());
+					data.setStreamingVideoData(videoTrafficCollector.clearData());
 				}
 			} catch (Exception ex) {
+				ex.printStackTrace();
 				LOGGER.error("Error in Video usage analysis :" + ex.getMessage(), ex);
 			}
-			
+
+			try {
+				List<BestPracticeType> imageBPList = new ArrayList<>();
+				imageBPList.add(BestPracticeType.IMAGE_MDATA);
+				imageBPList.add(BestPracticeType.IMAGE_CMPRS);
+				imageBPList.add(BestPracticeType.IMAGE_FORMAT);
+				imageBPList.add(BestPracticeType.IMAGE_COMPARE);
+				if (CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), imageBPList)) {
+					imageExtractor.execute(result, sessionList, requestMap);
+				}
+			} catch (Exception ex) {
+				LOGGER.error("Error in Image extraction:" + ex.getMessage(), ex);
+			}
+
+			htmlExtractor.execute(result, sessionList, requestMap);
 			data.setBurstCollectionAnalysisData(burstcollectiondata);
 			data.setEnergyModel(energymodel);
-			data.setSessionlist(sessionlist);
+			data.setSessionlist(sessionList);
 			data.setStatemachine(statemachine);
 			data.setStatistic(stat);
 			data.setTraceresult(result);
@@ -283,67 +303,60 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 	 * @return packets/PacketInfos filtered
 	 */
 	public List<PacketInfo> filterPackets(AnalysisFilter filter, List<PacketInfo> packetsInfo) {
-		
-		List<PacketInfo> filteredPackets = new ArrayList<PacketInfo>();	// create new packets according to the filter setting
+
+		List<PacketInfo> filteredPackets = new ArrayList<PacketInfo>(); // create new packets according to the filter setting
 		TimeRange timeRange = filter.getTimeRange();
 		int packetIdx = 0;
-		
-		boolean ipv4Flag = false;
-		boolean ipv6Flag = false;
-		boolean udpFlag = false;
-		
-		if(!(filter.isIpv4Sel() && filter.isIpv6Sel() && filter.isUdpSel())){
-			
-			if(!(filter.isIpv4Sel() && filter.isIpv6Sel())){
-			
-				if(!filter.isIpv4Sel()){
-					ipv4Flag = true;
-				}
-				if(!filter.isIpv6Sel()){
-					ipv6Flag = true;
-				}
-			}
-			if(!filter.isUdpSel()){
-				udpFlag = true;
-			}
-			
-		}
+
+		// Ff you select the check box, you want to include it.
+		// All of of the skip-flags are false at first.
+		boolean ipv4Skip = !filter.isIpv4Sel();
+		boolean ipv6Skip = !filter.isIpv6Sel();
+		boolean udpSkip = !filter.isUdpSel();
+		boolean dnsSkip = !filter.isDnsSelection();
 
 		for (PacketInfo packetInfo : packetsInfo) {
 
-			if(ipv4Flag && packetInfo.getRemoteIPAddress() instanceof Inet4Address){
+			if (ipv4Skip && packetInfo.getRemoteIPAddress() instanceof Inet4Address) {
 				continue;
 			}
-			if(ipv6Flag && packetInfo.getRemoteIPAddress() instanceof Inet6Address){
+			if (ipv6Skip && packetInfo.getRemoteIPAddress() instanceof Inet6Address) {
 				continue;
 			}
-			if(udpFlag && packetInfo.getPacket() instanceof UDPPacket){
-				continue;
-
+			if (udpSkip && packetInfo.getPacket() instanceof UDPPacket) {
+				UDPPacket udpPacket = (UDPPacket) packetInfo.getPacket();
+				if (!(DNS_PORT == udpPacket.getDestinationPort() || DNS_PORT == udpPacket.getSourcePort())) {
+					continue;
+				}
+			}
+			if (dnsSkip && packetInfo.getPacket() instanceof UDPPacket) {
+				UDPPacket udpPacket = (UDPPacket) packetInfo.getPacket();
+				if (DNS_PORT == udpPacket.getDestinationPort() || DNS_PORT == udpPacket.getSourcePort()) {
+					continue;
+				}
 			}
 
 			// Check time range
 			double timestamp = packetInfo.getTimeStamp();
-			if (timeRange != null
-						&& (timeRange.getBeginTime() > timestamp || timeRange.getEndTime() < timestamp)) {
-					// Not in time range
-					continue;
+			if (timeRange != null && (timeRange.getBeginTime() > timestamp || timeRange.getEndTime() < timestamp)) {
+				// Not in time range
+				continue;
 			}
 			// Check to see if application is selected
 			if (filter.getPacketColor(packetInfo) == null) {
-					// App unknown by filter
+				// App unknown by filter
 				continue;
 			}
 
 			packetInfo.setPacketId(++packetIdx);
 			filteredPackets.add(packetInfo);
 		}
-	
+
 		return filteredPackets;
 	}
 
 	@Override
-	public Statistic getStatistic(List<PacketInfo> packetlist){
+	public Statistic getStatistic(List<PacketInfo> packetlist) {
 		Statistic stat = new Statistic();
 		Set<String> appNames = new HashSet<String>();
 		List<PacketInfo> packets = packetlist;
@@ -356,13 +369,13 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			List<IPPacketSummary> ipPacketSummary = new ArrayList<IPPacketSummary>();
 			List<ApplicationPacketSummary> applicationPacketSummary = new ArrayList<ApplicationPacketSummary>();
 			Map<Integer, Integer> packetSizeToCountMap = new HashMap<Integer, Integer>();
-			
+
 			PacketInfo lastPacket = packets.get(packets.size() - 1);
 			Map<String, PacketCounter> appPackets = new HashMap<String, PacketCounter>();
 			Map<InetAddress, PacketCounter> ipPackets = new HashMap<InetAddress, PacketCounter>();
 			for (PacketInfo packet : packets) {
 				totalBytes += packet.getLen();
-				
+
 				if (packet.getPacket() instanceof TCPPacket) {
 					TCPPacket tcp = (TCPPacket) packet.getPacket();
 					if ((tcp.isSsl()) || (tcp.getDestinationPort() == 443) || (tcp.getSourcePort() == 443)) {
@@ -370,7 +383,6 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 					}
 					totalTCPBytes += packet.getLen();
 				}
-
 
 				String appName = packet.getAppName();
 				appNames.add(appName);
@@ -405,17 +417,16 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				}
 			}
 			for (Map.Entry<InetAddress, PacketCounter> ipPacketMap : ipPackets.entrySet()) {
-				ipPacketSummary.add(new IPPacketSummary(ipPacketMap.getKey(), ipPacketMap.getValue().getPacketCount(), ipPacketMap
-						.getValue().getTotalBytes()));
+				ipPacketSummary.add(new IPPacketSummary(ipPacketMap.getKey(), ipPacketMap.getValue().getPacketCount(), ipPacketMap.getValue().getTotalBytes()));
 			}
 			for (Map.Entry<String, PacketCounter> appPacketMap : appPackets.entrySet()) {
-				applicationPacketSummary.add(new ApplicationPacketSummary(appPacketMap.getKey(), appPacketMap
-						.getValue().getPacketCount(), appPacketMap.getValue().getTotalBytes()));
+				applicationPacketSummary
+						.add(new ApplicationPacketSummary(appPacketMap.getKey(), appPacketMap.getValue().getPacketCount(), appPacketMap.getValue().getTotalBytes()));
 			}
 
 			packetsDuration = lastPacket.getTimeStamp() - packets.get(0).getTimeStamp();
 			avgKbps = packetsDuration != 0 ? totalTCPBytes * 8.0 / 1000.0 / packetsDuration : 0.0;
-			
+
 			stat.setApplicationPacketSummary(applicationPacketSummary);
 			stat.setAppName(appNames);
 			stat.setAverageKbps(avgKbps);
@@ -430,8 +441,54 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			stat.setTotalTCPPackets(packets.size());
 			stat.setPacketSizeToCountMap(packetSizeToCountMap);
 		}
-		
+
 		stat.setAppName(appNames);
 		return stat;
 	}
-}//end class
+
+	/*
+	 * Create a TreeMap of all pertinent Requests keyed by timestamp plus tie-breaker
+	 *
+	 * @param sessionlist
+	 * 
+	 * @return Map of Requests
+	 */
+	public void generateRequestMap(List<Session> sessionList) {
+		int counter = 0;
+		requestMap.clear();
+		for (Session session : sessionList) {
+			List<HttpRequestResponseInfo> rri = session.getRequestResponseInfo();
+			for (HttpRequestResponseInfo rrInfo : rri) {
+				if (HttpDirection.REQUEST.equals(rrInfo.getDirection()) && HttpRequestResponseInfo.HTTP_GET.equals(rrInfo.getRequestType())
+						&& rrInfo.getObjNameWithoutParams().contains(".")) {
+					rrInfo.setSession(session);
+					double key = getReqInfoKey(rrInfo, 0);
+					if (requestMap.containsKey(key)) {
+						do {
+							key = getReqInfoKey(rrInfo, ++counter);
+						} while (requestMap.containsKey(key));
+						counter = 0;
+					}
+					requestMap.put(key, rrInfo);
+				}
+			}
+			// Set a forward link for all packets in session to the next packet (within the session).
+			List<PacketInfo> packets = session.getPackets();
+			for (int i = 0; i < packets.size() - 1; i++) {
+				packets.get(i).getPacket().setNextPacketInSession(packets.get(i + 1).getPacket());
+			}
+		}
+	}
+
+	/*
+	 * build key for storing requests in order with tie-breaker support
+	 */
+	private Double getReqInfoKey(HttpRequestResponseInfo rrInfo, int counter) {
+		return rrInfo.getTimeStamp() * 1000000 + counter;
+	}
+
+	public Map<Double, HttpRequestResponseInfo> getReqMap() {
+		return requestMap;
+	}
+
+}// end class

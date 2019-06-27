@@ -61,6 +61,7 @@ import com.att.aro.core.datacollector.pojo.CollectorStatus;
 import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
+import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
@@ -73,6 +74,7 @@ import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.PcapConfirmationImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.VideoOption;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.mvc.AROController;
 import com.att.aro.ui.collection.AROCollectorSwingWorker;
 import com.att.aro.ui.commonui.ARODiagnosticsOverviewRouteImpl;
@@ -159,6 +161,8 @@ public class MainFrame implements SharedAttributesProcesses {
 	private int rtEdge = screenSize.width - playbackWidth;
 	private long lastOpened = 0;
 	private AROSwingWorker<Void, Void> aroSwingWorker;
+	
+	private Hashtable<String,Object> previousOptions;
 	
 	public static MainFrame getWindow() {
 		return window;
@@ -644,6 +648,7 @@ public class MainFrame implements SharedAttributesProcesses {
 
 	@Override
 	public void startCollector(IAroDevice device, String traceFolderName, Hashtable<String, Object> extraParams) {
+		previousOptions = extraParams;
 		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 1, "startCollector",
 				device, traceFolderName, extraParams).execute();
 	}
@@ -658,6 +663,7 @@ public class MainFrame implements SharedAttributesProcesses {
 	public void liveVideoDisplay(IDataCollector collector) {
 		liveView = new LiveScreenViewDialog(this, collector);
 		liveView.setVisible(true);
+		liveView.setVideoOption(aroController.getVideoOption());
 		LOG.info("liveVideoDisplay started");
 	}
 
@@ -734,7 +740,14 @@ public class MainFrame implements SharedAttributesProcesses {
 					cancelCollector();
 				}
 			}else{
-				MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(), statusResult.getError().getDescription());
+				String errorMessage = statusResult.getError().getDescription();				
+				if(statusResult.getError().getCode() == 512){
+					MessageDialogFactory.getInstance().showInformationDialog(window.getJFrame(), BUNDLE.getString("Error.rvi.resetconnection"), BUNDLE.getString("Error.rvi.resetconnection.title"));					
+				} else if(errorMessage.contains("0xe8008016")) {
+					MessageDialogFactory.getInstance().showInformationDialog(window.getJFrame(), BUNDLE.getString("Error.app.provision.invalidentitle"), BUNDLE.getString("Error.app.provision.invalidentitle.title"));					
+				}else {
+					MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(), errorMessage);
+				}
 			}
 			return;
 		}
@@ -844,5 +857,13 @@ public class MainFrame implements SharedAttributesProcesses {
 	@Override
 	public String[] getApplicationsList(String id) {
 		return aroController.getApplicationsList(id);
+	}
+
+	public Hashtable<String,Object> getPreviousOptions() {
+		return previousOptions;
+	}
+
+	public void setPreviousOptions(Hashtable<String,Object> previousOptions) {
+		this.previousOptions = previousOptions;
 	}
 }

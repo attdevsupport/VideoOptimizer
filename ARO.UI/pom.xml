@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>2.3.0</version>
+        <version>2.4.0</version>
         <relativePath>../ARO.Parent</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
 		<main.class>com.att.aro.ui.view.MainFrame</main.class>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.deploy.skip>true</maven.deploy.skip>
-		<vo.version>2.3.0</vo.version>
+		<vo.version>2.4.0</vo.version>
 	</properties>
 
 	<!-- repositories -->
@@ -125,7 +125,12 @@
 		    <artifactId>swingx</artifactId>
 		    <version>1.6.1</version>
 		</dependency>
-
+		<dependency>
+		    <groupId>org.projectlombok</groupId>
+		    <artifactId>lombok</artifactId>
+		    <version>1.18.2</version>
+		    <scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<!-- build -->

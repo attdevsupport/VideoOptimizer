@@ -5,10 +5,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.pojo.ByteRange;
+import com.att.aro.core.util.StringParse;
 import com.att.aro.core.videoanalysis.IVideoEventDataHelper;
 import com.att.aro.core.videoanalysis.pojo.VideoEventData;
 import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
@@ -82,12 +84,12 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 			}
 
 			case ByteStart: {
-				ved.setByteStart(strData[i]);
+				ved.setByteStart(StringParse.stringToDouble(strData[i], 0));
 				break;
 			}
 
 			case ByteEnd: {
-				ved.setByteEnd(strData[i]);
+				ved.setByteEnd(StringParse.stringToDouble(strData[i], 0));
 				break;
 			}
 
@@ -110,14 +112,6 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 				break;
 			}
 			
-			case SegmentReference: {
-				ved.setSegmentReference(strData[i]);
-				if ("init".equals(strData[i])){
-					ved.setSegment(0);
-				}
-				break;
-			}
-			
 			case HexSegment: {
 				try {
 					ved.setSegment(Integer.valueOf(strData[i], 16));
@@ -127,12 +121,25 @@ public class VideoEventDataHelperImpl implements IVideoEventDataHelper{
 				}
 				break;
 			}
+			
+			case SegmentReference: {
+				ved.setSegmentReference(strData[i]);
+				if ("init".equals(strData[i])){
+					ved.setSegment(0);
+				}
+				break;
+			}
 
 			case SegmentStartTime: {
 				ved.setSegmentStartTime(strData[i]);
 				break;
 			}
-
+			
+			case SegmentAutoCount: {
+				ved.setSegmentAutoCount(!StringUtils.isEmpty(strData[i]));
+				break;
+			}
+			
 			case Bitrate: {
 				ved.setBitrate(strData[i]);
 				break;

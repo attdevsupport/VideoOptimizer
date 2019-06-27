@@ -16,16 +16,25 @@
 package com.att.aro.ui.view.statistics;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
 import javax.swing.JPanel;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.TabPanelCommon;
 import com.att.aro.ui.commonui.TabPanelCommonAttributes;
@@ -47,6 +56,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 	private static final long serialVersionUID = 1L;
 	private static final String EMPTY_SPACE = "                              ";
 	private final TabPanelCommon tabPanelCommon = new TabPanelCommon();
+	private static final Logger LOG = LogManager.getLogger(DateTraceAppDetailPanel.class.getName());
 	
 	
 	/**
@@ -121,7 +131,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 
 		String traceDirectory = traceResults.getTraceDirectory();
 		int lastIndexOf = traceDirectory.lastIndexOf(Util.FILE_SEPARATOR);
-		tabPanelCommon.setText(LabelKeys.bestPractices_trace, lastIndexOf > -1 ? traceDirectory.substring((lastIndexOf + 1)) : traceDirectory);
+		tabPanelCommon.setText(LabelKeys.bestPractices_trace, lastIndexOf > -1 ? traceDirectory.substring((lastIndexOf + 1)) : traceDirectory, getOpenFolderAdapter());
 
 		StringBuilder appList = new StringBuilder();
 		boolean firstTimeFlag = true;
@@ -139,6 +149,27 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		tabPanelCommon.setText(LabelKeys.bestPractices_application, appList.toString());
 	}
 	
+	private MouseAdapter getOpenFolderAdapter() {
+		MouseAdapter openFolderAction = new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+
+				Desktop desktop = null;
+				if (Desktop.isDesktopSupported()) {
+					desktop = Desktop.getDesktop();
+					try {
+						File traceFile = new File(PreferenceHandlerImpl.getInstance().getPref("TRACE_PATH"));
+						desktop.open(traceFile);
+					} catch (IOException ex) {
+						LOG.error("Error opening the Trace Folder : " +ex.getMessage());
+					}
+				}
+			}
+		};
+		return openFolderAction;
+	}
+
+
 	private void refreshTraceDirectory(TraceDirectoryResult traceDirectoryResults) {
 		tabPanelCommon.setText(LabelKeys.bestPractices_applicationversion,
 				traceDirectoryResults.getCollectorVersion());

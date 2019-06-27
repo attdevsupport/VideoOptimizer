@@ -21,6 +21,7 @@ import java.text.MessageFormat;
 import javax.swing.JPanel;
 
 import com.att.aro.core.ApplicationConfig;
+import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.TabPanelJPanel;
@@ -62,5 +63,15 @@ public class WaterfallTab extends TabPanelJPanel {
 	public void updateMainFrame(Object object) {
 		route.updateDiagnosticsTab(object);
 	}
+	
+	/*
+	 * Takes graph to the range of 100  with respect 
+	 * to the Multiple Simultaneous Connection timestamp
+	 */
+	public void updateGraph(HttpRequestResponseInfo httpReqRespInfo) {
+		int lowPoint = (int) (Math.floor(httpReqRespInfo.getTimeStamp())/100);
+		panel.setTimeRange(lowPoint*100, (lowPoint*100)+100);						
+	}
+	
 
 }

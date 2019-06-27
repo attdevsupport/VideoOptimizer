@@ -16,6 +16,7 @@
 package com.att.aro.ui.view.waterfalltab;
 
 import static com.att.aro.ui.utils.ResourceBundleHelper.getMessageString;
+import static org.apache.commons.collections.CollectionUtils.isEmpty;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -368,7 +369,7 @@ public class WaterfallPanel extends TabPanelJPanel {
 	 * @param low
 	 * @param high
 	 */
-	private void setTimeRange(double low, double high) {
+	public void setTimeRange(double low, double high) {
 		double lTime = low;
 		double hTime = high;
 		boolean zoomInEnabled = true;
@@ -567,10 +568,21 @@ public class WaterfallPanel extends TabPanelJPanel {
 	}
 	
 	private void setCrosshairs(AROTraceData data) {
-		try {
-			Thread.sleep(500);//Gives time for best practices to run and gather required data
-		} catch (InterruptedException e) {
-			//Do nothing
+		double time = getCrosshairTime(data);
+		CategoryPlot plot = getChartPanel().getChart().getCategoryPlot();
+		plot.setRangeCrosshairLockedOnData(true);
+		plot.setRangeCrosshairValue(time);
+		plot.setRangeCrosshairVisible(true);
+	}
+
+	private double getCrosshairTime(AROTraceData data) {
+		int iterations = 0;
+		while (iterations++ < 10 && (data == null || isEmpty(data.getBestPracticeResults()))) {
+			try {
+				Thread.sleep(250);// Gives time for best practices to gather required data
+			} catch (InterruptedException e) {
+				// Do nothing
+			}
 		}
 		double time = 0.0;
 		if (data != null && CollectionUtils.isNotEmpty(data.getBestPracticeResults())) {
@@ -582,10 +594,7 @@ public class WaterfallPanel extends TabPanelJPanel {
 						.getStartTimeStamp();
 			}
 		}
-		CategoryPlot plot = getChartPanel().getChart().getCategoryPlot();
-		plot.setRangeCrosshairLockedOnData(true);
-		plot.setRangeCrosshairValue(time);
-		plot.setRangeCrosshairVisible(true);
+		return time;
 	}
 
 	class WaterfallCategoryTooltipRenderer extends StandardCategoryToolTipGenerator {
@@ -595,7 +604,10 @@ public class WaterfallPanel extends TabPanelJPanel {
 		@Override
 		public String generateToolTip(CategoryDataset dataset, int row, int column) {
 			if(time < -EPS) {
-				return super.generateToolTip(dataset, row, column);
+				String toolTipText = super.generateToolTip(dataset, row, column);
+				String trimmedTooltip = toolTipText.indexOf(",") < 0 || toolTipText.indexOf("- ") < 0 ? toolTipText
+						: toolTipText.substring(toolTipText.indexOf(",") + 1, toolTipText.indexOf("- "));
+				return trimmedTooltip;
 			}
 			int maxSimultConnectionCount = 0;
 			boolean hasSessions = data != null && data.getAnalyzerResult() != null
@@ -662,6 +674,17 @@ public class WaterfallPanel extends TabPanelJPanel {
 				}
 			}
 		}
+	}
+
+	public String formatTooltip(String toolTip) {
+		String formattedString = "";
+		if (toolTip.indexOf(". ") > 0
+				&& toolTip.indexOf(" - ") > 0) {
+			formattedString = toolTip.substring(toolTip.indexOf(". ")+1, toolTip.indexOf(" - "));
+		} else {
+			formattedString = toolTip;
+		}
+		return formattedString;
 	}
 
 }

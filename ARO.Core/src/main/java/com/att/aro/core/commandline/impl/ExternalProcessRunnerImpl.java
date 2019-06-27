@@ -20,10 +20,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.commandline.IProcessFactory;
@@ -71,6 +73,13 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 	@Override
 	public String executeCmdRunner(String cmd, boolean earlyExit, String msg) {
 		ProcessBuilder pbldr = new ProcessBuilder().redirectErrorStream(true);
+
+		String binPath = Util.getBinPath();
+		if (!StringUtils.isEmpty(binPath)) {
+			Map<String, String> envs = pbldr.environment();
+			envs.put("PATH", System.getenv("PATH") + ":" + binPath);
+		}
+
 		if (!Util.isWindowsOS()) {
 			pbldr.command(new String[] { "bash", "-c", cmd });
 		} else {
@@ -81,14 +90,14 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		try {
 			Process proc = pbldr.start();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-			
+
 			String line = null;
 			while (true) {
 				line = reader.readLine();
 				if (line == null) {
 					break;
 				}
-				if(earlyExit && line.trim().equals(msg)) {
+				if (earlyExit && line.trim().equals(msg)) {
 					LOG.debug("read a line:" + line);
 					builder.append(line);
 					break;

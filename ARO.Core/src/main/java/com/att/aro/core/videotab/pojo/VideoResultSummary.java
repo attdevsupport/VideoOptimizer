@@ -35,12 +35,12 @@ import com.att.aro.core.bestpractice.pojo.VideoRedundancyResult;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.VideoTcpConnectionResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoBufferData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 // this is populated in the wrong place
 
@@ -144,27 +144,27 @@ public class VideoResultSummary {
 		ipAddress = ipSessionsMap.keySet().size();
 		ipSessions = allSessions.size();
 
-		VideoUsage videoUsage = trace.getAnalyzerResult().getVideoUsage();
-		if (videoUsage == null) {
+		StreamingVideoData streamingVideoData;
+		if ((streamingVideoData = trace.getAnalyzerResult().getStreamingVideoData()) == null) {
 			return;
 		}
-		Collection<AROManifest> selectedManifests = videoUsage.getManifests();
-		movieMBytes = calculateMBytes(selectedManifests, false);
-		totalMBytes = calculateMBytes(selectedManifests, true);
+		Collection<VideoStream> selectedVideoStreams = streamingVideoData.getVideoStreams();
+		movieMBytes = calculateMBytes(selectedVideoStreams, false);
+		totalMBytes = calculateMBytes(selectedVideoStreams, true);
 
-		if (trace.getAnalyzerResult().getVideoUsage().getChunkPlayTimeList().isEmpty()) {
+		if (trace.getAnalyzerResult().getStreamingVideoData().getStreamingVideoCompiled().getChunkPlayTimeList().isEmpty()) {
 			startupDelayStatus = false;
 		} else {
 			startupDelayStatus = true;
 		}
 	}
 
-	private double calculateMBytes(Collection<AROManifest> manifests, boolean allMovie) {
+	private double calculateMBytes(Collection<VideoStream> manifests, boolean allMovie) {
 
 		double sumtotalBytes = 0;
 		if (manifests != null && !manifests.isEmpty()) {
 			if (allMovie) {
-				for (AROManifest manifest : manifests) {
+				for ( VideoStream manifest : manifests) {
 					if (manifest != null) {
 						Collection<VideoEvent> videoEvents = manifest.getVideoEventList() != null ? manifest.getVideoEventList().values() : new ArrayList<>();
 						for (VideoEvent videoEvent : videoEvents) {
@@ -173,7 +173,7 @@ public class VideoResultSummary {
 					}
 				}
 			} else {
-				for (AROManifest manifest : manifests) {
+				for ( VideoStream manifest : manifests) {
 					if (manifest != null && manifest.isSelected() && (manifest.getVideoEventList() != null)) {
 						for (VideoEvent videoEvent : manifest.getVideoEventList().values()) {
 							sumtotalBytes += videoEvent.getTotalBytes();

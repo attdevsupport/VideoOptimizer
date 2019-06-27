@@ -1,13 +1,16 @@
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+<!-- -->	
+
 	<parent>
 		<groupId>com.att.aro</groupId>
 		<artifactId>vo-parent</artifactId>
-		<version>2.3.0</version>
+		<version>2.4.0</version>
 		<relativePath>../ARO.Parent</relativePath>
-	</parent>
+	</parent> 
 
 	<artifactId>vo-core</artifactId>
 	<packaging>jar</packaging>
@@ -25,29 +28,33 @@
 		<repository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
-			<url>http://repo1.maven.org/maven2</url>
+			<url>https://repo1.maven.org/maven2/</url>
 		</repository>
+		<repository>
+	        <id>jitpack.io</id>
+	        <url>https://jitpack.io</url>
+	    </repository>				
 		<repository>
 			<id>apache-releases</id>
 			<name>Apache Releases</name>
-            <url>https://repository.apache.org/content/repositories/releases</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>		
-        </repository>
+			<url>https://repository.apache.org/content/repositories/releases</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
 		<repository>
 			<id>apache-snapshots</id>
 			<name>Apache Snapshots</name>
-            <url>https://repository.apache.org/content/repositories/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
+			<url>https://repository.apache.org/content/repositories/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
 		</repository>
 		<repository>
 			<id>atlassian-public</id>
@@ -64,38 +71,39 @@
 			</releases>
 		</repository>
 		<repository>
-			<id>sonatype-public</id>
-			<name>Sonatype Public</name>
-			<url>http://repository.sonatype.org/content/groups/public</url>
-		</repository>
+      <id>rso-public-grid</id>
+      <url>https://repository.sonatype.org/content/groups/sonatype-public-grid/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
 		<repository>
 			<id>sonatype-flex</id>
 			<name>Sonatype Flex</name>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</repository>
-		      <repository>
-         <id>OSGeo</id>
-         <url>http://download.osgeo.org/webdav/geotools</url>
-      </repository>
-      <repository>
-			<id>jitpack.io</id>
-			<name>jitpack</name>
-			<url>https://jitpack.io</url>
-		</repository>
 		<repository>
+			<id>OSGeo</id>
+			<url>http://download.osgeo.org/webdav/geotools</url>
+		</repository>
+	    <repository>
 			<id>Google</id>
 			<name>Google</name>
 			<url>https://maven.google.com/</url>
 		</repository>
 	</repositories>
+	
 	<pluginRepositories>
 		<pluginRepository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
-			<url>http://repo1.maven.org/maven2</url>
+			<url>https://repo1.maven.org/maven2/</url>
 		</pluginRepository>
-		
 	</pluginRepositories>
+	
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -119,6 +127,7 @@
 			<version>4.5.3</version>
 		</dependency>
 
+		<!-- AMVOTS upload -->
 		<dependency>
 			<groupId>org.glassfish.jersey.core</groupId>
 			<artifactId>jersey-server</artifactId>
@@ -151,16 +160,24 @@
 			<version>2.2.11</version>
 		</dependency>
 		<!-- end jaxb support -->
+
 		<dependency>
 			<groupId>com.drewnoakes</groupId>
 			<artifactId>metadata-extractor</artifactId>
 			<version>2.8.1</version>
 		</dependency>
+
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-imaging</artifactId>
+		    <version>1.0-SNAPSHOT</version>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-imaging</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<artifactId>commons-collections4</artifactId>
+			<version>4.3</version>
 		</dependency>
+
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
@@ -346,10 +363,10 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.sikulix</groupId>
-			<artifactId>sikulixapi</artifactId>
-			<version>1.1.0</version>
-		</dependency>
+		    <groupId>com.sikulix</groupId>
+		    <artifactId>sikulixapi</artifactId>
+		    <version>1.1.1</version>
+		</dependency>	
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -361,7 +378,12 @@
 			<artifactId>meanbean</artifactId>
 			<version>2.0.3</version>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>com.github.vidstige</groupId>
+            <artifactId>jadb</artifactId>
+            <version>94ebf38</version>
+        </dependency>	
+       </dependencies>
 
 	<build>
 		<resources>
@@ -381,128 +403,70 @@
 			</resource>
 		</resources>
 		<plugins>
-			<!-- FindBugs -->
-<!-- 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>3.0.4</version>
-				<configuration>
-					<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
-					<effort>Max</effort>
-					<threshold>Max</threshold>
-					<maxRank>15</maxRank>
-					<xmlOutput>true</xmlOutput>
-					<findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-				</configuration>
-				<executions>
-					<execution>
-						<id>analyze-compile</id>
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin> -->
-			<!-- CheckStyle -->
-			<!-- <plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-checkstyle-plugin</artifactId>
-				<version>3.0.0</version>
-				<executions>
-					<execution>
-						<id>validate</id>
-						<phase>validate</phase>
-						<configuration>
-							<configLocation>src/main/resources/custom-google-checker.xml</configLocation>
-							<encoding>UTF-8</encoding>
-							<violationSeverity>warning</violationSeverity>
-							<failOnViolation>true</failOnViolation>
-							<failsOnError>true</failsOnError>
-							<linkXRef>false</linkXRef>
-						</configuration>
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin> -->
-		   <plugin>
-			  <artifactId>maven-install-plugin</artifactId>
-			  <version>2.5.2</version>
-			  <executions>
-			    <execution>
-		    		<id>1</id>
-			      <phase>pre-clean</phase>
-			      <goals>
-			        <goal>install-file</goal>
-			      </goals>
-			      <configuration>
-					<groupId>com.luciad.imageio</groupId>
-					<artifactId>webp-imageio</artifactId>
-					<packaging>jar</packaging>
-					<version>0.5.2</version>
-			        <file>lib/webp-imageio-0.5.2.jar</file>
-			      </configuration>
-			    </execution>
-			    <execution>
-			    	<id>2</id>
-			      <phase>pre-clean</phase>
-			      <goals>
-			        <goal>install-file</goal>
-			      </goals>
-			      <configuration>
-					<groupId>com.proxy</groupId>
-					<artifactId>proxy-vole</artifactId>
-					<packaging>jar</packaging>
-					<version>1.0</version>
-			        <file>lib/proxy-vole-1.0.jar</file>
-			      </configuration>
-			    </execution>
-			    <execution>
-		    		<id>3</id>
-			      <phase>pre-clean</phase>
-			      <goals>
-			        <goal>install-file</goal>
-			      </goals>
-			      <configuration>
-					<groupId>com.github.jai-imageio</groupId>
-					<artifactId>jai-imageio-jpeg2000</artifactId>
-					<packaging>jar</packaging>
-					<version>1.1</version>
-			        <file>lib/jai-imageio-jpeg2000-1.1.jar</file>
-			      </configuration>
-			    </execution>
-			    <execution>
-		    		<id>4</id>
-			      <phase>pre-clean</phase>
-			      <goals>
-			        <goal>install-file</goal>
-			      </goals>
-			      <configuration>
-					<groupId>org.apache.commons</groupId>
-					<artifactId>commons-imaging</artifactId>
-					<packaging>jar</packaging>
-					<version>1.0-SNAPSHOT</version>
-			        <file>lib/commons-imaging-1.0-SNAPSHOT.jar</file>
-			      </configuration>
-			    </execution>
-			    
-			  </executions>
-			</plugin>
 
-				<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.17</version>
-				<dependencies>
-					<dependency>
-						<groupId>org.apache.maven.surefire</groupId>
-						<artifactId>surefire-junit47</artifactId>
-						<version>2.16</version>
-					</dependency>
-				</dependencies>
+			<plugin>
+				<artifactId>maven-install-plugin</artifactId>
+				<version>2.5.2</version>
+				<executions>
+					<execution>
+						<id>1</id>
+						<phase>pre-clean</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<groupId>com.luciad.imageio</groupId>
+							<artifactId>webp-imageio</artifactId>
+							<packaging>jar</packaging>
+							<version>0.5.2</version>
+							<file>lib/webp-imageio-0.5.2.jar</file>
+						</configuration>
+					</execution>
+					<execution>
+						<id>2</id>
+						<phase>pre-clean</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<groupId>com.proxy</groupId>
+							<artifactId>proxy-vole</artifactId>
+							<packaging>jar</packaging>
+							<version>1.0</version>
+							<file>lib/proxy-vole-1.0.jar</file>
+						</configuration>
+					</execution>
+					<execution>
+						<id>3</id>
+						<phase>pre-clean</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<groupId>com.github.jai-imageio</groupId>
+							<artifactId>jai-imageio-jpeg2000</artifactId>
+							<packaging>jar</packaging>
+							<version>1.1</version>
+							<file>lib/jai-imageio-jpeg2000-1.1.jar</file>
+						</configuration>
+					</execution>
+					<execution>
+						<id>4</id>
+						<phase>pre-clean</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<groupId>org.apache.commons</groupId>
+							<artifactId>commons-imaging</artifactId>
+							<packaging>jar</packaging>
+							<version>1.0-SNAPSHOT</version>
+							<file>lib/commons-imaging-1.0-SNAPSHOT.jar</file>
+						</configuration>
+					</execution>
+
+				</executions>
 			</plugin>
-			<!-- Maven Dependency -->
 			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
 
@@ -525,8 +489,8 @@
 				<artifactId>jacoco-maven-plugin</artifactId>
 				<version>0.8.1</version>
 				<executions>
-					<!-- Prepares the property pointing to the JaCoCo runtime agent which is passed as VM argument when Maven 
-						the Surefire plugin is executed. -->
+					<!-- Prepares the property pointing to the JaCoCo runtime agent which 
+						is passed as VM argument when Maven the Surefire plugin is executed. -->
 					<execution>
 						<id>prepare-agent</id>
 						<goals>
@@ -556,12 +520,12 @@
 										<limit>
 											<counter>INSTRUCTION</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>45%</minimum>
+											<minimum>38%</minimum>
 										</limit>
 										<limit>
 											<counter>CLASS</counter>
 											<value>MISSEDCOUNT</value>
-											<maximum>181</maximum>
+											<maximum>193</maximum>
 										</limit>
 									</limits>
 								</rule>
@@ -583,8 +547,8 @@
 		</plugins>
 		<pluginManagement>
 			<plugins>
-				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven 
-					build itself. -->
+				<!--This plugin's configuration is used to store Eclipse m2e settings 
+					only. It has no influence on the Maven build itself. -->
 				<plugin>
 					<groupId>org.eclipse.m2e</groupId>
 					<artifactId>lifecycle-mapping</artifactId>

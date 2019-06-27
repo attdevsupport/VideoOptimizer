@@ -133,16 +133,14 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(direction.toString());
-		strblr.append(", TS :");
-		strblr.append(String.format("%.6f", getTimeStamp()));
-		strblr.append(", raw size :");
-		strblr.append(rawSize);
-		strblr.append(", contentLength :");
-		strblr.append(contentLength);
-		strblr.append(", contentOffsetLength :");
-		strblr.append(contentOffsetLength);
-		strblr.append(", contentType :");
-		strblr.append(contentType);
+		if (HttpDirection.REQUEST.equals(direction)) {
+			strblr.append(", fname :").append(getFileName());
+		}
+		strblr.append(", TS :").append(String.format("%.6f", getTimeStamp()))
+		.append(", raw size :").append(rawSize)
+		.append(", contentLength :").append(contentLength)
+		.append(", contentOffsetLength :").append(contentOffsetLength)
+		.append(", contentType :").append(contentType);
 		return strblr.toString();
 	}
 

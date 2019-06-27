@@ -20,6 +20,8 @@ import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,8 +39,8 @@ import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.impl.PacketAnalyzerImpl;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
@@ -81,6 +83,7 @@ public class FilterApplicationsAndIpDialog extends JDialog {
  	private boolean ipv4Selection;
  	private boolean ipv6Selection;
  	private boolean udpSelection;
+ 	private boolean dnsSelection;
  	
 	public PacketAnalyzerResult getCurrentPktAnalyzerResult() {
 		return currentTraceResult;
@@ -233,8 +236,48 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 		if (jButtonPanel == null) {
 			jButtonPanel = new JPanel(new BorderLayout());
 			jButtonPanel.add(getJButtonGrid(), BorderLayout.EAST);
+			this.addWindowListener(getWindowListener());
 		}
 		return jButtonPanel;
+	}
+	
+	private WindowListener getWindowListener() {
+		return (new WindowListener() {
+			
+			@Override
+			public void windowOpened(WindowEvent e) {
+				// Auto-generated method 				
+			}
+			
+			@Override
+			public void windowIconified(WindowEvent e) {
+				// Auto-generated method 		
+			}
+			
+			@Override
+			public void windowDeiconified(WindowEvent e) {
+				// Auto-generated method 
+			}
+			
+			@Override
+			public void windowDeactivated(WindowEvent e) {
+				// Auto-generated method 
+			}
+			
+			@Override
+			public void windowClosing(WindowEvent e) {
+				closeWindow();
+			}
+			
+			@Override
+			public void windowClosed(WindowEvent e) {
+			}
+			
+			@Override
+			public void windowActivated(WindowEvent e) {
+				// Auto-generated method 
+			}
+		});	
 	}
 
 	/**
@@ -277,7 +320,8 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 						}
 						filter.setIpv4Sel(ipv4Selection);
 						filter.setIpv6Sel(ipv6Selection);
-						filter.setUdpSel(udpSelection);						
+						filter.setUdpSel(udpSelection);
+						filter.setDnsSelection(dnsSelection);
 			
 						if (!selectionReturnsData()) {
 							
@@ -350,19 +394,23 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 			cancelButton.addActionListener(new ActionListener() {
 
 				@Override
-				public void actionPerformed(ActionEvent arg0) {
-										
-				    /*
-				     * Bring filter/selection back to what it was when the dialog was launched
-				     */
-					((MainFrame) parent).getController().getTheModel().getAnalyzerResult().setFilter(initialFilter);
-					
-					FilterApplicationsAndIpDialog.this.dispose();
+				public void actionPerformed(ActionEvent arg0) {						
+				    closeWindow();
+	
+	
 				}
 
 			});
 		}
 		return cancelButton;
+	}
+	
+	public void closeWindow() {
+		/*
+	     * Bring filter/selection back to what it was when the dialog was launched
+	     */
+		((MainFrame) parent).getController().getTheModel().getAnalyzerResult().setFilter(initialFilter);
+		FilterApplicationsAndIpDialog.this.dispose();
 	}
 
 	/**
@@ -401,32 +449,29 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 		final JCheckBox chkIpv4 = new JCheckBox("IPV4");
 	    final JCheckBox chkIpv6 = new JCheckBox("IPV6");
 	    final JCheckBox chkUdp = new JCheckBox("UDP");
+	    final JCheckBox chkDns = new JCheckBox("DNS");
 
 /*	    chkIpv4.setMnemonic(KeyEvent.VK_I);
 	    chkIpv6.setMnemonic(KeyEvent.VK_P);
 	    chkUdp.setMnemonic(KeyEvent.VK_U);
-	    System.out.println("Filter Info : " +traceresult.getFilter());
+	    LOGGER.info("Filter Info : " +traceresult.getFilter());
 	    if(traceresult.getFilter() != null){
-	    	System.out.println("Flag1 : " +traceresult.getFilter().isIpv4Sel());
-	    	System.out.println("Flag2 : " +traceresult.getFilter().isIpv6Sel());
-	    	System.out.println("Flag3 : " +traceresult.getFilter().isUdpSel());
+	    	LOGGER.info("Flag1 : " +traceresult.getFilter().isIpv4Sel());
+	    	LOGGER.info("Flag2 : " +traceresult.getFilter().isIpv6Sel());
+	    	LOGGER.info("Flag3 : " +traceresult.getFilter().isUdpSel());
 	    } 
 */
 	    chkIpv4.setSelected(ipv4Selection = currentTraceResult.getFilter().isIpv4Sel());
 		chkIpv6.setSelected(ipv6Selection = currentTraceResult.getFilter().isIpv6Sel());
 		chkUdp.setSelected(udpSelection = currentTraceResult.getFilter().isUdpSel());
+		chkDns.setSelected(dnsSelection = currentTraceResult.getFilter().isDnsSelection());
 				
 		chkIpv4.addActionListener(new ActionListener() {
 			
 			@Override
 			public void actionPerformed(ActionEvent aEvent) {
 				JCheckBox cb = (JCheckBox) aEvent.getSource();
-				if(cb.isSelected()){
-					ipv4Selection = true;
-				} else {
-					ipv4Selection = false;
-				}
-				
+				ipv4Selection = cb.isSelected();				
 			}
 		});
 
@@ -435,12 +480,7 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 			@Override
 			public void actionPerformed(ActionEvent aEvent) {
 				JCheckBox cb = (JCheckBox) aEvent.getSource();
-				
-				if(cb.isSelected()){
-					ipv6Selection = true;
-				} else {
-					ipv6Selection = false;
-				}
+				ipv6Selection = cb.isSelected();
 			}
 		});
 		
@@ -449,16 +489,23 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 			@Override
 			public void actionPerformed(ActionEvent aEvent) {
 				JCheckBox cb = (JCheckBox) aEvent.getSource();
-				if(cb.isSelected()){
-					udpSelection = true;
-				} else {
-					udpSelection = false;
-				}
+				udpSelection = cb.isSelected();
 			}
 		});
+		
+		chkDns.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent aEvent) {
+				JCheckBox cb = (JCheckBox)aEvent.getSource();
+				dnsSelection = cb.isSelected();				
+			}
+		});
+		
 	    checkBoxSelPanel.add(chkIpv4);
 	    checkBoxSelPanel.add(chkIpv6);
 	    checkBoxSelPanel.add(chkUdp);
+	    checkBoxSelPanel.add(chkDns);
 	    checkBoxSelPanel.setSize(50, 20);
 		return checkBoxSelPanel;
 	}

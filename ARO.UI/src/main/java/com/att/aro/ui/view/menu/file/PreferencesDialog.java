@@ -99,7 +99,7 @@ public class PreferencesDialog extends JDialog {
 	String logginglevel = "ERROR";
 	private Settings settings = SettingsImpl.getInstance();
 	private JLabel helpLabel;
-	BPVideoWarnFailPanel bpVideoWarnFailPanel;
+	VideoPreferencesPanel videoPreferencesPanel;
 	private JTabbedPane tabbedPane;
 	/**
 	 * Type of configuration This is used to provide appropriate method for
@@ -124,6 +124,7 @@ public class PreferencesDialog extends JDialog {
 		IOS_PROV("iosProv", "iOS Provisioning Profile", FILE, SettingsImpl.getInstance(), Util.isMacOS()),
 		IOS_CERT("iosCert", "iOS Certificate", TEXT, SettingsImpl.getInstance(), Util.isMacOS(),
 				ResourceBundleHelper.getMessageString("preferences.iosCert.textField.hint"), null),
+		IOS_BUNDLE("iosBundle", "iOS Bundle Identifier", TEXT, SettingsImpl.getInstance(), Util.isMacOS()),
 		LOG_LVL("logging", "Logging Level", COMBO, SettingsImpl.getInstance(),true,ResourceBundleHelper.getMessageString("preferences.logging.dropdown.values"));
 
 		private String name;
@@ -226,13 +227,13 @@ public class PreferencesDialog extends JDialog {
 			jContentPane = new JPanel();
 			jContentPane.setPreferredSize(new Dimension(750, 500));
 			jContentPane.setLayout(new BorderLayout());
-			bpVideoWarnFailPanel = new BPVideoWarnFailPanel();
+			videoPreferencesPanel = new VideoPreferencesPanel();
 			tabbedPane = new JTabbedPane();
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.general.tabtile"), getGeneralTab());
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.bestpractice.tabtile"),
 					BPSelectionPanel.getBPPanel());
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.video.tabtitle"),
-					bpVideoWarnFailPanel.getVideoPreferenceTab());
+					videoPreferencesPanel);
 			this.addComponentListener(new ComponentListener() {
 				@Override
 				public void componentResized(ComponentEvent e) {
@@ -423,10 +424,15 @@ public class PreferencesDialog extends JDialog {
 		try {
 			saveGenTabValues();
 			saveBPSelection();
-			bpVideoWarnFailPanel.saveWarnFail();
 			SettingsImpl.getInstance().setAndSaveAttribute("LOG_LEVEL", logginglevel);
 			Util.setLoggingLevel(logginglevel);
-			dispose();
+			if(videoPreferencesPanel.saveVideoPreferences()) {
+				dispose();
+			} else {
+				this.revalidate();
+				this.repaint();
+			}
+			
 		} catch (IllegalArgumentException iae) {
 			LOGGER.error("Failed to save preferences due to failure on video bp panel");
 			this.repaint();

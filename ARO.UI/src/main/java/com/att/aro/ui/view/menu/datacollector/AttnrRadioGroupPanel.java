@@ -51,14 +51,14 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 	private AttnrThroughputThrottlePanel attnrTTPanel;
 	private AttnrLoadProfilePanel attnrLoadPanel;
 	private DeviceDialogOptions deviceInfo;
-	private AttenuatorModel miniAtnr;
+	private AttenuatorModel attenuatorModel;
 
-	public AttnrRadioGroupPanel(AttnrPanel jp, AttenuatorModel miniAtnr, DataCollectorSelectNStartDialog startDialog, DeviceDialogOptions deviceInfo) {
+	public AttnrRadioGroupPanel(AttnrPanel jp, AttenuatorModel attenuatorModel, DataCollectorSelectNStartDialog startDialog, DeviceDialogOptions deviceInfo) {
 
 		setLayout(new FlowLayout());
 		this.parentPanel = jp;
 		this.startDialog = startDialog;
-		this.miniAtnr = miniAtnr;
+		this.attenuatorModel = attenuatorModel;
 		this.deviceInfo = deviceInfo;
 		attnrSlider = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.slider");
 		attnrLoadFile = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.loadfile");
@@ -106,9 +106,9 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 				parentPanel.getAttnrHolder().revalidate();
 				parentPanel.getAttnrHolder().repaint();
 	
-				miniAtnr.setConstantThrottle(true);
-				miniAtnr.setFreeThrottle(false);
-				miniAtnr.setLoadProfile(false);
+				attenuatorModel.setConstantThrottle(true);
+				attenuatorModel.setFreeThrottle(false);
+				attenuatorModel.setLoadProfile(false);
 				if(ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
 					startDialog.resizeUltra();
 				} else {
@@ -128,9 +128,9 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 				parentPanel.getAttnrHolder().revalidate();
 				parentPanel.getAttnrHolder().repaint();
 	
-				miniAtnr.setConstantThrottle(false);
-				miniAtnr.setFreeThrottle(false);
-				miniAtnr.setLoadProfile(true);
+				attenuatorModel.setConstantThrottle(false);
+				attenuatorModel.setFreeThrottle(false);
+				attenuatorModel.setLoadProfile(true);
 				resizeStartDialog();
 			}else if(attnrNone.equals(itemStr)) {
 				resizeStartDialog();
@@ -154,14 +154,14 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 
 	public AttnrLoadProfilePanel getLoadProfilePanel() {
 		if (attnrLoadPanel == null) {
-			attnrLoadPanel = new AttnrLoadProfilePanel(miniAtnr);
+			attnrLoadPanel = new AttnrLoadProfilePanel(attenuatorModel);
 		}
 		return attnrLoadPanel;
 	}
 
 	public AttnrThroughputThrottlePanel getThroughputPanel() {
 		if (attnrTTPanel == null) {
-			attnrTTPanel = new AttnrThroughputThrottlePanel(miniAtnr);
+			attnrTTPanel = new AttnrThroughputThrottlePanel(attenuatorModel);
 		}
 		return attnrTTPanel;
 	}
@@ -188,9 +188,9 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 		parentPanel.getAttnrHolder().revalidate();
 		parentPanel.getAttnrHolder().repaint();
 
-		miniAtnr.setConstantThrottle(false);
-		miniAtnr.setFreeThrottle(true);
-		miniAtnr.setLoadProfile(false);
+		attenuatorModel.setConstantThrottle(false);
+		attenuatorModel.setFreeThrottle(true);
+		attenuatorModel.setLoadProfile(false);
 		defaultBtn.setSelected(true);
 	}
 	
@@ -216,5 +216,47 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 
 	public void setDefaultBtn(JRadioButton defaultBtn) {
 		this.defaultBtn = defaultBtn;
+	}
+
+	public void reselectPriorOptions(AttenuatorModel attenuatorModel, boolean isIOS) {
+		
+		this.attenuatorModel = attenuatorModel;
+		attnrTTPanel.setAttenuatorModel(attenuatorModel);
+		attnrLoadPanel.setAttenuatorModel(attenuatorModel);
+		if (attenuatorModel.isConstantThrottle() && !attenuatorModel.isFreeThrottle() && !isIOS) {
+			sliderBtn.setSelected(true);
+			parentPanel.getAttnrHolder().remove(getLoadProfilePanel());
+			getLoadProfilePanel().resetComponent();
+			parentPanel.getAttnrHolder().add(getThroughputPanel(), BorderLayout.CENTER);
+			parentPanel.getAttnrHolder().revalidate();
+			parentPanel.getAttnrHolder().repaint();
+			if(ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
+				startDialog.resizeUltra();
+			} else {
+				startDialog.resizeLarge();
+			}
+			DataCollectorType collectorType = deviceInfo.getCollector().getType();
+			if(DataCollectorType.IOS.equals(collectorType) && deviceInfo.isSharedNetworkActive()){
+				MessageDialogFactory.getInstance().showInformationDialog(this, deviceInfo.messageComposed(),
+						DeviceDialogOptions.ATTENUATION_TITLE);
+			}else if(DataCollectorType.IOS.equals(collectorType)) {
+				new IOSStepsDialog(startDialog);
+			}
+			attnrTTPanel.reselectPriorOptions(attenuatorModel);
+		} else if (!attenuatorModel.isConstantThrottle() && attenuatorModel.isLoadProfile() && !isIOS) {
+			loadFileBtn.setSelected(true);
+			parentPanel.getAttnrHolder().remove(getThroughputPanel());
+			getThroughputPanel().resetComponent();
+			parentPanel.getAttnrHolder().add(getLoadProfilePanel());
+			parentPanel.getAttnrHolder().revalidate();
+			parentPanel.getAttnrHolder().repaint();
+			resizeStartDialog();
+			attnrLoadPanel.reselectPriorOptions(attenuatorModel);
+		} else {
+			defaultBtn.setSelected(true);
+			if (isIOS) {
+				loadFileBtn.setEnabled(false);
+			}
+		}
 	}
 }

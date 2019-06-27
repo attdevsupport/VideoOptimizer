@@ -125,9 +125,9 @@ public class VideoStallTableModel extends DataTableModel<VideoStall> {
 	protected Object getColumnValue(VideoStall item, int columnIndex) {
 		switch (columnIndex) {
 		case COL_1:
-			return item.getSegmentTryingToPlay().getAroManifest().getVideoName();
+			return item.getSegmentTryingToPlay().getManifest().getVideoName();
 		case COL_2:
-			return Integer.valueOf(decimalFormat.format(item.getSegmentTryingToPlay().getSegment()));
+			return Integer.valueOf(decimalFormat.format(item.getSegmentTryingToPlay().getSegmentID()));
 		case COL_3:
 			return decimalFormat.format(item.getStallEndTimeStamp()-item.getStallStartTimeStamp());
 		case COL_4:

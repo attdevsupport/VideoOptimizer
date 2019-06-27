@@ -17,13 +17,13 @@
 
 package com.att.aro.core.videoanalysis;
 
-import java.util.TreeMap;
+import java.util.SortedMap;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 
 public interface IVideoTabHelper {
 
-	TreeMap<Double, HttpRequestResponseInfo> getRequestListMap();
+	SortedMap<Double, HttpRequestResponseInfo> getRequestListMap();
 
 	void resetRequestMapList();
 

@@ -289,7 +289,7 @@ public class AdbServiceImplTest extends BaseTest {
 						return androidDebugBridge;
 					}
 					return null;
-				} else if (method.matches("init")) {
+				} else if (method.matches("initIfNeeded")) {
 					activated = true;
 					return null;
 
@@ -404,7 +404,7 @@ public class AdbServiceImplTest extends BaseTest {
 						return androidDebugBridge;
 					}
 					return null;
-				} else if (method.matches("init")) {
+				} else if (method.matches("initIfNeeded")) {
 					activated = true;
 					return null;
 

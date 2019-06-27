@@ -18,7 +18,9 @@
 package com.att.aro.ui.commonui;
 
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.Window;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
@@ -26,6 +28,7 @@ import java.util.ResourceBundle;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
+import javax.swing.JRootPane;
 import javax.swing.SwingConstants;
 
 import com.att.aro.core.ApplicationConfig;
@@ -56,6 +59,9 @@ public class AROProgressDialog extends JDialog {
 											ApplicationConfig.getInstance().getAppShortName()));
 		setResizable(false);
 		setLayout(new BorderLayout());
+		this.setUndecorated(true);
+	    this.getRootPane().setWindowDecorationStyle(JRootPane.PLAIN_DIALOG);
+	    
 		setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
 
 		this.label = new JLabel(message, SwingConstants.CENTER);
@@ -69,5 +75,9 @@ public class AROProgressDialog extends JDialog {
 
 		pack();
 		setLocationRelativeTo(parent);
+		Point pointDialog = getLocation();
+		pointDialog.setLocation(pointDialog.getX(), pointDialog.getY()-140);
+		setLocation(pointDialog);
+		
 	}
 }
