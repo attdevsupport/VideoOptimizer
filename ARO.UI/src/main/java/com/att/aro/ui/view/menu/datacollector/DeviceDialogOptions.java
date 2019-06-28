@@ -741,45 +741,9 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	}
 	
 	
-	
-	public String getTraceDesc() {
-		return traceDescField.getText();
-	}
-	
-	public String getTraceType() {
-		return traceTypeField.getText();
-	}
-
-	public String getTargetedApp() {
-		return targetedAppField.getText();
-	}
-
-	public String getAppProducer() {
-		return appProducerField.getText();
-	}
-	
-	public String getAppSelected() {
-		return (String) (appSelector.getSelectedItem()!=null? appSelector.getSelectedItem() : "");
-	}
 
 	public boolean isTestEnvironment() {
 		return testEnvironment;
-	}
-
-	public JComboBox<String> getAppSelector() {
-		return appSelector;
-	}
-
-	public void setAppSelector(JComboBox<String> appSelector) {
-		this.appSelector = appSelector;
-	}
-
-	public Label getLabelAppSelectorTitle() {
-		return labelAppSelectorTitle;
-	}
-
-	public void setLabelAppSelectorTitle(Label labelAppSelectorTitle) {
-		this.labelAppSelectorTitle = labelAppSelectorTitle;
 	}
 
 	public void reselectPriorOptions (Hashtable<String, Object> previousOptions) {
@@ -796,23 +760,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 						break;
 					case "AttenuatorModel":
 						enableAttenuatorOptions((AttenuatorModel) previousOptions.get("AttenuatorModel"));
-						break;
-					case "traceType":
-						traceTypeField.setText((String) previousOptions.get(key));
-						break;
-					case "traceDesc":
-						traceDescField.setText((String) previousOptions.get(key));
-						break;
-					case "targetedApp":
-						targetedAppField.setText((String) previousOptions.get(key));
-						break;
-					case "appProducer":
-						appProducerField.setText((String) previousOptions.get(key));
-						break;
-					case "selectedAppName":
-						if (device.getId().equals(selectedDevice.getId())) {
-							appSelector.setSelectedItem((String) previousOptions.get(key));
-						}
 						break;
 					case "TraceFolderName":
 						parent.setTraceFolderName((String) previousOptions.get(key));
