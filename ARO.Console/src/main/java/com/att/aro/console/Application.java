@@ -485,11 +485,6 @@ public final class Application implements IAROView {
 		return ThrottleUtil.getInstance().parseNumCvtUnit(throttleDL);
 	}
 	
-	
-	private boolean getCertInstallOption() {
-		return cmds.isCertInstall();
-	}
-	
 	void printError(ErrorCode error) {
 		err("Error code: " + error.getCode());
 		err(", Error name: " + error.getName());

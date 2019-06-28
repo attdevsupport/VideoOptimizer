@@ -103,10 +103,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private Label labelVideoTitle;
 	private Label labelVideoOrientTitle;
 	
-	private Label labelTraceDescTitle;
-	private Label labelTargetedAppTitle;
-	private Label labelAppProducerTitle;
-	private Label labelTraceTypeTitle;
 	private Label labelAppSelectorTitle;
 	
 	private JTextField traceDescField;
@@ -164,54 +160,10 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 		contents.add(labelVideoOrientTitle, labelConstraints);
 		contents.add(videoOrientRadioGrpPanel, optionConstraints);
-		
-		
-		if(testEnvironment) {
-			parent.resizeLarge();
-			
-			initializeFields();
-			
-			contents.add(labelTraceDescTitle, labelConstraints);
-			contents.add(traceDescField, optionConstraints);
-			
-			contents.add(labelTargetedAppTitle, labelConstraints);
-			contents.add(targetedAppField, optionConstraints);
-			
-			contents.add(labelAppProducerTitle, labelConstraints);
-			contents.add(appProducerField, optionConstraints);
-			
-			contents.add(labelTraceTypeTitle, labelConstraints);
-			contents.add(traceTypeField, optionConstraints);
-			
-			contents.add(labelAppSelectorTitle, labelConstraints);
-			contents.add(appSelector, optionConstraints);
-		}
 
 		return contents;
 	}
 
-	private void initializeFields() {
-		String[] response = getApplicationList();
-		
-		traceDescField = new JTextField(20);
-		targetedAppField = new JTextField(20);
-		appProducerField = new JTextField(20);
-		traceTypeField = new JTextField(20);
-		appSelector = new JComboBox<String>(response);
-		appSelector.insertItemAt(StringUtils.EMPTY, 0);
-		appSelector.setSelectedIndex(0);
-		AutoCompleteDecorator.decorate(appSelector);
-	}
-
-	private String[] getApplicationList() {
-		String[] response;
-		if(selectedDevice!=null && selectedDevice.getPlatform().equals(IAroDevice.Platform.Android)) {
-			response = ((MainFrame) parent.getMainframeParent()).getApplicationsList(selectedDevice.getId());
-		} else {
-			response = ((MainFrame) parent.getMainframeParent()).getApplicationsList("");
-		}
-		return response;
-	}
 
 	private void setUpLayoutProperties() {
 		contentLayout = new GridBagLayout();
@@ -230,26 +182,13 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private void setUpLabels() {
 		String collectorTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.collector.title");
 		String attenuatorTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.title");
-		String secureTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.secure.title");
 		String videoTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.video.title");
 		String videoOrientTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.video.orient.title");
-		
-		String traceDesc = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.trace.desc.title");
-		String targetedApp = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.targeted.app.title");
-		String appProducer = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.app.producer.title");
-		String traceType = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.trace.type.title");
-		String appSelector = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.app.selection.title");
 
 		labelCollectorTitle = new Label(collectorTitle);
 		labelAttenuatorTitle = new Label(attenuatorTitle);
 		labelVideoTitle = new Label(videoTitle);
 		labelVideoOrientTitle = new Label(videoOrientTitle);
-		
-		labelTraceDescTitle = new Label(traceDesc);
-		labelTargetedAppTitle = new Label(targetedApp);
-		labelAppProducerTitle = new Label(appProducer);
-		labelTraceTypeTitle = new Label(traceType);
-		labelAppSelectorTitle = new Label(appSelector);
 	}
 
 	/**
@@ -298,7 +237,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		if(vpn.equals(e.getActionCommand())||ios.equals(e.getActionCommand())) {
 			setAttenuateSectionStatus();
 		} else if (rooted.equals(e.getActionCommand())) {
-			disableAttenuateSection();
 			videoOrient = Orientation.PORTRAIT;
 			showVideoOrientation(false);
 		} else if(txtHDEF.equals(e.getActionCommand()) && btniOS.isSelected())	{
@@ -449,15 +387,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		}
 	}
 	
-	private void disableAttenuateSection() {
-		attnrGroupPanel.getAttnrRadioGP().reset();
-		attnrGroupPanel.setAttenuateEnable(false);
-		if (testEnvironment) {
-			parent.resizeLarge();
-		} else {
-			parent.resizeMedium();
-		}
-	}
 
 	public AttnrPanel getAttnrGroup() {
 		if (attnrGroupPanel == null) {
@@ -646,15 +575,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				btnRooted.setEnabled(true);
 				btnVpn.setEnabled(true);
 				btnRooted.setSelected(true);
-				if (testEnvironment) {
-					String[] response = getApplicationList();
-					appSelector.removeAllItems();
-					appSelector.insertItemAt(StringUtils.EMPTY, 0);
-					for(String item : response) {
-						appSelector.addItem(item);
-					}
-					appSelector.setSelectedIndex(0);
-				}
+
  
 				
 			} else {
@@ -665,15 +586,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				btnRooted.setEnabled(false);
 				btnVpn.setEnabled(true);
 				btnVpn.setSelected(true);
-				if (testEnvironment) {
-					String[] response = getApplicationList();
-					appSelector.removeAllItems();
-					appSelector.insertItemAt(StringUtils.EMPTY, 0);
-					for(String item : response) {
-						appSelector.addItem(item);
-					}
-					appSelector.setSelectedIndex(0);
-				}
+
 			}
 
 			// quick hack to allow or disallow full-motion video
