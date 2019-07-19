@@ -51,42 +51,52 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 2.3
+#### Video Optimizer 2.4
 
-**System Requirements for Video Optimizer 2.3:**
+**System Requirements for Video Optimizer 2.4:**
 
-Before you download Video Optimizer 2.3, make sure you meet the following system requirements for your operating system.
+Before you download Video Optimizer 2.4, make sure you meet the following system requirements for your operating system.
 
-1. At least 2GB of RAM
+1. At least 2GB of RAM, but recommend at least 8GB
 2. Java 8 or above
 3. For Android developers, Android SDK Level 19 or above
 4. Latest Xcode for collecting iOS devices trace
-5. WinPcap for Windows platform
+5. WinPcap or NPcap for Windows platform
 6. FFMpeg library
 7. VLC media player for Windows and Linux platform
-8. Brew, Ifuse, OSXfuse for MacOS platform
-9. Wireshark
+8. Brew, Ifuse, OSXfuse ,libimobiledevice , ideviceinstallerfor, Wireshark  MacOS platform
 
 
 
-#### Video Optimizer 2.3 Features
 
-#### • New Video Best Practice “Resolution and Perception” tests for video resolution greater than 720p
+#### Video Optimizer 2.4 Features
 
-#### • New "No data" icon added to indicate that a Best Practice is not applicable when a trace does not have relevant data available for analysis.
+#### • Enhanced Video Analysis for wider support of Video Streaming Applications
+#### -	Supports wider range of HLS and DASH based video streaming applications on both Android and iOS
+#### -  Enhanced video buffer calculations iOS enhancements
 
-#### • Waterfall Tab enhancements - Displays appropriate domain names and IP addresses, and highlights the Maximum number of Simultaneous Connections for the trace.
+#### • Supports latest iPhone model
 
-#### •	Other enhancements include:
-#### - Startup Delay compares video startup delay graphically against 3 reference apps
-#### - Handling special characters and spaces in adb path and other applicable locations.
-#### - Android versions Oreo and above to stop vpn collector on the device if there is an existing collector instance running on the device.
+#### • iOS Start collector now includes both low resolution and HD options
+
+#### • iOS workflow improvements to handle provisioning profile error messages
+
+#### • UI Enhancements:
+#### - Best Practice “Minify CSS, JS and HTML” results summary is updated to reflect savings in KB
+#### - The trace name in Best Practices tab, Video Tab and Statistics tab now includes a link which helps user navigate to the trace folder
+#### - Preferences, under File menu, now has Default buttons under the Video Tab so it helps users to revert to default settings
+#### - “Select Applications/IPs” option under View menu now includes DNS checkbox that helps user to filter based on DNS packet
+#### - Helps preserve start collector options between traces
 
 
 
-### What are the known issues in Release 2.3?
+### What are the known issues in Release 2.4?
 
-#### •	Application names, CPU usage, signal strength is not displayed for traces taken with Android Version Oreo and above.
+#### •	Application names, CPU usage, signal strength not captured for traces on Android Oreo and above (Known Limitation)
+#### •	Live screen display fails intermittently during iOS trace capture
+#### •	For Linux:
+#### -	Some Text boxes in Video tab is not easily readable
+#### -	‘Trace Name’ link may open multiple windows at once
 
 ### •  Installation instruction
 + Please follow the order to compile projects
@@ -96,5 +106,5 @@ Before you download Video Optimizer 2.3, make sure you meet the following system
 + ../DataCollectors/ARO.IOSCollector
 + ../DataCollectors/ARO.NorootAndroidCollector
 + ../DataCollectors/ARO.RootedAndroidCollector
-+ ../ARO.UI 
-+ ../ARO.Console 
++ ../ARO.UI
++ ../ARO.Console

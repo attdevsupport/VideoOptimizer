@@ -51,6 +51,7 @@ import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.ui.view.overviewtab.OverviewTab;
+import com.att.aro.ui.view.waterfalltab.WaterfallTab;
 
 /**
  *
@@ -403,6 +404,8 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		} else if (routeInfo instanceof MultipleConnectionsEntry) {
 			if (((MultipleConnectionsEntry) routeInfo).isMultiple()) {
 				jtabbedPane.setSelectedIndex(WATERFALL_INDEX);
+				WaterfallTab waterfallTab = (WaterfallTab) jtabbedPane.getSelectedComponent();
+				waterfallTab.updateGraph(((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo());
 			} else {
 				if (((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo().getSession() != null) {
 					diagnosticsTab.setHighlightedSessionTCP(((MultipleConnectionsEntry) routeInfo).getHttpReqRespInfo());

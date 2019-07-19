@@ -23,8 +23,8 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -37,7 +37,7 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper {
 	private static final int TWO_MB = 2 * 1024 * 1024;
 	private static final Logger LOG = LogManager.getLogger(HttpRequestResponseHelperImpl.class.getName());
-	
+
 	/**
 	 * Indicates whether the content type is CSS or not.
 	 * 
@@ -51,7 +51,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 	public boolean isCss(String contentType) {
 		return "text/css".equals(contentType);
 	}
-	
+
 	/**
 	 * Indicates whether the content type is HTML or not.
 	 * 
@@ -69,37 +69,33 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 	public boolean isJSON(String contentType) {
 		return "application/json".equals(contentType);
 	}
+
 	/**
 	 * Indicates whether the content type is JavaScript or not.
 	 * 
 	 * The following content types are considered as JavaScript:
 	 * 
-	 * - application/ecmascript
-	 * - application/javascript
-	 * - text/javascript
+	 * - application/ecmascript - application/javascript - text/javascript
 	 * 
 	 * @return returns true if the content type is JavaScript otherwise return false
 	 * 
 	 */
 	public boolean isJavaScript(String contentType) {
 
-		return ("application/ecmascript".equals(contentType) ||
-			"application/javascript".equals(contentType) ||
-			"text/javascript".equals(contentType));
+		return ("application/ecmascript".equals(contentType) || "application/javascript".equals(contentType) || "text/javascript".equals(contentType));
 	}
+
 	/**
-	 * Returns the request/response body as a text string. The returned text may
-	 * not be readable.
+	 * Returns the request/response body as a text string. The returned text may not be readable.
 	 * 
-	 * @return The content of the request/response body as a string, or null if
-	 *         the method does not execute successfully.
+	 * @return The content of the request/response body as a string, or null if the method does not execute successfully.
 	 * 
 	 * @throws ContentException
-	 *             - When part of the content is not available.
+	 *                              - When part of the content is not available.
 	 */
 	public String getContentString(HttpRequestResponseInfo req, Session session) throws Exception {
 		byte[] content = getContent(req, session);
-		if(content == null || content.length == 0) {
+		if (content == null || content.length == 0) {
 			return "";
 		} else if (content.length > TWO_MB) {
 			LOG.error("Ignoring this html file as it's too big to process - possibly a speed test file.");
@@ -108,13 +104,15 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 			return new String(content, "UTF-8");
 		}
 	}
+
 	/**
 	 * get content of the request/response in byte[]
+	 * 
 	 * @param req
 	 * @return byte array
-	 * @throws Exception 
+	 * @throws Exception
 	 */
-	public byte[] getContent(HttpRequestResponseInfo req, Session session) throws Exception{
+	public byte[] getContent(HttpRequestResponseInfo req, Session session) throws Exception {
 		SortedMap<Integer, Integer> contentOffsetLength = req.getContentOffsetLength();
 
 		LOG.debug("getContent(req, session) :" + req.toString());
@@ -126,10 +124,9 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 			byte[] buffer = getStorageBuffer(req, session);
 			if (buffer == null) {
 				req.setExtractable(false);
-				return new byte[0];
+				return new byte[0];			
 			}
-//			System.out.println("Byte Count:" + buffer.length);
-			
+
 			ByteArrayOutputStream output = null;
 			for (Map.Entry<Integer, Integer> entry : contentOffsetLength.entrySet()) {
 				int start = entry.getKey();
@@ -139,12 +136,16 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 					throw new Exception("The content may be too big.");
 				} else if (buffer.length < start + size) {
 					req.setExtractable(false);
-					if(req.getContentType().contains("text/html")){
+					if (req.getContentType().contains("text/html")) {
 						LOG.error("The content may be corrupted.");
 						continue;
-					}else{
-						throw new Exception("The content may be corrupted.");
-					}				
+					} else {
+						int part = buffer.length - start;
+						int pct = part * 100 / size;
+						LOG.error(String.format("%s: %s The content may be corrupted. Buffer exceeded: only %d percent arrived", req.getTimeStamp(), req.getAssocReqResp().getObjNameWithoutParams(), pct));
+						size = buffer.length - start;
+						continue;
+					}
 				}
 
 				for (int i = start; i < start + size; ++i) {
@@ -158,7 +159,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 
 				// Decompress gzipped content
 				GZIPInputStream gzip = null;
-					gzip = new GZIPInputStream(new ByteArrayInputStream(output.toByteArray()));
+				gzip = new GZIPInputStream(new ByteArrayInputStream(output.toByteArray()));
 				try {
 					output.reset();
 					buffer = new byte[2048];
@@ -184,18 +185,20 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 				}
 			}
 			if (output != null) {
-			    return output.toByteArray();
+				return output.toByteArray();
 			} else {
 				req.setExtractable(false);
-			    return new byte[0];
+				return new byte[0];
 			}
 		}
 		return new byte[0];
 	}
+
 	/**
-	 * Determines whether the same content is contained in this request/response as in
-	 * the specified request/response
-	 * @param right The request to compare to
+	 * Determines whether the same content is contained in this request/response as in the specified request/response
+	 * 
+	 * @param right
+	 *                  The request to compare to
 	 * @return true if the content is the same
 	 */
 	public boolean isSameContent(HttpRequestResponseInfo left, HttpRequestResponseInfo right, Session session, Session sessionRight) {
@@ -206,70 +209,69 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 		boolean yes = true;
 		long leftcount = getActualByteCount(left, session);
 		long rightcount = getActualByteCount(right, sessionRight);
-		if(leftcount == rightcount){
-			
-			if(leftcount == 0){
+		if (leftcount == rightcount) {
+
+			if (leftcount == 0) {
 				return true;
 			}
-			
+
 			// Otherwise do byte by byte compare
 			byte[] bufferLeft = getStorageBuffer(left, session);
 			byte[] bufferRight = getStorageBuffer(right, sessionRight);
-			
+
 			Iterator<Map.Entry<Integer, Integer>> itleft = left.getContentOffsetLength().entrySet().iterator();
 			Iterator<Map.Entry<Integer, Integer>> itright = right.getContentOffsetLength().entrySet().iterator();
 			int indexLeft = 0;
 			int stopLeft = 0;
 			int indexRight = 0;
 			int stopRight = 0;
-			if(itleft.hasNext() && itright.hasNext()){
+			if (itleft.hasNext() && itright.hasNext()) {
 				Map.Entry<Integer, Integer> entryLeft = itleft.next();
 				Map.Entry<Integer, Integer> entryRight = itright.next();
 				indexLeft = entryLeft.getKey();
 				stopLeft = indexLeft + entryLeft.getValue();
 				indexRight = entryRight.getKey();
 				stopRight = entryRight.getValue();
-				do{
-					if(bufferLeft[indexLeft] != bufferRight[indexRight]){
+				do {
+					if (bufferLeft[indexLeft] != bufferRight[indexRight]) {
 						return false;
 					}
 					++indexLeft;
 					++indexRight;
-					if(indexLeft >= bufferLeft.length || indexRight >= bufferRight.length){
+					if (indexLeft >= bufferLeft.length || indexRight >= bufferRight.length) {
 						break;
 					}
-					if(indexLeft >= stopLeft){
-						if(itleft.hasNext()){
+					if (indexLeft >= stopLeft) {
+						if (itleft.hasNext()) {
 							entryLeft = itleft.next();
 							indexLeft = entryLeft.getKey();
 							stopLeft = indexLeft + entryLeft.getValue();
-						}else{
+						} else {
 							break;
 						}
 					}
-					if(indexRight >= stopRight){
-						if(itright.hasNext()){
+					if (indexRight >= stopRight) {
+						if (itright.hasNext()) {
 							entryRight = itright.next();
 							indexRight = entryRight.getKey();
 							stopRight = entryRight.getValue();
-						}else{
+						} else {
 							break;
 						}
 					}
-				} while(true);
+				} while (true);
 			}
 			yes = true;
-		}else{
+		} else {
 			yes = false;
 		}
 		return yes;
 	}
+
 	/**
-	 * Gets the number of bytes in the request/response body. The actual byte
-	 * count.
+	 * Gets the number of bytes in the request/response body. The actual byte count.
 	 * 
-	 * @return The total number of bytes in the request/response body. If
-	 *         contentOffsetLength is null, then this method returns 0.
+	 * @return The total number of bytes in the request/response body. If contentOffsetLength is null, then this method returns 0.
 	 */
 	public long getActualByteCount(HttpRequestResponseInfo item, Session session) {
 		if (item.getContentOffsetLength() != null) {
@@ -293,9 +295,10 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 			return 0;
 		}
 	}
+
 	/**
-	 * Convenience method that gets the storage array in the session where this request/
-	 * response is located.
+	 * Convenience method that gets the storage array in the session where this request/ response is located.
+	 * 
 	 * @return
 	 */
 	private byte[] getStorageBuffer(HttpRequestResponseInfo req, Session session) {
@@ -309,4 +312,4 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 		}
 
 	}
-}//end class
+}// end class

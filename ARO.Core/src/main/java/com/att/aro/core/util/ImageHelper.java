@@ -24,12 +24,19 @@ import java.awt.image.ColorModel;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.Hashtable;
 
 import javax.media.jai.NullOpImage;
 import javax.media.jai.OpImage;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.android.ddmlib.RawImage;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -48,7 +55,8 @@ public class ImageHelper {
 
 	public static boolean imageDecoderStatus = true;
 	private static final String PNG_IMAGE_HEADER = "89 50 4E 47 0D 0A 1A 0A";
-
+	private static final Logger Logger = LogManager.getLogger(ImageHelper.class.getName());
+	private static final String THIRDP_LOG = "3rdPartyLibExcp.log";
 	/**
 	 * Converts raw image in to buffered image object which will be provided to
 	 * quickstream for creating video {@link QuickTimeOutputStream}
@@ -119,18 +127,35 @@ public class ImageHelper {
 	 * @return new instance of BufferedImage
 	 * @throws IOException
 	 */
-	public static BufferedImage getImageFromByte(byte[] array) throws IOException {
+	public static BufferedImage getImageFromByte(byte[] array){
 		InputStream instream = new ByteArrayInputStream(array);
 		String imageType = getImageType(array);
 		ImageDecoder dec = ImageCodec.createImageDecoder(imageType, instream, null);
 		BufferedImage image = null;
+		// Navigate the 3rd party error messages to a file, not to print out in console
+		FileOutputStream fos=null;
 		try {
-			RenderedImage renderedImg = dec.decodeAsRenderedImage(0);
+			File logFile = new File(Util.getVideoOptimizerLibrary() + Util.FILE_SEPARATOR +THIRDP_LOG);
+			logFile.createNewFile();
+			fos = new FileOutputStream(logFile,false);
+		} catch (IOException ioe) {
+			Logger.error("Failed to create a log file", ioe);
+		}		
+		System.setErr(new PrintStream(fos));
+		try {
+			RenderedImage renderedImg;
+			renderedImg = dec.decodeAsRenderedImage(0);
 			RenderedImage rendering = new NullOpImage(renderedImg, null, null, OpImage.OP_IO_BOUND);
 			image = convertRenderedImage(rendering);
 		} catch (ImagingException exp) {
 			setImageDecoderStatus(false);
+		} catch (EOFException eof) {
+			setImageDecoderStatus(false);
+		} catch (IOException ioe) {
+			setImageDecoderStatus(false);
 		}
+		System.setErr(System.err);
+
 		return image;
 	}
 

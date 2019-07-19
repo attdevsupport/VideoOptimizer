@@ -1,0 +1,150 @@
+package com.att.aro.core.videoanalysis.pojo;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+
+/**<pre>
+ *
+ * VideoStream - holds everything for a captured streaming video
+ *  ⁃ Manifest
+ *  ⁃ VideoSegments
+ *
+ *
+ */
+@Data
+public class VideoStream {
+
+	private Manifest manifest;
+	
+	/** <pre>
+	 * key definition timestamp-segment
+	 * value VideoEvent
+	 */
+	@NonNull
+	@Setter(AccessLevel.NONE)
+	private SortedMap<String, VideoEvent> videoEventList = new TreeMap<>();
+
+	/** <pre>
+	 * key definition segment-quality-timestamp
+	 * value VideoEvent
+	 */
+	@NonNull
+	@Setter(AccessLevel.NONE)
+	private SortedMap<String, VideoEvent> segmentEventList = new TreeMap<>();
+
+	private Boolean validatedCount = false;
+	private int segmentCount = 0;
+	private int selectedManifestCount = 0;
+	private int validSegmentCount = 0;
+	private int nonValidSegmentCount = 0;
+	private int invalidManifestCount = 0;
+	
+	private boolean valid = true;
+	private boolean selected = false;
+	private boolean activeState = false;
+	
+	/**
+	 * Add VideoEvent to both videoEventList and segmentEventList.
+	 * 
+	 * @param segment
+	 * @param timestamp
+	 * @param videoEvent
+	 */
+	public void addVideoEvent(double segment, double timestamp, VideoEvent videoEvent) {
+
+		String key = generateEventKey(segment, timestamp);
+		videoEventList.put(key, videoEvent);
+		this.selected=true;
+		if (segment != -1) {
+			key = generateVideoEventKey(segment, timestamp, videoEvent.getQuality());
+			segmentEventList.put(key, videoEvent);
+		}
+	}
+
+	/**
+	 * <pre>Generates a key
+	 *	 s = segment len = 8
+	 *	 Q = quality variable length
+	 *	 t = timestamp len = 11
+	 *   format ssssssssQualitytttttt.tttt
+	 *   
+	 * @param segment
+	 * @param timestamp
+	 * @param quality
+	 * @return
+	 */
+	public String generateVideoEventKey(double segment, double timestamp, String quality) {
+		String key;
+		key = String.format("%08.0f:%s:%010.4f", segment, quality, timestamp);
+		return key;
+	}
+
+	/**
+	 * <pre>Generates a key
+	 *	 s = segment len = 10
+	 *	 t = timestamp len = 11
+	 *   format sssssssssstttttttt
+	 *   
+	 * @param segment
+	 * @param timestamp
+	 * @param quality
+	 * @return
+	 */
+	public static String generateEventKey(double segment, double timestamp) {
+		return String.format("%010.4f:%08.0f", timestamp, segment );
+	}
+	
+	public double getSegmentCount() {
+		return segmentCount > 0 ? segmentCount : segmentEventList.size();
+	}
+	
+	public VideoEvent getVideoEventBySegment(String key) {
+		return segmentEventList.get(key);
+	}
+
+	/**
+	 * 
+	 * Retrieve VideoEvents by segment
+	 * 
+	 * @return
+	 * 
+	 */
+	public Collection<VideoEvent> getVideoEventsBySegment() {
+		return segmentEventList.values();
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder strblr = new StringBuilder("VideoStream :");
+
+		strblr.append("\n\t\t\tManifest              :").append(manifest);
+		strblr.append("\n\t\t\tSegmentCount          :").append(segmentCount);
+		strblr.append("\n\t\t\tSelectedManifestCount :").append(selectedManifestCount);
+		strblr.append("\n\t\t\tValidSegmentCount     :").append(validSegmentCount);
+		strblr.append("\n\t\t\tNonValidSegmentCount  :").append(nonValidSegmentCount);
+		strblr.append("\n\t\t\tInvalidManifestCount  :").append(invalidManifestCount);
+		strblr.append("\n\t\t\tValid                 :").append(valid);
+		strblr.append("\n\t\t\tSelected              :").append(selected);
+		strblr.append("\n\t\t\tActiveState           :").append(activeState);
+		
+		strblr.append("\n\t\t\tVideoEventList:").append(videoEventList.size());
+		if (videoEventList.size() > 0) {
+			Iterator<String> keys = videoEventList.keySet().iterator();
+			while (keys.hasNext()) {
+				String key = keys.next();
+				strblr.append("\n\t\t\t\t<").append(key + ">: " + videoEventList.get(key));
+			}
+		}
+		strblr.append("\n");
+		return strblr.toString();
+	}
+
+}

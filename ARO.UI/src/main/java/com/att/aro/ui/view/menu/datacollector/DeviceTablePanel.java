@@ -195,6 +195,7 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 			boolean validated = false;
 			if (optionPanel != null) {
 				validated = optionPanel.setDevice(selectedIAroDevice);
+
 				dialog.enableStart(validated);
 			} else if (dialog != null) {
 				dialog.enableStart(true);

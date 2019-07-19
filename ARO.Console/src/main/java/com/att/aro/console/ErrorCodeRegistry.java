@@ -118,10 +118,20 @@ public final class ErrorCodeRegistry {
 		err.setDescription("Please check that you have admin rights or re-enter your password");
 		sendGAErrorCode(err);
 		return err;
-
 	}
-
+	
+	public static ErrorCode getInvalidiOSArgs() {
+		ErrorCode err = new ErrorCode();
+		err.setCode(314);
+		err.setName("Limited support for iOS collection");
+		err.setDescription("VO console does not support HD/SD collection with iOS devices.");
+		sendGAErrorCode(err);
+		return err;
+	}
+	
 	private static void sendGAErrorCode(ErrorCode err){
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendErrorEvents(err.getName(),err.getDescription(), false);
 	}
+	
+	
 }

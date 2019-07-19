@@ -24,31 +24,30 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.datacollector.ioscollector.utilities.AppSigningHelper;
 import com.att.aro.datacollector.ioscollector.utilities.IOSDeviceInfo;
 
+/**
+ * Utility class for mapping device information retrieved from the libimobiledevice library
+ * Commend: ideviceinfo -u [device's UDID]
+ */
 public class IOSDevice implements IAroDevice {
 
-	final private Platform platform = Platform.iOS;
-
-	private String udid;
-	private String deviceClass; // : iPhone;
+	private String udid;		// UDID is a 40-digit hexadecimal number of the device
+ 	private String deviceClass; // : iPhone
 	private String deviceName; // : aro team’s iPhone
-	private String productVersion; // : 9.2
-	private String productName; // : iPhone OS
-	private String productType; // : iPhone6,1
+	private String productVersion; // : 12.1.4
+	private String productName; // : iPhone OS 
+	private String productType; // : iPhone 10,6 -> iPhone X
+	private String abi;			// : arm64
 
 	private AroDeviceState state = AroDeviceState.Unknown ;	   // Available, in-use, Unknown         
 
 	private IDataCollector collector;
 
-	private String abi;
 
 	public IOSDevice(String udid) throws IOException {
 		this.udid = udid;
 
-		String data = null;
 		IOSDeviceInfo deviceinfo = new IOSDeviceInfo();
-
-		data = deviceinfo.getDeviceData(udid);
-
+		String data = deviceinfo.getDeviceData(udid);
 		Map<String, String> profile = stringToMap(data);
 		deviceClass = profile.get("DeviceClass");
 		deviceName = profile.get("DeviceName");
@@ -138,7 +137,7 @@ public class IOSDevice implements IAroDevice {
 
 	@Override
 	public Platform getPlatform() {
-		return platform;
+		return Platform.iOS;
 	}
 
 	@Override
@@ -161,19 +160,8 @@ public class IOSDevice implements IAroDevice {
 	
 	@Override
 	public boolean isPlatform(Platform platform) {
-		return (this.platform.equals(platform));
+		return (Platform.iOS.equals(platform));
 	}	
-	
-	@Override
-	public String toString() {
-		return new String(getDeviceClass()
-				+ " iOS " + getApi()
-				+ ", udid:" + getId() 
-				+ ", api:" + getApi() 
-				+ ", abi:" + getAbi() 
-				+ ", model:" + getModel() 
-				+ ", DevName:" + getDeviceName());
-	}
 
 	@Override
 	public void setCollector(IDataCollector collectorOption) {
@@ -195,6 +183,17 @@ public class IOSDevice implements IAroDevice {
 	public void setStatus(AroDeviceState state) {
 		this.state = state;
 		
+	}
+	
+	@Override
+	public String toString() {
+		return new String(getDeviceClass()
+				+ " iOS " + getApi()
+				+ ", udid:" + getId() 
+				+ ", api:" + getApi() 
+				+ ", abi:" + getAbi() 
+				+ ", model:" + getModel() 
+				+ ", DevName:" + getDeviceName());
 	}
 
 }

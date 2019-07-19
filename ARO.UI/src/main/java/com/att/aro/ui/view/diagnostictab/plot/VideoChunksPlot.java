@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.jfree.chart.labels.XYToolTipGenerator;
@@ -42,19 +43,18 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.impl.SortSelection;
 import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
 import com.att.aro.core.videoanalysis.impl.VideoEventComparator;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoCompiled;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
-import com.att.aro.ui.view.diagnostictab.SliderDialogBox;
-
 
 public class VideoChunksPlot implements IPlot{
 	
@@ -94,20 +94,21 @@ public class VideoChunksPlot implements IPlot{
 	/**
 	 * Holds selected chunk and it's play time in HashMap
 	 */
-    private Map<VideoEvent,Double> chunkPlayTime = new HashMap<>();
+    private SortedMap<VideoEvent,Double> chunkPlayTime = new TreeMap<>();
 
 	public AROTraceData refreshPlot(XYPlot plot, AROTraceData analysis, double startTime, VideoEvent selectedChunk) {
 		chunkPlayTime.clear();
 		chunkPlayTime.put(selectedChunk, startTime);
 
-		videoChunkPlotter.setChunkPlayBackTimeList(chunkPlayTime);
+		videoChunkPlotter.setChunkPlayTimeList(chunkPlayTime);
 		setChunkPlayBackTimeCollection(analysis);
 		boPlot.setChunkPlayTimeList(chunkPlayTime);
+		boTimePlot.setChunkPlayTimeList(chunkPlayTime);
 
 		populate(plot, analysis);
 		AbstractBestPracticeResult startupDelayBPResult = videoChunkPlotter.refreshStartUpDelayBP(analysis);
 		
-		if (analysis.getAnalyzerResult().getVideoUsage().getChunksBySegmentNumber().isEmpty()) {
+		if (analysis.getAnalyzerResult().getStreamingVideoData().getStreamingVideoCompiled().getChunksBySegment().isEmpty()) {
 			return refreshBPVideoResults(analysis, startupDelayBPResult, null, null);
 		}
 		
@@ -130,9 +131,9 @@ public class VideoChunksPlot implements IPlot{
 	}
 
 	private void setChunkPlayBackTimeCollection(AROTraceData analysis) {
-		if (analysis != null && analysis.getAnalyzerResult().getVideoUsage() != null) {
-			VideoUsage videousage = analysis.getAnalyzerResult().getVideoUsage();
-			videousage.setChunkPlayTimeList(chunkPlayTime);
+		if(analysis != null && analysis.getAnalyzerResult().getStreamingVideoData() != null){
+			StreamingVideoData videoData = analysis.getAnalyzerResult().getStreamingVideoData();
+			videoData.getStreamingVideoCompiled().setChunkPlayTimeList(chunkPlayTime);
 		}
 	}
 
@@ -197,12 +198,11 @@ public class VideoChunksPlot implements IPlot{
     
     private void newTraceData(){
     	chunkPlayTime.clear();
-    	SliderDialogBox.segmentListChosen= new ArrayList<>();
     }
-    public void setDelayAROManifest(double seconds, Collection<AROManifest> aroManifests){
-    	for (AROManifest aroManifest : aroManifests) {
-			if (aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) { 
-				aroManifest.setDelay(seconds);
+    public void setDelayVideoStream(double seconds, Collection<VideoStream> videoStreams){
+    	for (VideoStream videoStream : videoStreams) {
+			if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) { 
+				videoStream.getManifest().setDelay(seconds);
 			}
     	}
     }
@@ -210,7 +210,7 @@ public class VideoChunksPlot implements IPlot{
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
 		if (analysis != null) {		
-			VideoUsage videousage = analysis.getAnalyzerResult().getVideoUsage();
+			StreamingVideoData streamingVideoData = analysis.getAnalyzerResult().getStreamingVideoData();
 			if(!isReDraw) {
 				boPlot.clearPlot(this.bufferOccupancyPlot);
 				boTimePlot.clearPlot(this.bufferTimePlot);
@@ -231,13 +231,13 @@ public class VideoChunksPlot implements IPlot{
 
 			series = new XYSeries("Chunks");
 			seriesDataSets = new TreeMap<>();
-			seriesDataSets = videoChunkPlotter.populateDataSet(analysis.getAnalyzerResult().getVideoUsage());
+			seriesDataSets = videoChunkPlotter.populateDataSet(analysis.getAnalyzerResult().getStreamingVideoData());
 
-			imgSeries = videoChunkPlotter.getImageSeries();
-			filteredChunks = videousage.getFilteredSegments();
+			imgSeries = videoChunkPlotter.getImgSeries();
+			filteredChunks = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments();
 			segmentsToBePlayed.clear();
-			if(videousage.getAllSegments() != null) {
-				for(VideoEvent ve: videousage.getAllSegments()){
+			if(streamingVideoData.getStreamingVideoCompiled().getAllSegments() != null) {
+				for(VideoEvent ve: streamingVideoData.getStreamingVideoCompiled().getAllSegments()){
 					segmentsToBePlayed.add(ve);
 				}
 			}
@@ -256,15 +256,19 @@ public class VideoChunksPlot implements IPlot{
 
 				seriesStartUpDelay= new XYSeries("StartUpDelay"+(index++));
 				seriesStartUpDelay.add(ve.getDLTimeStamp(),0);
-				seriesStartUpDelay.add((double)chunkPlayTime.get(ve),0);
+				Double playTime = chunkPlayTime.get(ve);
+				if(playTime != null){
+						seriesStartUpDelay.add((double)playTime,0);
+				}
 				
 				
 				if (first == 0) {	
-					VideoUsage videoUsage = analysis.getAnalyzerResult().getVideoUsage();
-					TreeMap<Double, AROManifest> videoEventList = videoUsage.getAroManifestMap();
-					
-					setDelayAROManifest((double)chunkPlayTime.get(ve)-ve.getEndTS(), videoEventList.values());//Set start up delay in AROManifest getDLTimeStamp()
-
+					StreamingVideoData videoData = analysis.getAnalyzerResult().getStreamingVideoData();
+					SortedMap<Double, VideoStream> videoEventList = videoData.getVideoStreamMap();
+					Double segPlayTime = chunkPlayTime.get(ve);
+					if(segPlayTime != null){
+						setDelayVideoStream((double)segPlayTime-ve.getEndTS(), videoEventList.values());
+					}
 				}
 				playTimeStartSeries.addSeries(seriesStartUpDelay);
 
@@ -291,7 +295,7 @@ public class VideoChunksPlot implements IPlot{
 									
 								 DecimalFormat decimalFormat = new DecimalFormat("0.##");
 								 		 
-								 tooltipValue.append(decimalFormat.format(currentVEvent.getSegment())+","+String.format("%.2f",currentVEvent.getStartTS())+","+String.format("%.2f",currentVEvent.getEndTS())+",");
+								 tooltipValue.append(decimalFormat.format(currentVEvent.getSegmentID())+","+String.format("%.2f",currentVEvent.getStartTS())+","+String.format("%.2f",currentVEvent.getEndTS())+",");
 
 								 if(!chunkPlayTime.isEmpty()){
 									 if(videoChunkPlotter.getSegmentPlayStartTime(currentVEvent) == -1){ 
@@ -395,8 +399,14 @@ public class VideoChunksPlot implements IPlot{
 	}
 	
 	public List<VideoEvent> getAllChunks(){
-		return videoChunkPlotter.getVideoUsage().getAllSegments();
+		StreamingVideoCompiled streamingVideoCompiled = videoChunkPlotter.getStreamingVideoData().getStreamingVideoCompiled();
+		return streamingVideoCompiled.getAllSegments();
 	}
+
+	public List<XYSeriesCollection> getStartUpDelayCollection() {
+		return startUpDelayCollection;
+	}
+ 
 }
 
 

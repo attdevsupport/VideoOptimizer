@@ -15,7 +15,9 @@ public class LittleProxyWrapper implements Runnable {
 	private int defaultPort = 8080;
 	private int throttleReadStream = -1;
 	private int throttleWriteStream = -1;
-	
+
+
+
 	private String TRACE_FILE_PATH = "";
 
 	public String getTRACE_FILE_PATH() {
@@ -60,7 +62,6 @@ public class LittleProxyWrapper implements Runnable {
 			HttpProxyServerBootstrap bootstrap = DefaultHttpProxyServer.bootstrapFromFile("./littleproxy.properties")
 					.withPort(defaultPort).withAllowLocalOnly(false).withThreadPoolConfiguration(config)
 					.withThrottling(getThrottleReadStream(), getThrottleWriteStream());
-	
 			proxyServer = bootstrap.start();
 
 		} catch (Exception e) {

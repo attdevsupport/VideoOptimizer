@@ -174,7 +174,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 		if (isUserPrefsSelected(ChartPlotOptions.DEFAULT_VIEW)) {
 			enableOptions(false);
 		}
-		this.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+		this.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
 		enableEscKeyCloseDialog = new EnableEscKeyCloseDialog(getRootPane(), this, false);
 		this.addWindowListener(new WindowAdapter() {
 			@Override

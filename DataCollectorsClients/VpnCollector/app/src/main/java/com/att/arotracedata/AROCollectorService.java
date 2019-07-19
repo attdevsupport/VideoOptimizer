@@ -104,25 +104,25 @@ public class AROCollectorService extends Service {
  
 	// Output stream and Buffer Writer for peripherals traces files 
 	private OutputStream mActiveProcessOutputFile;
-	private BufferedWriter mActiveProcessTraceWriter;;
+	private BufferedWriter mActiveProcessTraceWriter;
 	private OutputStream mBatteryTraceOutputFile;
 	private BufferedWriter mBatteryTraceWriter;
 	private OutputStream mBluetoohTraceOutputFile;
-	private BufferedWriter mBluetoothTraceWriter;;
+	private BufferedWriter mBluetoothTraceWriter;
 	private OutputStream mCameraTraceOutputFile;
-	private BufferedWriter mCameraTraceWriter;;
+	private BufferedWriter mCameraTraceWriter;
 	private OutputStream mCpuTraceOutputFile;
-	private BufferedWriter mCpuTraceWriter;;
+	private BufferedWriter mCpuTraceWriter;
 	private OutputStream mDeviceDetailsOutputFile;
-	private BufferedWriter mDeviceDetailsWriter;;
+	private BufferedWriter mDeviceDetailsWriter;
 	private OutputStream mDeviceInfoOutputFile;
-	private BufferedWriter mDeviceInfoWriter;;
+	private BufferedWriter mDeviceInfoWriter;
 	private OutputStream mGPSTraceOutputFile;
-	private BufferedWriter mGPSTraceWriter;;
+	private BufferedWriter mGPSTraceWriter;
 	private OutputStream mNetworkDetailsOutputFile;
-	private BufferedWriter mNetworkTraceWriter;;
+	private BufferedWriter mNetworkTraceWriter;
 	private OutputStream mRadioTraceOutputFile;
-	private BufferedWriter mRadioTraceWriter;;
+	private BufferedWriter mRadioTraceWriter;
 	private OutputStream mScreenOutputFile;
 	private BufferedWriter mScreenRotationTraceWriter;
 	private OutputStream mScreenRotationOutputFile;
@@ -140,7 +140,7 @@ public class AROCollectorService extends Service {
 
 	private AROWifiEventsReceiver receiverWifiEvents;
 
-	private AROBluetoothReceiver receiverBluetoothEvents;;
+	private AROBluetoothReceiver receiverBluetoothEvents;
 
 	/**
 	 * Initialize receivers
@@ -227,12 +227,12 @@ public class AROCollectorService extends Service {
 	 */
 	private void releaseReceivers() {
 		Log.i(TAG, "releaseReceivers()");
-		if (receiverAROScreenTrace != null ) unregisterReceiver(receiverAROScreenTrace); receiverAROScreenTrace.closeTraceFile();
-		if (receiverScreenRotation != null ) unregisterReceiver(receiverScreenRotation); receiverScreenRotation.closeTraceFile();
-		if (receiverBattery        != null ) unregisterReceiver(receiverBattery);        receiverBattery.closeTraceFile();
-		if (receiverNetworkDetails != null ) unregisterReceiver(receiverNetworkDetails); receiverNetworkDetails.closeTraceFile();
-		if (receiverWifiEvents     != null ) unregisterReceiver(receiverWifiEvents);     receiverWifiEvents.closeTraceFile();
-		if (receiverBluetoothEvents!= null ) unregisterReceiver(receiverBluetoothEvents);receiverBluetoothEvents.closeTraceFile();
+		if (receiverAROScreenTrace != null ) {unregisterReceiver(receiverAROScreenTrace); receiverAROScreenTrace.closeTraceFile();}
+		if (receiverScreenRotation != null ) {unregisterReceiver(receiverScreenRotation); receiverScreenRotation.closeTraceFile();}
+		if (receiverBattery        != null ) {unregisterReceiver(receiverBattery);        receiverBattery.closeTraceFile();}
+		if (receiverNetworkDetails != null ) {unregisterReceiver(receiverNetworkDetails); receiverNetworkDetails.closeTraceFile();}
+		if (receiverWifiEvents     != null ) {unregisterReceiver(receiverWifiEvents);     receiverWifiEvents.closeTraceFile();}
+		if (receiverBluetoothEvents!= null ) {unregisterReceiver(receiverBluetoothEvents);receiverBluetoothEvents.closeTraceFile();}
 	}
 
 	@Override
@@ -303,6 +303,7 @@ public class AROCollectorService extends Service {
 		private String osRelease;
 		private String collectorVersion;
 		private String windowDimensions;
+		private String screenDPI;
 		private String networkType;
 
 		DeviceDetails() {
@@ -325,10 +326,11 @@ public class AROCollectorService extends Service {
 			WindowManager wm = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
 			Display display = wm.getDefaultDisplay();
 			DisplayMetrics metrics = new DisplayMetrics();
-			display.getMetrics(metrics);
+			display.getRealMetrics(metrics);
 			int width = metrics.widthPixels;
 			int height = metrics.heightPixels;
 			windowDimensions = new String("" + width + "*" + height);
+			screenDPI = Float.toString(metrics.xdpi);
 
 		}
 
@@ -342,6 +344,7 @@ public class AROCollectorService extends Service {
 					+ collectorVersion + "\n"	// 6: 3.1.1.6
 					+ networkType + "\n"		// 7: 10
 					+ windowDimensions + "\n"	// 8: 720*1184
+					+ screenDPI + "\n"			// 9: 515.154
 			;
 		}
 	}
@@ -448,36 +451,7 @@ public class AROCollectorService extends Service {
 		}
 
 	}
-	/**
-	 * Reads a device Info from the device file in trace folder.
-	 * 
-	 * @throws IOException
-	 */
-/*
-	private void readDeviceDetails() throws IOException {
 
-		File file = new File(traceDir, DEVICEDETAILS_FILE);
-		if (!file.exists()) {
-			this.missingFiles.add(DEVICEDETAILS_FILE);
-			return;
-		}
-		BufferedReader br = new BufferedReader(new FileReader(file));
-		try {
-
-			String s;
-			while ((s = br.readLine()) != null) {
-
-				// In case of IPv6 scoped address, remove scope ID
-				int i = s.indexOf('%');
-				localIPAddresses.add(InetAddress.getByName(i >= 0 ? s.substring(0, i) : s));
-			}
-
-		} finally {
-			br.close();
-		}
-	}
-*/
-	
 	@Override
 	public IBinder onBind(Intent intent) {
 		// TODO Auto-generated method stub

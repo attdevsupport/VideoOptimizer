@@ -25,21 +25,21 @@ import java.util.TreeMap;
 
 import org.apache.commons.math3.util.MathUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
 import com.att.aro.core.packetanalysis.pojo.NearStall;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.videoanalysis.AbstractBufferOccupancyCalculator;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalculator {
 
 	private List<VideoEvent> filteredChunk;
 	private List<VideoEvent> chunkDownload;
 	private List<VideoEvent> chunkDownloadCopy;
-	private Map<VideoEvent, AROManifest> veManifestList;
+	private Map<VideoEvent, VideoStream> veManifestList;
 
 	private List<VideoEvent> veDone;
 
@@ -55,7 +55,6 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	
 	private List<VideoEvent> veWithIn;
 	private List<VideoEvent> completedDownloads = new ArrayList<>();
-	// private int stallCount;
 	private List<VideoStall> videoStallResult;
 	private List<NearStall> videoNearStallResult;
 	private boolean stallStarted;
@@ -127,20 +126,18 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 		}
 	}
 
-	public Map<Integer, String> populate(VideoUsage videoUsage, Map<VideoEvent, Double> chunkPlayTimeList) {
+	public Map<Integer, String> populate(StreamingVideoData streamingVideoData, Map<VideoEvent, Double> chunkPlayTimeList) {
 		if (videoPrefManager.getVideoUsagePreference() != null) {
 			setStallTriggerTime(videoPrefManager.getVideoUsagePreference().getStallTriggerTime());
 			setStallPausePoint(videoPrefManager.getVideoUsagePreference().getStallPausePoint());
 			setStallRecovery(videoPrefManager.getVideoUsagePreference().getStallRecovery());
 			setNearStall(videoPrefManager.getVideoUsagePreference().getNearStall());
 		}
-		// this.chunkPlayTimeList = chunkPlayTimeList;
 		seriesDataSets.clear();
 		key = 0;
-		// stallCount=0;
 		videoStallResult = new ArrayList<>();
 		videoNearStallResult = new ArrayList<>();
-		if (videoUsage != null) {
+		if (streamingVideoData != null && streamingVideoData.getStreamingVideoCompiled() != null) {
 			filteredChunk = new ArrayList<>();
 			chunkDownload = new ArrayList<>();
 			chunkDownloadCopy = new ArrayList<>();
@@ -152,15 +149,15 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 			endBuffer = 0;
 			stallStarted = false;
 
-			initialize(videoUsage);
+			initialize(streamingVideoData);
 
 			double bufferInSeconds = 0;
-			possibleStartPlayTime =0;
-			for (int index = 0; index < videoUsage.getChunksBySegmentNumber().size(); index++) {// filteredChunk
+			possibleStartPlayTime = 0;
+			for (int index = 0; index < streamingVideoData.getStreamingVideoCompiled().getChunksBySegment().size(); index++) {
 				bufferInSeconds = 0;
 
 				updateUnfinishedDoneVideoEvent();
-				//update downloaded segments list with consideration of near stall
+				// update downloaded segments list with consideration of near stall
 				updateSegementsDownloadedList();
 
 				bufferInSeconds = drawVeDone(veDone, beginBuffer);
@@ -172,7 +169,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 
 				endBuffer = bufferInSeconds;
 
-				if (bufferInSeconds < 0 ) { // using -ve as stall indicator
+				if (bufferInSeconds < 0) { // using -ve as stall indicator
 					// if indicated push the chunk play start time
 					double tempPrevTime = 0;
 					if (possibleStartPlayTime != 0) {
@@ -188,7 +185,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 						}
 						if (!videoStallResult.isEmpty()) {
 							videoStallResult.get(videoStallResult.size() - 1).setSegmentTryingToPlay(chunkPlaying);
-							videoStallResult.get(videoStallResult.size()-1).setStallEndTimeStamp(possibleStartPlayTime);
+							videoStallResult.get(videoStallResult.size() - 1).setStallEndTimeStamp(possibleStartPlayTime);
 						}
 						addToChunkPlayTimeList(chunkPlaying, possibleStartPlayTime);
 					}
@@ -197,8 +194,8 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 				}
 
 				beginBuffer = endBuffer;
-				if (index + 1 <= videoUsage.getChunksBySegmentNumber().size() - 1) {
-					setNextPlayingChunk(index + 1, videoUsage.getChunksBySegmentNumber());
+				if (index + 1 <= streamingVideoData.getStreamingVideoCompiled().getChunksBySegment().size() - 1) {
+					setNextPlayingChunk(index + 1, streamingVideoData.getStreamingVideoCompiled().getChunksBySegment());
 				}
 			}
 		}
@@ -331,18 +328,18 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 
 	}
 
-	private void initialize(VideoUsage videoUsage) {
-		this.videoUsage = videoUsage;
-		filteredChunk = videoUsage.getFilteredSegments(); // filterVideoSegment(videoUsage);
+	private void initialize(StreamingVideoData streamingVideoData) {
+		this.streamingVideoData = streamingVideoData;
+		filteredChunk = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments(); // filterVideoSegment(videoUsage);
 		chunkDownload = new ArrayList<>();
 		chunkDownloadCopy = new ArrayList<>();
 		for (VideoEvent vEvent : filteredChunk) {
 			chunkDownload.add(vEvent);
 			chunkDownloadCopy.add(vEvent);
 		}
-		veManifestList = videoUsage.getVideoEventManifestMap();
+		veManifestList = streamingVideoData.getStreamingVideoCompiled().getVeStreamList();
 
-		runInit(videoUsage, veManifestList, videoUsage.getChunksBySegmentNumber());
+		runInit(streamingVideoData, veManifestList, streamingVideoData.getStreamingVideoCompiled().getChunksBySegment());
 	}
 
 	public double getChunkPlayStartTime(VideoEvent chunkPlaying) {
@@ -431,7 +428,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	
 	public Map<Long, Double> getSegmentStartTimeMap() {
 		return videoChunkPlotterImpl.getSegmentStartTimeList();
-		}
+	}
 
 
 
@@ -439,13 +436,13 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 		Map<Long, Double> segmentStartTimeMap = getSegmentStartTimeMap();
 		Map<Double, Long> segmentEndTimeMap = new HashMap<Double, Long>();
 		if(segmentStartTimeMap!=null) {
-			for (VideoEvent ve : videoUsage.getFilteredSegments()) {
+			for (VideoEvent ve : streamingVideoData.getStreamingVideoCompiled().getFilteredSegments()) {
 				if(ve == null) {
 					continue;
 				}
-				Double startTime = segmentStartTimeMap.get(new Double(ve.getSegment()).longValue());
+				Double startTime = segmentStartTimeMap.get(new Double(ve.getSegmentID()).longValue());
 				double segmentPlayEndTime = (startTime != null ? startTime : 0.0) + getChunkPlayTimeDuration(ve);
-				segmentEndTimeMap.put(segmentPlayEndTime, new Double(ve.getSegment()).longValue());
+				segmentEndTimeMap.put(segmentPlayEndTime, new Double(ve.getSegmentID()).longValue());
 			}
 		}
 		return segmentEndTimeMap;

@@ -21,7 +21,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
-import java.io.IOException;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractButton;
@@ -31,11 +30,12 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
-import com.att.aro.core.packetanalysis.IVideoUsageAnalysis;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.util.Util;
+import com.att.aro.core.videoanalysis.impl.VideoPrefsController;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.ContextAware;
@@ -55,8 +55,9 @@ public class StartUpDelayWarningDialog extends JDialog {
 	private JPanel contentPanel;
 	private JPanel jDialogPanel;
 	GraphPanel graphPanel = null;
-	private IVideoUsageAnalysis videoUsage = ContextAware.getAROConfigContext().getBean(IVideoUsageAnalysis.class);
-	private VideoUsagePrefs videoUsagePrefs = ContextAware.getAROConfigContext().getBean("videoUsagePrefs",VideoUsagePrefs.class);;
+	private VideoUsagePrefs videoUsagePrefs = ContextAware.getAROConfigContext().getBean("videoUsagePrefs",VideoUsagePrefs.class);
+	private VideoPrefsController videoPrefsController = ContextAware.getAROConfigContext().getBean("videoPrefsController",VideoPrefsController.class);
+	private static final Logger LOG = LogManager.getLogger(StartUpDelayWarningDialog.class.getName());
 	IARODiagnosticsOverviewRoute diagnosticRoute;
 	private PacketAnalyzerResult currentTraceResult;
 	private JLabel warningLabel;
@@ -72,15 +73,17 @@ public class StartUpDelayWarningDialog extends JDialog {
 	}
 
 	private void initialize() {
-		PacketAnalyzerResult currentTraceResult = ((MainFrame) parent).getController().getTheModel()
-				.getAnalyzerResult();
-		if(Util.isWindowsOS())
+		PacketAnalyzerResult currentTraceResult = ((MainFrame) parent).getController().getTheModel().getAnalyzerResult();
+		if (Util.isWindowsOS()) {
 			height = height + 30;
+		}
 		setCurrentPktAnalyzerResult(currentTraceResult);
 		this.setMinimumSize(new Dimension(width, height));
 		this.setMaximumSize(new Dimension(width, height));
 		this.setResizable(false);
 		this.setTitle(resourceBundle.getString("startupdelay.warning.dialog.title"));
+		this.setModal(true);
+		this.setModalityType(ModalityType.APPLICATION_MODAL);
 		this.setLocationRelativeTo(getOwner());
 		this.setContentPane(getJDialogPanel());
 		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -89,10 +92,10 @@ public class StartUpDelayWarningDialog extends JDialog {
 			public void windowLostFocus(WindowEvent e) {
 				dispose();
 			}
-			
+
 			@Override
 			public void windowGainedFocus(WindowEvent e) {
-				
+
 			}
 		});
 		if (null != ((MainFrame) parent).getDiagnosticTab()) {
@@ -174,17 +177,8 @@ public class StartUpDelayWarningDialog extends JDialog {
 	}
 
 	public boolean setStartUpDelayReminder(boolean selection) {
-		videoUsagePrefs = videoUsage.getVideoUsagePrefs();
+		videoUsagePrefs = videoPrefsController.getVideoUsagePrefs();
 		videoUsagePrefs.setStartupDelayReminder(selection);
-
-		ObjectMapper mapper = new ObjectMapper();
-		String temp;
-		try {
-			temp = mapper.writeValueAsString(videoUsagePrefs);
-		} catch (IOException e) {
-			return false;
-		}
-		videoUsage.getPrefs().setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
-		return true;
+		return videoPrefsController.save();
 	}
 }

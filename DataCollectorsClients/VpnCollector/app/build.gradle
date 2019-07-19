@@ -1,23 +1,17 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 28
-    buildToolsVersion "25.0.0"
+    compileSdkVersion 23
+    buildToolsVersion "23.0.3"
 
     defaultConfig {
         applicationId "com.att.arocollector"
         def jenkinsBuildNumber = System.getenv("BUILD_NUMBER") as Integer ?: 1
         def releaseBuildId = jenkinsBuildNumber - 1
-        versionName "2.3." + releaseBuildId
+        versionName "2.4." + releaseBuildId
         minSdkVersion 19
         targetSdkVersion 21
-//        jackOptions {
-//            enabled true
-//        }
-        compileOptions {
-            sourceCompatibility JavaVersion.VERSION_1_7
-            targetCompatibility JavaVersion.VERSION_1_7
-        }
+
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
     }
 
@@ -38,20 +32,6 @@ android {
         abortOnError false
     }
 
-    afterEvaluate { project ->
-        def propsFile = rootProject.file('/home/aroteam/.gradle/gradle.properties')
-        def configName = 'release'
-
-        if (propsFile.exists() && android.signingConfigs.hasProperty(configName)) {
-            def props = new Properties()
-            props.load(new FileInputStream(propsFile))
-            android.signingConfigs[configName].storeFile = file(props['RELEASE_STORE_FILE'])
-            android.signingConfigs[configName].storePassword = props['RELEASE_STORE_PASSWORD']
-            android.signingConfigs[configName].keyAlias = props['RELEASE_KEY_ALIAS']
-            android.signingConfigs[configName].keyPassword = props['RELEASE_KEY_PASSWORD']
-        }
-    }
-
     signingConfigs {
         release {
 
@@ -65,18 +45,20 @@ android {
     }
 }
 def renameAPK(variant, defaultConfig) {
-    variant.outputs.each { output ->
-        def applicationName = "VPNCollector";
-        def file = output.packageApplication.outputFile
+    variant.outputs.all{ output ->
+        def applicationName = "VPNCollector"
         def fileName = applicationName + "-" + defaultConfig.versionName + ".apk"
-        output.packageApplication.outputFile = new File(file.parent, fileName)
+        outputFileName = new File("rellease", fileName)
     }
+
 }
 
 dependencies {
-    compile 'org.apache.commons:commons-collections4:4.0'
-    compile 'com.android.support:support-v4:23.3.0'
-    compile 'com.android.support:appcompat-v7:23.3.0'
-    compile files('../libs/bcpkix-jdk15on-154.jar')
-    compile files('../libs/bcprov-jdk15on-154.jar')
+
+    implementation 'org.apache.commons:commons-collections4:4.0'
+    implementation 'com.android.support:support-v4:23.3.0'
+    implementation 'com.android.support:appcompat-v7:23.3.0'
+    implementation files('../libs/bcpkix-jdk15on-154.jar')
+    implementation files('../libs/bcprov-jdk15on-154.jar')
+
 }

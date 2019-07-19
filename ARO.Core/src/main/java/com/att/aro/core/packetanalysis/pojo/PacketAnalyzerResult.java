@@ -18,10 +18,9 @@ package com.att.aro.core.packetanalysis.pojo;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.configuration.pojo.Profile;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Data returned from analyzing trace file or directory
@@ -85,8 +84,8 @@ public class PacketAnalyzerResult {
 	 * results Video analysis
 	 */
 	@JsonIgnore
-	private VideoUsage videoUsage;
-
+	private StreamingVideoData streamingVideoData;
+	
 	/**
 	 * Returns trace results
 	 *  
@@ -269,15 +268,14 @@ public class PacketAnalyzerResult {
 		this.deviceKeywords = keywords;
 	}
 
-	public VideoUsage getVideoUsage() {
-		return videoUsage;
+	public StreamingVideoData getStreamingVideoData() {
+		return streamingVideoData;
 	}
 
-	public void setVideoUsage(VideoUsage videoUsage) {
-		this.videoUsage = videoUsage;
-
+	public void setStreamingVideoData(StreamingVideoData streamingVideoData) {
+		this.streamingVideoData = streamingVideoData;
 	}
-
+	
 	public List<VideoStall> getVideoStalls() {
 		return videoStalls;
 	}
@@ -307,7 +305,7 @@ public class PacketAnalyzerResult {
 		nearStalls = null;
 		bufferOccupancyResult = null;
 		cacheAnalysis = null;
-		videoUsage = null;
+		streamingVideoData = null;
 	}
 
 	public BufferTimeBPResult getBufferTimeResult() {

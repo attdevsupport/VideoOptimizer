@@ -143,8 +143,9 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (videoCapture != null) {
 			videoCapture.signalStop();
 		}
-
-		monitor.stopMonitoring();
+		if(monitor!=null) {
+			monitor.stopMonitoring();	
+		}
 
 		if (rvi != null) {
 			try {
@@ -359,7 +360,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		// Start Attenuation
 		if((attenuatorModel.isConstantThrottle()
 				&&(attenuatorModel.isThrottleDLEnabled()||attenuatorModel.isThrottleULEnabled()))) {
-			startAttenuatorCollection(datadir, attenuatorModel);
+			startAttenuatorCollection(datadir, attenuatorModel,false);
 		}
 		
 		
@@ -381,7 +382,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		String certName = SettingsImpl.getInstance().getAttribute("iosCert");
 		StatusResult status = new StatusResult();
 		status.setSuccess(true);
-		if (AppSigningHelper.isCertInfoPresent() && (this.videoOption.equals(VideoOption.HDEF))) {
+		if (AppSigningHelper.getInstance().isCertInfoPresent() && (this.videoOption.equals(VideoOption.HDEF))) {
 			try {
 				AppSigningHelper.getInstance().extractAndSign(provProfile, certName);
 				AppSigningHelper.getInstance().deployAndLaunchApp();
@@ -439,7 +440,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		return status;
 	}
 	
-	private void startAttenuatorCollection(String trafficFilePath,AttenuatorModel attenuatorModel) {
+	private void startAttenuatorCollection(String trafficFilePath,AttenuatorModel attenuatorModel,boolean secure) {
 
 		    int throttleDL = 0;
 			int throttleUL = 0;
@@ -456,7 +457,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			}
 			LOG.info("ios attenuation setting: "+" trafficFilePath: "+ trafficFilePath +" throttleDL: "+throttleDL
 					+"throttleUL: "+throttleUL);
-			mitmAttenuator.startCollect(trafficFilePath,throttleDL,throttleUL);	
+			mitmAttenuator.startCollect(trafficFilePath,throttleDL,throttleUL,false);	
 			
 		
 	}
@@ -559,7 +560,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	}
 
 	private StatusResult checkDeviceInfo(StatusResult status, String udid, String deviceDetails) {
-		if (!deviceinfo.getDeviceInfo(udid, deviceDetails)) {
+		if (!deviceinfo.recordDeviceInfo(udid, deviceDetails)) {
 			LOG.error(defaultBundle.getString("Error.deviceinfoissue"));
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getDeviceInfoIssue());
@@ -625,7 +626,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 					} catch (IOException e) {
 						String errorMessage = "Failed to retrieve iOS device data:" + e.getMessage();
 						LOG.error(errorMessage);
-						status.setError(ErrorCodeRegistry.getFailedRetrieveDeviceData(errorMessage));
+						status.setError(ErrorCodeRegistry.getFailedRetrieveDeviceData(errorMessage));						
 					}
 				}
 			}
@@ -791,7 +792,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				File pcapfile = new File(
 						datadir + Util.FILE_SEPARATOR + defaultBundle.getString("datadump.trafficFile"));
 				status.setSuccess(pcapfile.exists());
-				if (AppSigningHelper.isCertInfoPresent() && (this.videoOption.equals(VideoOption.HDEF))) {
+				if (AppSigningHelper.getInstance().isCertInfoPresent() && (this.videoOption.equals(VideoOption.HDEF))) {
 					pullFromDevice(); // hd video trace only
 				}
 			}

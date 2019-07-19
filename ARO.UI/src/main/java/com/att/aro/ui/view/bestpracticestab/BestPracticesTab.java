@@ -164,18 +164,10 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		bpObservable.registerObserver(testStatisticsPanel);
 		
-		if (ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
-			MetadataPanel metadataPanel = new MetadataPanel();
-			bpObservable.registerObserver(metadataPanel);
-			JSplitPane bottomSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, topLeftPanel, metadataPanel);
-			bottomSplitPane.setResizeWeight(0.3);
-			bottomSplitPane.setOpaque(false);
-			topPanel.add(bottomSplitPane, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.HORIZONTAL, insets, 0, 0));
-		} else {
+ 
 			topPanel.add(topLeftPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 					GridBagConstraints.HORIZONTAL, insets, 0, 0));
-		}
+		
 		// Separator
 		topPanel.add(UIComponent.getInstance().getSeparator()
 				, new GridBagConstraints(0, section++

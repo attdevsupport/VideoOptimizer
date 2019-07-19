@@ -291,11 +291,11 @@ public final class ErrorCodeRegistry {
 	 * 
 	 * @return
 	 */
-	public static ErrorCode getAppDeploymentError(){
+	public static ErrorCode getAppDeploymentError(String errorReturn){
 		ErrorCode err = new ErrorCode();
 		err.setCode(522);
 		err.setName("Failed to deploy/launch app");
-		err.setDescription(defaultBundle.getString("Error.app.deploymentfailed"));
+		err.setDescription(defaultBundle.getString("Error.app.deploymentfailed") + " (" + errorReturn +")");
 		sendGAErrorCode(err);
 		return err;
 	}
@@ -341,7 +341,7 @@ public final class ErrorCodeRegistry {
 	 */
 	public static ErrorCode getAppTrustError(){
 		ErrorCode err = new ErrorCode();
-		err.setCode(525);
+		err.setCode(526);
 		err.setName("App trust error");
 		err.setDescription(defaultBundle.getString("Error.app.trust"));
 		sendGAErrorCode(err);

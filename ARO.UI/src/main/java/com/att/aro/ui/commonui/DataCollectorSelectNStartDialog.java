@@ -34,6 +34,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,6 +52,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.LogManager;
 
 import com.att.aro.core.ApplicationConfig;
@@ -122,7 +124,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 * @wbp.parser.constructor
 	 */
 	public DataCollectorSelectNStartDialog(Frame owner) {
-		this(owner, null, null, null, null, true);
+		this(owner, null, null, null, null, true, null);
 	}
 
 	/**
@@ -145,9 +147,9 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 *            A boolean value that indicates whether to record video for
 	 *            this trace or not.
 	 */
-	public DataCollectorSelectNStartDialog(Frame owner, SharedAttributesProcesses mainframeParent, ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo) {
+	public DataCollectorSelectNStartDialog(Frame owner, SharedAttributesProcesses mainframeParent, ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo, Hashtable<String, Object> previousOptions) {
 		super(owner);
-		initialize(mainframeParent, deviceList, traceFolderName, collectors, recordVideo);
+		initialize(mainframeParent, deviceList, traceFolderName, collectors, recordVideo, previousOptions);
 	}
 
 	/**
@@ -155,7 +157,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 * 
 	 * @return void
 	 */
-	private void initialize(SharedAttributesProcesses mainframeParent, ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo) {
+	private void initialize(SharedAttributesProcesses mainframeParent, ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo, Hashtable<String, Object> previousOptions) {
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("StartCollectorWindow");
 		this.setModal(true);
 		this.setTitle(ResourceBundleHelper.getMessageString("dlog.collector.title"));
@@ -168,11 +170,19 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		this.pack();
 		this.setLocationRelativeTo(getOwner());
 		this.getRootPane().setDefaultButton(getStartButton());
-
+		
 		getJTraceFolderTextField().setText(traceFolderName);
 		getJTraceFolderTextField().selectAll();
 		
 		deviceOptionPanel.showVideoOrientation(false);
+		
+		reselectPriorOptionsForDeviceDialog(previousOptions);
+	}
+
+	private void reselectPriorOptionsForDeviceDialog(Hashtable<String, Object> previousOptions) {
+		if (MapUtils.isNotEmpty(previousOptions)) {
+			getDeviceOptionPanel().reselectPriorOptions(previousOptions);
+		}
 	}
 
 	/**
@@ -316,13 +326,22 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 						}
 					}	
 					
-					boolean attnEnabled = deviceOptionPanel.getAttnrGroup().getAttnrRadioGP().getSliderBtn().isSelected();
-					
-					if (deviceTablePanel.getSelection().isPlatform(Platform.iOS) && attnEnabled
-							&& (!deviceOptionPanel.isSharedNetworkActive())) {
-						 new IOSStepsDialog(DataCollectorSelectNStartDialog.this);
-						return;
+					boolean secureOrAttnEnabled = deviceOptionPanel.getAttnrGroup().getAttnrRadioGP().getSliderBtn().isSelected();
+					if(deviceTablePanel.getSelection().isPlatform(Platform.iOS)) {
+						if(deviceTablePanel.getSelection().getProductName()==null||deviceTablePanel.getSelection().getModel()==null) {
+							JOptionPane.showMessageDialog(DataCollectorSelectNStartDialog.this
+									, ResourceBundleHelper.getMessageString("Error.app.nolibimobiledevice")
+									, MessageFormat.format(ResourceBundleHelper.getMessageString("Error.app.noprerequisitelib"), 
+															ApplicationConfig.getInstance().getAppShortName())
+									, JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+						if (secureOrAttnEnabled && (!deviceOptionPanel.isSharedNetworkActive())) {
+							 new IOSStepsDialog(DataCollectorSelectNStartDialog.this);
+							return;
+						}
 					}
+
 					// don't allow whitespace
 					traceFolderName = traceFolderName.replaceAll("\\s", "");					
 					if (!traceFolderName.isEmpty()) {
@@ -388,8 +407,8 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 					&& !traceFolderNameField.getText().isEmpty()
 					&& deviceTablePanel.getSelection() != null)) {
 			
-			startButton.setEnabled(flag);
-			startButton.setSelected(false);
+			getStartButton().setEnabled(flag);
+			getStartButton().setSelected(false);
 		}
 	}
 
@@ -597,5 +616,8 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	public void setMainframeParent(SharedAttributesProcesses mainframeParent) {
 		this.mainframeParent = mainframeParent;
 	}
-
+	
+	public void setTraceFolderName (String traceFolderName) {
+		traceFolderNameField.setText(traceFolderName);
+	}
 }

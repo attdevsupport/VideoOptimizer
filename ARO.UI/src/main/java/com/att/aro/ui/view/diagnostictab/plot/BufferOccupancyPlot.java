@@ -39,6 +39,7 @@ import com.att.aro.core.packetanalysis.pojo.BufferOccupancyBPResult;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.impl.BufferOccupancyCalculatorImpl;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -70,29 +71,38 @@ public class BufferOccupancyPlot implements IPlot {
 	public void populate(XYPlot plot, AROTraceData analysis) {
 
 		if (analysis != null) {
-			
+			StreamingVideoData streamingVideoData = analysis.getAnalyzerResult().getStreamingVideoData();
 			bufferFillDataCollection.removeAllSeries();
 			seriesBufferFill = new XYSeries("Buffer Fill");
 			seriesDataSets = new TreeMap<>();
 			
-			seriesDataSets = bufferOccupancyCalculatorImpl.populateBufferOccupancyDataSet(analysis.getAnalyzerResult().getVideoUsage(),chunkPlayTimeList);
+			seriesDataSets = bufferOccupancyCalculatorImpl.populateBufferOccupancyDataSet(streamingVideoData,chunkPlayTimeList);
 			bufferSizeList.clear();
 			
 			double xCoordinate,yCoordinate;
 			String ptCoordinate[] = new String[2]; // to hold x & y values
-			if(!seriesDataSets.isEmpty()){
-
-				for(int key :seriesDataSets.keySet()){
+			double videoPlayStartTime = 0;
+			for (VideoEvent key : chunkPlayTimeList.keySet()) {
+				videoPlayStartTime = chunkPlayTimeList.get(key);
+				break;
+			}
+			List<VideoEvent> filteredSegments = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments();
+			double lastArrivedSegmentTimeStamp = filteredSegments.get(filteredSegments.size() - 1).getEndTS();
+			if (!seriesDataSets.isEmpty()) {
+				for (int key : seriesDataSets.keySet()) {
 					ptCoordinate = seriesDataSets.get(key).trim().split(",");
 					xCoordinate = Double.parseDouble(ptCoordinate[0]);
 					yCoordinate = Double.parseDouble(ptCoordinate[1]);
-					yCoordinate = yCoordinate/1024; //Converting Buffer size measurement unit to KB
-					bufferSizeList.add(yCoordinate);
-					seriesBufferFill.add(xCoordinate,yCoordinate);
-				}			
+					yCoordinate = yCoordinate / 1024; // Converting Buffer size measurement unit to KB
+					if (xCoordinate >= videoPlayStartTime && xCoordinate <= lastArrivedSegmentTimeStamp) {
+						bufferSizeList.add(yCoordinate);
+					}
+					seriesBufferFill.add(xCoordinate, yCoordinate);
+				}
 			}
 			Collections.sort(bufferSizeList);
-			BufferOccupancyBPResult bufferOccupancyResult = bufferOccupancyCalculatorImpl.setMaxBuffer(bufferSizeList.get(bufferSizeList.size()-1));
+			Double maxBuffer = bufferSizeList.size() == 0 ? 0.0 : bufferSizeList.get(bufferSizeList.size()-1);
+			BufferOccupancyBPResult bufferOccupancyResult = bufferOccupancyCalculatorImpl.setMaxBuffer(maxBuffer);
 			bufferOccupancyResult.setBufferByteDataSet(bufferSizeList);
 			analysis.getAnalyzerResult().setBufferOccupancyResult(bufferOccupancyResult);
 			// populate collection

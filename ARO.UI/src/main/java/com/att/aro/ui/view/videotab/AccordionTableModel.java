@@ -57,7 +57,7 @@ public class AccordionTableModel extends AbstractTableModel {
 		VideoEvent videoSegment = this.videoEventList.get(rowIndex);
 		switch (columnIndex) {
 		case 0:
-			value = String.format("%.0f", videoSegment.getSegment());
+			value = String.format("%.0f", videoSegment.getSegmentID());
 			break;
 		case 1:
 			value = String.format("%.3f", videoSegment.getStartTS());

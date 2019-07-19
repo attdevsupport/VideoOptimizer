@@ -82,11 +82,11 @@ public class NumericInputVerifier extends InputVerifier{
 
 	
 	@Override
-	public boolean verify(JComponent input) {
+	public boolean verify(JComponent component) {
 		
 		hidePopup();
 		
-		String text = ((JTextField) input).getText();
+		String text = ((JTextField) component).getText();
 		result = false;
 		tested = true;
 		try {
@@ -97,11 +97,11 @@ public class NumericInputVerifier extends InputVerifier{
 			BigDecimal value = new BigDecimal(text);
 
 			if (value.doubleValue() > max) {
-				popup(input, String.format(maxMssgFormat, max));
+				popup(component, String.format(maxMssgFormat, max));
 			} else if (value.doubleValue() < min || text.startsWith("-")) {
-				popup(input, String.format(minMssgFormat, min));
+				popup(component, String.format(minMssgFormat, min));
 			} else if (value.scale() > significands) {
-				popup(input, significands>0
+				popup(component, significands>0
 						? String.format("No more than %d digits beyond decimal point", significands)
 						: "Integer values only"
 						);
@@ -110,7 +110,7 @@ public class NumericInputVerifier extends InputVerifier{
 			}
 			
 		} catch (Exception e) {
-			popup(input, String.format("Illegal value!"));
+			popup(component, String.format("Illegal value!"));
 		}
 
 		return result;
@@ -122,7 +122,7 @@ public class NumericInputVerifier extends InputVerifier{
 	 * @param component
 	 * @param messageText
 	 */
-	private void popup(JComponent component, String messageText) {
+	public void popup(JComponent component, String messageText) {
 		try {
 			Point position = component.getLocationOnScreen();
 			int yOffset = position.y + (int) (component.getHeight() * 0.2);

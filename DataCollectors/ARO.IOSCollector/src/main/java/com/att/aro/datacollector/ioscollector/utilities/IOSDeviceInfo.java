@@ -31,7 +31,7 @@ import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 
 public class IOSDeviceInfo {
 	private static final Logger LOG = LogManager.getLogger(IOSDeviceInfo.class);
-	String exepath = "";
+	private static final String IDEVICE_INFO = "/usr/local/bin/ideviceinfo";
 	ExternalProcessRunner runner;
 	Map<String, String> list;
 	String buildversion;
@@ -41,62 +41,38 @@ public class IOSDeviceInfo {
 
 	public IOSDeviceInfo() {
 		list = new HashMap<String, String>();
-		exepath = "/usr/local/bin/ideviceinfo";
-		
-		LOG.info("set ideviceinfo path: " + exepath);
-
-		runner = new ExternalProcessRunner();
-		
+		runner = new ExternalProcessRunner();		
 		buildversion = buildBundle.getString("build.majorversion");
 	}
 
 	/**
-	 * check if a device is password protected
+	 * Retrieved the device information and write to the file
 	 * 
-	 * @param deviceId
-	 * @return
-	 * @throws IOException
-	 */
-	public boolean isPasswordProtected(String deviceId) throws IOException {
-		String data = getDeviceData(deviceId);
-		readData(data);
-		String pass = list.get("PasswordProtected");
-		if (pass != null && pass.toLowerCase().trim().equals("true")) {
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Get device info by UDID
-	 * 
-	 * @param deviceId
-	 *            is UDID for IOS device
+	 * @param deviceId is UDID for IOS device
 	 * @return
 	 */
-	public boolean getDeviceInfo(String deviceId, String filepath) {
-		File exefile = new File(exepath);
-		LOG.debug("exepath :"+exepath);
-		if (!exefile.exists()) {
-			LOG.error("" + exepath + " is not found.");
-			return false;
-		}
-		String data = null;
+	public boolean recordDeviceInfo(String deviceId, String filepath) {
+		boolean retrievedSuccess = false;
+		File exefile = new File(IDEVICE_INFO);
+		LOG.debug("exepath :"+IDEVICE_INFO);
 		this.currentFilepath = filepath;
-		try {
-			data = getDeviceData(deviceId);
-			readData(data);
-			writeData(filepath);
-			return true;
-		} catch (IOException e) {
-			LOG.error("getDeviceInfo IOException:", e);
-		}
-		return false;
+		if (!exefile.exists()) {
+			LOG.error(" " + IDEVICE_INFO + " is not found.");
+		}else {
+ 			try {
+				String data = getDeviceData(deviceId);
+				readData(data);
+				writeData(filepath);
+				retrievedSuccess = true;
+			} catch (IOException e) {
+				LOG.error("getDeviceInfo IOException:", e);							
+			}
+ 		}
+		return retrievedSuccess;
 	}
 
 	public String getDeviceData(String deviceId) throws IOException {
-	//	String[] cmds = new String[] { "bash", " -c " + exepath + " -u " + deviceId };
-		String[] cmds = new String[] { "bash", "-c", exepath + " -u " + deviceId };
+		String[] cmds = new String[] { "bash", "-c", IDEVICE_INFO + " -u " + deviceId };
 		String data = runner.runCmd(cmds);
 		return data;
 	}
@@ -112,6 +88,20 @@ public class IOSDeviceInfo {
 			deviceVersion = list.get("ProductVersion"); //Since list get when device info called
 		}
 		return deviceVersion;
+	}
+	
+	public void updateScreensize(int width, int height) {
+		if (width > height) {
+			list.put("ScreenResolution", height + "*" + width);
+		} else {
+			list.put("ScreenResolution", width + "*" + height);
+		}
+		writeData(this.currentFilepath);
+		this.foundrealscreensize = true;
+	}
+
+	public boolean foundScreensize() {
+		return this.foundrealscreensize;
 	}
 
 	private void readData(String data) {
@@ -181,20 +171,6 @@ public class IOSDeviceInfo {
 		} catch (Exception e) {
 		}
 
-	}
-
-	public void updateScreensize(int width, int height) {
-		if (width > height) {
-			list.put("ScreenResolution", height + "*" + width);
-		} else {
-			list.put("ScreenResolution", width + "*" + height);
-		}
-		writeData(this.currentFilepath);
-		this.foundrealscreensize = true;
-	}
-
-	public boolean foundScreensize() {
-		return this.foundrealscreensize;
 	}
 
 	private String getScreensize(String deviceType) {

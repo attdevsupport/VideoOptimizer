@@ -70,15 +70,15 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 	private int fpsDL = MAX_NUM;// 100Mb = 1048576 kb
 	private int fpsUL = MAX_NUM;
 
-	private AttenuatorModel miniAtnr;
+	private AttenuatorModel attenuatorModel;
 	
 	private enum SliderOption{
 		ULSlide, DLSlide;
 	}
 	
-	public AttnrThroughputThrottlePanel(AttenuatorModel miniAtnr){
+	public AttnrThroughputThrottlePanel(AttenuatorModel attenuatorModel){
 		setLayout(new GridBagLayout());
-		this.miniAtnr = miniAtnr;
+		this.setAttenuatorModel(attenuatorModel);
 		loadRadioGroupAttenuate();
  		getGBConstant();
  		resetComponent();
@@ -111,8 +111,8 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 		fsUpJLabel.setText(addUnit(textUpLabel));
 		setUpFps(setUpInit);
 		setThrottleUL(fpsUL);
-		miniAtnr.setThrottleUL(MAX_NUM);
-		miniAtnr.setThrottleULEnable(setUpSlider);
+		getAttenuatorModel().setThrottleUL(MAX_NUM);
+		getAttenuatorModel().setThrottleULEnable(setUpSlider);
 	}
 
 	private void setDownload(boolean setDownSlider, int setDownSliderNum, String textDownLabel, int setDownInit, int fpsDL){
@@ -121,8 +121,8 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 		fsJLabel.setText(addUnit(textDownLabel));
 		setFps(setDownInit);
 		setThrottoleDL(fpsDL);
-		miniAtnr.setThrottleDL(MAX_NUM);
-		miniAtnr.setThrottleDLEnable(setDownSlider);
+		getAttenuatorModel().setThrottleDL(MAX_NUM);
+		getAttenuatorModel().setThrottleDLEnable(setDownSlider);
 		
 	}
 	
@@ -137,13 +137,13 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 				LOG.info("Set DelayTime: " + fpsDL);
 				setThrottoleDL(fpsDL);
 				fsJLabel.setText(addUnit(Integer.toString(fpsDL)));
-				miniAtnr.setThrottleDL(fpsDL);
+				getAttenuatorModel().setThrottleDL(fpsDL);
 			}else{
 				setUpFps(fps_local);
 				LOG.info("Set DelayTime: " + fpsUL);
 				setThrottleUL(fpsUL);
 				fsUpJLabel.setText(addUnit(Integer.toString(fpsUL)));
-				miniAtnr.setThrottleUL(fpsUL);
+				getAttenuatorModel().setThrottleUL(fpsUL);
 			}
 			
 		}
@@ -204,14 +204,14 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 			LOG.info("Set DelayTime: " + fpsUL);
 			setThrottleUL(fpsUL);
 			fsUpJLabel.setText(addUnit(Integer.toString(fpsUL)));
-			miniAtnr.setThrottleUL(fpsUL);
+			getAttenuatorModel().setThrottleUL(fpsUL);
 		}else if(option == SliderOption.DLSlide){
 			delayDLJSlider.setValue(value);
 			setFps(value);
 			LOG.info("Set DelayTime: " + fpsDL);
 			setThrottoleDL(fpsDL);
 			fsJLabel.setText(addUnit(Integer.toString(fpsDL)));
-			miniAtnr.setThrottleDL(fpsDL);
+			getAttenuatorModel().setThrottleDL(fpsDL);
 		}
 	}
 	
@@ -356,14 +356,14 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 	public void resetComponent(){
 		downloadCheckBox.setSelected(false);
 		uploadCheckBox.setSelected(false);
-		miniAtnr.setThrottleDLEnable(false);
-		miniAtnr.setThrottleULEnable(false);
+		getAttenuatorModel().setThrottleDLEnable(false);
+		getAttenuatorModel().setThrottleULEnable(false);
 		delayDLJSlider.setValue(MAX_NUM);
 		delayDLJSlider.setEnabled(false);
 		delayULJSlider.setValue(MAX_NUM);
 		delayULJSlider.setEnabled(false);
-		miniAtnr.setThrottleDL(MAX_NUM);
-		miniAtnr.setThrottleUL(MAX_NUM);
+		getAttenuatorModel().setThrottleDL(MAX_NUM);
+		getAttenuatorModel().setThrottleUL(MAX_NUM);
 
 	}
 	public void setThrottleUL(int throughputUL) {
@@ -402,6 +402,33 @@ public class AttnrThroughputThrottlePanel extends JPanel implements ActionListen
 
 	public void setDownloadCheckBox(JCheckBox downloadCheckBox) {
 		this.downloadCheckBox = downloadCheckBox;
+	}
+
+	public void reselectPriorOptions(AttenuatorModel attenuatorModel) {
+		
+		this.setAttenuatorModel(attenuatorModel);
+		
+		if (attenuatorModel.isThrottleDLEnabled()) {
+			downloadCheckBox.setSelected(true);
+			delayDLJSlider.setEnabled(true);
+			delayDLJSlider.setValue(getAttenuatorModel().getThrottleDL());
+			fsJLabel.setText(addUnit(Integer.toString(getAttenuatorModel().getThrottleDL())));
+		}
+		
+		if (attenuatorModel.isThrottleULEnabled()) {
+			uploadCheckBox.setSelected(true);
+			delayULJSlider.setEnabled(true);
+			delayULJSlider.setValue(getAttenuatorModel().getThrottleUL());	
+			fsUpJLabel.setText(addUnit(Integer.toString(getAttenuatorModel().getThrottleUL())));
+		}
+	}
+
+	public AttenuatorModel getAttenuatorModel() {
+		return attenuatorModel;
+	}
+
+	public void setAttenuatorModel(AttenuatorModel attenuatorModel) {
+		this.attenuatorModel = attenuatorModel;
 	}
 
 }

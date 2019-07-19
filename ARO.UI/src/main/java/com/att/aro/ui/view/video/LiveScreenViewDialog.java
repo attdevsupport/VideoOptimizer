@@ -32,15 +32,15 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
 import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
-import com.att.aro.datacollector.ioscollector.utilities.AppSigningHelper;
+import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.ui.commonui.ImagePanel;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -62,6 +62,8 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 	private SharedAttributesProcesses theView;
 	
 	private IDataCollector collector;
+	
+	private VideoOption videoOption;
 
 	/**
 	 * Create the dialog.
@@ -99,6 +101,10 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 		setVisible(true);
 		collector.addVideoImageSubscriber(this);
 
+	}
+	
+	public void setVideoOption(VideoOption videoOption) {
+		this.videoOption = videoOption;
 	}
 
 	private JPanel dashBoardPane() {
@@ -148,8 +154,7 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 	 */
 	void onStop() {
 		setVisible(false);
-		if (this.collector.getType().equals(DataCollectorType.IOS)
-				&& (AppSigningHelper.getInstance().getIosVersion() >= 11) && AppSigningHelper.isCertInfoPresent()) {
+		if (this.collector.getType().equals(DataCollectorType.IOS) &&VideoOption.HDEF.equals(videoOption)) {			
 			MessageDialogFactory.showMessageDialog(null,
 					ResourceBundleHelper.getMessageString("Message.stop.screenrecording"), "Stop Collection",
 					JOptionPane.INFORMATION_MESSAGE);

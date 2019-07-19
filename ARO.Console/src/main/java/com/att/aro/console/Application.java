@@ -527,6 +527,10 @@ public final class Application implements IAROView {
 					printError(ErrorCodeRegistry.getInvalidPasswordError());
 					System.exit(1);
 				}
+ 				if("hd".equals(cmds.getVideo())||"sd".equals(cmds.getVideo())) {
+					printError(ErrorCodeRegistry.getInvalidiOSArgs());
+					System.exit(1);
+				}
 				break;
 				
 			default:
@@ -564,6 +568,7 @@ public final class Application implements IAROView {
 				Hashtable<String,Object> extras = new Hashtable<String,Object>();
 				extras.put("video_option", getVideoOption());
 				extras.put("AttenuatorModel", model);
+
 				result = runCommand(cmds, collector, cmds.getSudo(), extras);
 			} finally {
 				restoreSystemOut(outSave);
@@ -723,7 +728,7 @@ public final class Application implements IAROView {
 				.append("\n    If not declared first device found is used.")
 				.append("\n  --format [json|html]: optional type of report to generate. Default: json.")
 				.append(
-						(Util.isMacOS())
+						(!Util.isMacOS())
 						?"\n  --video [hd|sd|slow|no]: optional command to record video when running collector. Default: no."
 						:"\n  --video [yes|no]: optional command to record video when running collector. Default: no."
 						)
@@ -738,7 +743,7 @@ public final class Application implements IAROView {
 				.append("\nRun Android collector to capture trace with video:")
 				.append("\n    slow video is 1-2 frames per second: ")
 				.append("\n  --startcollector rooted_android --output /User/documents/test --video slow")
-			
+								
 				.append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation applied:")
 				.append("\n    throttle uplink throughput can accept 64k - 100m (102400k)")
 				.append("\n    throttle downlink throughput can accept 64k - 100m (102400k)")
@@ -750,7 +755,7 @@ public final class Application implements IAROView {
 				.append("\nRun iOS collector to capture trace with video: ")
 				.append("\n    trace will be overwritten if it exists: ")
 				.append("\n  --startcollector ios --deviceid udid/deviceIdentifier --overwrite yes --output /Users/{user}/tracefolder --video hd --sudo password")
-				
+								
 				.append("\nRun iOS collector to capture trace with video and uplink/downlink attenuation applied: ")
 				.append("\n  --startcollector ios --deviceid udid/deviceIdentifier --output /user/documents/(trace name) --video slow --throttleUL 2m --throttleDL 64k --sudo password")
 				

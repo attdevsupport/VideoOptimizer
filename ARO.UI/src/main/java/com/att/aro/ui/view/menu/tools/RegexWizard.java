@@ -1,5 +1,5 @@
 /*
-*  Copyright 2017 AT&T
+ *  Copyright 2017 AT&T
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@
 package com.att.aro.ui.view.menu.tools;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
@@ -46,10 +48,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import javax.swing.AbstractCellEditor;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultCellEditor;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -64,6 +66,8 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
@@ -76,6 +80,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoAnalysisConfigHelper;
 import com.att.aro.core.videoanalysis.impl.RegexMatchLbl;
 import com.att.aro.core.videoanalysis.impl.VideoAnalysisConfigHelperImpl;
@@ -84,6 +89,7 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
 import com.att.aro.core.videoanalysis.pojo.config.VideoDataTags;
 import com.att.aro.ui.commonui.ContextAware;
+import com.att.aro.ui.utils.NumericInputVerifier;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -110,6 +116,12 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	private JTextArea regexHeaderField;
 	private JTextArea responseField;
 	private JTextArea regexResponseField;
+	private JScrollPane headerScrollPane;
+	private JScrollPane requestScrollPane;
+	private JScrollPane responseScrollPane;
+	private JScrollPane reqRegexScrollPane;
+	private JScrollPane resRegexScrollPane;
+	private JScrollPane headerRegexScrollPane;
 	
 	private JCheckBox cbRequest;
 	private JCheckBox cbHeader;
@@ -173,14 +185,19 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	public void init() {
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("VideoParserWizard");
 		setDefaultCloseOperation(RegexWizard.DISPOSE_ON_CLOSE);
-		enableCheckBoxes(true);	
-		this.setSize(815, 800);
-		this.setMaximumSize(new Dimension(815, 800));
-		this.setMinimumSize(new Dimension(815, 700));
-		this.setModal(false);
+		enableCheckBoxes(true);		
+		Dimension screenDimension = Toolkit.getDefaultToolkit().getScreenSize();
+		double screenHeight = screenDimension.getHeight();
+		double screenWidth = screenDimension.getWidth();
+		int height = Util.isLinuxOS() ? (int) (screenHeight * 0.9): (int) (screenHeight * 0.8);
+		int width = (int) (screenWidth * 0.75);
+		this.setPreferredSize(new Dimension(width, height));		
+		this.setModalityType(ModalityType.APPLICATION_MODAL);
 		this.setTitle(resourceBundle.getString("videoParser.wizard.title"));
 		this.setLocationRelativeTo(getOwner());
-		this.setAlwaysOnTop(true);
+		int xPt = ((int) screenWidth - width)/2;
+		int yPt = ((int) screenHeight - height)/2;
+		this.setLocation(xPt, yPt);
 		this.setResizable(false);
 
 		setLayout(new GridBagLayout());
@@ -190,18 +207,18 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		constraint.gridx = 0;
 		constraint.gridy = 0;
 		constraint.weightx = 1;
-		constraint.weighty = 0.6;
+		constraint.weighty = 0.8;
 		constraint.gridwidth = 2;
 		add(getFieldPanel(), constraint);
 
 		constraint.gridy = 1;
 		constraint.gridwidth = 1;
-		constraint.weighty = 0.38;
-		constraint.weightx = 0.4;
+		constraint.weighty = 0.2;
+		constraint.weightx = 0.6;
 		constraint.insets = new Insets(0, 2, 0, 5);
 		add(getMatcherPanel(), constraint);
 
-		constraint.weightx = 0.5;
+		constraint.weightx = 0.4;
 		constraint.gridx = 1;
 		constraint.insets = new Insets(0, 1, 0, 2);
 		add(getResultPanel(), constraint);
@@ -209,7 +226,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		constraint.weightx = 1;
 		constraint.gridy = 2;
 		constraint.gridx = 0;
-		constraint.weighty = 0.02;
+		constraint.weighty = 0.0;
 		constraint.gridwidth = 2;
 		add(getBottomPanel(), constraint);
 
@@ -248,7 +265,6 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 				videoConfig = new VideoAnalysisConfig();
 			}
 			pack();
-//		}
 	}
 	
 	private void enableCheckBoxes(boolean state){
@@ -276,15 +292,48 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		numeric.setSelected(false);
 		lengthMax.setSelected(false);
 		lengthMin.setSelected(false);
-		lengthMinField.setText("");
-		lengthMaxField.setText("");
-		// resultField.setText("");
+		lengthMinField.setText("0");
+		lengthMaxField.setText("0");
 		configField.setText("");
 
+		lengthMinField.addFocusListener(new FocusListener() {
+
+			@Override
+			public void focusLost(FocusEvent e) {
+				updateValidations();
+			}
+
+			@Override
+			public void focusGained(FocusEvent e) {
+			}
+		});
+		
+		lengthMaxField.addFocusListener(new FocusListener() {
+
+			@Override
+			public void focusLost(FocusEvent e) {
+			}
+
+			@Override
+			public void focusGained(FocusEvent e) {
+				updateValidations();
+			}
+		});
+		
 		videoConfig = new VideoAnalysisConfig();
 		displayResult(null);
 	}
 
+	private void updateValidations() {
+		Integer min = parseInt(lengthMinField, 0);
+		Integer max = parseInt(lengthMaxField, min);
+		if (max < min) {
+			max = min;
+			lengthMaxField.setText(max.toString());
+		}
+		setValidation(lengthMaxField, 500, min, 0);
+	}
+	
 	private void populateURLFields(String request, String header, String response) {
 		if (fieldPanel != null) {
 			clear();
@@ -298,18 +347,21 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		}
 	}
 	
-	private JTextArea createTextAreaAndProperties(String title){
-		JTextArea textArea = new JTextArea();
+	private JScrollPane createScrollPaneForTextArea(JTextArea textArea, String name, String title) {
+		textArea.setName(name);
 		textArea.setLineWrap(true);
+		textArea.addFocusListener(this);
+
+		JScrollPane scrollPane = new JScrollPane(textArea);
 		TitledBorder ttlBorder = BorderFactory.createTitledBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createRaisedBevelBorder(), BorderFactory.createLoweredBevelBorder()), title);
 		ttlBorder.setTitleColor(Color.BLUE);
 		ttlBorder.setTitleFont(ttlBorder.getTitleFont().deriveFont(Font.BOLD));
-		textArea.setBorder(ttlBorder);
-		textArea.addFocusListener(this);
-		return textArea;
-	}
+		scrollPane.setBorder(ttlBorder);
 
+		return scrollPane;
+	}
+	
 	private JPanel getFieldPanel() {
 		if (fieldPanel == null) {
 				        
@@ -349,23 +401,36 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 			compileResultsField.setBackground(fieldPanel.getBackground());
 			compileResultsField.setForeground(Color.red);
 			compileResultsField.setFont(compileResultsField.getFont().deriveFont(Font.BOLD));
-
-			requestField = createTextAreaAndProperties(ResourceBundleHelper.getMessageString("videotab.label.request"));
-			requestField.setName(ResourceBundleHelper.getMessageString("videotab.field.request"));
-			regexRequestField = createTextAreaAndProperties(ResourceBundleHelper.getMessageString("videotab.label.regex.request"));
-			regexRequestField.setName(ResourceBundleHelper.getMessageString("videotab.field.regex.request"));
-			responseField = createTextAreaAndProperties(ResourceBundleHelper.getMessageString("videotab.label.response"));
-			responseField.setName(ResourceBundleHelper.getMessageString("videotab.field.response"));
-			regexResponseField = createTextAreaAndProperties(ResourceBundleHelper.getMessageString("videotab.label.regex.response"));
-			regexResponseField.setName(ResourceBundleHelper.getMessageString("videotab.field.regex.response"));
-			headerField = createTextAreaAndProperties(ResourceBundleHelper.getMessageString("videotab.label.header"));
-			headerField.setName(ResourceBundleHelper.getMessageString("videotab.field.header"));
-			regexHeaderField = createTextAreaAndProperties(ResourceBundleHelper.getMessageString("videotab.label.regex.header"));
-			regexHeaderField.setName(ResourceBundleHelper.getMessageString("videotab.field.regex.header"));
-
 			fieldPanel.add(compileResultsField, constraint);
+			
+			requestField = new JTextArea();
+			regexRequestField = new JTextArea();
+			responseField = new JTextArea();
+			regexResponseField = new JTextArea();
+			headerField = new JTextArea();
+			regexHeaderField = new JTextArea();
 
+			requestScrollPane = createScrollPaneForTextArea(requestField,
+					ResourceBundleHelper.getMessageString("videotab.field.request"),
+					ResourceBundleHelper.getMessageString("videotab.label.request"));
+			headerScrollPane = createScrollPaneForTextArea(headerField,
+					ResourceBundleHelper.getMessageString("videotab.field.header"),
+					ResourceBundleHelper.getMessageString("videotab.label.header"));
+			responseScrollPane = createScrollPaneForTextArea(responseField,
+					ResourceBundleHelper.getMessageString("videotab.field.response"),
+					ResourceBundleHelper.getMessageString("videotab.label.response"));
+			reqRegexScrollPane = createScrollPaneForTextArea(regexRequestField,
+					ResourceBundleHelper.getMessageString("videotab.field.regex.request"),
+					ResourceBundleHelper.getMessageString("videotab.label.regex.request"));
+			resRegexScrollPane = createScrollPaneForTextArea(regexResponseField,
+					ResourceBundleHelper.getMessageString("videotab.field.regex.response"),
+					ResourceBundleHelper.getMessageString("videotab.label.regex.response"));
+			headerRegexScrollPane = createScrollPaneForTextArea(regexHeaderField,
+					ResourceBundleHelper.getMessageString("videotab.field.regex.header"),
+					ResourceBundleHelper.getMessageString("videotab.label.regex.header"));
+			
 			constraint.gridy = 1;
+			constraint.weighty = 0.0;
 			constraint.anchor = GridBagConstraints.WEST;
 			constraint.fill=GridBagConstraints.NONE;
 			constraint.anchor = GridBagConstraints.EAST;
@@ -373,13 +438,15 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 			
 			constraint.gridy = 2;
 			constraint.anchor = GridBagConstraints.WEST;
-			constraint.fill=GridBagConstraints.HORIZONTAL;
-			fieldPanel.add(requestField, constraint);
-			
+			constraint.fill = GridBagConstraints.BOTH;
+			constraint.weighty = Util.isLinuxOS() ? 0.0 : 0.3;
+			fieldPanel.add(requestScrollPane, constraint);
+
 			constraint.gridy = 3;
+			constraint.weighty = 0.0;
 			constraint.fill=GridBagConstraints.HORIZONTAL;
 			constraint.anchor = GridBagConstraints.WEST;
-			fieldPanel.add(regexRequestField, constraint);
+			fieldPanel.add(reqRegexScrollPane, constraint);
 			
 			constraint.gridy = 4;
 			constraint.fill=GridBagConstraints.NONE;
@@ -387,10 +454,12 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 			constraint.anchor = GridBagConstraints.EAST;
 			fieldPanel.add(cbHeader, constraint);
 			constraint.gridy = 5;
-			constraint.fill=GridBagConstraints.HORIZONTAL;
-			fieldPanel.add(headerField, constraint);
+			constraint.fill = GridBagConstraints.BOTH;
+			constraint.weighty = Util.isLinuxOS() ? 0.0 : 0.3;
+			fieldPanel.add(headerScrollPane, constraint);
 			constraint.gridy = 6;
-			fieldPanel.add(regexHeaderField, constraint);
+			constraint.weighty = 0.0;
+			fieldPanel.add(headerRegexScrollPane, constraint);
 
 			constraint.gridy = 7;
 			constraint.fill=GridBagConstraints.NONE;
@@ -400,12 +469,14 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 
 			constraint.gridy = 8;
 			constraint.anchor = GridBagConstraints.WEST;
-			constraint.fill=GridBagConstraints.HORIZONTAL;
-			fieldPanel.add(responseField, constraint);
+			constraint.fill = GridBagConstraints.BOTH;
+			constraint.weighty = Util.isLinuxOS() ? 0.0 : 0.3;
+			fieldPanel.add(responseScrollPane, constraint);
 			
 			constraint.gridy = 9;
-			constraint.fill=GridBagConstraints.HORIZONTAL;
-			fieldPanel.add(regexResponseField, constraint);
+			constraint.weighty = 0.0;
+			constraint.fill = GridBagConstraints.HORIZONTAL;
+			fieldPanel.add(resRegexScrollPane, constraint);
 		}
 		return fieldPanel;
 	}
@@ -441,7 +512,9 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 			lengthMax = new JCheckBox(ResourceBundleHelper.getMessageString("videoTab.max.length"));
 			lengthMinField = new JTextField(10);
 			lengthMaxField = new JTextField(10);
-
+			setValidation(lengthMinField, 500, 0, 0);
+			setValidation(lengthMaxField, 500, 0, 0);
+			
 			matcherPanel.add(ignore, constraint);
 
 			constraint.gridy = 1;
@@ -491,6 +564,10 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		return matcherPanel;
 	}
 
+	private void setValidation(JTextField numericTextField, double max, double min, int significands) {
+		numericTextField.setInputVerifier(new NumericInputVerifier(max, min, significands));
+	}
+
 	private JPanel getResultPanel() {
 		if (resultPanel == null) {
 			resultPanel = new JPanel();
@@ -525,14 +602,8 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		TableColumnModel columnModel = table.getColumnModel();
 		TableColumn comboColumn = columnModel.getColumn(columnIndex);
 
-		JComboBox<String> comboBox = new JComboBox<>();
-
 		EnumSet<VideoDataTags> allVDTags = EnumSet.allOf(VideoDataTags.class);
-		for (VideoDataTags videoDataTag : allVDTags) {
-			comboBox.addItem(videoDataTag.toString());
-		}
-
-		comboColumn.setCellEditor(new DefaultCellEditor(comboBox));
+		comboColumn.setCellEditor(new ComboBoxCellEditor(allVDTags));
 
 		/*
 		 * allows clearing a problem when cell editor is interrupted, very deep problem. 
@@ -540,11 +611,83 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		 * closed , and (C) Wizard is entered from the menu in this exact order
 		 */
 		cellEditor = comboColumn.getCellEditor();
-		
-		DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
+		ComboBoxCellRenderer renderer = new ComboBoxCellRenderer();
 		renderer.setToolTipText(ResourceBundleHelper.getMessageString("videoTab.tooltip"));
 		comboColumn.setCellRenderer(renderer);
+	}
+	
+	private class ComboBoxCellEditor extends AbstractCellEditor implements TableCellEditor {
 
+		private String xrefValue;
+		private EnumSet<VideoDataTags> allVideoTags;
+
+		public ComboBoxCellEditor(EnumSet<VideoDataTags> allVideoTags) {
+			this.allVideoTags = allVideoTags;
+		}
+
+		@Override
+		public Object getCellEditorValue() {
+			return this.xrefValue;
+		}
+
+		@Override
+		public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row,
+				int column) {
+			JComboBox<String> comboBox = new JComboBox<>();
+
+			for (VideoDataTags videoDataTag : allVideoTags) {
+				comboBox.addItem(videoDataTag.toString());
+			}
+			this.xrefValue = value.toString();
+			comboBox.setSelectedItem(value.toString());
+			comboBox.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent evt) {
+					JComboBox<String> combo = (JComboBox<String>) evt.getSource();
+					xrefValue = (String) combo.getSelectedItem();
+					fireEditingStopped();
+				}
+			});
+
+			comboBox.addPopupMenuListener(new PopupMenuListener() {
+
+				@Override
+				public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+
+				}
+
+				@Override
+				public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+					fireEditingCanceled();
+				}
+
+				@Override
+				public void popupMenuCanceled(PopupMenuEvent e) {
+
+				}
+			});
+
+			comboBox.setBackground(Color.WHITE);
+			return comboBox;
+		}
+
+		@Override
+		public boolean stopCellEditing() {
+			return super.stopCellEditing();
+		}
+	}
+	
+	private class ComboBoxCellRenderer extends DefaultTableCellRenderer {
+
+		@Override
+		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+				int row, int column) {
+			super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+			setBackground(Color.WHITE);
+			setForeground(Color.BLACK);
+			return this;
+		}
 	}
 
 	private JPanel getBottomPanel() {
@@ -595,6 +738,9 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	}
 
 	private void doLoad() {
+		if (!validateFields()) {
+			return;
+		}
 		JFileChooser fileChooser = new JFileChooser(voConfigHelper.getFolderPath());
 		if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 			File file = fileChooser.getSelectedFile();
@@ -602,7 +748,6 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 				configField.setText(file.getPath());
 				compileResultsField.setText("");
 				VideoAnalysisConfig voConfig = voConfigHelper.loadConfigFile(file.getAbsolutePath());
-				// get VideoAnalysisConfig type and setText of fields
 				if (voConfig != null) {
 					signalStopCellEditing();
 					this.videoConfig = voConfig;
@@ -627,6 +772,9 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	}
 
 	private void doEnter() {
+		if (!validateFields()) {
+			return;
+		}
 		if (errorOccured) {
 			errorOccured = false;
 		} else {
@@ -672,11 +820,16 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		}
 	}
 
+	private boolean validateFields() {
+		return (lengthMaxField.getInputVerifier().verify(lengthMaxField)
+				&& lengthMinField.getInputVerifier().verify(lengthMinField));
+	}
+
 	/*<pre>
 	 * issues a stopCellEditing to resolve problems from interrupted combobox selections.
 	 *  allows clearing a problem when cell editor is interrupted, very deep problem. 
 	 *  Only shows if: 
-	 *   (A) combobox selection is interupted
+	 *   (A) combobox selection is interrupted
 	 *   (B) dialog is closed
 	 *   (C) Wizard is entered from the menu in this exact order
 	 */
@@ -688,6 +841,12 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 
 	private void saveConfig() {
 		if (this.videoConfig != null) {
+			if (!validateFields()) {
+				return;
+			}
+			requestFocusON = false;
+			headerFocusON = false;
+			responseFocusON = false;
 			doEnter();
 			VideoDataTags[] xref = resultsTable.getVideoDataTags();
 			Map<RegexMatchLbl, VideoDataTags[]> xrefMap = resultsTable.getVideoDataTagsMap();
@@ -700,13 +859,20 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		if (this.videoConfig != null && voConfigHelper.validateConfig(videoConfig)) {
 			try {
 				JFileChooser fileChooser = new JFileChooser(voConfigHelper.getFolderPath());
-				if (videoConfig.getDesc() != null) {
-					fileChooser.setSelectedFile(new File(videoConfig.getDesc()));
+				if (videoConfig.getDesc() == null || videoConfig.getDesc().isEmpty()) {
+					videoConfig.setDesc("ConfigFile");
 				}
-				// fileChooser.setCurrentDirectory(new File(voConfigHelper.getFolderPath()));
+				fileChooser.setSelectedFile(new File(videoConfig.getDesc()));
+				
 				if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-					voConfigHelper.saveConfigFile(videoConfig.getVideoType(), fileChooser.getSelectedFile().getName().replaceAll("\\.json", ""), videoConfig.getType(), videoConfig.getRegex(),
-							videoConfig.getHeaderRegex(), videoConfig.getResponseRegex(), videoConfig.getXref());
+					voConfigHelper.saveConfigFile(
+							videoConfig.getVideoType()
+							, fileChooser.getSelectedFile().getName().replaceAll("\\.json", "")
+							, videoConfig.getType()
+							, videoConfig.getRegex()
+							, videoConfig.getHeaderRegex()
+							, videoConfig.getResponseRegex()
+							, videoConfig.getXref());
 					videoConfig.setDesc(fileChooser.getSelectedFile().getName().replaceAll("\\.json", ""));
 					configField.setText(videoConfig.getDesc());
 					Map<RegexMatchLbl, VideoDataTags[]> map = new LinkedHashMap<>(videoConfig.getXrefMap());
@@ -973,8 +1139,7 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	Pattern pat = Pattern.compile("(\\(.+\\))");
 
 	private Map<RegexMatchLbl, RegexMatchResult> extractResult(VideoAnalysisConfig voConfig) {
-		Map<RegexMatchLbl, RegexMatchResult> result = voConfigHelper.match(voConfig, requestField.getText(),
-				headerField.getText(), responseField.getText());
+		Map<RegexMatchLbl, RegexMatchResult> result = voConfigHelper.match(voConfig, requestField.getText(), headerField.getText(), responseField.getText());
 		return result;
 	}
 
@@ -1030,12 +1195,10 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 		numericPattern.append("\\d");
 		if (lengthMin.isSelected() || lengthMax.isSelected()) {
 			int min = -1, max = -1;
-			if (lengthMinField.getText() != null && (!lengthMinField.getText().isEmpty())) {
-				min = Integer.parseInt(lengthMinField.getText());
-			}
-			if (lengthMaxField.getText() != null && (!lengthMaxField.getText().isEmpty())) {
-				max = Integer.parseInt(lengthMaxField.getText());
-			}
+			
+			min = parseInt(lengthMinField, 0);
+			max = parseInt(lengthMaxField, min);
+			
 			if ((min == 1 && max == 1) || (min < 1 && max == 1)) {
 				// pattern for only one digit
 			} else if (min > 1) {
@@ -1059,6 +1222,22 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 
 		return numericPattern.toString();
 
+	}
+
+	private int parseInt(JTextField field, int defaultVal) {
+		int val;
+		if (field == null || StringUtils.isEmpty(field.getText())) {
+			val = defaultVal;
+		} else {
+			try {
+				Double dVal = Double.parseDouble(field.getText());
+				val = dVal.intValue();
+			} catch (NumberFormatException e) {
+				val = defaultVal;
+				LOG.error("NumberFormatException {" + field.getText() + "} ", e);
+			}
+		}
+		return val;
 	}
 
 	private String matchSelection(String text) {

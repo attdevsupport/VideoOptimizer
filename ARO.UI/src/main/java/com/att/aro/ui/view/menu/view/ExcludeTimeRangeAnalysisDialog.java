@@ -21,6 +21,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.util.List;
@@ -165,8 +167,48 @@ public class ExcludeTimeRangeAnalysisDialog extends JDialog {
 			jDialogPanel.setLayout(new BorderLayout());
 			jDialogPanel.add(getTimeRangeSelectionPanel(), BorderLayout.CENTER);
 			jDialogPanel.add(getJButtonPanel(), BorderLayout.SOUTH);
+			this.addWindowListener(getWindowListener());
 		}
 		return jDialogPanel;
+	}
+
+	private WindowListener getWindowListener() {
+		return (new WindowListener() {
+			
+			@Override
+			public void windowOpened(WindowEvent e) {
+				// Auto-generated method 				
+			}
+			
+			@Override
+			public void windowIconified(WindowEvent e) {
+				// Auto-generated method 		
+			}
+			
+			@Override
+			public void windowDeiconified(WindowEvent e) {
+				// Auto-generated method 
+			}
+			
+			@Override
+			public void windowDeactivated(WindowEvent e) {
+				// Auto-generated method 
+			}
+			
+			@Override
+			public void windowClosing(WindowEvent e) {
+				closeWindow();	
+			}
+			
+			@Override
+			public void windowClosed(WindowEvent e) {
+			}
+			
+			@Override
+			public void windowActivated(WindowEvent e) {
+				// Auto-generated method 
+			}
+		});	
 	}
 
 	/**
@@ -334,17 +376,18 @@ public class ExcludeTimeRangeAnalysisDialog extends JDialog {
 			cancelButton.addActionListener(new ActionListener() {
 
 				@Override
-				public void actionPerformed(ActionEvent arg0) {
-					
-					AnalysisFilter filter = ((MainFrame)parent).getController().getTheModel().getAnalyzerResult().getFilter();
-					filter.setTimeRange(new TimeRange(initTimeRangeStartTime, initTimeRangeEndTime));
-					
-					dispose();
+				public void actionPerformed(ActionEvent arg0) {	
+					closeWindow();
 				}
-
 			});
 		}
 		return cancelButton;
+	}
+	
+	private void closeWindow() {
+		AnalysisFilter filter = ((MainFrame)parent).getController().getTheModel().getAnalyzerResult().getFilter();
+		filter.setTimeRange(new TimeRange(initTimeRangeStartTime, initTimeRangeEndTime));
+		dispose();
 	}
 
 	/**

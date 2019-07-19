@@ -23,7 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.TabPanelJScrollPane;
@@ -64,10 +64,10 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
 		accordionList.clear();
-		if (analyzerResult != null && analyzerResult.getAnalyzerResult() != null && analyzerResult.getAnalyzerResult().getVideoUsage() != null) {
-			for (AROManifest aroManifest : analyzerResult.getAnalyzerResult().getVideoUsage().getManifests()) {
-				if (aroManifest != null && aroManifest.getVideoEventList() != null && !aroManifest.getVideoEventList().isEmpty()) {
-					AccordionComponent component = new AccordionComponent(aroManifest, this.overviewRoute, analyzerResult, aroView);
+		if (analyzerResult != null && analyzerResult.getAnalyzerResult() != null && analyzerResult.getAnalyzerResult().getStreamingVideoData() != null) {
+			for (VideoStream videoStream : analyzerResult.getAnalyzerResult().getStreamingVideoData().getVideoStreamMap().values()) {
+				if (videoStream != null && videoStream.getVideoEventList() != null && !videoStream.getVideoEventList().isEmpty()) {
+					AccordionComponent component = new AccordionComponent(videoStream, this.overviewRoute, analyzerResult, aroView);
 					component.setVisible(false);
 					accordionList.add(component);
 				}

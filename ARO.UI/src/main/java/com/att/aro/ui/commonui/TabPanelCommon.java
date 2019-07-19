@@ -17,10 +17,12 @@ package com.att.aro.ui.commonui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.MouseAdapter;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,7 +58,7 @@ public class TabPanelCommon {
 	private final Map<String, JLabel> labels = new HashMap<String, JLabel>();
 	private final ResourceBundle resource;
 	private int currentDataPanel = 0;
-
+	
 	public TabPanelCommon(boolean use2Contents) {
 		resource = ResourceBundleHelper.getDefaultBundle();
 		labelContents2 = use2Contents ? new HashMap<String, JLabel>() : null;
@@ -478,8 +480,26 @@ public class TabPanelCommon {
 		setText(getKeyFromEnum(enumParm), 2, value);
 	}
 	public void setText(Enum<?> enumParm, int columnIndex, String value) {
-		
+
 	}
-	public void setText(Enum<?> enumParm, Enum<?> columnEnum, String value) {		
+
+	public void setText(Enum<?> enumParm, Enum<?> columnEnum, String value) {
+	}
+
+	public void setText(Enum<?> enumParm, String value, MouseAdapter mouseAdapter) {
+		if (enumParm == null) {
+			throw new AROUIPanelException("enumParm must be specified");
+		}
+		String key = getKeyFromEnum(enumParm);
+		StringBuilder text = new StringBuilder();
+		text.append("<html><a href=\"#\">");
+		text.append(value);
+		text.append("</a></html>");
+		setText(key, 1, text.toString());
+		JLabel infoLabel = labelContents.get(key);	
+		infoLabel.addMouseListener(mouseAdapter);
+		infoLabel.setToolTipText(ResourceBundleHelper.getMessageString("trace.hyperlink"));
+		infoLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
 	}
 }

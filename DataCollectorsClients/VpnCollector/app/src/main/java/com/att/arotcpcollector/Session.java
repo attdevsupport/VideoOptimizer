@@ -166,6 +166,7 @@ public class Session {
 		clearSendingStream = new ByteArrayOutputStream();
 	}
 
+
 	/**
 	 * decrease value of sendAmountSinceLastAck so that client's window is not
 	 * full
@@ -483,6 +484,7 @@ public class Session {
 	public void setClosingConnection(boolean closingConnection) {
 		this.closingConnection = closingConnection;
 	}
+
 	
 	public boolean isDataForSendingReady() {
 		return isDataForSendingReady;

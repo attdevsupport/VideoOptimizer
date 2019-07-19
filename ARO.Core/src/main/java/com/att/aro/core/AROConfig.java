@@ -63,12 +63,14 @@ import com.att.aro.core.packetanalysis.IRrcStateRangeFactory;
 import com.att.aro.core.packetanalysis.ISessionManager;
 import com.att.aro.core.packetanalysis.IThroughputCalculator;
 import com.att.aro.core.packetanalysis.ITraceDataReader;
-import com.att.aro.core.packetanalysis.IVideoUsageAnalysis;
+import com.att.aro.core.packetanalysis.IVideoTrafficCollector;
 import com.att.aro.core.packetanalysis.impl.BurstCollectionAnalysisImpl;
 import com.att.aro.core.packetanalysis.impl.ByteArrayLineReaderImpl;
 import com.att.aro.core.packetanalysis.impl.CacheAnalysisImpl;
 import com.att.aro.core.packetanalysis.impl.EnergyModelFactoryImpl;
+import com.att.aro.core.packetanalysis.impl.HtmlExtractor;
 import com.att.aro.core.packetanalysis.impl.HttpRequestResponseHelperImpl;
+import com.att.aro.core.packetanalysis.impl.ImageExtractor;
 import com.att.aro.core.packetanalysis.impl.PacketAnalyzerImpl;
 import com.att.aro.core.packetanalysis.impl.ParseHeaderLineImpl;
 import com.att.aro.core.packetanalysis.impl.PktAnazlyzerTimeRangeImpl;
@@ -78,7 +80,8 @@ import com.att.aro.core.packetanalysis.impl.RrcStateRangeFactoryImpl;
 import com.att.aro.core.packetanalysis.impl.SessionManagerImpl;
 import com.att.aro.core.packetanalysis.impl.ThroughputCalculatorImpl;
 import com.att.aro.core.packetanalysis.impl.TraceDataReaderImpl;
-import com.att.aro.core.packetanalysis.impl.VideoUsageAnalysisImpl;
+import com.att.aro.core.packetanalysis.impl.VideoStreamConstructor;
+import com.att.aro.core.packetanalysis.impl.VideoTrafficCollectorImpl;
 import com.att.aro.core.packetreader.IDomainNameParser;
 import com.att.aro.core.packetreader.IPacketReader;
 import com.att.aro.core.packetreader.IPacketService;
@@ -163,8 +166,6 @@ import com.att.aro.core.securedpacketreader.impl.TLSHandshakeImpl;
 import com.att.aro.core.securedpacketreader.impl.TLSSessionInfoImpl;
 import com.att.aro.core.settings.Settings;
 import com.att.aro.core.settings.impl.SettingsImpl;
-import com.att.aro.core.tracemetadata.IMetaDataHelper;
-import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
 import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.PcapConfirmationImpl;
@@ -186,6 +187,7 @@ import com.att.aro.core.videoanalysis.impl.VideoAnalysisConfigHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoBestPractices;
 import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
 import com.att.aro.core.videoanalysis.impl.VideoEventDataHelperImpl;
+import com.att.aro.core.videoanalysis.impl.VideoPrefsController;
 import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
@@ -218,11 +220,6 @@ public class AROConfig {
 		return new AROServiceImpl();
 	}
 	
-	@Bean(name = "videoBestPractices")
-	public IVideoBestPractices getVideoBestPractices() {
-		return new VideoBestPractices();
-	}
-
 	@Bean
 	public AnalyticsEvents getAnalyticsEvets() {
 		return new AnalyticsEvents();
@@ -587,10 +584,30 @@ public class AROConfig {
 	public ISearchingStrategy getTrieSearchingStrategy() {
 		return new TrieSearchingStrategy();
 	}
+	
+	@Bean(name = "videoBestPractices")
+	public IVideoBestPractices getVideoBestPractices() {
+		return new VideoBestPractices();
+	}
+	
+	@Bean(name = "imageExtractor")
+	public ImageExtractor getImageExtractor() {
+		return new ImageExtractor();
+	}
+	
+	@Bean(name = "htmlExtractor")
+	public HtmlExtractor getHtmlExtractor() {
+		return new HtmlExtractor();
+	}
 
-	@Bean(name = "videoUsage")
-	public IVideoUsageAnalysis getVideoUsage() {
-		return new VideoUsageAnalysisImpl();
+	@Bean(name = "videoStreamingAnalysis")
+	public IVideoTrafficCollector getVideoStreamingAnalysis() {
+		return new VideoTrafficCollectorImpl();
+	}
+
+	@Bean(name = "videoStreamConstructor")
+	public VideoStreamConstructor getVideoStreamConstructor() {
+		return new VideoStreamConstructor();
 	}
 
 	@Bean(name = "bufferOccupancyCalculatorImpl")
@@ -652,12 +669,9 @@ public class AROConfig {
 	public VideoUsagePrefs getVideoUsagePrefs(){
 		return new VideoUsagePrefs();
 	}
-	
-	@Bean(name="metaDataHelper")
-	public IMetaDataHelper getMetaDataHelper(){
-		return new MetaDataHelper();
+
+	@Bean(name ="videoPrefsController")
+	public VideoPrefsController getVideoPrefsController() {
+		return new VideoPrefsController();
 	}
-	
-
-
 }

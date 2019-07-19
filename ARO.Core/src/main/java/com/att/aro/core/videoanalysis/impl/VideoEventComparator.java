@@ -45,8 +45,8 @@ public class VideoEventComparator implements Comparator<VideoEvent> {
 				return 1;
 			}
 		} else if(choice == SortSelection.SEGMENT){
-			double seg1 = ve1.getSegment();
-			double seg2 = ve2.getSegment();
+			double seg1 = ve1.getSegmentID();
+			double seg2 = ve2.getSegmentID();
 			if (seg1 < seg2){
 				return -1;
 			} else if (seg1 > seg2){

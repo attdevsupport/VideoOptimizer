@@ -1,0 +1,195 @@
+/*
+ *  Copyright 2017 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
+package com.att.aro.core.videoanalysis.pojo;
+
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import org.apache.commons.collections4.trie.PatriciaTrie;
+
+import com.att.aro.core.videoanalysis.impl.SegmentInfo;
+
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+
+@Data
+public class ManifestCollection {
+
+	/**<pre>
+	 * Trie of SegmentInfo
+	 * Key: segmentUriName
+	 */
+	@NonNull
+	@Setter
+	private PatriciaTrie<SegmentInfo> segmentTrie = new PatriciaTrie<>();
+	
+	public PatriciaTrie<SegmentInfo> getSegmentTrie() {
+		return segmentTrie;
+	}
+
+	/**<pre>
+	 * Trie of ChildManifest
+	 * Key: segmentUriName
+	 */
+	@NonNull
+	@Setter
+	private PatriciaTrie<ChildManifest> segmentChildManifestTrie = new PatriciaTrie<>();
+
+	public PatriciaTrie<ChildManifest> getSegmentChildManifestTrie() {
+		return segmentChildManifestTrie;
+	}
+
+	/**<pre>
+	 * TreeMap of ChildManifest
+	 * Key: childUriName
+	 */
+	@Setter(AccessLevel.NONE)
+	@NonNull
+	private PatriciaTrie<ChildManifest> uriNameChildMap = new PatriciaTrie<>();
+	
+	/**<pre>
+	 * TreeMap of ChildManifest
+	 * Key: (Double)timestamp
+	 */
+	@Setter(AccessLevel.NONE)
+	@NonNull
+	@Getter
+	private SortedMap<Double, ChildManifest> timestampChildManifestMap = new TreeMap<>(); 
+	
+	/**<pre>
+	 * TreeMap of ChildManifest
+	 * Key: (Double)bandwidth
+	 */
+	@Setter(AccessLevel.NONE)
+	@NonNull
+	@Getter
+	private SortedMap<Double, ChildManifest> bandwidthMap = new TreeMap<>();
+	
+	private Manifest manifest;
+	
+	private int commonBaseLength = -1;
+	private int segmentFileNameLength;
+	private boolean segmentOrder;
+	private int segmentCounter = 0;
+
+	public int childUriNameSectionCount;
+
+
+	public int getChildUriNameSectionCount() {
+		return childUriNameSectionCount;
+	}
+
+	public void setChildUriNameSectionCount(int childUriNameSectionCount) {
+		this.childUriNameSectionCount = childUriNameSectionCount;
+	}
+
+	public void addToUriNameChildMap(int count, String childUriName, ChildManifest childManifest) {
+		setChildUriNameSectionCount(count);
+		uriNameChildMap.put(childUriName, childManifest);
+	}
+	
+	public void addToTimestampChildManifestMap(Double timestamp, ChildManifest childManifest) {
+		timestampChildManifestMap.put(timestamp, childManifest);
+	}
+	
+	public void addToBandwidthMap(Double bandwidth, ChildManifest childManifest) {
+		bandwidthMap.put(bandwidth, childManifest);
+	}
+	
+	public void addToSegmentTrie(String segmentUriName, SegmentInfo segmentInfo) {
+		segmentTrie.put(segmentUriName, segmentInfo);
+	}
+
+	public void addToSegmentChildManifestTrie(String segmentUriName, ChildManifest childManifest) {
+		segmentChildManifestTrie.put(segmentUriName, childManifest);
+	}
+
+	public String dumpTimeChildMap() {
+		StringBuilder stblr = new StringBuilder("\n\t, timeChildMap<doubleTimestamp,ChildManifest>:");
+		stblr.append("\tSize: " + timestampChildManifestMap.size());
+		stblr.append("\n timestamps: ");
+				
+		Set<Entry<Double, ChildManifest>> eset = timestampChildManifestMap.entrySet();
+		Iterator<Entry<Double, ChildManifest>> iset = eset.iterator();
+		while (iset.hasNext()) {
+			Entry<Double, ChildManifest> val = iset.next();
+			stblr.append("\nKey :" + (Double)val.getKey());
+			stblr.append("\t, " + val.getValue());
+		}
+		return stblr.toString();
+	}
+
+	public String dumpTrie(int skip) {
+		int countDown = skip;
+		StringBuilder stblr = new StringBuilder("segmentTrie<segmentUriName,SegmentInfo>:");
+		stblr.append(segmentTrie.size());
+		stblr.append(" entries");
+
+		Set<Entry<String, SegmentInfo>> eset = segmentTrie.entrySet();
+		Iterator<Entry<String, SegmentInfo>> iset = eset.iterator();
+		while (iset.hasNext()) {
+			Entry<String, SegmentInfo> val = iset.next();
+			if (skip > 0 || (countDown-- > 0)) {
+				break;
+			}
+			stblr.append("\nKey :" + (String) val.getKey()).append("\t, " + val.getValue());
+		}
+		return stblr.toString();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder strblr = new StringBuilder("\nManifestCollection :");
+		strblr.append("Manifest " + manifest);
+		strblr.append(dumpUriNameChildMap());
+		strblr.append(dumpTrie(5));
+		strblr.append(dumpTimeChildMap());
+		return strblr.toString();
+	}
+
+	public String dumpUriNameChildMap() {
+		StringBuilder strblr = new StringBuilder("\n\t, uriNameChildMap  :");
+		strblr.append(uriNameChildMap.size());
+		if (!uriNameChildMap.isEmpty()) {
+			if (uriNameChildMap.size() > 0) {
+				Iterator<String> keys = uriNameChildMap.keySet().iterator();
+				while (keys.hasNext()) {
+					String key = keys.next();
+					strblr.append("\n\t\tchildMap_key: " + key);
+					if (uriNameChildMap.get(key).getManifest() != null) {
+						strblr.append("\n" + uriNameChildMap.get(key).getManifest());
+					}
+				}
+			}
+		}
+		return strblr.toString();
+	}
+
+	public int getNextSegment() {
+		return segmentCounter++;
+	}
+
+	public ChildManifest getChildManifest(String childUriName) {
+		return uriNameChildMap.get(childUriName);
+	}
+
+}

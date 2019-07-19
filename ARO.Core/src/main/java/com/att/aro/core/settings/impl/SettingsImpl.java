@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
 
+import com.android.ddmlib.AndroidDebugBridge;
 import com.att.aro.core.exception.ARORuntimeException;
 import com.att.aro.core.settings.Settings;
 
@@ -102,6 +103,10 @@ public final class SettingsImpl implements Settings {
 	public String setAttribute(String name, String value) {
 		LOGGER.debug("Replacing property " + name + " with " + value);
 		valueMap.put(name, value);
+		//Disconnecting the current adb bridge when we change the adb path value in the config file
+		if(name.equals("adb")){
+			AndroidDebugBridge.disconnectBridge();
+		}
 		return (String) configProperties.setProperty(name, value);
 	}
 

@@ -316,8 +316,8 @@ public class CacheAnalysisImplTest extends BaseTest {
 		CacheAnalysis testResult = cacheAnalysis.analyze(sessionList);
 		assertEquals(4, testResult.getCacheExpirationResponses().size());
 		assertEquals(60, testResult.getDiagnosisResults().size());
-		assertEquals(45, testResult.getDuplicateContentBytes());
-		assertEquals(0, testResult.getDuplicateContentBytesRatio(), 0.225);
-		assertEquals(18, testResult.getDuplicateContentWithOriginals().size());
+		assertEquals(95, testResult.getDuplicateContentBytes());
+		assertEquals(0, testResult.getDuplicateContentBytesRatio(), 0.475);
+		assertEquals(38, testResult.getDuplicateContentWithOriginals().size());
 	}
 }

@@ -30,11 +30,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.ResourceBundle;
 import java.util.TreeMap;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.commandline.IExternalProcessRunner;
@@ -45,9 +46,12 @@ import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.app.IOSAppException;
 
 public final class AppSigningHelper {
-	private static final Logger LOGGER = LogManager.getLogger(AppSigningHelper.class.getName());	
+	private static final Logger LOGGER = LogManager.getLogger(AppSigningHelper.class.getName());
+	private static ResourceBundle defaultBundle = ResourceBundle.getBundle("messages");
+
 	private static final String IDEVICE_DEBUG = "/usr/local/bin/idevicedebug";
-	private static final String IDEVICE_INSTALLER = "/usr/local/bin/ideviceinstaller";	
+	private static final String IDEVICE_INSTALLER = "/usr/local/bin/ideviceinstaller";
+	private static final String IFUSE_VERIFY = "ifuse -V";
 	private static final String VO_APP_FILE = "VideoOptimizer.app";
 	private static final String VO_ZIP_FILE = "VideoOptimizer.zip";
 	private static final String CODE_SIGNATURE_FOLDER_NAME = "_CodeSignature";
@@ -77,9 +81,7 @@ public final class AppSigningHelper {
 	private String packageName = "com.att.vo.test";
 	private boolean signed = false;
 
-	private AppSigningHelper() {
-
-	}
+	private AppSigningHelper() {}
 	
 	public static synchronized AppSigningHelper getInstance() {
 		if(INSTANCE == null) {
@@ -88,6 +90,10 @@ public final class AppSigningHelper {
 		return INSTANCE;
 	}
 	
+	public String getPackageName() {
+		return packageName;
+	}
+
 	public void extractAndSign(String devProvProfilePath, String certName) throws IOSAppException {
 		if(signed) {
 			return;
@@ -113,8 +119,144 @@ public final class AppSigningHelper {
 		launchApp();
 	}
 	
+	public void executeCmd(String cmd) {
+		LOGGER.debug(cmd);
+		ProcessBuilder pbldr = new ProcessBuilder();
+		if (!Util.isWindowsOS()) {
+			pbldr.command(new String[] { "bash", "-c", cmd });
+		} else {
+			pbldr.command(new String[] { "CMD", "/C", cmd });
+		}
+		try {
+			Process proc = pbldr.start();
+			try {
+				Thread.sleep(1000 * 2);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			proc.destroy();
+		} catch (IOException e) {
+			LOGGER.error("IOException during process command: ", e);
+		}
+	}
+	
+	public void relaunchApp() {
+		String command = IDEVICE_DEBUG + " run " + packageName + " -state" + " stop_rec";
+		executeCmd(command);
+	}
+	
+	public String executeProcessExtractionCmd(String processList, String iosDeployPath) {
+		TreeMap<Date, String> pidList = new TreeMap<>();
+		if (processList != null) {
+			String[] lineArr = processList.split(Util.LINE_SEPARATOR);
+			SimpleDateFormat formatter = new SimpleDateFormat("hh:mma");
+			for (String str : lineArr) {
+				String[] strArr = str.split(" +");
+				try {
+					if (str.contains(iosDeployPath) && strArr.length >= 8) {
+						Date timestamp = formatter.parse(strArr[8]);
+						pidList.put(timestamp, strArr[1]);
+					}
+
+				} catch (ParseException e) {
+					LOGGER.error("Exception during pid extraction");
+				}
+			}
+		}
+
+		return pidList.lastEntry().getValue();
+	}
+
+	//as backup method for retrieved iOS version
+	public int getIosVersion(){
+		String cmd = "instruments -w device";
+		String deviceList = extProcRunner.executeCmd(cmd);
+		String[] devicesArray = deviceList.split("\n");
+		int iosVersion = -1;
+		for(String device: devicesArray){
+			if((!device.contains("Simulator")) && device.contains("iPhone")){
+				try{
+					String versionStr = device.substring(device.indexOf("(")+1, device.indexOf(")"));
+					if(versionStr.indexOf(".") != -1)
+						iosVersion = Integer.valueOf(versionStr.substring(0, versionStr.indexOf(".")));
+				}catch(NumberFormatException e){
+					LOGGER.error("Non numeric value cannot represent ios version: " + iosVersion);
+				}
+				break;
+			}
+		}
+		return iosVersion;
+	}	
+
+	public boolean isCertInfoPresent() {
+		String provProfile = SettingsImpl.getInstance().getAttribute("iosProv");
+		String certName = SettingsImpl.getInstance().getAttribute("iosCert");
+		return StringUtils.isNotBlank(provProfile) && StringUtils.isNotBlank(certName);
+	}
+
+	//need to re-visit
+	private boolean isProvProfileExpired() throws IOSAppException {
+		DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+		Instant dateTime = Instant.from(formatter.parse(provProfile.getExpiration()));
+		return dateTime.compareTo(Instant.now()) < 0;		
+	}
+	
+	public boolean isLatestProvisionProfile() {
+		boolean isLatestProvfile = false;
+		DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+		Instant originalDateTime = Instant.now();
+		try {
+			ProvProfile originalPP  = new ProvProfile(SettingsImpl.getInstance().getAttribute("iosProv"));			
+			originalDateTime = Instant.from(formatter.parse(originalPP.getExpiration()));
+			if(originalDateTime.compareTo(Instant.now()) > 0) {
+				isLatestProvfile = true;
+			}
+		} catch (IOSAppException iosae) {
+			LOGGER.error("Error for load provision profile from the preference setting.", iosae);
+ 		}
+		return isLatestProvfile;
+		
+	}
+	
+	public boolean isSameDevice(String deviceID) {
+		boolean isSame = false;
+		try {
+			ProvProfile originalPP = new ProvProfile(SettingsImpl.getInstance().getAttribute("iosProv"));
+				isSame = deviceID!=null && originalPP.getDevicesID().contains(deviceID);
+		} catch (IOSAppException iosae) {
+			LOGGER.error("Error for load provision profile from the preference setting.", iosae);
+		}		
+		return isSame;		
+	}
+	
+	public boolean isAppIdMatch() {
+		try {
+			ProvProfile originalPP = new ProvProfile(SettingsImpl.getInstance().getAttribute("iosProv"));
+			String origAppId = originalPP.getAppId();
+			String trimAppId = origAppId.substring(origAppId.indexOf('.')+1);
+			String appBundleId = SettingsImpl.getInstance().getAttribute("iosBundle");
+			if(appBundleId!=null) {
+				return appBundleId.equals(trimAppId);
+			}
+		} catch (IOSAppException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+		return false;		
+	}
+	
+	public boolean verifyIDeviceInstaller() {			  
+		return !extProcRunner.executeCmdRunner(IDEVICE_INSTALLER, true, "success").
+				contains(defaultBundle.getString("Messsage.ideviceinstaller.verify"));
+	}
+	
+	public boolean verifyIFuse() {
+		return extProcRunner.executeCmdRunner(IFUSE_VERIFY, true, "success").
+				contains(defaultBundle.getString("Messsage.ifuse.verify"));
+	}
+
 	private void extractPackageName() throws IOSAppException {
-		String command = "codesign -dv " + Util.wrapText(APP_PATH);
+		String command = "codesign -dv " + APP_PATH;
 		String res = extProcRunner.executeCmd(command);
 		StringReader sr = new StringReader(res);
 		Properties p = new Properties();
@@ -134,32 +276,6 @@ public final class AppSigningHelper {
 		String command = IDEVICE_DEBUG + " run " + packageName;
 		executeCmd(command);
 	}
-	
-	public void relaunchApp() {
-		String command = IDEVICE_DEBUG + " run " + packageName + " -state" + " stop_rec";
-		executeCmd(command);
-	}
-	
-	public void executeCmd(String cmd) {
-		System.out.println(cmd);
-		ProcessBuilder pbldr = new ProcessBuilder();
-		if (!Util.isWindowsOS()) {
-			pbldr.command(new String[] { "bash", "-c", cmd });
-		} else {
-			pbldr.command(new String[] { "CMD", "/C", cmd });
-		}
-		try {
-			Process proc = pbldr.start();
-			try {
-				Thread.sleep(1000 * 2);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			proc.destroy();
-		} catch (IOException e) {
-			//Do nothing
-		}
-	}
 
 	private void extractVoZip() throws IOSAppException {
 		if (!fileExtractor.extractFiles(ZIP_PATH, VO_ZIP_FILE, AppSigningHelper.class.getClassLoader())) {
@@ -173,16 +289,6 @@ public final class AppSigningHelper {
 			throw new IOSAppException(ErrorCodeRegistry.getAppUnzipError());
 		}
 		executeCmd(Commands.removeFileOrDir(ZIP_PATH));
-	}
-
-	private boolean isProvProfileExpired() throws IOSAppException {
-		DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
-		Instant dateTime = Instant.from(formatter.parse(provProfile.getExpiration()));
-		return dateTime.compareTo(Instant.now()) < 0;
-	}
-
-	public String getPackageName() {
-		return packageName;
 	}
 
 	private void removeEntitlementsPlist() {	
@@ -221,8 +327,8 @@ public final class AppSigningHelper {
 			Path filePath = Paths.get(APP_PATH + Util.FILE_SEPARATOR + PROVISIONING_PROFILE_NAME);
 			FileTime ftBefore = Files.getLastModifiedTime(filePath);
 			// format path to be used for command line
-			devProvProfilePath = devProvProfilePath.replaceAll(" ", "\\\\ ");
-			extProcRunner.executeCmd(Commands.copyProvProfile(devProvProfilePath));
+			String retirnSt = extProcRunner.executeCmd(Commands.copyProvProfile(devProvProfilePath));
+			LOGGER.info("Return of copy provision profile: "+ retirnSt);
 			FileTime ftAfter = Files.getLastModifiedTime(filePath);	
 			verifyFileUpdated(PROVISIONING_PROFILE_NAME, ftBefore, ftAfter);
 		} catch (IOException e) {
@@ -249,8 +355,8 @@ public final class AppSigningHelper {
 			verifyEntitlementsUpdated();
 			verifyFileUpdated(INFO_PLIST_FILENAME, infoFTBefore, infoFTAfter);
 	
-		} catch (IOException e) {
-			LOGGER.error("Error getting plist file last modified time", e);
+		} catch (IOException ioe) {
+			LOGGER.error("Error getting plist file last modified time", ioe);
 		}
 	}
 
@@ -331,57 +437,15 @@ public final class AppSigningHelper {
 			throw new IOSAppException(ErrorCodeRegistry.getCreateEntitlementsFileError());
 		}
 	}
-
-	public String executeProcessExtractionCmd(String processList, String iosDeployPath) {
-		TreeMap<Date, String> pidList = new TreeMap<>();
-		if (processList != null) {
-			String[] lineArr = processList.split(Util.LINE_SEPARATOR);
-			SimpleDateFormat formatter = new SimpleDateFormat("hh:mma");
-			for (String str : lineArr) {
-				String[] strArr = str.split(" +");
-				try {
-					if (str.contains(iosDeployPath) && strArr.length >= 8) {
-						Date timestamp = formatter.parse(strArr[8]);
-						pidList.put(timestamp, strArr[1]);
-					}
-
-				} catch (ParseException e) {
-					LOGGER.error("Exception during pid extraction");
-				}
-			}
-		}
-
-		return pidList.lastEntry().getValue();
-	}
-	
-	public int getIosVersion(){
-		String cmd = "instruments -w device";
-		String deviceList = extProcRunner.executeCmd(cmd);
-		String[] devicesArray = deviceList.split("\n");
-		int iosVersion = -1;
-		for(String device: devicesArray){
-			if((!device.contains("Simulator")) && device.contains("iPhone")){
-				try{
-					String versionStr = device.substring(device.indexOf("(")+1, device.indexOf(")"));
-					if(versionStr.indexOf(".") != -1)
-						iosVersion = Integer.valueOf(versionStr.substring(0, versionStr.indexOf(".")));
-				}catch(NumberFormatException e){
-					LOGGER.error("Non numeric value cannot represent ios version: " + iosVersion);
-				}
-				break;
-			}
-		}
-		return iosVersion;
-	}
 	
 	private void verifyAppDeployed(String cmdOutput) throws IOSAppException {
-		System.out.println(cmdOutput);
+		LOGGER.debug("Verifying App Deployed Status return: "+ cmdOutput);
 		if (!cmdOutput.contains(APP_INSTALL_COMPLETE_TXT)) {
-			throw new IOSAppException(ErrorCodeRegistry.getAppDeploymentError());
+			throw new IOSAppException(ErrorCodeRegistry.getAppDeploymentError(cmdOutput));
 		}
 		if (cmdOutput.contains(APP_NEEDS_TRUST_TXT)) {
 			throw new IOSAppException(ErrorCodeRegistry.getAppTrustError());
-		}
+		}		
 	}
 	
 	private final static class Commands {
@@ -406,9 +470,9 @@ public final class AppSigningHelper {
 		static String createEntitlementsPlist() {
 			StringBuilder strBuilder = new StringBuilder();
 			strBuilder.append("codesign -d --entitlements :");		
-			strBuilder.append(Util.wrapText(ENTITLEMENTS_PLIST_PATH));
+			strBuilder.append(ENTITLEMENTS_PLIST_PATH);
 			strBuilder.append(" ");
-			strBuilder.append(Util.wrapText(APP_PATH));
+			strBuilder.append(APP_PATH);
 			return strBuilder.toString();
 		}		
 		
@@ -428,9 +492,9 @@ public final class AppSigningHelper {
 			strBuilder.append("\" -i ");
 			strBuilder.append(id);
 			strBuilder.append(" --entitlements ");
-			strBuilder.append(Util.wrapText(ENTITLEMENTS_PLIST_PATH));
+			strBuilder.append(ENTITLEMENTS_PLIST_PATH);
 			strBuilder.append(" ");
-			strBuilder.append(Util.wrapText(APP_PATH));
+			strBuilder.append(APP_PATH);
 			return strBuilder.toString();
 		}
 		
@@ -441,9 +505,11 @@ public final class AppSigningHelper {
 			strBuilder.append("\" -i ");
 			strBuilder.append(id);
 			strBuilder.append(" --entitlements ");
-			strBuilder.append(Util.wrapText(ENTITLEMENTS_PLIST_PATH));
+			strBuilder.append(ENTITLEMENTS_PLIST_PATH);
 			strBuilder.append(" ");
-			strBuilder.append(Util.wrapText(APP_PATH + Util.FILE_SEPARATOR + "Frameworks/*"));
+			strBuilder.append(APP_PATH);
+			strBuilder.append(Util.FILE_SEPARATOR);
+			strBuilder.append("Frameworks/*");
 			return strBuilder.toString();
 		}
 		
@@ -454,9 +520,11 @@ public final class AppSigningHelper {
 			strBuilder.append("\" -i ");
 			strBuilder.append(id);
 			strBuilder.append(" --entitlements ");
-			strBuilder.append(Util.wrapText(ENTITLEMENTS_PLIST_PATH));
+			strBuilder.append(ENTITLEMENTS_PLIST_PATH);
 			strBuilder.append(" ");
-			strBuilder.append(Util.wrapText(APP_PATH + Util.FILE_SEPARATOR + filename));
+			strBuilder.append(APP_PATH);
+			strBuilder.append(Util.FILE_SEPARATOR);
+			strBuilder.append(filename);
 			return strBuilder.toString();
 		}
 
@@ -482,15 +550,9 @@ public final class AppSigningHelper {
 			strBuilder.append(" ");
 			strBuilder.append(value);
 			strBuilder.append("\" ");
-			strBuilder.append(Util.wrapText(filePath));
+			strBuilder.append(filePath);
 			return strBuilder.toString();
 		}
-	}
-
-	public static boolean isCertInfoPresent() {
-		String provProfile = SettingsImpl.getInstance().getAttribute("iosProv");
-		String certName = SettingsImpl.getInstance().getAttribute("iosCert");
-		return StringUtils.isNotBlank(provProfile) && StringUtils.isNotBlank(certName);
 	}
 
 }

@@ -29,8 +29,9 @@ import javax.swing.JOptionPane;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.LogManager;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.datacollector.DataCollectorType;
@@ -39,6 +40,7 @@ import com.att.aro.core.datacollector.pojo.CollectorStatus;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
 import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.core.util.Util;
@@ -67,6 +69,8 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
 	private String menuItemDatacollectorStart = ResourceBundleHelper.getMessageString("menu.datacollector.start");
 	private String menuItemDatacollectorStop = ResourceBundleHelper.getMessageString("menu.datacollector.stop");
+	
+	private Hashtable<String,Object> previousOptions;
 
 	/**
 	 * @wbp.parser.entryPoint
@@ -181,7 +185,12 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		
 		String traceFolderName = "";
 		String profileLocation = "";
-		DataCollectorSelectNStartDialog dialog = new DataCollectorSelectNStartDialog(((MainFrame) parent).getJFrame(), parent, deviceList, traceFolderName, collectors, true);
+		
+		if (((MainFrame) parent).getPreviousOptions()!=null) {
+			previousOptions = ((MainFrame) parent).getPreviousOptions();
+		}
+		
+		DataCollectorSelectNStartDialog dialog = new DataCollectorSelectNStartDialog(((MainFrame) parent).getJFrame(), parent, deviceList, traceFolderName, collectors, true, previousOptions);
 
 		if (dialog.getResponse()){
 			
@@ -189,14 +198,14 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			traceFolderName = dialog.getTraceFolder();
 			device.setCollector(dialog.getCollectorOption());
 			/*debug purpose*/
-			delayTimeDL = dialog.getDeviceOptionPanel().getMiniAtnr().getDelayDS();
-			dialog.getDeviceOptionPanel().getMiniAtnr().getDelayUS();
-			throttleDL = dialog.getDeviceOptionPanel().getMiniAtnr().getThrottleDL();
-			throttleUL = dialog.getDeviceOptionPanel().getMiniAtnr().getThrottleUL();
-			throttleDLEnable = dialog.getDeviceOptionPanel().getMiniAtnr().isThrottleDLEnabled();
-			throttleULEnable = dialog.getDeviceOptionPanel().getMiniAtnr().isThrottleULEnabled();
-			profileLocation = dialog.getDeviceOptionPanel().getMiniAtnr().getLocalPath();
-			profileBoolean = dialog.getDeviceOptionPanel().getMiniAtnr().isLoadProfile();			
+			delayTimeDL = dialog.getDeviceOptionPanel().getAttenuatorModel().getDelayDS();
+			dialog.getDeviceOptionPanel().getAttenuatorModel().getDelayUS();
+			throttleDL = dialog.getDeviceOptionPanel().getAttenuatorModel().getThrottleDL();
+			throttleUL = dialog.getDeviceOptionPanel().getAttenuatorModel().getThrottleUL();
+			throttleDLEnable = dialog.getDeviceOptionPanel().getAttenuatorModel().isThrottleDLEnabled();
+			throttleULEnable = dialog.getDeviceOptionPanel().getAttenuatorModel().isThrottleULEnabled();
+			profileLocation = dialog.getDeviceOptionPanel().getAttenuatorModel().getLocalPath();
+			profileBoolean = dialog.getDeviceOptionPanel().getAttenuatorModel().isLoadProfile();			
 			LOG.info("set U delay: "+ delayTimeDL + "set D delay: "+ delayTimeDL 
 					+ "set U throttle: "+ throttleUL + "set D throttle: "+ throttleDL 
 					+ "set profile: " + profileBoolean+ "set profileLocation: "+ profileLocation);
@@ -240,10 +249,12 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			}
 
  			Hashtable<String,Object> extras = new Hashtable<String,Object>();
+ 			extras.put("device", device);
 			extras.put("video_option", dialog.getRecordVideoOption());
 			extras.put("videoOrientation", dialog.getVideoOrientation());
-			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getMiniAtnr());
-
+			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getAttenuatorModel());
+			extras.put("TraceFolderName", traceFolderName);
+			
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			
 		} else {
@@ -254,8 +265,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
 		return device;
 	}
-	
-	
+
 	public SharedAttributesProcesses getParent() {
 		return parent;
 	}
