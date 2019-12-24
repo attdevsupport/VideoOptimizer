@@ -239,7 +239,7 @@ public class DashParser {
 	 */
 	public void addVideoEvent(double segment, double timestamp, VideoEvent videoEvent) {
 
-		String key = generateEventKey(segment, timestamp);
+		String key = generateEventKey(timestamp, segment);
 		videoEventList.put(key, videoEvent);
 		this.selected=true;
 		if (segment != -1) {

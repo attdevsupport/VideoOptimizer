@@ -51,7 +51,9 @@ public class PeriodicTransferImplTest extends BaseTest {
 		BurstCollectionAnalysisData burstcollectionAnalysisData = new BurstCollectionAnalysisData();
 
 		InetAddress remoteIP = null;
+		InetAddress localIP = null;
 		try {
+			localIP = InetAddress.getLocalHost();
 			remoteIP = InetAddress.getLocalHost();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -78,7 +80,7 @@ public class PeriodicTransferImplTest extends BaseTest {
 		burst01.setFirstUplinkDataPacket(packetInfo01);
 		burst01.setBurstInfo(BurstCategory.CLIENT_APP);
 		burstCollection.add(burst01);
-		Session session01 = new Session(remoteIP, remotePort, localPort);
+		Session session01 = new Session(localIP, remoteIP, remotePort, localPort, "");
 		session01.setUdpOnly(false);
 		session01.setPackets(packetlist);
 		HttpRequestResponseInfo httpRequestResponseInfo01 = new HttpRequestResponseInfo();
@@ -115,7 +117,9 @@ public class PeriodicTransferImplTest extends BaseTest {
 		profile3g.setPeriodMinSamples(3);
 		profile3g.setCloseSpacedBurstThreshold(-50.0);
 		InetAddress remoteIP = null;
+		InetAddress localIP = null;
 		try {
+			localIP = InetAddress.getLocalHost();
 			remoteIP = InetAddress.getLocalHost();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -129,8 +133,8 @@ public class PeriodicTransferImplTest extends BaseTest {
 
 		int remotePort = 80;
 		int localPort = 80;
-		Session session01 = new Session(remoteIP, remotePort, localPort);
-		Session session02 = new Session(remoteIP01, remotePort, localPort);
+		Session session01 = new Session(localIP, remoteIP, remotePort, localPort, "");
+		Session session02 = new Session(localIP, remoteIP01, remotePort, localPort, "");
 
 		byte[] d1 = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 8, 0, 69, 0, 0, 52, -87, -63, 64, 0, 64, 6, 76, -121, 10, 120,
 				0, 1, 74, 125, -17, -123, -104, 53, 1, -69, 91, 8, 7, 120, 25, -21, 51, -84, -128, 16, 5, 123, 105, -6,

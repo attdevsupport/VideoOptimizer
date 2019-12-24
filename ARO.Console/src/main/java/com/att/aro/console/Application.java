@@ -67,8 +67,7 @@ import com.beust.jcommander.JCommander;
 
 
 public final class Application implements IAROView {
-	// private final Logger LOGGER =
-	// LoggerFactory.getLogger(Application.class);
+	
 	private final Logger LOGGER = Logger.getLogger(Application.class);
 
 	private UtilOut utilOut;
@@ -504,7 +503,6 @@ public final class Application implements IAROView {
 	 * @param context
 	 * @param cmds
 	 */
-	@SuppressWarnings("null")//ignoring incorrect eclipse warning
 	void runDataCollector(ApplicationContext context, Commands cmds) {
 		if (cmds.getOutput() != null) {
 			// LOGGER.info("runDataCollector");
@@ -568,7 +566,6 @@ public final class Application implements IAROView {
 				Hashtable<String,Object> extras = new Hashtable<String,Object>();
 				extras.put("video_option", getVideoOption());
 				extras.put("AttenuatorModel", model);
-
 				result = runCommand(cmds, collector, cmds.getSudo(), extras);
 			} finally {
 				restoreSystemOut(outSave);
@@ -743,7 +740,6 @@ public final class Application implements IAROView {
 				.append("\nRun Android collector to capture trace with video:")
 				.append("\n    slow video is 1-2 frames per second: ")
 				.append("\n  --startcollector rooted_android --output /User/documents/test --video slow")
-								
 				.append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation applied:")
 				.append("\n    throttle uplink throughput can accept 64k - 100m (102400k)")
 				.append("\n    throttle downlink throughput can accept 64k - 100m (102400k)")
@@ -755,7 +751,6 @@ public final class Application implements IAROView {
 				.append("\nRun iOS collector to capture trace with video: ")
 				.append("\n    trace will be overwritten if it exists: ")
 				.append("\n  --startcollector ios --deviceid udid/deviceIdentifier --overwrite yes --output /Users/{user}/tracefolder --video hd --sudo password")
-								
 				.append("\nRun iOS collector to capture trace with video and uplink/downlink attenuation applied: ")
 				.append("\n  --startcollector ios --deviceid udid/deviceIdentifier --output /user/documents/(trace name) --video slow --throttleUL 2m --throttleDL 64k --sudo password")
 				
@@ -895,7 +890,7 @@ public final class Application implements IAROView {
 	}
 
 	@Override
-	public void isDeviceDataPulled(boolean status) {
+	public void setDeviceDataPulled(boolean status) {
 	}
 
 }

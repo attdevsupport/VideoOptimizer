@@ -88,6 +88,7 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.bestpracticestab.BestPracticesTab;
 import com.att.aro.ui.view.diagnostictab.ChartPlotOptions;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
+import com.att.aro.ui.view.diagnostictab.GraphPanel;
 import com.att.aro.ui.view.menu.AROMainFrameMenu;
 import com.att.aro.ui.view.menu.help.SplashScreen;
 import com.att.aro.ui.view.menu.tools.DataDump;
@@ -271,6 +272,7 @@ public class MainFrame implements SharedAttributesProcesses {
 	 * Initialize the contents of the frame.
 	 */
 	public void initialize() {
+		long launchStartTime = System.currentTimeMillis();
 		AROUIManager.init();
 		int playbackWidth = 350;
 		// int playbackHeight = 600;
@@ -311,7 +313,7 @@ public class MainFrame implements SharedAttributesProcesses {
 
 		});
 
-		LOG.info("ARO UI started");
+		LOG.info(String.format("ARO UI started :%12.3f", ((float) (System.currentTimeMillis() - launchStartTime)) / (60 * 60)));
 	}
 
 	private void sendGADiagnosticTabChartPlotViews(ChartPlotOptions  option) {
@@ -331,7 +333,7 @@ public class MainFrame implements SharedAttributesProcesses {
 				GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsStartSessionEvents(
 						GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(),
 						GoogleAnalyticsUtil.getAnalyticsEvents().getStartApp(),
-						Util.OS_NAME + (Util.OS_ARCHYTECTURE.contains("64") ? " 64" : " 32")); 
+						Util.OS_NAME + (Util.OS_ARCHITECTURE.contains("64") ? " 64" : " 32")); 
 			}
 		};
 		new Thread(runGA).start();
@@ -411,22 +413,19 @@ public class MainFrame implements SharedAttributesProcesses {
 
 	private void onTabChanged(ChangeEvent event) {
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews(getCurrentTabComponent().getName());
+		
 		if (getCurrentTabComponent() == bestPracticesTab) {
 			tabPanel = TabPanels.tab_panel_best_practices;
-			if (getController().getTheModel().getAnalyzerResult() != null) {
-				bestPracticesTab.update(modelObserver, getController().getTheModel());
-			}
 		} else if (getCurrentTabComponent() == statisticsTab) {
 			tabPanel = TabPanels.tab_panel_statistics;
+			
 		} else if (getCurrentTabComponent() == diagnosticsTab) {
 			tabPanel = TabPanels.tab_panel_other;
 			getDiagnosticTab().addGraphPanel();
-		} else if(getCurrentTabComponent() == videoTab){
+			
+		} else if (getCurrentTabComponent() == videoTab) {
 			tabPanel = TabPanels.tab_panel_video_tab;
 			getVideoTab().addGraphPanel();
-			if (getDiagnosticTab().getGraphPanel().getTraceData() != null) {
-				videoTab.update(modelObserver, getDiagnosticTab().getGraphPanel().getTraceData());
-			}
 		} else {
 			tabPanel = TabPanels.tab_panel_other;
 		}
@@ -489,7 +488,7 @@ public class MainFrame implements SharedAttributesProcesses {
 	/**
 	 * Refreshes the bestpractice tab to reload modified information
 	 */
-	public void refreshMetadataPanel() {
+	public void refreshBestPracticesTab() {
 		bestPracticesTab.refresh(aroController.getTheModel());
 	}
 
@@ -616,6 +615,16 @@ public class MainFrame implements SharedAttributesProcesses {
 	}
 
 	@Override
+	public IVideoPlayer getVideoPlayer() {
+		return diagnosticsTab.getVideoPlayer();
+	}
+	
+	@Override
+	public GraphPanel getGraphPanel() {
+		return diagnosticsTab.getGraphPanel();
+	}
+
+	@Override
 	public void updateVideoPlayerSelected(boolean videoPlayerSelected) {
 		this.videoPlayerSelected = videoPlayerSelected;
 		videoPlayerController.getCurrentVideoPlayer().setVisibility(videoPlayerSelected);
@@ -666,26 +675,30 @@ public class MainFrame implements SharedAttributesProcesses {
 		liveView.setVideoOption(aroController.getVideoOption());
 		LOG.info("liveVideoDisplay started");
 	}
-
+	
+	@Override
+	public void startVideoCollector(String msg) {
+		stopCollectorWorker = new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3, "startManualVideoCollection", msg);
+		stopCollectorWorker.execute();
+	}
+	
 	@Override
 	public void stopCollector() {
 		if (liveView != null) {
 			liveView.setVisible(false);
 			liveView = null;
 		}
-		stopCollectorWorker = new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3, "stopCollector",
-				null);
+		stopCollectorWorker = new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3, "stopCollector", null);
 		stopCollectorWorker.execute();
 	}
-	
+
 	@Override
 	public void cancelCollector() {
 		if (liveView != null) {
 			liveView.setVisible(false);
 			liveView = null;
 		}
-		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3, "cancelCollector",
-				null).execute();
+		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3, "cancelCollector", null).execute();
 	}
 
 	@Override
@@ -694,8 +707,7 @@ public class MainFrame implements SharedAttributesProcesses {
 			liveView.setVisible(false);
 			liveView = null;
 		}
-		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3,
-				"haltCollectorInDevice", null).execute();
+		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 3, "haltCollectorInDevice", null).execute();
 	}
 
 	@Override
@@ -713,8 +725,12 @@ public class MainFrame implements SharedAttributesProcesses {
 		return aroController.getAroDevices();
 	}
 
-	public void isDeviceDataPulled(boolean status) {
+	public void setDeviceDataPulled(boolean status) {
 		deviceDataPulled = status;
+	}
+
+	public boolean isDeviceDataPulled() {
+		return deviceDataPulled;
 	}
 
 	@Override
@@ -726,7 +742,7 @@ public class MainFrame implements SharedAttributesProcesses {
 			return;
 		}
 		LOG.info("updateCollectorStatus :STATUS :" + statusResult);
-		if (!deviceDataPulled) {
+		if (!isDeviceDataPulled()) {
 			JOptionPane.showMessageDialog(window.getJFrame(), BUNDLE.getString("MainFrame.pulldata.message"),
 					BUNDLE.getString("MainFrame.pulldata.title"), JOptionPane.WARNING_MESSAGE);
 		}
@@ -734,16 +750,16 @@ public class MainFrame implements SharedAttributesProcesses {
 		if (!statusResult.isSuccess()) {
 			//String traceFolder = aroController.getTraceFolderPath();
 			LOG.info("updateCollectorStatus :FAILED STATUS :" + statusResult.getError().getDescription());
-			if(statusResult.getError().getCode() == 206){
+			if (statusResult.getError().getCode() == 206){
 				int option = MessageDialogFactory.getInstance().showStopDialog(window.getJFrame(), statusResult.getError().getDescription(), BUNDLE.getString("error.title"), JOptionPane.DEFAULT_OPTION);
-				if(option == JOptionPane.YES_NO_OPTION || CollectorStatus.CANCELLED == collectorStatus){
+				if (option == JOptionPane.YES_NO_OPTION || CollectorStatus.CANCELLED == collectorStatus){
 					cancelCollector();
 				}
-			}else{
+			} else {
 				String errorMessage = statusResult.getError().getDescription();				
-				if(statusResult.getError().getCode() == 512){
+				if (statusResult.getError().getCode() == 512) {
 					MessageDialogFactory.getInstance().showInformationDialog(window.getJFrame(), BUNDLE.getString("Error.rvi.resetconnection"), BUNDLE.getString("Error.rvi.resetconnection.title"));					
-				} else if(errorMessage.contains("0xe8008016")) {
+				} else if (errorMessage.contains("0xe8008016")) {
 					MessageDialogFactory.getInstance().showInformationDialog(window.getJFrame(), BUNDLE.getString("Error.app.provision.invalidentitle"), BUNDLE.getString("Error.app.provision.invalidentitle.title"));					
 				}else {
 					MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(), errorMessage);

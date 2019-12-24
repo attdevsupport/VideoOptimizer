@@ -34,6 +34,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+
+import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
 import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.IScreenshotPubSub;
@@ -42,10 +45,10 @@ import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageDecoder;
 
 public class ScreenshotManager extends Thread implements IScreenshotPubSub {
-	// private static final Logger logger =
-	// LogManager.getLogger(ScreenshotManager.class.getName());
-
+	
 	private static final Logger LOG = LogManager.getLogger(ScreenshotManager.class.getName());
+	
+	IExternalProcessRunner runner = new ExternalProcessRunnerImpl();
 	Process proc = null;
 	String lastmessage = "";
 	int counter = 0;
@@ -64,7 +67,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 	public ScreenshotManager(String folder, String udid) {
 		imagefolder = folder + Util.FILE_SEPARATOR + "tmp";
 		tmpfolder = new File(imagefolder);
-		this.udid= udid;
+		this.udid = udid;
 		if (!tmpfolder.exists()) {
 			LOG.debug("tmpfolder.mkdirs()" + imagefolder);
 			tmpfolder.mkdirs();
@@ -74,39 +77,36 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 
 	@Override
 	public void run() {
-		String exepath = Util.getIdeviceScreenshot();
-		File exefile = new File(exepath);
+		String exeIdeviceScreenShot = Util.getIdeviceScreenshot();
+		File exefile = new File(exeIdeviceScreenShot);
 		if (!exefile.exists()) {
-			LOG.info("Not found exepath: " + exepath);
+			LOG.info("Not found exepath: " + exeIdeviceScreenShot);
+			isready = false;
+		} else if (StringUtils.isNotBlank(udid) && !exeIdeviceScreenShot.contains("-u")) {
+			exeIdeviceScreenShot += " -u " + udid;
 		}
 
-		
 		while (isready) {
 			String img = this.imagefolder + Util.FILE_SEPARATOR + "image" + count + ".tiff";
 			File file = new File(imagefolder);
-			if(!file.exists()) {
+			if (!file.exists()) {
 				try {
 					file.createNewFile();
 				} catch (IOException e) {
 					LOG.error("Failed to create image folder", e);
 				}
 			}
-			if(StringUtils.isNotBlank(udid) && !exepath.contains("-u")){
-				exepath = exepath + " -u "+ udid; 
-			}
-			String[] cmds = new String[] { "bash", "-c", exepath + " " + img };
-			ProcessBuilder builder = new ProcessBuilder(cmds);
-			builder.redirectErrorStream(true);
-
-			try {
-				proc = builder.start();
-			} catch (IOException e) {
-				LOG.error("Error starting idevicescreenshot:", e);
-				return;
-			}
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
+			
+			// VID-TODO utilize ExternalProcessRunner, get response and find failures
+			// String[] cmd = new String[] { "bash", "-c", exeIdeviceScreenShot + " " + img };
+			
+			String results = runner.executeCmd(exeIdeviceScreenShot + " " + img);
+			if (!results.isEmpty() && !results.contains("Screenshot saved to")) {
+				isready = false; 
+				isReadyForRead = false;
+				LOG.error("iOS screenshot failure: " + results);
+				shutDown();
+				break;
 			}
 			File imgFile = new File(img);
 			if (imgFile.exists() || this.lastmessage.contains("Connect success")) {
@@ -127,11 +127,18 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 		File imgfile = null;
 		String img = this.imagefolder + Util.FILE_SEPARATOR + "image" + counter + ".tiff";
 		int tempCounter = counter;
-		
+
+		while (isready && !isReadyForRead) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				LOG.debug("InterruptedException:", e);
+			}
+		}
 		try {
 			imgfile = new File(img);
 			if (imgfile.exists() && isReadyForRead) {
-				
+
 				FileInputStream inputstream = new FileInputStream(imgfile);
 				byte[] imgdataarray = new byte[(int) imgfile.length()];
 				inputstream.read(imgdataarray);
@@ -141,13 +148,13 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 				ByteArrayOutputStream byteArrayOutputStream = Tiff2JpgUtil.tiff2Jpg(imgfile.getAbsolutePath());
 				imgdataarray = byteArrayOutputStream.toByteArray();
 				imgdata = getImageFromByte(imgdataarray);
-				
+
 				counter++;
 				// Making sure that the Live Screen Thread is at least one behind the Screenshot Capture.
-				if(counter >= count-1) {
+				if (counter >= count - 1) {
 					isReadyForRead = false;
 				}
-				
+
 				try {
 					imgfile.delete();
 				} catch (Exception e) {
@@ -157,8 +164,8 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 		} catch (IOException ioe) {
 			LOG.error("Error reading image file:" + img, ioe);
 			imgdata = null;
-			
-			if(ExceptionUtils.indexOfThrowable(ioe, NullPointerException.class) != -1) {
+
+			if (ExceptionUtils.indexOfThrowable(ioe, NullPointerException.class) != -1) {
 				counter = tempCounter;
 			}
 		}

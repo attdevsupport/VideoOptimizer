@@ -21,19 +21,17 @@ import java.util.Collection;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.bestpractice.pojo.VideoVariableBitrateResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 public class VideoVariableBitrateImpl implements IBestPractice {
 
@@ -82,12 +80,10 @@ public class VideoVariableBitrateImpl implements IBestPractice {
 	@Value("${videoManifest.invalid}")
 	private String invalidManifestsFound;
 
-	@Nonnull
-	private SortedMap<Double, AROManifest> manifestCollection = new TreeMap<>();
-	
-	@Nonnull
-	VideoUsage videoUsage;
+	private SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
 
+	private StreamingVideoData streamingVideoData;
+	
 	private VideoVariableBitrateResult result;
 	private boolean vbrUsed = true;
 
@@ -106,25 +102,21 @@ public class VideoVariableBitrateImpl implements IBestPractice {
 		init(result);
 		
 		if (tracedata == null) {
-			return result;
+			return result;	
 		}
 
-		videoUsage = tracedata.getVideoUsage();
-
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
-
-		if (MapUtils.isNotEmpty(manifestCollection)) {
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 			
-			selectedManifestCount = videoUsage.getSelectedManifestCount();
+			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
-			invalidCount = videoUsage.getInvalidManifestCount();
+			invalidCount = streamingVideoData.getInvalidManifestCount();
 			
 			bpResultType = BPResultType.CONFIG_REQUIRED;
 			
 			if (selectedManifestCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
+				if (invalidCount == videoStreamCollection.size()) {
 					result.setResultText(invalidManifestsFound);
 				} else if (invalidCount > 0) {
 					result.setResultText(noManifestsSelectedMixed);
@@ -135,10 +127,10 @@ public class VideoVariableBitrateImpl implements IBestPractice {
 				result.setResultText(multipleManifestsSelected);
 			} else if (hasSelectedManifest) {
 				bpResultType = BPResultType.NONE;
-				for (AROManifest manifest : manifestCollection.values()) {
-					if (manifest.isValid() && manifest.isSelected()) {
-						if (manifest.isVideoMetaDataExtracted()) {
-							Collection<VideoEvent> videoEventList = manifest.getVideoEventsBySegment();
+				for (VideoStream videoStream : videoStreamCollection.values()) {
+					if (videoStream.isValid() && videoStream.isSelected()) {
+						if (videoStream.getManifest().isVideoMetaDataExtracted()) {
+							Collection<VideoEvent> videoEventList = videoStream.getVideoEventsBySegment();
 							double[] uniqueBitRates = videoEventList.stream().mapToDouble(ve -> ve.getBitrate()).distinct().toArray();
 							if (uniqueBitRates.length == 1 && videoEventList.size() != 1) {
 								vbrUsed = false;

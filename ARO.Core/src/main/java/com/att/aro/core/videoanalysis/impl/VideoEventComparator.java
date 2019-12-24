@@ -22,44 +22,53 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 public class VideoEventComparator implements Comparator<VideoEvent> {
 
 	private SortSelection choice;
+
 	public VideoEventComparator(SortSelection choice) {
 		this.choice = choice;
 	}
 
 	@Override
 	public int compare(VideoEvent ve1, VideoEvent ve2) {
-		if(choice == SortSelection.END_TS){
+		if (choice == SortSelection.END_TS) {
 			double endTime1 = ve1.getEndTS();
 			double endTime2 = ve2.getEndTS();
-			if (endTime1 < endTime2){
+			if (endTime1 < endTime2) {
 				return -1;
-			} else if (endTime1 > endTime2){
+			} else if (endTime1 > endTime2) {
 				return 1;
 			}
-		} else if(choice == SortSelection.START_TS){
+		} else if (choice == SortSelection.SEGMENT_START_TS) {
+			double time1 = ve1.getSegmentStartTime();
+			double time2 = ve2.getSegmentStartTime();
+			if (time1 < time2) {
+				return -1;
+			} else if (time1 > time2) {
+				return 1;
+			}
+		} else if (choice == SortSelection.START_TS) {
 			double startTime1 = ve1.getStartTS();
 			double startTime2 = ve2.getStartTS();
-			if (startTime1 < startTime2){
+			if (startTime1 < startTime2) {
 				return -1;
-			} else if (startTime1 > startTime2){
+			} else if (startTime1 > startTime2) {
 				return 1;
 			}
-		} else if(choice == SortSelection.SEGMENT){
+		} else if (choice == SortSelection.SEGMENT_ID) {
 			double seg1 = ve1.getSegmentID();
 			double seg2 = ve2.getSegmentID();
-			if (seg1 < seg2){
+			if (seg1 < seg2) {
 				return -1;
-			} else if (seg1 > seg2){
+			} else if (seg1 > seg2) {
 				return 1;
-			}			
-		}else if(choice == SortSelection.END_TS_DESCENDING){
+			}
+		} else if (choice == SortSelection.END_TS_DESCENDING) {
 			double endTime2 = ve2.getEndTS();
 			double endTime1 = ve1.getEndTS();
-			if (endTime2 < endTime1){
+			if (endTime2 < endTime1) {
 				return -1;
-			} else if (endTime2 > endTime1){
+			} else if (endTime2 > endTime1) {
 				return 1;
-			}			
+			}
 		}
 		return 0;
 	}

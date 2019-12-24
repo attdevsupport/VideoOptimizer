@@ -2,14 +2,17 @@ package com.att.aro.core.videoanalysis.pojo;
 
 import com.att.aro.core.packetanalysis.pojo.ByteRange;
 
+import lombok.Data;
+
+@Data
 public class VideoEventData {
 	                                         
 	private String cdn;
-	private String name;
+	private String name="";
 	private Integer segment;
 	private String segmentReference;
-	private String byteStart;
-	private String byteEnd;
+	private Double byteStart;
+	private Double byteEnd;
 	private String quality;
 	private String segmentStartTime;
 	private String bitrate;
@@ -29,6 +32,7 @@ public class VideoEventData {
 	private double contentStart;
 	private double contentEnd;
 	private String failure = "";
+	private boolean segmentAutoCount = false;
 
 	@Override
 	public String toString() {
@@ -37,7 +41,7 @@ public class VideoEventData {
 		if (cdn != null) {
 			strblr.append("\n\t cdn : ").append(cdn);
 		}
-		if (name != null) {
+		if (!name.isEmpty()) {
 			strblr.append("\n\t name : ").append(name);
 		}
 		if (!extension.isEmpty()) {
@@ -112,231 +116,16 @@ public class VideoEventData {
 		return strblr.toString();
 	}
 
-	public VideoEventData() {
-	}
-
 	public ByteRange getByteRange() {
 		if (byteRange == null) {
 			if (byteStart != null && byteEnd != null) {
-				byteRange = new ByteRange(byteStart, byteEnd);
+				byteRange = new ByteRange(byteStart.intValue(), byteEnd.intValue());
 			} else {
 				return new ByteRange(0, 0);
 			}
 		}
 
 		return byteRange;
-	}
-
-	public String getCdn() {
-		return cdn;
-	}
-
-	/**
-	 * Name of video
-	 * returns empty string when null
-	 * 
-	 * @return
-	 */
-	public String getId() {
-		return name != null ? name : "";
-	}
-
-	public String getExtension() {
-		return extension;
-	}
-
-	public Integer getSegment() {
-		return segment;
-	}
-
-	public void setSegment(Integer segment) {
-		this.segment = segment;
-	}
-
-	public String getSegmentReference() {
-		return segmentReference;
-	}
-
-	public void setSegmentReference(String segmentReference) {
-		this.segmentReference = segmentReference;
-	}
-
-	/**
-	 * populated from converting dateTime
-	 * 
-	 * @return a UTC timestamp in milliseconds
-	 */
-	public double getDtTime() {
-		return dtTime;
-	}
-
-	public String getByteStart() {
-		return byteStart;
-	}
-
-	public String getByteEnd() {
-		return byteEnd;
-	}
-
-	public String getQuality() {
-		return quality;
-	}
-
-	public void setQuality(String quality) {
-		this.quality = quality;
-	}
-
-	public String getSegmentStartTime() {
-		return segmentStartTime;
-	}
-
-	public String getBitrate() {
-		return bitrate;
-	}
-
-	public String getMdatSize() {
-		return mdatSize;
-	}
-
-	public String getDuration() {
-		return duration;
-	}
-	
-	public String getManifestType() {
-		return manifestType;
-	}
-
-	public void setManifestType(String manifestType) {
-		this.manifestType = manifestType;
-	}
-
-	public String getRateCode() {
-		return rateCode;
-	}
-
-	public String getPosition() {
-		return position;
-	}
-
-	public double getTimestamp() {
-		return timestamp;
-	}
-
-	public String getDateTime() {
-		return dateTime;
-	}
-
-	public Double getContentLength() {
-		return contentLength;
-	}
-
-	public Double getContentSize() {
-		return contentSize;
-	}
-
-	public String getContentType() {
-		return contentType;
-	}
-
-	public Double getContentStart() {
-		return contentStart;
-	}
-
-	public Double getContentEnd() {
-		return contentEnd;
-	}
-	// ----------------
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getFailure() {
-		return failure;
-	}
-
-	public void setFailure(String failure) {
-		this.failure = failure;
-	}
-
-	public void setCdn(String cdn) {
-		this.cdn = cdn;
-	}
-
-	public void setByteStart(String byteStart) {
-		this.byteStart = byteStart;
-	}
-
-	public void setByteEnd(String byteEnd) {
-		this.byteEnd = byteEnd;
-	}
-
-	public void setSegmentStartTime(String segmentStartTime) {
-		this.segmentStartTime = segmentStartTime;
-	}
-
-	public void setBitrate(String bitrate) {
-		this.bitrate = bitrate;
-	}
-
-	public void setMdatSize(String mdatSize) {
-		this.mdatSize = mdatSize;
-	}
-
-	public void setDuration(String duration) {
-		this.duration = duration;
-	}
-	
-	public void setRateCode(String rateCode) {
-		this.rateCode = rateCode;
-	}
-
-	public void setPosition(String position) {
-		this.position = position;
-	}
-
-	public void setTimestamp(double timestamp) {
-		this.timestamp = timestamp;
-	}
-
-	public void setDateTime(String dateTime) {
-		this.dateTime = dateTime;
-	}
-
-	public void setByteRange(ByteRange byteRange) {
-		this.byteRange = byteRange;
-	}
-
-	public void setDtTime(double dtTime) {  
-		this.dtTime = dtTime;
-	}
-
-	public void setExtension(String extension) {
-		this.extension = extension;
-	}
-
-	public void setContentType(String contentType) {
-		this.contentType = contentType;
-	}
-
-	public void setContentLength(double contentLength) {
-		this.contentLength = contentLength;
-	}
-
-	public void setContentSize(double contentSize) {
-		this.contentSize = contentSize;
-	}
-
-	public void setContentStart(double contentStart) {
-		this.contentStart = contentStart;
-	}
-
-	public void setContentEnd(double contentEnd) {
-		this.contentEnd = contentEnd;
 	}
 
 }

@@ -23,6 +23,9 @@ import java.util.Set;
 import com.att.aro.core.util.ForwardSecrecyUtil;
 import com.att.aro.core.util.WeakCipherUtil;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * A bean class that provides access to TCP packet data.
  */
@@ -55,6 +58,8 @@ public class TCPPacket extends IPPacket implements Serializable {
 	private boolean ssl;
 	private boolean decrypted;
 	private boolean sslHandshake;
+	@Getter @Setter
+	private boolean retransmission = false;
 	private boolean sslApplicationData;
 	private Set<String> unsecureSSLVersions;
 	private Set<String> weakCipherSuites;
@@ -98,6 +103,10 @@ public class TCPPacket extends IPPacket implements Serializable {
 		do {
 			offset = parseSecureSocketsLayer(bytes, offset);
 		} while (offset >= 0);
+	}
+	
+	public void setDataOffset(int dataOffset) {
+		this.dataOffset = dataOffset;
 	}
 
 	public Set<String> getUnsecureSSLVersions() {

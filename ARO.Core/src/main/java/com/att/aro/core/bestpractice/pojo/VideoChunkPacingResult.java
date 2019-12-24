@@ -15,31 +15,27 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * VBP #7
  */
 public class VideoChunkPacingResult extends AbstractBestPracticeResult {
-
-	private double chunkPacing;
 	
+	@Getter @Setter
+	private double chunkPacing;
+
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.CHUNK_PACING;
 	}
 
-	public double getChunkPacing() {
-		return chunkPacing;
-	}
-
-	public void setChunkPacing(double chunkPacing) {
-		this.chunkPacing = chunkPacing;
-	}
-	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
-}
+		}
 		if (obj == null || obj.getClass() != this.getClass()) {
 			return false;
 		}
@@ -47,8 +43,7 @@ public class VideoChunkPacingResult extends AbstractBestPracticeResult {
 		if (Double.doubleToLongBits(other.getChunkPacing()) != Double.doubleToLongBits(chunkPacing)) {
 			return false;
 		}
-		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim()))
-				|| getResultType() != other.getResultType()) {
+		if ((!other.getBestPracticeDescription().trim().equals(getBestPracticeDescription().trim())) || getResultType() != other.getResultType()) {
 			return false;
 		}
 		return true;

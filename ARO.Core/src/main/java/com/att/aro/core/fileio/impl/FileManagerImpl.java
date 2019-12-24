@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,15 +28,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.util.Util;
 
@@ -48,6 +53,9 @@ import com.att.aro.core.util.Util;
 public class FileManagerImpl implements IFileManager {
 
 	private static final Logger LOGGER = LogManager.getLogger(FileManagerImpl.class.getName());
+	
+	@Autowired
+	private IExternalProcessRunner extrunner;
 
 	@Override
 	public String[] readAllLine(String filepath) throws IOException {
@@ -70,6 +78,28 @@ public class FileManagerImpl implements IFileManager {
 		String[] arrlist = list.toArray(new String[list.size()]);
 
 		return arrlist;
+	}
+
+	@Override
+	public String readAllData(String filepath) throws IOException {
+		BufferedReader reader = new BufferedReader(new FileReader(filepath));
+		String dString = readAllData(reader);
+		reader.close();
+		return dString;
+	}
+
+	public String readAllData(BufferedReader reader) {
+		StringBuilder temp = new StringBuilder();
+		String line;
+		try {
+			while ((line = reader.readLine()) != null) {
+				temp.append(line);
+			}
+		} catch (IOException e) {
+			LOGGER.error("error reading data from BufferedReader", e);
+		}
+
+		return temp.toString();
 	}
 
 	@Override
@@ -296,5 +326,48 @@ public class FileManagerImpl implements IFileManager {
 		File renameFile = createFile(path, newName);
 		
 		return (!renameFile.exists() && origFileName.renameTo(renameFile));
+	}
+
+	@Override
+	public File deAlias(File tracePath) {
+		if (tracePath == null) {
+			return tracePath;
+		}
+		if (Util.isMacOS()) {
+			String cmd ="if [ -f \"%path%\" -a ! -L \"%path%\" ]; then\n"
+					  + " item_name=`basename \"%path%\"`\n"
+					  + " item_parent=`dirname \"%path%\"`\n"
+					  + " item_parent=\"`cd \\\"${item_parent}\\\" 2>/dev/null && pwd || echo \\\"${item_parent}\\\"`\"\n"
+					  + " item_path=\"${item_parent}/${item_name}\"\n"
+					  + " line_1='tell application \"Finder\"'"
+					  + " line_2='set theItem to (POSIX file \"'${item_path}'\") as alias'\n"
+					  + " line_3='if the kind of theItem is \"alias\" then'\n"
+					  + " line_4='get the posix path of (original item of theItem as text)'\n"
+					  + " line_5='end if'\n"
+					  + " line_6='end tell'\n"
+					  + " orig=`osascript -e \"$line_1\" -e \"$line_2\" -e \"$line_3\" -e \"$line_4\" -e \"$line_5\" -e \"$line_6\"`\n"
+					  + " echo \"$orig\"\n"
+					  + "fi\n";
+			cmd = cmd.replaceAll("%path%", tracePath.getAbsolutePath());
+			String results = extrunner.executeCmd(cmd);
+			if (StringUtils.isEmpty(results) || results.contains("execution error:")) {
+				LOGGER.error("shell error:" + results);
+				return tracePath;
+			}
+			results = results.replaceAll("\\s*$", "");
+			return new File(results);
+		} else if (Util.isWindowsOS()) {
+			Path oPath;
+			try {
+				oPath = Files.readSymbolicLink(tracePath.toPath());
+				tracePath = oPath.toFile();
+				return tracePath;
+			} catch (IOException e) {
+				return tracePath;
+			}
+
+		}  else {
+			return tracePath;
+		}
 	}
 }

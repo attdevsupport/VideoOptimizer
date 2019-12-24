@@ -51,7 +51,7 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 	public void testSessionChunkedMocked() throws IOException {
 		
 		Session session = Mockito.mock(Session.class);
-		Mockito.when(session.isUDP()).thenReturn(false);
+		Mockito.when(session.isUdpOnly()).thenReturn(false);
 
 		TreeMap<Integer, PacketInfo> dlPacketOffsets = new TreeMap<Integer, PacketInfo>();
 		TreeMap<Integer, PacketInfo> ulPacketOffsets = new TreeMap<Integer, PacketInfo>();
@@ -136,20 +136,24 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 		// load a real session with chunked data
 		packetList = getPacketListChunked();
 		
+		InetAddress localIP = null;
 		InetAddress remoteIP = null;
 		int remotePort = 0;
 		int localPort = 0;
+		String key = "";
 		try {
 			// Source: 157.166.239.38 (157.166.239.38)
 			// Destination: 192.168.1.10 (192.168.1.10)
+			localIP = InetAddress.getByAddress(new byte[] { (byte) 192, (byte) 168, (byte) 1, (byte) 10 });
 			remoteIP = InetAddress.getByAddress(new byte[] { (byte) 157, (byte) 166, (byte) 239, 38 });
 			remotePort = 80;
 			localPort = 48449;
+			key = localIP.getHostAddress() + " " + localPort + " " + remotePort + " " + remoteIP.getHostAddress();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
 
-		Session session = new Session(remoteIP, remotePort, localPort);
+		Session session = new Session(localIP, remoteIP, remotePort, localPort, key);
 		session.setRemoteHostName("the.remote.host");
 		session.setPackets(packetList);
 		
@@ -219,18 +223,24 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 		List<PacketInfo> packetList = null;
 		packetList = getPacketList1();
 
+		InetAddress localIP = null;
 		InetAddress remoteIP = null;
 		int remotePort = 0;
 		int localPort = 0;
+		String key = "";
 		try {
+			// Source: 192.168.1.1 (192.168.1.1)
+			// Destination: 192.168.1.10 (192.168.1.10)
+			localIP = InetAddress.getByAddress(new byte[] { (byte) 192, (byte) 168, 1, 10 });
 			remoteIP = InetAddress.getByAddress(new byte[] { (byte) 192, (byte) 168, 1, 1 });
 			remotePort = 1234;
 			localPort = 4321;
+			key = localIP.getHostAddress() + " " + localPort + " " + remotePort + " " + remoteIP.getHostAddress();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
 
-		Session session = new Session(remoteIP, remotePort, localPort);
+		Session session = new Session(localIP, remoteIP, remotePort, localPort, key);
 		session.setRemoteHostName("the.remote.host");
 		session.setPackets(packetList);
 		byte[] storageUl = packetList.get(0).getPacket().getData();
@@ -255,19 +265,23 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 	public void testSession2() throws IOException{
 		List<PacketInfo> packetList = null;
 		packetList = getPacketList2();	// 32.8
-
+		
+		InetAddress localIP = null;
 		InetAddress remoteIP = null;
 		int remotePort = 0;
 		int localPort = 0;
+		String key = "";
 		try {
+			localIP = InetAddress.getByAddress(new byte[] { 24, 16, (byte) 97, (byte) 107 });
 			remoteIP = InetAddress.getByAddress(new byte[] { 24, 16, (byte) 97, (byte) 108 });
 			remotePort = 8080;
 			localPort = 4321;
+			key = localIP.getHostAddress() + " " + localPort + " " + remotePort + " " + remoteIP.getHostAddress();
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
 
-		Session session = new Session(remoteIP, remotePort, localPort);
+		Session session = new Session(localIP, remoteIP, remotePort, localPort, key);
 		session.setRemoteHostName("the.remote.host");
 		session.setPackets(packetList);
 		
@@ -309,7 +323,7 @@ public class RequestResponseBuilderImplTest extends BaseTest {
 		Mockito.when(pi2.getPacket()).thenReturn(mTcpPacket);
 		Mockito.when(pi2.getTcpFlagString()).thenReturn("");
 
-		Mockito.when(session.isUDP()).thenReturn(false);
+		Mockito.when(session.isUdpOnly()).thenReturn(false);
 
 		TreeMap<Integer, PacketInfo> dlPacketOffsets = new TreeMap<Integer, PacketInfo>();
 		TreeMap<Integer, PacketInfo> ulPacketOffsets = new TreeMap<Integer, PacketInfo>();

@@ -87,7 +87,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		// Build a sorted list of all of the HTTP request/response in the trace
 		List<HttpRequestResponseInfoWithSession> rrInfo = new ArrayList<HttpRequestResponseInfoWithSession>();
 		for (Session session : sessionlist) {
-			if (!session.isUDP()) {
+			if (!session.isUdpOnly()) {
 				// rrInfo.addAll(session.getRequestResponseInfo());
 				for (HttpRequestResponseInfo item : session.getRequestResponseInfo()) {
 					HttpRequestResponseInfoWithSession itemsession = new HttpRequestResponseInfoWithSession();
@@ -553,7 +553,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		try {
 			content = rrhelper.getContent(response, session);
 		} catch (Exception e) {
-			LOG.error("Error in retrieving Content");
+			LOG.error("Error in retrieving Content: "+e.getMessage());
 		}
 		return content;
 	}

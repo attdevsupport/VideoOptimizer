@@ -156,7 +156,7 @@ public class HttpsUsageImpl implements IBestPractice {
 				boolean isSslSession = false;
 				boolean isHttpsConnection = false;
 				// Excluding UDP Sessions
-				if (session.isUDP()) {
+				if (session.isUdpOnly()) {
 					continue;
 				}
 				List<PacketInfo> packetsInfo = session.getPackets();

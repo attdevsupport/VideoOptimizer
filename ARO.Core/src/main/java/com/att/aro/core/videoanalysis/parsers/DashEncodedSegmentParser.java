@@ -17,6 +17,8 @@ package com.att.aro.core.videoanalysis.parsers;
 
 import java.util.List;
 
+import org.springframework.util.CollectionUtils;
+
 import com.att.aro.core.util.StringParse;
 import com.att.aro.core.videoanalysis.parsers.encodedsegment.AdaptationSetESL;
 import com.att.aro.core.videoanalysis.parsers.encodedsegment.MPDEncodedSegment;
@@ -41,6 +43,11 @@ public class DashEncodedSegmentParser extends DashParser {
 		this.mpdOut = mpdOut;
 	}
 	
+	public List<AdaptationSetESL> getAdaptationSet() {
+		List<PeriodESL> period = mpdOut.getPeriod();
+		return CollectionUtils.isEmpty(period) ? null : period.get(0).getAdaptationSet();
+	}
+
 	public List<RepresentationESL> getRepresentationAmz(String contentType) {
 		List<RepresentationESL> videoRepresentationAmz = findAdaptationSet(mpdOut, contentType);
 		return videoRepresentationAmz;

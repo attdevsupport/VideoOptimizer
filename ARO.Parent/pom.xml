@@ -5,7 +5,7 @@
 
 	<groupId>com.att.aro</groupId>
 	<artifactId>vo-parent</artifactId>
-	<version>2.4.0</version>
+	<version>3.0.0</version>
 	<packaging>pom</packaging>
 
 	<name>VO Parent</name>

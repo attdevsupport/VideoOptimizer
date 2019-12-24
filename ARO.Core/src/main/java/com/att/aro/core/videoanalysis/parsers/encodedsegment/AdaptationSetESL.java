@@ -32,6 +32,7 @@ public class AdaptationSetESL {
 
 	@XmlAttribute(name = "contentType")  private String contentType;
 	@XmlElement(name = "Representation") private List<RepresentationESL> representation;
+	@XmlElement(name = "EncodedSegmentDurations") private EncodedSegmentDurations encodedSegmentDurations;
 	
 	@Override
 	public String toString() {

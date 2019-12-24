@@ -18,7 +18,7 @@ package com.att.aro.ui.view.diagnostictab.plot;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Shape;
-import java.awt.geom.Ellipse2D;
+import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -27,8 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
@@ -47,45 +49,46 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-public class BufferInSecondsPlot implements IPlot{
-	
+public class BufferInSecondsPlot implements IPlot {
+
 	private static final String BUFFER_TIME_OCCUPANCY_TOOLTIP = ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip");
-	
+
 	XYSeriesCollection bufferFillDataCollection = new XYSeriesCollection();
 	XYSeries seriesBufferFill;
-	Map<Integer,String> seriesDataSets; 
-	private Shape shape  = new Ellipse2D.Double(0,0,10,10);
+	Map<Integer, String> seriesDataSets;
+	private Shape shape = new Rectangle2D.Double(0, 0, 50, 50);//new Ellipse2D.Double(0, 0, 50, 50);
 	private List<Double> bufferTimeList = new ArrayList<>();
 
-	BufferInSecondsCalculatorImpl bufferInSecondsCalculatorImpl= (BufferInSecondsCalculatorImpl) ContextAware.getAROConfigContext().getBean("bufferInSecondsCalculatorImpl",PlotHelperAbstract.class);
-	
-	Map<VideoEvent,Double> chunkPlayTimeList;
+	BufferInSecondsCalculatorImpl bufferInSecondsCalculatorImpl = (BufferInSecondsCalculatorImpl) ContextAware.getAROConfigContext()
+			.getBean("bufferInSecondsCalculatorImpl", PlotHelperAbstract.class);
+
+	TreeMap<VideoEvent, Double> chunkPlayTimeList;
 	private static final Logger LOG = LogManager.getLogger(BufferInSecondsPlot.class.getName());
-	public void setChunkPlayTimeList(Map<VideoEvent,Double> chunkPlayTime){
-		this.chunkPlayTimeList = chunkPlayTime;
+
+	public void setChunkPlayTimeList(Map<VideoEvent, Double> chunkPlayTime) {
+		this.chunkPlayTimeList = (TreeMap<VideoEvent, Double>) chunkPlayTime;
 	}
-	
+
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
-		if(analysis != null){
+		if (analysis != null) {
 			StreamingVideoData streamingVideoData = analysis.getAnalyzerResult().getStreamingVideoData();
 			bufferFillDataCollection.removeAllSeries();
 			seriesBufferFill = new XYSeries("Buffer Against Play Time");
 			seriesDataSets = new TreeMap<>();
-			
+
+			// stalls loaded here
 			seriesDataSets = bufferInSecondsCalculatorImpl.populate(streamingVideoData, chunkPlayTimeList);
-			//updating video stall result in packetAnalyzerResult
+			// updating video stall result in packetAnalyzerResult
 			analysis.getAnalyzerResult().setVideoStalls(bufferInSecondsCalculatorImpl.getVideoStallResult());
 			analysis.getAnalyzerResult().setNearStalls(bufferInSecondsCalculatorImpl.getVideoNearStallResult());
-			
+
 			bufferTimeList.clear();
-			double xCoordinate,yCoordinate;
+			double xCoordinate, yCoordinate;
 			String ptCoordinate[] = new String[2]; // to hold x & y values
 			double videoPlayStartTime = 0;
-			for (VideoEvent key : chunkPlayTimeList.keySet()) {
-				videoPlayStartTime = chunkPlayTimeList.get(key);
-				break;
-			}
+			videoPlayStartTime = chunkPlayTimeList.get(chunkPlayTimeList.firstKey());
+
 			List<VideoEvent> filteredSegments = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments();
 			double lastArrivedSegmentTimeStamp = filteredSegments.get(filteredSegments.size() - 1).getEndTS();
 			if (!seriesDataSets.isEmpty()) {
@@ -99,91 +102,162 @@ public class BufferInSecondsPlot implements IPlot{
 					seriesBufferFill.add(xCoordinate, yCoordinate);
 				}
 			}
-			
+
 			Collections.sort(bufferTimeList);
 			BufferTimeBPResult bufferTimeResult = bufferInSecondsCalculatorImpl.updateBufferTimeResult(bufferTimeList);
 			analysis.getAnalyzerResult().setBufferTimeResult(bufferTimeResult);
 			// populate collection
 			bufferFillDataCollection.addSeries(seriesBufferFill);
-			
+
 			XYItemRenderer renderer = new StandardXYItemRenderer();
-			renderer.setBaseToolTipGenerator(new XYToolTipGenerator() {
-				
-		
-				@Override
-				public String generateToolTip(XYDataset dataset, int series, int item) {
-
-					// Tooltip value
-					Number timestamp = dataset.getX(series, item);
-					Number bufferTime = dataset.getY(series, item);
-					StringBuffer tooltipValue = new StringBuffer();
-
-					Map<Double, Long> segmentEndTimeMap = bufferInSecondsCalculatorImpl.getSegmentEndTimeMap();
-					Map<Long, Double> segmentStartTimeMap = bufferInSecondsCalculatorImpl.getSegmentStartTimeMap();
-					double firstSegmentNo = streamingVideoData.getStreamingVideoCompiled().getChunksBySegment().get(0).getSegmentID();
-
-					DecimalFormat decimalFormat = new DecimalFormat("0.##");
-					if (segmentStartTimeMap == null || segmentStartTimeMap.isEmpty()) {
-						return "-,-,-";
-					}
-
-					List<Long> segmentList = new ArrayList<Long>(segmentEndTimeMap.values());
-					Collections.sort(segmentList);
-					Long lastSegmentNo = -1L;
-					if(segmentList.size() != 0){
-						lastSegmentNo =segmentList.get(segmentList.size()-1);
-					}				
-					Long segmentNumber = 0L;
-					boolean isSegmentPlaying = false;
-					boolean startup = false;
-					boolean endPlay = false;
-
-					for (double segmentEndTime : segmentEndTimeMap.keySet()) {
-						if (segmentEndTime > timestamp.doubleValue()) {
-							segmentNumber = segmentEndTimeMap.get(segmentEndTime);
-							if (segmentNumber == firstSegmentNo) {
-								startup = true;
-							}
-							if (segmentStartTimeMap.get(segmentNumber) <= timestamp.doubleValue()) {
-								tooltipValue.append(decimalFormat.format(segmentNumber) + ",");
-								isSegmentPlaying = true;
-								startup = false;
-							}
-						} else if (lastSegmentNo.equals(segmentEndTimeMap.get(segmentEndTime))
-								&& segmentEndTime == timestamp.doubleValue()) {
-							endPlay = true;
-						}
-					}
-
-					if (endPlay || startup) {
-						tooltipValue.append("-,");
-					} else if (!isSegmentPlaying && !startup) {
-						tooltipValue.append("Stall,");
-					}
-					
-					tooltipValue.append(String.format("%.2f", bufferTime) + "," + String.format("%.2f", timestamp));
-					
-					String[] value = tooltipValue.toString().split(",");
-					return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP, value[0], value[1], value[2]));
-				}
-
-			});
+			XYToolTipGenerator xyToolTipGenerator = toolTipGenerator(streamingVideoData);
+			if (xyToolTipGenerator != null) {
+				renderer.setBaseToolTipGenerator(xyToolTipGenerator);
+			}
 			renderer.setSeriesStroke(0, new BasicStroke(2.0f));
 			renderer.setSeriesPaint(0, Color.MAGENTA);
-			
+
 			renderer.setSeriesShape(0, shape);
-			
+
 			plot.setRenderer(renderer);
 
 		}
 		plot.setDataset(bufferFillDataCollection);
 	}
 
+	public XYToolTipGenerator toolTipGenerator_standard(StreamingVideoData streamingVideoData) {
+		return new StandardXYToolTipGenerator() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String generateToolTip(XYDataset dataset, int series, int item) {
+
+				// Tooltip value
+				Number timestamp = dataset.getX(series, item);
+				Number bufferTime = dataset.getY(series, item);
+				StringBuffer tooltipValue = new StringBuffer();
+
+				Map<Double, Long> segmentEndTimeMap = bufferInSecondsCalculatorImpl.getSegmentEndTimeMap();
+				Map<Long, Double> segmentStartTimeMap = bufferInSecondsCalculatorImpl.getSegmentStartTimeMap();
+				double firstSegmentNo = streamingVideoData.getStreamingVideoCompiled().getChunksBySegmentID().get(0).getSegmentID();
+
+				DecimalFormat decimalFormat = new DecimalFormat("0.##");
+				if (segmentStartTimeMap == null || segmentStartTimeMap.isEmpty()) {
+					return "-,-,-";
+				}
+
+				List<Long> segmentList = new ArrayList<Long>(segmentEndTimeMap.values());
+				Collections.sort(segmentList);
+				Long lastSegmentNo = -1L;
+				if (segmentList.size() != 0) {
+					lastSegmentNo = segmentList.get(segmentList.size() - 1);
+				}
+				Long segmentNumber = 0L;
+				boolean isSegmentPlaying = false;
+				boolean startup = false;
+				boolean endPlay = false;
+
+				for (double segmentEndTime : segmentEndTimeMap.keySet()) {
+					if (segmentEndTime > timestamp.doubleValue()) {
+						segmentNumber = segmentEndTimeMap.get(segmentEndTime);
+						if (segmentNumber == firstSegmentNo) {
+							startup = true;
+						}
+						if (segmentStartTimeMap.get(segmentNumber) <= timestamp.doubleValue()) {
+							tooltipValue.append(decimalFormat.format(segmentNumber) + ",");
+							isSegmentPlaying = true;
+							startup = false;
+						}
+					} else if (lastSegmentNo.equals(segmentEndTimeMap.get(segmentEndTime)) && segmentEndTime == timestamp.doubleValue()) {
+						endPlay = true;
+					}
+				}
+
+				if (endPlay || startup) {
+					tooltipValue.append("-,");
+				} else if (!isSegmentPlaying && !startup) {
+					tooltipValue.append("Stall,");
+				}
+
+				tooltipValue.append(String.format("%.2f", bufferTime) + "," + String.format("%.2f", timestamp));
+
+				String[] value = tooltipValue.toString().split(",");
+				return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP, value[0], value[1], value[2]));
+			}
+		};
+	}
+		
+		
+	public XYToolTipGenerator toolTipGenerator(StreamingVideoData streamingVideoData) {
+		return new XYToolTipGenerator() {
+
+			@Override
+			public String generateToolTip(XYDataset dataset, int series, int item) {
+
+				// Tooltip value
+				Number timestamp = dataset.getX(series, item);
+				Number bufferTime = dataset.getY(series, item);
+				StringBuffer tooltipValue = new StringBuffer();
+
+				Map<Double, Long> segmentEndTimeMap = bufferInSecondsCalculatorImpl.getSegmentEndTimeMap();
+				Map<Long, Double> segmentStartTimeMap = bufferInSecondsCalculatorImpl.getSegmentStartTimeMap();
+				List<VideoEvent> chunksBySegmentId = streamingVideoData.getStreamingVideoCompiled().getChunksBySegmentID();
+				if (CollectionUtils.isEmpty(chunksBySegmentId)) {
+					return null;
+				}
+				double firstSegmentNo = chunksBySegmentId.get(0).getSegmentID();
+
+				DecimalFormat decimalFormat = new DecimalFormat("0.##");
+				if (segmentStartTimeMap == null || segmentStartTimeMap.isEmpty()) {
+					return "-,-,-";
+				}
+
+				List<Long> segmentList = new ArrayList<Long>(segmentEndTimeMap.values());
+				Collections.sort(segmentList);
+				Long lastSegmentNo = -1L;
+				if (segmentList.size() != 0) {
+					lastSegmentNo = segmentList.get(segmentList.size() - 1);
+				}
+				Long segmentNumber = 0L;
+				boolean isSegmentPlaying = false;
+				boolean startup = false;
+				boolean endPlay = false;
+
+				for (double segmentEndTime : segmentEndTimeMap.keySet()) {
+					if (segmentEndTime > timestamp.doubleValue()) {
+						segmentNumber = segmentEndTimeMap.get(segmentEndTime);
+						if (segmentNumber == firstSegmentNo) {
+							startup = true;
+						}
+						if (segmentStartTimeMap.get(segmentNumber) <= timestamp.doubleValue()) {
+							tooltipValue.append(decimalFormat.format(segmentNumber) + ",");
+							isSegmentPlaying = true;
+							startup = false;
+						}
+					} else if (lastSegmentNo.equals(segmentEndTimeMap.get(segmentEndTime)) && segmentEndTime == timestamp.doubleValue()) {
+						endPlay = true;
+					}
+				}
+
+				if (endPlay || startup) {
+					tooltipValue.append("-,");
+				} else if (!isSegmentPlaying && !startup) {
+					tooltipValue.append("Stall,");
+				}
+
+				tooltipValue.append(String.format("%.2f", bufferTime) + "," + String.format("%.2f", timestamp));
+
+				String[] value = tooltipValue.toString().split(",");
+				return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP, value[0], value[1], value[2]));
+			}
+
+		};
+	}
 
 	public void clearPlot(XYPlot bufferTimePlot) {
-		bufferTimePlot.setDataset(null);	
+		bufferTimePlot.setDataset(null);
 	}
-	
+
 	public VideoEvent isDataItemStallPoint(double xDataValue, double yDataValue) {
 		VideoEvent segmentToPlay = null;
 		List<VideoStall> videoStallResults = bufferInSecondsCalculatorImpl.getVideoStallResult();
@@ -196,9 +270,9 @@ public class BufferInSecondsPlot implements IPlot{
 			if (videoStallResults != null && (!videoStallResults.isEmpty())) {
 				VideoStall stallPoint = videoStallResults.get(videoStallResults.size() - 1);
 				double lastDataSet_YValue = Double.parseDouble(dataSetArray[1]);
-				if ((stallPoint.getStallEndTimeStamp() == 0
-						|| stallPoint.getStallStartTimeStamp() == stallPoint.getStallEndTimeStamp())
-						&& stallPoint.getStallStartTimeStamp() == xDataValue && lastDataSet_YValue == yDataValue) {
+				if ((stallPoint.getStallEndTimestamp() == 0 || stallPoint.getStallEndTimestamp() == stallPoint.getStallEndTimestamp())
+						&& stallPoint.getStallEndTimestamp() == xDataValue 
+						&& lastDataSet_YValue == yDataValue) {
 					segmentToPlay = stallPoint.getSegmentTryingToPlay();
 				}
 			}

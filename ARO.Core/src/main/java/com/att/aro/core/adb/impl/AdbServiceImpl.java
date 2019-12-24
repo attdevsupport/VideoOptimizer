@@ -159,7 +159,7 @@ public class AdbServiceImpl implements IAdbService {
 			return null;
 
 		}
-		return (Util.isMacOS() && !unfiltered) ? Util.escapeChars(adbPath) : Util.validateInputLink(adbPath);
+		return ((Util.isMacOS() || Util.isLinuxOS()) && !unfiltered) ? Util.escapeChars(adbPath) : Util.validateInputLink(adbPath);
 	}
 	
 	/**
@@ -208,7 +208,7 @@ public class AdbServiceImpl implements IAdbService {
 		AndroidDebugBridge bridge = AndroidDebugBridge.getBridge();
 
 		if (bridge == null) {
-			AndroidDebugBridge.init(false);
+			AndroidDebugBridge.initIfNeeded(false);
 			bridge = AndroidDebugBridge.createBridge(adbPath, false);
 		}
 		return bridge;

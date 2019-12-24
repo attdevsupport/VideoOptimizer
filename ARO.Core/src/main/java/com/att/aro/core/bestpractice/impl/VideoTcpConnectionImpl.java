@@ -17,10 +17,9 @@
 package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import javax.annotation.Nonnull;
 
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,11 +29,11 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoTcpConnectionResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 /**
  * <pre>
@@ -74,26 +73,24 @@ public class VideoTcpConnectionImpl implements IBestPractice{
 	private String noData;
 
 	@Value("${videoSegment.empty}")
-	private String novalidManifestsFound;
+	private String novalidStreamsFound;
 
 	@Value("${videoManifest.multipleManifestsSelected}")
-	private String multipleManifestsSelected;
+	private String multipleStreamsSelected;
 
 	@Value("${videoManifest.noManifestsSelected}")
-	private String noManifestsSelected;
+	private String noStreamsSelected;
 	
 	@Value("${videoManifest.noManifestsSelectedMixed}")
-	private String noManifestsSelectedMixed;
+	private String noStreamsSelectedMixed;
 	
 	@Value("${videoManifest.invalid}")
-	private String invalidManifestsFound;
+	private String invalidStreamsFound;
 
-	@Nonnull
-	private SortedMap<Double, AROManifest> manifestCollection = new TreeMap<>();
+	private SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
+
+	private StreamingVideoData streamingVideoData;
 	
-	@Nonnull
-	VideoUsage videoUsage;
-
 	private int selectedCount;
 	private int invalidCount;
 	
@@ -104,44 +101,40 @@ public class VideoTcpConnectionImpl implements IBestPractice{
 		int sessionCount = 0;
 		init(result);
 		
-		videoUsage = tracedata.getVideoUsage();
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
-
-		if (MapUtils.isNotEmpty(manifestCollection)) {
-			selectedCount = videoUsage.getSelectedManifestCount();
-			invalidCount = videoUsage.getInvalidManifestCount();
+			selectedCount = streamingVideoData.getSelectedManifestCount();
+			invalidCount = streamingVideoData.getInvalidManifestCount();
 			
 			if (selectedCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
-					result.setResultText(invalidManifestsFound);
+				if (invalidCount == videoStreamCollection.size()) {
+					result.setResultText(invalidStreamsFound);
 				} else if (invalidCount > 0) {
-					result.setResultText(noManifestsSelectedMixed);
+					result.setResultText(noStreamsSelectedMixed);
 				} else {
-					result.setResultText(noManifestsSelected);
+					result.setResultText(noStreamsSelected);
 				}
 				bpResultType = BPResultType.CONFIG_REQUIRED;
 				result.setSelfTest(false);
 			} else if (selectedCount > 1) {
 				bpResultType = BPResultType.CONFIG_REQUIRED;
-				result.setResultText(multipleManifestsSelected);
+				result.setResultText(multipleStreamsSelected);
 				result.setSelfTest(false);
 			} else {
-				TreeMap<Session, Integer> uniqSessions = new TreeMap<>();
-				for (AROManifest aroManifest : videoUsage.getManifests()) {
-					if (aroManifest != null && aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
-						int count = 0;
-						for (VideoEvent videoEvent : aroManifest.getVideoEventList().values()) {
-							if (uniqSessions.containsKey(videoEvent.getSession())) {
-								count = uniqSessions.get(videoEvent.getSession());
+				ArrayList<Session> uniqSessions = new ArrayList<>();
+				for (VideoStream videoStream : videoStreamCollection.values()) {
+					if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
+						for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
+							if (!uniqSessions.contains(videoEvent.getSession())) {
+								uniqSessions.add(videoEvent.getSession());
 							}
-							uniqSessions.put(videoEvent.getSession(), ++count);
 						}
 					}
-					sessionCount = uniqSessions.size();
 				}
+				sessionCount = uniqSessions.size();
+				uniqSessions.clear();
 				bpResultType = BPResultType.SELF_TEST;
 				result.setResultText(MessageFormat.format(textResults,
 						ApplicationConfig.getInstance().getAppShortName(), sessionCount, sessionCount == 1 ? "" : "s"));
@@ -166,4 +159,4 @@ public class VideoTcpConnectionImpl implements IBestPractice{
 		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 	}
-}// end class
+}

@@ -15,17 +15,12 @@
 */
 package com.att.aro.core.util;
 
-import java.util.List;
-import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
-import com.att.aro.core.packetanalysis.pojo.PacketInfo;
-import com.att.aro.core.packetanalysis.pojo.Session;
 
 public final class VideoImageAnalysisUtil {
 	private static Logger LOG = LogManager.getLogger(VideoImageAnalysisUtil.class.getName());

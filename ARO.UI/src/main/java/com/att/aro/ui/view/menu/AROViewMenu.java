@@ -25,17 +25,12 @@ import javax.swing.JMenuItem;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
-import com.att.aro.core.peripheral.pojo.CpuActivityList;
-import com.att.aro.mvc.AROController;
 import com.att.aro.ui.commonui.AROMenuAdder;
 import com.att.aro.ui.utils.ResourceBundleHelper;
-import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.menu.view.ChartPlotOptionsDialog;
 import com.att.aro.ui.view.menu.view.ExcludeTimeRangeAnalysisDialog;
 import com.att.aro.ui.view.menu.view.FilterApplicationsAndIpDialog;
-import com.att.aro.ui.view.menu.view.FilterProcessesDialog;
 /**
  *
  *
@@ -57,10 +52,6 @@ public class AROViewMenu implements ActionListener, MenuListener {
 	private final JMenuItem menuViewOptions =
 			menuAdder.getMenuItemInstance(MenuItem.menu_view_options);
 
-	private FilterProcessesDialog filterProcessDialog;
-
-	private AROController voController;
-	
 	private enum MenuItem {
 		menu_view,
 		menu_view_video,
@@ -72,7 +63,6 @@ public class AROViewMenu implements ActionListener, MenuListener {
 
 	public AROViewMenu(SharedAttributesProcesses parent) {
 		this.parent = parent;
-		voController = ((MainFrame)parent).getController();
 	}
 	
 
@@ -98,11 +88,6 @@ public class AROViewMenu implements ActionListener, MenuListener {
 		return viewMenu;
 	}
 
-	private boolean isRootedTrace() {
-		return voController.isRooted();
-	}
-
-
 	@Override
 	public void actionPerformed(ActionEvent aEvent) {
 		if(menuAdder.isMenuSelected(MenuItem.menu_view_video, aEvent)) {
@@ -123,28 +108,19 @@ public class AROViewMenu implements ActionListener, MenuListener {
 		}
 	}
 
-
 	@Override
 	public void menuSelected(MenuEvent event) {
 		// There is a dependency to having a valid trace path specified
 		menuViewVideo.setSelected(parent.isVideoPlayerSelected());
 		menuViewApps.setEnabled(parent.isModelPresent());
 		menuToolsExcludetimerangeanalysis.setEnabled(parent.isModelPresent());
-		}
+	}
+	
 	@Override
 	public void menuDeselected(MenuEvent e) { // NoOp
 	}
+	
 	@Override
 	public void menuCanceled(MenuEvent e) { // NoOp
-	}
-
-	private boolean cpuDataExists() {
-		boolean exists = false;
-		PacketAnalyzerResult analysisData = voController.getTheModel().getAnalyzerResult();
-		if (analysisData != null) {
-			CpuActivityList cpuAList = analysisData.getTraceresult().getCpuActivityList();
-			exists = !cpuAList.getAllProcesses().isEmpty();
-		}		
-		return exists;
 	}
 }

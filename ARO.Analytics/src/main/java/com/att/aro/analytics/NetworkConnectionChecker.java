@@ -26,7 +26,8 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import com.btr.proxy.search.ProxySearch;
+import com.github.markusbernhardt.proxy.*;
+import com.github.markusbernhardt.proxy.selector.misc.BufferedProxySelector.CacheScope;
 
 public class NetworkConnectionChecker implements Runnable {
 	private String site = "http://www.google-analytics.com";
@@ -40,7 +41,7 @@ public class NetworkConnectionChecker implements Runnable {
 		boolean inetAvailabilityFlag = false;
 		try {
 			ProxySearch proxySearch = ProxySearch.getDefaultProxySearch();
-			proxySearch.setPacCacheSettings(32, 3000); // Cache 32 urls upto 7 sec
+			proxySearch.setPacCacheSettings(32, 3000, CacheScope.CACHE_SCOPE_HOST); // Cache 32 urls upto 7 sec
 
 			ProxySelector myProxySelector = proxySearch.getProxySelector(); // Return Null if no proxy available
 			String host = null;

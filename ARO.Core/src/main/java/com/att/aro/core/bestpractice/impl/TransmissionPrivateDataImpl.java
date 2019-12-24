@@ -15,6 +15,9 @@
 */
 package com.att.aro.core.bestpractice.impl;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -22,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +38,9 @@ import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.PrivateDataType;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataResult;
+import com.att.aro.core.packetanalysis.impl.SessionManagerImpl;
+import com.att.aro.core.packetanalysis.pojo.HttpDirection;
+import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.peripheral.pojo.PrivateDataInfo;
@@ -48,6 +56,8 @@ import com.att.aro.core.searching.pojo.SearchingResult;
 import com.att.aro.core.util.Util;
 
 public class TransmissionPrivateDataImpl implements IBestPractice {
+	
+	private static final Logger LOGGER = LogManager.getLogger(SessionManagerImpl.class.getName());
 
 	@Value("${security.transmissionPrivateData.title}")
 	private String overviewTitle;
@@ -86,9 +96,6 @@ public class TransmissionPrivateDataImpl implements IBestPractice {
 	
 	@Value("#{'${regex.credit.card.visa}'.split(';')}")
 	private List<String> creditCardVisa;
-	
-//	@Value("#{'${regex.ssn}'.split(';')}")
-//	private List<String> ssnList;
 	
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
@@ -181,8 +188,20 @@ public class TransmissionPrivateDataImpl implements IBestPractice {
 	 * @return
 	 */
 	private SearchingContent getContent(Session session) {
-		byte[] data = session.getStorageUl();
-		String str = Util.byteArrayToString(data);
+		String str = "";
+		ByteArrayOutputStream data = new ByteArrayOutputStream();
+		BufferedOutputStream dataWrapper = new BufferedOutputStream(data);
+		try {
+			for (HttpRequestResponseInfo rrInfo : session.getRequestResponseInfo()) {
+				if (rrInfo.getDirection() == HttpDirection.REQUEST) {
+					dataWrapper.write(rrInfo.getPayloadData().toByteArray());
+				}
+			}
+			dataWrapper.flush();
+		} catch (IOException e) {
+			LOGGER.error("Error extracting content from Session: " + session.getSessionKey());
+		}
+		str = Util.byteArrayToString(data.toByteArray());
 		return new SearchingContent(str);
 	}
 	
@@ -232,14 +251,10 @@ public class TransmissionPrivateDataImpl implements IBestPractice {
 	private SearchingPattern getRegexPattern(Map<String, String> expressions) {
 		SearchingPatternBuilder patternBuilder = new SearchingPatternBuilder();
 		
-		// ARO defined expression (default)
-//		addRegex(patternBuilder, phoneNumberRegex, PrivateDataType.regex_phone_number.toString());
-//		addRegex(patternBuilder, dateBirthRegex, PrivateDataType.regex_date_birth.toString());
 		addRegex(patternBuilder, creditCardAmericanExpress, PrivateDataType.regex_credit_card_number.toString());
 		addRegex(patternBuilder, creditCardMasterCard, PrivateDataType.regex_credit_card_number.toString());
 		addRegex(patternBuilder, creditCardDiscover, PrivateDataType.regex_credit_card_number.toString());
 		addRegex(patternBuilder, creditCardVisa, PrivateDataType.regex_credit_card_number.toString());
-//		addRegex(patternBuilder, ssnList, PrivateDataType.regex_ssn.toString());
 		
 		if (expressions == null || expressions.isEmpty()) {
 			return patternBuilder.build();

@@ -112,8 +112,8 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 	}
 
 	public void setVOLibName() {
-		setAroJpcapLibName(Util.OS_NAME, Util.OS_ARCHYTECTURE);
-		setAroWebPLib(Util.OS_NAME, Util.OS_ARCHYTECTURE);
+		setAroJpcapLibName(Util.OS_NAME, Util.OS_ARCHITECTURE);
+		setAroWebPLib(Util.OS_NAME, Util.OS_ARCHITECTURE);
 	}
 
 	/**

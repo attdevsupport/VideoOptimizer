@@ -84,9 +84,7 @@ public enum ChartPlotOptions {
 			if (str != null && !"".equals(str.trim())) {
 				try {
 					ChartPlotOptions cpo = ChartPlotOptions.valueOf(str);
-					if (cpo != null) {
-						list.add(cpo);
-					}
+					list.add(cpo);
 				} catch (IllegalArgumentException e) {
 					LOGGER.warn("Unrecognized chart plot option in preferences: " + str);
 				}

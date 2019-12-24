@@ -228,7 +228,6 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"html.httpUsage"                     //  #bp 20   HTML: HTTP 1.0 Usage
 				  ,"html.fileorder"                     //  #bp 11   HTML: File Order
 				  ,"empty.url"                          //  #bp 12   HTML: Empty Source and Link Attributes
-				  ,"flash"                              //  #bp 13   HTML: FLASH
 				  ,"html.displaynoneincss"              //  #bp 14   HTML: "display:none" in CSS
 				  
 				  ,"security.httpsUsage"				// 	#bp 15	 Security: HTTPS Usage
@@ -248,6 +247,7 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"videoConcurrentSession"
 				  ,"videoVariableBitrate"
 				  ,"videoResolutionQuality"
+				  ,"audioStream"
 				  
 				  ,"other.accessingPeripherals"         //  #bp    Other: Accessing Peripheral Applications
 			//	  ,"#smallrequest"                      //  #bp    File Download: Minimize Number of Small Requests

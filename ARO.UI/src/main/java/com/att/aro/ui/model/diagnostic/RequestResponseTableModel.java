@@ -20,8 +20,9 @@ import java.text.DecimalFormat;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.att.aro.core.bestpractice.impl.FileCompressionImpl;
-import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
@@ -36,7 +37,6 @@ public class RequestResponseTableModel extends DataTableModel<HttpRequestRespons
 	
 	private static final long serialVersionUID = 1L;
 
-	private IHttpRequestResponseHelper httpHelper = ContextAware.getAROConfigContext().getBean(IHttpRequestResponseHelper.class);
 	private FileCompressionImpl fileCompression = (FileCompressionImpl)ContextAware.getAROConfigContext().getBean("textFileCompression");
 
 	private static final String[] COLUMNS = { 
@@ -46,7 +46,8 @@ public class RequestResponseTableModel extends DataTableModel<HttpRequestRespons
 		ResourceBundleHelper.getMessageString("rrview.hostname"), 
 		ResourceBundleHelper.getMessageString("rrview.objectname"),
 		ResourceBundleHelper.getMessageString("rrview.contentlen"), 
-		ResourceBundleHelper.getMessageString("rrview.http.compression") 
+		ResourceBundleHelper.getMessageString("rrview.http.compression"),
+		ResourceBundleHelper.getMessageString("tcp.latency") 
 	};
 	
 	private static final int TIME_COL = 0;
@@ -56,6 +57,7 @@ public class RequestResponseTableModel extends DataTableModel<HttpRequestRespons
 	private static final int OBJ_NAME_CONTENT_LENGTH = 4;
 	private static final int ON_WIRE_CONTENT_LENGTH = 5;
 	private static final int HTTP_COMPRESSION = 6;
+	private static final int NETWORK_LATENCY_COL = 7;
 
 	private Session session;
 	public Session getSession() {
@@ -97,6 +99,13 @@ public class RequestResponseTableModel extends DataTableModel<HttpRequestRespons
 		TableColumnModel cols = super.createDefaultTableColumnModel();
 		TableColumn col = cols.getColumn(TIME_COL);
 		col.setCellRenderer(new NumberFormatRenderer(new DecimalFormat("0.000")));
+		
+		// Release 3.0 Fix. To be undone after the latency calculations are corrected. 
+		col = cols.getColumn(NETWORK_LATENCY_COL);
+		col.setMaxWidth(0);
+		col.setPreferredWidth(0);
+		cols.removeColumn(col);
+		
 		return cols;
 	}
 
@@ -147,7 +156,7 @@ public class RequestResponseTableModel extends DataTableModel<HttpRequestRespons
 					String type = item.getRequestType();
 					return type != null ? type : ResourceBundleHelper.getMessageString("rrview.unknownType");
 				} else {
-					return item.getStatusCode();
+					return (item.getStatusCode() != 0) ? item.getStatusCode() : ResourceBundleHelper.getMessageString("rrview.unknownType");
 				}
 			case HOST_NAME_CONTENT_TYPE_COL:
 				if (item.getDirection() == HttpDirection.REQUEST) {
@@ -157,14 +166,16 @@ public class RequestResponseTableModel extends DataTableModel<HttpRequestRespons
 				}
 			case OBJ_NAME_CONTENT_LENGTH:
 				if (item.getDirection() == HttpDirection.REQUEST) {
-					return item.getObjName();
+					return StringUtils.isNotEmpty(item.getObjName())?item.getObjName():item.getContentLength();
 				} else {
 					return item.getContentLength();
 				}
 			case ON_WIRE_CONTENT_LENGTH:
-				return httpHelper.getActualByteCount(item, getSession());
+				return item.getRawSize();
 			case HTTP_COMPRESSION:
 				return  getHttpCompression(item);
+			case NETWORK_LATENCY_COL:
+				return  item.getLatency();
 			}
 		}
 		return null;

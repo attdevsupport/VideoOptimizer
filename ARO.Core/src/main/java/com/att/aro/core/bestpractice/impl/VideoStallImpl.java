@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,12 +31,12 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 /**
  * <pre>
@@ -94,11 +92,9 @@ public class VideoStallImpl implements IBestPractice {
 	@Autowired
 	private IVideoUsagePrefsManager videoPref;
 
-	@Nonnull
-	private SortedMap<Double, AROManifest> manifestCollection = new TreeMap<>();
+	private SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
 	
-	@Nonnull
-	VideoUsage videoUsage;
+	private StreamingVideoData streamingVideoData;
 
 	private int warningCount, passCount, failCount;
 
@@ -118,22 +114,18 @@ public class VideoStallImpl implements IBestPractice {
 		result = new VideoStallResult();
 		init(result);
 
-		videoUsage = tracedata.getVideoUsage();
-
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
-
-		if (MapUtils.isNotEmpty(manifestCollection)) {
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 			
 			bpResultType = BPResultType.CONFIG_REQUIRED;
 			
-			selectedManifestCount = videoUsage.getSelectedManifestCount();
+			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
-			invalidCount = videoUsage.getInvalidManifestCount();
+			invalidCount = streamingVideoData.getInvalidManifestCount();
 
 			if (selectedManifestCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
+				if (invalidCount == videoStreamCollection.size()) {
 					result.setResultText(invalidManifestsFound);
 				} else if (invalidCount > 0) {
 					result.setResultText(noManifestsSelectedMixed);
@@ -172,7 +164,7 @@ public class VideoStallImpl implements IBestPractice {
 
 				double startupDelay = videoPref.getVideoUsagePreference().getStartupDelay();
 
-				if (MapUtils.isEmpty(videoUsage.getChunkPlayTimeList())) {
+				if (MapUtils.isEmpty(streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList())) {
 					// Meaning startup delay is not set yet
 					bpResultType = BPResultType.CONFIG_REQUIRED;
 					result.setResultText(MessageFormat.format(startUpDelayNotSet, startupDelay, startupDelay == 1 ? "" : "s"));
@@ -214,8 +206,9 @@ public class VideoStallImpl implements IBestPractice {
 	}
 
 	private VideoStall updateStallResult(VideoStall stall) {
-		BPResultType bpResultType = Util.checkPassFailorWarning(stall.getDuration(), Double.parseDouble(videoPref.getVideoUsagePreference().getStallDurationWarnVal()),
-				Double.parseDouble(videoPref.getVideoUsagePreference().getStallDurationFailVal()));
+		BPResultType bpResultType = Util.checkPassFailorWarning(stall.getDuration()
+											, videoPref.getVideoUsagePreference().getStallDurationWarnVal()
+											, videoPref.getVideoUsagePreference().getStallDurationFailVal());
 		if (bpResultType == BPResultType.FAIL) {
 			failCount = failCount + 1;
 		} else if (bpResultType == BPResultType.PASS) {

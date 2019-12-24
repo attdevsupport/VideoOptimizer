@@ -36,10 +36,10 @@ public class Manifest {
 	}
 
 	public enum ContentType {
-		VIDEO, AUDIO, SUBTITLES, UNKNOWN
+		VIDEO, AUDIO, SUBTITLES, MUXED, UNKNOWN
 	}
 
-	
+	Manifest masterManifest = null;
 	Session session;                					// session that manifest arrived on
 	protected VideoFormat videoFormat = VideoFormat.UNKNOWN;
 	protected VideoType videoType = VideoType.UNKNOWN;            // DASH, HLS, Unknown
@@ -47,6 +47,7 @@ public class Manifest {
 	protected StreamType playListType = StreamType.UNDECLARED;
 	protected ContentType contentType = ContentType.UNKNOWN;
 
+	private double programDateTime;
 	private String videoName = "";
 	
 	private boolean videoNameValidated = false;
@@ -92,7 +93,13 @@ public class Manifest {
 	 */
 	private boolean videoMetaDataExtracted = false;
 
-
+	public double getStartupDelay() {
+		if (startupVideoEvent != null) {
+			return startupVideoEvent.getPlayTime();
+		}
+		return 0;
+	}
+	
 	public boolean isVOD() {
 		return StreamType.VOD.equals(playListType);
 	}
@@ -127,8 +134,9 @@ public class Manifest {
 		StringBuilder strblr = new StringBuilder("\n\tManifest :");
 		strblr.append(videoType);
 		strblr.append(", :").append(getVideoName());
+		strblr.append(String.format(masterManifest == null ? "\n\t StreamProgramDateTime: %.3f" : "\n\t ProgramDateTime: %.3f", programDateTime));
 		strblr.append("\n\t, Name :").append(getVideoName());
-		strblr.append(String.format("\n\t  CRC-32: %8.0f",checksumCRC32));
+		strblr.append(String.format("\n\t  CRC-32: %8.0f", checksumCRC32));
 		strblr.append("\n\t, VideoType :").append(getVideoType());
 		strblr.append("\n\t, Type :").append(getManifestType());
 		strblr.append("\n\t, requestTime :").append(requestTime);
@@ -156,5 +164,22 @@ public class Manifest {
 		this.videoName = videoName;
 	}
 
+	public ContentType matchContentType(String type) {
+		for (ContentType contentType : ContentType.values()) {
+			if (type.equalsIgnoreCase(contentType.toString())) {
+				return contentType;
+			}
+		}
+		return ContentType.UNKNOWN;
+	}
+
+	public void updateStreamProgramDateTime(double programDateTime) {
+		if (programDateTime < this.programDateTime || this.programDateTime == 0) {
+			setProgramDateTime(programDateTime);
+			if (masterManifest != null) {
+				masterManifest.updateStreamProgramDateTime(programDateTime);
+			}
+		}
+	}
 
 }

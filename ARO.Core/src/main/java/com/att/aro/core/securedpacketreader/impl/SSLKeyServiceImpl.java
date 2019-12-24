@@ -114,8 +114,6 @@ public class SSLKeyServiceImpl implements ISSLKeyService {
 	@Override
 	public int tlsprf(byte[] secret, int secretLen, String label, byte[] seed, int seedLen, byte[] out, int outlen) {
 		
-		// TODO: Delton wants to be here
-		
 		int ls1, ls2;
 		byte[] s1arr = null;
 		byte[] s2arr = null;

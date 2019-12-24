@@ -91,12 +91,9 @@ import com.att.aro.ui.commonui.IAROExpandable;
 import com.att.aro.ui.commonui.UIComponent;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
-import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.ui.view.menu.file.BPSelectionPanel;
 import com.att.aro.ui.view.menu.file.PreferencesDialog;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
-import com.att.aro.ui.view.videotab.AccordionComponent;
-import com.att.aro.ui.view.videotab.VideoTab;
 
 public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 	private final class HyperlinkAdapter extends MouseAdapter {
@@ -337,14 +334,14 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 				@Override
 				public void hyperlinkUpdate(HyperlinkEvent e) {
 					if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-						if(e.getDescription().equalsIgnoreCase("preferences")){
+						if (e.getDescription().equalsIgnoreCase("preferences")) {
 							openVideoPreferencesDialog();
-						} else if(e.getDescription().equalsIgnoreCase("selectManifest")){
+						} else if (e.getDescription().equalsIgnoreCase("selectStream")) {
 							openVideoTab();
-						}else {
+						} else {
 							routeHyperlink();
 						}
-						
+
 					}
 				}
 			});
@@ -442,19 +439,7 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 	}
 
 	void routeHyperlink() {
-		if (this.bpType == BestPracticeType.STARTUP_DELAY || this.bpType == BestPracticeType.BUFFER_OCCUPANCY
-				|| this.bpType == BestPracticeType.VIDEO_STALL) {
-			openSetStartupDelayWindow();
-		} else {
-			diagnosticsOverviewRoute.routeHyperlink(this.bpType);
-		}
-	}
-
-	void openSetStartupDelayWindow() {
-		if (this.diagnosticsOverviewRoute != null) {
-			diagnosticsOverviewRoute.launchSliderDialogFromDiagnosticTab();
-		}
-
+		diagnosticsOverviewRoute.routeHyperlink(this.bpType);
 	}
 
 	/**
@@ -558,9 +543,6 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 		case HTTP_1_0_USAGE:
 			learnMoreURI = ResourceBundleHelper.getURLResource("html.httpUsage.url");
 			break;
-		case FLASH:
-			learnMoreURI = ResourceBundleHelper.getURLResource("flash.url");
-			break;
 		case FILE_ORDER:
 			learnMoreURI = ResourceBundleHelper.getURLResource("html.fileorder.url");
 			break;
@@ -635,6 +617,9 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 			break;
 		case VIDEO_RESOLUTION_QUALITY:
 			learnMoreURI = ResourceBundleHelper.getURLResource("videoResolutionQuality.url");
+			break;
+		case AUDIO_STREAM:
+			learnMoreURI = ResourceBundleHelper.getURLResource("audioStream.url");
 			break;
 		default:
 			break;

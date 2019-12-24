@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 AT&T
+ *  Copyright 2019 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,7 @@ import com.att.aro.core.packetreader.pojo.IPPacket;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.settings.SettingsUtil;
+import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 
 /**
@@ -79,7 +80,8 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 
 	private final static int DNS_PORT = 53;
 	private ITraceDataReader tracereader;
-
+	
+	@Autowired
 	private ISessionManager sessionmanager;
 
 	private IRrcStateMachineFactory statemachinefactory;
@@ -104,17 +106,14 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 	private String pktAnalysisTitle;
 	@Value("${ga.request.timing.analysisCategory.title}")
 	private String analysisCategory;
+	@Autowired
+	private IMetaDataHelper metaDataHelper;
 
 	private SortedMap<Double, HttpRequestResponseInfo> requestMap = new TreeMap<>();
 
 	@Autowired
 	public void setTraceReader(ITraceDataReader traceReader) {
 		this.tracereader = traceReader;
-	}
-
-	@Autowired
-	public void setSessionManager(ISessionManager sessionManager) {
-		this.sessionmanager = sessionManager;
 	}
 
 	@Autowired
@@ -179,8 +178,11 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				result.setAttenautionEvent(tempResult.getAttenautionEvent());
 			}
 		}
+		result.setMetaData(metaDataHelper.initMetaData(result));
+		PacketAnalyzerResult res = finalResult(result, profile, filter);
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(pktAnalysisTitle, System.currentTimeMillis() - bpStartTime, analysisCategory);
-		return finalResult(result, profile, filter);
+		LOGGER.info(String.format("Time to process PacketAnalyzerImpl %s :%12.4f", pktAnalysisTitle, ((float) (System.currentTimeMillis() - bpStartTime)) / (60 * 60)));
+		return res;
 	}
 
 	protected PacketAnalyzerResult finalResult(AbstractTraceResult result, Profile profile, AnalysisFilter filter) {
@@ -219,7 +221,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			result.setAllpackets(filteredPackets);
 			sessionmanager.setiOSSecureTracePath(result.getTraceDirectory());// for iOS trace
 		}
-		List<Session> sessionList = sessionmanager.assembleSession(filteredPackets);
+		List<Session> sessionList = sessionmanager.processPacketsAndAssembleSessions(filteredPackets);
 		generateRequestMap(sessionList);
 		List<PacketInfo> filteredPacketsNoDNSUDP = new ArrayList<PacketInfo>();
 		for (Session session : sessionList) {

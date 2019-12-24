@@ -33,7 +33,7 @@ public class DeviceDetail {
 	private String osType = "";               // line #4
 	private String osVersion = "";            // line #5
 	private String collectorVersion = "";     // line #6
-	private String screenSize = "0x0";        // line #8 recorded in Portrait mode, (width 'x' height)
+	private String screenSize = "0*0";        // line #8 recorded in Portrait mode, (width 'x' height)
 	private double screenDensity = 0;         // line #9 DotsPerInch DPI
 	
 	private int totalLines = 0;

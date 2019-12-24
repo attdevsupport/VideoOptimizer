@@ -44,7 +44,6 @@ public class VideoPreferenceModel {
 	private static final Logger LOGGER = LogManager.getLogger(VideoPreferenceModel.class.getName());
 	
 	private List<VideoPreferenceInfo> videoPreferenceList = new ArrayList<>();
-	private VideoUsagePrefs preferences;
 	private String segmentRedundancyWarnVal = ResourceBundleHelper
 			.getMessageString("preferences.video.defaultSegmentRedundancyWarnVal");
 	private String startUpDelayWarnVal = ResourceBundleHelper.getMessageString("preferences.video.defaultStartUpDelayWarnVal");
@@ -54,10 +53,6 @@ public class VideoPreferenceModel {
 			.getMessageString("preferences.video.defaultStallDurationFailVal");
 	private String segmentRedundancyFailVal = ResourceBundleHelper
 			.getMessageString("preferences.video.defaultSegmentRedundancyFailVal");
-
-	public VideoPreferenceModel(VideoUsagePrefs preferences) {
-		this.preferences = preferences;
-	}
 
 	private String getWarnFailText(int row, int col) {
 		String cellinfo = "";

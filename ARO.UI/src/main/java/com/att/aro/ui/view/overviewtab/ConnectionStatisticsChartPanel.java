@@ -253,7 +253,7 @@ public class ConnectionStatisticsChartPanel extends TabPanelJPanel{
 			int properTermSessions = 0;
 			
 			for(Session tcpSession : traceDataModel.getAnalyzerResult().getSessionlist()){
-				if(!tcpSession.isUDP()){
+				if(!tcpSession.isUdpOnly()){
 					Termination termination = tcpSession.getSessionTermination();
 					if(termination != null){
 						++termSessions;

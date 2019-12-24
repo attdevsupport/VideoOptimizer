@@ -474,6 +474,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	public TCPFlowsDataTable<Session> getJTCPFlowsTable() {
 		if (tcpflowsTable == null) {
 			tcpflowsTable = new TCPFlowsDataTable<Session>(jTcpUdpFlowsModel, this);
+			tcpflowsTable.setName("sessionTable");
 			tcpflowsTable.setAutoCreateRowSorter(true);
 			tcpflowsTable.setGridColor(Color.LIGHT_GRAY);
 			tcpflowsTable.getSelectionModel().addListSelectionListener(this);
@@ -556,10 +557,10 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 					getJHttpReqResPanel().getjRequestResponseTableModel().removeAllRows();
 					getJContentViewPanel().getJContentTextArea().setText("");
 				} else {
-					if (session.isUDP()) {
-						jPacketViewTableModel.setData(session.getUDPPackets());
+					if (session.isUdpOnly()) {
+						jPacketViewTableModel.setData(session.getUdpPackets());
 						getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
-						if (!session.getUDPPackets().isEmpty()) {
+						if (!session.getUdpPackets().isEmpty()) {
 							getJPacketViewTable().getSelectionModel().setSelectionInterval(0, 0);
 						}
 						if (jTCPFlowsContentTabbedPane.getSelectedComponent() == getJContentViewPanel()) {
@@ -603,7 +604,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	private List<HttpRequestResponseInfoWithSession> buildHttpRequestResponseWithSession(List<Session> sessions) {
 		List<HttpRequestResponseInfoWithSession> returnList = new ArrayList<HttpRequestResponseInfoWithSession>();
 		for (Session session : sessions) {
-			if (!session.isUDP()) {
+			if (!session.isUdpOnly()) {
 				for (HttpRequestResponseInfo item : session.getRequestResponseInfo()) {
 					HttpRequestResponseInfoWithSession itemsession = new HttpRequestResponseInfoWithSession();
 					itemsession.setInfo(item);
@@ -755,9 +756,9 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		}
 	}
 
-	public void launchSliderDialog() {
+	public void launchStartUpDelayDialog() {
 		if (null != getGraphPanel())
-			getGraphPanel().launchSliderDialog(0);
+			getGraphPanel().launchStartUpDelayDialog(0);
 	}
 
 	// only for security best practice table route

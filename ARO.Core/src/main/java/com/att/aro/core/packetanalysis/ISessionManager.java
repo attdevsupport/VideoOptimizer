@@ -21,7 +21,7 @@ import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 
 public interface ISessionManager {
-	List<Session> assembleSession(List<PacketInfo> packets);
+	List<Session> processPacketsAndAssembleSessions(List<PacketInfo> packets);
 
 	void setiOSSecureTracePath(String tracePath);
 }

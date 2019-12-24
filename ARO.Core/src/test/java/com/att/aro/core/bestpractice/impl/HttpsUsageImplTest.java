@@ -140,7 +140,7 @@ public class HttpsUsageImplTest extends BaseTest {
 		Session session2 = mock(Session.class);
 		InetAddress ipAddr = mock(InetAddress.class);
 		when(ipAddr.getHostAddress()).thenReturn("157.56.19.80");
-		when(session1.isUDP()).thenReturn(true);
+		when(session1.isUdpOnly()).thenReturn(true);
 		when(session2.getRemoteIP()).thenReturn(ipAddr);
 		when(session2.getDomainName()).thenReturn("www.hotmail.com");
 		TCPPacket tcpPacket1 = mock(TCPPacket.class);

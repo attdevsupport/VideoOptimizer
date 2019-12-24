@@ -76,7 +76,7 @@ public class DuplicateContentImpl implements IBestPractice {
 			result.setResultText(textResultPass);
 		} else {
 			result.setResultType(BPResultType.FAIL);
-			DecimalFormat numf = new DecimalFormat(".##");
+			DecimalFormat numf = new DecimalFormat("#.##");
 			NumberFormat numf2 = NumberFormat.getInstance();
 			numf2.setMaximumFractionDigits(3);
 			String text = MessageFormat.format(textResults,

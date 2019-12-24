@@ -42,7 +42,7 @@ public class MPDSegmentTimeline implements MpdBase {
 
 		if (period != null) {
 			strblr.append(getSize());
-			strblr.append(" List<PeriodPR>").append(period);
+			strblr.append(" List<PeriodST>").append(period);
 		} else {
 			strblr.append("period == null");
 		}

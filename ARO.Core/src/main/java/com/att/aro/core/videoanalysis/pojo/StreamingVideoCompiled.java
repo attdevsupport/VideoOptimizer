@@ -18,69 +18,61 @@
 package com.att.aro.core.videoanalysis.pojo;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
 import javax.annotation.Nonnull;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.Setter;
 
 @Data
 public class StreamingVideoCompiled {
 
 	private SortedMap<VideoEvent, Double> chunkPlayTimeList = new TreeMap<>();
-	
-	/**
-	 * All video segements with out the duplicate chunks
-	 */
-	@Nonnull
-	private Map<VideoEvent, VideoStream> veStreamList = new HashMap<>();
-	
+
 	/**
 	 * All video segments including the duplicate chunks
 	 */
 	@Nonnull
 	private List<VideoEvent> allSegments = new ArrayList<>();
 	@Nonnull
-	private List<VideoEvent> duplicateChunks = new ArrayList<>();
-	
+	private List<VideoEvent> deleteChunkList = new ArrayList<>();
+
 	/**
 	 * All Video segments from selected video streams ordered by segment number
 	 */
-	@Nonnull
-	private List<VideoEvent> chunksBySegment = new ArrayList<>();
-	
+	@Nonnull@Setter(AccessLevel.NONE)
+	private List<VideoEvent> chunksBySegmentID = new ArrayList<>();
+
 	/**
 	 * 
 	 */
-	@Nonnull
+	@Nonnull@Setter(AccessLevel.NONE)
 	private List<VideoEvent> filteredSegments = new ArrayList<>();
-	
-	
-	public void setVideoEventManifestMap(Map<VideoEvent, VideoStream> veStreamList) {
-		if(null == veStreamList){
-			this.veStreamList.clear();
-		}else{
-			this.veStreamList = veStreamList;
+
+	public void setFilteredSegments(List<VideoEvent> replacementSegmentsList) {
+		filteredSegments.clear();
+		for (VideoEvent videoEvent : replacementSegmentsList) {
+			filteredSegments.add(videoEvent);
 		}
 	}
 
-	public void setAllSegments(List<VideoEvent> allSegments) {
-		if(null == allSegments){
+	public void setAllSegments(List<VideoEvent> allSegmentsList) {
+		if (null == allSegmentsList) {
 			this.allSegments.clear();
-		}else{
-			this.allSegments = allSegments;
+		} else {
+			this.allSegments = allSegmentsList;
 		}
 	}
 	
-	public void setChunksBySegmentNumber(List<VideoEvent> chunksBySegment) {
-		if(chunksBySegment == null){
-			this.chunksBySegment.clear();
-		}else{
-			this.chunksBySegment = chunksBySegment;
-		}
+	public void clear() {
+		getAllSegments().clear();
+		getChunksBySegmentID().clear();
+		getDeleteChunkList().clear();
+		getFilteredSegments().clear();
+		getChunkPlayTimeList().clear();
 	}
 }
-

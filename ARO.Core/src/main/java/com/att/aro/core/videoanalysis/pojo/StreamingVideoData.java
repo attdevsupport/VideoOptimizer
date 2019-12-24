@@ -50,24 +50,37 @@ import lombok.Setter;
 @JsonIgnoreType
 public class StreamingVideoData extends AbstractBestPracticeResult {
 
-	@NonNull @Setter(AccessLevel.PROTECTED) private BestPracticeType 							bestPracticeType 		= BestPracticeType.VIDEOUSAGE;
-	@NonNull @Setter(AccessLevel.PROTECTED) private SortedMap<Double, VideoStream> 				videoStreamMap 			= new TreeMap<>();
-	@NonNull                                private SortedMap<Double, HttpRequestResponseInfo>	requestMap 				= new TreeMap<>();
-	@NonNull @Setter(AccessLevel.PROTECTED) private SortedMap<Double, String> 					failedRequestMap 		= new TreeMap<>();
-	@NonNull @Setter(AccessLevel.PROTECTED) private Map<Manifest,Double> 						durationManifestMap 	= new HashMap<>();
-	@NonNull @Setter(AccessLevel.PROTECTED) private Map<Manifest,Double> 						timescaleManifestMap 	= new HashMap<>();
-	@NonNull @Setter(AccessLevel.PROTECTED) private StreamingVideoCompiled 						streamingVideoCompiled	= new StreamingVideoCompiled();
-	@Setter(AccessLevel.PROTECTED) private String tracePath;
+	@NonNull@Setter(AccessLevel.PROTECTED)
+	private BestPracticeType							bestPracticeType = BestPracticeType.VIDEOUSAGE;
+	@NonNull@Setter(AccessLevel.PROTECTED)
+	private SortedMap<Double, VideoStream>				videoStreamMap = new TreeMap<>();
+	@NonNull
+	private SortedMap<Double, HttpRequestResponseInfo>	requestMap = new TreeMap<>();
+	@NonNull@Setter(AccessLevel.PROTECTED)
+	private SortedMap<Double, String>					failedRequestMap = new TreeMap<>();
+	@NonNull@Setter(AccessLevel.PROTECTED)
+	private Map<Manifest, Double>						durationManifestMap = new HashMap<>();
+	@NonNull@Setter(AccessLevel.PROTECTED)
+	private Map<Manifest, Double>						timescaleManifestMap = new HashMap<>();
+	@NonNull@Setter(AccessLevel.PROTECTED)
+	private StreamingVideoCompiled						streamingVideoCompiled = new StreamingVideoCompiled();
+	@Setter(AccessLevel.PROTECTED) 
+	private String tracePath;
 	private final String VIDEO_SEGMENTS = "video_segments";
-	@Setter(AccessLevel.PROTECTED) private String videoPath;
+	@Setter(AccessLevel.PROTECTED) 
+	private String videoPath;
 	
 	@NonNull private Boolean validatedCount 			= false;
-	@Setter(AccessLevel.PROTECTED) private int     totalSegmentCount 		= 0;
-	@Setter(AccessLevel.PROTECTED) private int     selectedManifestCount 	= 0;
-	@Setter(AccessLevel.PROTECTED) private int     validSegmentCount 		= 0;
-	@Setter(AccessLevel.PROTECTED) private int     nonValidSegmentCount 	= 0;
-	@Setter(AccessLevel.PROTECTED) private int     invalidManifestCount 	= 0;
-	
+	@Setter(AccessLevel.PROTECTED)
+	private int totalSegmentCount = 0;
+	@Setter(AccessLevel.PROTECTED)
+	private int selectedManifestCount = 0;
+	@Setter(AccessLevel.PROTECTED)
+	private int validSegmentCount = 0;
+	@Setter(AccessLevel.PROTECTED)
+	private int nonValidSegmentCount = 0;
+	@Setter(AccessLevel.PROTECTED)
+	private int invalidManifestCount = 0;	
 	
 	/**
 	 * handy debugging info
@@ -80,7 +93,7 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 		if (!videoStreamMap.isEmpty()) {
 			strblr.append(":\n\t");
 			for (VideoStream videoStream : videoStreamMap.values()) {
-				strblr.append(videoStream);
+				strblr.append(videoStream.getSegmentCount());
 				strblr.append("\n\t");
 			}
 		}
@@ -101,6 +114,7 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 			nonValidSegmentCount = 0;
 
 			for (VideoStream videoStream : videoStreamMap.values()) {
+				checkMissing(videoStream);
 				if (videoStream.isValid()) {
 					validSegmentCount += videoStream.getSegmentCount();
 				} else {
@@ -114,6 +128,36 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 			}
 		}
 		validatedCount = true;
+	}
+
+	private void checkMissing(VideoStream videoStream) {
+		videoStream.getVideoEventsBySegment();
+		videoStream.getAudioSegmentEventList();
+		videoStream.setMissingSegmentCount(Math.max(scanSegmentGaps(videoStream.getVideoStartTimeMap()) 
+												  , scanSegmentGaps(videoStream.getAudioStartTimeMap())));
+	}
+
+
+	double THRESHOLD=.1;
+
+	VideoEvent lastEvent = null;
+	
+	private int scanSegmentGaps(TreeMap<String, VideoEvent> eventMap) {
+		int count = 0;
+		for (VideoEvent event : eventMap.values()) {
+			if (!event.isNormalSegment()) {
+				continue;
+			}
+			if (lastEvent != null) {
+				double dif = event.getPlayTime() - lastEvent.getPlayTimeEnd();
+				if (dif > THRESHOLD) {
+					// found gap, could be one or many segments missing
+					count++;
+				}
+			}
+			lastEvent = event;
+		}
+		return count;
 	}
 
 	public StreamingVideoData(String tracePath) {
@@ -151,9 +195,6 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 	}
 
 	public void addFailedRequestMap(HttpRequestResponseInfo request) {
-		if (request.getObjNameWithoutParams() == null) {
-			System.out.println();
-		}
 		this.failedRequestMap.put(request.getTimeStamp(), request.getObjNameWithoutParams() != null ? request.getObjNameWithoutParams() : "");
 	}
 

@@ -51,9 +51,9 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.datacollector.IDataCollector;
@@ -303,7 +303,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 * @return javax.swing.JButton
 	 */
 	private JButton getStartButton() {
-			if(startButton != null){
+			if (startButton != null){
 				return startButton;
 			}
 			startButton = new JButton();
@@ -327,8 +327,8 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 					}	
 					
 					boolean secureOrAttnEnabled = deviceOptionPanel.getAttnrGroup().getAttnrRadioGP().getSliderBtn().isSelected();
-					if(deviceTablePanel.getSelection().isPlatform(Platform.iOS)) {
-						if(deviceTablePanel.getSelection().getProductName()==null||deviceTablePanel.getSelection().getModel()==null) {
+					if (deviceTablePanel.getSelection().isPlatform(Platform.iOS)) {
+						if (deviceTablePanel.getSelection().getProductName()==null||deviceTablePanel.getSelection().getModel()==null) {
 							JOptionPane.showMessageDialog(DataCollectorSelectNStartDialog.this
 									, ResourceBundleHelper.getMessageString("Error.app.nolibimobiledevice")
 									, MessageFormat.format(ResourceBundleHelper.getMessageString("Error.app.noprerequisitelib"), 

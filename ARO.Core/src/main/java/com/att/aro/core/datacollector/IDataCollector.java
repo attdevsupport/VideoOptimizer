@@ -195,5 +195,5 @@ public interface IDataCollector {
 	 * 
 	 * @return true if video data is pulled device
 	 */
-	boolean isDeviceDataPulledStatus();
+	boolean isDeviceDataPulled();
 }

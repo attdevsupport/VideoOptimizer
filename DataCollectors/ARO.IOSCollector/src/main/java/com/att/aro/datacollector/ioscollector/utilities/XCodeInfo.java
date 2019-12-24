@@ -17,15 +17,19 @@ package com.att.aro.datacollector.ioscollector.utilities;
 
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 
+import lombok.Data;
+
+@Data
 public class XCodeInfo {
 
 	ExternalProcessRunner runner = null;
     private boolean xcodeCLTError = false;
+	private String path = null;
 	private static final Logger LOG = LogManager.getLogger(XCodeInfo.class);
 
 	public XCodeInfo() {
@@ -37,27 +41,44 @@ public class XCodeInfo {
 	}
 
 	/**
-	 * Find out if component rvictl is available. This component come with XCode
+	 * Find out if rvictl is available. This is included in XCode's commandline tools
 	 * 4.2 and above.
 	 * 
 	 * @return true or false
 	 */
 	public boolean isRVIAvailable() {
-		boolean yes = false;
-		String[] cmd = new String[] { "bash", "-c", "which rvictl" };
+		if (path != null) {
+			return true;
+		}
+		return (isRVIAvailable("") || isRVIAvailable("/Library/Apple/usr/bin/"));
+	}
+
+	public boolean isRVIAvailable(String path) {
+		boolean isAvailable = false;
+		String[] cmd = new String[] { "bash", "-c", "which " + path + "rvictl" };
 		String result = "";
 		try {
 			result = runner.runCmd(cmd);
-
 		} catch (IOException e) {
 			LOG.debug("IOException:", e);
 		}
 		if (result.length() > 1) {
-			yes = true;
+			isAvailable = true;
+			this.path = result.trim();
 		}
-		return yes;
+		return isAvailable;
 	}
 
+	public String getPath() {
+		if (path == null) {
+			// locate rvictl
+			if (!isRVIAvailable()) {
+				path = "";
+			}
+		}
+		return path;
+	}
+	
 	/**
 	 * Find whether xcode is installed or not.
 	 * 
@@ -107,11 +128,11 @@ public class XCodeInfo {
 			} catch (NumberFormatException e) {
 				LOG.debug("NumberFormatException:", e);
 			}
-			if (versionNumber >= 7) { //only 8% of iphone users has xcode version 6 and below --- November 2016 statistics
+			if (versionNumber >= 7) { // only 8% of iphone users has xcode version 6 and below --- November 2016 statistics
 				supportedVersionFlag = true;
 			}
 
-		}else{
+		} else {
 			xcodeCLTError = true;
 		}
 		return supportedVersionFlag;

@@ -18,7 +18,6 @@
 package com.att.aro.ui.commonui;
 
 import java.awt.BorderLayout;
-import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Window;

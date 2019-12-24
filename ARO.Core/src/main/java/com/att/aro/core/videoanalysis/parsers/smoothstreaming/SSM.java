@@ -57,12 +57,9 @@ public class SSM implements MpdBase{
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
 		strblr.append("SSMAmz :"); 
-		strblr.append(" majorVersion :");
-		strblr.append(majorVersion);
-		strblr.append(",  minorVersion :");
-		strblr.append(minorVersion);
-		strblr.append(",  duration :");
-		strblr.append(duration);
+		strblr.append(" majorVersion :").append(majorVersion);
+		strblr.append(",  minorVersion :").append(minorVersion);
+		strblr.append(",  duration :").append(duration);
 		
 		if (!streamIndex.isEmpty()) {
 			strblr.append("\n\tstreamIndex:");
@@ -119,5 +116,10 @@ public class SSM implements MpdBase{
 	@Override
 	public String getVideoName() {
 		return null;
+	}
+
+	@Override
+	public String getType() {
+		return "";
 	}
 }

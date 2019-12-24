@@ -48,8 +48,8 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
+import com.github.jaiimageio.jpeg2000.J2KImageWriteParam;
 import com.luciad.imageio.webp.WebPWriteParam;
-import com.sun.media.imageio.plugins.jpeg2000.J2KImageWriteParam;
 
 //FIXME ADD UNIT TESTS
 public class ImageFormatImpl implements IBestPractice {

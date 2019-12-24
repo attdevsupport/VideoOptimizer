@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2015 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,7 +40,11 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.springframework.context.ApplicationContext;
 
+import com.att.aro.core.SpringContextUtil;
+import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.preferences.UserPreferences;
 import com.att.aro.core.preferences.UserPreferencesFactory;
 import com.att.aro.core.util.CrashHandler;
@@ -64,6 +69,10 @@ import com.att.aro.ui.view.menu.file.PreferencesDialog;
  */
 public class AROFileMenu implements ActionListener, MenuListener {
 	private static final Logger LOG = LogManager.getLogger(AROFileMenu.class.getSimpleName());	
+
+	ApplicationContext context = SpringContextUtil.getInstance().getContext();
+
+	private IFileManager fileManager = context.getBean(IFileManager.class);
 	
 	private final AROMenuAdder menuAdder = new AROMenuAdder(this);
 
@@ -167,8 +176,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 			File tracePath = null;
 			Object event = aEvent.getSource();
 			if (event instanceof JMenuItem) {
-				tracePath = chooseFileOrFolder(JFileChooser.FILES_ONLY,
-						ResourceBundleHelper.getMessageString(MenuItem.menu_file_pcap));
+				tracePath = chooseFileOrFolder(JFileChooser.FILES_ONLY, ResourceBundleHelper.getMessageString(MenuItem.menu_file_pcap));
 				if (tracePath != null) {
 					parent.updateTracePath(tracePath);
 					userPreferences.setLastTraceDirectory(tracePath.getParentFile().getParentFile());
@@ -176,7 +184,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 				}
 			}
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_pref, aEvent)) {
-			new PreferencesDialog(parent, (JMenuItem)aEvent.getSource()).setVisible(true);
+			new PreferencesDialog(parent, (JMenuItem) aEvent.getSource()).setVisible(true);
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_adb, aEvent)) {
 			new ADBPathDialog(parent).setVisible(true);
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_print, aEvent)) {
@@ -186,46 +194,68 @@ public class AROFileMenu implements ActionListener, MenuListener {
 			System.exit(0);
 		} else if (aEvent.getSource() != null) {
 			JMenuItem jmenuSource = (JMenuItem) aEvent.getSource();
-			if (jmenuSource.getName() != null
-					&& jmenuSource.getName().equals(ResourceBundleHelper.getMessageString("menu.file.recent"))) {
+			if (jmenuSource.getName() != null && jmenuSource.getName().equals(ResourceBundleHelper.getMessageString("menu.file.recent"))) {
 				openTraceFolder(aEvent, true);
 			}
-
-
 		}
 	}
 
 	private void openTraceFolder(ActionEvent aEvent, boolean isRecent) {
 		try {
-			File tracePath = null;
+			File traceFolder = null;
 			Object event = aEvent.getSource();
 			if (event instanceof JMenuItem) {
-				if(!isRecent) {
-				tracePath = chooseFileOrFolder(JFileChooser.DIRECTORIES_ONLY,
-						ResourceBundleHelper.getMessageString(MenuItem.menu_file_open));
+				if (!isRecent) {
+					traceFolder = chooseFileOrFolder(JFileChooser.DIRECTORIES_ONLY, ResourceBundleHelper.getMessageString(MenuItem.menu_file_open));
+					traceFolder = new File(fileManager.deAlias(traceFolder).toString());
 				} else {
-					tracePath = new File(recentMenuItems.get(aEvent.getActionCommand()));
+					traceFolder = new File(recentMenuItems.get(aEvent.getActionCommand()));
 				}
-				if (tracePath != null) {
-					MissingTraceFiles missingTraceFiles = new MissingTraceFiles(tracePath);
-					Set<File> missingFiles = missingTraceFiles.retrieveMissingFiles();
-					if (missingFiles.size() > 0) {
-						LOG.warn(MessageFormat.format(ResourceBundleHelper.getMessageString(
-							MenuItem.file_missingAlert),
-								missingTraceFiles.formatMissingFiles(missingFiles)));
+
+				if (traceFolder.isDirectory()) {
+					if (!isTrafficFilePresent(traceFolder)) {
+						showErrorDialog(ResourceBundleHelper.getMessageString("trafficFile.notFound"));
+					} else if (isTraceFolderEmpty(traceFolder)) {
+						// has a traffic file, but no other trace files, so not a trace folder, should be opened as a pcap file directly
+						showErrorDialog(ResourceBundleHelper.getMessageString("invalid.traceFolder"));
+					} else {
+						MissingTraceFiles missingTraceFiles = new MissingTraceFiles(traceFolder);
+						Set<File> missingFiles = missingTraceFiles.retrieveMissingFiles();
+						if (missingFiles.size() > 0) {
+							LOG.warn(MessageFormat.format(ResourceBundleHelper.getMessageString(MenuItem.file_missingAlert), missingTraceFiles.formatMissingFiles(missingFiles)));
+						}
+						parent.updateTracePath(traceFolder);
+						userPreferences.setLastTraceDirectory(traceFolder.getParentFile());
+						GoogleAnalyticsUtil.getAndIncrementTraceCounter();
 					}
-					parent.updateTracePath(tracePath);
-					userPreferences.setLastTraceDirectory(tracePath.getParentFile());
-					GoogleAnalyticsUtil.getAndIncrementTraceCounter();
 				}
 			}
-		} catch(OutOfMemoryError err) {
+		} catch (OutOfMemoryError err) {
 			LOG.error(err.getMessage(), err);
-			MessageDialogFactory.getInstance().showErrorDialog(parent.getFrame(),
-					"Video Optimizer failed to load the trace: Trace is too big to load", "Out of Memory");
+			showErrorDialog("Video Optimizer failed to load the trace: Trace is too big to load");
 		}
 		this.fileMenu.repaint();
 		this.fileMenu.updateUI();
+	}
+	
+	private void showErrorDialog(String errorString) {
+		MessageDialogFactory.getInstance().showErrorDialog(parent.getFrame(), errorString);
+	}
+
+	private boolean isTrafficFilePresent(File traceFolder) {
+		File checkPath = new File(traceFolder, TraceDataConst.FileName.PCAP_FILE);
+		return checkPath.exists();
+	}
+
+	private boolean isTraceFolderEmpty(File traceFolder) {
+		boolean isTraceFolderEmpty = true;
+		File[] traceFiles;
+		if ((traceFiles = traceFolder.listFiles()) != null) {
+			if (traceFiles.length > 0) {
+				isTraceFolderEmpty = false;
+			}
+		}
+		return isTraceFolderEmpty;
 	}
 
 	/**
@@ -240,20 +270,15 @@ public class AROFileMenu implements ActionListener, MenuListener {
 		JFileChooser chooser = new JFileChooser();
 		chooser.setDialogTitle(title);
 		chooser.setFileSelectionMode(mode);
-		String defaultDir = userPreferences.getLastTraceDirectory() == null ?
-			System.getProperty("user.home") :
-				userPreferences.getLastTraceDirectory().toString();
-		if (parent.getTracePath() != null && parent.getTracePath().lastIndexOf(File.separator)
-				>-1) {
-			defaultDir = parent.getTracePath().substring(0,
-					parent.getTracePath().lastIndexOf(File.separator));
+		String defaultDir = userPreferences.getLastTraceDirectory() == null ? System.getProperty("user.home") : userPreferences.getLastTraceDirectory().toString();
+		if (parent.getTracePath() != null && parent.getTracePath().lastIndexOf(File.separator) > -1) {
+			defaultDir = parent.getTracePath().substring(0, parent.getTracePath().lastIndexOf(File.separator));
 		}
 		chooser.setCurrentDirectory(new File(defaultDir));
-		
-		if (mode==JFileChooser.FILES_ONLY){
-			FileNameExtensionFilter pcapfilter = new FileNameExtensionFilter(
-					"Pcap files (*.cap, *.pcap)", "cap", "pcap");
-//			chooser.addChoosableFileFilter(pcapfilter);
+
+		if (mode == JFileChooser.FILES_ONLY) {
+			// chooser.addChoosableFileFilter(pcapfilter);
+			FileNameExtensionFilter pcapfilter = new FileNameExtensionFilter("Pcap files (*.cap, *.pcap)", "cap", "pcap");
 			chooser.setFileFilter(pcapfilter);
 		}
 		if (chooser.showOpenDialog(parent.getCurrentTabComponent()) == JFileChooser.APPROVE_OPTION) {

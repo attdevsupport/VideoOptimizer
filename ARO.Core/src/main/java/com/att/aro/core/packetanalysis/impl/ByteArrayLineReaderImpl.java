@@ -15,11 +15,11 @@
 */
 package com.att.aro.core.packetanalysis.impl;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 
-import com.att.aro.core.packetanalysis.IByteArrayLineReader;
 import com.att.aro.core.util.Util;
+import com.att.aro.core.packetanalysis.IByteArrayLineReader;
 
 
 /**
@@ -124,12 +124,16 @@ public class ByteArrayLineReaderImpl implements IByteArrayLineReader {
 	public void setArrayIndex(int arrayIndex) {
 		this.index = arrayIndex;
 	}
+	
+	public int getLength(){
+		return this.length;
+	}
 
 	@Override
 	public String toString() {
 		try {
 			String response = "index :" + index + "\n";
-//			return response + (byteArray != null ? new String(byteArray, "UTF-8") : "null");
+			// return response + (byteArray != null ? new String(byteArray, StandardCharsets.UTF_8) : "null");
 			return response + Util.byteArrayToString(byteArray);
 		} catch (Exception e) {
 			return "UnsupportedEncodingException :"+e.getMessage();

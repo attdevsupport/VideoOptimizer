@@ -618,6 +618,8 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	
 	private class ComboBoxCellEditor extends AbstractCellEditor implements TableCellEditor {
 
+		private static final long serialVersionUID = 1L;
+		
 		private String xrefValue;
 		private EnumSet<VideoDataTags> allVideoTags;
 
@@ -642,10 +644,10 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 			comboBox.setSelectedItem(value.toString());
 			comboBox.addActionListener(new ActionListener() {
 
+				@SuppressWarnings("unchecked")
 				@Override
 				public void actionPerformed(ActionEvent evt) {
-					JComboBox<String> combo = (JComboBox<String>) evt.getSource();
-					xrefValue = (String) combo.getSelectedItem();
+					xrefValue = (String) ((JComboBox<String>) evt.getSource()).getSelectedItem();
 					fireEditingStopped();
 				}
 			});
@@ -679,6 +681,8 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	}
 	
 	private class ComboBoxCellRenderer extends DefaultTableCellRenderer {
+
+		private static final long serialVersionUID = 1L;
 
 		@Override
 		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,

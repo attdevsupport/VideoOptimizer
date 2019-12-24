@@ -44,11 +44,11 @@ public class RepresentationESL {
 		strblr.append(", baseURL:");
 		strblr.append(baseURL);
 		if (encodedSegment != null) {
-			strblr.append("\n\t\t\t\tEncodedSegmentListAmz :");
+			strblr.append("\n\t\t\t\tEncodedSegmentList :");
 			strblr.append(encodedSegment);
 		}
 		if (segmentList != null) {
-			strblr.append("\n\t\t\t\tSegmentListAmz :");
+			strblr.append("\n\t\t\t\tSegmentList :");
 			strblr.append(segmentList);
 		}
 		return strblr.toString();

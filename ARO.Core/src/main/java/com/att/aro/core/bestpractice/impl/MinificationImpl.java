@@ -33,6 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.mozilla.javascript.EvaluatorException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,6 +88,9 @@ public class MinificationImpl implements IBestPractice {
 
 	@Value("${minification.results}")
 	private String textResults;
+	
+	@Value("${minification.resultsFail}")
+	private String textResultFail;
 
 	@Value("${exportall.csvNumberOfMinifyFiles}")
 	private String exportAllNumberOfMinifyFiles;
@@ -191,6 +195,11 @@ public class MinificationImpl implements IBestPractice {
 			result.setResultType(BPResultType.PASS);
 			text = MessageFormat.format(textResultPass, numberOfFiles, savingInKb);
 			result.setResultText(text);
+		} else if (savingInKb < 1) {
+			result.setResultType(BPResultType.FAIL);
+			text = MessageFormat.format(textResultFail, ApplicationConfig.getInstance().getAppShortName(),
+					numberOfFiles);
+			result.setResultText(text);
 		} else {
 			result.setResultType(BPResultType.FAIL);
 			String percentageSaving = String.valueOf(Math.round(((double) totalSavingInBytes / totalBytes) * 100));
@@ -220,11 +229,16 @@ public class MinificationImpl implements IBestPractice {
 	public MinificationEntry calculateSavingMinifiedHtml(HttpRequestResponseInfo req, HttpRequestResponseInfo lastRequestObj, Session session) {
 		String content = null;
 		try {
-			content = reqhelper.getContentString(req, session);
+			String contentEncoding = req.getContentEncoding();
+			if ("gzip".equals(contentEncoding)) {
+				content = "";
+			}else{
+				content = reqhelper.getContentString(req, session);
+			}
 		} catch (Exception e) {
 			LOGGER.error("Failed to get content from html response: " + e.getMessage());
 		}
-		if (content != null) {
+		if (!StringUtils.isEmpty(content)) {
 			String minicontent = null;
 			try {
 				minicontent = htmlCompressor.compress(content);
@@ -241,11 +255,16 @@ public class MinificationImpl implements IBestPractice {
 	public MinificationEntry calculateSavingMinifiedCss(HttpRequestResponseInfo req, HttpRequestResponseInfo lastRequestObj, Session session) {
 		String content = null;
 		try {
-			content = reqhelper.getContentString(req, session);
+			String contentEncoding = req.getContentEncoding();
+			if ("gzip".equals(contentEncoding)) {
+				content = "";
+			}else{
+				content = reqhelper.getContentString(req, session);
+			}
 		} catch (Exception e) {
 			LOGGER.error("Failed to get content from Css response: " + e.getMessage());
 		}
-		if (content != null) {
+		if (!StringUtils.isEmpty(content)) {
 			String minicontent = null;
 			try {
 				minicontent = minifyCss(content);
@@ -271,11 +290,16 @@ public class MinificationImpl implements IBestPractice {
 	public MinificationEntry calculateSavingMinifiedJavascript(HttpRequestResponseInfo req, HttpRequestResponseInfo lastRequestObj, Session session) {
 		String content = null;
 		try {
-			content = reqhelper.getContentString(req, session);
+			String contentEncoding = req.getContentEncoding();
+			if ("gzip".equals(contentEncoding)) {
+				content = "";
+			}else{
+				content = reqhelper.getContentString(req, session);
+			}
 		} catch (Exception e) {
 			LOGGER.error("Failed to get content from Javascript response: " + e.getMessage());
 		}
-		if (content != null) {
+		if (!StringUtils.isEmpty(content)) {
 			String minicontent = null;
 			try {
 				minicontent = minifyJavascript(content);
@@ -304,11 +328,16 @@ public class MinificationImpl implements IBestPractice {
 	public MinificationEntry calculateSavingMinifiedJson(HttpRequestResponseInfo req, HttpRequestResponseInfo lastRequestObj, Session session) {
 		String content = null;
 		try {
-			content = reqhelper.getContentString(req, session);
+			String contentEncoding = req.getContentEncoding();
+			if ("gzip".equals(contentEncoding)) {
+				content = "";
+			}else{
+				content = reqhelper.getContentString(req, session);
+			}
 		} catch (Exception e) {
 			LOGGER.error("Failed to get content from Json response: " + e.getMessage());
 		}
-		if (content != null) {
+		if (!StringUtils.isEmpty(content)) {
 			String minicontent = minifyJson(content);
 			return minSavingEntry(minicontent.length(), content.length(), req, lastRequestObj, session);
 		}

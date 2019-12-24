@@ -66,7 +66,7 @@ public interface IARODiagnosticsOverviewRoute {
 	 * Interface to route to the diagnostic Tab & launch slider dialog 
 	 * 
 	 */
-	public void launchSliderDialogFromDiagnosticTab();
+	public void launchStartUpDelayDialog();
 	/**
 	 * <p>
 	 * Interface to route to the video Tab & launch slider dialog 

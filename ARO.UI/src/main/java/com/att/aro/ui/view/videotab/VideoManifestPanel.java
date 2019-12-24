@@ -33,7 +33,7 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 
 	private static final long serialVersionUID = 1L;
 	private JPanel videoManifestPanel;
-	private List<AccordionComponent> accordionList = new ArrayList<>();
+	private List<SegmentTable> segmentTableList = new ArrayList<>();
 	private IARODiagnosticsOverviewRoute overviewRoute;
 	private JPanel manifestPanel;
 	private MainFrame aroView;
@@ -50,26 +50,26 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 		videoManifestPanel.add(manifestPanel);
 		setViewportView(videoManifestPanel);
 	}
-	
+
 	private JPanel getManifestPanel() {
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 		panel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-		for (AccordionComponent accordion : accordionList) {
-			panel.add(accordion);
+		for (SegmentTable segmentTable : segmentTableList) {
+			panel.add(segmentTable);
 		}
 		return panel;
 	}
 	
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
-		accordionList.clear();
+		segmentTableList.clear();
 		if (analyzerResult != null && analyzerResult.getAnalyzerResult() != null && analyzerResult.getAnalyzerResult().getStreamingVideoData() != null) {
 			for (VideoStream videoStream : analyzerResult.getAnalyzerResult().getStreamingVideoData().getVideoStreamMap().values()) {
 				if (videoStream != null && videoStream.getVideoEventList() != null && !videoStream.getVideoEventList().isEmpty()) {
-					AccordionComponent component = new AccordionComponent(videoStream, this.overviewRoute, analyzerResult, aroView);
+					SegmentTable component = new SegmentTable(videoStream, this.overviewRoute, analyzerResult, aroView);
 					component.setVisible(false);
-					accordionList.add(component);
+					segmentTableList.add(component);
 				}
 			}
 		}
@@ -80,14 +80,8 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 	}
 	
 	public void refreshLocal(AROTraceData analyzerResult) {
-		for (AccordionComponent accordion : accordionList) {
-			accordion.updateTitleButton(analyzerResult);
-		}
-	}
-
-	public void refreshSize(int width) {
-		for (AccordionComponent accordion : accordionList) {
-			accordion.resize(width);
+		for (SegmentTable segmentTable : segmentTableList) {
+			segmentTable.updateTitleButton(analyzerResult);
 		}
 	}
 	

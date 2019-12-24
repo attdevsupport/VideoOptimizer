@@ -92,7 +92,7 @@ public class VideoPreferencesPanel extends JPanel {
 		if (temp != null && !temp.equals("null")) {
 			try {
 				videoUsagePrefs = mapper.readValue(temp, VideoUsagePrefs.class);
-				videoPreferenceModel = new VideoPreferenceModel(videoUsagePrefs);
+				videoPreferenceModel = new VideoPreferenceModel();
 			} catch (IOException e) {
 				LOG.error("VideoUsagePrefs failed to de-serialize :" + e.getMessage(), e);
 			}
@@ -204,8 +204,6 @@ public class VideoPreferencesPanel extends JPanel {
 		Label stallPausePointLabel = new Label(
 				ResourceBundleHelper.getMessageString("video.usage.dialog.stallPausePoint"));
 		Label stallRecoveryLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallRecovery"));
-		Label startupDelayReminderLabel = new Label(
-				ResourceBundleHelper.getMessageString("video.usage.dialog.startupDelayReminder"));
 		Label targetedStartupDelayLabel = new Label(
 				ResourceBundleHelper.getMessageString("video.usage.dialog.targetedStartupDelay"));
 		Label nearStallLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.nearStall"));
@@ -224,7 +222,6 @@ public class VideoPreferencesPanel extends JPanel {
 		targetedStartupDelayEdit.setInputVerifier(new NumericInputVerifier(MAX_TARGETEDSTARTUPDELAY, 0, 2));
 		nearStallEdit.setInputVerifier(new NumericInputVerifier(MAX_NEARSTALL, 0.01, 4));
 		startupDelayReminder = new JCheckBox();
-		startupDelayReminder.setSelected(videoUsagePrefs.isStartupDelayReminder());
 		duplicateHandlingEditCombo = new JComboBox<>();
 		for (DUPLICATE_HANDLING item : DUPLICATE_HANDLING.values()) {
 			duplicateHandlingEditCombo.addItem(item);
@@ -250,7 +247,6 @@ public class VideoPreferencesPanel extends JPanel {
 		addLine(nearStallLabel, nearStallEdit, panel,
 				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		addLine(maxBufferLabel, maxBufferEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.mbytes")));
-		addLineComboBox(startupDelayReminderLabel, startupDelayReminder, panel);
 		addLineComboBox(duplicateHandlingLabel, duplicateHandlingEditCombo, panel);
 		addDefaultButton(panel, 2);
 		return panel;
@@ -413,10 +409,9 @@ public class VideoPreferencesPanel extends JPanel {
 		videoUsagePrefs.setDuplicateHandling((DUPLICATE_HANDLING) duplicateHandlingEditCombo.getSelectedItem());
 		videoUsagePrefs.setStallPausePoint(Double.valueOf(stallPausePointEdit.getText()));
 		videoUsagePrefs.setStallRecovery(Double.valueOf(stallRecoveryEdit.getText()));
-		videoUsagePrefs.setStartupDelayReminder(startupDelayReminder.isSelected());
 		videoUsagePrefs.setStartupDelay(Double.valueOf(targetedStartupDelayEdit.getText()));
 		videoUsagePrefs.setNearStall(Double.valueOf(nearStallEdit.getText()));
-		videoPreferenceModel = new VideoPreferenceModel(videoUsagePrefs);
+		videoPreferenceModel = new VideoPreferenceModel();
 		String temp;
 		try {
 			temp = mapper.writeValueAsString(videoUsagePrefs);
@@ -458,8 +453,8 @@ public class VideoPreferencesPanel extends JPanel {
 
 	public boolean saveVideoPreferences() {
 		boolean result = true;
-		videoPreferenceModel = new VideoPreferenceModel(videoUsagePrefs);
-		if (saveVideoAnalysisConfiguration() || !validateVideoPreferenceConfiguration()) {
+		videoPreferenceModel = new VideoPreferenceModel();
+		if (!validateVideoPreferenceConfiguration() || saveVideoAnalysisConfiguration()) {
 			throw new IllegalArgumentException(videoPreferenceModel.getValidationError().toString());
 		}
 		return result;

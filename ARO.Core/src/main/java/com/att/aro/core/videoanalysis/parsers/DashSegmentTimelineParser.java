@@ -19,6 +19,8 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.util.CollectionUtils;
+
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.AdaptationSetTL;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.MPDSegmentTimeline;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.PeriodST;
@@ -113,6 +115,11 @@ public class DashSegmentTimelineParser extends DashParser {
 		return result;
 	}
 
+	public List<AdaptationSetTL> getAdaptationSet() {
+		List<PeriodST> period = mpd.getPeriod();
+		return CollectionUtils.isEmpty(period) ? null : period.get(0).getAdaptationSet();
+	}
+
 	/**
 	 * LocatesAdaptationSetPR with a matching mimeType
 	 * 
@@ -133,8 +140,8 @@ public class DashSegmentTimelineParser extends DashParser {
 	 */
 	private AdaptationSetTL findAdaptationSet(MPDSegmentTimeline mani, String mimeType, String bandwidth) {
 		List<PeriodST> period = mani.getPeriod();
-		for (PeriodST periodPr : period) {
-			List<AdaptationSetTL> adaptationSet = periodPr.getAdaptationSet();
+		for (PeriodST periodST : period) {
+			List<AdaptationSetTL> adaptationSet = periodST.getAdaptationSet();
 			if (adaptationSet != null) {
 				for (AdaptationSetTL adaptationSetPR : adaptationSet) {
 					if (adaptationSetPR.getMimeType().startsWith(mimeType)) {
@@ -178,5 +185,6 @@ public class DashSegmentTimelineParser extends DashParser {
 	public void setTimeScale(Double timeScale) {
 		super.setTimeScale((timeScale == null || timeScale == 0) ? 1D : timeScale);
 	}
+
 	
 }

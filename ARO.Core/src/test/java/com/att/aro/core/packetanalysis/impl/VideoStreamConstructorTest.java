@@ -1,72 +1,72 @@
 package com.att.aro.core.packetanalysis.impl;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.File;
+
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.springframework.context.ApplicationContext;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import com.att.aro.core.SpringContextUtil;
+import com.att.aro.core.fileio.IFileManager;
+import com.google.common.io.Files;
 
 public class VideoStreamConstructorTest {
 
-	@Test
-	public void testFindMagic() throws Exception {
-//		VideoStreamConstructor videoStreamConstructor = new VideoStreamConstructor();
-		
-		Map<String, MyClass> classMap = new HashMap<>();
-		classMap.put("one", new MyClass("Me", 1));
-		classMap.put("two", new MyClass("Bayley", 2));
-		classMap.put("three", new MyClass("Artimus", 3));
-		classMap.put("four", new MyClass("Apollo", 4));
-		
-		System.out.println(this.findMagic(classMap, "two"));
-	}
-
-	@Test
-	public void anotherExercise() {
-
-		Map<String, Double> productPrice = new HashMap<>();
-		// add value
-		productPrice.put("Rice", 6.9);
-		productPrice.put("Flour", 3.9);
-		productPrice.put("Sugar", 4.9);
-		productPrice.put("Milk", 3.9);
-		productPrice.put("Egg", 1.9);
-
-		// Set<String> keys = productPrice.keySet();
-		// keys.forEach(key -> System.out.println(key));
-
-		Collection<Double> values = productPrice.values();
-		values.forEach(value -> System.out.println(value));
-
-		productPrice.forEach((key, value) -> {
-			System.out.print("\nkey: " + key +", Value: " + value);
-		});
+	ApplicationContext context = SpringContextUtil.getInstance().getContext();
+	VideoStreamConstructor videoStreamConstructor = context.getBean(VideoStreamConstructor.class);
+	IFileManager filemanager = context.getBean(IFileManager.class);
+	
+	File tempFolder = Files.createTempDir();
+	String pathName1 = tempFolder + "/file1";
+	String pathName1exten = tempFolder + "/file1.xyz";
+	byte[] content = "dummy data".getBytes();
+	
+	@Before
+	public void init() {
+		videoStreamConstructor.savePayload(content, pathName1);
+		videoStreamConstructor.savePayload(content, pathName1exten);
 	}
 	
-	@Data
-	@AllArgsConstructor
-	public class MyClass{
-		String name;
-		int id;
+	@After
+	public void destroy() {
+		filemanager.directoryDeleteInnerFiles(tempFolder.toString());
+		filemanager.deleteFile(tempFolder.toString());
 	}
-	
-	public String findMagic(Map<String, MyClass> classMap, String findThis) {
-		
-//		Map<String, MyClass> result =
-//				classMap.entrySet().stream().collect(Collectors.toMap(MyClass::getName, c -> c));
-//		
-//		Optional<Entry<String, MyClass>> result = classMap
-//				.entrySet()
-//				.stream()
-//				.filter(x -> MyClass::getName(), findThis)
-//				.findFirst()
-////				.orElse(null) != null)
-//				;
-		
-		return null;
+
+	@Test
+	public void testFindPathNameTiebreaker_when_no_duplicates() throws Exception {
+		String pathName = tempFolder + "/fileNotThere";
+		String incrementedName = videoStreamConstructor.findPathNameTiebreaker(pathName);
+		assertThat(incrementedName).isEqualTo(pathName);
+
+		System.out.println("tempFolder :" + tempFolder);
+	}
+
+	@Test
+	public void testFindPathNameTiebreaker_when_noExtension() throws Exception {
+		String incrementedName = videoStreamConstructor.findPathNameTiebreaker(pathName1);
+		assertThat(incrementedName).isEqualTo(pathName1 + "(1)");
+	}
+
+	@Test
+	public void testFindPathNameTiebreaker_when_Extension() throws Exception {
+		String incrementedName = videoStreamConstructor.findPathNameTiebreaker(pathName1 + ".xyz");
+		assertThat(incrementedName).isEqualTo(pathName1 + "(1).xyz");
+	}
+
+	@Test
+	public void testFindPathNameTiebreaker_when_201_duplicate_names() throws Exception {
+		String pathName = tempFolder + "/file.xyz";
+		byte[] content = pathName.getBytes();
+		for (int idx = 0; idx < 200; idx++) {
+			videoStreamConstructor.savePayload(content, pathName);
+		}
+		String incrementedName = videoStreamConstructor.findPathNameTiebreaker(pathName);
+		assertThat(incrementedName).isEqualTo(tempFolder + "/file.xyz(duplicated)");
 	}
 
 }
+

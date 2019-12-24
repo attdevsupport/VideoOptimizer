@@ -18,7 +18,6 @@ package com.att.aro.ui.model.diagnostic;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,30 +36,29 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 	private static final long serialVersionUID = 3691872179254714817L;
 	
-	public static final int TIME_COL 		= 0;
-	public static final int CHECKBOX_COL 	= 1;
-	public static final int APP_COL 		= 2;
-	public static final int DOMAIN_COL 		= 3;
-	public static final int LOCALPORT_COL 	= 4;
-	public static final int REMOTEIP_COL 	= 5;
-	public static final int REMOTEPORT_COL 	= 6;
-	public static final int BYTE_COUNT_COL 	= 7;
-	public static final int PACKETCOUNT_COL = 8;
-	public static final int TCP_UDP_COL 	= 9;
+	public static final int TIME_COL		=	 0;
+	public static final int CHECKBOX_COL 	=	 1;
+	public static final int DOMAIN_COL 		=	 2;
+	public static final int LOCALPORT_COL 	=	 3;
+	public static final int REMOTEIP_COL 	=	 4;
+	public static final int REMOTEPORT_COL 	=	 5;
+	public static final int BYTE_COUNT_COL	=	 6;
+	public static final int PACKETCOUNT_COL	=	 7;
+	public static final int TCP_UDP_COL 	=	 8;
+	public static final int NW_LATENCY_COL 	=	 9;
 	
 	private static final String HOSTPORTSEPERATOR = ResourceBundleHelper.getMessageString("tcp.hostPortSeparator");
-	private static final String STRINGLISTSEPARATOR = ResourceBundleHelper.getMessageString("stringListSeparator");
-
+	
 	private  static final String[] COLUMNNAMES = { 
 		ResourceBundleHelper.getMessageString("tcp.time"),"", 
-		ResourceBundleHelper.getMessageString("tcp.app"),
 		ResourceBundleHelper.getMessageString("tcp.domain"), 
 		ResourceBundleHelper.getMessageString("tcp.local"), 
 		ResourceBundleHelper.getMessageString("tcp.remote"), 
 		ResourceBundleHelper.getMessageString("tcp.remoteport"),
 		ResourceBundleHelper.getMessageString("tcp.bytecount"),
 		ResourceBundleHelper.getMessageString("tcp.packetcount"),
-		ResourceBundleHelper.getMessageString("tcp.protocol") 
+		ResourceBundleHelper.getMessageString("tcp.protocol"),
+		ResourceBundleHelper.getMessageString("tcp.latency")
 	};
 	private Set<Session> highlighted = new HashSet<Session>();
 	private TableColumnModel cols;
@@ -178,13 +176,10 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 					"0.000")));
 			col.setMaxWidth(60);
 
-			TableColumn appCol = cols.getColumn(APP_COL);
+			TableColumn appCol = cols.getColumn(DOMAIN_COL);
 			DefaultTableCellRenderer defaultTableCR = new DefaultTableCellRenderer();
 			appCol.setCellRenderer(defaultTableCR);
-			appCol.setPreferredWidth(230);
-
-			appCol = cols.getColumn(DOMAIN_COL);
-			appCol.setPreferredWidth(150);
+			appCol.setPreferredWidth(130);
 
 			appCol = cols.getColumn(LOCALPORT_COL);
 			appCol.setPreferredWidth(60);
@@ -198,8 +193,17 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 			appCol.setMaxWidth(75); 
 			
 			appCol = cols.getColumn(TCP_UDP_COL);
-			appCol.setMaxWidth(55);
-			appCol.setPreferredWidth(55);
+			appCol.setMaxWidth(85);
+			appCol.setPreferredWidth(85);
+			
+			appCol = cols.getColumn(NW_LATENCY_COL);
+			
+			// Release 3.0 Fix. To be undone after the latency calculations are corrected. 
+			// appCol.setMaxWidth(85);
+			// appCol.setPreferredWidth(85);
+			appCol.setMaxWidth(0);
+			appCol.setPreferredWidth(0);
+			cols.removeColumn(appCol);
 
 			//Adding checkbox to column greg story
 			appCol = cols.getColumn(CHECKBOX_COL);
@@ -227,65 +231,14 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 		
 		switch (columnIndex) {
 		case TIME_COL:
-			if(item.isUDP()){
-				return item.getUDPPackets().get(0).getTimeStamp();
+			if(item.isUdpOnly()){
+				return item.getUdpPackets().get(0).getTimeStamp();
 			}else{
 				return item.getPackets().get(0).getTimeStamp();
 			}
 		case CHECKBOX_COL:
 			String sessionKey = getSessionKey(item);
 			return getCheckboxMap().get(sessionKey);
-		case APP_COL:
-			if(item.isUDP()){
-				return item.getUDPPackets().get(0).getAppName();
-			}else{
-				TableColumn appCol = cols.getColumn(APP_COL);
-				int width = appCol.getWidth();
-	
-				Iterator<String> iterator = item.getAppNames().iterator();
-				if (!iterator.hasNext()) {
-					return ResourceBundleHelper.getMessageString("aro.unknownApp");
-				}
-	
-				// intended to dynamically determine how
-				// many characters will fit in a cell based on column width in
-				// pixels, then substring app name and prefix with ...
-				// start with 16% and add another .5% for each 70 pixels
-				double basePct = .16;
-				int units = width / 70;
-				if (units > 0) {
-					basePct = basePct + units * .005;
-				}
-				
-				double shortLength = width * basePct;				
-				String app = iterator.next();
-				if(iterator.hasNext()){
-					StringBuffer sbuffer = new StringBuffer(app);
-					while (iterator.hasNext()) {
-						sbuffer.append(STRINGLISTSEPARATOR);
-						sbuffer.append(iterator.next());
-					}
-					
-					int appStrLength = sbuffer.length();
-					
-					if (appStrLength > shortLength + 2) {					
-						return "..."
-								+ sbuffer.substring(appStrLength - (int) shortLength);
-					} else {
-						return sbuffer.toString();
-					}
-
-				}else{
-					
-					int appStrLength = app.length();					
-					if (appStrLength > shortLength + 2) {					
-						app = "..."
-								+ app.substring(appStrLength - (int) shortLength);
-					}
-					return app;
-				}
-
-			}
 		case DOMAIN_COL:
 
 			return item.getDomainName();
@@ -305,13 +258,13 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 			return item.getBytesTransferred();
 			
 		case PACKETCOUNT_COL:
-			if(item.isUDP()){
-				return item.getUDPPackets().size();
+			if(item.isUdpOnly()){
+				return item.getUdpPackets().size();
 			}else{
 				return item.getPackets().size();
 			}
 		case TCP_UDP_COL:
-			if(item.isUDP()){
+			if(item.isUdpOnly()){
 				if(53==item.getLocalPort()||53==item.getRemotePort()){
 					return ResourceBundleHelper.getMessageString("tcp.dns");
 				}else if(443==item.getLocalPort()||443==item.getRemotePort()||80==item.getLocalPort()||80==item.getRemotePort()){
@@ -322,7 +275,8 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 			}else{
 				return ResourceBundleHelper.getMessageString("tcp.tcp");
 			}
-						
+		case NW_LATENCY_COL:
+				return	item.getLatency(item);	
 		default:
 			return null;
 		}
@@ -341,7 +295,6 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 					checkboxMap.put(sessionKey, checkBoxValue);
 				}
 			}
-
 			fireTableCellUpdated(row, col);
 		}
 

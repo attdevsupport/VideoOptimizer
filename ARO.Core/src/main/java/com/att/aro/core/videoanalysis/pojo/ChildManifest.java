@@ -30,15 +30,18 @@ import lombok.Data;
  */
 @Data
 public class ChildManifest {
-	String uriName = "";
-	double bandwidth;
-	String codecs = "";
-	int quality;
-	int pixelWidth;
-	int pixelHeight;
-	int segmentCount = 0;
-	boolean video;
-	Manifest manifest;
+	private String uriName = "";
+	private double bandwidth;
+	private String codecs = "";
+	private int quality;
+	private int pixelWidth;
+	private int pixelHeight;
+	private int segmentCount = 0;
+	private boolean video;
+	private Manifest manifest;
+	private double segmentStartTime;
+	protected ContentType contentType = ContentType.UNKNOWN;
+	
 	byte[] moovContent;
 
 	/**<pre>
@@ -47,44 +50,82 @@ public class ChildManifest {
 	 */
 	PatriciaTrie<SegmentInfo> segmentList = new PatriciaTrie<>();
 
+	public void setStreamProgramDateTime(double programDateTime) {
+		manifest.updateStreamProgramDateTime(programDateTime);
+		this.segmentStartTime = programDateTime;
+	}
+	
 	public int getNextSegmentID() {
 		return segmentCount++;
 	}
 
 	public boolean addSegment(String segmentUriName, SegmentInfo segmentInfo) {
 		if (!segmentList.containsKey(segmentUriName)) {
+			if (segmentInfo.getStartTime() == 0) {
+				segmentInfo.setStartTime(getSegmentStartTime());
+				segmentStartTime += segmentInfo.getDuration();
+			}
 			segmentList.put(segmentUriName, segmentInfo);
+			if (segmentInfo.getContentType().equals(ContentType.UNKNOWN)) {
+				segmentInfo.setContentType(getContentType());
+			}
 			return true;
 		}
 		return false;
 	}
 
+	public void adjustDurations() {
+		if (!segmentList.isEmpty()) {
+			SegmentInfo priorSegment = null;
+			SegmentInfo segment;
+			String key = segmentList.firstKey();
+			String nkey;
+
+			while ((nkey = segmentList.nextKey(key)) != null) {
+				segment = segmentList.get(nkey);
+				if (priorSegment != null) {
+					priorSegment.setDuration(segment.getStartTime() - priorSegment.getStartTime());
+				}
+				key = nkey;
+				priorSegment = segment;
+			}
+		}
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("\n\tChildManifest :");
-		if (manifest != null) {
-			strblr.append("\n\t\t\tVideoName   :").append(manifest.getVideoName());
-			strblr.append("\n\t\t\tTimestamp   :").append(String.format("%.4f:", manifest.getRequestTime()));
-		}
-		strblr.append("\n\t\t\tUriName     :").append(uriName);
-		strblr.append("\n\t\t\tVideo       :").append(video);
-		strblr.append("\n\t\t\tContentType :").append(getContentType());
-		strblr.append("\n\t\t\tSegmentCount:").append(segmentCount);
-		strblr.append("\n\t\t\tBandwidth   :").append(bandwidth);
-		strblr.append("\n\t\t\tCodecs      :").append(codecs);
-		strblr.append("\n\t\t\tQuality     :").append(quality);
-		strblr.append("\n\t\t\tPixelWidth  :").append(pixelWidth);
-		strblr.append("\n\t\t\tPixelHeight :").append(pixelHeight);
+		strblr.append("\n\t\t\tVideoName        :").append(manifest == null ? "-" : manifest.getVideoName());
+		strblr.append("\n\t\t\tReqTimestamp     :").append(manifest == null ? "-" : String.format("%.4f:", manifest.getRequestTime()));
+		strblr.append("\n\t\t\tProgramDateTime  :").append(manifest == null ? "-" : String.format("%.3f:", manifest.getProgramDateTime()));
+		strblr.append("\n\t\t\tSegmentStartTime :").append(String.format("%.3f:", segmentStartTime));
+		strblr.append("\n\t\t\tUriName          :").append(uriName);
+		strblr.append("\n\t\t\tVideo            :").append(video);
+		strblr.append("\n\t\t\tContentType      :").append(getContentType());
+		strblr.append("\n\t\t\tSegmentCount     :").append(segmentCount);
+		strblr.append("\n\t\t\tBandwidth        :").append(bandwidth);
+		strblr.append("\n\t\t\tCodecs           :").append(codecs);
+		strblr.append("\n\t\t\tQuality          :").append(quality);
+		strblr.append("\n\t\t\tPixelWidth       :").append(pixelWidth);
+		strblr.append("\n\t\t\tPixelHeight      :").append(pixelHeight);
 		strblr.append(dumpSegmentList());
+		 strblr.append(dumpManifest(700));
+
+		return strblr.toString();
+	}
+
+	public String dumpManifest(int cutoff) {
+		StringBuilder strblr = new StringBuilder();
 		if (manifest != null && manifest.getContent() != null) {
 			String strContent = new String(manifest.getContent());
 			int len = strContent.length();
-			if (len > 700) {
-				strContent = strContent.substring(0, 700) + "...\ttruncated\n";
+			if (cutoff > 0 && len > cutoff) {
+				strContent = strContent.substring(0, cutoff) + "...\ttruncated\n";
 			}
 			strblr.append("\nManifest file contents:\n" + strContent);
+		} else {
+			strblr.append("No manifest data");
 		}
-
 		return strblr.toString();
 	}
 
@@ -102,13 +143,21 @@ public class ChildManifest {
 	public void setContentType(ContentType contentType) {
 		if (manifest != null) {
 			manifest.setContentType(contentType);
-		}
+		} 
+		this.contentType = contentType;
 	}
 	
 	public ContentType getContentType() {
-		if (manifest==null) {
-			return ContentType.UNKNOWN;
+		if (manifest == null) {
+			return this.contentType;
 		}
 		return manifest.getContentType();
+	}
+	
+	public void setManifest(Manifest manifest) {
+		this.manifest = manifest;
+		if (!contentType.equals(ContentType.UNKNOWN)) {
+			manifest.setContentType(this.contentType);
+		}
 	}
 }

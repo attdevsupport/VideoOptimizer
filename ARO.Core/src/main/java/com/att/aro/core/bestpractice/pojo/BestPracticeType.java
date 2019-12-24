@@ -60,7 +60,6 @@ public enum BestPracticeType {
 	, HTTP_1_0_USAGE(HTML, "HTTP 1.0 Usage")
 	, FILE_ORDER(HTML, "File Order")
 	, EMPTY_URL(HTML, "Empty Source and Link Attributes")
-	, FLASH(HTML, "Flash")
 	, DISPLAY_NONE_IN_CSS(HTML, "\"display:none\" in CSS"),
 
 	HTTPS_USAGE(SECURITY, "HTTPS Usage")
@@ -79,8 +78,8 @@ public enum BestPracticeType {
 	, VIDEO_REDUNDANCY(VIDEO, "Redundancy")
 	, VIDEO_CONCURRENT_SESSION(VIDEO, "Concurrent Session")
 	, VIDEO_VARIABLE_BITRATE(VIDEO, "Variable Bitrate") 
-	, VIDEO_RESOLUTION_QUALITY(VIDEO, "Video Resolution and Perception") 
-	,
+	, VIDEO_RESOLUTION_QUALITY(VIDEO, "Resolution and Perception") 
+	, AUDIO_STREAM(VIDEO, "Streaming Separate Audio and Video"),
 
 	ACCESSING_PERIPHERALS(OTHER, "Accessing Peripheral Applications"),
 

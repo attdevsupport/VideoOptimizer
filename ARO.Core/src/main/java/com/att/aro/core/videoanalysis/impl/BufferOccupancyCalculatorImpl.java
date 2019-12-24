@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import org.apache.commons.math3.util.MathUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.maven.doxia.logging.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import com.att.aro.core.packetanalysis.pojo.BufferOccupancyBPResult;
@@ -47,18 +46,15 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 	private List<VideoEvent> chunkDownload;
 	private List<VideoEvent> chunkPlay;
 	private List<VideoEvent> veDone;
-	private List<VideoEvent> filteredSegmentByLastArrival;
+	private List<VideoEvent> filteredSegments;
 	private List<VideoEvent> completedDownloads = new ArrayList<>();
 	List<VideoEvent> veCollection = new ArrayList<>();
 
 	Map<Integer, String> seriesDataSets = new TreeMap<Integer, String>();
 	int key = 1;
 
-	private Map<VideoEvent, VideoStream> veManifestList;
-
 	private BufferOccupancyBPResult bufferOccupancyResult;
 
-	
 	private VideoChunkPlotterImpl videoChunkPlotterRef;
 	  
 	@Autowired
@@ -68,10 +64,10 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 	}
 
 	private void initialize(StreamingVideoData streamingVideoData){
-		filteredSegmentByLastArrival = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments();
+		filteredSegments = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments();
 	
 		for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
-			if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
+			if (videoStream.isSelected()) {
 				for (VideoEvent ve : videoStream.getVideoEventList().values()) {
 					if (ve.getSegmentID() != 0) {
 						chunkDownload.add(ve);
@@ -84,21 +80,11 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
     	for(VideoEvent vEvent:chunkDownload){
     		chunkPlay.add(vEvent);
     	}
-    	Collections.sort(chunkPlay, new VideoEventComparator(SortSelection.SEGMENT));
-        Collections.sort(filteredSegmentByLastArrival, new VideoEventComparator(SortSelection.SEGMENT));
-    	veManifestList = streamingVideoData.getStreamingVideoCompiled().getVeStreamList();
-    	runInit(streamingVideoData, veManifestList,filteredSegmentByLastArrival);
+    	
+    	Collections.sort(chunkPlay, new VideoEventComparator(SortSelection.SEGMENT_ID));
+        Collections.sort(filteredSegments, new VideoEventComparator(SortSelection.SEGMENT_ID));
+    	runInit(streamingVideoData, filteredSegments);
     }
-    
-	public double getChunkPlayStartTime(VideoEvent chunkPlaying) {
-		for (VideoEvent veEvent : chunkPlayTimeList.keySet()) {
-			if (veEvent.equals(chunkPlaying)) {
-				return chunkPlayTimeList.get(veEvent); // return play start time
-			}
-		}
-		return -1;
-	}
-
 
     @Override
 	public double drawVeDone(List<VideoEvent> veDone, double beginByte) {
@@ -189,13 +175,13 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 			chunkPlay = new ArrayList<VideoEvent>();
 			veDone = new ArrayList<>();
 			completedDownloads.clear();
-			filteredSegmentByLastArrival = new ArrayList<VideoEvent>();
+			filteredSegments = new ArrayList<VideoEvent>();
 			beginByte=0; 
 			endByte =0;
 			initialize(streamingVideoData);
 
 			double bufferFill = 0;
-			for (int index = 0; index < filteredSegmentByLastArrival.size(); index++) { // chunkPlay.size()
+			for (int index = 0; index < filteredSegments.size(); index++) { // chunkPlay.size()
 				bufferFill = 0;
 
 				updateUnfinishedDoneVideoEvent();
@@ -207,8 +193,8 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 				
 				beginByte = endByte;
 
-				if (index + 1 <= filteredSegmentByLastArrival.size() - 1) { //chunkPlay.size()
-					setNextPlayingChunk(index + 1,filteredSegmentByLastArrival); //, videoUsage);
+				if (index + 1 <= filteredSegments.size() - 1) { //chunkPlay.size()
+					setNextPlayingChunk(index + 1,filteredSegments); //, videoUsage);
 				}
 
 			}
@@ -239,9 +225,9 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 			nonStalled = true;
 		}
 		if (nonStalled) {
-			if (chunkIndex != -1 && videoChunkPlotterRef.getChunkPlayStartTimes() != null && !videoChunkPlotterRef.getChunkPlayStartTimes().isEmpty()) {
-				if (chunkIndex < videoChunkPlotterRef.getChunkPlayStartTimes().size()) {
-					chunkPlayStartTime = videoChunkPlotterRef.getChunkPlayStartTimes().get(chunkIndex);
+			if (chunkIndex != -1 && videoChunkPlotterRef.getChunkPlayStartTimesList() != null && !videoChunkPlotterRef.getChunkPlayStartTimesList().isEmpty()) {
+				if (chunkIndex < videoChunkPlotterRef.getChunkPlayStartTimesList().size()) {
+					chunkPlayStartTime = videoChunkPlotterRef.getChunkPlayStartTimesList().get(chunkIndex);
 				}
 
 			} else {
@@ -249,7 +235,7 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 			}
 		}
 
-		chunkPlayTimeDuration = getChunkPlayTimeDuration(chunkPlaying);// , videoUsage);
+		chunkPlayTimeDuration = chunkPlaying.getDuration();// , videoUsage);
 		chunkPlayEndTime = chunkPlayStartTime + chunkPlayTimeDuration;
 		chunkByteRange = (chunkPlaying.getTotalBytes());
 	}

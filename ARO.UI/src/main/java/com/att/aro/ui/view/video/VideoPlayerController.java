@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
-import org.apache.log4j.Logger;
+import org.apache.log4j.Logger;	
 import org.apache.log4j.LogManager;
 
 import com.att.aro.core.AnalyzerOS;

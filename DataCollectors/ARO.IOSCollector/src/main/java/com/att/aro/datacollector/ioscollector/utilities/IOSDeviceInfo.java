@@ -183,13 +183,28 @@ public class IOSDeviceInfo {
 			} else if (deviceType.contains("iPhone8,1"))   {return "750*1334";	// iPhone 6s
 			} else if (deviceType.contains("iPhone8,4"))   {return "640*1136";	// iPhone SE
 			} else if (deviceType.contains("iPhone8,2"))   {return "1080*1920";	// iPhone 6s+
-			} else if (deviceType.contains("iPhone9,1")  || deviceType.contains("iPhone9,3") )  {return "750*1334";
-			} else if (deviceType.contains("iPhone9,2")  || deviceType.contains("iPhone9,4") )  {return "1080*1920";
-			} else if (deviceType.contains("iPhone10,1") || deviceType.contains("iPhone10,4") ) {return "750*1334";
-			} else if (deviceType.contains("iPhone10,2") || deviceType.contains("iPhone10,5") ) {return "1080*1920";
-			} else if (deviceType.contains("iPhone10,3") || deviceType.contains("iPhone10,6") ) {return "1125*2436";
+			} else if (deviceType.contains("iPhone9,1")  || deviceType.contains("iPhone9,3") )  {return "750*1334";	 // iPhone 7
+			} else if (deviceType.contains("iPhone9,2")  || deviceType.contains("iPhone9,4") )  {return "1080*1920"; // iPhone 7 Plus
+			} else if (deviceType.contains("iPhone10,1") || deviceType.contains("iPhone10,4") ) {return "750*1334";	 // iPhone 8
+			} else if (deviceType.contains("iPhone10,2") || deviceType.contains("iPhone10,5") ) {return "1080*1920"; // iPhone 8 Plus
+			} else if (deviceType.contains("iPhone10,3") || deviceType.contains("iPhone10,6")	// iPhone X
+					|| deviceType.contains("iPhone11,2") ) {return "1125*2436";					// iPhone XS
+			} else if (deviceType.contains("iPhone11,6") ) {return "1242*2688";					// iPhone XS Max
+			} else if (deviceType.contains("iPhone11,8"))  {return "828*1792";					// iPhone XR
+			
 			} else if (deviceType.contains("iPad2"))   {return "768*1024";
-			} else if (deviceType.contains("iPad3"))   {return "1536*2048";
+			} else if (deviceType.contains("iPad3"))   {return "1536*2048"; // iPad 3rd/4th Gen
+			} else if (deviceType.contains("iPad4"))   {return "1536*2048";	// iPad Air, mini 2, mini 3
+			} else if (deviceType.contains("iPad5"))   {return "1536*2048";	// iPad Air 2, mini 4
+			} else if (deviceType.contains("iPad6,7") || deviceType.contains("iPad6,8"))   {return "2048*2732"; // iPad Pro 12.9 inch
+			} else if (deviceType.contains("iPad6"))   {return "1536*2048"; // iPad Pro 9.7 inch, iPad 5th Gen
+			} else if (deviceType.contains("iPad7,1") || deviceType.contains("iPad7,2"))   {return "2048*2732"; // iPad Pro 12.9 inch
+			} else if (deviceType.contains("iPad7,3") || deviceType.contains("iPad7,4"))   {return "1668*2224"; // iPad Pro 10.5 inch
+			} else if (deviceType.contains("iPad7,5") || deviceType.contains("iPad7,6"))   {return "1536*2048"; // iPad 6th Gen
+			} else if (deviceType.contains("iPad8,5") || deviceType.contains("iPad8,7"))   {return "2048*2732"; // iPad Pro 12.9 inch
+			} else if (deviceType.contains("iPad8"))   {return "1668*2388"; // iPad 11 inch
+			} else if (deviceType.contains("iPad11,1") || deviceType.contains("iPad11,2"))   {return "1536*2048"; // iPad mini 5th gen
+			} else if (deviceType.contains("iPad11"))   {return "1668*2224"; // iPad Air 3rd gen
 			}
 		}
 		this.foundrealscreensize = false;

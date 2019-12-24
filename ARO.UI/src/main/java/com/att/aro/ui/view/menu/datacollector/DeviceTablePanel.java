@@ -195,7 +195,15 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 			boolean validated = false;
 			if (optionPanel != null) {
 				validated = optionPanel.setDevice(selectedIAroDevice);
-
+				if (optionPanel.isTestEnvironment()) {
+					if (selectedIAroDevice!=null && !selectedIAroDevice.getPlatform().equals(IAroDevice.Platform.Android)) {
+						optionPanel.getAppSelector().setVisible(false);
+						optionPanel.getLabelAppSelectorTitle().setVisible(false);
+					} else {
+						optionPanel.getAppSelector().setVisible(true);
+						optionPanel.getLabelAppSelectorTitle().setVisible(true);
+					}
+				}
 				dialog.enableStart(validated);
 			} else if (dialog != null) {
 				dialog.enableStart(true);

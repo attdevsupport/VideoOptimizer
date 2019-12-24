@@ -12,19 +12,23 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 package com.att.aro.core.videoanalysis.impl;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.math3.util.MathUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+
 import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
 import com.att.aro.core.packetanalysis.pojo.NearStall;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
@@ -34,34 +38,58 @@ import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@EqualsAndHashCode(callSuper = false)
 public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalculator {
 
-	private List<VideoEvent> filteredChunk;
+	protected static final Logger LOG = LogManager.getLogger(BufferInSecondsCalculatorImpl.class.getName());
+	
+	private static final double THRESHOLD = .00001;
+	private List<VideoEvent> filteredChunks;
 	private List<VideoEvent> chunkDownload;
 	private List<VideoEvent> chunkDownloadCopy;
-	private Map<VideoEvent, VideoStream> veManifestList;
 
 	private List<VideoEvent> veDone;
 
 	double beginBuffer, endBuffer;
 
-	Map<Integer, String> seriesDataSets = new TreeMap<Integer, String>();
-	int key;
+	Double dlTime = 0D;
+	Double dlDuration = 0D;
+
+	enum SortOrder {
+		LAST, FIRST, HIGHEST
+	}
 	
+	/**
+	 * <pre>
+	 * A mapped point set for graphics display key=(x-coord)timeStamp, (y-coord)duration Each key-value describes a point in the graph. A line will be drawn from
+	 * {key} point to the {key+1} point ex: 0=61.287999868392944, 0.0 , 1=61.287999868392944, 2.75275 , 2=62.986000061035156, 2.75275 , 3=62.986000061035156,
+	 * 6.089416666666667
+	 */
+	Map<Integer, String> seriesDataSets = new TreeMap<Integer, String>();
+
+	int key;
+	int skey = 0;
+	int debugkey = 0;
+
 	private BufferTimeBPResult bufferTimeResult;
 
 	@Autowired
 	private VideoChunkPlotterImpl videoChunkPlotterImpl;
-	
+
 	private List<VideoEvent> veWithIn;
 	private List<VideoEvent> completedDownloads = new ArrayList<>();
+
 	private List<VideoStall> videoStallResult;
 	private List<NearStall> videoNearStallResult;
 	private boolean stallStarted;
 	double possibleStartPlayTime;
 	private List<VideoEvent> completedDownloadsWithOutNearStalls = new ArrayList<>();
 	private List<VideoEvent> veWithInPlayDownloadedSegments;
-	
+
 	@Autowired
 	private IVideoUsagePrefsManager videoPrefManager;
 
@@ -69,55 +97,15 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	private double stallPausePoint;
 	private double stallRecovery;
 	private double nearStall;
-	
-	public List<VideoStall> getVideoStallResult() {
-		return videoStallResult;
-	}
-
-	public List<NearStall> getVideoNearStallResult(){
-		return videoNearStallResult;
-	}
-	
-	public double getStallTriggerTime() {
-		return stallTriggerTime;
-	}
-
-	private void setStallTriggerTime(double stallTriggerTime) {
-		this.stallTriggerTime = stallTriggerTime;
-	}
-
-	public double getStallPausePoint() {
-		return stallPausePoint;
-	}
-
-	public void setStallPausePoint(double stallPausePoint) {
-		this.stallPausePoint = stallPausePoint;
-	}
-
-	public double getStallRecovery() {
-		return stallRecovery;
-	}
-
-	public void setStallRecovery(double stallRecovery) {
-		this.stallRecovery = stallRecovery;
-	}
-
-	public double getNearStall() {
-		return nearStall;
-	}
-
-	public void setNearStall(double nearStall) {
-		this.nearStall = nearStall;
-	}
+	private VideoStall videoStall = null;
+	private TreeMap<Double, VideoEvent> stalls;
 
 	public void detectionForNearStall(VideoEvent chunkPlaying) {
-		if (completedDownloads.contains(chunkPlaying)
-				&& (!completedDownloadsWithOutNearStalls.contains(chunkPlaying))) {
+		if (completedDownloads.contains(chunkPlaying) && (!completedDownloadsWithOutNearStalls.contains(chunkPlaying))) {
 			// mark chunkPlaying as nearly stalled segment
 			NearStall nearStalledSegment = new NearStall(chunkPlaying.getEndTS() - (nearStall + stallPausePoint), chunkPlaying);
 			videoNearStallResult.add(nearStalledSegment);
-		} else if (completedDownloadsWithOutNearStalls.contains(chunkPlaying)
-				&& (!veWithInPlayDownloadedSegments.isEmpty())) {
+		} else if (completedDownloadsWithOutNearStalls.contains(chunkPlaying) && (!CollectionUtils.isEmpty(veWithInPlayDownloadedSegments))) {
 			// add veWithInPlayDownloadedSegments to completedDownloadsWithOutNearStalls collection
 			for (VideoEvent ve : veWithInPlayDownloadedSegments) {
 				completedDownloadsWithOutNearStalls.add(ve);
@@ -126,6 +114,10 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 		}
 	}
 
+	/*
+	 * skip non-video
+	 * 
+	 */
 	public Map<Integer, String> populate(StreamingVideoData streamingVideoData, Map<VideoEvent, Double> chunkPlayTimeList) {
 		if (videoPrefManager.getVideoUsagePreference() != null) {
 			setStallTriggerTime(videoPrefManager.getVideoUsagePreference().getStallTriggerTime());
@@ -133,75 +125,312 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 			setStallRecovery(videoPrefManager.getVideoUsagePreference().getStallRecovery());
 			setNearStall(videoPrefManager.getVideoUsagePreference().getNearStall());
 		}
-		seriesDataSets.clear();
-		key = 0;
+
 		videoStallResult = new ArrayList<>();
 		videoNearStallResult = new ArrayList<>();
-		if (streamingVideoData != null && streamingVideoData.getStreamingVideoCompiled() != null) {
-			filteredChunk = new ArrayList<>();
-			chunkDownload = new ArrayList<>();
-			chunkDownloadCopy = new ArrayList<>();
-			veWithInPlayDownloadedSegments = new ArrayList<>();
-			veDone = new ArrayList<>();
-			veWithIn = new ArrayList<>();
-			completedDownloads.clear();
-			beginBuffer = 0;
-			endBuffer = 0;
-			stallStarted = false;
+		lastTimestamp = 0;
+		totalDuration = 0;
+		lastBufferTime = 0;
+		bufferedTime = 0;
+		playedTime = 0;
+		lastBufferedTime = 0D;
+		lastPlayedTime = 0D;
 
-			initialize(streamingVideoData);
+		// new way
 
-			double bufferInSeconds = 0;
-			possibleStartPlayTime = 0;
-			for (int index = 0; index < streamingVideoData.getStreamingVideoCompiled().getChunksBySegment().size(); index++) {
-				bufferInSeconds = 0;
+		initialize(streamingVideoData);
+		seriesDataSets.clear();
+		skey = 0;
+		bufferTime = 0D;
 
-				updateUnfinishedDoneVideoEvent();
-				// update downloaded segments list with consideration of near stall
-				updateSegementsDownloadedList();
+		ArrayList<VideoEvent> streams = selectSegments(streamingVideoData, SortOrder.LAST);
+		
+		/*
+		 * key: playTime, value: duration
+		 */
+		TreeMap<Double, VideoEvent> playStream = new TreeMap<>();
+		/*
+		 * key: download end time, value: duration
+		 */
+		TreeMap<Double, Double> dlStream = new TreeMap<>();
+		stalls = new TreeMap<>();
 
-				bufferInSeconds = drawVeDone(veDone, beginBuffer);
-				veDone.clear();
+		VideoEvent playEvent = null;
+		videoStall = null;
 
-				detectionForNearStall(chunkPlaying);
-				bufferInSeconds = drawVeWithIn(veWithIn, bufferInSeconds);
-				veWithIn.clear();
+		double playTimeEnd = 0;
 
-				endBuffer = bufferInSeconds;
+		// VID-TODO remove bufferTime based on duration of segment starting to play (playtime)
+		for (VideoEvent event : streams) {
+			LOG.debug(String.format("Seg:%.0f: P:%3.3f D:%3.6f Stall:%3.3f >> Next:%3.3f", event.getSegmentID(), event.getPlayTime(), event.getDuration(),
+					event.getStallTime(), (event.getPlayTime() + event.getDuration())));
 
-				if (bufferInSeconds < 0) { // using -ve as stall indicator
-					// if indicated push the chunk play start time
-					double tempPrevTime = 0;
-					if (possibleStartPlayTime != 0) {
-						tempPrevTime = possibleStartPlayTime;
+			if (event.getStallTime() != 0) {
+				LOG.debug("stall");
+				videoStallResult.add(new VideoStall(event));
+				stalls.put(playTimeEnd, event);
+			}
+			dlTime = event.getEndTS();
+			while (dlStream.get(dlTime) != null) {
+				// protect against duplicate timestamps
+				dlTime += .000000001;
+			}
+			dlStream.put(dlTime, event.getDuration());
+			playStream.put(event.getPlayTime(), event);
+			playTimeEnd = event.getPlayTimeEnd();
+		}
+		
+		skey = 0;
+		Double segPlayTime = 0D;
+
+		double stallStart = Double.MAX_VALUE;
+		double stallEnd = Double.MAX_VALUE;
+		double priorDlTime = 0D;
+
+		while (!playStream.isEmpty() && (segPlayTime = playStream.firstKey()) != null) {
+			playEvent = playStream.remove(segPlayTime);
+			LOG.debug(String.format("seg(%.0f) :%.3f - %.3f, duration: %.5f", playEvent.getSegmentID(), playEvent.getPlayTime(), playEvent.getPlayTimeEnd(), playEvent.getDuration()));
+			double playTimestamp = playEvent.getPlayTime();
+			double playEndTimestamp = playEvent.getPlayTimeEnd();
+			double playDuration = playEvent.getDuration();
+
+			if (isStallActive(segPlayTime) || isStallActive(playEvent.getPlayTimeEnd())) {
+				stallStart = videoStall.getStallStartTimestamp();
+				stallEnd = videoStall.getStallEndTimestamp();
+				LOG.debug(String.format("Stalled event found: %.3f", videoStall.getStallStartTimestamp()));
+			}
+
+			if (!dlStream.isEmpty()) {
+				while (!dlStream.isEmpty() && (dlTime = dlStream.firstKey()) != null) {
+					if (playEndTimestamp< dlTime) {
+						insertDataSet(playEndTimestamp, -playDuration);
+						break;
 					}
-					possibleStartPlayTime = updatePlayStartTime(chunkPlaying);
+					dlDuration = dlStream.remove(dlTime);
+					LOG.debug(String.format("BUFF \t%.3f\t%.5f\t%.5f", lastTimestamp, bufferedTime-lastBufferedTime, playedTime-lastPlayedTime));
 
-					if (possibleStartPlayTime == -1 || possibleStartPlayTime == tempPrevTime) {
-						possibleStartPlayTime = updatePlayStartTimeAfterStall(chunkPlaying, stallPausePoint, stallRecovery);
-						if (possibleStartPlayTime <= tempPrevTime) {
-							seriesDataSets.clear();
+					lastBufferedTime = bufferedTime;
+					lastPlayedTime = playedTime;
+
+					LOG.debug(String.format("<dl>dlTime(%.3f->%.3f)  dlDuration: %.5f", dlTime, dlTime + dlDuration, dlDuration));
+					if (videoStall != null && dlTime >= videoStall.getStallEndTimestamp()) {
+						// reset for next stall
+						LOG.debug(String.format("RESETTING >> dlTime: %.3f,  videoStall :%s", dlTime, videoStall));
+						videoStall = null;
+						stallStart = Double.MAX_VALUE;
+						stallEnd = Double.MAX_VALUE;
+					}
+					if (isStallActive(dlTime, dlTime + dlDuration)) {
+						stallStart = videoStall.getStallStartTimestamp();
+						stallEnd = videoStall.getStallEndTimestamp();
+						LOG.debug(String.format("Stalled event found for dlTime:(%.3f->%.3f) %.3f - %.3f", dlTime, dlTime + dlDuration, stallStart, stallEnd));
+					} else {
+						isStallActive = false;
+					}
+					if (dlTime < playTimestamp){
+						insertDataSet(dlTime, 0);
+						insertDataSet(dlTime, dlDuration);
+
+					} else if (isStallActive(priorDlTime, playEndTimestamp)) {
+						stallStart = videoStall.getStallStartTimestamp();
+						stallEnd = videoStall.getStallEndTimestamp();
+						isStallActive = true;
+						double fragTime = stallStart - playTimestamp;
+						insertDataSet(lastTimestamp, 0);
+						insertDataSet(stallStart, -fragTime);
+						playTimestamp = dlTime;
+						playDuration -= fragTime;
+						insertDataSet(playTimestamp, 0);
+						insertDataSet(playTimestamp, dlDuration);
+						LOG.debug(String.format("left over in stall @211:  %.0f: %.3f, %.3f", playEvent.getSegmentID(), playTimestamp, playDuration));
+
+					} else if (isStallActive) {
+						insertDataSet(dlTime, 0);
+						insertDataSet(dlTime, dlDuration);
+						if (dlStream.isEmpty() || dlStream.firstKey() > playStream.firstKey()) {
+							break;
+						} else {
+							continue;
+						}
+					} else if (dlTime < playEndTimestamp) {
+						LOG.debug(String.format("%d -> dl:%.3f: seg:%.0f :%.3f - %.3f", skey, dlTime, playEvent.getSegmentID(), playEvent.getPlayTime(), playEvent.getPlayTimeEnd()));
+
+						double fragTime = dlTime - playTimestamp;
+
+						insertDataSet(playTimestamp, 0);
+						insertDataSet(dlTime, -fragTime);
+
+						playTimestamp = dlTime;
+						playDuration -= fragTime;
+
+						insertDataSet(playTimestamp, dlDuration);// should be done here 
+
+						if (dlStream.isEmpty() || dlStream.firstKey() > playStream.firstKey()) {
+							if (isStallActive(dlTime, playEvent.getPlayTimeEnd())) {
+								stallStart = videoStall.getStallStartTimestamp();
+								stallEnd = videoStall.getStallEndTimestamp();
+								insertDataSet(stallStart, 0);
+								if (stallEnd < dlTime) {
+									LOG.debug(String.format("Stalled event found here for dlTime: %.3f (%.3f) %.3f", stallStart, dlTime, stallEnd));
+									insertDataSet(stallEnd, 0);
+									videoStall = null;
+								} else {
+									videoStall.setStallStartTimestamp(dlTime);
+								}
+
+							} 
+							else {
+								insertDataSet(playEndTimestamp, -playDuration);
+							}
+							priorDlTime = dlTime;
 							break;
 						}
-						if (!videoStallResult.isEmpty()) {
-							videoStallResult.get(videoStallResult.size() - 1).setSegmentTryingToPlay(chunkPlaying);
-							videoStallResult.get(videoStallResult.size() - 1).setStallEndTimeStamp(possibleStartPlayTime);
-						}
-						addToChunkPlayTimeList(chunkPlaying, possibleStartPlayTime);
-					}
-					index--;
-					continue;
-				}
+					} else {
+						insertDataSet(dlTime, 0);
+						insertDataSet(dlTime, dlDuration);
+						lastPlayEndTimestamp = playEndTimestamp;
 
-				beginBuffer = endBuffer;
-				if (index + 1 <= streamingVideoData.getStreamingVideoCompiled().getChunksBySegment().size() - 1) {
-					setNextPlayingChunk(index + 1, streamingVideoData.getStreamingVideoCompiled().getChunksBySegment());
+						priorDlTime = dlTime;
+						break;
+					}
+					priorDlTime = dlTime;
+				}
+			} else {
+				insertDataSet(playEndTimestamp, -playDuration);
+				LOG.debug(String.format("left over in stall @260:  %.0f: %.3f, %.3f", playEvent.getSegmentID(), playTimestamp, playDuration));
+			}
+		}
+		while (playStream.size() > 1) {
+			segPlayTime = playStream.firstKey();
+			playEvent = playStream.remove(segPlayTime);
+			insertDataSet(segPlayTime, 0);
+			insertDataSet(playEvent.getPlayTimeEnd(), -playEvent.getDuration());
+		}
+		
+		debugDisplay();
+		return seriesDataSets;
+	}
+
+	public void debugDisplay() {
+		StringBuilder strblr = new StringBuilder("\ntotalDuration=");
+		strblr.append(totalDuration).append("\n{");
+		for (int idx = 0; idx < seriesDataSets.size(); idx++) {
+			strblr.append(String.format("%d\t%s", idx, seriesDataSets.get(idx).replaceAll(",", "\t")));
+		}
+		strblr.append("}");
+		LOG.debug(strblr.toString());
+	}
+
+	/**
+	 * Check for timestamp to fall within a VideoStall start-end timestamps.
+	 * If timestamp is after the VideoStall end timestamp, the next, if any stall will be pulled from the stalls TreeMap
+	 * 
+	 * @param timeStamp
+	 * @param stalls
+	 * @return true is in range, false otherwise
+	 */
+	public boolean isStallActive(Double timeStamp) {
+		if (videoStall == null && stalls.isEmpty()) {
+			return false;
+		}
+		if (!stalls.isEmpty() && (videoStall == null || videoStall.getStallEndTimestamp() < timeStamp)) {
+			videoStall = new VideoStall(stalls.pollFirstEntry().getValue());
+		}
+		return videoStall != null && videoStall.getStallStartTimestamp() <= timeStamp && timeStamp <= videoStall.getStallEndTimestamp();
+	}
+
+	private boolean isStallActive(Double startTimeStamp, double endTimeStamp) {
+		if (videoStall == null && !stalls.isEmpty()) {
+			videoStall = new VideoStall(stalls.pollFirstEntry().getValue());
+		}
+		if (videoStall != null 
+				&& ((videoStall.getStallStartTimestamp() > startTimeStamp && videoStall.getStallStartTimestamp() < endTimeStamp)
+				|| (videoStall.getStallEndTimestamp() > startTimeStamp && videoStall.getStallEndTimestamp() < endTimeStamp))) {
+			return true;
+		}
+		return false;
+	}
+
+	String dataSetValues = "";
+	private double lastTimestamp;
+	private double lastPlayEndTimestamp;
+	private double lastBufferTime;
+	private int totalDuration;
+	private double bufferTime;
+	private double bufferedTime;
+	private double playedTime;
+	private double lastBufferedTime;
+	private double lastPlayedTime;
+	private boolean isStallActive;
+
+	public void insertDataSet(double timestamp, double delta) {
+		if (skey == 20) {
+			System.out.print("");
+		}
+		if (delta > 0) {
+			bufferedTime += delta;
+		} else {
+			playedTime += delta;
+		}
+		bufferTime += delta;
+		if (bufferTime != 0 && sameDoubleValue(lastTimestamp, timestamp) && sameDoubleValue(bufferTime, lastBufferTime)) {
+			LOG.debug(String.format("DROP\t%2d\t%2.3f\t%2.3f\t%2.3f", skey, timestamp, delta, bufferTime));
+			return;
+		}
+		seriesDataSets.put(skey++, timestamp + "," + bufferTime);
+		LOG.debug(String.format("IDS\t%2d\t%2.3f\t%2.5f\t%2.5f", skey - 1, timestamp, delta, bufferTime));
+		lastTimestamp = timestamp;
+		lastBufferTime = bufferTime;
+	}
+
+	public boolean sameDoubleValue(double dbl1, double dbl2) {
+		return (Math.abs(dbl1 - dbl2) < THRESHOLD);
+	}
+
+	/**
+	 * assemble ArrayList of VideoEvents based on selection criteria.
+	 * 
+	 * @param streamingVideoData
+	 * @param tempSegment
+	 * @param sortLast
+	 * @param sortFirst
+	 * @param sortHighest
+	 * @return
+	 */
+	public ArrayList<VideoEvent> selectSegments(StreamingVideoData streamingVideoData, SortOrder sort) {
+		
+		VideoEvent priorEvent = null;
+		ArrayList<VideoEvent> streams = new ArrayList<>();
+		
+		for (VideoStream stream : streamingVideoData.getVideoStreamMap().values()) {
+			if (stream.isSelected()) {
+				for (VideoEvent event : stream.getVideoSegmentEventList().values()) { // key definition segment-quality-timestamp
+					if (event.isNormalSegment()) {
+						if (priorEvent == null) {
+							priorEvent = event;
+							continue;
+						} else {
+							if (priorEvent.getSegmentID() == event.getSegmentID()) {
+								if (sort==SortOrder.HIGHEST && priorEvent.getQuality().compareTo(event.getQuality()) > 0) {
+									priorEvent = event;
+								} else if (sort==SortOrder.FIRST && event.getEndTS() < priorEvent.getEndTS()) {
+									priorEvent = event;
+								} else if (sort==SortOrder.LAST && event.getEndTS() > priorEvent.getEndTS()) {
+									priorEvent = event;
+								}
+								continue;
+							}
+						}
+						streams.add(priorEvent);
+						priorEvent = event;
+					} else {
+						LOG.debug("skip abnormal VideoEvents such as moov:" + event);
+					}
 				}
 			}
 		}
-
-		return seriesDataSets;
-
+		streams.add(priorEvent);
+		return streams;
 	}
 
 	@Override
@@ -210,14 +439,12 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 		Collections.sort(veDone, new VideoEventComparator(SortSelection.END_TS));
 
 		for (VideoEvent chunk : veDone) {
-			
-			seriesDataSets.put(key, chunk.getEndTS() + "," + buffer);
-			key++;
 
-			buffer = buffer + getChunkPlayTimeDuration(chunk);
+			seriesDataSets.put(key++, chunk.getEndTS() + "," + buffer);
 
-			seriesDataSets.put(key, chunk.getEndTS() + "," + buffer);
-			key++;
+			buffer = buffer + chunk.getDuration();
+
+			seriesDataSets.put(key++, chunk.getEndTS() + "," + buffer);
 
 			completedDownloads.add(chunk);
 			chunkDownload.remove(chunk);
@@ -230,9 +457,9 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	public double drawVeWithIn(List<VideoEvent> veWithIn, double beginBuffer) {
 		double buffer = beginBuffer;
 
-		if (veWithIn.size() == 0  && completedDownloads.contains(chunkPlaying)) {
+		if (veWithIn.size() == 0 && completedDownloads.contains(chunkPlaying)) {
 			buffer = bufferDrain(buffer);
-		} else if (completedDownloads.contains(chunkPlaying)) {
+		} else if (completedDownloads.contains(chunkPlaying)) { // if not there then it is a stall
 			Collections.sort(veWithIn, new VideoEventComparator(SortSelection.END_TS));
 
 			boolean drained = false;
@@ -240,8 +467,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 			double timeRange;
 			double durationLeft = chunkPlayTimeDuration;
 
-			seriesDataSets.put(key, chunkPlayStartTime + "," + buffer);
-			key++;
+			seriesDataSets.put(key++, chunkPlayStartTime + "," + buffer);
 
 			if (stallStarted) {
 				updateStallInformation(chunkPlayStartTime);
@@ -257,14 +483,12 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 						buffer = 0;
 						updateStallInformation(chunk.getEndTS());
 					}
-					seriesDataSets.put(key, chunkPlayEndTime + "," + buffer);
-					key++;
+					seriesDataSets.put(key++, chunkPlayEndTime + "," + buffer);
 					drained = true;
 
-					buffer = buffer + getChunkPlayTimeDuration(chunk);
+					buffer = buffer + chunk.getDuration();
 
-					seriesDataSets.put(key, chunk.getEndTS() + "," + buffer);
-					key++;
+					seriesDataSets.put(key++, chunk.getEndTS() + "," + buffer);
 
 					completedDownloads.add(chunk);
 					chunkDownload.remove(chunk);
@@ -283,13 +507,11 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 					}
 					durationLeft = durationLeft - timeRange;
 
-					seriesDataSets.put(key, chunk.getEndTS() + "," + buffer);
-					key++;
+					seriesDataSets.put(key++, chunk.getEndTS() + "," + buffer);
 
-					buffer = buffer + getChunkPlayTimeDuration(chunk);
+					buffer = buffer + chunk.getDuration();
 
-					seriesDataSets.put(key, chunk.getEndTS() + "," + buffer);
-					key++;
+					seriesDataSets.put(key++, chunk.getEndTS() + "," + buffer);
 
 					completedDownloads.add(chunk);
 					chunkDownload.remove(chunk);
@@ -303,22 +525,25 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 					stallStarted = true;
 					updateStallInformation(chunkPlayEndTime);
 				}
-				seriesDataSets.put(key, chunkPlayEndTime + "," + buffer);
-				key++;
+				seriesDataSets.put(key++, chunkPlayEndTime + "," + buffer);
 
 			}
 
 		} else {
+			/*
+			 * chunkPlaying has not yet arrived, therefore a stall has occurred
+			 */
+
 			boolean skipStallStart = false;
 			for (VideoStall stall : videoStallResult) {
-				if (BigDecimal.valueOf(stall.getStallStartTimeStamp()) == BigDecimal.valueOf(chunkPlayStartTime)) {
+				if (BigDecimal.valueOf(stall.getStallEndTimestamp()) == BigDecimal.valueOf(chunkPlayStartTime)) {
 					skipStallStart = true;
 					break;
 				}
 			}
 			if (skipStallStart == false) {
 				stallStarted = true;
-				VideoStall stall = new VideoStall(chunkPlayStartTime);
+				VideoStall stall = new VideoStall(chunkPlayStartTime - stallPausePoint);
 				videoStallResult.add(stall);
 			}
 			return -1;
@@ -330,44 +555,34 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 
 	private void initialize(StreamingVideoData streamingVideoData) {
 		this.streamingVideoData = streamingVideoData;
-		filteredChunk = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments(); // filterVideoSegment(videoUsage);
+		filteredChunks = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments(); // filterVideoSegment(videoUsage);
 		chunkDownload = new ArrayList<>();
 		chunkDownloadCopy = new ArrayList<>();
-		for (VideoEvent vEvent : filteredChunk) {
+		for (VideoEvent vEvent : filteredChunks) {
 			chunkDownload.add(vEvent);
 			chunkDownloadCopy.add(vEvent);
 		}
-		veManifestList = streamingVideoData.getStreamingVideoCompiled().getVeStreamList();
 
-		runInit(streamingVideoData, veManifestList, streamingVideoData.getStreamingVideoCompiled().getChunksBySegment());
-	}
-
-	public double getChunkPlayStartTime(VideoEvent chunkPlaying) {
-		for (VideoEvent veEvent : chunkPlayTimeList.keySet()) {
-			if (veEvent.equals(chunkPlaying)) {
-				return chunkPlayTimeList.get(veEvent); // return play start time
-			}
-		}
-		return -1;
+		runInit(streamingVideoData, streamingVideoData.getStreamingVideoCompiled().getChunksBySegmentID());
 	}
 
 	public void updateUnfinishedDoneVideoEvent() {
 		for (VideoEvent ve : chunkDownload) {
-			if (ve.getDLTimeStamp() < chunkPlayStartTime && ve.getEndTS() <= chunkPlayStartTime) {
+			if (ve.getEndTS() <= chunkPlayStartTime) {
 				veDone.add(ve);
-			} else if (ve.getEndTS() > chunkPlayStartTime && ve.getEndTS() <= chunkPlayEndTime) {
+			} else if (ve.getEndTS() > chunkPlayStartTime && ve.getEndTS() <= chunkPlayEndTime) { // late? stall?
 				veWithIn.add(ve);
 			}
 		}
 	}
 
-	public void updateSegementsDownloadedList() {
+	public void updateSegmentsDownloadedList() {
 		List<VideoEvent> toBeRemovedSegments = new ArrayList<>();
 		for (VideoEvent ve : chunkDownloadCopy) {
 			if (ve.getDLTimeStamp() < chunkPlayStartTime && ve.getEndTS() - (nearStall + stallPausePoint) <= chunkPlayStartTime) {
 				completedDownloadsWithOutNearStalls.add(ve);
 				toBeRemovedSegments.add(ve);
-			} else if (ve.getEndTS()- (nearStall + stallPausePoint) > chunkPlayStartTime && ve.getEndTS() - (nearStall + stallPausePoint) <= chunkPlayEndTime) {
+			} else if (ve.getEndTS() - (nearStall + stallPausePoint) > chunkPlayStartTime && ve.getEndTS() - (nearStall + stallPausePoint) <= chunkPlayEndTime) {
 				veWithInPlayDownloadedSegments.add(ve);
 			}
 		}
@@ -377,10 +592,10 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	}
 
 	public void updateStallInformation(double stallTime) {
-		if (stallStarted && (videoStallResult != null && videoStallResult.size()!=0)) {
-			VideoStall veStall = videoStallResult.get(videoStallResult.size() - 1);
-			if(veStall.getStallStartTimeStamp() != stallTime){
-				veStall.setStallEndTimeStamp(stallTime);
+		if (stallStarted && (videoStallResult != null && videoStallResult.size() != 0)) {
+			VideoStall videoStall = videoStallResult.get(videoStallResult.size() - 1);
+			if (videoStall.getStallEndTimestamp() != stallTime) {
+				videoStall.setStallEndTimestamp(stallTime);
 			}
 		} else {
 			stallStarted = true;
@@ -392,8 +607,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	@Override
 	public double bufferDrain(double buffer) {
 		if (buffer > 0 && completedDownloads.contains(chunkPlaying)) {
-			seriesDataSets.put(key, chunkPlayStartTime + "," + buffer);
-			key++;
+			seriesDataSets.put(key++, chunkPlayStartTime + "," + buffer);
 
 			buffer = buffer - chunkPlayTimeDuration;
 			if (buffer <= 0) {
@@ -408,8 +622,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 				}
 			}
 
-			seriesDataSets.put(key, chunkPlayEndTime + "," + buffer);
-			key++;
+			seriesDataSets.put(key++, chunkPlayEndTime + "," + buffer);
 
 		} else {
 			// stall
@@ -418,38 +631,34 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 				stallStarted = true;
 				updateStallInformation(chunkPlayStartTime);
 			}
-			seriesDataSets.put(key, chunkPlayStartTime + "," + buffer);
-			key++;
+			seriesDataSets.put(key++, chunkPlayStartTime + "," + buffer);
 			return -1;
 		}
 
 		return buffer;
 	}
-	
+
 	public Map<Long, Double> getSegmentStartTimeMap() {
-		return videoChunkPlotterImpl.getSegmentStartTimeList();
+		return videoChunkPlotterImpl.getSegmentStartTimeMap();
 	}
-
-
 
 	public Map<Double, Long> getSegmentEndTimeMap() {
 		Map<Long, Double> segmentStartTimeMap = getSegmentStartTimeMap();
-		Map<Double, Long> segmentEndTimeMap = new HashMap<Double, Long>();
-		if(segmentStartTimeMap!=null) {
+		Map<Double, Long> segmentEndTimeMap = new HashMap<>();
+		if (segmentStartTimeMap != null) {
 			for (VideoEvent ve : streamingVideoData.getStreamingVideoCompiled().getFilteredSegments()) {
-				if(ve == null) {
-					continue;
+				if (ve != null) {
+					Double startTime = segmentStartTimeMap.get(new Double(ve.getSegmentID()).longValue());
+					double segmentPlayEndTime = (startTime != null ? startTime : 0.0) + ve.getDuration();
+					segmentEndTimeMap.put(segmentPlayEndTime, new Double(ve.getSegmentID()).longValue());
 				}
-				Double startTime = segmentStartTimeMap.get(new Double(ve.getSegmentID()).longValue());
-				double segmentPlayEndTime = (startTime != null ? startTime : 0.0) + getChunkPlayTimeDuration(ve);
-				segmentEndTimeMap.put(segmentPlayEndTime, new Double(ve.getSegmentID()).longValue());
 			}
 		}
 		return segmentEndTimeMap;
 	}
-	
-	public BufferTimeBPResult updateBufferTimeResult(List<Double> bufferTimeBPResult){
-		bufferTimeResult= new BufferTimeBPResult(bufferTimeBPResult);
+
+	public BufferTimeBPResult updateBufferTimeResult(List<Double> bufferTimeBPResult) {
+		bufferTimeResult = new BufferTimeBPResult(bufferTimeBPResult);
 		return bufferTimeResult;
 	}
 }

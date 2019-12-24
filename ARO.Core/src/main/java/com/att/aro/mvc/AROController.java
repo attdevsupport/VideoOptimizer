@@ -403,7 +403,8 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	private void startCollector(ActionEvent event, String actionCommand) {
 		StatusResult result;
 		this.theView.updateCollectorStatus(CollectorStatus.STARTING, null);
-
+		this.theView.setDeviceDataPulled(true); // reset so that a failure will be true
+		
 		if (event instanceof AROCollectorActionEvent) {
 			IAroDevice device         = ((AROCollectorActionEvent) event).getDevice();
 			String traceName 		  = ((AROCollectorActionEvent) event).getTrace();
@@ -411,7 +412,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			
 			result = startCollector(device, traceName, extraParams);
 				
-				LOG.info("---------- Android " + result.toString());
+				LOG.info("---------- result: " + result.toString());
 				if (!result.isSuccess()) { // report failure
 
 					if (result.getError().getCode() == 206) {
@@ -442,7 +443,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 * @param videoOption
 	 * @param secure 
 	 */
-	public StatusResult startCollector(IAroDevice device, String traceFolderName, Hashtable<String, Object> extraParams){ //VideoOption videoOption, int delayTime, boolean secure) {
+	public StatusResult startCollector(IAroDevice device, String traceFolderName, Hashtable<String, Object> extraParams){
 
 		StatusResult result = null;
 		
@@ -548,8 +549,8 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		if (collector.isTrafficCaptureRunning(1) && !collectorstatus.equals(CollectorStatus.CANCELLED)) { //FIXME THINKS THE CAPTURE IS RUNNING AFTER STOP
 			StatusResult result = collector.stopCollector();
 			LOG.info("stopped collector, result:" + result);
-			if (collector.getType().equals(DataCollectorType.IOS) && (!collector.isDeviceDataPulledStatus())) {
-				this.theView.isDeviceDataPulled(false);
+			if (collector.getType().equals(DataCollectorType.IOS) && (!collector.isDeviceDataPulled())) {
+				this.theView.setDeviceDataPulled(false);
 			}
 			if (result.isSuccess()) {
 				Date traceStopTime = new Date();

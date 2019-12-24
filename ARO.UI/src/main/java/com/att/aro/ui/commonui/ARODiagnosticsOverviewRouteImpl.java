@@ -27,7 +27,6 @@ import com.att.aro.core.bestpractice.pojo.CombineCsJssResult;
 import com.att.aro.core.bestpractice.pojo.ConnectionClosingResult;
 import com.att.aro.core.bestpractice.pojo.DisplayNoneInCSSEntry;
 import com.att.aro.core.bestpractice.pojo.EmptyUrlResult;
-import com.att.aro.core.bestpractice.pojo.FlashResult;
 import com.att.aro.core.bestpractice.pojo.ForwardSecrecyEntry;
 import com.att.aro.core.bestpractice.pojo.Http10UsageResult;
 import com.att.aro.core.bestpractice.pojo.HttpEntry;
@@ -286,15 +285,6 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 				}
 			}
 				break;
-			case FLASH: {// done
-				for (AbstractBestPracticeResult result : diagnosticsTab.getAnalyzerResult().getBestPracticeResults()) {
-					if (result instanceof FlashResult) {
-						diagnosticsTab.setHighlightedTCP(((FlashResult) result).getFirstFlash());
-						break;
-					}
-				}
-			}
-				break;
 			case FILE_ORDER: {
 				// for (AbstractBestPracticeResult result :
 				// diagnosticsTab.getAnalyzerResult().getBestPracticeResults())
@@ -368,8 +358,6 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 				// }
 			}
 				break;
-			case DUPLICATE_CONTENT:
-				break;
 			default:
 				break;
 			}// switch
@@ -434,10 +422,10 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 	}
 
 	@Override
-	public void launchSliderDialogFromDiagnosticTab() {
+	public void launchStartUpDelayDialog() {
 		jtabbedPane.setSelectedIndex(DIAGNOSTIC_INDEX);
 		DiagnosticsTab diagnosticTab = (DiagnosticsTab) jtabbedPane.getSelectedComponent();
-		diagnosticTab.launchSliderDialog();
+		diagnosticTab.launchStartUpDelayDialog();
 	}
 
 	public void updateOverviewTab(Object routeInfo) {

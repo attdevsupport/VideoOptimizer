@@ -42,6 +42,7 @@ import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoAnalysisConfigHelper;
 import com.att.aro.core.videoanalysis.IVideoEventDataHelper;
 import com.att.aro.core.videoanalysis.IVideoTabHelper;
+import com.att.aro.core.videoanalysis.impl.VideoSegmentAnalyzer;
 import com.att.aro.core.videoanalysis.pojo.Manifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ManifestType;
@@ -67,8 +68,8 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 	@Autowired private IVideoTabHelper videoTabHelper;
 	@Autowired private IHttpRequestResponseHelper reqhelper;
 	@Autowired private IStringParse stringParse;
-	
 	@Autowired private VideoStreamConstructor videoStreamConstructor;
+	@Autowired private VideoSegmentAnalyzer videoSegmentAnalyzer;
 	
 	Pattern extensionPattern = Pattern.compile("(\\b[a-zA-Z0-9\\-_\\.]*\\b)(\\.[a-zA-Z0-9]*\\b)");
 	private String tracePath;
@@ -99,6 +100,8 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 	private Map<String, Double> manifestReqMap = new HashMap<>();
 
 	private Manifest trackManifest;
+
+	private boolean audioEnabled = true;
 	
 	@Override
 	public StreamingVideoData collect(AbstractTraceResult result, List<Session> sessionlist, SortedMap<Double, HttpRequestResponseInfo> requestMap) {
@@ -121,6 +124,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		videoStreamConstructor.setStreamingVideoData(streamingVideoData);
 
 		processRequests(requestMap);
+		
 		processSegments();
 
 		streamingVideoData.scanVideoStreams();
@@ -128,9 +132,11 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(videoAnalysisTitle, System.currentTimeMillis() - analysisStartTime, analysisCategory);
 
 		LOG.debug("\nFinal results: \n" + streamingVideoData);
-		LOG.error("\nTraffic HEALTH:\n" + displayFailedRequests());
+		LOG.debug("\nTraffic HEALTH:\n" + displayFailedRequests());
 		LOG.info("\n**** FIN **** " + tracePath + "\n\n");
-
+		
+		videoSegmentAnalyzer.process(result, streamingVideoData);
+		
 		return streamingVideoData;
 	}
 
@@ -138,7 +144,9 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		StringBuilder strbldr = new StringBuilder();
 		double failed = streamingVideoData.getFailedRequestMap().size();
 		double succeeded = streamingVideoData.getRequestMap().size();
-		strbldr.append(String.format("Video network traffic health : %2.0f%% Requests succeeded", succeeded * 100 / (succeeded + failed)));
+		if (failed!=0 || succeeded!=0) {
+			strbldr.append(String.format("Video network traffic health : %2.0f%% Requests succeeded", succeeded * 100 / (succeeded + failed)));
+		}
 		if (failed != 0) {
 			strbldr.append("\nFailed requests list by timestamp");
 			streamingVideoData.getFailedRequestMap().entrySet().stream().forEach(x -> {
@@ -159,7 +167,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		for (HttpRequestResponseInfo req : requestMap.values()) {
 			LOG.info(req.toString());
 			
-			if (req.getAssocReqResp() == null || req.getAssocReqResp().getContentLength() == 0) {
+			if (req.getAssocReqResp() == null) {
 				LOG.info("NO Content (skipped):" + req.getTimeStamp() + ": " + req.getObjUri());
 				videoStreamConstructor.addFailedRequest(req);
 				continue;
@@ -172,7 +180,18 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			if (extn == null) {
 				extn = fname;
 			}
-
+			if (fname.contains("_audio_")) {
+				extn = "audio";
+			}
+			
+			// catch offset filename, usually before a byte range, example: 4951221a-709b-4cb9-8f52-7bd7abb4b5c9_v5.ts/range/340280-740719
+			if (fname.contains(".ts\\/")) {
+				extn = ".ts";
+			}
+			if (fname.contains("aac\\/")) {
+				extn = ".aac";
+			}
+			
 			switch (extn) {
 			
 			// DASH - Amazon, Hulu, Netflix, Fullscreen
@@ -183,7 +202,15 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			case ".m3u8": // HLS Manifest, iOS, DTV
 				processManifestHLS(req);
 				break;
-				
+
+			case ".m4a": // 69169728
+			case ".aac": // audio
+			case "audio": // audio
+				if (audioEnabled) {
+					segmentRequests.add(req);
+					LOG.info("\taudio segment: " + trackManifestTimeStamp+": "+req.getObjNameWithoutParams());
+				}
+				break;
 			case ".dash":
 			case ".mp2t":
 			case ".mp4": // Dash/MPEG
@@ -196,11 +223,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 				break;
 				
 			case ".ism": // SSM
-				LOG.debug("skipping DASH dynamic :" + fname);
-				break;
-			case ".m4a": // audio
-			case ".aac": // audio
-				LOG.debug("skipping audio :" + fname);
+				LOG.debug("skipping SmoothStreamingMedia :" + fname);
 				break;
 			case ".vtt":
 				LOG.debug("skipping closed caption :" + fname);
@@ -210,22 +233,25 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 				LOG.info("skipped :" + fname);
 				break;
 			}
-
 		}
 	}
 
 	public void processManifestDASH(HttpRequestResponseInfo req) {
-		manifest = videoStreamConstructor.extractManifestDash(streamingVideoData, req);
-		if (manifest.getManifestType().equals(ManifestType.CHILD) && manifest.getContentType().equals(ContentType.VIDEO)) {
-			trackManifestTimeStamp = req.getTimeStamp();
-			trackManifest = manifest;
+		if ((manifest = videoStreamConstructor.extractManifestDash(streamingVideoData, req)) != null) {
+			if (manifest.getManifestType().equals(ManifestType.CHILD) && manifest.getContentType().equals(ContentType.VIDEO)) {
+				trackManifestTimeStamp = req.getTimeStamp();
+				trackManifest = manifest;
+			}
+			LOG.info("extracted :" + manifest.getVideoName());
+		} else {
+			LOG.error("Failed to extract manifest:" + req);
 		}
-		LOG.info("extract :" + manifest.getVideoName());
 	}
-
+	
 	public void processManifestHLS(HttpRequestResponseInfo req) {
 		if ((manifest = videoStreamConstructor.extractManifestHLS(streamingVideoData, req)) != null) {
-			if (manifest.getManifestType().equals(ManifestType.CHILD) && manifest.getContentType().equals(ContentType.VIDEO)) {
+			if (manifest.getManifestType().equals(ManifestType.CHILD)
+					&& (manifest.getContentType().equals(ContentType.VIDEO) || manifest.getContentType().equals(ContentType.MUXED))) {
 				LOG.info("childManifest videoName:" + manifest.getVideoName() + ", timestamp: " + manifest.getRequestTime());
 				trackManifestTimeStamp = req.getTimeStamp();
 				trackManifest = manifest;
@@ -236,7 +262,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			LOG.info(manifest.displayContent(true, 20));
 		}
 	}
-
+	
 	public void processSegments() {
 		Double trackManifestTimestamp = null;
 		LOG.info("\n>>>>>>>>>> segmentRequests: " + segmentRequests);
@@ -246,15 +272,12 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			videoStreamConstructor.extractVideo(streamingVideoData, req, trackManifestTimestamp);
 		}
 	}
-
+	
 	@Override
 	public StreamingVideoData clearData() {
 		this.segmentRequests.clear();
-		if (streamingVideoData != null && streamingVideoData.getStreamingVideoCompiled().getFilteredSegments() != null) {
-			streamingVideoData.getStreamingVideoCompiled().getFilteredSegments().clear();
-		}
-		if (streamingVideoData != null && streamingVideoData.getStreamingVideoCompiled().getAllSegments() != null) {
-			streamingVideoData.getStreamingVideoCompiled().getAllSegments().clear();
+		if (streamingVideoData != null ) {
+			streamingVideoData.getStreamingVideoCompiled().clear();
 		}
 		videoTabHelper.resetRequestMapList();
 		streamingVideoData = new StreamingVideoData("");

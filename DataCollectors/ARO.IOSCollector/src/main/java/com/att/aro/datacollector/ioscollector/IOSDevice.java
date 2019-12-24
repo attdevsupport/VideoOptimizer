@@ -21,7 +21,7 @@ import java.util.Map;
 
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
-import com.att.aro.datacollector.ioscollector.utilities.AppSigningHelper;
+import com.att.aro.datacollector.ioscollector.utilities.DeviceVideoHandler;
 import com.att.aro.datacollector.ioscollector.utilities.IOSDeviceInfo;
 
 /**
@@ -69,7 +69,7 @@ public class IOSDevice implements IAroDevice {
 	}
 
 	private String getProductVersion(){
-        int iosVersion = AppSigningHelper.getInstance().getIosVersion();    
+        int iosVersion = DeviceVideoHandler.getInstance().getIosVersion();    
         if(iosVersion != -1){
         	return String.valueOf(iosVersion);
         }else{
