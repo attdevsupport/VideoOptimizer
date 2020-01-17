@@ -229,7 +229,6 @@ public class Commands {
 		if (verbose) {
 			sb.append(", verbose");
 		}
-		
 		if (attenuationprofile != null) {
 			sb.append(", attenuationprofile:" + getAttenuationprofile());
 		}
