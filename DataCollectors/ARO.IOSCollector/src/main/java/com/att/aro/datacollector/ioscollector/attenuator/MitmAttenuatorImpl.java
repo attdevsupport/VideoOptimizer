@@ -34,13 +34,13 @@ public class MitmAttenuatorImpl {
 	    littleProxy.setTRACE_FILE_PATH(trafficFilePath);
    		pool = Executors.newFixedThreadPool(THREAD_NUM);
  		pool.execute(littleProxy);
-
      }
     
     public void stopCollect() {
     	if(littleProxy!=null) {
     		littleProxy.stop();		
     	}
+    	
 		if(pool!=null) {
 			pool.shutdown();
 			try {

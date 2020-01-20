@@ -17,16 +17,12 @@ package com.att.aro.ui.commonui;
 
 import java.awt.Component;
 import java.awt.Frame;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -40,12 +36,6 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class ContentViewer {
 	private static final ContentViewer instance = new ContentViewer();
-
-	private static Map<HttpRequestResponseInfo, ContentViewFrame> viewerMap = 
-			new HashMap<HttpRequestResponseInfo, ContentViewFrame>();
-
-	private static Map<String, ContentViewFrame> imageViewerMap = 
-			new HashMap<String, ContentViewFrame>();
 
 	private static String contentViewerDirectory;
 

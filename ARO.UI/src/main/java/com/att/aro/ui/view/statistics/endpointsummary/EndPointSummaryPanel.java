@@ -25,10 +25,13 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.UIManager;
+import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import com.att.aro.core.packetanalysis.pojo.ApplicationPacketSummary;
 import com.att.aro.core.packetanalysis.pojo.IPPacketSummary;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -137,6 +140,7 @@ public class EndPointSummaryPanel extends JSplitPane {
 	public DataTable<ApplicationPacketSummary> getTable() {
 		if (table == null) {
 			table = new DataTable<ApplicationPacketSummary>(tableModel);
+			table.setAutoCreateRowSorter(true);
 		}
 		return table;
 	}
@@ -149,6 +153,10 @@ public class EndPointSummaryPanel extends JSplitPane {
 	public DataTable<IPPacketSummary> getIPTable() {
 		if (ipTable == null) {
 			ipTable = new DataTable<IPPacketSummary>(ipTableModel);
+			ipTable.setAutoCreateRowSorter(true);
+			TableRowSorter<TableModel> sorter = new TableRowSorter<>(ipTableModel);	
+			sorter.setComparator(0, Util.getDomainSorter());
+			ipTable.setRowSorter(sorter);
 		}
 		return ipTable;
 	}

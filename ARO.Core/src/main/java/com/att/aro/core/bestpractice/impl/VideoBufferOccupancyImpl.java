@@ -31,12 +31,17 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.BufferOccupancyResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.BufferOccupancyBPResult;
 import com.att.aro.core.packetanalysis.pojo.BufferTimeBPResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
+
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * <pre>
@@ -96,10 +101,12 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 	private String invalidManifestsFound;
 
 	@Nonnull
-	private SortedMap<Double, AROManifest> manifestCollection = new TreeMap<>();
+	private SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
 	
-	@Nonnull
-	VideoUsage videoUsage;
+	@NonNull
+	@Setter(AccessLevel.NONE)
+	@Getter(AccessLevel.NONE)
+	private StreamingVideoData streamingVideoData;
 
 	private BufferOccupancyResult result;
 
@@ -107,7 +114,7 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 	private boolean hasSelectedManifest;
 
 	@Nonnull
-	private BPResultType bpResultType;
+	private BPResultType bpResultType = BPResultType.CONFIG_REQUIRED;;
 
 	private double maxBufferSet;
 	private double maxBufferReached;
@@ -124,24 +131,20 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 
 		result = new BufferOccupancyResult();
-
 		init(result);
 
-		videoUsage = tracedata.getVideoUsage();
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
-
-		if (MapUtils.isNotEmpty(manifestCollection)) {
 			bpResultType = BPResultType.CONFIG_REQUIRED;
 
-			selectedManifestCount = videoUsage.getSelectedManifestCount();
+			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
-			invalidCount = videoUsage.getInvalidManifestCount();
+			invalidCount = streamingVideoData.getInvalidManifestCount();
 
 			if (selectedManifestCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
+				if (invalidCount == videoStreamCollection.size()) {
 					result.setResultText(invalidManifestsFound);
 				} else if (invalidCount > 0) {
 					result.setResultText(noManifestsSelectedMixed);
@@ -156,7 +159,7 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 				BufferTimeBPResult bufferTimeBPResult = tracedata.getBufferTimeResult();
 				if (bufferBPResult != null && bufferBPResult.getBufferByteDataSet().size() > 0) {
 					maxBufferReached = bufferBPResult.getMaxBuffer();// maxBufferReached is in KB (1024)
-					maxBufferReached = maxBufferReached / 1024; // change to MB (2^20)
+					maxBufferReached = maxBufferReached / 1024;
 					List<Double> bufferDataSet = bufferBPResult.getBufferByteDataSet();
 					result.setMinBufferByte(bufferDataSet.get(0) / 1024);
 					double bufferSum = bufferDataSet.stream().reduce((a, b) -> a + b).get();
@@ -176,13 +179,11 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 				result.setMaxBuffer(maxBufferReached);
 
 				updateVideoPrefMaxBuffer();
-//				double startupDelay = videoUsagePrefs.getVideoUsagePreference().getStartupDelay();
 				double percentage = 0;
 				if (maxBufferSet != 0) {
 					percentage = (maxBufferReached / maxBufferSet) * 100;
 				}
-
-				if (MapUtils.isEmpty(videoUsage.getChunkPlayTimeList())) {
+				if (MapUtils.isEmpty(streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList())) {
 					result.setResultText(MessageFormat.format(startUpDelayNotSet, String.format("%.2f", percentage), String.format("%.2f", maxBufferReached),
 							String.format("%.2f", maxBufferSet)));
 					bpResultType = BPResultType.CONFIG_REQUIRED;

@@ -118,9 +118,9 @@ public class HttpRequestResponseHelperImplTest extends BaseTest {
 		reqRight.setContentOffsetLength(testMap);
 		reqRight.setPacketDirection(PacketDirection.DOWNLINK);
 
-		Session sessionRight = new Session(null, 0, 0);
+		Session sessionRight = new Session(null, null, 0, 0, "");
 		sessionRight.setStorageDl(storage);
-		Session sessionLeft = new Session(null, 0, 0);
+		Session sessionLeft = new Session(null, null, 0, 0, "");
 		sessionLeft.setStorageDl(storage);
 
 		boolean testResult = httpRequestResponseHelper.isSameContent(reqLeft, reqRight, sessionLeft, sessionRight);
@@ -141,9 +141,9 @@ public class HttpRequestResponseHelperImplTest extends BaseTest {
 		reqRight.setContentOffsetLength(testMap);
 		reqRight.setPacketDirection(PacketDirection.UPLINK);
 
-		Session sessionRight = new Session(null, 0, 0);
+		Session sessionRight = new Session(null, null, 0, 0, "");
 		sessionRight.setStorageDl(storage);
-		Session sessionLeft = new Session(null, 0, 0);
+		Session sessionLeft = new Session(null, null, 0, 0, "");
 		sessionLeft.setStorageDl(storage);
 
 		httpRequestResponseHelper.isSameContent(reqLeft, reqRight, sessionLeft, sessionRight);

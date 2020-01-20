@@ -176,7 +176,7 @@ public class PeriodicTransferImpl implements IBestPractice {
 		for (Session tcpSession : sessionlist) {
 			
 			// Get a list of timestamps of established sessions with each remote IP
-			if(!tcpSession.isUDP()){
+			if(!tcpSession.isUdpOnly()){
 				PacketInfo firstPacket = tcpSession.getPackets().get(0);
 				if (firstPacket.getTcpInfo() == TcpInfo.TCP_ESTABLISH) {
 					List<Double> res = connectedIP2tsList.get(tcpSession.getRemoteIP());
@@ -190,7 +190,7 @@ public class PeriodicTransferImpl implements IBestPractice {
 				// Get a list of timestamps of HTTP requests to hosts/object names
 				for (HttpRequestResponseInfo hrri : tcpSession.getRequestResponseInfo()) {
 					PacketInfo pkt = hrri.getFirstDataPacket();
-					if (hrri.getDirection() == HttpDirection.REQUEST) {
+					if (hrri.getDirection() == HttpDirection.REQUEST && pkt!=null) {
 						Double ts0 = Double.valueOf(pkt.getTimeStamp());
 						if (hrri.getHostName() != null) {
 							List<Double> tempRequestHostEventList = requestedHost2tsList.get(hrri.getHostName());
@@ -576,7 +576,7 @@ public class PeriodicTransferImpl implements IBestPractice {
 			Burst burst, PacketInfo firstUplinkPayloadPacket, List<Session> sessionlist) {
 		int periodicCount = 0;
 		for (Session session : sessionlist) {
-			if(!session.isUDP()){
+			if(!session.isUdpOnly()){
 				for (HttpRequestResponseInfo httpInfo : session.getRequestResponseInfo()) {
 					if (httpInfo.getDirection() == HttpDirection.REQUEST
 							&& (hostList.contains(httpInfo.getHostName()) || objList.contains(httpInfo.getObjNameWithoutParams()))

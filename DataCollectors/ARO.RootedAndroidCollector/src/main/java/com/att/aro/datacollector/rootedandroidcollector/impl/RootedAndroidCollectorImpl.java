@@ -826,7 +826,7 @@ public class RootedAndroidCollectorImpl implements IDataCollector, IVideoImageSu
 	}
 
 	@Override
-	public boolean isDeviceDataPulledStatus() {
+	public boolean isDeviceDataPulled() {
 		return true;
 	}
 

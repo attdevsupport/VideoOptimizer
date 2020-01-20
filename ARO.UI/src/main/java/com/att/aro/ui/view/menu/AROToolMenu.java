@@ -32,8 +32,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
-import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.adb.IAdbService;
@@ -52,6 +52,8 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.menu.tools.AWSDialog;
 import com.att.aro.ui.view.menu.tools.AWSDialog.AWS;
 import com.att.aro.ui.view.menu.tools.ExportReport;
+import com.att.aro.ui.view.menu.tools.MSPostDialog;
+import com.att.aro.ui.view.menu.tools.MetadataDialog;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
 import com.att.aro.ui.view.menu.tools.RegexWizard;
 import com.att.aro.ui.view.menu.tools.TimeRangeAnalysisDialog;
@@ -159,6 +161,11 @@ public class AROToolMenu implements ActionListener {
 			openAWSUploadDialog(AWS.UPLOAD);
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_downloadTraceDialog, aEvent)){
 			openAWSUploadDialog(AWS.DOWNLOAD);
+		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_ms_uploadTraceDialog, aEvent) 
+					|| (menuAdder.isMenuSelected(MenuItem.menu_tools_ms_downloadTraceDialog, aEvent))){
+			openATTmsUploadDialog();
+		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_editMetadata, aEvent)){
+			openMetadataDialog(aEvent);
 		}
 	}
 
@@ -282,7 +289,19 @@ public class AROToolMenu implements ActionListener {
 		uploadDialog.setVisible(true);
 		uploadDialog.setAlwaysOnTop(true);
 	}
- 
+
+	private void openMetadataDialog(ActionEvent aEvent) {
+			new MetadataDialog(parent, (JMenuItem) aEvent.getSource());
+	}
+
+	private void openATTmsUploadDialog() {
+		try {
+			new MSPostDialog();
+		} catch (Exception e) {
+			LOG.error("Failed to upload trace :", e);
+		}
+	}
+
 	private void openRegexWizard(){
 		RegexWizard regexWizard = RegexWizard.getInstance();
 		if (regexWizard != null) {

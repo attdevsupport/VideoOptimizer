@@ -23,8 +23,8 @@ public class UtilTest {
 	String aroJpcapLibName,aroJpcapLibFileName;
 	@Before
 	public void setup(){
-		String osname = Util.OS_NAME, osarch = Util.OS_ARCHYTECTURE;
-		if (Util.OS_NAME != null && Util.OS_ARCHYTECTURE != null) {
+		String osname = Util.OS_NAME, osarch = Util.OS_ARCHITECTURE;
+		if (Util.OS_NAME != null && Util.OS_ARCHITECTURE != null) {
 			if (osname.contains("Windows") && osarch.contains("64")) { // _______ 64 bit Windows jpcap64.DLL
 				aroJpcapLibName = "jpcap64";
 				aroJpcapLibFileName = aroJpcapLibName + ".dll";
@@ -262,9 +262,36 @@ public class UtilTest {
 	}
 	
 	@Test
+	public void testParseForUTC_when_no_dashes_or_colons() {
+		long result;
+	
+		result = Util.parseForUTC("2018-01-11T22:14:59");	assertEquals(1515708899000L, result);
+		result = Util.parseForUTC("20180111T221459000");	assertEquals(1515708899000L, result);
+		result = Util.parseForUTC("20180111T221459");		assertEquals(1515708899000L, result);
+		result = Util.parseForUTC("20191106T172805265");	assertEquals(1573061285265L, result);
+		result = Util.parseForUTC("20161122T223027123");	assertEquals(1479853827123L, result);
+	}
+
+	@Test
 	public void testParseForUTC() {
 
 		long result;
+
+		result = Util.parseForUTC("2016-11-22T22:30:27.000000Z");
+		assertEquals(1479853827000L, result);
+		
+		result = Util.parseForUTC("2016-11-22T22:30:27.591");
+		assertEquals(1479853827591L, result);
+		
+		result = Util.parseForUTC("2016-11-22T22:30:27.59100");
+		assertEquals(1479853827591L, result);
+		
+		result = Util.parseForUTC("2016-11-22T22:30:27.591000Z");
+		assertEquals(1479853827591L, result);
+		
+		// test for truncation, not rounding
+		result = Util.parseForUTC("2016-11-22T22:30:27.123999Z");
+		assertEquals(1479853827123L, result);
 		
 		result = Util.parseForUTC("2018-01-11T22:14:59.000000Z");
 		assertEquals(1515708899000L, result);
@@ -274,7 +301,6 @@ public class UtilTest {
 		
 		result = Util.parseForUTC("2018-01-11 22:14:59");
 		assertEquals(1515708899000L, result);
-		
 	}
 	
 	@Test

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 AT&T
+ *  Copyright 2019 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.att.aro.core.packetanalysis.impl;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
@@ -25,7 +26,9 @@ import java.util.zip.GZIPInputStream;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import com.att.aro.core.packetanalysis.IByteArrayLineReader;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
@@ -37,6 +40,13 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper {
 	private static final int TWO_MB = 2 * 1024 * 1024;
 	private static final Logger LOG = LogManager.getLogger(HttpRequestResponseHelperImpl.class.getName());
+	
+	private IByteArrayLineReader storageReader;
+	
+	@Autowired
+	public void setByteArrayLineReader(IByteArrayLineReader reader){
+		this.storageReader = reader;
+	}
 
 	/**
 	 * Indicates whether the content type is CSS or not.
@@ -99,7 +109,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 			return "";
 		} else if (content.length > TWO_MB) {
 			LOG.error("Ignoring this html file as it's too big to process - possibly a speed test file.");
-			return "";
+			return "HTML File too big to process";
 		} else {
 			return new String(content, "UTF-8");
 		}
@@ -108,90 +118,103 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 	/**
 	 * get content of the request/response in byte[]
 	 * 
-	 * @param req
+	 * @param request
 	 * @return byte array
 	 * @throws Exception
 	 */
-	public byte[] getContent(HttpRequestResponseInfo req, Session session) throws Exception {
-		SortedMap<Integer, Integer> contentOffsetLength = req.getContentOffsetLength();
+	public byte[] getContent(HttpRequestResponseInfo request, Session session) throws Exception {
 
-		LOG.debug("getContent(req, session) :" + req.toString());
-		LOG.debug("-->contentOffsetLength :" + contentOffsetLength);
-		LOG.debug("-->getActualByteCount(req, session) :" + getActualByteCount(req, session));
+		LOG.debug("getContent(Req, Session) :" + request.toString());
+		String contentEncoding = request.getContentEncoding();
+		byte[] payload;
+		ByteArrayOutputStream output;
 
-		String contentEncoding = req.getContentEncoding();
-		if (contentOffsetLength != null) {
-			byte[] buffer = getStorageBuffer(req, session);
-			if (buffer == null) {
-				req.setExtractable(false);
-				return new byte[0];			
-			}
+		payload = request.getPayloadData().toByteArray();
 
-			ByteArrayOutputStream output = null;
-			for (Map.Entry<Integer, Integer> entry : contentOffsetLength.entrySet()) {
-				int start = entry.getKey();
-				int size = entry.getValue();
-				if (start + size < 0) {
-					req.setExtractable(false);
-					throw new Exception("The content may be too big.");
-				} else if (buffer.length < start + size) {
-					req.setExtractable(false);
-					if (req.getContentType().contains("text/html")) {
-						LOG.error("The content may be corrupted.");
-						continue;
+		if (request.isChunked()) {
+			storageReader.init(payload);
+			String line;
+			output = new ByteArrayOutputStream();
+			while (true) {
+
+				line = storageReader.readLine();
+
+				if (line != null) {
+					String[] str = line.split(";");
+					int size = 0;
+					try {
+						String trim = str[0].trim();
+						size = Integer.parseInt(trim, 16);
+					} catch (NumberFormatException e) {
+						LOG.warn("Unexpected begin of the chunk format : " + line);
+					}
+					if (size > 0) {
+
+						// Save content offsets
+						output.write(
+								Arrays.copyOfRange(payload, storageReader.getIndex(), storageReader.getIndex() + size));
+						storageReader.skipForward(size);
+
+						// CRLF at end of each chunk
+						line = storageReader.readLine();
+
+						if (line != null && line.length() > 0) {
+							LOG.warn("Unexpected end of chunk: " + line);
+						}
 					} else {
-						int part = buffer.length - start;
-						int pct = part * 100 / size;
-						LOG.error(String.format("%s: %s The content may be corrupted. Buffer exceeded: only %d percent arrived", req.getTimeStamp(), req.getAssocReqResp().getObjNameWithoutParams(), pct));
-						size = buffer.length - start;
-						continue;
-					}
-				}
+						request.setChunkModeFinished(true);
+						line = storageReader.readLine(); // End of chunks
 
-				for (int i = start; i < start + size; ++i) {
-					if (output == null) {
-						output = new ByteArrayOutputStream((int) getActualByteCount(req, session));
+						if (line != null && line.length() > 0) {
+							LOG.warn("Unexpected end of chunked data: " + line);
+						}
+						break;
 					}
-					output.write(buffer[i]);
+				} else {
+					break;
 				}
 			}
-			if ("gzip".equals(contentEncoding) && output != null) {
-
-				// Decompress gzipped content
-				GZIPInputStream gzip = null;
-				gzip = new GZIPInputStream(new ByteArrayInputStream(output.toByteArray()));
-				try {
-					output.reset();
-					buffer = new byte[2048];
-					int len;
-					while ((len = gzip.read(buffer)) >= 0) {
-						output.write(buffer, 0, len);
-					}
-				} catch (IOException ioe) {
-					if (gzip != null) {
-						try {
-							gzip.close();
-						} catch (IOException ex) {
-							throw ex;
-						}
-					}
-					if (output != null) {
-						try {
-							output.close();
-						} catch (IOException ex) {
-							throw ex;
-						}
-					}
-				}
-			}
-			if (output != null) {
-				return output.toByteArray();
+			if (request.isChunkModeFinished()) {
+				payload = output.toByteArray();
 			} else {
-				req.setExtractable(false);
-				return new byte[0];
+				throw new Exception(String.format("Unexpected Chunk End %.3f: %s The content may be corrupted.",
+						request.getTimeStamp(), request.getAssocReqResp().getObjNameWithoutParams()));
 			}
+		} else if (payload.length < request.getContentLength()) {
+			request.setExtractable(false);
+			int percentage = payload.length / request.getContentLength() * 100;
+			throw new Exception(String.format(
+					"PayloadException %.3f: %s The content may be corrupted. Buffer exceeded: only %d percent arrived",
+					request.getTimeStamp(), request.getAssocReqResp().getObjNameWithoutParams(), percentage));
 		}
-		return new byte[0];
+
+		// Decompress GZIP Content
+		if ("gzip".equals(contentEncoding) && payload != null) {
+			GZIPInputStream gzip = null;
+			output = new ByteArrayOutputStream();
+			gzip = new GZIPInputStream(new ByteArrayInputStream(payload));
+			try {
+				byte[] buffer = new byte[2048];
+				int len;
+				while ((len = gzip.read(buffer)) >= 0) {
+					output.write(buffer, 0, len);
+				}
+				gzip.close();
+			} catch (IOException ioe) {
+				LOG.error("Error Extracting Content from Request");
+				throw new Exception(String.format("Zip Extract Exception  %.3f: %s. The content may be corrupted.",
+						request.getTimeStamp(), request.getAssocReqResp()));
+			}
+		} else {
+			return payload;
+		}
+
+		if (output.size() > 0) {
+			return output.toByteArray();
+		} else {
+			request.setExtractable(false);
+			return new byte[0];
+		}
 	}
 
 	/**
@@ -216,8 +239,8 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 			}
 
 			// Otherwise do byte by byte compare
-			byte[] bufferLeft = getStorageBuffer(left, session);
-			byte[] bufferRight = getStorageBuffer(right, sessionRight);
+			byte[] bufferLeft = left.getPayloadData().toByteArray();
+			byte[] bufferRight = right.getPayloadData().toByteArray();
 
 			Iterator<Map.Entry<Integer, Integer>> itleft = left.getContentOffsetLength().entrySet().iterator();
 			Iterator<Map.Entry<Integer, Integer>> itright = right.getContentOffsetLength().entrySet().iterator();
@@ -295,7 +318,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 			return 0;
 		}
 	}
-
+	
 	/**
 	 * Convenience method that gets the storage array in the session where this request/ response is located.
 	 * 
@@ -312,4 +335,4 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 		}
 
 	}
-}// end class
+}

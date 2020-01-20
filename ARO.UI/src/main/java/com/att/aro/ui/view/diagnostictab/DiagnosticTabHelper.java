@@ -27,7 +27,7 @@ public class DiagnosticTabHelper {
 			boolean bExactMatch, double timeStamp, double dTimeRangeInterval) {
 
 		// Try to eliminate session before iterating through packets
-		if(!tcpSession.isUDP()){
+		if(!tcpSession.isUdpOnly()){
 			if (tcpSession.getSessionStartTime() > timeStamp
 					|| tcpSession.getSessionEndTime() < timeStamp) {
 				return null;
@@ -41,7 +41,7 @@ public class DiagnosticTabHelper {
 
 		double packetTimeStamp = 0.0;
 		PacketInfo matchedPacket = null;
-		if(!tcpSession.isUDP()){
+		if(!tcpSession.isUdpOnly()){
 			for (PacketInfo p : tcpSession.getPackets()) {
 				packetTimeStamp = p.getTimeStamp();
 				if ((bExactMatch && (packetTimeStamp == timeStamp))
@@ -50,7 +50,7 @@ public class DiagnosticTabHelper {
 				}
 			}
 		}else{
-			for (PacketInfo p : tcpSession.getUDPPackets()) {
+			for (PacketInfo p : tcpSession.getUdpPackets()) {
 				packetTimeStamp = p.getTimeStamp();
 				if ((bExactMatch && (packetTimeStamp == timeStamp))
 						|| ((packetTimeStamp >= (timeStamp - dTimeRangeInterval)) && (packetTimeStamp <= (timeStamp + dTimeRangeInterval)))) {

@@ -20,8 +20,6 @@ import java.text.MessageFormat;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -29,13 +27,13 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoResolutionQualityResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.peripheral.pojo.DeviceDetail;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 /**
  * 
@@ -119,11 +117,9 @@ public class VideoResolutionQualityImpl implements IBestPractice {
 	private BPResultType resultType;
 	String conditionalMessage;
 
-	@Nonnull
-	private SortedMap<Double, AROManifest> manifestCollection = new TreeMap<>();
+	private SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
 	
-	@Nonnull
-	VideoUsage videoUsage;
+	private StreamingVideoData streamingVideoData;
 
 	private double maxHeightUsed;
 	private int overSizeCount;
@@ -152,22 +148,18 @@ public class VideoResolutionQualityImpl implements IBestPractice {
 
 		resultType = presetResultsByDevice(tracedata.getTraceresult());
 
-		videoUsage = tracedata.getVideoUsage();
-
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
-
-		if (MapUtils.isNotEmpty(manifestCollection)) {
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
 			bpResultType = BPResultType.CONFIG_REQUIRED;
-			selectedManifestCount = videoUsage.getSelectedManifestCount();
-			validSegmentCount = videoUsage.getValidSegmentCount();
+			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
+			validSegmentCount = streamingVideoData.getValidSegmentCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
-			invalidCount = videoUsage.getInvalidManifestCount();
+			invalidCount = streamingVideoData.getInvalidManifestCount();
 
 			if (selectedManifestCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
+				if (invalidCount == videoStreamCollection.size()) {
 					result.setResultText(invalidManifestsFound);
 				} else if (invalidCount > 0) {
 					result.setResultText(noManifestsSelectedMixed);
@@ -177,7 +169,7 @@ public class VideoResolutionQualityImpl implements IBestPractice {
 			} else if (selectedManifestCount > 1) {
 				result.setResultText(multipleManifestsSelected);
 			} else if (hasSelectedManifest) {
-				scanManifestsForHeight(manifestCollection);
+				scanManifestsForHeight(videoStreamCollection);
 
 				bpResultType = BPResultType.SELF_TEST;
 
@@ -252,16 +244,16 @@ public class VideoResolutionQualityImpl implements IBestPractice {
 
 	/**
 	 * Sets values on maxHeightUsed and overSizeCount
-	 * @param manifestCollection
+	 * @param videoStreamCollection
 	 */
-	private void scanManifestsForHeight(SortedMap<Double, AROManifest> manifestCollection) {
+	private void scanManifestsForHeight(SortedMap<Double, VideoStream> videoStreamCollection) {
 		
 		maxHeightUsed = 0;
 		overSizeCount = 0;
 		
-		for (AROManifest aroManifest : manifestCollection.values()) {
-			if (aroManifest.isSelected()) {
-				for (VideoEvent videoEvent : aroManifest.getVideoEventList().values()) {
+		for (VideoStream videoStream : videoStreamCollection.values()) {
+			if (videoStream.isSelected()) {
+				for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
 					double height = videoEvent.getResolutionHeight();
 					if (height > maxHeightUsed) {
 						maxHeightUsed = height;

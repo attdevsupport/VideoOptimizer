@@ -230,7 +230,7 @@ public class FileTypesChartPanel extends TabPanelJPanel{
 		int totalContentLength = 0;
 		if (traceDataModel != null && traceDataModel.getAnalyzerResult() != null) {
 			for (Session tcp : traceDataModel.getAnalyzerResult().getSessionlist()) {
-					if(!tcp.isUDP()){
+					if(!tcp.isUdpOnly()){
 						for (HttpRequestResponseInfo info : tcp.getRequestResponseInfo()) {
 							if (HttpDirection.RESPONSE
 									.equals(info.getDirection())) {

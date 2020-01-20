@@ -19,8 +19,6 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
-
 public final class StringParse implements IStringParse{
 
 	public static Double findLabeledDoubleFromString(String fieldSearch, byte[] data) {

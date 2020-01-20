@@ -43,17 +43,19 @@ public class MPDEncodedSegment implements MpdBase{
 	@XmlAttribute String minorVersion;
 	@XmlAttribute String profiles;
 	@XmlAttribute String revision;
+	@XmlAttribute String type;
 	
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
 		strblr.append("MPDEncodedSegment :")
-		.append(" majorVersion :").append( majorVersion)
-		.append(",  mediaPresentationDuration :").append( mediaPresentationDuration)
-		.append(",  minBufferTime :").append( minBufferTime)
-		.append(",  minorVersion :").append( minorVersion)
-		.append(",  profiles :").append( profiles)
-		.append(",  revision :").append( revision)
+		.append(" type :").append( type)
+		.append(", majorVersion :").append( majorVersion)
+		.append(", mediaPresentationDuration :").append( mediaPresentationDuration)
+		.append(", minBufferTime :").append( minBufferTime)
+		.append(", minorVersion :").append( minorVersion)
+		.append(", profiles :").append( profiles)
+		.append(", revision :").append( revision)
 		.append("\n\tPeriod:").append(getPeriod());
 		return strblr.toString();
 	}
@@ -66,5 +68,6 @@ public class MPDEncodedSegment implements MpdBase{
 	@Override
 	public String getVideoName() {
 		return null;
-	}	
+	}
+
 }

@@ -3,7 +3,7 @@
 
 All works distributed in this package are covered by the Apache 2.0 License unless otherwise stated.
 
-> Copyright 2018
+> Copyright 2019
 Intellectual Property
 
 > Licensed under the Apache License, Version 2.0 (the "License");
@@ -51,11 +51,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 2.4
+#### Video Optimizer 3.0
 
-**System Requirements for Video Optimizer 2.4:**
+**System Requirements for Video Optimizer 3.0:**
 
-Before you download Video Optimizer 2.4, make sure you meet the following system requirements for your operating system.
+Before you download Video Optimizer 3.0, make sure you meet the following system requirements for your operating system.
 
 1. At least 2GB of RAM, but recommend at least 8GB
 2. Java 8 or above
@@ -67,38 +67,38 @@ Before you download Video Optimizer 2.4, make sure you meet the following system
 8. Brew, Ifuse, OSXfuse ,libimobiledevice , ideviceinstallerfor, Wireshark  MacOS platform
 
 
+#### Video Optimizer 3.0 Features
+
+#### • Audio Analyis added for Video Streaming Applications
+##### -	Added a new Audio Best Practice called "Streaming Separate Audio & Video" - Added as a self test detecting Muxed & Demuxed Video.
+##### - Video Tab has separate tables to display Audio Segments for Demuxed Video.
+
+#### • Video Enhancements
+##### -	Corrected the Video Stall Indicator to display the exact stall.
+##### - The video segment table has been updated to support streams with separate audio & video segments. A “Content” column indicates whether a segment is audio, video, or muxed audio & video.
+##### -	A “Stall time” column has been added in the video/audio segment table to indicate the time when the stall occurred.
+##### - A “TCP state” column has been added to the video/audio segment table to indicate when a packet is a “reset” or “finished” packet.
+##### -	The “Quality” column in the video/audio segment table was renamed to the more accurate “Track.”.
+##### -	Any gaps in segments are now identified in the Video Stream section.
+##### -	Support has been added for more variance of HLS and DASH manifests for wider support of video streaming applications.
+
+#### • Device & Desktop OS Support
+##### -	Added Support for Collection on Android 10.
+##### -	Added Support for Mac OS Catalina
+
+#### • Other Enhancements
+##### - Simplified HD trace collection on iOS devices. No longer requires install of an app on iOS devices.
+##### - Export option in diagnostics tab is enhanced to support exporting only rows selected by the user.
+##### - Sorting feature has been added to the tables in the Statistics tab.
 
 
-#### Video Optimizer 2.4 Features
+### Known issues in Release 3.0
 
-#### • Enhanced Video Analysis for wider support of Video Streaming Applications
-#### -	Supports wider range of HLS and DASH based video streaming applications on both Android and iOS
-#### -  Enhanced video buffer calculations iOS enhancements
-
-#### • Supports latest iPhone model
-
-#### • iOS Start collector now includes both low resolution and HD options
-
-#### • iOS workflow improvements to handle provisioning profile error messages
-
-#### • UI Enhancements:
-#### - Best Practice “Minify CSS, JS and HTML” results summary is updated to reflect savings in KB
-#### - The trace name in Best Practices tab, Video Tab and Statistics tab now includes a link which helps user navigate to the trace folder
-#### - Preferences, under File menu, now has Default buttons under the Video Tab so it helps users to revert to default settings
-#### - “Select Applications/IPs” option under View menu now includes DNS checkbox that helps user to filter based on DNS packet
-#### - Helps preserve start collector options between traces
+#### •	Some of the video traces don’t display Byte and time information under Video Summary table on Windows and Linux platform
+#### •	In some traces, not all segment gaps are identified.
 
 
-
-### What are the known issues in Release 2.4?
-
-#### •	Application names, CPU usage, signal strength not captured for traces on Android Oreo and above (Known Limitation)
-#### •	Live screen display fails intermittently during iOS trace capture
-#### •	For Linux:
-#### -	Some Text boxes in Video tab is not easily readable
-#### -	‘Trace Name’ link may open multiple windows at once
-
-### •  Installation instruction
+### Compilation instructions
 + Please follow the order to compile projects
 + ../ARO.Parent
 + ../ARO.Core

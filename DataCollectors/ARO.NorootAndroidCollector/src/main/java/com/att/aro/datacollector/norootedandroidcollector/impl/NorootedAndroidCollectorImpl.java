@@ -56,6 +56,7 @@ import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
+import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.util.AttnScriptUtil;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.StringParse;
@@ -111,6 +112,13 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	private String traceType = "";
 	private String targetedApp = "";
 	private String appProducer = "";
+	
+	private IMetaDataHelper metaDataHelper;
+	
+	@Autowired
+	public void setMetaDataHelper(IMetaDataHelper metaDataHelper) {
+		this.metaDataHelper = metaDataHelper;
+	}
 
 	@Autowired
 	public void setAndroid(IAndroid android) {
@@ -326,7 +334,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 				 * @return
 				 */
 				private InputStream exec() {
-					String[] cmd = {adbService.getAdbPath(), "devices"};
+					String[] cmd = {adbService.getAdbPath(true), "devices"};
 					ProcessBuilder pBuilder = new ProcessBuilder(cmd);
 					try {
 						Process ps = pBuilder.start();
@@ -389,8 +397,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		
 		if (extraParams != null) {
 			atnr = (AttenuatorModel)getOrDefault(extraParams, "AttenuatorModel", atnr);
-
-			videoOption = (VideoOption) getOrDefault(extraParams, "video_option", VideoOption.NONE);
+ 			videoOption = (VideoOption) getOrDefault(extraParams, "video_option", VideoOption.NONE);
 			videoOrientation = (Orientation) getOrDefault(extraParams, "videoOrientation", Orientation.PORTRAIT);
 			selectedAppName = (String) getOrDefault(extraParams, "selectedAppName", StringUtils.EMPTY);
 			traceDesc = (String) getOrDefault(extraParams, "traceDesc", StringUtils.EMPTY);
@@ -418,7 +425,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			result.setSuccess(false);
 			return result;
 		}
-
+		
 		if (filemanager.directoryExistAndNotEmpty(folderToSaveTrace)) {
 			result.setError(ErrorCodeRegistry.getTraceDirExist());
 			return result;
@@ -432,6 +439,8 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		}
 
 		aroDevice = new AROAndroidDevice(device, false);
+
+		cleanARO();
 
 		if (device.isEmulator()) {
 			if (!aroDevice.getAbi().equals("x86_64")) {
@@ -451,12 +460,8 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			result.setSuccess(false);
 			return result;
 		}
-
+		
 		this.localTraceFolder = folderToSaveTrace;
-
-		// remove existing trace if presence
-		android.removeEmulatorData(this.device, "/sdcard/ARO");
-		android.makeDirectory(this.device, "/sdcard/ARO");
 
 		// there might be an instance of vpn_collector running
 		// to be sure it is not in memory
@@ -495,7 +500,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 //					+ " --ei delayDL " + delayTimeDL + " --ei delayUL " + delayTimeUL
 					+ " --ei throttleDL " + throttleDL + " --ei throttleUL " + throttleUL
 					+ (atnrProfile ? (" --ez profile " + atnrProfile + " --es profilename '" + location + "'") : "")
-					+ " --es video "+ videoOption.toString() 
 					+ " --ei bitRate " + bitRate + " --es screenSize " + screenSize 
 					+ " --es videoOrientation " + videoOrientation.toString() 
 					+ " --es selectedAppName " + (StringUtils.isEmpty(selectedAppName)?"EMPTY":selectedAppName) ;
@@ -510,6 +514,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			result.setSuccess(false);
 			return result;
 		}
+		
 		if (!isTrafficCaptureRunning(MILLISECONDSFORTIMEOUT)) {
 			// timeout while waiting for VPN to activate within 15 seconds
 			timeOutShutdown();
@@ -541,6 +546,15 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		result.setSuccess(true);
 		this.running = true;
 		return result;
+	}
+
+	/**
+	 * Delete and replace /sdcard/ARO
+	 */
+	public void cleanARO() {
+		// remove existing trace if presence
+		android.removeEmulatorData(this.device, "/sdcard/ARO");
+		android.makeDirectory(this.device, "/sdcard/ARO");
 	}
 
 	private boolean isAndroidVersionNougatOrHigher(IDevice device) {
@@ -750,14 +764,12 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	 * @return
 	 */
 	public boolean isVpnActivated() {
-		String cmd = "ifconfig tun0";
+		String cmd = "ls -la /sdcard/ARO/traffic.cap";
 		String[] lines = android.getShellReturn(this.device, cmd);
 		boolean success = false;
-		// log.debug("responses :" + lines.length);
 		for (String line : lines) {
-			// log.debug("<" + line + ">");
-			if (line.contains("tun0: ip 10.") || line.contains("UP POINTOPOINT RUNNING")) {
-				LOG.info("tun is active :" + line);
+			if (line.endsWith("traffic.cap")) {
+				LOG.info("vpn collector is active :" + line);
 				success = true;
 				break;
 			}
@@ -863,6 +875,14 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		LOG.debug("pulling trace to local dir");
 		new LogcatCollector(adbService, device.getSerialNumber()).collectLogcat(localTraceFolder, "Logcat.log");
 		result = pullTrace(this.mDataDeviceCollectortraceFileNames);
+		
+		if(result.isSuccess()) {
+			try {
+				metaDataHelper.initMetaData(localTraceFolder, traceDesc, traceType, targetedApp, appProducer);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 		
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
 				GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
@@ -1080,7 +1100,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	}
 
 	@Override
-	public boolean isDeviceDataPulledStatus() {
+	public boolean isDeviceDataPulled() {
 		return true;
 	}
 

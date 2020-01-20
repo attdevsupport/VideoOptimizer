@@ -52,6 +52,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
 import org.jfree.chart.ChartPanel;
@@ -144,7 +145,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 	private static final int MIN_BATTERY = 0;
 	private static final int MAX_BATTERY = 110;
-	
+
 	private static final int MIN_TEMPERATURE = 0;
 	private static final int MAX_TEMPERATURE = 100;
 
@@ -189,7 +190,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private AttenuatorPlot attnrPlot;
 	private SpeedThrottlePlot stPlot;
 	private CombinedDomainXYPlot combinedPlot;
-	
+
 	private double endTime = 0.0;
 
 	public double getEndTime() {
@@ -284,15 +285,16 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	 * Initializes a new instance of the GraphPanel class.
 	 */
 	public GraphPanel(IAROView aroview, DiagnosticsTab parent) {
-
-		if (statemachinefactory == null) {
-			statemachinefactory = ContextAware.getAROConfigContext().getBean(IRrcStateMachineFactory.class);
-		}
-		if (burstcollectionanalyzer == null) {
-			burstcollectionanalyzer = ContextAware.getAROConfigContext().getBean(IBurstCollectionAnalysis.class);
-		}
-		if (packetanalyzer == null) {
-			packetanalyzer = ContextAware.getAROConfigContext().getBean(IPacketAnalyzer.class);
+		if (StringUtils.isNotBlank(aroview.getTracePath())) {
+			if (statemachinefactory == null) {
+				statemachinefactory = ContextAware.getAROConfigContext().getBean(IRrcStateMachineFactory.class);
+			}
+			if (burstcollectionanalyzer == null) {
+				burstcollectionanalyzer = ContextAware.getAROConfigContext().getBean(IBurstCollectionAnalysis.class);
+			}
+			if (packetanalyzer == null) {
+				packetanalyzer = ContextAware.getAROConfigContext().getBean(IPacketAnalyzer.class);
+			}
 		}
 		if (graphHelper == null) {
 			graphHelper = new GraphPanelHelper();
@@ -338,9 +340,10 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		subplotMap.put(ChartPlotOptions.BATTERY,
 				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.battery"),
 						getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.red, MIN_BATTERY, MAX_BATTERY), 1));
-		subplotMap.put(ChartPlotOptions.TEMPERATURE,
-				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.temperature"),
-						getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.green, MIN_TEMPERATURE, MAX_TEMPERATURE), 1));
+		subplotMap.put(ChartPlotOptions.TEMPERATURE, new GraphPanelPlotLabels(
+				ResourceBundleHelper.getMessageString("chart.temperature"),
+				getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.green, MIN_TEMPERATURE, MAX_TEMPERATURE),
+				1));
 		subplotMap.put(ChartPlotOptions.WAKELOCK,
 				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.wakelock"),
 						getBarPlot().drawXYBarPlot(Color.yellow, false), 1));
@@ -360,29 +363,29 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 				ResourceBundleHelper.getMessageString("chart.dl"), getBarPlot().drawYIntervalPlot(), 1));
 		subplotMap.put(ChartPlotOptions.BUFFER_TIME_OCCUPANCY, new GraphPanelPlotLabels(
 				ResourceBundleHelper.getMessageString("chart.bufferTime.occupancy"), getBarPlot().drawXYItemPlot(), 1));
-				
-		subplotMap.put(ChartPlotOptions.ATTENUATION,new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.attenuation"),getBarPlot().drawStepChartPlot(),2));
 
-		subplotMap.put(ChartPlotOptions.SPEED_THROTTLE,new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.attenuation"),getBarPlot().drawStepChartPlot(),2));
-		
+		subplotMap.put(ChartPlotOptions.ATTENUATION, new GraphPanelPlotLabels(
+				ResourceBundleHelper.getMessageString("chart.attenuation"), getBarPlot().drawStepChartPlot(), 2));
+
+		subplotMap.put(ChartPlotOptions.SPEED_THROTTLE, new GraphPanelPlotLabels(
+				ResourceBundleHelper.getMessageString("chart.attenuation"), getBarPlot().drawStepChartPlot(), 2));
+
 		Dimension screenDimension = Toolkit.getDefaultToolkit().getScreenSize();
 		double screenHeight = screenDimension.getHeight();
-		
+
 		setLayout(new BorderLayout());
 		//setMinimumSize(new Dimension(300, 280));
-		setPreferredSize(new Dimension(300, (int)screenHeight/3));
+		setPreferredSize(new Dimension(300, (int) screenHeight / 3));
 		add(getZoomSavePanel(), BorderLayout.EAST);
 		add(getPane(), BorderLayout.CENTER);
 		setGraphPanelBorder(true);
 		setChartOptions(guiPreferences.getChartPlotOptions());
 	}
-	
-	public void setGraphPanelBorder(boolean value){
-		if(true == value){
+
+	public void setGraphPanelBorder(boolean value) {
+		if (true == value) {
 			border = new RoundedBorder(new Insets(20, 20, 20, 20), Color.WHITE);
-		}else{
+		} else {
 			border = null;
 		}
 		setBorder(border);
@@ -539,7 +542,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			setGraphView(0, true);
 		}
 		setTraceData(aroTraceData);
-		if(aroTraceData != null) {
+		if (aroTraceData != null) {
 			setAllPackets(aroTraceData.getAnalyzerResult().getTraceresult().getAllpackets());
 			setTraceDuration(aroTraceData.getAnalyzerResult().getTraceresult().getTraceDuration());
 			setAllTcpSessions(aroTraceData.getAnalyzerResult().getSessionlist().size());// list
@@ -549,16 +552,17 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			setTraceDuration(0);
 			setAllTcpSessions(0);
 		}
-		
 
-		if (aroTraceData != null && aroTraceData.getAnalyzerResult().getFilter() != null
+		if (aroTraceData != null 
+				&& aroTraceData.getAnalyzerResult().getFilter() != null 
 				&& aroTraceData.getAnalyzerResult().getFilter().getTimeRange() != null) {
+			
 			if (aroTraceData.getAnalyzerResult().getSessionlist().size() > 0
-					&& aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime() < aroTraceData
-							.getAnalyzerResult().getFilter().getTimeRange().getEndTime()) {
-				getAxis().setRange(new Range(aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime(),
-						aroTraceData != null ? aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getEndTime()
-								: DEFAULT_TIMELINE));
+					&& aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime()
+						< aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getEndTime()) {
+				
+				getAxis().setRange(new Range(aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime()
+											, aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getEndTime()));
 			} else {
 				getAxis().setRange(new Range(-0.01, 0));
 			}
@@ -570,8 +574,9 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 				setStartTime(0.0); // Reset times
 				setEndTime(0.0);
 			} else {
-				getAxis().setRange(new Range(-0.01, aroTraceData != null
-						? aroTraceData.getAnalyzerResult().getTraceresult().getTraceDuration() : DEFAULT_TIMELINE));
+				getAxis().setRange(new Range(-0.01,
+						aroTraceData != null ? aroTraceData.getAnalyzerResult().getTraceresult().getTraceDuration()
+								: DEFAULT_TIMELINE));
 			}
 		}
 		if (aroTraceData != null && aroTraceData.getAnalyzerResult().getSessionlist().size() > 0) {
@@ -694,12 +699,12 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					break;
 
 				case SPEED_THROTTLE:
-					if(stPlot == null){
+					if (stPlot == null) {
 						stPlot = new SpeedThrottlePlot();
 					}
 					stPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
-					
+
 				case VIDEO_CHUNKS:
 					if (vcPlot == null) {
 						vcPlot = new VideoChunksPlot();
@@ -709,8 +714,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					this.chunkInfo.clear();
 					vcPlot.setBufferOccupancyPlot(bufferOccupancyPlot);
 					vcPlot.setBufferTimePlot(bufferTimePlot);
-					VideoStream selectedStream=null;
-					int count=0;
+					VideoStream selectedStream = null;
+					int count = 0;
 					StreamingVideoData streamingVideoData = aroTraceData.getAnalyzerResult().getStreamingVideoData();
 					if (streamingVideoData != null) {
 						for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
@@ -720,7 +725,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 							}
 						}
 						if (count == 1 && selectedStream != null && selectedStream.getManifest().getDelay() != 0) {
-							VideoEvent firstSegment = (VideoEvent) selectedStream.getVideoEventsBySegment().toArray()[0];
+							VideoEvent firstSegment = (VideoEvent) selectedStream.getVideoEventsBySegment()
+									.toArray()[0];
 							if (selectedStream.getManifest().getVideoFormat() == VideoFormat.MPEG4) {
 								for (VideoEvent video : selectedStream.getVideoEventsBySegment()) {
 									if (video.getSegmentID() != 0) {
@@ -745,9 +751,9 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		getZoomInButton().setEnabled(aroTraceData != null);
 		getZoomOutButton().setEnabled(aroTraceData != null);
 		getSaveGraphButton().setEnabled(aroTraceData != null);
-		if(aroTraceData != null) {
+		if (aroTraceData != null) {
 			parent.getDeviceNetworkProfilePanel().refresh(aroTraceData); // Greg
-																		 // Story
+																			// Story
 		}
 	}
 
@@ -756,13 +762,13 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		resetGraphZoom();
 		advancedGraphPanel.setVisible(false);
 	}
-	
+
 	public void showChartOptions() {
 		// these log.error lines are for tracking down a problem in jfreechart, leave in until problem is resolved
 		// if "showChartOptions()" is not followed by " done" then VO is stuck in a deadlock
 		advancedGraphPanel.setVisible(true);
 	}
-	
+
 	public void setChartOptions(List<ChartPlotOptions> optionsSelected) {
 
 		if (optionsSelected == null || optionsSelected.contains(ChartPlotOptions.DEFAULT_VIEW)) {
@@ -801,7 +807,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	public void layoutGraphLabels() {
 		CombinedDomainXYPlot combinedPlot = getPlot();
 		int height = getChartPanel().getBounds().height - 15;
-		
+
 		// find weights and use them to determine how may divisions are needed.
 		int plotWeightedDivs = 0;
 		List<?> plots = combinedPlot.getSubplots();
@@ -1152,7 +1158,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		XYPlot plot = (XYPlot) getAdvancedGraph().getPlot();
 		int handleCoordinate = new Float(
 				plot.getDomainAxis().valueToJava2D(getCrosshair(), plotArea, plot.getDomainAxisEdge())).intValue();
-		return handleCoordinate; // handleCoordinate+100;
+		return handleCoordinate;
 	}
 
 	/**
@@ -1201,14 +1207,14 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	 * This method implements the reset of Zoom.
 	 */
 	private void resetGraphZoom() {
-		getChartPanel()
-		.setPreferredSize(new Dimension((int) (getChartPanel().getBounds().width / Math.pow(this.zoomFactor, zoomCounter)), 100));
+		getChartPanel().setPreferredSize(
+				new Dimension((int) (getChartPanel().getBounds().width / Math.pow(this.zoomFactor, zoomCounter)), 100));
 		zoomCounter = 0;
 		zoomEventUIUpdate();
 		chartPanelScrollPane().getViewport().setViewPosition(new Point(getPointX(), 0));
 		positionHairLineHandle(getPointX());
 	}
-	
+
 	/**
 	 * Updates the graph UI after zoom in or zoom out.
 	 */
@@ -1278,7 +1284,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		for (GraphPanelListener gpl : listeners) {
 			gpl.graphPanelClicked(lastChartX);
 
-			/* New added @Tinbit */
 			ChartEntity entity = chartmouseevent.getEntity();
 
 			if (entity instanceof XYItemEntity) {
@@ -1292,22 +1297,13 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 				double yDataValue = xyDataset.getYValue(seriesIndex, itemIndex);
 
 				Map<Integer, VideoEvent> veSegment = vcPlot.getChunk(xDataValue);
-				int indexKey = 0;
 				if (vcPlot.isDataItemPoint(xDataValue, yDataValue)) {
 
 					if (veSegment != null) {
-
 						for (int key : veSegment.keySet()) {
-							// String value="Chunk "+(key+1)+" at
-							// "+String.format("%.2f",
-							// veSegment.get(key).getDLTimeStamp())+"S";
 							chunkInfo.put(key, veSegment.get(key));
-							// chunkInfo.add(value);
 						}
-						indexKey = (int) veSegment.keySet().toArray()[0];
 					}
-
-					launchSliderDialog(indexKey);
 
 				} else if (vcPlot.getBufferTimePlot().isDataItemStallPoint(xDataValue, yDataValue) != null) {
 					VideoEvent segmentToPlay = vcPlot.getBufferTimePlot().isDataItemStallPoint(xDataValue, yDataValue);
@@ -1316,20 +1312,18 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 						for (int key : veSegment.keySet()) {
 							chunkInfo.put(key, veSegment.get(key));
 						}
-						indexKey = (int) veSegment.keySet().toArray()[0];
 					}
-					launchSliderDialog(indexKey);
 				}
 			}
 		}
 	}
 
-	public void launchSliderDialog(int indexKey) {
+	public void launchStartUpDelayDialog(int indexKey) {
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("StartupDelayDialog");
 		IVideoPlayer player = parent.getVideoPlayer();
 		double maxDuration = player.getDuration();
 		if (maxDuration >= 0) {
-			JDialog dialog = new SliderDialogBox(this, maxDuration, chunkInfo, indexKey, vcPlot.getAllChunks());
+			JDialog dialog = new StartUpDelayDialog(this, maxDuration, chunkInfo, indexKey, vcPlot.getAllChunks());
 			dialog.pack();
 			dialog.setSize(dialog.getPreferredSize());
 			dialog.validate();

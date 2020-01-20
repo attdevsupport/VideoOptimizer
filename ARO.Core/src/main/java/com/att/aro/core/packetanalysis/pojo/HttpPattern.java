@@ -18,13 +18,14 @@ package com.att.aro.core.packetanalysis.pojo;
 import java.util.regex.Pattern;
 
 public class HttpPattern{
-	public static Pattern strReRequestType = Pattern.compile("(\\S*)\\s* \\s*(\\S*)\\s* \\s*(HTTP/1\\.[0|1]|RTSP/1\\.[0|1])");
+	public static Pattern strReRequestType = Pattern.compile("(\\S*)\\s* \\s*(\\S*)\\s* \\s*(HTTP/1\\.[0|1|2|3]|RTSP/1\\.[0|1|2|3])");
+	public static Pattern strRequestType = Pattern.compile("(GET|POST|HEAD|PUT|DELETE|TRACE|OPTIONS|CONNECT|PATCH){1}\\s*(\\S*)\\s*(HTTP\\/1\\.[0|1|2|3]|RTSP\\/1\\.[0|1|2|3])");
 	public static Pattern strReRequestHost = Pattern.compile("[H|h]ost:");
 	public static Pattern strReResponseContentLength = Pattern.compile("[C|c]ontent-[L|l]ength:");
 	public static Pattern strReTransferEncoding = Pattern.compile("[T|t]ransfer-[E|e]ncoding:");
 	public static Pattern strReResponseContentType = Pattern.compile("[C|c]ontent-[T|t]ype:");
 	public static Pattern strReResponseContentEncoding = Pattern.compile("[C|c]ontent-[E|e]ncoding:");
-	public static Pattern strReResponseResults = Pattern.compile("(HTTP/1\\.[0|1]|RTSP/1\\.[0|1])\\s* \\s*(\\d++)\\s* \\s*(.*)");
+	public static Pattern strReResponseResults = Pattern.compile("(HTTP/1\\.[0|1|2|3]|RTSP/1\\.[0|1|2|3])\\s* \\s*(\\d++)\\s* \\s*(.*)");
 	public static Pattern strReResponseEtag = Pattern.compile("E[T|t]ag\\s*:\\s*(W/)?\"(.*)\"");
 	public static Pattern strReResponseAge = Pattern.compile("Age\\s*:\\s*(\\d*)");
 	public static Pattern strReResponseExpires = Pattern.compile("Expires\\s*:(.*)");

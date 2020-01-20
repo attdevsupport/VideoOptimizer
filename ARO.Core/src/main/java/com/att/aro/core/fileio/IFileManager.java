@@ -15,6 +15,7 @@
 */
 package com.att.aro.core.fileio;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -123,5 +124,16 @@ public interface IFileManager {
 	 * @return
 	 */
 	String[] findFilesByExtention(String folderPath, String extention);
+
+	String readAllData(String filepath) throws IOException;
+	String readAllData(BufferedReader reader) throws IOException;
+	
+	/**
+	 * Find the real path from an alias, if it is an alias
+	 * 
+	 * @param tracePath
+	 * @return validated real path
+	 */
+	File deAlias(File tracePath);
 
 }

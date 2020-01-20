@@ -58,7 +58,7 @@ public class VideoPrefsController {
 	 */
 	public VideoUsagePrefs loadPrefs() {
 		ObjectMapper mapper = new ObjectMapper();
-		videoUsagePrefs = null;
+		videoUsagePrefs = new VideoUsagePrefs();
 		String temp = prefs.getPref(VideoUsagePrefs.VIDEO_PREFERENCE);
 		if (temp != null && !temp.equals("null")) {
 			try {

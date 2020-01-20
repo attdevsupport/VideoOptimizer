@@ -30,6 +30,8 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevices;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.view.diagnostictab.ChartPlotOptions;
+import com.att.aro.ui.view.diagnostictab.GraphPanel;
+import com.att.aro.ui.view.video.IVideoPlayer;
 
 
 /**
@@ -57,6 +59,8 @@ public interface SharedAttributesProcesses extends IAROView {
 	void notifyActionListeners(int key, String command);
 	// collector control
 	
+	void startVideoCollector(String msg);
+	
 	void stopCollector();
 
 	void haltCollector();
@@ -79,6 +83,8 @@ public interface SharedAttributesProcesses extends IAROView {
 
 	Profile getProfile();
 	boolean isVideoPlayerSelected();
+	public IVideoPlayer getVideoPlayer();
+	public GraphPanel getGraphPanel();
 	void updateVideoPlayerSelected(boolean videoSelected);
 	boolean isModelPresent();
 	void dataDump(File dir) throws IOException ;

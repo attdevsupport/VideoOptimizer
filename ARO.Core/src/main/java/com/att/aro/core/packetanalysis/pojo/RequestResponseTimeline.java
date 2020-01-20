@@ -50,7 +50,7 @@ public class RequestResponseTimeline implements Serializable {
 	 */
 	public RequestResponseTimeline(double startTime, Double dnsLookupDuration, Double initialConnDuration,
 			Double sslNegotiationDuration, double requestDuration, double timeToFirstByte,
-			double contentDownloadDuration, Double inactiveConnectionDuration) {
+			double contentDownloadDuration) {
 		this.startTime = startTime;
 		this.dnsLookupDuration = dnsLookupDuration;
 		this.initialConnDuration = initialConnDuration;
@@ -58,7 +58,6 @@ public class RequestResponseTimeline implements Serializable {
 		this.requestDuration = requestDuration;
 		this.timeToFirstByte = timeToFirstByte;
 		this.contentDownloadDuration = contentDownloadDuration;
-		this.inactiveConnectionDuration = inactiveConnectionDuration;
 	}
 
 	/**
@@ -118,7 +117,6 @@ public class RequestResponseTimeline implements Serializable {
 		return (dnsLookupDuration != null ? dnsLookupDuration.doubleValue() : 0.0)
 				+ (initialConnDuration != null ? initialConnDuration.doubleValue() : 0.0)
 				+ (sslNegotiationDuration != null ? sslNegotiationDuration.doubleValue() : 0.0)
-				+ (inactiveConnectionDuration != null ? inactiveConnectionDuration.doubleValue() : 0.0)
 				+ requestDuration
 				+ timeToFirstByte
 				+ contentDownloadDuration;

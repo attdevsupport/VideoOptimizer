@@ -54,7 +54,7 @@ public class DomainsTCPSessions implements Comparable<DomainsTCPSessions>,Serial
 		Map<String, ArrayList<Session>> distinctMap = new HashMap<String, ArrayList<Session>>();
 		for(Session tcpSession : sessions){
 			if(tcpSession != null){
-				if(!tcpSession.isUDP()){
+				if(!tcpSession.isUdpOnly()){
 					String domainName = tcpSession.getDomainName();
 					
 					ArrayList<Session> tempList = distinctMap.get(domainName);

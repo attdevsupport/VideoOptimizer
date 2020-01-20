@@ -1,6 +1,5 @@
 /*
- *  Copyright 2017 AT&T
- *
+ * Copyright 2019 AT&T
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,13 +31,12 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoRedundancyResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
-import com.att.aro.core.videoanalysis.pojo.ManifestDash;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 /**
  * 
@@ -104,18 +102,16 @@ public class VideoRedundancyImpl implements IBestPractice {
 	private int selectedManifestCount;
 	private boolean hasSelectedManifest;
 	@Nonnull
-	private BPResultType bpResultType;
+	private BPResultType bpResultType = BPResultType.CONFIG_REQUIRED;
 
 	int countRedundant = 0;
 	int countSegment = 0;
 	int redundantPercentage = 0;
 	int countDuplicate = 0;
 
-	@Nonnull
-	private SortedMap<Double, AROManifest> manifestCollection;
+	private SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
 	
-	@Nonnull
-	VideoUsage videoUsage;
+	private StreamingVideoData streamingVideoData;
 
 	private int invalidCount;
 	
@@ -126,22 +122,18 @@ public class VideoRedundancyImpl implements IBestPractice {
 
 		init(result);
 
-		videoUsage = tracedata.getVideoUsage();
-		manifestCollection = new TreeMap<>();
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
-
-		if (MapUtils.isNotEmpty(manifestCollection)) {
 			bpResultType = BPResultType.CONFIG_REQUIRED;
 
-			selectedManifestCount = videoUsage.getSelectedManifestCount();
+			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
-			invalidCount = videoUsage.getInvalidManifestCount();
+			invalidCount = streamingVideoData.getInvalidManifestCount();
 
 			if (selectedManifestCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
+				if (invalidCount == videoStreamCollection.size()) {
 					result.setResultText(invalidManifestsFound);
 				} else if (invalidCount > 0) {
 					result.setResultText(noManifestsSelectedMixed);
@@ -151,9 +143,9 @@ public class VideoRedundancyImpl implements IBestPractice {
 			} else if (selectedManifestCount > 1) {
 				result.setResultText(multipleManifestsSelected);
 			} else if (hasSelectedManifest) {
-				for (AROManifest aroManifest : manifestCollection.values()) {
-					if (aroManifest.isSelected()) {
-						countDuplicateChunks(aroManifest);
+				for (VideoStream videoStream : videoStreamCollection.values()) {
+					if (videoStream.isSelected()) {
+						countDuplicateChunks(videoStream);
 						break;
 					}
 				}
@@ -184,16 +176,16 @@ public class VideoRedundancyImpl implements IBestPractice {
 		return result;
 	}
 
-	public void countDuplicateChunks(AROManifest aroManifest) {
+	public void countDuplicateChunks(VideoStream videoStream) {
 		VideoEvent preStuff = null;
 		Double prevSegment = null;
 		String prevQuality = "";
-		for (VideoEvent videoEvent : aroManifest.getVideoEventsBySegment()) {
-			double segment = videoEvent.getSegment();
-			String quality = videoEvent.getQuality();
-			if (aroManifest instanceof ManifestDash && segment == 0) {
+		for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
+			if (!videoEvent.isNormalSegment()) {
 				continue;
 			}
+			double segment = videoEvent.getSegmentID();
+			String quality = videoEvent.getQuality();
 			countSegment++;
 			if (prevSegment != null && prevSegment == segment) {
 				countSegment--;

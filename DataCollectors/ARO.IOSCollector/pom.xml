@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>2.4.0</version>
+        <version>3.0.0</version>
         <relativePath>../../ARO.Parent</relativePath>
     </parent>
 
@@ -69,7 +69,7 @@
 		<dependency>
 			<groupId>com.att.aro</groupId>
 			<artifactId>vo-core</artifactId>
-			<version>2.4.0</version>
+			<version>3.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.media</groupId>
@@ -87,26 +87,6 @@
 		    <artifactId>findbugs-maven-plugin</artifactId>
 		    <version>3.0.4</version>
 		</dependency>
-<!-- 		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-example</artifactId>
-			<version>4.1.19.Final</version>
-			<scope>test</scope> -->
-			<!-- If you have problems in Eclipse, copy the Maven plugin to eclipse/dropins/plugins/os-maven-plugin-1.2.3.Final.jar, 
-				restart Eclipse and update project with [alt]+[F5], see: https://github.com/trustin/os-maven-plugin#issues-with-eclipse-m2e-or-other-ides -->
-			<!--If this fails, you could exclude netty-tcnative: -->
-<!--  			<exclusions>
-				<exclusion>
-					<artifactId>netty-tcnative</artifactId>
-					<groupId>io.netty</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>-->
-<!--  		<dependency>
-			<groupId>org.littleshoot</groupId>
-			<artifactId>littleproxy</artifactId>
-			<version>1.1.2</version>
-		</dependency>-->
 		<dependency>
 		   <groupId>com.github.ganskef</groupId>
 		   <artifactId>littleproxy-mitm</artifactId>
@@ -121,6 +101,12 @@
 			<groupId>org.nanohttpd</groupId>
 			<artifactId>nanohttpd-webserver</artifactId>
 			<version>2.3.1</version>
+		</dependency>
+		<dependency>
+		  <groupId>org.projectlombok</groupId>
+		  <artifactId>lombok</artifactId>
+		  <version>1.18.2</version>
+		  <scope>provided</scope>
 		</dependency>
 	</dependencies>
 

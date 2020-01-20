@@ -33,7 +33,16 @@ import lombok.Setter;
 
 @Data
 public class ManifestCollection {
+	
+	private Manifest manifest;
+	
+	private int commonBaseLength = -1;
+	private int segmentFileNameLength;
+	private boolean segmentOrder;
+	private int segmentCounter = 0;
 
+	private int childUriNameSectionCount;
+	
 	/**<pre>
 	 * Trie of SegmentInfo
 	 * Key: segmentUriName
@@ -83,28 +92,18 @@ public class ManifestCollection {
 	@NonNull
 	@Getter
 	private SortedMap<Double, ChildManifest> bandwidthMap = new TreeMap<>();
-	
-	private Manifest manifest;
-	
-	private int commonBaseLength = -1;
-	private int segmentFileNameLength;
-	private boolean segmentOrder;
-	private int segmentCounter = 0;
-
-	public int childUriNameSectionCount;
-
-
-	public int getChildUriNameSectionCount() {
-		return childUriNameSectionCount;
-	}
-
-	public void setChildUriNameSectionCount(int childUriNameSectionCount) {
-		this.childUriNameSectionCount = childUriNameSectionCount;
-	}
 
 	public void addToUriNameChildMap(int count, String childUriName, ChildManifest childManifest) {
 		setChildUriNameSectionCount(count);
 		uriNameChildMap.put(childUriName, childManifest);
+	}
+	
+	public void addToUriNameChildMap(String childUriName, ChildManifest childManifest) {
+		uriNameChildMap.put(childUriName, childManifest);
+	}
+	
+	public ChildManifest getChildManifest(String childUriName) {
+		return uriNameChildMap.get(childUriName);
 	}
 	
 	public void addToTimestampChildManifestMap(Double timestamp, ChildManifest childManifest) {
@@ -123,6 +122,7 @@ public class ManifestCollection {
 		segmentChildManifestTrie.put(segmentUriName, childManifest);
 	}
 
+	// debugging - logging info
 	public String dumpTimeChildMap() {
 		StringBuilder stblr = new StringBuilder("\n\t, timeChildMap<doubleTimestamp,ChildManifest>:");
 		stblr.append("\tSize: " + timestampChildManifestMap.size());
@@ -132,7 +132,7 @@ public class ManifestCollection {
 		Iterator<Entry<Double, ChildManifest>> iset = eset.iterator();
 		while (iset.hasNext()) {
 			Entry<Double, ChildManifest> val = iset.next();
-			stblr.append("\nKey :" + (Double)val.getKey());
+			stblr.append("\nKey :" + val.getKey());
 			stblr.append("\t, " + val.getValue());
 		}
 		return stblr.toString();
@@ -151,7 +151,7 @@ public class ManifestCollection {
 			if (skip > 0 || (countDown-- > 0)) {
 				break;
 			}
-			stblr.append("\nKey :" + (String) val.getKey()).append("\t, " + val.getValue());
+			stblr.append("\nKey :" + val.getKey()).append("\t, " + val.getValue());
 		}
 		return stblr.toString();
 	}
@@ -187,9 +187,4 @@ public class ManifestCollection {
 	public int getNextSegment() {
 		return segmentCounter++;
 	}
-
-	public ChildManifest getChildManifest(String childUriName) {
-		return uriNameChildMap.get(childUriName);
-	}
-
 }

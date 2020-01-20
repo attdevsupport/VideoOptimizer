@@ -20,8 +20,6 @@ import java.text.MessageFormat;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.math3.util.MathUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,11 +28,10 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoChunkPacingResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
-import com.att.aro.core.videoanalysis.pojo.ManifestDash;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 
 /**
@@ -92,11 +89,9 @@ public class VideoSegmentPacingImpl implements IBestPractice{
 	@Value("${videoManifest.invalid}")
 	private String invalidManifestsFound;
 	
-	@Nonnull
-	private SortedMap<Double, AROManifest> manifestCollection = new TreeMap<>();
+	private SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
 	
-	@Nonnull
-	VideoUsage videoUsage;
+	private StreamingVideoData streamingVideoData;
 
 	private int selectedCount;
 	private int invalidCount;
@@ -112,18 +107,15 @@ public class VideoSegmentPacingImpl implements IBestPractice{
 		
 		init(result);
 		
-		videoUsage = tracedata.getVideoUsage();
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
-
-		if (MapUtils.isNotEmpty(manifestCollection)) {
-			selectedCount = videoUsage.getSelectedManifestCount();
-			invalidCount = videoUsage.getInvalidManifestCount();
+			selectedCount = streamingVideoData.getSelectedManifestCount();
+			invalidCount = streamingVideoData.getInvalidManifestCount();
 			
 			if (selectedCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
+				if (invalidCount == videoStreamCollection.size()) {
 					result.setResultText(invalidManifestsFound);
 				} else if (invalidCount > 0) {
 					result.setResultText(noManifestsSelectedMixed);
@@ -137,11 +129,10 @@ public class VideoSegmentPacingImpl implements IBestPractice{
 				bpResultType = BPResultType.CONFIG_REQUIRED;
 				result.setSelfTest(false);
 			} else {
-				for (AROManifest aroManifest : manifestCollection.values()) {
-					if (aroManifest != null && aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) { // don't count if no videos with manifest
-						for (VideoEvent videoEvent : aroManifest.getVideoEventsBySegment()) {
-
-							if (ManifestDash.class.isInstance(aroManifest) && videoEvent.getSegment() == 0) {
+				for (VideoStream videoStream : videoStreamCollection.values()) {
+					if (videoStream != null && videoStream.isSelected() && !videoStream.getVideoEventsBySegment().isEmpty()) {
+						for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
+							if (!videoEvent.isNormalSegment()) {
 								continue;
 							}
 							count++;
@@ -158,7 +149,7 @@ public class VideoSegmentPacingImpl implements IBestPractice{
 				if (count != 0) {
 					segmentPacing = averageDelay / count;
 				}
-				bpResultType = BPResultType.SELF_TEST; // this VideoBestPractice is to be reported as a selftest until further notice
+				bpResultType = BPResultType.SELF_TEST;
 				result.setResultText(MessageFormat.format(
 						textResults, count == 1 ? "was" : "were"
 						,count

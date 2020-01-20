@@ -51,6 +51,7 @@ import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
 
+@SuppressWarnings("restriction")
 public class JFxPlayer implements IVideoPlayer {
 
 	private static final Logger LOGGER = LogManager.getLogger(JFxPlayer.class);	

@@ -119,8 +119,9 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		String cmd = Util.getFFMPEG() + " -i " + "\"" + videoPath + "\"";
 		String result = extrunner.executeCmd(cmd);
 		String[] timestamp = StringParse.findLabeledDataFromString("Duration: ", ",", result).split(":");
-		double duration = (StringUtils.isEmpty(timestamp[0])? 0 : Integer.parseInt(timestamp[0])) * 3600 + (timestamp.length <= 1 || StringUtils.isEmpty(timestamp[1])? 0 : Integer.parseInt(timestamp[1]) * 60)
-				+ (timestamp.length <= 2 || StringUtils.isEmpty(timestamp[2])? 0.0 : Double.parseDouble(timestamp[2]));
+		double duration = (StringUtils.isEmpty(timestamp[0]) ? 0 : Integer.parseInt(timestamp[0])) * 3600
+				+ (timestamp.length <= 1 || StringUtils.isEmpty(timestamp[1]) ? 0 : Integer.parseInt(timestamp[1]) * 60)
+				+ (timestamp.length <= 2 || StringUtils.isEmpty(timestamp[2]) ? 0.0 : Double.parseDouble(timestamp[2]));
 		if (result.contains("creation_time")) {
 			String creationTime = StringParse.findLabeledDataFromString("creation_time   :", "\n", result).trim();
 			long creationtimeStamp = Util.parseForUTC(creationTime);
@@ -151,8 +152,10 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		double videoStartTime = 0;
 		String[] lines = null;
 		try {
-			lines = filereader.readAllLine(filepath);
-			setVideoTimeContent(lines);
+			if (filereader.fileExist(filepath)) {
+				lines = filereader.readAllLine(filepath);
+				setVideoTimeContent(lines);
+			} 
 		} catch (IOException e1) {
 			LOGGER.error("failed reading video time file", e1);
 		}

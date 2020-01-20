@@ -46,6 +46,7 @@ import javafx.scene.media.MediaPlayer.Status;
 import javafx.scene.media.MediaView;
 import javafx.util.Duration;
 
+@SuppressWarnings("restriction")
 public class JFxPlayerControl {
 
 	private MediaPlayer mediaPlayer;

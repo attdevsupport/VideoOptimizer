@@ -20,30 +20,19 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
 public class VideoConcurrentSessionResult extends AbstractBestPracticeResult {
-	private int maxConcurrentSessionsCount = 0;
+	private int maxConcurrentSessionCount = 0;
 	@Nonnull
 	private List<VideoConcurrentSession> manifestConcurrency = new ArrayList<>();
 
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.VIDEO_CONCURRENT_SESSION;
-	}
-
-	public int getMaxConcurrentSessionCount() {
-		return maxConcurrentSessionsCount;
-	}
-
-	@JsonProperty(value = "maxConcurrentSessionCount")
-	public void setMaxConcurrentSessionsCount(int maxConcurrentSessionsCount) {
-		this.maxConcurrentSessionsCount = maxConcurrentSessionsCount;
 	}
 
 	public List<VideoConcurrentSession> getResults() {

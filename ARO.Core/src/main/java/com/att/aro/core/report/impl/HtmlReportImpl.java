@@ -181,7 +181,10 @@ public class HtmlReportImpl implements IReport {
 		if(statistic!=null){
 			EnergyModel energyModel = analyzerResults.getEnergyModel();
 			sbuffer.append(tableLIne()+"<th>Total Data (Byte)</th><td>" + statistic.getTotalByte() 
-					+ tableChange()+System.getProperty(lineSeperator())+tableLIne()+"<th>HTTPS Data Not Analyzed (Byte)</th><td>" 
+					+ tableChange()+System.getProperty(lineSeperator())
+					+ tableLIne()+"<th>Total PayLoad Data (Byte)</th><td>" + statistic.getTotalPayloadBytes() 
+					+ tableChange()+System.getProperty(lineSeperator())+
+					tableLIne()+"<th>HTTPS Data Not Analyzed (Byte)</th><td>" 
 					+ statistic.getTotalHTTPSByte() + tableChange()+System.getProperty(lineSeperator())
 					+tableLIne()+"<th>Energy Consumed (J)</th><td>" + getRoundDouble(energyModel.getTotalEnergyConsumed()) 
 					+ tableChange()+System.getProperty(lineSeperator()));
@@ -284,6 +287,10 @@ public class HtmlReportImpl implements IReport {
 			description = description.substring(0, description.indexOf("To change targeted delay"));
 		}
 
+		if (description.contains("Click")) {
+			description = description.substring(0, description.indexOf("Click"));
+		}
+		
 		if (description.contains("&nbsp;")) {
 			description = description.replace("&nbsp;", " ");
 		}

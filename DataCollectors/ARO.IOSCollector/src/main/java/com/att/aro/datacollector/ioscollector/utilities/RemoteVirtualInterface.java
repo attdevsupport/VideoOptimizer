@@ -47,22 +47,18 @@ public class RemoteVirtualInterface {
 	volatile boolean hasSetup = false;
 	private boolean launchDaemonsExecuted;
 	private String rviName;
+	private XCodeInfo xcode;
+	private String rviPath;
 
 	public RemoteVirtualInterface(String sudoPassword) {
+
+		this.sudoPassword = sudoPassword;
 		startDate = new Date();
 		initDate = startDate;
-		this.sudoPassword = sudoPassword;
 		runner = new ExternalProcessRunner();
 		pcaphelp = new PcapHelper(runner);
-		
-	}
-
-	public RemoteVirtualInterface(String sudoPassword, ExternalProcessRunner runner) {
-		this.sudoPassword = sudoPassword;
-		this.runner = runner;
-		startDate = new Date();
-		initDate = startDate;
-
+		xcode = new XCodeInfo();
+		rviPath = xcode.getPath();
 	}
 
 	public String getErrorMessage() {
@@ -147,19 +143,19 @@ public class RemoteVirtualInterface {
 	private boolean rviConnection(String mode, String serialNumber) {
 		String cmdResponse;
 		try {
-			cmdResponse = runner.runCmd("rvictl " + mode + " " + serialNumber );
-			LOG.debug("cmd : " + "rvictl " + mode + " " + serialNumber);
-			LOG.debug("cmdResponse : "+cmdResponse);
+			String cmdString = rviPath + " " + mode + " " + serialNumber;
+			cmdResponse = runner.runCmd(cmdString);
+			LOG.debug("cmd : " + cmdString);
+			LOG.debug("cmdResponse : " + cmdResponse);
 		} catch (IOException e) {
 			LOG.error("IOException", e);
 			return false;
 		}
-		if (cmdResponse != null && cmdResponse.contains("[SUCCEEDED]")
-				&& !cmdResponse.contains("Stopping")) {
+		if (cmdResponse != null && cmdResponse.contains("[SUCCEEDED]") && !cmdResponse.contains("Stopping")) {
 			String[] splitResponse = cmdResponse.split("interface");
 			if (splitResponse.length > 1) {
 				setRviName(splitResponse[1].trim());
-			}else{
+			} else {
 				setRviName(findDeviceInRvictl(serialNumber));
 			}
 			return true;
@@ -180,7 +176,7 @@ public class RemoteVirtualInterface {
 		try {
 			do {
 				rviConnection("-x", serialNumber);
-				response = runner.runCmd("rvictl -l");
+				response = runner.runCmd(rviPath + " -l");
 			} while (!response.trim().equals("Could not get list of devices"));
 		} catch (IOException e) {
 			LOG.error("IOException", e);
@@ -196,7 +192,7 @@ public class RemoteVirtualInterface {
 	private String findDeviceInRvictl(String serialNumber) {
 		String data;
 		try {
-			data = runner.runCmd("rvictl -l | grep " + serialNumber + " |awk -F \"interface \" '{print $2}'");
+			data = runner.runCmd(rviPath + " -l | grep " + serialNumber + " |awk -F \"interface \" '{print $2}'");
 		} catch (IOException e) {
 			LOG.error("IOException", e);
 			return null;

@@ -58,7 +58,7 @@ public class VideoStallTableModel extends DataTableModel<VideoStall> {
 	public static final int COL_6 = 5;
 	
 
-	DecimalFormat decimalFormat = new DecimalFormat("0.##");
+	DecimalFormat decimalFormat = new DecimalFormat("0.000");
 	private static final String[] COLUMNS = {
 			ResourceBundleHelper.getMessageString("videoStall.table.col1"),
 			ResourceBundleHelper.getMessageString("videoStall.table.col2"),
@@ -127,13 +127,13 @@ public class VideoStallTableModel extends DataTableModel<VideoStall> {
 		case COL_1:
 			return item.getSegmentTryingToPlay().getManifest().getVideoName();
 		case COL_2:
-			return Integer.valueOf(decimalFormat.format(item.getSegmentTryingToPlay().getSegmentID()));
+			return (int)item.getSegmentTryingToPlay().getSegmentID();
 		case COL_3:
-			return decimalFormat.format(item.getStallEndTimeStamp()-item.getStallStartTimeStamp());
+			return decimalFormat.format(item.getDuration());
 		case COL_4:
-			return decimalFormat.format(item.getStallStartTimeStamp());
+			return decimalFormat.format(item.getStallStartTimestamp());
 		case COL_5:
-			return decimalFormat.format(item.getStallEndTimeStamp());
+			return decimalFormat.format(item.getStallEndTimestamp());
 		case COL_6:
 			return item.getStallState();
 		default:

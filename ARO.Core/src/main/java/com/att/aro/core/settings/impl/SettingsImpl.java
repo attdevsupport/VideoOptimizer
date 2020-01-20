@@ -74,7 +74,6 @@ public final class SettingsImpl implements Settings {
 		return configProperties;
 	}
 
-	@SuppressWarnings("checkstyle:emptyblock")
 	private void createConfig(String configFilePath) {
 		File configFile = new File(configFilePath);
 		if (!configFile.exists()) {

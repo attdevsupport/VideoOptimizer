@@ -113,6 +113,7 @@ import com.att.aro.core.peripheral.IScreenRotationReader;
 import com.att.aro.core.peripheral.IScreenStateInfoReader;
 import com.att.aro.core.peripheral.ISpeedThrottleEventReader;
 import com.att.aro.core.peripheral.IUserEventReader;
+import com.att.aro.core.peripheral.IVideoStartupReadWrite;
 import com.att.aro.core.peripheral.IVideoTimeReader;
 import com.att.aro.core.peripheral.IWakelockInfoReader;
 import com.att.aro.core.peripheral.IWifiInfoReader;
@@ -140,6 +141,7 @@ import com.att.aro.core.peripheral.impl.ScreenRotationReaderImpl;
 import com.att.aro.core.peripheral.impl.ScreenStateInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.SpeedThrottleEventReaderImpl;
 import com.att.aro.core.peripheral.impl.UserEventReaderImpl;
+import com.att.aro.core.peripheral.impl.VideoStartupReadWriterImpl;
 import com.att.aro.core.peripheral.impl.VideoTimeReaderImpl;
 import com.att.aro.core.peripheral.impl.WakelockInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.WifiInfoReaderImpl;
@@ -166,6 +168,8 @@ import com.att.aro.core.securedpacketreader.impl.TLSHandshakeImpl;
 import com.att.aro.core.securedpacketreader.impl.TLSSessionInfoImpl;
 import com.att.aro.core.settings.Settings;
 import com.att.aro.core.settings.impl.SettingsImpl;
+import com.att.aro.core.tracemetadata.IMetaDataHelper;
+import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
 import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.PcapConfirmationImpl;
@@ -188,9 +192,11 @@ import com.att.aro.core.videoanalysis.impl.VideoBestPractices;
 import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
 import com.att.aro.core.videoanalysis.impl.VideoEventDataHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoPrefsController;
+import com.att.aro.core.videoanalysis.impl.VideoSegmentAnalyzer;
 import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
+import com.att.aro.core.videouploadanalysis.ImageBoundsGrabber;
 
 
 /**
@@ -665,9 +671,29 @@ public class AROConfig {
 		return new ExternalProcessRunnerImpl();
 	}
 	
+	@Bean(name = "videoStartupReadWrite")
+	public IVideoStartupReadWrite getVideoStartupReadWriteImpl(){
+		return new VideoStartupReadWriterImpl();
+	}
+
+	@Bean(name = "videoSegmentAnalyzer")
+	public VideoSegmentAnalyzer getVideoSegmentAnalyzer(){
+		return new VideoSegmentAnalyzer();
+	}
+
+	@Bean(name = "imageBoundsGrabber")
+	public ImageBoundsGrabber getImageBoundsGrabber() {
+		return new ImageBoundsGrabber();
+	}
+	
 	@Bean(name ="videoUsagePrefs")
 	public VideoUsagePrefs getVideoUsagePrefs(){
 		return new VideoUsagePrefs();
+	}
+	
+	@Bean(name="metaDataHelper")
+	public IMetaDataHelper getMetaDataHelper(){
+		return new MetaDataHelper();
 	}
 
 	@Bean(name ="videoPrefsController")

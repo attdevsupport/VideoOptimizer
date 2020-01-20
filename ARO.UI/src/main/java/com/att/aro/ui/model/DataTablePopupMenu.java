@@ -37,7 +37,6 @@ import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-
 /**
  *
  *
@@ -47,19 +46,17 @@ public class DataTablePopupMenu extends JPopupMenu {
 	private static final long serialVersionUID = 1L;
 
 	private DataTable<?> table;
-	
-	
+
 	private JMenuItem exportMenuItem;
 
 	private File exportPath = UserPreferencesFactory.getInstance().create().getLastExportDirectory();
 	private String titleDialog = ResourceBundleHelper.getMessageString("fileChooser.Title");
-	
+
 	/**
 	 * Initializes a new instance of the DataTablePopupMenu class using the
 	 * specified DataTable object.
 	 * 
-	 * @param table
-	 *            The DataTable to associate with the DataTablePopupMenu.
+	 * @param table The DataTable to associate with the DataTablePopupMenu.
 	 */
 	public DataTablePopupMenu(DataTable<?> table) {
 		this.table = table;
@@ -69,7 +66,7 @@ public class DataTablePopupMenu extends JPopupMenu {
 	public void setExportPath(File exportPath) {
 		this.exportPath = exportPath;
 	}
-	
+
 	private File getVideoRequestExportDriectory() {
 		String tracePath = PreferenceHandlerImpl.getInstance().getPref("TRACE_PATH");
 		File exportPathDirectory = UserPreferencesFactory.getInstance().create().getLastExportDirectory();
@@ -107,8 +104,8 @@ public class DataTablePopupMenu extends JPopupMenu {
 
 				@Override
 				public void actionPerformed(ActionEvent aEvent) {
-					File defaultFile=null;
-					if(table == null) {
+					File defaultFile = null;
+					if (table == null) {
 						return;
 					}
 					if ("VideoRequestTable".equals(table.getName())) {
@@ -116,13 +113,26 @@ public class DataTablePopupMenu extends JPopupMenu {
 						String defaultFileName = exportPath.getAbsolutePath() + "/VideoRequestTable.csv";
 						defaultFile = new File(defaultFileName);
 					}
+					if (table.getName() != null && "sessionTable".equalsIgnoreCase(table.getName())) {
+						boolean isRowSelected = false;
+						for (int rowIndex = 0; rowIndex < table.getRowCount(); ++rowIndex) {
+							if (isRowSelected = isRowSelected || ((Boolean) table.getValueAt(rowIndex, 1)).booleanValue()) {
+								break;
+							}
+						}
+
+						if (!isRowSelected) {
+							MessageDialogFactory.showMessageDialog(table, ResourceBundleHelper.getMessageString("tcp.error.noRowSelected"));
+							return;
+						}
+					}
 					JFileChooser chooser = new JFileChooser(exportPath);
-					if(defaultFile != null){
+					if (defaultFile != null) {
 						chooser.setSelectedFile(defaultFile);
 					}
 					chooser.setDialogTitle(titleDialog);
 					FileNameExtensionFilter filter = new FileNameExtensionFilter(
-							ResourceBundleHelper.getMessageString("fileChooser.desc.csv"), 
+							ResourceBundleHelper.getMessageString("fileChooser.desc.csv"),
 							ResourceBundleHelper.getMessageString("fileChooser.contentType.csv"));
 					chooser.setFileFilter(filter);
 					chooser.addChoosableFileFilter(null);
@@ -135,8 +145,9 @@ public class DataTablePopupMenu extends JPopupMenu {
 							exportPath.delete();
 						}
 					} catch (Exception exp) {
-						String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("exportall.errorFileOpen"), 
-																ApplicationConfig.getInstance().getAppShortName());
+						String errorMsg = MessageFormat.format(
+								ResourceBundleHelper.getMessageString("exportall.errorFileOpen"),
+								ApplicationConfig.getInstance().getAppShortName());
 						MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()),
 								errorMsg + exp.getMessage());
 					}
@@ -149,8 +160,7 @@ public class DataTablePopupMenu extends JPopupMenu {
 	/**
 	 * Method to export the table content in to the CSV file format.
 	 * 
-	 * @param chooser
-	 *            {@link JFileChooser} object to validate the save option.
+	 * @param chooser {@link JFileChooser} object to validate the save option.
 	 */
 	private void saveFile(JFileChooser chooser) throws Exception {
 		Frame frame = Frame.getFrames()[0];// get parent frame
@@ -161,10 +171,9 @@ public class DataTablePopupMenu extends JPopupMenu {
 						+ ResourceBundleHelper.getMessageString("fileChooser.contentType.csv"));
 			}
 			if (file.exists()) {
-				if (MessageDialogFactory.getInstance().showConfirmDialog(
-						frame,
-						MessageFormat.format(ResourceBundleHelper.getMessageString("fileChooser.fileExists"),
-								file.getAbsolutePath()), JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
+				if (MessageDialogFactory.getInstance().showConfirmDialog(frame,
+						MessageFormat.format(ResourceBundleHelper.getMessageString("fileChooser.fileExists"), file.getAbsolutePath()),
+						JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
 					saveFile(chooser);
 					return;
 				}
@@ -177,8 +186,8 @@ public class DataTablePopupMenu extends JPopupMenu {
 				} else {
 					writeFile(writer, true);
 				}
-				//TODO take care about the commented code.
-				//UserPreferences.getInstance().setLastExportDirectory(file);
+				// TODO take care about the commented code.
+				// UserPreferences.getInstance().setLastExportDirectory(file);
 			} finally {
 				writer.close();
 			}
@@ -188,8 +197,7 @@ public class DataTablePopupMenu extends JPopupMenu {
 						Desktop desktop = Desktop.getDesktop();
 						desktop.open(file);
 					} catch (UnsupportedOperationException unsupportedException) {
-						MessageDialogFactory.showMessageDialog(frame,
-								ResourceBundleHelper.getMessageString("Error.unableToOpen"));
+						MessageDialogFactory.showMessageDialog(frame, ResourceBundleHelper.getMessageString("Error.unableToOpen"));
 					}
 				}
 			} else {
@@ -201,8 +209,7 @@ public class DataTablePopupMenu extends JPopupMenu {
 	/**
 	 * Method to convert the {@link Object} values in to {@link String} values.
 	 * 
-	 * @param val
-	 *            {@link Object} value retrieved from the table cell.
+	 * @param val {@link Object} value retrieved from the table cell.
 	 * @return Cell data in string format.
 	 */
 	private String createCSVEntry(Object val) {
@@ -227,6 +234,9 @@ public class DataTablePopupMenu extends JPopupMenu {
 		final String lineSep = System.getProperty("line.separator");
 		// Write headers
 		for (int columnIndex = 0; columnIndex < table.getColumnCount(); ++columnIndex) {
+			if (table.getName() != null && columnIndex == 1 && "sessionTable".equalsIgnoreCase(table.getName())) {
+				continue;
+			}
 			if (columnIndex > 0) {
 				writer.append(',');
 			}
@@ -238,6 +248,9 @@ public class DataTablePopupMenu extends JPopupMenu {
 			// Write data
 			for (int rowIndex = 0; rowIndex < table.getRowCount(); ++rowIndex) {
 				for (int columnIndex = 0; columnIndex < table.getColumnCount(); ++columnIndex) {
+					if (columnIndex == 1 && "sessionTable".equalsIgnoreCase(table.getName())) {
+						continue;
+					}
 					if (columnIndex > 0) {
 						writer.append(',');
 					}
@@ -251,6 +264,9 @@ public class DataTablePopupMenu extends JPopupMenu {
 				for (int sColumn = 0; sColumn < table.getColumnCount(); ++sColumn) {
 					if (sColumn > 0) {
 						writer.append(',');
+					}
+					if (table.getName()!=null && sColumn == 1 && "sessionTable".equalsIgnoreCase(table.getName())) {
+						continue;
 					}
 					writer.append(createCSVEntry(table.getValueAt(rowIndex[sRow], sColumn)));
 				}

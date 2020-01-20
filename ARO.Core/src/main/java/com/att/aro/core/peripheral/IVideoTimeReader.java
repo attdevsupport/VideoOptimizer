@@ -19,11 +19,6 @@ import java.util.Date;
 
 import com.att.aro.core.peripheral.pojo.VideoTime;
 
-/**
- * 
- *
- * Date: October 7, 2014
- */
 public interface IVideoTimeReader {
 	VideoTime readData(String directory, Date traceTime);
 }

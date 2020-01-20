@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2019 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.videoanalysis.impl;
 
 import java.util.HashMap;
@@ -38,10 +53,6 @@ public abstract class ManifestBuilder {
 	protected static final Logger LOG = LogManager.getLogger(ManifestBuilder.class.getName());
 	protected static final Pattern pattern = Pattern.compile("^(#[A-Z0-9\\-]*)");
 
-	enum HlsType {
-		Parent, VodChild, LiveChild
-	}
-	
 	protected int manifestCount;
 	protected Manifest manifest;
 
@@ -78,6 +89,7 @@ public abstract class ManifestBuilder {
 
 	private CRC32 crc32;
 	private String key;
+	Manifest masterManifest;
 	
 	public ManifestBuilder() {
 
@@ -211,6 +223,7 @@ public abstract class ManifestBuilder {
 		HttpRequestResponseInfo request = manifest.getRequest();
 		String uriReferencePath = request.getObjNameWithoutParams();
 		int sectionCount = manifestCollection.getChildUriNameSectionCount();
+		
 		referenceKey = uriReferencePath;
 		if (!CollectionUtils.isEmpty(manifestCollection.getUriNameChildMap())) {
 			int[] matchPoints = getStringPositions(uriReferencePath, "/");
@@ -265,6 +278,7 @@ public abstract class ManifestBuilder {
 		childManifest = null;
 		manifestCollection = new ManifestCollection();
 		manifestCollection.setManifest(tmpManifest);
+		masterManifest = tmpManifest;
 		if (manifestCollectionMap.get(key) == null) {
 			manifestCollectionMap.put(key, new HashMap<Double, ManifestCollection>());
 		}
@@ -288,27 +302,22 @@ public abstract class ManifestBuilder {
 		
 		LOG.info("locating manifest for :" + request.getObjUri().toString());
 
-		key = buildKey(request);
 		identifiedManifestRequestTime = 0;
-		Set<Entry<String, String>> eSet = segmentManifestCollectionMap.entrySet();
-		for (Entry<String, String> sKey : eSet) {
-			String[] found = stringParse.parse(key, StringUtils.substringBefore(sKey.getKey(), "|"));
-			if (found != null) {
-				key = sKey.getKey().toString();
-				break;
-			}
-		}
+		
+		key = keyMatch(buildKey(request));
 		
 		try {
 			List<Entry<String, String>> tempList = segmentManifestCollectionMap.entrySet().parallelStream()
 					.filter(segmentManifestCollectionMapEntry -> segmentManifestCollectionMapEntry.getKey().contains(key))
 					.collect(Collectors.toList());
 
-			if(tempList.size() >= 1) {
+			if (tempList.size() >= 1) {
 				tempList.stream().forEach(x -> {
-					manifestCollectionMap.entrySet().stream().filter(y -> y.getKey().contains(x.getValue()))
-						.forEach(y -> {
-						y.getValue().entrySet().stream().forEach( z -> {
+					manifestCollectionMap.entrySet().stream()
+					.filter(y -> y.getKey().contains(x.getValue()))
+					.forEach(y -> {
+						y.getValue().entrySet().stream()
+						.forEach( z -> {
 							if (request.getTimeStamp() > z.getKey() && z.getKey() > identifiedManifestRequestTime) {
 								identifiedManifestRequestTime = z.getKey();
 								manifestCollectionToBeReturned = z.getValue();
@@ -327,6 +336,25 @@ public abstract class ManifestBuilder {
 		return manifestCollectionToBeReturned;
 	}
 
+	public String keyMatch(String targetKey) {
+		String key = "";
+		Set<Entry<String, String>> eSet = segmentManifestCollectionMap.entrySet();
+		for (Entry<String, String> sKey : eSet) {
+			String[] found = stringParse.parse(targetKey, StringUtils.substringBefore(sKey.getKey(), "|"));
+			if (found != null || sKey.getKey().contains(targetKey)) {
+				key = sKey.getKey().toString();
+				break;
+			}
+		}
+		return key;
+	}
+	
+	public String locateKey(HttpRequestResponseInfo request) {
+		String key = keyMatch(buildKey(request));
+		key = StringUtils.substringBefore(key, "|");
+		return key;
+	}
+	
 	public String dumpSegmentManifestCollectionTrie() {
 		StringBuilder strbldr = new StringBuilder("segment_ManifestCollectionTrie:");
 		strbldr.append(segmentManifestCollectionMap.size());
@@ -335,7 +363,7 @@ public abstract class ManifestBuilder {
 		Set<Entry<String, String>> eset = segmentManifestCollectionMap.entrySet();
 		
 		eset.stream().forEach(x -> {
-			strbldr.append("\nURL :" + (String) x.getKey());
+			strbldr.append("\nURL :" + x.getKey());
 			strbldr.append("\t, manifest name:" + x.getValue());
 		});
 
@@ -365,10 +393,12 @@ public abstract class ManifestBuilder {
 	public String toString() {
 		StringBuilder strbldr = new StringBuilder();
 		strbldr.append(dumpManifestCollection());
+		strbldr.append(dumpSegmentManifestCollectionTrie());
 		return strbldr.toString();
 	}
 
 	public abstract String buildSegmentName(HttpRequestResponseInfo request, String extension);
+
 
 
 }

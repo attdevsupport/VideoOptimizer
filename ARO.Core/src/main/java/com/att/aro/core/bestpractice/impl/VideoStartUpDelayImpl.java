@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -34,12 +32,13 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.Manifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoStartup;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 /**
  * <pre>
@@ -103,12 +102,10 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 	@Value("${video.noData}")
 	private String noData;
 
-	@Nonnull
-	private SortedMap<Double, AROManifest> manifestCollection = new TreeMap<>();
-	
-	@Nonnull
-	VideoUsage videoUsage;
+	private SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
 
+	private StreamingVideoData streamingVideoData;
+	
 	private double startupDelay;
 	private double manifestRequestTime;
 	private double playDelay;
@@ -118,8 +115,6 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 	boolean startupDelaySet = false;
 
 	private double warningValue;
-
-	private double failValue;
 
 	private int selectedManifestCount;
 	private VideoStartUpDelayResult result;
@@ -136,20 +131,15 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 
 		init(result);
 
-		warningValue = parseDoubleDefault(videoPref.getVideoUsagePreference().getStartUpDelayWarnVal(), 2.0);
-		failValue = parseDoubleDefault(videoPref.getVideoUsagePreference().getStartUpDelayFailVal(), 3.0);
-
-		videoUsage = tracedata.getVideoUsage();
-
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
-
-		if (MapUtils.isNotEmpty(manifestCollection)) {
+		warningValue = videoPref.getVideoUsagePreference().getStartUpDelayWarnVal();
+		
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 			
-			selectedManifestCount = videoUsage.getSelectedManifestCount();
+			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
-			invalidCount = videoUsage.getInvalidManifestCount();
+			invalidCount = streamingVideoData.getInvalidManifestCount();
 			
 			double definedDelay = videoPref.getVideoUsagePreference().getStartupDelay();
 			startupDelay = definedDelay;
@@ -158,38 +148,36 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 			bpResultType = BPResultType.CONFIG_REQUIRED;
 				
 			if (selectedManifestCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
+				if (invalidCount == videoStreamCollection.size()) {
 					result.setResultText(invalidManifestsFound);
 				} else if (invalidCount > 0) {
 					result.setResultText(noManifestsSelectedMixed);
 				} else {
-					if (manifestCollection.size() > 0 && MapUtils.isEmpty(videoUsage.getChunkPlayTimeList())) {
+					if (videoStreamCollection.size() > 0 && MapUtils.isEmpty(streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList())) {
 						result.setResultText(startUpDelayNotSet);
 					} else {
 						result.setResultText(noManifestsSelected);
 					}
 				}
-			} else if (MapUtils.isEmpty(videoUsage.getChunkPlayTimeList())) {
+			} else if (MapUtils.isEmpty(streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList())) {
 				result.setResultText(startUpDelayNotSet);
 			} else if (selectedManifestCount > 1) {
 				result.setResultText(multipleManifestsSelected);
 			} else if (hasSelectedManifest) {
 				startupDelaySet = true;
 
-				for (AROManifest aroManifest : manifestCollection.values()) {
-					if (aroManifest.isSelected()
-							&& MapUtils.isNotEmpty(aroManifest.getVideoEventList())
-							&& aroManifest.getVideoEventSegment() != null) {
-						manifestRequestTime = aroManifest.getRequestTime() - tracedata.getTraceresult().getPcapTimeOffset();
-						manifestDeliveredTime = aroManifest.getEndTime() - manifestRequestTime;
-						startupDelay = aroManifest.getVideoEventSegment().getPlayTime() - manifestRequestTime;
-						playDelay = aroManifest.getVideoEventSegment().getPlayTime() - manifestRequestTime;
-						LOG.info(String.format("startup segment = %s", aroManifest.getVideoEventSegment()));
+				for (VideoStream videoStream : videoStreamCollection.values()) {
+					if (videoStream.isSelected() && MapUtils.isNotEmpty(videoStream.getVideoEventList()) && videoStream.getManifest().getStartupVideoEvent() != null) {
+						Manifest manifest = videoStream.getManifest();
+						manifestRequestTime = manifest.getRequestTime();
+						// - tracedata.getTraceresult().getPcapTimeOffset();
+						manifestDeliveredTime = manifest.getEndTime() - manifestRequestTime;
+						startupDelay = manifest.getStartupDelay() - manifestRequestTime;
+						playDelay = manifest.getStartupDelay() - manifestRequestTime;
+						LOG.info(String.format("startup segment = %s", manifest.getStartupVideoEvent()));
 						LOG.info(String.format("segment startupDelay = %.03f", startupDelay));
-						LOG.info(String.format("aroManifest request to segment_plays = %.03f",
-								aroManifest.getVideoEventSegment().getPlayTime() - manifestRequestTime));
-						LOG.info(String.format("segment_plays = %.03f",
-								aroManifest.getVideoEventSegment().getPlayTime()));
+						LOG.info(String.format("videoStream request to segment_plays = %.03f", manifest.getStartupVideoEvent().getPlayTime() - manifestRequestTime));
+						LOG.info(String.format("segment_plays = %.03f", manifest.getStartupVideoEvent().getPlayTime()));
 
 						List<VideoStartup> compApps = new ArrayList<>();
 						compApps.add(new VideoStartup("RefApp 1", 0.914, 3.423));
@@ -200,18 +188,16 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 
 						result.setResults(compApps);
 
-						bpResultType = Util.checkPassFailorWarning(startupDelay, warningValue, failValue);
+						bpResultType = Util.checkPassFailorWarning(startupDelay, warningValue);
 						if (bpResultType.equals(BPResultType.PASS)) {
-							result.setResultText( MessageFormat.format(
-									textResultPass
-									, startupDelay, startupDelay == 1 ? "" : "s"	
-								));
+							result.setResultText(MessageFormat.format(textResultPass, startupDelay, startupDelay == 1 ? "" : "s"));
 						} else {
 							result.setResultText(MessageFormat.format(
 									textResults
-									, startupDelay, startupDelay == 1 ? "" : "s"	
-										, warningValue, failValue == 1 ? "" : "s"		
-											, failValue, failValue == 1 ? "" : "s"		
+									, String.format("%.03f", startupDelay)
+									, startupDelay == 1 ? "" : "s"
+									, String.format("%.04f", warningValue)
+									, warningValue == 1 ? "" : "s"
 								));
 						}
 
@@ -244,24 +230,12 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 		playDelay = 0;
 		manifestDeliveredTime = 0;
 		warningValue = 0;
-		failValue = 0;
 		hasSelectedManifest = false;
 		startupDelaySet = false;
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
 		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
-	}
-
-	private double parseDoubleDefault(String value, double defaultValue) {
-		double doubleValue;
-		try {
-			doubleValue = Double.parseDouble(value);
-		} catch (NumberFormatException e) {
-			LOG.error("NumberFormatException " + value + " failed to parse");
-			doubleValue = defaultValue;
-		}
-		return doubleValue;
 	}
 
 }// end class

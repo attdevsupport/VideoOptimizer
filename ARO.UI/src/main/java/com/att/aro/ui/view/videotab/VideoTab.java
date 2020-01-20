@@ -20,7 +20,6 @@ import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ComponentListener;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 
@@ -28,23 +27,9 @@ import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
-
 import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.bestpractice.pojo.BestPracticeType;
-import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
-import com.att.aro.core.packetanalysis.IVideoTrafficCollector;
-import com.att.aro.core.packetanalysis.impl.VideoTrafficCollectorImpl;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
-import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.settings.SettingsUtil;
-import com.att.aro.core.videoanalysis.impl.VideoPrefsController;
-import com.att.aro.core.videoanalysis.pojo.VideoStream;
-import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.IAROPrintable;
 import com.att.aro.ui.commonui.ImagePanel;
@@ -62,7 +47,6 @@ import com.att.aro.ui.view.statistics.DateTraceAppDetailPanel;
 import com.att.aro.view.images.Images;
 
 public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
-	private static final Logger LOG = LogManager.getLogger(VideoTab.class.getName());
 	
 	private static final long serialVersionUID = 1L;
 	AROModelObserver bpObservable;
@@ -70,8 +54,6 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 	private JPanel mainPanel;
 	private IARODiagnosticsOverviewRoute overviewRoute = null;
 	private MainFrame aroView;
-	private VideoTrafficCollectorImpl videoStreamingAnalysis = (VideoTrafficCollectorImpl) ContextAware.getAROConfigContext().getBean(IVideoTrafficCollector.class);
-	private VideoPrefsController videoPrefsController = ContextAware.getAROConfigContext().getBean(VideoPrefsController.class);
 	private Insets insets = new Insets(10, 1, 10, 1);
 	private Insets headInsets = new Insets(10, 1, 0, 1);
 	private Insets noInsets = new Insets(0, 0, 0, 0);
@@ -80,10 +62,9 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 	
 	private String trace = "";
 	private long lastOpenedTrace;
-	private StartUpDelayWarningDialog startUpDelayWarningDialog = null;
-	private String warningMessage;
 	int graphPanelIndex = 0;
- 	
+
+	
 	/**
 	 * Create the panel.
 	 */
@@ -115,7 +96,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		getVerticalScrollBar().setUnitIncrement(10);
 		getHorizontalScrollBar().setUnitIncrement(10);
 	}
-
+	
 	@Override
 	public JPanel layoutDataPanel() {
 		if (mainPanel == null) {
@@ -125,7 +106,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 
 			int section = 1;			
 			
-			mainPanel.add(buildSummariesGroup(), new GridBagConstraints(
+			mainPanel.add(buildSummaryPanel(), new GridBagConstraints(
 					0, section++
 					, 1, 1
 					, 1.0, 0.0
@@ -172,91 +153,30 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		aroView.getDiagnosticTab().getGraphPanel().setChartOptions(ChartPlotOptions.getVideoDefaultView());
 	}
 	
-	private void openStartUpDelayWarningDialog() {
-		boolean startUpReminder = true;
-		boolean videoAnalyzed = CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), BestPracticeType.getByCategory(Category.VIDEO));
-		boolean startupDelayAnalyzed = SettingsUtil.retrieveBestPractices().contains(BestPracticeType.STARTUP_DELAY);
-		if (videoAnalyzed && startupDelayAnalyzed && isStartUpReminderRequired() && aroView != null && aroView.getCurrentTabComponent() == aroView.getVideoTab()) {
-			if (null == startUpDelayWarningDialog) {
-				startUpDelayWarningDialog = new StartUpDelayWarningDialog(aroView, overviewRoute);
-			} else if (null != videoStreamingAnalysis) {
-				VideoUsagePrefs videoPrefs = videoPrefsController.loadPrefs();
-				startUpReminder = videoPrefs.isStartupDelayReminder();
-			}
-			startUpDelayWarningDialog.setDialogInfo(warningMessage, startUpReminder);
-			startUpDelayWarningDialog.setVisible(true);
-		}
-	}
-	
-	private boolean isStartUpReminderRequired() {
-		boolean preferenceStartUpReminder = false;
-		boolean startupDelaySet = false;
-		int manifestsSelected = 0;
-		boolean moreManifestsSelected = false;
-		boolean result = true;
-		
-		if (null != videoStreamingAnalysis) {
-			VideoUsagePrefs videoPrefs = videoPrefsController.loadPrefs();
-			preferenceStartUpReminder = videoPrefs.isStartupDelayReminder();
-
-			if (videoStreamingAnalysis.getStreamingVideoData() != null && CollectionUtils.isNotEmpty(videoStreamingAnalysis.getStreamingVideoData().getVideoStreamMap().values())) {
-				for (VideoStream videoStream : videoStreamingAnalysis.getStreamingVideoData().getVideoStreamMap().values()) {
-					if (videoStream != null && true == videoStream.isSelected()) {
-						// if any of the manifest file is selected
-						manifestsSelected++;
-						// User updated the startup delay
-						if (videoStream.getManifest().getDelay() > 0 && false == startupDelaySet) {
-							startupDelaySet = true;
-						}
-					}
-				}
-			}
-			moreManifestsSelected = (manifestsSelected > 1) ? true : false;
-
-			if (moreManifestsSelected) {
-				warningMessage = ResourceBundleHelper.getMessageString("startupdelay.warning.dialog.message1");
-			} else {
-				warningMessage = ResourceBundleHelper.getMessageString("startupdelay.warning.dialog.message2");
-			}
-
-			if (preferenceStartUpReminder == false) {
-				result = false;
-			}
-			if (manifestsSelected == 0) {
-				result = false;
-			} else if (preferenceStartUpReminder == true && (moreManifestsSelected == false && startupDelaySet == true)) {
-				result = false;
-			}
-		}
-		return result;
-	}
-
 	/**
 	 * TopPanel contains summaries
 	 */
-	private JPanel buildSummariesGroup() {
+	private JPanel buildSummaryPanel() {
 		
-		JPanel topPanel;
-		topPanel = new JPanel(new GridBagLayout());
+		JPanel summaryPanel = new JPanel(new GridBagLayout());
 
-		topPanel.setOpaque(false);
-		topPanel.setBorder(new RoundedBorder(new Insets(20, 20, 20, 20), Color.WHITE));
+		summaryPanel.setOpaque(false);
+		summaryPanel.setBorder(new RoundedBorder(new Insets(20, 20, 20, 20), Color.WHITE));
 		int section = 0;
 
 		// Trace Summary, common with Best Practices and Statistics
 		DateTraceAppDetailPanel dateTraceAppDetailPanel = new DateTraceAppDetailPanel();
-		topPanel.add(dateTraceAppDetailPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		summaryPanel.add(dateTraceAppDetailPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		bpObservable.registerObserver(dateTraceAppDetailPanel);
 		
 		// Separator
-		topPanel.add(UIComponent.getInstance().getSeparator(),
+		summaryPanel.add(UIComponent.getInstance().getSeparator(),
 				new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 10, 0), 0, 0));
 			
-		topPanel.add(getSummaryPane(), new GridBagConstraints(0, section, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		summaryPanel.add(getSummaryPane(), new GridBagConstraints(0, section, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		
-		return topPanel;
+		return summaryPanel;
 	}
- 
 
 	private JPanel getSummaryPane() {
 		JPanel summaryPane = new JPanel(new GridBagLayout());
@@ -270,7 +190,9 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		Insets inset = new Insets(0, 1, 10, 1);
 		summaryPane.add(videoSummaryPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0, GridBagConstraints.WEST,
 				GridBagConstraints.HORIZONTAL, inset, 0, 0));
- 
+
+		inset = new Insets(10, 40, 10, 1);
+
 		return summaryPane;
 	}
 	
@@ -364,16 +286,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 			trace = result.getTraceDirectory() != null ? result.getTraceDirectory() : result.getTraceFile();
 			lastOpenedTrace = newTraceTime;
 			bpObservable.refreshModel(analyzerResult);
- 			updateUI();
-		}
-		//open set start up popup, if only start up delay is not already set 
-		GraphPanel graphPanel = aroView.getDiagnosticTab().getGraphPanel();
-		try {
-			if (graphPanel.getVcPlot().getStartUpDelayCollection().isEmpty() && result.getTraceResultType() == TraceResultType.TRACE_DIRECTORY) {
-				openStartUpDelayWarningDialog();
-			}
-		} catch (Exception e) {
-			LOG.error("Refresh error:", e);
+			updateUI();
 		}
 	}
 	
@@ -382,11 +295,6 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 			container.refresh(analyzerResult);
 		}
 		videoManifestPanel.refreshLocal(analyzerResult);
-	}
-
-	@Override
-	public synchronized void addComponentListener(ComponentListener listener) {
-		super.addComponentListener(listener);
 	}
 
 	/**

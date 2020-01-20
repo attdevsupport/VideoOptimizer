@@ -142,6 +142,7 @@ public class BurstAnalysisPanel extends JPanel implements IUITabPanelLayoutUpdat
 		if (table == null) {
 			table = new DataTable<BurstAnalysisInfo>(tableModel);
 			table.setGridColor(Color.LIGHT_GRAY);
+			table.setAutoCreateRowSorter(true);
 		}
 		return table;
 	}
@@ -155,6 +156,7 @@ public class BurstAnalysisPanel extends JPanel implements IUITabPanelLayoutUpdat
 		if (burstTable == null) {
 			burstTable = new DataTable<Burst>(burstTableModel);
 			burstTable.setGridColor(Color.LIGHT_GRAY);
+			burstTable.setAutoCreateRowSorter(true);
 		}
 		return burstTable;
 	}

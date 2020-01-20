@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import javax.annotation.Nonnull;
 
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,11 +31,11 @@ import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoConcurrentSession;
 import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 public class VideoConcurrentSessionImpl implements IBestPractice {
 	@Value("${videoConcurrentSession.title}")
@@ -71,36 +70,28 @@ public class VideoConcurrentSessionImpl implements IBestPractice {
 	private boolean hasSelectedManifest;
 	private BPResultType bpResultType;
 	
-	@Nonnull
-	SortedMap<Double, AROManifest> manifestCollection;
+	SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
 
-	@Nonnull
-	VideoUsage videoUsage;
+	private StreamingVideoData streamingVideoData;
 	
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 
 		result = new VideoConcurrentSessionResult();
-
 		init(result);
 
-		videoUsage = tracedata.getVideoUsage();
-		manifestCollection = new TreeMap<>();
-
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
-
-		if (MapUtils.isNotEmpty(manifestCollection)) {
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
 			bpResultType = BPResultType.CONFIG_REQUIRED;
 			
-			selectedManifestCount = videoUsage.getSelectedManifestCount();
+			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
-			invalidCount = videoUsage.getInvalidManifestCount();
-
+			invalidCount = streamingVideoData.getInvalidManifestCount();
+			
 			if (selectedManifestCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
+				if (invalidCount == videoStreamCollection.size()) {
 					result.setResultText(invalidManifestsFound);
 				} else if (invalidCount > 0) {
 					result.setResultText(noManifestsSelectedMixed);
@@ -113,14 +104,14 @@ public class VideoConcurrentSessionImpl implements IBestPractice {
 				bpResultType = BPResultType.SELF_TEST;
 				int maxManifestConcurrentSessions = 0;
 				List<VideoConcurrentSession> manifestConcurrency = new ArrayList<VideoConcurrentSession>();
-				manifestConcurrency = manifestConcurrentSessions(manifestCollection);
+				manifestConcurrency = manifestConcurrentSessions(videoStreamCollection);
 				result.setResults(manifestConcurrency);
 				for (VideoConcurrentSession manifestSession : manifestConcurrency) {
 					if (maxManifestConcurrentSessions < manifestSession.getConcurrentSessionCount()) {
 						maxManifestConcurrentSessions = manifestSession.getConcurrentSessionCount();
 					}
 				}
-				result.setMaxConcurrentSessionsCount(maxManifestConcurrentSessions);
+				result.setMaxConcurrentSessionCount(maxManifestConcurrentSessions);
 				if (maxManifestConcurrentSessions>0) {
 					result.setResultText(MessageFormat.format(textResults, maxManifestConcurrentSessions));
 				} else {
@@ -150,18 +141,16 @@ public class VideoConcurrentSessionImpl implements IBestPractice {
 		result.setLearnMoreUrl(learnMoreUrl);
 	}
 
-	public List<VideoConcurrentSession> manifestConcurrentSessions(SortedMap<Double, AROManifest> aroManifestMap) {
+	public List<VideoConcurrentSession> manifestConcurrentSessions(SortedMap<Double, VideoStream> videoStreamMap) {
 		List<VideoConcurrentSession> concurrentSessionList = new ArrayList<VideoConcurrentSession>();
-		if (MapUtils.isNotEmpty(manifestCollection)) {
-			for (AROManifest manifest : aroManifestMap.values()) {
-				if (manifest.isSelected()) {
+		if (MapUtils.isNotEmpty(videoStreamCollection)) {
+			for (VideoStream videoStream : videoStreamMap.values()) {
+				if (videoStream.isSelected()) {
 					ArrayList<Double> sessionStartTimes = new ArrayList<>();
 					ArrayList<Double> sessionEndTimes = new ArrayList<>();
 					ArrayList<Session> sessionList = new ArrayList<>();
-					TreeMap<String, VideoEvent> videoEventList = manifest.getVideoEventList();
-					// for (Map.Entry<String, VideoEvent> veEntry : videoEventList.entrySet()) {
+					SortedMap<String, VideoEvent> videoEventList = videoStream.getVideoEventList();
 					for (VideoEvent veEntry : videoEventList.values()) {
-//						Session session = veEntry.getValue().getSession();
 						Session session = veEntry.getSession();
 						if (!sessionList.contains(session)) {
 							sessionList.add(session);
@@ -169,10 +158,10 @@ public class VideoConcurrentSessionImpl implements IBestPractice {
 							sessionEndTimes.add(session.getSessionEndTime());
 						}
 					}
-					VideoConcurrentSession concurrency = findConcurrency(sessionStartTimes, sessionEndTimes);
-					if (concurrency != null && concurrency.getConcurrentSessionCount() > 0) {
-						concurrency.setVideoName(manifest.getVideoName());
-						concurrentSessionList.add(concurrency);
+					VideoConcurrentSession videoConcurrentSession = findConcurrency(sessionStartTimes, sessionEndTimes);
+					if (videoConcurrentSession != null && videoConcurrentSession.getConcurrentSessionCount() > 0) {
+						videoConcurrentSession.setVideoName(videoStream.getManifest().getVideoName());
+						concurrentSessionList.add(videoConcurrentSession);
 					}
 				}
 			}

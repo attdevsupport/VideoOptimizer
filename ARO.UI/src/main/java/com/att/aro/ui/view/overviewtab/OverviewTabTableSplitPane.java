@@ -256,7 +256,7 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 		List<Session> tcpSessions = new ArrayList<Session>();
 		for(Session tcpSession : this.getAroModel().getAnalyzerResult().getSessionlist()){
 			
-			if(!tcpSession.isUDP()){
+			if(!tcpSession.isUdpOnly()){
 				tcpSessions.add(tcpSession);
 			}
 		}

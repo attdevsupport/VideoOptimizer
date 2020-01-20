@@ -20,8 +20,6 @@ import java.text.MessageFormat;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -29,11 +27,10 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoChunkSizeResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
-import com.att.aro.core.videoanalysis.pojo.ManifestDash;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 /**
  * <pre>
@@ -84,11 +81,9 @@ public class VideoSegmentSizeImpl implements IBestPractice{
 	@Value("${videoManifest.invalid}")
 	private String invalidManifestsFound;
 	
-	@Nonnull
-	private SortedMap<Double, AROManifest> manifestCollection = new TreeMap<>();
+	private SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
 	
-	@Nonnull
-	VideoUsage videoUsage;
+	private StreamingVideoData streamingVideoData;
 
 	private double averageSize;
 	private double count;
@@ -104,18 +99,14 @@ public class VideoSegmentSizeImpl implements IBestPractice{
 
 		init(result);
 
-		videoUsage = tracedata.getVideoUsage();
-
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
-
-		if (MapUtils.isNotEmpty(manifestCollection)) {
-			selectedCount = videoUsage.getSelectedManifestCount();
-			invalidCount = videoUsage.getInvalidManifestCount();
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
+			selectedCount = streamingVideoData.getSelectedManifestCount();
+			invalidCount = streamingVideoData.getInvalidManifestCount();
 			
 			if (selectedCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
+				if (invalidCount == videoStreamCollection.size()) {
 					result.setResultText(invalidManifestsFound);
 				} else if (invalidCount > 0) {
 					result.setResultText(noManifestsSelectedMixed);
@@ -128,10 +119,10 @@ public class VideoSegmentSizeImpl implements IBestPractice{
 				result.setResultText(multipleManifestsSelected);
 				result.setSelfTest(false);
 			} else {
-				for (AROManifest aroManifest : videoUsage.getAroManifestMap().values()) {
-					if (aroManifest != null && aroManifest.isSelected() && !aroManifest.getVideoEventList().isEmpty()) {
-						for (VideoEvent videoEvent : aroManifest.getVideoEventsBySegment()) {
-							if (ManifestDash.class.isInstance(aroManifest) && videoEvent.getSegment() == 0) {
+				for (VideoStream videoStream : videoStreamCollection.values()) {
+					if (videoStream != null && videoStream.isSelected() && !videoStream.getVideoEventsBySegment().isEmpty()) {
+						for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
+							if (!videoEvent.isNormalSegment()) {
 								continue;
 							}
 							count++;
@@ -145,8 +136,10 @@ public class VideoSegmentSizeImpl implements IBestPractice{
 				}
 				bpResultType = BPResultType.SELF_TEST;
 				result.setSelfTest(true);
-				result.setResultText(MessageFormat.format(textResults, count == 1 ? "was" : "were", count,
-						count == 1 ? "" : "different", count == 1 ? "" : "s", (int) averageSize / 1024));
+				result.setResultText(MessageFormat.format(textResults
+						, count == 1 ? "was" : "were", count
+						, count == 1 ? "" : "different"
+						, count == 1 ? "" : "s", (int) averageSize / 1024));
 				result.setSegmentSize((int) averageSize / 1024); // Size in KB
 				result.setSegmentCount((int) count);
 			}

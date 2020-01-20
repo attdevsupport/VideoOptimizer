@@ -39,7 +39,7 @@ public class AdaptationSetTL {
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
 		strblr.append("\n\t\tAdaptationSet\n\t\t\tmimeType:").append(mimeType);
-		strblr.append("\n\t\t\tcontentType:").append(contentType);
+		strblr.append("\n\t\t\tcontentType:").append(getContentType());
 		int cntr = 0;
 		strblr.append(segmentTemplate);
 		for (RepresentationST repSet : representation) {
@@ -47,5 +47,14 @@ public class AdaptationSetTL {
 			strblr.append("\n\t\t RepresentationTL :").append(repSet);
 		}
 		return strblr.toString();
+	}
+	
+	public String getContentType() {
+		String type = contentType;
+		if (contentType == null && mimeType != null) {
+			int pos = mimeType.indexOf('/');
+			type = pos < 0 ? mimeType : mimeType.substring(0, pos);
+		}
+		return type;
 	}
 }

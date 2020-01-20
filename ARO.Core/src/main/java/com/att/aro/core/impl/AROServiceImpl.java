@@ -123,7 +123,6 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice uiComparator;
 	private IBestPractice minify;
 	private IBestPractice emptyUrl;
-	private IBestPractice flash;
 	private IBestPractice spriteImage;
 	private IBestPractice scripts;
 	private IBestPractice async;
@@ -149,6 +148,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice videoConcurrentSession;
 	private IBestPractice videoVariableBitrate;
 	private IBestPractice videoResolutionQuality;
+	private IBestPractice audioStream;
 
 	@Autowired
 	public void setPacketAnalyzer(IPacketAnalyzer packetanalyzer) {
@@ -299,12 +299,6 @@ public class AROServiceImpl implements IAROService {
 	}
 
 	@Autowired
-	@Qualifier("flash")
-	public void setFlash(IBestPractice flash) {
-		this.flash = flash;
-	}
-
-	@Autowired
 	@Qualifier("spriteImage")
 	public void setSpriteImage(IBestPractice spriteImage) {
 		this.spriteImage = spriteImage;
@@ -399,6 +393,12 @@ public class AROServiceImpl implements IAROService {
 	@Qualifier("videoResolutionQuality")
 	public void setVideoResolutionQualityImpl(IBestPractice videoResolutionQuality) {
 		this.videoResolutionQuality = videoResolutionQuality;
+	}
+	
+	@Autowired
+	@Qualifier("audioStream")
+	public void setSeparateAudioImpl(IBestPractice audioStream) {
+		this.audioStream = audioStream;
 	}
 	
 	@Autowired
@@ -717,8 +717,6 @@ public class AROServiceImpl implements IAROService {
 			return textFileCompression;
 		case FILE_ORDER:
 			return fileorder;
-		case FLASH:
-			return flash;
 		case HTTP_1_0_USAGE:
 			return http10Usage;
 		case HTTP_3XX_CODE:
@@ -771,6 +769,8 @@ public class AROServiceImpl implements IAROService {
 			return videoVariableBitrate;
 		case VIDEO_RESOLUTION_QUALITY:
 			return videoResolutionQuality;
+		case AUDIO_STREAM:
+			return audioStream;
 		case HTTPS_USAGE:
 			return httpsUsage;
 		case TRANSMISSION_PRIVATE_DATA:

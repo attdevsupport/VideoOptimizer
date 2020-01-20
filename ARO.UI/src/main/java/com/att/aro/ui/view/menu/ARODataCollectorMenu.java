@@ -18,6 +18,7 @@ package com.att.aro.ui.view.menu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.File;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -29,11 +30,14 @@ import javax.swing.JOptionPane;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import org.apache.log4j.Logger;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.jfree.util.Log;
 
 import com.att.aro.core.ApplicationConfig;
+import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
 import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.datacollector.pojo.CollectorStatus;
@@ -44,6 +48,7 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
 import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.core.util.Util;
+import com.att.aro.datacollector.ioscollector.impl.IOSCollectorImpl;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.commonui.IosPasswordDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
@@ -239,8 +244,32 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 				if (result == JOptionPane.OK_OPTION) {
 					if (traceFolderPath.equals(currentPath)) {
 						new MessageDialogFactory().showErrorDialog(null, ResourceBundleHelper.getMessageString("viewer.contentUnwritable"));
-
 						return null;
+					}
+					File mountPoint = fileManager.createFile(traceFolderPath, IOSCollectorImpl.IOSAPP_MOUNT);
+					if (fileManager.createFile(traceFolderPath, IOSCollectorImpl.IOSAPP_MOUNT).exists() && device.getPlatform().equals(IAroDevice.Platform.iOS)) {
+						IExternalProcessRunner runner = new ExternalProcessRunnerImpl();
+
+						String results = runner.executeCmd(String.format("umount %s;rmdir %s", mountPoint, mountPoint));
+						if (!results.isEmpty()) {
+							new MessageDialogFactory().showErrorDialog(null, traceFolderPath+"/"+IOSCollectorImpl.IOSAPP_MOUNT +" is BUSY");
+							return null;
+						} else {
+							int count = 0;
+							while (fileManager.directoryExistAndNotEmpty(mountPoint.toString())) {
+								if (++count > 5) {
+									new MessageDialogFactory().showErrorDialog(null, traceFolderPath + "/" + IOSCollectorImpl.IOSAPP_MOUNT + " will not release, please detach the iOS device and delete the foldere manually");
+									return null;
+								}
+								try {
+									Thread.sleep(1000);
+								} catch (InterruptedException e) {
+									Log.error("sleep interrupted");
+								}
+							
+							}
+						}
+
 					}
 					fileManager.deleteFolderContents(traceFolderPath);
 				} else {
@@ -254,6 +283,15 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			extras.put("videoOrientation", dialog.getVideoOrientation());
 			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getAttenuatorModel());
 			extras.put("TraceFolderName", traceFolderName);
+			if (dialog.getDeviceOptionPanel().isTestEnvironment()) {
+				if(Platform.iOS!=device.getPlatform()) {
+					extras.put("selectedAppName", dialog.getDeviceOptionPanel().getAppSelected());
+				}
+				extras.put("traceDesc", StringUtils.isEmpty(dialog.getDeviceOptionPanel().getTraceDesc())?traceFolderName:dialog.getDeviceOptionPanel().getTraceDesc());
+				extras.put("traceType", dialog.getDeviceOptionPanel().getTraceType());
+				extras.put("targetedApp", dialog.getDeviceOptionPanel().getTargetedApp());
+				extras.put("appProducer", dialog.getDeviceOptionPanel().getAppProducer());				
+			}
 			
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			

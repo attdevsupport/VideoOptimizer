@@ -221,7 +221,7 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 	}
 
 	@Override
-	public boolean isDeviceDataPulledStatus() {
+	public boolean isDeviceDataPulled() {
 		return true;
 	}
 	

@@ -42,7 +42,7 @@ import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.util.Util;
 
 public class AROServiceImplTest extends BaseTest {
-	private static final int TOTAL_BPTESTS = 46;
+	private static final int TOTAL_BPTESTS = 45;
 	@InjectMocks
 	AROServiceImpl aro;
 	@Mock
@@ -93,8 +93,6 @@ public class AROServiceImplTest extends BaseTest {
 	IBestPractice minify;
 	@Mock(name = "emptyUrl")
 	IBestPractice emptyUrl;
-	@Mock(name = "flash")
-	IBestPractice flash;
 	@Mock(name = "spriteImage")
 	IBestPractice spriteImage;
 	@Mock(name = "scripts")
@@ -205,7 +203,6 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.IMAGE_SIZE);
 		req.add(BestPracticeType.MINIFICATION);
 		req.add(BestPracticeType.EMPTY_URL);
-		req.add(BestPracticeType.FLASH);
 		req.add(BestPracticeType.SPRITEIMAGE);
 		req.add(BestPracticeType.SCRIPTS_URL);
 		req.add(BestPracticeType.ASYNC_CHECK);
@@ -278,7 +275,6 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.IMAGE_SIZE);
 		req.add(BestPracticeType.MINIFICATION);
 		req.add(BestPracticeType.EMPTY_URL);
-		req.add(BestPracticeType.FLASH);
 		req.add(BestPracticeType.SPRITEIMAGE);
 		req.add(BestPracticeType.SCRIPTS_URL);
 		req.add(BestPracticeType.ASYNC_CHECK);
@@ -297,6 +293,7 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.TRANSMISSION_PRIVATE_DATA);
 		req.add(BestPracticeType.DISPLAY_NONE_IN_CSS);
 		req.add(BestPracticeType.VIDEO_CONCURRENT_SESSION);
+		req.add(BestPracticeType.AUDIO_STREAM);
 		req.add(BestPracticeType.MULTI_SIMULCONN);
 		List<BestPracticeType> list = SettingsUtil.retrieveBestPractices();
 		SettingsUtil.saveBestPractices(req);

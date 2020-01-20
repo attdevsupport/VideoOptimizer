@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2019 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.videoanalysis.impl;
 
 import java.util.regex.Pattern;
@@ -12,6 +27,7 @@ import com.att.aro.core.AROConfig;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.StringParse;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.ChildManifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
@@ -32,6 +48,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 	ApplicationContext context = new AnnotationConfigApplicationContext(AROConfig.class);
 	IStringParse stringParse = context.getBean(IStringParse.class);
 	private String childUriName;
+	private boolean adjustDurationNeeded = false;
 
 	public ManifestBuilderHLS() {
 
@@ -41,6 +58,9 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 	public String buildSegmentName(HttpRequestResponseInfo request, String extension) {
 		String name = request.getObjNameWithoutParams();
 		int dot = name.lastIndexOf('.');
+		if (StringUtils.isNotEmpty(extension) && name.endsWith(extension)) {
+			name = name.substring(0, name.length() - extension.length());
+		}
 		if (dot > -1) {
 			int sep = name.substring(0, dot).lastIndexOf('/');
 			if (sep > -1) {
@@ -88,6 +108,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 			LOG.error("Unrecognized Manifest:" + strData);
 			return;
 		}
+		adjustDurationNeeded = false;
 		
 		for (int itr = 0; itr < sData.length; itr++) {
 			if (!sData[itr].startsWith("#")) {
@@ -107,7 +128,12 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				if (strData.contains("#EXT-X-STREAM-INF:")) {
 					switchManifestCollection(newManifest, key, manifest.getRequestTime());
 				} else if (strData.contains("#EXTINF:")) {
+					if (manifestCollection == null) { 
+						// special handling of childmanifest when there is no parent manifest
+						switchManifestCollection(newManifest, key, manifest.getRequestTime());
+					}
 					newManifest.setManifestType(ManifestType.CHILD);
+					newManifest.setMasterManifest(masterManifest);
 					childManifest = locateChildManifest(newManifest);
 					if (childManifest.getManifest() != null && childManifest.getManifest().getChecksumCRC32() == newManifest.getChecksumCRC32()) {
 						LOG.info("Identical VOD child manifest found, skipping..." + newManifest.getVideoName());
@@ -116,7 +142,11 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					childManifest.setManifest(newManifest);
 					childManifest.getManifest().setVideoName(removeParamsFromStringURI(childManifest.getUriName()));
 					if (childManifest.isVideo()) {
-						childManifest.setContentType(ContentType.VIDEO);
+						if (childManifest.getCodecs().contains(",")) {
+							childManifest.setContentType(ContentType.MUXED);
+						} else {
+							childManifest.setContentType(ContentType.VIDEO);
+						}
 					} else {
 						return;
 					}
@@ -171,21 +201,34 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					LOG.error("failed to locate child manifest " + sData[++itr]);
 				} else {
 					String parameters = sData[itr];
+					if (sData[itr + 1].startsWith("#EXT-X-BYTERANGE:")) { // ex: #EXT-X-BYTERANGE:99640@4222104
+						String byteRange = sData[++itr];
+						// VID-TODO convert (#EXT-X-BYTERANGE:544824@23058200) so can look in header for (Range: bytes=23058200-23603023) 
+						// breaking collection here to avvoid false matches
+						LOG.error("Cannot match " + byteRange);
+						break;
+					}
 					String segmentUriName = sData[++itr];
 					
 					SegmentInfo segmentInfo = createSegmentInfo(childManifest, parameters, segmentUriName);
 					
+					String val = StringUtils.substringBefore(segmentUriName, ".");
+					if (val.matches("^[0-9]*T[0-9]*$")) {
+						adjustDurationNeeded = true;
+						double nVal = (double) Util.parseForUTC(val);
+						segmentInfo.setStartTime((nVal) / 1000);
+					}
 					if (childManifest.addSegment(segmentUriName, segmentInfo)) {
 						manifestCollection.addToSegmentTrie(segmentUriName, segmentInfo);
 						manifestCollection.addToTimestampChildManifestMap(manifest.getRequest().getTimeStamp(), childManifest);
 						if (!manifestCollection.getSegmentChildManifestTrie().containsKey(segmentUriName)) {
 							manifestCollection.addToSegmentChildManifestTrie(segmentUriName, childManifest);
-							segmentManifestCollectionMap.put(segmentUriName+"|"+manifestCollection.getManifest().getVideoName(), manifestCollection.getManifest().getVideoName());
+							segmentManifestCollectionMap.put(segmentUriName + "|" + manifestCollection.getManifest().getVideoName(),
+									manifestCollection.getManifest().getVideoName());
 						}
 					}
 				}
 				break;
-
 			case "#EXT-X-ENDLIST": // Segment ENDLIST for VOD (STATIC)
 				// processExtXendlist();
 				break;
@@ -203,6 +246,11 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				break;
 
 			case "#EXT-X-PROGRAM-DATE-TIME": // YYYY-MM-DDTHH:MM:sss
+				String dateString = StringParse.findLabeledDataFromString("#EXT-X-PROGRAM-DATE-TIME:", "\\$", sData[itr]);
+				dateString = dateString.replaceAll("\\+00\\:00", "000Z");
+				long programDateTime = Util.parseForUTC(dateString);
+				masterManifest.updateStreamProgramDateTime(programDateTime);
+				childManifest.setStreamProgramDateTime(programDateTime);
 				break;
 
 			case "#USP-X-MEDIA": // #USP-X-MEDIA:TYPE=VIDEO,GROUP-ID="video-avc1-157",LANGUAGE="en",NAME="English",AUTOSELECT=YES,BANDWIDTH=209000,CODECS="avc1.4D401E",RESOLUTION=768x432
@@ -215,7 +263,10 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				break;
 			}
 		}
-
+		
+		if (adjustDurationNeeded ) {
+			childManifest.adjustDurations();
+		}
 		assignQuality(manifestCollection);
 		
 	}
@@ -248,16 +299,23 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					childManifest.setVideo(true);
 					childManifest.setContentType(ContentType.VIDEO);
 				}
+			}
+			
+			String codecs = StringParse.findLabeledDataFromString("CODECS=\"", "\"", parameters);
+			childManifest.setCodecs(codecs);
+			
+			if (codecs.contains(",")) {
+				childManifest.setVideo(true);
+				childManifest.setContentType(ContentType.MUXED);
+			} else if (codecs.contains("v")) {
+				childManifest.setVideo(true);
+				childManifest.setContentType(ContentType.VIDEO);
+			} else if (codecs.contains("a")) {
+				childManifest.setVideo(false);
+				childManifest.setContentType(ContentType.AUDIO);
 			} else {
-				String codecs = StringParse.findLabeledDataFromString("CODECS=\"", "\"", parameters);
-				childManifest.setCodecs(codecs);
-				if (codecs.contains("v")) {
-					childManifest.setVideo(true);
-					childManifest.setContentType(ContentType.VIDEO);
-				} else {
-					// likely an audio only child manifest
-					childManifest.setVideo(false);
-				}
+				childManifest.setVideo(false);
+				childManifest.setContentType(ContentType.UNKNOWN);
 			}
 		}
 		childUriName = childUriName.replaceAll("%2f", "/");

@@ -80,21 +80,6 @@ public interface IAROView {
 	 */
 	String getReportPath();
 	
-//	/**
-//	 * Update all property change listeners on changes in property
-//	 * @param property: the property that changes
-//	 * @param oldValue: the old value of the property
-//	 * @param newValue: the new value of the property
-//	 */
-//	void notifyPropertyChangeListeners(String property, Object oldValue, Object newValue);
-//
-//	/**
-//	 * Notify listeners to actions of interest
-//	 * @param key: type of action
-//	 * @param command: command 
-//	 */
-//	void notifyActionListeners(int key, String command);
-//
 	/**
 	 * Callback that allows an application to register ARO's PropertyChangeListener.
 	 * 
@@ -204,5 +189,5 @@ public interface IAROView {
 	 * 
 	 * @param status
 	 */
-	void isDeviceDataPulled(boolean status);
+	void setDeviceDataPulled(boolean status);
 }

@@ -8,4 +8,6 @@ public interface MpdBase {
 
 	String getVideoName();
 
+	String getType();
+
 }

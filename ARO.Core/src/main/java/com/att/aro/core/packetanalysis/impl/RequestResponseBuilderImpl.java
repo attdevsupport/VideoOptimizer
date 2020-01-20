@@ -26,10 +26,8 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
-import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -66,28 +64,29 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 	
 	private ArrayList<HttpRequestResponseInfo> result = null;
 
-	Map<String, Integer> wellKnownParts = new HashMap<String, Integer>(5);
+	Map<String, Integer> wellKnownPorts = new HashMap<String, Integer>(5);
 
 	public RequestResponseBuilderImpl(){
-		wellKnownParts.put("HTTP", 80);
-		wellKnownParts.put("HTTPS", 443);
-		wellKnownParts.put("RTSP", 554);
+		wellKnownPorts.put("HTTP", 80);
+		wellKnownPorts.put("HTTPS", 443);
+		wellKnownPorts.put("RTSP", 554);
 	}
 
 	public List<HttpRequestResponseInfo> createRequestResponseInfo(Session session) throws IOException {
+		// TODO: Unused code, to be cleaned up in the future.
 		Double sslNegotiationDuration = null;
-		Double inactiveConnectionDuration = null;
 		double contentDownloadDuration = 0;
 		double requestDuration = 0;
 		double timeToFirstByte = 0;
 		
 		result = new ArrayList<HttpRequestResponseInfo>();
 		this.session = session;
+		
 		extractHttpRequestResponseInfo(PacketDirection.UPLINK);
 		extractHttpRequestResponseInfo(PacketDirection.DOWNLINK);
 		Collections.sort(result);
 		result.trimToSize();
-		if(!session.isUDP() && !result.isEmpty()){/* By pass for UDP packets*/
+		if(!session.isUdpOnly() && !result.isEmpty()){/* By pass for UDP packets*/
 			
 			// Get DNS info for waterfall
 			Double dns = null;
@@ -112,14 +111,6 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 			if (handshake != null) {
 				sslNegTime = handshake.getTimeStamp();
 			}
-			Double openConnectionTime = null;
-			List<PacketInfo> packetInfoList = session.getPackets();
-			List<PacketInfo> filteredPkts = packetInfoList.stream().filter(
-					pktInfo -> (pktInfo.getTcpFlagString().contains("F") || pktInfo.getTcpFlagString().contains("R")))
-					.collect(Collectors.toList());
-			if(CollectionUtils.isNotEmpty(filteredPkts)){
-				openConnectionTime = filteredPkts.get(0).getTimeStamp(); 
-			}
 			
 			// Associate requests/responses
 			List<HttpRequestResponseInfo> reqs = new ArrayList<HttpRequestResponseInfo>(result.size());
@@ -137,14 +128,15 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 			// Build waterfall for each request/response pair
 			for (HttpRequestResponseInfo rrinfo : result) {
 				if (rrinfo.getDirection() != HttpDirection.REQUEST || rrinfo.getAssocReqResp() == null
-						|| rrinfo.getFirstDataPacket() == null || rrinfo.getLastDataPacket() == null) {
+						|| rrinfo.getFirstDataPacket() == null){
 					// Only process non-HTTPS request/response pairs
 					continue;
 				}
 				
 				double startTime = -1;
 				double firstReqPacket = rrinfo.getFirstDataPacket().getTimeStamp();
-				double lastReqPacket = rrinfo.getLastDataPacket().getTimeStamp();
+				PacketInfo lastPkt = rrinfo.getLastDataPacket();
+				double lastReqPacket = lastPkt != null ? lastPkt.getTimeStamp() : -1;
 
 				HttpRequestResponseInfo resp = rrinfo.getAssocReqResp();
 
@@ -186,11 +178,11 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 				}
 
 				// Store waterfall in request/response
-				if (sslNegTime != null) {
+				if (sslNegTime != null && lastRespPacket >= sslNegTime) {
 					sslNegotiationDuration = sslNegTime - firstReqPacket;
 					contentDownloadDuration = lastRespPacket - sslNegTime;
 				} else {
-					if (firstRespPacket >= lastReqPacket) {
+					if (firstRespPacket >= lastReqPacket && lastReqPacket != -1) {
 						contentDownloadDuration = lastRespPacket - firstRespPacket;
 						requestDuration = lastReqPacket - firstReqPacket;
 						timeToFirstByte = firstRespPacket - lastReqPacket;
@@ -199,10 +191,9 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 					}
 
 				}
-				inactiveConnectionDuration = openConnectionTime != null ? (openConnectionTime - lastRespPacket) : null;
 				RequestResponseTimeline reqRespTimeline = new RequestResponseTimeline(startTime, dnsDuration,
 						initConnDuration, sslNegotiationDuration, requestDuration, timeToFirstByte,
-						contentDownloadDuration, inactiveConnectionDuration);
+						contentDownloadDuration);
 				rrinfo.setWaterfallInfos(reqRespTimeline);
 				rrinfo.getWaterfallInfos().setLastRespPacketTime(lastRespPacket);
 
@@ -248,9 +239,10 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 		default:
 			throw new IllegalArgumentException("Direction argument invalid");
 		}
-
 		HttpRequestResponseInfo rrInfo = findNextRequestResponse(direction,	packetOffsets);
+		//		int prevIndex = storageReader.getIndex();
 		String line;
+
 		while ((line = storageReader.readLine()) != null && rrInfo != null) {
 			if (line.length() == 0) {
 				if (rrInfo.getContentLength() > 0) {
@@ -308,14 +300,17 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 				// Build an absolute URI if possible
 				if (rrInfo.getObjUri() != null && !rrInfo.getObjUri().isAbsolute()) {
 					try {
-						int port = Integer.valueOf(rrInfo.getPort()).equals(wellKnownParts.get(rrInfo.getScheme())) ? -1 : rrInfo.getPort();
-						rrInfo.setObjUri( new URI(rrInfo.getScheme().toLowerCase(), null, rrInfo.getHostName(), port, rrInfo.getObjUri().getPath(), rrInfo.getObjUri().getQuery(), rrInfo.getObjUri().getFragment()));
+						int port = Integer.valueOf(rrInfo.getPort()).equals(wellKnownPorts.get(rrInfo.getScheme())) ? -1
+								: rrInfo.getPort();
+						rrInfo.setObjUri(new URI(rrInfo.getScheme().toLowerCase(), null, rrInfo.getHostName(), port,
+								rrInfo.getObjUri().getPath(), rrInfo.getObjUri().getQuery(),
+								rrInfo.getObjUri().getFragment()));
 					} catch (URISyntaxException e) {
 						// Just log fine message
-						LOGGER.info("Unexpected exception creating URI for request: " + e.getMessage()+
-								". Scheme=" + rrInfo.getScheme().toLowerCase() +",Host name="+ rrInfo.getHostName()
-								+",Path=" + rrInfo.getObjUri().getPath() + ",Fragment="+ rrInfo.getObjUri().getFragment());
-						
+						LOGGER.info("Unexpected exception creating URI for request: " + e.getMessage() + ". Scheme="
+								+ rrInfo.getScheme().toLowerCase() + ",Host name=" + rrInfo.getHostName() + ",Path="
+								+ rrInfo.getObjUri().getPath() + ",Fragment=" + rrInfo.getObjUri().getFragment());
+
 					}
 				}
 				
@@ -378,10 +373,10 @@ public class RequestResponseBuilderImpl implements IRequestResponseBuilder {
 			}
 		}
 
-		if (direction == PacketDirection.UPLINK && this.session.getStorageUlEx() != null) {
-			index = this.session.getStorageUlEx().length - 1;
-		} else if (direction == PacketDirection.DOWNLINK && this.session.getStorageDlEx() != null) {
-			index = this.session.getStorageDlEx().length - 1;
+		if (direction == PacketDirection.UPLINK && this.session.getStorageUlext() != null) {
+			index = this.session.getStorageUlext().length - 1;
+		} else if (direction == PacketDirection.DOWNLINK && this.session.getStorageDlext() != null) {
+			index = this.session.getStorageDlext().length - 1;
 		}
 
 		for (SortedMap.Entry<Integer, PacketInfo> entry : packetOffsets.entrySet()) {

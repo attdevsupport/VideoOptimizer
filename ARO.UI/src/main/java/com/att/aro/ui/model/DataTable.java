@@ -248,7 +248,8 @@ public class DataTable<T> extends JTable {
 					cacheEntry = ((CacheEntry) getDataTableModel().getValueAt(rowIndex));
 					if (cacheEntry.getDiagnosis().toString()
 							.equalsIgnoreCase(Diagnosis.CACHING_DIAG_CACHE_MISSED.toString())) {
-						if (cacheItem.getHttpObjectName().equalsIgnoreCase(cacheEntry.getHttpObjectName())) {
+						if (cacheItem.getHttpObjectName().equalsIgnoreCase(cacheEntry.getHttpObjectName())
+								&& cacheItem.getContentLength() == cacheEntry.getContentLength()) {
 							return isSelected(rowIndex);
 						}
 					}

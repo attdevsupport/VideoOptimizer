@@ -22,7 +22,6 @@ import org.springframework.context.annotation.Lazy;
 
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.impl.AccessingPeripheralImpl;
-//import com.att.aro.core.bestpractice.impl.AdAnalyticsImpl;
 import com.att.aro.core.bestpractice.impl.AsyncCheckInScriptImpl;
 import com.att.aro.core.bestpractice.impl.CacheControlImpl;
 import com.att.aro.core.bestpractice.impl.CombineCsJssImpl;
@@ -33,7 +32,6 @@ import com.att.aro.core.bestpractice.impl.DuplicateContentImpl;
 import com.att.aro.core.bestpractice.impl.EmptyUrlImpl;
 import com.att.aro.core.bestpractice.impl.FileCompressionImpl;
 import com.att.aro.core.bestpractice.impl.FileOrderImpl;
-import com.att.aro.core.bestpractice.impl.FlashImpl;
 import com.att.aro.core.bestpractice.impl.ForwardSecrecyImpl;
 import com.att.aro.core.bestpractice.impl.Http10UsageImpl;
 import com.att.aro.core.bestpractice.impl.Http3xxCodeImpl;
@@ -42,7 +40,6 @@ import com.att.aro.core.bestpractice.impl.HttpsUsageImpl;
 import com.att.aro.core.bestpractice.impl.ImageCompressionImpl;
 import com.att.aro.core.bestpractice.impl.ImageFormatImpl;
 import com.att.aro.core.bestpractice.impl.ImageMetaDataImpl;
-//import com.att.aro.core.bestpractice.impl.HttpsUsageImpl;
 import com.att.aro.core.bestpractice.impl.ImageSizeImpl;
 import com.att.aro.core.bestpractice.impl.ImageUIComparatorImpl;
 import com.att.aro.core.bestpractice.impl.MinificationImpl;
@@ -53,7 +50,6 @@ import com.att.aro.core.bestpractice.impl.ScriptsImpl;
 import com.att.aro.core.bestpractice.impl.SimultnsConnImpl;
 import com.att.aro.core.bestpractice.impl.SpriteImageImpl;
 import com.att.aro.core.bestpractice.impl.TransmissionPrivateDataImpl;
-//import com.att.aro.core.bestpractice.impl.TransmissionPersonalImpl;
 import com.att.aro.core.bestpractice.impl.UnnecessaryConnectionImpl;
 import com.att.aro.core.bestpractice.impl.UnsecureSSLVersionImpl;
 import com.att.aro.core.bestpractice.impl.UsingCacheImpl;
@@ -64,6 +60,7 @@ import com.att.aro.core.bestpractice.impl.VideoRedundancyImpl;
 import com.att.aro.core.bestpractice.impl.VideoResolutionQualityImpl;
 import com.att.aro.core.bestpractice.impl.VideoSegmentPacingImpl;
 import com.att.aro.core.bestpractice.impl.VideoSegmentSizeImpl;
+import com.att.aro.core.bestpractice.impl.AudioStreamImpl;
 import com.att.aro.core.bestpractice.impl.VideoStallImpl;
 import com.att.aro.core.bestpractice.impl.VideoStartUpDelayImpl;
 import com.att.aro.core.bestpractice.impl.VideoTcpConnectionImpl;
@@ -236,11 +233,6 @@ public class AROBestPracticeConfig {
 		return new EmptyUrlImpl();
 	}
 
-	@Bean(name = "flash")
-	IBestPractice getFlash() {
-		return new FlashImpl();
-	}
-
 	@Bean(name = "spriteImage")
 	IBestPractice getSpriteImage() {
 		return new SpriteImageImpl();
@@ -325,6 +317,11 @@ public class AROBestPracticeConfig {
 	@Bean(name = "videoResolutionQuality")
 	IBestPractice getVideoResolutionQuality() {
 		return new VideoResolutionQualityImpl();
+	}
+	
+	@Bean(name = "audioStream")
+	IBestPractice getAudioStreamImpl() {
+		return new AudioStreamImpl();
 	}
 	// End of Video
 

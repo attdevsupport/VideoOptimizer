@@ -60,6 +60,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -463,17 +464,20 @@ public class PreferencesDialog extends JDialog {
 		return tracePath;
 	}
 	
+	
 	private void saveBPSelection() {
 		SettingsUtil.saveBestPractices(BPSelectionPanel.getInstance().getCheckedBP());
-		String tracePath="";
+		reloadTrace();
+	}
+
+	public void reloadTrace() {
 		if (parent instanceof MainFrame) {
-			String path = getTracePath();
-			tracePath = path != null ? path : tracePath;
-		}
-		if(tracePath != null && !tracePath.equals("")) {
-			parent.updateTracePath(new File(tracePath));
-		} else if (parent.getTracePath() != null && !"".equals(parent.getTracePath().trim())) {
-			parent.updateTracePath(new File(parent.getTracePath()));
+			String tracePath = getTracePath();
+			if (StringUtils.isNotBlank(tracePath)) {
+				parent.updateTracePath(new File(tracePath));
+			} else if (StringUtils.isBlank(tracePath) && StringUtils.isNotBlank(parent.getTracePath())) {
+				parent.updateTracePath(new File(parent.getTracePath()));
+			}
 		}
 	}
 

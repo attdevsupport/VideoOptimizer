@@ -32,7 +32,6 @@ import com.att.aro.core.videoanalysis.impl.SortSelection;
 import com.att.aro.core.videoanalysis.impl.VideoEventComparator;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
-import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs.DUPLICATE_HANDLING;
@@ -62,19 +61,16 @@ public abstract class PlotHelperAbstract {
 			for (VideoStream videoStream : videoData.getVideoStreamMap().values()) {
 				// don't count if no videos with manifest, or only one video
 				if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
-					TreeMap<String, VideoEvent> segmentEventList = (TreeMap<String, VideoEvent>) videoStream.getSegmentEventList();
+					TreeMap<String, VideoEvent> segmentEventList = (TreeMap<String, VideoEvent>) videoStream.getVideoSegmentEventList();
 					Entry<String, VideoEvent> segmentValue = segmentEventList.higherEntry("00000000:z");
 					double firstSeg = segmentValue != null ? segmentValue.getValue().getSegmentID() : 0;
+					
 					VideoEvent first = null;
 					for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
 						if (videoEvent.getSegmentID() == firstSeg) {
 							first = videoEvent;
-							break;
 						}
-					}
-
-					for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
-						if (!(videoEvent.getSegmentID() == 0 && videoStream.getManifest().isVideoTypeFamily(VideoType.DASH)) && (!chunkDownload.contains(videoEvent))) {
+						if (videoEvent.isNormalSegment() && (!chunkDownload.contains(videoEvent))) {
 
 							for (VideoEvent video : chunkDownload) {
 								if ((videoEvent.getSegmentID() != firstSeg) && video.getSegmentID() == videoEvent.getSegmentID()) {
@@ -109,21 +105,18 @@ public abstract class PlotHelperAbstract {
 		Map<VideoEvent, VideoStream> veManifestList = new HashMap<>();
 		chunkDownload = new ArrayList<>();
 		List<VideoEvent> allSegments = new ArrayList<>();
-		videoData.getStreamingVideoCompiled().getDuplicateChunks().clear();
+		streamingVideoData.getStreamingVideoCompiled().getDeleteChunkList().clear();
 		DUPLICATE_HANDLING segmentFilterChoice = videoPrefManager.getVideoUsagePreference().getDuplicateHandling();
 
-		for (VideoStream videoStream : videoData.getVideoStreamMap().values()) {
+		for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
 			// don't count if no videos with manifest, or only one video
 			if (videoStream != null && videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
-
 				for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
-					if (videoEvent != null 
-							&& !(videoEvent.getSegmentID() == 0 && videoStream.getManifest().getVideoFormat().equals(VideoFormat.MPEG4))
-							&& (!chunkDownload.contains(videoEvent))) {
+					if (!(videoEvent.getSegmentID() == 0 && videoStream.getManifest().getVideoFormat().equals(VideoFormat.MPEG4)) && (!chunkDownload.contains(videoEvent))) {
 
 						switch (segmentFilterChoice) {
 						case FIRST:
-							filteByFirst(chunkDownload, videoEvent);
+							filterByFirst(chunkDownload, videoEvent);
 							break;
 						case LAST:
 							filterByLast(chunkDownload, videoEvent);
@@ -143,21 +136,20 @@ public abstract class PlotHelperAbstract {
 		}
 
 		if (segmentFilterChoice == DUPLICATE_HANDLING.FIRST || segmentFilterChoice == DUPLICATE_HANDLING.LAST) {
-			for (VideoEvent ve : videoData.getStreamingVideoCompiled().getDuplicateChunks()) {
+			for (VideoEvent ve : streamingVideoData.getStreamingVideoCompiled().getDeleteChunkList()) {
 				veManifestList.keySet().remove(ve);
 				chunkDownload.remove(ve);
 			}
 		}
-		videoData.getStreamingVideoCompiled().setVeStreamList(veManifestList);
-		videoData.getStreamingVideoCompiled().setAllSegments(allSegments);
+		streamingVideoData.getStreamingVideoCompiled().setAllSegments(allSegments);
 
 		return chunkDownload;
 	}
 
-	private void filteByFirst(List<VideoEvent> chunkDownloadList, VideoEvent videoEvent) {
+	private void filterByFirst(List<VideoEvent> chunkDownloadList, VideoEvent videoEvent) {
 		for (VideoEvent video : chunkDownloadList) {
 			if (video.getSegmentID() == videoEvent.getSegmentID()) {
-				streamingVideoData.getStreamingVideoCompiled().getDuplicateChunks().add(videoEvent); // Adding the segments that came in LAST to the remove list
+				streamingVideoData.getStreamingVideoCompiled().getDeleteChunkList().add(videoEvent); // Adding the segments that came in LAST to the remove list
 			}
 		}
 	}
@@ -165,7 +157,7 @@ public abstract class PlotHelperAbstract {
 	private void filterByLast(List<VideoEvent> chunkDownloadList, VideoEvent videoEvent) {
 		for (VideoEvent video : chunkDownloadList) {
 			if (video.getSegmentID() == videoEvent.getSegmentID()) {
-				streamingVideoData.getStreamingVideoCompiled().getDuplicateChunks().add(video); // Adding the segments that came in FIRST to the remove list
+				streamingVideoData.getStreamingVideoCompiled().getDeleteChunkList().add(video); // Adding the segments that came in FIRST to the remove list
 			}
 		}
 	}
@@ -179,10 +171,10 @@ public abstract class PlotHelperAbstract {
 					Integer videoEventQuality = videoEvent.getQuality().isEmpty() || videoEvent.getQuality() == null || videoEvent.getQuality().matches(".*[A-Za-z].*") ? 0
 							: Integer.parseInt(videoEvent.getQuality());
 					if (videoQuality.compareTo(videoEventQuality) < 0) {
-						streamingVideoData.getStreamingVideoCompiled().getDuplicateChunks().add(video);
+						streamingVideoData.getStreamingVideoCompiled().getDeleteChunkList().add(video);
 
 					} else {
-						streamingVideoData.getStreamingVideoCompiled().getDuplicateChunks().add(videoEvent);
+						streamingVideoData.getStreamingVideoCompiled().getDeleteChunkList().add(videoEvent);
 					}
 				} catch (NumberFormatException e) {
 					StackTraceElement[] stack = e.getStackTrace();
@@ -195,66 +187,29 @@ public abstract class PlotHelperAbstract {
 		}
 	}
 
-	public List<VideoEvent> filterVideoSegmentUpdated(StreamingVideoData videoData) {
-		this.streamingVideoData = videoData;
-		List<VideoEvent> filteredSegments = new ArrayList<>();
-		filterSegmentByVideoPref(videoData);
-		for (VideoEvent ve : chunkDownload) {
-			filteredSegments.add(ve);
-		}
-		videoData.getStreamingVideoCompiled().setFilteredSegments(filteredSegments);
+	public List<VideoEvent> filterVideoSegmentUpdated(StreamingVideoData streamingVideoData) {
+		streamingVideoData.getStreamingVideoCompiled().setFilteredSegments(filterSegmentByVideoPref(streamingVideoData));
 		return chunkDownload;
 	}
 
-	public List<VideoEvent> videoEventListBySegment(StreamingVideoData videoData) {
-		this.streamingVideoData = videoData;
-		List<VideoEvent> chunksBySegment = new ArrayList<>();
-		for (VideoStream videoStream : videoData.getVideoStreamMap().values()) {
-			if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
+	public List<VideoEvent> videoEventListBySegment(StreamingVideoData streamingVideoData) {
+		this.streamingVideoData = streamingVideoData;
+		List<VideoEvent> chunksBySegmentID = streamingVideoData.getStreamingVideoCompiled().getChunksBySegmentID(); // new ArrayList<>();
+		chunksBySegmentID.clear();
+		for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
+			if (videoStream.isSelected() && !videoStream.getVideoEventsBySegment().isEmpty()) {
 				for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
-					if (!(videoEvent.getSegmentID() == 0 && videoStream.getManifest().isVideoTypeFamily(VideoType.DASH))) {
-						chunksBySegment.add(videoEvent);
+					if (videoEvent.isNormalSegment()) {
+						chunksBySegmentID.add(videoEvent);
 					}
 				}
 			}
 		}
-		for (VideoEvent ve : videoData.getStreamingVideoCompiled().getDuplicateChunks()) {
-			chunksBySegment.remove(ve);
+		for (VideoEvent ve : streamingVideoData.getStreamingVideoCompiled().getDeleteChunkList()) {
+			chunksBySegmentID.remove(ve);
 		}
 
-		Collections.sort(chunksBySegment, new VideoEventComparator(SortSelection.SEGMENT));
-		videoData.getStreamingVideoCompiled().setChunksBySegmentNumber(chunksBySegment);
-		return chunksBySegment;
-	}
-
-	public double getChunkPlayTimeDuration(VideoEvent ve) {
-		Map<VideoEvent, VideoStream> veManifestList = streamingVideoData.getStreamingVideoCompiled().getVeStreamList(); // getVideoEventManifestMap();
-		double duration = ve.getDuration();
-		if (duration == 0 && veManifestList != null) {
-			for (VideoEvent vEvent : veManifestList.keySet()) {
-				if (ve.equals(vEvent)) {
-					VideoStream videoStream = veManifestList.get(vEvent);
-					duration = videoStream.getManifest().getDuration();
-					double timescale = videoStream.getManifest().getTimeScale();
-					if (timescale != 0) {
-						duration = duration / timescale;
-					}
-					return duration;
-				}
-			}
-		}
-		return duration;
-	}
-
-	public double getChunkPlayStartTime(VideoEvent chunkPlaying) {
-		for (VideoEvent veEvent : chunkPlayTimeList.keySet()) {
-			if (veEvent.getSegmentID() == chunkPlaying.getSegmentID()) { // veEvent.equals(chunkPlaying)){
-				Double playTime = chunkPlayTimeList.get(veEvent);
-				if (playTime != null) {
-					return playTime; // return play start time
-				}
-			}
-		}
-		return -1;
+		Collections.sort(chunksBySegmentID, new VideoEventComparator(SortSelection.SEGMENT_ID));
+		return chunksBySegmentID;
 	}
 }

@@ -24,4 +24,5 @@ public interface IByteArrayLineReader {
 	String readLine() throws IOException;
 	int getIndex();
 	void setArrayIndex(int arrayIndex);
+	int getLength();
 }

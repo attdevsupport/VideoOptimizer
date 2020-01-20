@@ -59,8 +59,6 @@ public class AROCollectorSwingWorker<T, V> extends SwingWorker<T, V>{
 
 	private Hashtable<String, Object> extraParams;
 	private VideoOption videoCapture;
-//	private int delayTime;
-//	private boolean secure;
 	
 	/**
 	 *  Stop Collector
@@ -77,7 +75,7 @@ public class AROCollectorSwingWorker<T, V> extends SwingWorker<T, V>{
 						, String command
 						, String msg) {
 		this.parentUI = frmApplicationResourceOptimizer;
-		String message = ResourceBundleHelper.getMessageString("Message.stopcollector");
+		String message = (msg == null) ? ResourceBundleHelper.getMessageString("Message.stopcollector") : ResourceBundleHelper.getMessageString(msg);
 		this.progress = new AROProgressDialog(parentUI, message);
 		progress.setVisible(true);
 		this.msg = msg;
@@ -101,7 +99,6 @@ public class AROCollectorSwingWorker<T, V> extends SwingWorker<T, V>{
 		String msg = ResourceBundleHelper.getMessageString("Message.startcollectorOnDevice");
 		this.progress = new AROProgressDialog(parentUI, msg);
 		progress.setVisible(true);
-//		this.msg = msg;
 		this.actionListeners = actionListeners;
 		this.eventId = eventId;
 		this.command = command;

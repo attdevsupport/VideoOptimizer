@@ -167,9 +167,9 @@ public class CacheAnalysisImplTest extends BaseTest {
 		session01.setPackets(packets);
 		session02.setPackets(packets);
 		when(session01.getRequestResponseInfo()).thenReturn(value);
-		when(session01.isUDP()).thenReturn(false);
+		when(session01.isUdpOnly()).thenReturn(false);
 		when(session01.getPackets()).thenReturn(packets);
-		when(session02.isUDP()).thenReturn(false);
+		when(session02.isUdpOnly()).thenReturn(false);
 		when(session02.getRequestResponseInfo()).thenReturn(value);
 		when(session02.getPackets()).thenReturn(packets);
 		List<Session> sessionList = new ArrayList<Session>();
@@ -305,9 +305,9 @@ public class CacheAnalysisImplTest extends BaseTest {
 		packets.add(pktInfo01);
 		packets.add(pktInfo02);
 		when(session01.getRequestResponseInfo()).thenReturn(value);
-		when(session01.isUDP()).thenReturn(false);
+		when(session01.isUdpOnly()).thenReturn(false);
 		when(session01.getPackets()).thenReturn(packets);
-		when(session02.isUDP()).thenReturn(false);
+		when(session02.isUdpOnly()).thenReturn(false);
 		when(session02.getRequestResponseInfo()).thenReturn(value);
 		when(session02.getPackets()).thenReturn(packets);
 		List<Session> sessionList = new ArrayList<Session>();
@@ -316,8 +316,8 @@ public class CacheAnalysisImplTest extends BaseTest {
 		CacheAnalysis testResult = cacheAnalysis.analyze(sessionList);
 		assertEquals(4, testResult.getCacheExpirationResponses().size());
 		assertEquals(60, testResult.getDiagnosisResults().size());
-		assertEquals(95, testResult.getDuplicateContentBytes());
-		assertEquals(0, testResult.getDuplicateContentBytesRatio(), 0.475);
-		assertEquals(38, testResult.getDuplicateContentWithOriginals().size());
+		assertEquals(45, testResult.getDuplicateContentBytes());
+		assertEquals(0, testResult.getDuplicateContentBytesRatio(), 0.225);
+		assertEquals(18, testResult.getDuplicateContentWithOriginals().size());
 	}
 }

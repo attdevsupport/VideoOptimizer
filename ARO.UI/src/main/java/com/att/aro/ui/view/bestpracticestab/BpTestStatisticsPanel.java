@@ -44,7 +44,6 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 
 	private JLabel summaryHeaderLabel;
 	private JLabel statisticsHeaderLabel;
-	private JLabel httpsDataNotAnalyzedLabel;
 	private JLabel durationLabel;
 	private JLabel totalDataLabel;
 	private JLabel totalPayloadDataLabel;
@@ -87,7 +86,6 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
         
         durationLabel                  = new JLabel();
         energyConsumedLabel            = new JLabel();
-        httpsDataNotAnalyzedLabel      = new JLabel();
         summaryFillerHeaderLabel       = new JLabel();
         testFillerHeaderLabel          = new JLabel();
         totalDataLabel                 = new JLabel();
@@ -109,7 +107,6 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
         effectsScoreLabel         .setFont(TEXT_FONT);
         energyConsumedLabel       .setFont(TEXT_FONT);
         httpsDataAnalyzedLabel    .setFont(TEXT_FONT);
-        httpsDataNotAnalyzedLabel .setFont(TEXT_FONT);
         summaryFillerHeaderLabel  .setFont(TEXT_FONT);
         testFillerHeaderLabel     .setFont(TEXT_FONT);
         totalAppScoreLabel        .setFont(TEXT_FONT);
@@ -141,8 +138,6 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 			
 			addLabelLineName(summaryHeaderLabel        , "bestPractices.header.summary"         ,   idx ,2, weightX, insets, SUMMARY_FONT);  //
 			addLabelLineName(statisticsHeaderLabel     , "bestPractices.header.statistics"      , ++idx ,2, weightX, insets, HEADER_FONT);   //
-			                                                                                                                             //
-			addLabelLineName(httpsDataNotAnalyzedLabel , "bestPractices.HTTPSDataNotAnalyzed"   , ++idx ,2, weightX, insets, TEXT_FONT);     // HTTPS data not analyzed\:
 
 			addLabelLineName(durationLabel             , "bestPractices.duration"               , ++idx ,2, weightX, insets, TEXT_FONT);     //
 			addLabelLineName(totalDataLabel            , "bestPractices.totalDataTransfered"    , ++idx ,2, weightX, insets, TEXT_FONT);     //
@@ -168,16 +163,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 	public void refresh(AROTraceData model) {
 				
 		PacketAnalyzerResult analyzerResults = model.getAnalyzerResult();
-		
-		int httpsDataNotAnalyzed = analyzerResults.getStatistic().getTotalHTTPSByte();
-		double httpsDataNotAnalyzedKB = (double)httpsDataNotAnalyzed/1024;
-		double httpsDataNotAnalyzedPct = (double)httpsDataNotAnalyzed/analyzerResults.getStatistic().getTotalByte();
-		
-		httpsDataNotAnalyzedLabel.setText(MessageFormat.format(
-				ResourceBundleHelper.getMessageString("bestPractices.HTTPSDataNotAnalyzedValue"),
-				pctFmt.format(httpsDataNotAnalyzedPct),
-				decFormat.format(httpsDataNotAnalyzedKB)));
-		sendGAHTTPSDataNotAnalyzed(pctFmt.format(httpsDataNotAnalyzedPct), decFormat.format(httpsDataNotAnalyzedKB));
+
 		// Total Data Transferred\:
 		totalDataLabel.setText(MessageFormat.format(
 				ResourceBundleHelper.getMessageString("bestPractices.totalDataTransferedValue"),

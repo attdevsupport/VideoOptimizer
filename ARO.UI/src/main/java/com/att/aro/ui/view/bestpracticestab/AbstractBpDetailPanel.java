@@ -47,10 +47,10 @@ import com.att.aro.view.images.Images;
  *
  *
  */
-public abstract class AbstractBpDetailPanel extends TabPanelJScrollPane{
+public abstract class AbstractBpDetailPanel extends TabPanelJScrollPane {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	private static final Font TEXTFONT = new Font("TextFont", Font.PLAIN, 12);
 	private static final int TEXT_WIDTH = 550;
 
@@ -58,42 +58,42 @@ public abstract class AbstractBpDetailPanel extends TabPanelJScrollPane{
 
 	JPanel fullPanel;
 	JPanel detailPane;
-	
+
 	Insets imageInsets = new Insets(25, 10, 10, 10);
 	Insets startInsets = new Insets(25, 5, 2, 5);
 	Insets insets = new Insets(2, 5, 2, 5);
-	
+
 	BpHeaderPanel header;
-	
+
 	public AbstractBpDetailPanel(String title) {
 		super();
 		initialize(title);
-	//	add(fullPanel, BorderLayout.CENTER);
+		// add(fullPanel, BorderLayout.CENTER);
 	}
-		
+
 	public void initialize(String title) {
-		
+
 		fullPanel = new JPanel(new BorderLayout());
 		fullPanel.setOpaque(false);
-	//	setBorder(new RoundedBorder(new Insets(0, 0, 0, 0), Color.WHITE)); // bcn
-		
+		// setBorder(new RoundedBorder(new Insets(0, 0, 0, 0), Color.WHITE)); // bcn
+
 		// Create the header bar
 		header = new BpHeaderPanel(ResourceBundleHelper.getMessageString(title));
-		String desc = ResourceBundleHelper.getMessageString(title+"Description");
+		String desc = ResourceBundleHelper.getMessageString(title + "Description");
 		fullPanel.add(header, BorderLayout.NORTH);
-		
+
 		// Create the data panel
 		JPanel dataPanel = new JPanel(new BorderLayout());
 		dataPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 		dataPanel.setOpaque(false);
 		dateTraceAppDetailPanel = new DateTraceAppDetailPanel();
 		dataPanel.add(dateTraceAppDetailPanel, BorderLayout.NORTH);
-		
+
 		// Create the group overview panel
 		JPanel textPanel = new JPanel(new BorderLayout(10, 10));
 		textPanel.setOpaque(false);
 		JScrollPane scroll = new JScrollPane(createJTextArea(desc, null));
-	//	scroll.setBackground(Color.RED);	// bcn
+		// scroll.setBackground(Color.RED); // bcn
 		scroll.setBorder(BorderFactory.createEmptyBorder());
 		removeMouseWheelListeners(scroll);
 		textPanel.add(scroll, BorderLayout.CENTER);
@@ -105,7 +105,7 @@ public abstract class AbstractBpDetailPanel extends TabPanelJScrollPane{
 		detailPanel.setOpaque(true);
 
 		detailPanel = new JPanel();
-		
+
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setOpaque(false);
 		panel.add(textPanel, BorderLayout.NORTH);
@@ -114,21 +114,20 @@ public abstract class AbstractBpDetailPanel extends TabPanelJScrollPane{
 		dataPanel.add(panel);
 		fullPanel.add(dataPanel);
 	}
+
 	private JTextPane createJTextArea(String textToDisplay, final URI url) {
 		HTMLDocument doc = new HTMLDocument();
 		StyleSheet style = doc.getStyleSheet();
-		style.addRule("body { font-family: " + TEXTFONT.getFamily() + "; "
-				+ "font-size: " + TEXTFONT.getSize() + "pt; }");
+		style.addRule("body { font-family: " + TEXTFONT.getFamily() + "; " + "font-size: " + TEXTFONT.getSize() + "pt; }");
 		style.addRule("a { text-decoration: underline; font-weight:bold; }");
-		JTextPane jTextArea = new JTextPane(doc);//, 0, 0);
+		JTextPane jTextArea = new JTextPane(doc);// , 0, 0);
 		jTextArea.setEditable(false);
 		jTextArea.setEditorKit(new HTMLEditorKit());
 		jTextArea.setStyledDocument(doc);
 		jTextArea.setMargin(new Insets(0, 0, 0, 0));
 
 		if (url != null) {
-			jTextArea.setText(textToDisplay + "&nbsp;" + " <a href=\"#\">"
-					+ ResourceBundleHelper.getMessageString("bestPractices.learnMore") + "</a>");
+			jTextArea.setText(textToDisplay + "&nbsp;" + " <a href=\"#\">" + ResourceBundleHelper.getMessageString("bestPractices.learnMore") + "</a>");
 			jTextArea.addHyperlinkListener(new HyperlinkListener() {
 				@Override
 				public void hyperlinkUpdate(HyperlinkEvent e) {
@@ -137,7 +136,7 @@ public abstract class AbstractBpDetailPanel extends TabPanelJScrollPane{
 						try {
 							BrowserGenerator.openBrowser(url);
 						} catch (IOException e1) {
-//							MessageDialogFactory.showUnexpectedExceptionDialog(, e1);
+							// MessageDialogFactory.showUnexpectedExceptionDialog(, e1);
 						}
 					}
 				}
@@ -146,7 +145,7 @@ public abstract class AbstractBpDetailPanel extends TabPanelJScrollPane{
 		} else {
 			jTextArea.setText(textToDisplay);
 		}
-		
+
 		// Calculate preferred size
 		jTextArea.setSize(TEXT_WIDTH, 9999);
 		Dimension d = jTextArea.getPreferredSize();
@@ -154,16 +153,13 @@ public abstract class AbstractBpDetailPanel extends TabPanelJScrollPane{
 		jTextArea.setPreferredSize(d);
 		jTextArea.setMinimumSize(d);
 
-		
-		
 		return jTextArea;
 	}
-	
+
 	private static void removeMouseWheelListeners(JScrollPane scrollPane) {
 		for (MouseWheelListener mwl : scrollPane.getMouseWheelListeners()) {
 			scrollPane.removeMouseWheelListener(mwl);
 		}
 	}
-
 
 }

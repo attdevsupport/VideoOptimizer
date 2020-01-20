@@ -23,17 +23,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.LogManager;
+
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.SessionValues;
 
 public final class SimultnsUtil {
+	private static final Logger LOGGER = LogManager.getLogger(SimultnsUtil.class.getName());
 	TreeMap<Double, String> ipMap = new TreeMap<Double, String>();
 
 	public Map<String, ArrayList<Session>> getDistinctMap(List<Session> sessions) {
 		Map<String, ArrayList<Session>> distinctMap = new HashMap<String, ArrayList<Session>>();
 		for (Session session : sessions) {
-			if (session != null && !session.isUDP()) {
+			if (session != null && !session.isUdpOnly()) {
 				String domainName = session.getRemoteIP().toString();
 				ArrayList<Session> tempList = distinctMap.get(domainName);
 				if (tempList == null) {
@@ -144,6 +148,7 @@ public final class SimultnsUtil {
 	}
 
 	public List<SessionValues> createDomainsTCPSessions(Collection<Session> allTCPSessions) {
+		LOGGER.info("Test Message");
 		List<SessionValues> sessionValues = new ArrayList<SessionValues>();
 		Session lastSession = null;
 		for (Session aSession : allTCPSessions) {

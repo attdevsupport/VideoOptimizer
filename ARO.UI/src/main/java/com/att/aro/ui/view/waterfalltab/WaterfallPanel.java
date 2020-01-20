@@ -95,6 +95,7 @@ public class WaterfallPanel extends TabPanelJPanel {
 	private static final int DEFAULT_TIMELINE = 100;
 	private static final int CATEGORY_MAX_COUNT = 25;
 	private static final double ZOOM_FACTOR = 2;
+	private double startGraphRange;
 
 	private Color noneColor = new Color(0, 0, 0, 0);
 	private Color dnsLoolupColor = new Color(0, 128, 128);
@@ -371,6 +372,7 @@ public class WaterfallPanel extends TabPanelJPanel {
 	 */
 	public void setTimeRange(double low, double high) {
 		double lTime = low;
+		startGraphRange = low;
 		double hTime = high;
 		boolean zoomInEnabled = true;
 		boolean zoomOutEnabled = true;
@@ -412,9 +414,7 @@ public class WaterfallPanel extends TabPanelJPanel {
 		this.data = aModel;
 		this.popup.refresh(null, 0);
 		this.popup.setVisible(false);
-		
-		double range = DEFAULT_TIMELINE;
-		
+				
 		// Create sorted list of request/response pairs
 		categoryList = new ArrayList<WaterfallCategory>();
 		
@@ -423,11 +423,10 @@ public class WaterfallPanel extends TabPanelJPanel {
 			
 			// add 20% to make sure labels close to the right edge of the screen are visible
 			this.traceDuration *= 1.2; 
-			range = Math.min(this.traceDuration, DEFAULT_TIMELINE);
 			
 			for (Session tcpSession : aModel.getAnalyzerResult().getSessionlist()) {
 				Session thisSession = tcpSession;
-				if(!tcpSession.isUDP()){
+				if(!tcpSession.isUdpOnly()){
 					for (HttpRequestResponseInfo reqResInfo : tcpSession.getRequestResponseInfo()) {
 						if(reqResInfo.getDirection() == HttpDirection.REQUEST && reqResInfo.getWaterfallInfos() != null){
 							categoryList.add(new WaterfallCategory(reqResInfo,thisSession));							
@@ -448,9 +447,7 @@ public class WaterfallPanel extends TabPanelJPanel {
 		JScrollBar hScrollBar = getHorizontalScroll();
 		hScrollBar.setMaximum((int) Math.ceil(this.traceDuration));
 		
-		// Set the visible time range
-		setTimeRange(0, range);
-				
+		
 		CategoryAxis cAxis = getCategoryAxis();
 		cAxis.clearCategoryLabelToolTips();
 		DefaultCategoryDataset underlying = new DefaultCategoryDataset();
@@ -491,6 +488,8 @@ public class WaterfallPanel extends TabPanelJPanel {
 		this.dataset = new SlidingCategoryDataset(underlying, 0, CATEGORY_MAX_COUNT);
 		plot.setDataset(this.dataset);
 
+		// Set the visible time range
+		setTimeRange(startGraphRange, startGraphRange+100);
 		// Place proper colors on renderer for waterfall states
 		final CategoryItemRenderer renderer = plot.getRenderer();
 		for (Object obj : underlying.getRowKeys()) {
@@ -686,5 +685,4 @@ public class WaterfallPanel extends TabPanelJPanel {
 		}
 		return formattedString;
 	}
-
 }

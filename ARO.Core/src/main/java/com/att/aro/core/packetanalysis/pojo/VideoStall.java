@@ -15,63 +15,63 @@
 */
 package com.att.aro.core.packetanalysis.pojo;
 
+import javax.annotation.Nonnull;
+
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
+import lombok.Data;
+
+@Data
 public class VideoStall {
 	private double duration;
-	private double stallStartTimeStamp;
-	private double stallEndTimeStamp;
-	private VideoEvent segmentTryingToPlay;
-	private String stallState;
-	
+	private double stallStartTimestamp;
+	private double stallEndTimestamp;
+
+	private VideoEvent videoEvent;
+	@Nonnull
+	private String stallState = "";
+
 	@Override
 	public String toString() {
-		return new String("start:"+stallStartTimeStamp+", end: "+stallEndTimeStamp);
-	}
-	
-	public VideoStall(double stallStartTimeStamp){
-		this.stallStartTimeStamp = stallStartTimeStamp;
-	//	this.stallEndTimeStamp = duration + stallStartTimeStamp;
-	}
-
-	public String getStallState() {
-		return stallState;
+		StringBuilder strblr = new StringBuilder(83);
+		strblr.append("Segment:")
+			.append(videoEvent != null ? videoEvent.getSegmentID() : "")
+			.append(", stallState:").append(stallState)
+			.append(", duration:").append(String.format("%.3f", duration))
+			.append(", start:").append(String.format("%.3f", stallStartTimestamp))
+			.append(", end :").append(String.format("%.3f :", stallEndTimestamp));
+		return strblr.toString();
 	}
 
-	public void setStallState(String stallState) {
-		this.stallState = stallState;
+	public VideoStall(double stallStartTimestamp) {
+		setStallStartTimestamp(stallStartTimestamp);
 	}
 
-	public double getDuration() {
-		return duration;
+	public VideoStall(VideoEvent videoEvent) {
+		setVideoEvent(videoEvent);
+		setStallStartTimestamp(videoEvent.getPlayTime() - videoEvent.getStallTime());
+		setStallEndTimestamp(videoEvent.getPlayTime());
+		setDuration(stallEndTimestamp - stallStartTimestamp);
 	}
 
-	public double getStallStartTimeStamp() {
-		return stallStartTimeStamp;
+	public void setStallEndTimestamp(double stallEndTimestamp) {
+		this.stallEndTimestamp = stallEndTimestamp;
+		setDuration(this.stallEndTimestamp - this.stallStartTimestamp);
 	}
 
-	public double getStallEndTimeStamp() {
-		return stallEndTimeStamp;
-	}
-	
-	public void setStallEndTimeStamp(double stallEndTimeStamp){
-		this.stallEndTimeStamp = stallEndTimeStamp;
-		duration = this.stallEndTimeStamp - this.stallStartTimeStamp;
-	}
-
-	public void setSegmentTryingToPlay(VideoEvent chunkPlaying) {
-		this.segmentTryingToPlay = chunkPlaying;
+	public void setSegmentTryingToPlay(VideoEvent videoEvent) {
+		setVideoEvent(videoEvent);
 	}
 
 	public VideoEvent getSegmentTryingToPlay() {
-		return segmentTryingToPlay;
+		return getVideoEvent();
 	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {
 			return true;
-}
+		}
 		if (obj == null || obj.getClass() != this.getClass()) {
 			return false;
 		}
@@ -79,15 +79,14 @@ public class VideoStall {
 		if (Double.doubleToLongBits(other.getDuration()) != Double.doubleToLongBits(duration)) {
 			return false;
 		}
-		if (Double.doubleToLongBits(other.getStallEndTimeStamp()) != Double.doubleToLongBits(stallEndTimeStamp)
-				|| Double.doubleToLongBits(other.getStallStartTimeStamp()) != Double
-						.doubleToLongBits(stallStartTimeStamp)) {
+		if (Double.doubleToLongBits(other.getStallEndTimestamp()) != Double.doubleToLongBits(stallEndTimestamp)
+				|| Double.doubleToLongBits(other.getStallEndTimestamp()) != Double.doubleToLongBits(stallStartTimestamp)) {
 			return false;
 		}
 		if (!other.getStallState().equals(stallState)) {
 			return false;
 		}
-		if (!other.getSegmentTryingToPlay().equals(segmentTryingToPlay)) {
+		if (!other.getSegmentTryingToPlay().equals(videoEvent)) {
 			return false;
 		}
 		return true;
@@ -100,12 +99,12 @@ public class VideoStall {
 		long temp;
 		temp = Double.doubleToLongBits(duration);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
-		temp = Double.doubleToLongBits(stallEndTimeStamp);
+		temp = Double.doubleToLongBits(stallEndTimestamp);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
-		temp = Double.doubleToLongBits(stallStartTimeStamp);
+		temp = Double.doubleToLongBits(stallStartTimestamp);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		result = prime * result + stallState.hashCode();
-		result = prime * result + segmentTryingToPlay.hashCode();
+		result = prime * result + videoEvent.hashCode();
 		return result;
 	}
 }

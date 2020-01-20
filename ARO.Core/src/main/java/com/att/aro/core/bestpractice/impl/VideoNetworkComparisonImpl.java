@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import javax.annotation.Nonnull;
-
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -32,13 +30,12 @@ import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.VideoNetworkComparisonResult;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
-import com.att.aro.core.videoanalysis.pojo.AROManifest;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 /**
  * <pre>
@@ -93,11 +90,7 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 	@Value("${videoManifest.invalid}")
 	private String invalidManifestsFound;
 	
-	@Nonnull
-	private SortedMap<Double, AROManifest> manifestCollection = new TreeMap<>();
-	
-	@Nonnull
-	VideoUsage videoUsage;
+	private SortedMap<Double, VideoStream> videoStreamCollection = new TreeMap<>();
 
 	private int selectedCount;
 	private int invalidCount;
@@ -112,20 +105,17 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 		VideoNetworkComparisonResult result = new VideoNetworkComparisonResult();
 		init(result);
 
-		videoUsage = tracedata.getVideoUsage();
+		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
-		if (videoUsage != null) {
-			manifestCollection = videoUsage.getAroManifestMap();
-		}
+			selectedCount = streamingVideoData.getSelectedManifestCount();
+			invalidCount = streamingVideoData.getInvalidManifestCount();
 
-		if (MapUtils.isNotEmpty(manifestCollection)) {
-			selectedCount = videoUsage.getSelectedManifestCount();
-			invalidCount = videoUsage.getInvalidManifestCount();
-
-			List<VideoEvent> filteredVideoSegment = filterVideoSegment(videoUsage);
+			List<VideoEvent> filteredVideoSegment = filterVideoSegment(streamingVideoData);
 
 			if (selectedCount == 0) {
-				if (invalidCount == manifestCollection.size()) {
+				if (invalidCount == videoStreamCollection.size()) {
 					result.setResultText(invalidManifestsFound);
 				} else if (invalidCount > 0) {
 					result.setResultText(noManifestsSelectedMixed);

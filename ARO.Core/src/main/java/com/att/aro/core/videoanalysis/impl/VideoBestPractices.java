@@ -17,19 +17,19 @@ import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
 import com.att.aro.core.bestpractice.pojo.VideoNetworkComparisonResult;
 import com.att.aro.core.bestpractice.pojo.VideoRedundancyResult;
 import com.att.aro.core.bestpractice.pojo.VideoResolutionQualityResult;
+import com.att.aro.core.bestpractice.pojo.AudioStreamResult;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.VideoTcpConnectionResult;
 import com.att.aro.core.bestpractice.pojo.VideoVariableBitrateResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.util.GoogleAnalyticsUtil;
+import com.att.aro.core.util.GoogleAnalyticsUtil;	
 
 public class VideoBestPractices implements IVideoBestPractices {
 	
 	@Autowired
 	private IAROService aroService;
-	private VideoResolutionQualityResult videoResolutionQualityResult;
 
 	public AROTraceData analyze(AROTraceData traceDataresult) {
 		PacketAnalyzerResult result = null;
@@ -51,6 +51,8 @@ public class VideoBestPractices implements IVideoBestPractices {
 		VideoRedundancyResult videoRedundancyResult = null;
 		VideoConcurrentSessionResult videoConcurrentSessionResult = null;
 		VideoVariableBitrateResult videoVariableBitrateResult = null;
+		VideoResolutionQualityResult videoResolutionQualityResult = null;
+		AudioStreamResult videoSeparateAudioResult = null;
 		
 		List<BestPracticeType> requests = BestPracticeType.getByCategory(Category.VIDEO);
 		List<AbstractBestPracticeResult> bpResults = traceDataresult.getBestPracticeResults();
@@ -93,6 +95,9 @@ public class VideoBestPractices implements IVideoBestPractices {
 				case VIDEO_RESOLUTION_QUALITY:
 					videoResolutionQualityResult = (VideoResolutionQualityResult)videoBPResult;
 					break;
+				case AUDIO_STREAM:
+					videoSeparateAudioResult = (AudioStreamResult)videoBPResult;
+					break;
 				default:
 					break;
 			}
@@ -124,6 +129,8 @@ public class VideoBestPractices implements IVideoBestPractices {
 				bpResults.set(bpResults.indexOf(bestPractice), videoVariableBitrateResult);
 			}else if(bestPractice instanceof VideoResolutionQualityResult){
 				bpResults.set(bpResults.indexOf(bestPractice), videoResolutionQualityResult);
+			}else if(bestPractice instanceof AudioStreamResult){
+				bpResults.set(bpResults.indexOf(bestPractice), videoSeparateAudioResult);
 			}
 		}
 		

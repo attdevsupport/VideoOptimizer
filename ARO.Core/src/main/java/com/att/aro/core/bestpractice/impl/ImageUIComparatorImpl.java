@@ -105,19 +105,19 @@ public class ImageUIComparatorImpl implements IBestPractice {
 		tracedataResult = tracedata;
 		String tracePath = tracedata.getTraceresult().getTraceDirectory() + System.getProperty("file.separator");
 		imageFolderPath = tracePath + "Image" + System.getProperty("file.separator");
-		
+		originalImageDimensionMap.clear();
+
+		uiComparatorFolderPath = tracePath + "UIComparator" + System.getProperty("file.separator");
+		File uiComparatorFolder = new File(uiComparatorFolderPath);
+		String windowsCompFolderPath = tracePath + "ARO" + System.getProperty("file.separator") + "UIComparator"
+				+ System.getProperty("file.separator");
+		if (new File(windowsCompFolderPath).exists()) {
+			moveUIXmlFolder(new File(windowsCompFolderPath), uiComparatorFolder,
+					tracePath + "ARO" + System.getProperty("file.separator"));
+		}
+
 		if (Util.isFilesforAnalysisAvailable(new File(imageFolderPath))) {
 			
-			originalImageDimensionMap.clear();
-			uiComparatorFolderPath = tracePath + "UIComparator" + System.getProperty("file.separator");
-
-			File uiComparatorFolder = new File(uiComparatorFolderPath);
-			String windowsCompFolderPath = tracePath + "ARO" + System.getProperty("file.separator") + "UIComparator"
-					+ System.getProperty("file.separator");
-			if (new File(windowsCompFolderPath).exists()) {
-				moveUIXmlFolder(new File(windowsCompFolderPath), uiComparatorFolder,
-						tracePath + "ARO" + System.getProperty("file.separator"));
-			}
 			entrylist = new ArrayList<ImageMdataEntry>();
 			if (new File(imageFolderPath).exists()) {
 				if (uiComparatorFolder.exists() && uiComparatorFolder.isDirectory()) {

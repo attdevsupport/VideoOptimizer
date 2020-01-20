@@ -100,11 +100,11 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 		LOG.info("subscribed");
 		setVisible(true);
 		collector.addVideoImageSubscriber(this);
-
 	}
 	
 	public void setVideoOption(VideoOption videoOption) {
 		this.videoOption = videoOption;
+		onStart();
 	}
 
 	private JPanel dashBoardPane() {
@@ -145,22 +145,31 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 				getRootPane().setDefaultButton(stopButton);
 			}
 		}
-
+		
 		return dashBoardPane;
 	}
 
+	/**
+	 * forwards user action START command to theView
+	 */
+	void onStart() {
+		if (this.collector.getType().equals(DataCollectorType.IOS) && VideoOption.HDEF.equals(videoOption)) {
+			MessageDialogFactory.showMessageDialog(null, ResourceBundleHelper.getMessageString("Message.start.screenrecording"), "Start Collection",
+					JOptionPane.INFORMATION_MESSAGE);
+		}
+	}
+	
 	/**
 	 * forwards user action STOP command to theView
 	 */
 	void onStop() {
 		setVisible(false);
-		if (this.collector.getType().equals(DataCollectorType.IOS) &&VideoOption.HDEF.equals(videoOption)) {			
-			MessageDialogFactory.showMessageDialog(null,
-					ResourceBundleHelper.getMessageString("Message.stop.screenrecording"), "Stop Collection",
-					JOptionPane.INFORMATION_MESSAGE);
+		if (this.collector.getType().equals(DataCollectorType.IOS) && VideoOption.HDEF.equals(videoOption)) {
+			MessageDialogFactory.showMessageDialog(null, ResourceBundleHelper.getMessageString("Message.stop.screenrecording"), "Stop Collection", JOptionPane.INFORMATION_MESSAGE);
 		}
 		theView.stopCollector();
 	}
+
 
 	/**
 	 * Used to fit image to panel

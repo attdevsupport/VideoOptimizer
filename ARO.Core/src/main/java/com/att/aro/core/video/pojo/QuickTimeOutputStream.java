@@ -741,7 +741,6 @@ public class QuickTimeOutputStream {
 		ftypAtom.finish();
 	}
 
-	@SuppressWarnings("checkstyle:missingswitchdefault")
 	private void writeEpilog() throws IOException {
 		Date modificationTime = new Date();
 		int duration = 0;

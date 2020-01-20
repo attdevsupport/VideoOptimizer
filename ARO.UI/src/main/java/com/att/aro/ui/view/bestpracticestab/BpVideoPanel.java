@@ -50,6 +50,7 @@ public class BpVideoPanel extends BpDetail {
 		addPanel(row++, new BpDetailItem("videoConcurrentSession" , BestPracticeType.VIDEO_CONCURRENT_SESSION, new BPVideoConcurrentSessionTablePanel()));
 		addPanel(row++, new BpDetailItem("videoVariableBitrate"   , BestPracticeType.VIDEO_VARIABLE_BITRATE));
 		addPanel(row++, new BpDetailItem("videoResolutionQuality" , BestPracticeType.VIDEO_RESOLUTION_QUALITY));
+		addPanel(row++, new BpDetailItem("audioStream"            , BestPracticeType.AUDIO_STREAM));
 		
 		fullPanel.add(dataPanel, BorderLayout.CENTER);
 		fullPanel.add(detailPanel, BorderLayout.SOUTH);

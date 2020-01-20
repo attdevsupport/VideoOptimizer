@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 AT&T
+ *  Copyright 2019 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,33 @@
 */
 package com.att.aro.core.packetanalysis.pojo;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.TreeMap;
 
-import com.att.aro.core.securedpacketreader.pojo.BidirDataChunk;
-import com.att.aro.core.securedpacketreader.pojo.MatchedRecord;
-import com.att.aro.core.securedpacketreader.pojo.StorageRange;
+import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.util.Util;
+
+import lombok.Data;
 
 /**
  * Session contains all of the packets from the session. 
  * The purpose is for analysis and modeling of session data.
  * Date: April 24, 2014
  */
+@Data 
 public class Session implements Serializable, Comparable<Session> {
 
 	private static final long serialVersionUID = 1L;
 
-	public static final int COMPRESS_DEFLATE = 1;
-	public static final int COMPRESS_NONE = 0;
 	/** plain text, no https */
 	public static final int HTTPS_MODE_NONE = 0;
 	/** https, no compression */
@@ -51,20 +52,26 @@ public class Session implements Serializable, Comparable<Session> {
 	public static final int ALERT_LEVEL_FATAL = 2;
 	public static final int ALERT_CLOSE_NOTIFY = 0;
 
-	/** ssl */
-	private List<BidirDataChunk> bdcRaw = new ArrayList<BidirDataChunk>();
-	private List<MatchedRecord> mrList =  new ArrayList<MatchedRecord>();
-	private List<StorageRange> dec2encUL = new ArrayList<StorageRange>();
-	private List<StorageRange> dec2encDL = new ArrayList<StorageRange>();
-	private double tsTLSHandshakeBegin = -1;
-	private double tsTLSHandshakeEnd = -1;
+	private int localPort;
+	private int remotePort;
+	private boolean decrypted;
+	private long baseUplinkSequenceNumber = 0;
+	private long baseDownlinkSequenceNumber = 0;
 	
-	
-	private InetAddress remoteIP;
+	private String sessionKey;
 	private String remoteHostName;
+	
+	private InetAddress localIP;
+	private InetAddress remoteIP;
+	
+	
 	private PacketInfo dnsRequestPacket;
 	private PacketInfo dnsResponsePacket;
 	private PacketInfo lastSslHandshakePacket;
+	
+	private boolean iOSSecureSession;
+	
+	private boolean dataInaccessible = false;
 
 	/**
 	 * Domain name is the initial host name requested that initiated a TCP
@@ -83,14 +90,11 @@ public class Session implements Serializable, Comparable<Session> {
 	 * The number of bytes transferred during the session.
 	 */
 	private long bytesTransferred;
-
-	private int remotePort;
-	private int localPort;
-
+	
 	/**
 	 * Indicates whether SSL packets were detected in this session
 	 */
-	private boolean ssl;
+	private boolean ssl = false;
 
 	/**
 	 * Indicates whether the session is UDP only or not.<br>
@@ -107,6 +111,17 @@ public class Session implements Serializable, Comparable<Session> {
 	 * A List of PacketInfo objects containing the packet data.
 	 */
 	private List<PacketInfo> udpPackets = new ArrayList<PacketInfo>();
+	
+	
+	/**
+	 * List of Upload Packets ordered by Sequence Numbers for TCP Session.
+	 */
+	private TreeMap<Long, PacketInfo> uplinkPackets = new TreeMap<>();
+	
+	/**
+	 * List of Download Packets ordered by Sequence Numbers for TCP Session.
+	 */
+	private TreeMap<Long, PacketInfo> downlinkPackets = new TreeMap<>();
 
 	/**
 	 * A Set of strings containing the application names.
@@ -145,27 +160,6 @@ public class Session implements Serializable, Comparable<Session> {
 	 * downlink packet data.
 	 */
 	private SortedMap<Integer, PacketInfo> packetOffsetsDl;
-
-	/**
-	 * An ArrayList of ints, the packet index Note: stored in conjunction with
-	 * session.getPackets().add(packet), but not used.
-	 */
-//	private List<Integer> pktIndex = new ArrayList<Integer>();
-
-	/**
-	 * A Reassembler object, used to reassemble a session
-	 */
-	private Reassembler pStorageBothRAW = new Reassembler();
-
-	/**
-	 * A List of packet upload ranges
-	 */
-	private List<PacketRangeInStorage> pktRangesUl;
-
-	/**
-	 * A List of packet download ranges
-	 */
-	private List<PacketRangeInStorage> pktRangesDl;
 
 	/**
 	 * app-layer-protocol<br>
@@ -209,16 +203,6 @@ public class Session implements Serializable, Comparable<Session> {
 	 */
 	private ByteArrayOutputStream pStorageBothDCPT = new ByteArrayOutputStream();
 	
-	private boolean decrypted;
-
-	public boolean isDecrypted() {
-		return decrypted;
-	}
-
-	public void setDecrypted(boolean decrypted) {
-		this.decrypted = decrypted;
-	}
-
 	/**
 	 * Initializes an instance of the TCPSession class, using the specified
 	 * remote IP, remote port, and local port.
@@ -232,10 +216,16 @@ public class Session implements Serializable, Comparable<Session> {
 	 * @param localPort
 	 *            The local port.
 	 */
-	public Session(InetAddress remoteIP, int remotePort, int localPort) {
+	public Session(InetAddress localIP, InetAddress remoteIP, int remotePort, int localPort, String sessionKey) {
+		
+		this.localIP = localIP;
+		this.localPort = localPort;
+		
 		this.remoteIP = remoteIP;
 		this.remotePort = remotePort;
-		this.localPort = localPort;
+		
+		this.sessionKey = sessionKey;
+		
 	}
 
 	/**
@@ -275,114 +265,6 @@ public class Session implements Serializable, Comparable<Session> {
 	}
 
 	/**
-	 * Returns the set of application names contained in the TCP session.
-	 * 
-	 * @return A Set of strings containing the application names.
-	 */
-	public Set<String> getAppNames() {
-		return appNames;
-	}
-
-	/**
-	 * Returns the remote IP address.
-	 * 
-	 * @return The remote IP.
-	 */
-	public InetAddress getRemoteIP() {
-		return remoteIP;
-	}
-
-	/**
-	 * Returns the remote port.
-	 * 
-	 * @return The remote port.
-	 */
-	public int getRemotePort() {
-		return remotePort;
-	}
-
-	/**
-	 * Returns the local port.
-	 * 
-	 * @return The local port.
-	 */
-	public int getLocalPort() {
-		return localPort;
-	}
-
-	/**
-	 * Indicates whether SSL packets were detected in this session
-	 * 
-	 * @return the ssl
-	 */
-	public boolean isSsl() {
-		return ssl;
-	}
-
-	/**
-	 * Returns the name of the remote host.
-	 * 
-	 * @return The remote host name.
-	 */
-	public String getRemoteHostName() {
-		return remoteHostName;
-	}
-
-	/**
-	 * Returns The dns Request Packet
-	 * 
-	 * @return the dnsRequestPacket
-	 */
-	public PacketInfo getDnsRequestPacket() {
-		return dnsRequestPacket;
-	}
-
-	/**
-	 * Returns The dns Response Packet
-	 * 
-	 * @return the dnsResponsePacket
-	 */
-	public PacketInfo getDnsResponsePacket() {
-		return dnsResponsePacket;
-	}
-
-	/**
-	 * Returns the last SSL handshake packet
-	 * 
-	 * @return the lastSslHandshakePacket
-	 */
-	public PacketInfo getLastSslHandshakePacket() {
-		return lastSslHandshakePacket;
-	}
-
-	/**
-	 * Returns the name of the TCP domain.
-	 * 
-	 * @return The TCP domain name.
-	 */
-	public String getDomainName() {
-		return domainName;
-	}
-
-	/**
-	 * Returns a count of the number of files downloaded during the TCP session.
-	 * 
-	 * @return The file download count.
-	 */
-	public int getFileDownloadCount() {
-		return fileDownloadCount;
-	}
-
-	/**
-	 * Returns the number of bytes transferred during the session.
-	 * 
-	 * @return The total number of bytes transferred.
-	 */
-	public long getBytesTransferred() {
-		return bytesTransferred;
-	}
-
-	/**
 	 * Returns all of the  TCP & UDP packets in the session.
 	 * 
 	 * @return A List of PacketInfo objects containing the packet data.
@@ -396,33 +278,6 @@ public class Session implements Serializable, Comparable<Session> {
 			allPackets.addAll(udpPackets);
 		}
 		return allPackets;
-	}
-
-	/**
-	 * Returns all of the packets in the TCP session.
-	 * 
-	 * @return A List of PacketInfo objects containing the packet data.
-	 */
-	public List<PacketInfo> getPackets() {
-		return packets;
-	}
-
-	/**
-	 * Returns all the UDP packets
-	 * 
-	 * @return A List of PacketInfo objects containing the packet data.
-	 */
-	public List<PacketInfo> getUDPPackets() {
-		return udpPackets;
-	}
-
-	/**
-	 * Returns true if session is UDP otherwise false
-	 * 
-	 * @return true if session is UDP otherwise false
-	 */
-	public boolean isUDP() {
-		return udpOnly;
 	}
 
 	/**
@@ -472,565 +327,6 @@ public class Session implements Serializable, Comparable<Session> {
 	public double getUDPSessionEndTime() {
 		return udpPackets.get(udpPackets.size() - 1).getTimeStamp();
 	}
-
-	/**
-	 * Return the request/response information for all of the packets.
-	 * 
-	 * @return A List of HTTPRequestResponseInfo objects containing the
-	 *         information.
-	 */
-	public List<HttpRequestResponseInfo> getRequestResponseInfo() {
-		return requestResponseInfo;
-	}
-
-	/**
-	 * Return the uplink storage.
-	 * 
-	 * @return An array of bytes containing the uplink storage.
-	 */
-	public byte[] getStorageUl() {
-		return storageUl;
-	}
-
-	/**
-	 * Return the extended uplink storage.
-	 * 
-	 * @return An array of bytes containing the extended uplink storage.
-	 */
-	public byte[] getStorageUlEx() {
-		return storageUlext;
-	}
-
-	/**
-	 * Return the extended downlink storage.
-	 * 
-	 * @return An array of bytes containing the extended downlink storage.
-	 */
-	public byte[] getStorageDlEx() {
-		return storageDlext;
-	}
-
-	/**
-	 * Return the downlink storage.
-	 * 
-	 * @return An array of bytes containing the downlink storage.
-	 */
-	public byte[] getStorageDl() {
-		return storageDl;
-	}
-
-	/**
-	 * Returns a sorted Map of offsets and packet data for each uplink packet in
-	 * the storage array.
-	 * 
-	 * @return A Map of offsets and corresponding PacketInfo objects that
-	 *         contain the uplink packet data.
-	 */
-	public SortedMap<Integer, PacketInfo> getPacketOffsetsUl() {
-		return packetOffsetsUl;
-	}
-
-	/**
-	 * Returns a sorted Map of offsets and packet data for each downlink packet
-	 * in the storage array.
-	 * 
-	 * @return A Map of offsets and corresponding PacketInfo objects that
-	 *         contain the downlink packet data.
-	 */
-	public SortedMap<Integer, PacketInfo> getPacketOffsetsDl() {
-		return packetOffsetsDl;
-	}
-
-	/**
-	 * Returns information about the session termination if one exists in the
-	 * trace.
-	 * 
-	 * @return A TCPSession.Termination object containing the information, or
-	 *         null, if there was no session termination in the trace.
-	 */
-	public Termination getSessionTermination() {
-		return sessionTermination;
-	}
-
-	/**
-	 * Set A dns Request Packet
-	 * 
-	 * @param dnsRequestPacket - A dns Request Packet
-	 */
-	public void setDnsRequestPacket(PacketInfo dnsRequestPacket) {
-		this.dnsRequestPacket = dnsRequestPacket;
-	}
-
-	/**
-	 * A dns Response Packet
-	 * 
-	 * @param dnsResponsePacket - A dns Response Packet
-	 */
-	public void setDnsResponsePacket(PacketInfo dnsResponsePacket) {
-		this.dnsResponsePacket = dnsResponsePacket;
-	}
-
-	/**
-	 * Returns true if session is UDP otherwise false
-	 * 
-	 * @return true if session is UDP otherwise false
-	 */
-	public boolean isUdpOnly() {
-		return udpOnly;
-	}
-
-	/**
-	 * Set true to indicate session is UDP only
-	 * 
-	 * @param udpOnly
-	 *            - true to indicate session is UDP only
-	 */
-	public void setUdpOnly(boolean udpOnly) {
-		this.udpOnly = udpOnly;
-	}
-
-	/**
-	 * Set a List of PacketInfo objects containing the packet data.
-	 * 
-	 * @param udpPackets
-	 *            - List of PacketInfo objects containing the packet data.
-	 */
-	public void setUdpPackets(List<PacketInfo> udpPackets) {
-		this.udpPackets = udpPackets;
-	}
-
-	public double getTsTLSHandshakeBegin() {
-		return tsTLSHandshakeBegin;
-	}
-
-	public void setTsTLSHandshakeBegin(double tsTLSHandshakeBegin) {
-		this.tsTLSHandshakeBegin = tsTLSHandshakeBegin;
-	}
-
-	public double getTsTLSHandshakeEnd() {
-		return tsTLSHandshakeEnd;
-	}
-
-	public void setTsTLSHandshakeEnd(double tsTLSHandshakeEnd) {
-		this.tsTLSHandshakeEnd = tsTLSHandshakeEnd;
-	}
-
-	public List<StorageRange> getDec2encUL() {
-		return dec2encUL;
-	}
-
-	public void setDec2encUL(List<StorageRange> dec2encUL) {
-		this.dec2encUL = dec2encUL;
-	}
-
-	public List<StorageRange> getDec2encDL() {
-		return dec2encDL;
-	}
-
-	public void setDec2encDL(List<StorageRange> dec2encDL) {
-		this.dec2encDL = dec2encDL;
-	}
-
-	public List<MatchedRecord> getMrList() {
-		return mrList;
-	}
-
-	public void setMrList(List<MatchedRecord> mrList) {
-		this.mrList = mrList;
-	}
-
-	public List<BidirDataChunk> getBdcRaw() {
-		return bdcRaw;
-	}
-
-	public void setBdcRaw(List<BidirDataChunk> bdcRaw) {
-		this.bdcRaw = bdcRaw;
-	}
-
-
-//	/**
-//	 * Returns the packet index
-//	 * 
-//	 * @return the packet index
-//	 */
-//	public List<Integer> getPktIndex() {
-//		return pktIndex;
-//	}
-//
-//	/**
-//	 * Sets the packet index
-//	 * 
-//	 * @param pktIndex - the packet index
-//	 */
-//	public void setPktIndex(List<Integer> pktIndex) {
-//		this.pktIndex = pktIndex;
-//	}
-
-	/**
-	 * Returns a Reassembler object
-	 * 
-	 * @return - A Reassembler object, used to reassemble a session
-	 */
-	public Reassembler getpStorageBothRAW() {
-		return pStorageBothRAW;
-	}
-
-	/**
-	 * 
-	 * Used in Reassembler<br>
-	 * has been refactored out of this class
-	 * 
-	 * @param pStorageBothRAW - A Reassembler object, used to reassemble a session
-	 */
-	public void setpStorageBothRAW(Reassembler pStorageBothRAW) {
-		this.pStorageBothRAW = pStorageBothRAW;
-	}
-
-	/**
-	 * 
-	 * @return A List of packet upload ranges
-	 */
-	public List<PacketRangeInStorage> getPktRangesUl() {
-		return pktRangesUl;
-	}
-
-	public void setPktRangesUl(List<PacketRangeInStorage> pktRangesUl) {
-		this.pktRangesUl = pktRangesUl;
-	}
-
-	/**
-	 * @return A List of packet download ranges
-	 */
-	public List<PacketRangeInStorage> getPktRangesDl() {
-		return pktRangesDl;
-	}
-
-	/**
-	 * Sets A List of packet download ranges
-	 * 
-	 * @param pktRangesDl - A List of packet download ranges
-	 */
-	public void setPktRangesDl(List<PacketRangeInStorage> pktRangesDl) {
-		this.pktRangesDl = pktRangesDl;
-	}
-
-	/**
-	 * app-layer-protocol<br>
-	 * has been refactored out of this class
-	 * 
-	 * @return protocol - app-layer-protocol
-	 */
-	public int getProtocol() {
-		return protocol;
-	}
-
-	/**
-	 * app-layer-protocol<br>
-	 * has been refactored out of this class
-	 * 
-	 * @param protocol - app-layer-protocol
-	 */
-	public void setProtocol(int protocol) {
-		this.protocol = protocol;
-	}
-
-	/**
-	 * httpsMode<br>
-	 * has been refactored out of this class
-	 * 
-	 * @return httpsMode - HttpsMode
-	 */
-	public int getHttpsMode() {
-		return httpsMode;
-	}
-
-	/**
-	 * httpsMode<br>
-	 * has been refactored out of this class
-	 * 
-	 * @param httpsMode - HttpsMode
-	 */
-	public void setHttpsMode(int httpsMode) {
-		this.httpsMode = httpsMode;
-	}
-
-	/**
-	 * Return the extended uplink storage.
-	 * 
-	 * @return An array of bytes containing the extended uplink storage.
-	 */
-	public byte[] getStorageUlext() {
-		return storageUlext;
-	}
-
-	/**
-	 * Set An array of bytes containing the extended uplink storage.
-	 * 
-	 * @param storageUlext
-	 *            - An array of bytes containing the extended uplink storage.
-	 */
-	public void setStorageUlext(byte[] storageUlext) {
-		this.storageUlext = storageUlext;
-	}
-
-	/**
-	 * Return the extended downlink storage.
-	 * 
-	 * @return An array of bytes containing the extended downlink storage.
-	 */
-	public byte[] getStorageDlext() {
-		return storageDlext;
-	}
-
-	/**
-	 * Set An array of bytes containing the extended downlink storage.
-	 * 
-	 * @param storageDlext
-	 *            - An array of bytes containing the extended downlink storage.
-	 */
-	public void setStorageDlext(byte[] storageDlext) {
-		this.storageDlext = storageDlext;
-	}
-
-	/**
-	 * A ByteArrayOutputStream<br>
-	 * May be replaced by storageUl (Already defined above) after testing.<br>
-	 * unused, has been refactored out of this class
-	 * 
-	 * @return A ByteArrayOutputStream
-	 */
-	public ByteArrayOutputStream getpStorageULDCPT() {
-		return pStorageULDCPT;
-	}
-
-	/**
-	 * A ByteArrayOutputStream<br>
-	 * May be replaced by storageUl (Already defined above) after testing.<br>
-	 * unused, has been refactored out of this class
-	 * 
-	 * @param pStorageULDCPT
-	 *            - A ByteArrayOutputStream
-	 */
-	public void setpStorageULDCPT(ByteArrayOutputStream pStorageULDCPT) {
-		this.pStorageULDCPT = pStorageULDCPT;
-	}
-
-	/**
-	 * A ByteArrayOutputStream<br>
-	 * May be replaced by storageDl (Already defined above) after testing.<br>
-	 * unused, has been refactored out of this class
-	 * 
-	 * @return A ByteArrayOutputStream
-	 */
-	public ByteArrayOutputStream getpStorageDLDCPT() {
-		return pStorageDLDCPT;
-	}
-
-	/**
-	 * A ByteArrayOutputStream<br>
-	 * May be replaced by storageDl (Already defined above) after testing.<br>
-	 * unused, has been refactored out of this class
-	 * 
-	 * @param pStorageDLDCPT - A ByteArrayOutputStream
-	 */
-	public void setpStorageDLDCPT(ByteArrayOutputStream pStorageDLDCPT) {
-		this.pStorageDLDCPT = pStorageDLDCPT;
-	}
-
-	/**
-	 * A ByteArrayOutputStream<br>
-	 * unused, has been refactored out of this class
-	 * 
-	 * @return A ByteArrayOutputStream
-	 */
-	public ByteArrayOutputStream getpStorageBothDCPT() {
-		return pStorageBothDCPT;
-	}
-
-	/**
-	 * A ByteArrayOutputStream<br>
-	 * unused, has been refactored out of this class
-	 * 
-	 * @param pStorageBothDCPT
-	 *            - A ByteArrayOutputStream
-	 */
-	public void setpStorageBothDCPT(ByteArrayOutputStream pStorageBothDCPT) {
-		this.pStorageBothDCPT = pStorageBothDCPT;
-	}
-
-	/**
-	 * Sets The remote IP address.
-	 * 
-	 * @param remoteIP
-	 *            - The remote IP address.
-	 */
-	public void setRemoteIP(InetAddress remoteIP) {
-		this.remoteIP = remoteIP;
-	}
-
-	/**
-	 * The remote host domain name.
-	 * 
-	 * @param remoteHostName
-	 *            - The remote host domain name.
-	 */
-	public void setRemoteHostName(String remoteHostName) {
-		this.remoteHostName = remoteHostName;
-	}
-
-	/**
-	 * The last SSL handshake packet
-	 * 
-	 * @param lastSslHandshakePacket
-	 *            - The last SSL handshake packet
-	 */
-	public void setLastSslHandshakePacket(PacketInfo lastSslHandshakePacket) {
-		this.lastSslHandshakePacket = lastSslHandshakePacket;
-	}
-
-	/**
-	 * The domain name
-	 * 
-	 * @param domainName
-	 *            - The domain name
-	 */
-	public void setDomainName(String domainName) {
-		this.domainName = domainName;
-	}
-
-	/**
-	 * Sets A count of the number of files downloaded during the session.
-	 * 
-	 * @param fileDownloadCount
-	 *            - number of files downloaded during the session.
-	 */
-	public void setFileDownloadCount(int fileDownloadCount) {
-		this.fileDownloadCount = fileDownloadCount;
-	}
-
-	/**
-	 * The number of bytes transferred during the session.
-	 * 
-	 * @param bytesTransferred
-	 *            - number of bytes transferred during the session.
-	 */
-	public void setBytesTransferred(long bytesTransferred) {
-		this.bytesTransferred = bytesTransferred;
-	}
-
-	/**
-	 * The remote port.
-	 * 
-	 * @param remotePort
-	 *            - The remote port.
-	 */
-	public void setRemotePort(int remotePort) {
-		this.remotePort = remotePort;
-	}
-
-	/**
-	 * The local port.
-	 * 
-	 * @param localPort
-	 *            - The local port.
-	 */
-	public void setLocalPort(int localPort) {
-		this.localPort = localPort;
-	}
-
-	/**
-	 * Sets boolean to indicates whether SSL packets were detected in this
-	 * session
-	 * 
-	 * @param ssl
-	 *            true if ssl packets detected, false if not
-	 */
-	public void setSsl(boolean ssl) {
-		this.ssl = ssl;
-	}
-
-	/**
-	 * Sets the List of PacketInfo objects containing all packets in the session
-	 * 
-	 * @param packets
-	 *            - List of PacketInfo objects containing all packets in the
-	 *            session
-	 */
-	public void setPackets(List<PacketInfo> packets) {
-		this.packets = packets;
-	}
-
-	/**
-	 * Sets a Set of strings containing the application names.
-	 * 
-	 * @param appNames
-	 *            - A Set of strings containing the application names.
-	 */
-	public void setAppNames(Set<String> appNames) {
-		this.appNames = appNames;
-	}
-
-	/**
-	 * Returns information about the session termination if one exists in the
-	 * trace.
-	 * 
-	 * @param sessionTermination
-	 *            A TCPSession.Termination object containing the information, or
-	 *            null, if there was no session termination in the trace.
-	 */
-	public void setSessionTermination(Termination sessionTermination) {
-		this.sessionTermination = sessionTermination;
-	}
-
-	/**
-	 * A List of HTTPRequestResponseInfo objects containing the information.
-	 * 
-	 * @param requestResponseInfo
-	 *            - List of HTTPRequestResponseInfo objects containing the
-	 *            information.
-	 */
-	public void setRequestResponseInfo(List<HttpRequestResponseInfo> requestResponseInfo) {
-		this.requestResponseInfo = requestResponseInfo;
-	}
-
-	/**
-	 * An array of bytes containing the uplink storage.
-	 * 
-	 * @param storageUl - An array of bytes containing the uplink storage.
-	 */
-	public void setStorageUl(byte[] storageUl) {
-		this.storageUl = storageUl;
-	}
-
-	/**
-	 * A Map of offsets and corresponding PacketInfo objects that contain the
-	 * uplink packet data.
-	 * 
-	 * @param packetOffsetsUl - A Map of offsets and corresponding PacketInfo objects that contain the uplink packet data.
-	 */
-	public void setPacketOffsetsUl(SortedMap<Integer, PacketInfo> packetOffsetsUl) {
-		this.packetOffsetsUl = packetOffsetsUl;
-	}
-
-	/**
-	 * An array of bytes containing the downlink storage.
-	 * 
-	 * @param storageDl - An array of bytes containing the downlink storage.
-	 */
-	public void setStorageDl(byte[] storageDl) {
-		this.storageDl = storageDl;
-	}
-
-	/**
-	 * A Map of offsets and corresponding PacketInfo objects that contain the
-	 * downlink packet data.
-	 * 
-	 * @param packetOffsetsDl
-	 *            - Map of offsets and corresponding PacketInfo objects
-	 */
-	public void setPacketOffsetsDl(SortedMap<Integer, PacketInfo> packetOffsetsDl) {
-		this.packetOffsetsDl = packetOffsetsDl;
-	}
 	
 	/**
 	 * Returns the consolidated string for uplink and downlink storage.
@@ -1038,25 +334,43 @@ public class Session implements Serializable, Comparable<Session> {
 	 * @return The result string.
 	 */
 	public String getDataText() {
-		// trim the buffer size, most of the contents are not available for use string presented
-		// 1000 according to the average packet size 1500
-		StringBuffer buffer;
-		int totalBufferLength = storageUl.length + storageDl.length;
-		if(totalBufferLength > 20000) {
-			buffer = new StringBuffer(20050);
-			buffer.append("\n--UPLINK--\n");
-			buffer.append(Util.byteArrayToString(Arrays.copyOf(storageUl, 10000)) + "...");
-			buffer.append('\n');
-			buffer.append("\n--DOWNLINK--\n");
-			buffer.append(Util.byteArrayToString(Arrays.copyOf(storageDl, 10000)) + "...");
-		} else {
-			buffer = new StringBuffer(storageUl.length + storageDl.length);
-			buffer.append("\n--UPLINK--\n");
-			buffer.append(Util.byteArrayToString(storageUl));
-			buffer.append("\n--DOWNLINK--\n");
-			buffer.append(Util.byteArrayToString(storageDl));
+		
+		// Limit Content Viewer to 20000 Bytes to prevent the system from hanging
+		
+		ByteArrayOutputStream uplinkData = new ByteArrayOutputStream();
+		BufferedOutputStream uplinkWrapper = new BufferedOutputStream(uplinkData);
+		
+		ByteArrayOutputStream downlinkData = new ByteArrayOutputStream();
+		BufferedOutputStream downlinkWrapper = new BufferedOutputStream(downlinkData);
+		
+		try {
+			uplinkWrapper.write("\n--UPLINK--\n".getBytes());
+			downlinkWrapper.write("\n--DOWNLINK--\n".getBytes());
+			int totalBytesWritten = 0;
+			for (HttpRequestResponseInfo rrInfo : getRequestResponseInfo()) {
+				if (totalBytesWritten < 20000) {
+					totalBytesWritten+=rrInfo.getContentLength();
+					if (rrInfo.getDirection().equals(HttpDirection.REQUEST)) {
+						uplinkWrapper.write(rrInfo.getHeaderData().toByteArray());
+						uplinkWrapper.write(rrInfo.getPayloadData().toByteArray());
+	 				} else {
+	 					downlinkWrapper.write(rrInfo.getHeaderData().toByteArray());
+	 					downlinkWrapper.write(rrInfo.getPayloadData().toByteArray());
+	 				}
+				} else {
+					break;
+				}
+			}
+			
+			uplinkWrapper.flush();
+			downlinkWrapper.flush();
+		} catch (IOException e) {
+			
 		}
-		return buffer.toString();
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.append(Util.byteArrayToString(uplinkData.toByteArray()));
+		stringBuilder.append(Util.byteArrayToString(downlinkData.toByteArray()));
+		return stringBuilder.toString();
 	}
 
 	/**
@@ -1068,10 +382,6 @@ public class Session implements Serializable, Comparable<Session> {
 		tos.append("seq:").append(getSessionStartTime());
 		tos.append(", abs:").append(getSessionStartTime());
 		tos.append(", lPort:").append(getLocalPort());
-//		tos.append(getTsTLSHandshakeBegin());
-		if (mrList!=null){
-			tos.append(", mrListSZ:").append(mrList.size());
-		}
 		tos.append(", count:");
 		if (getPackets() != null) {
 			tos.append(getPackets().size());
@@ -1081,6 +391,61 @@ public class Session implements Serializable, Comparable<Session> {
 		return tos.toString();
 	}
 	
-	
+	public String getLatency(Session session) {
+		double latency = 0.0;
+		if (!session.isUdpOnly()) {
+			latency = getAcknowledgeTimestamp(session.getAllPackets(), true) - session.getSessionStartTime();
+		}
+		return latency != 0 ? Util.formatDouble(latency) : "0.00";
+	}
 
-}//end class
+	public double getAcknowledgeTimestamp(List<PacketInfo> packetInfoList, boolean isTCP) {
+		double timeStamp = 0.0;
+		for (PacketInfo packetInfo : packetInfoList) {
+			if (isTCP) {
+				if (packetInfo.getTcpInfo() == TcpInfo.TCP_ESTABLISH
+						&& packetInfo.getDir() == PacketDirection.DOWNLINK) {
+					timeStamp = packetInfo.getTimeStamp();
+					break;
+				}
+			}
+		}
+		return timeStamp;
+	}
+	
+	public boolean addTcpPacket(PacketInfo packetInfo, long sequnceNumber) {
+		packets.add(packetInfo);
+		if (packetInfo.getDir().equals(PacketDirection.UPLINK)) {
+			// Done to handle TCP Sequence Number Wrap Around
+			if (sequnceNumber < getBaseUplinkSequenceNumber()) {
+				sequnceNumber += 0xFFFFFFFF;
+				sequnceNumber++;
+			}
+			if (uplinkPackets.containsKey(sequnceNumber)) {
+				PacketInfo tempPacket = uplinkPackets.get(sequnceNumber);
+				if (packetInfo.getPayloadLen() == 0 || packetInfo.getPayloadLen() == tempPacket.getPayloadLen()) {
+					return false;
+				}
+			}
+			uplinkPackets.put(sequnceNumber, packetInfo);
+		} else if (packetInfo.getDir().equals(PacketDirection.DOWNLINK)) {
+			// Done to handle TCP Sequence Number Wrap Around
+			if (sequnceNumber < getBaseDownlinkSequenceNumber()) {
+				sequnceNumber += 0xFFFFFFFF;
+				sequnceNumber++;
+			}
+			if (downlinkPackets.containsKey(sequnceNumber)) {
+				PacketInfo tempPacket = downlinkPackets.get(sequnceNumber);
+				if (packetInfo.getPayloadLen() == 0 || packetInfo.getPayloadLen() == tempPacket.getPayloadLen()) {
+					return false;
+				}
+			}
+			downlinkPackets.put(sequnceNumber, packetInfo);
+		}
+		return true;
+	}
+	
+	public void addUdpPacket(PacketInfo packetInfo) {
+		udpPackets.add(packetInfo);
+	}
+}

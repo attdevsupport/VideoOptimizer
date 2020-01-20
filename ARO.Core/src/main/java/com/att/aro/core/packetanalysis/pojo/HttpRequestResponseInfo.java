@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 AT&T
+ *  Copyright 2019 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,23 @@
  */
 package com.att.aro.core.packetanalysis.pojo;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.SortedMap;
+import java.util.TreeMap;
 
 import com.att.aro.core.packetreader.pojo.PacketDirection;
+import com.att.aro.core.packetreader.pojo.TCPPacket;
+import com.att.aro.core.packetreader.pojo.UDPPacket;
+import com.att.aro.core.util.Util;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Encapsulates information about an HTTP request or response. This class was converted from struct HTTP_REQUEST_RESPONSE
@@ -114,6 +125,8 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	private boolean mustRevalidate;
 	private boolean proxyRevalidate;
 	private boolean onlyIfCached;
+	@Getter @Setter
+	private boolean corrupt = false;
 	private String etag;
 	private Long age;
 	private Date expires;
@@ -127,8 +140,28 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	private HttpRequestResponseInfo assocReqResp;
 	private RequestResponseTimeline waterfallInfos;
 	private String allHeaders;
-
+	@Getter @Setter
+	private int headerOffset;
 	private Session session;
+	
+	/**
+	 * List of Upload Packets ordered by Sequence Numbers for TCP Session.
+	 */
+	@Getter @Setter
+	private TreeMap<Long, PacketInfo> tcpPackets = new TreeMap<>();
+	@Getter @Setter
+	private ArrayList<PacketInfo> udpPackets = new ArrayList<>();
+	@Getter @Setter
+	private boolean isTCP;
+	@Getter @Setter
+	private boolean headerParseComplete;
+	@Getter @Setter
+	private ByteArrayOutputStream payloadData = new ByteArrayOutputStream();
+	@Getter @Setter
+	private ByteArrayOutputStream headerData = new ByteArrayOutputStream();
+	@Getter @Setter
+	private BufferedOutputStream dataStream;
+	
 
 	@Override
 	public String toString() {
@@ -151,10 +184,8 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 		if (direction == null) {
 			throw new IllegalArgumentException("Http Direction may be null");
 		}
-		this.packetDirection = direction;
-		// Initialize session remote host
 		this.hostName = remoteHostName;
-
+		this.packetDirection = direction;
 	}
 
 
@@ -925,4 +956,46 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	public Session getSession() {
 		return session;
 	}
-}// end class
+	
+
+	public String getLatency() {
+		double networkLatency = 0.00;
+		if (direction.equals(HttpDirection.REQUEST) && getAssocReqResp() != null) {
+			networkLatency = (getAssocReqResp().getTimeStamp()) - getTimeStamp();
+		}
+		return Util.formatDouble(networkLatency);
+	}
+	
+	public void addTCPPacket(long sequenceNumber, PacketInfo packetInfo) {
+		tcpPackets.put(sequenceNumber, packetInfo);
+	}
+	
+	public void addUDPPacket(PacketInfo packetInfo) {
+		udpPackets.add(packetInfo);
+	}
+	
+	public void writeHeader(PacketInfo packetInfo, int headerDelta) throws IOException {
+		TCPPacket tcpPacket = (TCPPacket) packetInfo.getPacket();
+		dataStream = new BufferedOutputStream(headerData);
+		dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset(), headerDelta);
+		dataStream.flush();
+	}
+	
+	public void writePayload(PacketInfo packetInfo, boolean containsHeader, int headerDelta) throws IOException {
+		if (packetInfo.getPacket() instanceof TCPPacket) {
+			TCPPacket tcpPacket = (TCPPacket) packetInfo.getPacket();
+			dataStream = new BufferedOutputStream(payloadData);
+			if (containsHeader) {
+				dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset() + headerDelta , tcpPacket.getData().length - (tcpPacket.getDataOffset() + headerDelta));
+			} else {
+				dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset(), tcpPacket.getData().length - tcpPacket.getDataOffset());
+			}
+			dataStream.flush();
+		} else {
+			UDPPacket udpPacket = (UDPPacket) packetInfo.getPacket();
+			dataStream = new BufferedOutputStream(payloadData);
+			dataStream.write(udpPacket.getData(), udpPacket.getDataOffset(), udpPacket.getData().length - udpPacket.getDataOffset());
+			dataStream.flush();
+		}
+	}
+}

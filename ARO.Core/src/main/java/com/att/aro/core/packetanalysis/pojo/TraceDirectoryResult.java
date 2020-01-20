@@ -15,7 +15,6 @@
  */
 package com.att.aro.core.packetanalysis.pojo;
 
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,8 +33,10 @@ import com.att.aro.core.peripheral.pojo.NetworkType;
 import com.att.aro.core.peripheral.pojo.RadioInfo;
 import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent;
 import com.att.aro.core.peripheral.pojo.TemperatureEvent;
+import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
+import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -85,13 +86,6 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	@JsonIgnore
 	private int screenRotationCounter = 0;
 	
-	/**
-	 * Set of InetAddress
-	 * <br>from trace directory - device_info
-	 */
-	@JsonIgnore
-	private Set<InetAddress> localIPAddresses = null;
-
 	// Alarm Info
 	/**
 	 * Epoch time in milliseconds from (trace directory) alarm_info_end/alarm_info_start files
@@ -271,6 +265,12 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	 */
 	@JsonIgnore
 	private NetworkType networkType;
+
+	@JsonIgnore
+	private MetaDataModel metaData;
+	
+	@JsonIgnore
+	private VideoStreamStartup videoStreamStartup;
 	
 	public CollectOptions getCollectOptions() {
 		return collectOptions;
@@ -286,7 +286,6 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	public TraceDirectoryResult() {
 		super();
 		screenRotationCounter = 0;
-		localIPAddresses = new HashSet<InetAddress>(1);
 		alarmInfos = new ArrayList<AlarmInfo>();
 		alarmStatisticsInfos = new ArrayList<AlarmAnalysisInfo>();
 		scheduledAlarms = new HashMap<String, List<ScheduledAlarmInfo>>();
@@ -334,22 +333,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	public void setScreenRotationCounter(int screenRotationCounter) {
 		this.screenRotationCounter = screenRotationCounter;
 	}
-
-	/**
-	 * @return Set of InetAddress
-	 */
-	public Set<InetAddress> getLocalIPAddresses() {
-		return localIPAddresses;
-	}
-
-	/**
-	 * Store Set of InetAddress
-	 * @param localIPAddresses - Set of InetAddress
-	 */
-	public void setLocalIPAddresses(Set<InetAddress> localIPAddresses) {
-		this.localIPAddresses = localIPAddresses;
-	}
-
+	
 	/**
 	 * @return Epoch time in milliseconds
 	 */
@@ -817,6 +801,22 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	public TraceResultType getTraceResultType() {
 		this.traceResultType = TraceResultType.TRACE_DIRECTORY;
 		return traceResultType;
+	}
+	
+	public VideoStreamStartup getVideoStartup() {
+		return videoStreamStartup;
+	}
+
+	public void setVideoStartup(VideoStreamStartup videoStreamStartup) {
+		this.videoStreamStartup = videoStreamStartup;
+	}
+
+	public MetaDataModel getMetaData() {
+		return metaData;
+	}
+
+	public void setMetaData(MetaDataModel metaData) {
+		this.metaData = metaData;
 	}
 
 	@Override

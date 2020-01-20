@@ -46,7 +46,6 @@ public class BpDetailHtmlPanel extends BpDetail {
 		addPanel(row++, new BpDetailItem("html.httpUsage", BestPracticeType.HTTP_1_0_USAGE));
 		addPanel(row++, new BpDetailItem("html.fileorder", BestPracticeType.FILE_ORDER, new BpHtmlFileOrderTablePanel()));
 		addPanel(row++, new BpDetailItem("empty.url", BestPracticeType.EMPTY_URL));
-		addPanel(row++, new BpDetailItem("flash", BestPracticeType.FLASH));
 		addPanel(row++, new BpDetailItem("html.displaynoneincss", BestPracticeType.DISPLAY_NONE_IN_CSS, new BpHtmlDisplayNoneInCSSTablePanel()));
 
 		fullPanel.add(dataPanel, BorderLayout.CENTER);

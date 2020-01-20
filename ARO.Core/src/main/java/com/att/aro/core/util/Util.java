@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
@@ -50,7 +50,6 @@ import org.codehaus.plexus.util.FileUtils;
 
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
-import com.att.aro.core.bestpractice.pojo.VideoUsage;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -60,11 +59,12 @@ public final class Util {
 	public static final String DUMPCAP = "dumpCap";
 	public static final String FFMPEG = "ffmpeg";
 	public static final String RECENT_TRACES = "RECENT_TRACES";
+	private static final int RECENT_TRACES_MAXSIZE = 15;
 	public static final String FFPROBE = "ffprobe";
 	public static final String IDEVICESCREENSHOT = "iDeviceScreenshot";
-
 	public static final String OS_NAME = System.getProperty("os.name");
-	public static final String OS_ARCHYTECTURE = System.getProperty("os.arch");
+	public static final String OS_VERSION = System.getProperty("os.version");
+	public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
 	public static final String FILE_SEPARATOR = System.getProperty("file.separator");
 	public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 	public static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
@@ -258,22 +258,29 @@ public final class Util {
 	}
 
 	/**
-	 * <pre>
-	 * Supported date formats: 2018-01-11T22:14:59.000000Z 2018-01-11T22:14:59
-	 * 2018-01-11 22:14:59
 	 * 
 	 * @param creationTime
+	 * @param sdFormatStr format string for SimpleDateFormat(sdFormatStr)
 	 * @return
 	 */
-	public static long parseForUTC(String creationTime) {
+	public static long parseForUTC(String creationTime, String sdFormatStr) {
 		long milli = 0;
+		long mSec = 0;
 		if (creationTime != null) {
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+			int msecPos = creationTime.indexOf('.') + 1;
+
+			SimpleDateFormat sdf = new SimpleDateFormat(sdFormatStr);
 			sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
 			Date date = null;
 			try {
+				mSec = msecPos > 0 ? Long.valueOf(creationTime.substring(msecPos).replaceAll("\\d{3}Z", "")): 0;
+				while (mSec > 1000) {// only allow 3 digits of milliseconds
+					mSec /= 10;
+				}
+				creationTime = creationTime.replaceAll("\\d{3}Z", "");
 				date = sdf.parse(creationTime.replace('T', ' '));
-				milli = date.getTime();
+				milli = date.getTime() + mSec;
 			} catch (Exception e) {
 				logger.error("Date parsing error :" + e.getMessage());
 			}
@@ -281,6 +288,32 @@ public final class Util {
 		return milli;
 	}
 
+	/**
+	 * <pre>
+	 * Supported date formats: 
+	 *  2018-01-11T22:14:59.123000Z 
+	 *  2018-01-11T22:14:59
+	 *  2018-01-11 22:14:59
+	 *  20191106T172805265
+	 *  20180111T221459000
+	 *  20180111T221459
+	 * 
+	 * Nanoseconds are truncated
+	 * 
+	 * @param creationTime
+	 * @return
+	 */
+	public static long parseForUTC(String creationTime) {
+		if (creationTime.contains("-")) {
+			return parseForUTC(creationTime, "yyyy-MM-dd HH:mm:ss");
+		} else {
+			if (creationTime.length() < 16) {
+				creationTime += "000";
+			}
+			return parseForUTC(creationTime, "yyyyMMdd HHmmssSSS");
+		}
+	}
+	
 	public static String formatYMD(long timestamp) {
 		String pattern = "yyyy-MM-dd HH:mm:ss";
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
@@ -623,20 +656,24 @@ public final class Util {
 		return df.format(number);
 	}
 
+	public static String getBinPath() {
+		String path;
+		if (isWindowsOS()) {
+			path = "";
+		} else if (isMacOS()) {
+			path = "/usr/local/bin/";
+		} else {
+			path = "/usr/bin/";
+		}		
+		return path;
+	}
+
 	public static String getDumpCap() {
 		String config = SettingsImpl.getInstance().getAttribute(DUMPCAP);
 		if (StringUtils.isNotBlank(config)) {
 			return validateInputLink(config);
 		}
-		String dumpcap;
-		if (isWindowsOS()) {
-			dumpcap = ("dumpcap");
-		} else if (isMacOS()) {
-			dumpcap = ("/usr/local/bin/dumpcap");
-		} else {
-			dumpcap = ("/usr/bin/dumpcap");
-		}
-		return dumpcap;
+		return getBinPath() + "dumpcap";
 	}
 
 	public static String getFFMPEG() {
@@ -646,12 +683,10 @@ public final class Util {
 		}
 		String ffmpeg;
 		if (isWindowsOS()) {
-			ffmpeg = ("ffmpeg.exe");
-		} else if (isMacOS()) {
-			ffmpeg = ("/usr/local/bin/ffmpeg");
+			ffmpeg = "ffmpeg.exe";
 		} else {
-			ffmpeg = ("/usr/bin/ffmpeg");
-		}
+			ffmpeg = getBinPath() + "ffmpeg";
+		} 
 		return ffmpeg;
 	}
 
@@ -663,28 +698,18 @@ public final class Util {
 		String ffprobe;
 		if (isWindowsOS()) {
 			ffprobe = ("ffprobe.exe");
-		} else if (isMacOS()) {
-			ffprobe = ("/usr/local/bin/ffprobe");
 		} else {
-			ffprobe = ("/usr/bin/ffprobe");
+			ffprobe = getBinPath() + "ffprobe";
 		}
 		return ffprobe;
 	}
 
 	public static String getIfuse() {
-		return "/usr/local/bin/ifuse";
+		return getBinPath() + "ifuse";
 	}
 
 	public static String getEditCap() {
-		String editcap;
-		if (isWindowsOS()) {
-			editcap = ("editcap");
-		} else if (isMacOS()) {
-			editcap = ("/usr/local/bin/editcap");
-		} else {
-			editcap = ("/usr/bin/editcap");
-		}
-		return editcap;
+		return getBinPath() + "editcap";
 	}
 
 	public static boolean isJPG(File imgfile, String imgExtn) {
@@ -828,6 +853,14 @@ public final class Util {
 		}
 		return bpResultType;
 	}
+	
+	public static BPResultType checkPassFailorWarning(double resultValue, double warning) {
+		BPResultType bpResultType = BPResultType.PASS;
+		if (resultValue >= warning) {
+			bpResultType = BPResultType.WARNING;
+		}
+		return bpResultType;
+	}
 
 	public static Level getLoggingLvl(String loggingLvl) {
 		Level level = Level.ERROR;
@@ -856,7 +889,7 @@ public final class Util {
 		}
 		return logLevel;
 	}
-
+	
 	public static Comparator<String> getFloatSorter() {
 		if (floatValComparator == null) {
 			floatValComparator = new Comparator<String>() {
@@ -874,7 +907,7 @@ public final class Util {
 		if (StringUtils.isNotBlank(config)) {
 			return validateInputLink(config);
 		}
-		return "/usr/local/bin/idevicescreenshot";
+		return getBinPath() + "idevicescreenshot";
 	}
 
 	public static String percentageFormat(double inputValue) {
@@ -959,7 +992,10 @@ public final class Util {
 				if (recentItems != null) {
 					for (int i = 0; i < recentItems.length; i++) {
 						if (recentItems[i] != null) {
+							recentItems[i] = checkForCsvEscapedCharacters(recentItems[i]);
 							String recentMenuItem = getTraceName(recentItems[i]);
+							recentItems[i] = StringEscapeUtils
+									.unescapeJava(StringEscapeUtils.unescapeCsv(recentItems[i]));
 							if (!recentMenuItem.isEmpty() && new File(recentItems[i]).exists()) {
 								recentMenuItems.put(recentMenuItem, recentItems[i]);
 							}
@@ -971,13 +1007,26 @@ public final class Util {
 		return recentMenuItems;
 	}
 
+	private static String checkForCsvEscapedCharacters(String recentItem){
+		if (recentItem.contains("\"") || recentItem.contains(",")
+				|| recentItem.contains(LINE_SEPARATOR)) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(QUOTE);
+			sb.append(recentItem);
+			sb.append(QUOTE);
+			return sb.toString();
+		}
+		return recentItem;
+	}
+	
 	public static String[] getRecentlyOpenedTraces() {
 		String recentMenuConfig = SettingsImpl.getInstance().getAttribute(RECENT_TRACES);
 		String[] recentMenuItem = recentMenuConfig.split("(?<!\\\\)\",\"");
 		recentMenuItem[0] = recentMenuItem[0].replaceFirst("\"", "");
 		int len = recentMenuItem.length - 1;
 		recentMenuItem[len] = (recentMenuItem[len].charAt(recentMenuItem[len].length() - 1) == '\"'
-				? recentMenuItem[len].substring(0, recentMenuItem[len].length() - 1) : recentMenuItem[len]);
+								? recentMenuItem[len].substring(0, recentMenuItem[len].length() - 1)
+								: recentMenuItem[len]);
 		return recentMenuItem;
 	}
 	/***
@@ -992,7 +1041,11 @@ public final class Util {
 			int index = tracePath.lastIndexOf(FILE_SEPARATOR);
 			if (index > 0) {
 				traceName = tracePath.substring(index + 1);
+				if (traceName.charAt(traceName.length() - 1) == '\"') {
+					traceName = QUOTE + traceName;
+				}
 			}
+			traceName = StringEscapeUtils.unescapeJava(StringEscapeUtils.unescapeCsv(traceName));
 		}
 		return traceName;
 	}
@@ -1048,8 +1101,11 @@ public final class Util {
 				String[] recentMenu = getRecentlyOpenedTraces();
 				if (recentMenu != null) {
 					for (int i = 0; i < recentMenu.length; i++) {
-						if (counter < 5) {
-							if (!recentMenu[i].equals(value) && new File(recentMenu[i]).exists()) {
+						if (counter < RECENT_TRACES_MAXSIZE) {
+							recentMenu[i] = checkForCsvEscapedCharacters(recentMenu[i]);
+							String recentMenuPath = StringEscapeUtils
+									.unescapeJava(StringEscapeUtils.unescapeCsv(recentMenu[i]));
+							if (!compareValues(recentMenu[i], value) && new File(recentMenuPath).exists()) {
 								recentMenuBuilder.append(",");
 								String recentValue = recentMenu[i];
 								if (recentValue.startsWith(QUOTE)) {
@@ -1067,14 +1123,6 @@ public final class Util {
 			}
 		}
 		SettingsImpl.getInstance().setAndSaveAttribute("RECENT_TRACES", recentMenuBuilder.toString());
-	}
-	
-	public static boolean isStartupDelaySet(VideoUsage videoUsage) {
-		boolean isStartupDelaySet = true;
-		if (videoUsage != null && MapUtils.isEmpty(videoUsage.getChunkPlayTimeList())) {
-			isStartupDelaySet = false;
-		}
-		return isStartupDelaySet;
 	}
 	
 	public static boolean isFilesforAnalysisAvailable(File folderPath) {
@@ -1106,5 +1154,17 @@ public final class Util {
 			}
 		}
 		return false;
+	}
+
+	private static boolean compareValues(String recentMenu, String value) {
+		if (value.startsWith(QUOTE) && value.endsWith(QUOTE) && (!recentMenu.startsWith(QUOTE))) {
+			value = value.substring(1, value.length() - 1);
+		}
+		return recentMenu.equals(value);
+	}
+	
+	public static String formatDouble(double toFormat) {
+		DecimalFormat decimalFormatter = new DecimalFormat("#.###");
+		return decimalFormatter.format(toFormat);	
 	}
 }

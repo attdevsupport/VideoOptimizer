@@ -26,6 +26,7 @@ import java.util.List;
 
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
+import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableModel;
@@ -54,11 +55,13 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 
 		requestPanel = new JPanel();
 		requestPanel.setLayout(new BoxLayout(requestPanel, BoxLayout.PAGE_AXIS));
-		
+
 		requestPanel.setBackground(new Color(238, 238, 238));
 		requestPanel.add(getRequestListPanel());
-		
+		requestListTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
 		setViewportView(requestPanel);
+		resize();
 	}
 
 	private JPanel getRequestListPanel() {
@@ -68,19 +71,16 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 			getDummyData();
 			TableModel model = new AbstractTableModel() {
 				private static final long serialVersionUID = 1L;
-				String[] columnNames = { "Request URL" };
+				String[] columnNames = { "Time", "Request URL" };
 
 				@Override
 				public Object getValueAt(int rowIndex, int columnIndex) {
-					Object value = "";
 					if (columnIndex == 0) {
-						if (requestURL.get(rowIndex) != null) {
-							value = requestURL.get(rowIndex).getObjUri().toString();
-						} else {
-							value = "";
-						}
+						return requestURL.get(rowIndex) != null ? String.format("%6.3f", requestURL.get(rowIndex).getTimeStamp()) : "";
+					} else if (columnIndex == 1) {
+						return requestURL.get(rowIndex) != null ? requestURL.get(rowIndex).getObjUri().toString() : "";
 					}
-					return value;
+					return "";
 				}
 
 				@Override
@@ -118,11 +118,14 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 				public void mouseClicked(MouseEvent event) {
 					if (event.getClickCount() == 2) {
 						int row = requestListTable.getSelectedRow();
+						int column = requestListTable.getSelectedColumn();
 						HttpRequestResponseInfo request = requestURL.get(row);
 						requestListTable.getColumnModel().getColumn(0).setCellRenderer(new WordWrapRenderer(row));
-						RegexWizard regexWizard = RegexWizard.getInstance();
-						regexWizard.setRequest(request);
-						regexWizard.setVisible(true);
+						if (column != 0) {
+							RegexWizard regexWizard = RegexWizard.getInstance();
+							regexWizard.setRequest(request);
+							regexWizard.setVisible(true);
+						}
 					}
 				}
 			});
@@ -139,9 +142,13 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 		}
 	}
 
-	public void resize(){
+	public void resize() {
 		int width = requestPanel.getWidth() - 10;
-		requestListTable.getColumnModel().getColumn(0).setPreferredWidth(width);
+		if (width > 55) {
+			requestListTable.getColumnModel().getColumn(0).setPreferredWidth(55);
+			requestListTable.getColumnModel().getColumn(1).setPreferredWidth(width - 55);
+			requestListTable.getColumnModel().getColumn(0).setWidth(55);
+		}
 	}
 	
 	@Override
@@ -158,10 +165,12 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 			}
 		}
 		requestPanel.remove(requestListPanel);
+		requestListPanel = getRequestListPanel();
 		requestPanel.add(getRequestListPanel(),
 				new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
 
 		requestPanel.updateUI();
+		resize();
 	}
 
 	@Override

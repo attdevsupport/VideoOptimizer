@@ -1,5 +1,9 @@
 package com.att.aro.datacollector.ioscollector.attenuator;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.littleshoot.proxy.HttpProxyServer;
@@ -15,8 +19,6 @@ public class LittleProxyWrapper implements Runnable {
 	private int defaultPort = 8080;
 	private int throttleReadStream = -1;
 	private int throttleWriteStream = -1;
-
-
 
 	private String TRACE_FILE_PATH = "";
 
