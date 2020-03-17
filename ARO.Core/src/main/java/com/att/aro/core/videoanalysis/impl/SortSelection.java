@@ -16,5 +16,5 @@
 package com.att.aro.core.videoanalysis.impl;
 
 public enum SortSelection {
-		END_TS, END_TS_DESCENDING, START_TS, SEGMENT_START_TS, SEGMENT_ID
+		END_TS, END_TS_DESCENDING, START_TS, SEGMENT_START_TS, SEGMENT_ID, PLAY_TIME
 };

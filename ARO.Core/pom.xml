@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>com.att.aro</groupId>
 		<artifactId>vo-parent</artifactId>
-		<version>3.0.0</version>
+		<version>3.0.1</version>
 		<relativePath>../ARO.Parent</relativePath>
 	</parent> 
 
@@ -21,7 +21,8 @@
 		<ga.id>dev</ga.id>
 		<build.number>dev</build.number>
 		<maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
-		<maven.deploy.skip>false</maven.deploy.skip>
+		<maven.deploy.skip>true</maven.deploy.skip>
+		<vo.version>3.0.1</vo.version>
 	</properties>
 
 	<repositories>
@@ -478,58 +479,6 @@
 						</goals>
 						<configuration>
 							<outputDirectory>${basedir}/libs</outputDirectory>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<!-- JUNIT/JACOCO -->
-			<plugin>
-				<groupId>org.jacoco</groupId>
-				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.1</version>
-				<executions>
-					<!-- Prepares the property pointing to the JaCoCo runtime agent which 
-						is passed as VM argument when Maven the Surefire plugin is executed. -->
-					<execution>
-						<id>prepare-agent</id>
-						<goals>
-							<goal>prepare-agent</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>report</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>report</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>check</id>
-						<goals>
-							<goal>check</goal>
-						</goals>
-						<configuration>
-							<rules>
-								<rule>
-									<element>BUNDLE</element>
-									<excludes>
-										<exclude>*Test</exclude>
-									</excludes>
-									<limits>
-										<limit>
-											<counter>INSTRUCTION</counter>
-											<value>COVEREDRATIO</value>
-											<minimum>38%</minimum>
-										</limit>
-										<limit>
-											<counter>CLASS</counter>
-											<value>MISSEDCOUNT</value>
-											<maximum>193</maximum>
-										</limit>
-									</limits>
-								</rule>
-							</rules>
 						</configuration>
 					</execution>
 				</executions>

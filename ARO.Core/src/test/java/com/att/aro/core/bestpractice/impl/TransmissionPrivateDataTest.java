@@ -52,7 +52,7 @@ public class TransmissionPrivateDataTest extends BaseTest {
 		packetAnalyzerResult = getPacketAnalyzerResult(keywords, text);
 		result = (TransmissionPrivateDataResult) ((TransmissionPrivateDataImpl) bestPractice).runTest(packetAnalyzerResult);
 		
-		assertEquals(1, result.getResults().size());
+		assertEquals(0, result.getResults().size());
 	}
 
 	@Test
@@ -78,8 +78,8 @@ public class TransmissionPrivateDataTest extends BaseTest {
 		packetAnalyzerResult = getPacketAnalyzerResult(keywords, text);
 		result = (TransmissionPrivateDataResult) ((TransmissionPrivateDataImpl) bestPractice).runTest(packetAnalyzerResult);
 		
-		assertEquals(2, result.getResults().size());
-		assertEquals(BPResultType.WARNING, result.getResultType());
+		assertEquals(0, result.getResults().size());
+		assertEquals(BPResultType.PASS, result.getResultType());
 	}
 	
 	@Test
@@ -96,8 +96,8 @@ public class TransmissionPrivateDataTest extends BaseTest {
 		packetAnalyzerResult = getPacketAnalyzerResult(keywords, text);
 		result = (TransmissionPrivateDataResult) ((TransmissionPrivateDataImpl) bestPractice).runTest(packetAnalyzerResult);
 		
-		assertEquals(6, result.getResults().size());
-		assertEquals(BPResultType.FAIL, result.getResultType());
+		assertEquals(0, result.getResults().size());
+		assertEquals(BPResultType.PASS, result.getResultType());
 	}
 	
 	private PacketAnalyzerResult getPacketAnalyzerResult(Map<String, String> keywords, String text) {

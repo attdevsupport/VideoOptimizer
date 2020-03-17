@@ -21,7 +21,8 @@ import lombok.Data;
 public class MPDSegmentTimeline implements MpdBase {
 
 	String majorVersion = "0";
-
+	
+	@XmlElement(name = "BaseURL")			private String baseURL = "";
 	@XmlElement(name = "Period")			private List<PeriodST> period = new ArrayList<>();
 	@XmlAttribute(name = "minBufferTime")	private String minBufferTime = "";
 

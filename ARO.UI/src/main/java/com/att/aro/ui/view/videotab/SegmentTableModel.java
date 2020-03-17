@@ -93,7 +93,7 @@ public class SegmentTableModel extends AbstractTableModel {
 		case "DL Start Time" : value = String.format("%.3f", videoSegment.getStartTS()); break;
 		case "DL End Time"   : value = String.format("%.3f", videoSegment.getEndTS()); break;
 		case "StallTime"     : value = String.format("%.3f", videoSegment.getStallTime()); break;
-		case "PlayTime"      : value = videoSegment.isSelected() ? String.format("%.6f", videoSegment.getPlayTime()) : " -   "; break;
+		case "PlayTime"      : value = videoSegment.isSelected() && videoSegment.isNormalSegment() ? String.format("%.6f", videoSegment.getPlayTime()) : " -   "; break;
 		case "StartTime"     : value = String.format("%.6f", videoSegment.getSegmentStartTime()); break;
 		case "Track"         : value = videoSegment.getQuality(); break;
 		case "Resolution"    : value = videoSegment.getResolutionHeight() != 0 ? decimalFormat.format(videoSegment.getResolutionHeight()):"NA "; break;

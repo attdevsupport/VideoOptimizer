@@ -42,7 +42,7 @@ import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.util.Util;
 
 public class AROServiceImplTest extends BaseTest {
-	private static final int TOTAL_BPTESTS = 45;
+	private static final int TOTAL_BPTESTS = 46;
 	@InjectMocks
 	AROServiceImpl aro;
 	@Mock

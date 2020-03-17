@@ -161,66 +161,43 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 	
 	public void refreshSummaryInfo(AROTraceData trace) {
 
-		if (null == trace) {
-			return;
-		}
+		if (null != trace) {
 
-		videoResultSummary = new VideoResultSummary(trace);
-		updateBufferTableData(videoResultSummary.getVideoBufferDataList());
+			videoResultSummary = new VideoResultSummary(trace);
+			updateBufferTableData(videoResultSummary.getVideoBufferDataList());
 
-		tabPanelCommon.setText(LabelKeys.videoSummary_stalls, String.valueOf(videoResultSummary.getStalls()));
-		if (!videoResultSummary.isStartupDelayStatus()) {
-			tabPanelCommon.setText(LabelKeys.videoSummary_startUpDelay
-					, ResourceBundleHelper.getMessageString("videoSummary.startupDelayStatus"));
-		} else {
-			tabPanelCommon.setText(LabelKeys.videoSummary_startUpDelay
-					, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.seconds")
-							, decimalFormat.format(videoResultSummary.getStartUpDelay())
-							, videoResultSummary.getStartUpDelay() == 1 ? "" : "s"));
+			tabPanelCommon.setText(LabelKeys.videoSummary_stalls, String.valueOf(videoResultSummary.getStalls()));
+			if (!videoResultSummary.isStartupDelayStatus()) {
+				tabPanelCommon.setText(LabelKeys.videoSummary_startUpDelay, ResourceBundleHelper.getMessageString("videoSummary.startupDelayStatus"));
+			} else {
+				tabPanelCommon.setText(LabelKeys.videoSummary_startUpDelay, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.seconds"), decimalFormat.format(videoResultSummary.getStartUpDelay()), videoResultSummary.getStartUpDelay() == 1 ? "" : "s"));
+			}
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_bufferOccupancy, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb"), decimalFormat.format(videoResultSummary.getBufferOccupancy())));
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_networkComparison, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.average.kbps"), decimalFormat.format(videoResultSummary.getNtkComparison())));
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_tcpConnections, String.valueOf(videoResultSummary.getTcpConnection()));
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_segmentSize, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.kb"), decimalFormat.format(videoResultSummary.getSegmentSize())));
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_segmentPacing, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.seconds"), decimalFormat.format(videoResultSummary.getSegmentPacing()), videoResultSummary.getSegmentPacing() == 1 ? "" : "s"));
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_redundancy, String.format("%.0f", videoResultSummary.getRedundancy()) + "%");
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_duplicate, String.valueOf(videoResultSummary.getDuplicate()));
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_concurrentSessions, String.valueOf(videoResultSummary.getConcurrentSessions()));
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_ipSessions, String.valueOf(videoResultSummary.getIpSessions()));
+			tabPanelCommon.setText(LabelKeys.videoSummary_ipAddresses, String.valueOf(videoResultSummary.getIpAddress()));
+			tabPanelCommon.setText(LabelKeys.videoSummary_segmentCount, String.valueOf(videoResultSummary.getSegmentCount()));
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_mbytesOfMovie, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb"), decimalFormat.format(videoResultSummary.getMovieMBytes())));
+
+			tabPanelCommon.setText(LabelKeys.videoSummary_mbytesTotal, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb"), decimalFormat.format(videoResultSummary.getTotalMBytes())));
 		}
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_bufferOccupancy
-				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb")
-						, decimalFormat.format(videoResultSummary.getBufferOccupancy())));
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_networkComparison
-				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.average.kbps")
-						, decimalFormat.format(videoResultSummary.getNtkComparison())));
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_tcpConnections
-				, String.valueOf(videoResultSummary.getTcpConnection()));
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_segmentSize
-				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.kb")
-						, decimalFormat.format(videoResultSummary.getSegmentSize())));
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_segmentPacing
-				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.seconds")
-						, decimalFormat.format(videoResultSummary.getSegmentPacing())
-						, videoResultSummary.getSegmentPacing() == 1 ? "" : "s"));
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_redundancy
-				, String.format("%.0f", videoResultSummary.getRedundancy()) + "%");
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_duplicate
-				, String.valueOf(videoResultSummary.getDuplicate()));
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_concurrentSessions
-				, String.valueOf(videoResultSummary.getConcurrentSessions()));
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_ipSessions, String.valueOf(videoResultSummary.getIpSessions()));
-		tabPanelCommon.setText(LabelKeys.videoSummary_ipAddresses, String.valueOf(videoResultSummary.getIpAddress()));
-		tabPanelCommon.setText(LabelKeys.videoSummary_segmentCount, String.valueOf(videoResultSummary.getSegmentCount()));
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_mbytesOfMovie
-				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb")
-						, decimalFormat.format(videoResultSummary.getMovieMBytes())));
-		
-		tabPanelCommon.setText(LabelKeys.videoSummary_mbytesTotal
-				, MessageFormat.format(ResourceBundleHelper.getMessageString("videoSummary.mb")
-						, decimalFormat.format(videoResultSummary.getTotalMBytes())));
 	}
-
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
 		clearVideoSummary();

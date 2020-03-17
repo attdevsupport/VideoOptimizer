@@ -39,6 +39,7 @@ import com.att.aro.core.videoanalysis.parsers.encodedsegment.MPDEncodedSegment;
 import com.att.aro.core.videoanalysis.parsers.encodedsegment.RepresentationESL;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.AdaptationSetTL;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.MPDSegmentTimeline;
+import com.att.aro.core.videoanalysis.parsers.segmenttimeline.PeriodST;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.RepresentationST;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.SegmentST;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.SegmentTemplateST;
@@ -67,6 +68,8 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 	private boolean isDynamic;
 	private String[] encodedSegmentDurationList;
 	private Double segmentTimeScale;
+	private Pattern nameRegex = Pattern.compile("\\/([^\\/]*)\\/$");
+	private String[] urlName;
 
 	public ManifestBuilderDASH() {
 	}
@@ -132,15 +135,25 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 			
 			newManifest.setVideoType(VideoType.DASH_SEGMENTTIMELINE);
 			mpdSegmentTimeline = (MPDSegmentTimeline) manifestView.getManifest();
-			
+			if ((urlName = stringParse.parse(mpdSegmentTimeline.getBaseURL(), nameRegex)) != null) {
+				newManifest.setUrlName(urlName[0]);
+			}
+			mpdSegmentTimeline.getBaseURL();
+			List<PeriodST> periods = mpdSegmentTimeline.getPeriod();
+			if (periods.size() > 1) {
+				LOG.debug("period count :" + periods.size() + ", " + newManifest.getUriStr());
+			}
 			DashSegmentTimelineParser parseDashdynamic = new DashSegmentTimelineParser(mpdSegmentTimeline, newManifest, manifestCollection, childManifest);
 			
 			List<AdaptationSetTL> adaptationSetList = parseDashdynamic.getAdaptationSet();
 			for (AdaptationSetTL adaptationSet : adaptationSetList) {
 				ContentType contentType = manifest.matchContentType(adaptationSet.getContentType());
-
+				if (adaptationSet.getContentType().equals("text")) {
+					// skipping Closed Caption for now
+					continue;
+				}
 				SegmentTemplateST segmentTemplate = adaptationSet.getSegmentTemplate();
-				String initialization = segmentTemplate.getInitialization(); // segment 0 'moov'	
+				String initialization = segmentTemplate.getInitialization(); // segment 0 'moov'
 				String media = segmentTemplate.getMedia(); // segment x 'moof'
 				Double presentationTimeOffset = StringParse.stringToDouble(segmentTemplate.getPresentationTimeOffset(), 0);
 				Double timescale = StringParse.stringToDouble(segmentTemplate.getTimescale(), 1);
@@ -168,8 +181,8 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 					int segmentID = 0;
 					qualityID++;
 					String rid = representation.getContentID();
-					String childUriName = media.replaceAll("\\$(RepresentationID)\\$", rid).replaceAll("\\$(Time)\\$", "(\\\\d+)");
-
+					String childUriName = media.replaceAll("\\$(RepresentationID)\\$", rid).replaceAll("\\$(Time)\\$", "(\\\\d+)"); // generate REGEX for locating Byte position
+					
 					if (manifestLiveUpdate && ((childManifest = manifestCollection.getUriNameChildMap().get(childUriName)) != null)) {
 						PatriciaTrie<SegmentInfo> segmentInfoList = childManifest.getSegmentList();
 						for (String segmentKey : segmentInfoList.keySet()) {
@@ -194,42 +207,44 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 							String moovUriName = initialization.replaceAll("\\$(RepresentationID)\\$", rid);
 							manifestCollection.addToUriNameChildMap(moovUriName, childManifest);
 						}
+						manifestCollection.addToSegmentChildManifestTrie(childManifest.getUriName(), childManifest);
 					}
 
 					String segmentUriName;
 					SegmentInfo segmentInfo;
+					
+					Double timePos    =  0D;
+					Double duration   =  0D;
+					Double repetition =  0D;
+							
+					if (segmentList.size() > 0) {
+						SegmentST segment0 = segmentList.get(0);
+						timePos = StringParse.stringToDouble(segment0.getStartTime(), 0);
 
-					for (SegmentST segment : segmentList) {
-						Double timePos = StringParse.stringToDouble(segment.getStartTime(), 0);
-						Double duration = StringParse.stringToDouble(segment.getDuration(), 0);
-						Double repetition = StringParse.stringToDouble(segment.getRepeat(), 0);
+						// segment moov
+						segmentInfo = genSegmentInfo(contentType, timescale, qualityID, segmentID, timePos, 0D);
+						segmentUriName = initialization.replaceAll("\\$(.*)\\$", rid);
+						addToSegmentManifestCollectionMap(segmentUriName);
 
-						for (int idx = 0; idx <= repetition; idx++) {
-							timePos += duration;
-							if (timePos <= timeCursor) {
-								continue;
-							}
-							segmentInfo = new SegmentInfo();
-							segmentInfo.setDuration(duration / timescale);
-							segmentInfo.setStartTime(timePos);
-							segmentInfo.setQuality(qualityID.toString());
-							segmentInfo.setVideo("video".equalsIgnoreCase(contentType.toString()));
-							segmentInfo.setContentType(contentType);
-							segmentInfo.setSegmentID(segmentID++);
-							if (idx == 0) {
-								segmentUriName = initialization.replaceAll("\\$(.*)\\$", rid);
-								addToSegmentManifestCollectionMap(segmentUriName);
-							} else {
+						// segments moof
+						segmentID = 1;
+						for (SegmentST segment : segmentList) {
+							duration = StringParse.stringToDouble(segment.getDuration(), 0);
+							repetition = StringParse.stringToDouble(segment.getRepeat(), 0);
+							for (Double countdown = repetition; countdown > -1; countdown--) {
+								segmentInfo = genSegmentInfo(contentType, timescale, qualityID, segmentID, timePos, duration);
 								segmentUriName = media.replaceAll("\\$(RepresentationID)\\$", rid).replaceAll("\\$(Time)\\$", String.format("%.0f", timePos));
+								childManifest.addSegment(segmentUriName, segmentInfo);
+								timePos += duration;
+								segmentID++;
 							}
-//							LOG.info(idx + ": " + segmentUriName + " : " + segmentInfo);
-
-							childManifest.addSegment(segmentUriName, segmentInfo);
 						}
 					}
-					addToSegmentManifestCollectionMap(childManifest.getUriName());
-				}
 
+					addToSegmentManifestCollectionMap(childManifest.getUriName());
+
+				}
+				
 				if (getChildManifest() == null) {
 					childManifest = createChildManifest(newManifest, "", newManifest.getUriStr());
 				}
@@ -278,11 +293,15 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 		}
 	}
 
-	public void addToSegmentManifestCollectionMap(String segmentUriName) {
-		segmentManifestCollectionMap.put(
-				segmentUriName + "|" + manifestCollection.getManifest().getVideoName()
-				, manifestCollection.getManifest().getVideoName()
-			);
+	public SegmentInfo genSegmentInfo(ContentType contentType, Double timescale, Integer qualityID, int segmentID, Double timePos, Double duration) {
+		SegmentInfo tempSegmentInfo = new SegmentInfo();
+		tempSegmentInfo.setDuration(duration / timescale);
+		tempSegmentInfo.setStartTime(timePos);
+		tempSegmentInfo.setQuality(qualityID.toString());
+		tempSegmentInfo.setVideo("video".equalsIgnoreCase(contentType.toString()));
+		tempSegmentInfo.setContentType(contentType);
+		tempSegmentInfo.setSegmentID(segmentID++);
+		return tempSegmentInfo;
 	}
 
 	public void generateChildManifestFromEncodedSegmentList(Manifest newManifest, ContentType contentType, Integer qualityID, RepresentationESL representation) {
@@ -305,7 +324,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 			if (encodedSegmentElement == null) {
 				break;
 			}
-			duration = idx == 0 ? 0 : calcDuration(encodedSegmentDurationList[idx - 1], duration, segmentTimeScale);
+			duration = (idx == 0) ? 0 : calcDuration(encodedSegmentDurationList[idx - 1], duration, segmentTimeScale);
 
 			SegmentInfo segmentInfo = new SegmentInfo();
 			segmentInfo.setDuration(duration);
@@ -320,6 +339,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 			childManifest.addSegment(encodedSegmentElement, segmentInfo);
 
 		}
+		manifestCollection.addToSegmentChildManifestTrie(childManifest.getUriName(), childManifest);
 	}
 
 	public double calcDuration(String hex, Double duration, Double timescale) {

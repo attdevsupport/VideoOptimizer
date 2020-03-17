@@ -998,4 +998,19 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 			dataStream.flush();
 		}
 	}
+	
+	public void writeHeader(String dataRead) throws IOException {
+		writeDataToStream(dataRead, headerData);
+	}
+	
+	public void writePayload(String dataRead) throws IOException {
+		writeDataToStream(dataRead, payloadData);
+	}
+
+	private void writeDataToStream(String dataRead, ByteArrayOutputStream stream) throws IOException {
+		dataStream = new BufferedOutputStream(stream);
+		dataStream.write(dataRead.getBytes());
+		dataStream.flush();
+	}
+	
 }

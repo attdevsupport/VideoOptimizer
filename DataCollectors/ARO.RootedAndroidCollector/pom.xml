@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.1</version>
         <relativePath>../../ARO.Parent</relativePath>
     </parent>
 
@@ -17,6 +17,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.deploy.skip>true</maven.deploy.skip>
+		<vo.version>3.0.1</vo.version>
 	</properties>
 	<licenses>
 		<license>
@@ -29,7 +30,7 @@
 		<repository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
-			<url>http://repo1.maven.org/maven2</url>
+			<url>https://repo1.maven.org/maven2/</url>
 		</repository>
 		<repository>
 			<id>apache-snapshots</id>
@@ -58,14 +59,14 @@
 		<pluginRepository>
 			<id>central</id>
 			<name>MavenCentral Repository</name>
-			<url>http://repo1.maven.org/maven2</url>
+			<url>https://repo1.maven.org/maven2/</url>
 		</pluginRepository>
 	</pluginRepositories>
 	<dependencies>
 		<dependency>
 			<groupId>com.att.aro</groupId>
 			<artifactId>vo-core</artifactId>
-			<version>3.0.0</version>
+			<version>${vo.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>

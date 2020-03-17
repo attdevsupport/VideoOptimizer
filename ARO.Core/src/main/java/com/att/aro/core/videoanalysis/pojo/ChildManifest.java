@@ -59,6 +59,13 @@ public class ChildManifest {
 		return segmentCount++;
 	}
 
+	/**
+	 * Add to segmentList if not already there.
+	 * 
+	 * @param segmentUriName
+	 * @param segmentInfo
+	 * @return true if can add to segmentList, false is already there
+	 */
 	public boolean addSegment(String segmentUriName, SegmentInfo segmentInfo) {
 		if (!segmentList.containsKey(segmentUriName)) {
 			if (segmentInfo.getStartTime() == 0) {
@@ -130,7 +137,7 @@ public class ChildManifest {
 	}
 
 	public String dumpSegmentList() {
-		StringBuilder strblr = new StringBuilder();
+		StringBuilder strblr = new StringBuilder("SegmentList:");
 		Iterator<String> keys = segmentList.keySet().iterator();
 		while (keys.hasNext()) {// && limit-- > 0) {
 			String key = keys.next();

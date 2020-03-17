@@ -97,9 +97,6 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 				}
 			}
 			
-			// VID-TODO utilize ExternalProcessRunner, get response and find failures
-			// String[] cmd = new String[] { "bash", "-c", exeIdeviceScreenShot + " " + img };
-			
 			String results = runner.executeCmd(exeIdeviceScreenShot + " " + img);
 			if (!results.isEmpty() && !results.contains("Screenshot saved to")) {
 				isready = false; 

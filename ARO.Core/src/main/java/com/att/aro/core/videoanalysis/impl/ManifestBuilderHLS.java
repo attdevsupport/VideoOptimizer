@@ -119,6 +119,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 			if (flag == null) {
 				continue;
 			}
+			ContentType contentType;
 			switch (flag[0]) {
 			
 			// Master & Child -------------------------------
@@ -147,8 +148,6 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 						} else {
 							childManifest.setContentType(ContentType.VIDEO);
 						}
-					} else {
-						return;
 					}
 				}
 				break;
@@ -162,11 +161,24 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				// #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="caption_1",DEFAULT=NO,AUTOSELECT=YES,LANGUAGE="ENG",URI="114.m3u8"
 
 				childUriName = StringParse.findLabeledDataFromString("URI=", "\"", sData[itr]);
-				LOG.info("MEDIA childUriName :" + childUriName);
 				if (StringUtils.isNotEmpty(childUriName)) {
+					LOG.info("MEDIA childUriName :" + childUriName);
 					childManifest = createChildManifest(null, "", childUriName);
 					childManifest.setVideo(false);
-				}
+					switch (StringParse.findLabeledDataFromString("TYPE=", ",", sData[itr])) {
+					case "AUDIO":
+						contentType = ContentType.AUDIO;
+						break;
+					case "CLOSED-CAPTIONS":
+						contentType = ContentType.SUBTITLES;
+						break;
+					default:
+						contentType = ContentType.UNKNOWN;
+						break;
+					}
+					childManifest.setContentType(contentType);
+					manifest.setContentType(contentType);
+				}				
 				break;
 
 			case "#EXT-X-STREAM-INF": // ChildManifest Map itr:metadata-Info, ++itr:childManifestName
@@ -201,14 +213,13 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					LOG.error("failed to locate child manifest " + sData[++itr]);
 				} else {
 					String parameters = sData[itr];
-					if (sData[itr + 1].startsWith("#EXT-X-BYTERANGE:")) { // ex: #EXT-X-BYTERANGE:99640@4222104
-						String byteRange = sData[++itr];
-						// VID-TODO convert (#EXT-X-BYTERANGE:544824@23058200) so can look in header for (Range: bytes=23058200-23603023) 
-						// breaking collection here to avvoid false matches
-						LOG.error("Cannot match " + byteRange);
-						break;
+					String segmentUriName;
+					if (sData[itr + 1].startsWith("#EXT-X-BYTERANGE:")) {
+						segmentUriName = sData[++itr];
+						++itr; // skip next line
+					} else {
+						segmentUriName = sData[++itr];
 					}
-					String segmentUriName = sData[++itr];
 					
 					SegmentInfo segmentInfo = createSegmentInfo(childManifest, parameters, segmentUriName);
 					
@@ -223,8 +234,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 						manifestCollection.addToTimestampChildManifestMap(manifest.getRequest().getTimeStamp(), childManifest);
 						if (!manifestCollection.getSegmentChildManifestTrie().containsKey(segmentUriName)) {
 							manifestCollection.addToSegmentChildManifestTrie(segmentUriName, childManifest);
-							segmentManifestCollectionMap.put(segmentUriName + "|" + manifestCollection.getManifest().getVideoName(),
-									manifestCollection.getManifest().getVideoName());
+							addToSegmentManifestCollectionMap(segmentUriName);
 						}
 					}
 				}

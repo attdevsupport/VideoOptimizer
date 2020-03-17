@@ -49,6 +49,7 @@ public class Manifest {
 
 	private double programDateTime;
 	private String videoName = "";
+	private String urlName = "";
 	
 	private boolean videoNameValidated = false;
 	private Double duration = 0D;
@@ -92,6 +93,7 @@ public class Manifest {
 	 * Indicates if video segment metadata such as bitrate has been extracted successfully
 	 */
 	private boolean videoMetaDataExtracted = false;
+	private String setBaseURL;
 
 	public double getStartupDelay() {
 		if (startupVideoEvent != null) {
@@ -132,20 +134,19 @@ public class Manifest {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("\n\tManifest :");
-		strblr.append(videoType);
-		strblr.append(", :").append(getVideoName());
+		strblr.append(" requestTime :").append(String.format("%.3f", requestTime));
+		strblr.append(", VideoType :" + getVideoType());
+		strblr.append(", Type :").append(getManifestType());
 		strblr.append(String.format(masterManifest == null ? "\n\t StreamProgramDateTime: %.3f" : "\n\t ProgramDateTime: %.3f", programDateTime));
 		strblr.append("\n\t, Name :").append(getVideoName());
 		strblr.append(String.format("\n\t  CRC-32: %8.0f", checksumCRC32));
-		strblr.append("\n\t, VideoType :").append(getVideoType());
-		strblr.append("\n\t, Type :").append(getManifestType());
-		strblr.append("\n\t, requestTime :").append(requestTime);
 		strblr.append("\n\t, ContentType :").append(getContentType());
 		strblr.append("\n\t, Encryption :").append(getEncryption());
 		strblr.append("\n\t, URIs :").append(uri != null ? uri.getRawPath() : "null");
 		strblr.append(", duration :").append(getDuration());
 		strblr.append(", timeScale :").append(getTimeScale());
-		strblr.append("\n" + displayContent(true, 30));
+		strblr.append("\n");
+		strblr.append(displayContent(true, 30));
 		return strblr.toString();
 	}
 

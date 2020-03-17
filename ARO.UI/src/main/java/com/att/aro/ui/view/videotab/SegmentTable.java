@@ -481,7 +481,7 @@ public class SegmentTable extends JPanel implements ActionListener {
 
 		int colCount = rowSorter.getModel().getColumnCount();
 		for (int column = 0; column < colCount; column++) {
-			rowSorter.setComparator(column, new TableSortComparator(column));
+			rowSorter.setComparator(column, new TableSortComparator(column, "-"));
 		}
 
 		jTable.addMouseListener(streamTableClickHandler(tableModel, jTable, jTable.getColumnModel().getColumnIndex("SessionLink")));
