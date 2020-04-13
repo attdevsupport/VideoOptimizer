@@ -353,13 +353,18 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		}
 		
 		double temp = 0;
-		if (manifest.getTimeScale() > 0 && segmentInfo.getStartTime() > manifest.getTimeScale()) {
-			temp = segmentInfo.getStartTime() / manifest.getTimeScale();
+		if (isNormalSegment()) {
+			if (manifest.getTimeScale() > 0 && segmentInfo.getStartTime() > manifest.getTimeScale()) {
+				temp = segmentInfo.getStartTime() / manifest.getTimeScale();
+			} else {
+				temp = segmentInfo.getStartTime();
+			}
+			setSegmentStartTime(temp);
+			setPlayTime(temp);
 		} else {
-			temp = segmentInfo.getStartTime();
+			setSegmentStartTime(0);
+			setPlayTime(0);
 		}
-		setSegmentStartTime(temp);
-		setPlayTime(temp);
 		this.response = response;
 		setCrc32Value(crc32Value);
 

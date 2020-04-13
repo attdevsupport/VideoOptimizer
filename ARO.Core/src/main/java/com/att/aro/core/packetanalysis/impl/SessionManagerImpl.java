@@ -1,29 +1,26 @@
 /*
- *  Copyright 2019 AT&T
- *
+ * Copyright 2019 AT&T
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 package com.att.aro.core.packetanalysis.impl;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,40 +55,40 @@ import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.util.Util;
 
-//FIXME LOT OF TODOS IN HERE - RENAMING IT TO FROM TODO to TODOS FOR NOW
+// FIXME LOT OF TODOS IN HERE - RENAMING IT TO FROM TODO to TODOS FOR NOW
 public class SessionManagerImpl implements ISessionManager {
 
 	private static final Logger LOGGER = LogManager.getLogger(SessionManagerImpl.class.getName());
 
 	@Autowired
 	IRequestResponseBuilder requestResponseBuilder;
-	
+
 	@Autowired
 	private IParseHeaderLine parseHeaderLine;
 
 	private String tracePath = "";
-	
+
 	private IByteArrayLineReader storageReader;
-	
+
 	@Autowired
-	public void setByteArrayLineReader(IByteArrayLineReader reader){
+	public void setByteArrayLineReader(IByteArrayLineReader reader) {
 		this.storageReader = reader;
 	}
 
 	public void setiOSSecureTracePath(String tracePath) {
-		this.tracePath = tracePath+Util.FILE_SEPARATOR+ "iosSecure"+Util.FILE_SEPARATOR;
+		this.tracePath = tracePath + Util.FILE_SEPARATOR + "iosSecure" + Util.FILE_SEPARATOR;
 	}
-	
+
 	Map<String, Integer> wellKnownPorts = new HashMap<String, Integer>(5);
-	
+
 	public SessionManagerImpl() {
 		wellKnownPorts.put("HTTP", 80);
 		wellKnownPorts.put("HTTPS", 443);
 		wellKnownPorts.put("RTSP", 554);
 	}
-	
+
 	public List<Session> processPacketsAndAssembleSessions(List<PacketInfo> packets) {
-		
+
 		List<Session> sessions = new ArrayList<>();
 		List<PacketInfo> udpPackets = new ArrayList<>();
 		Map<InetAddress, String> hostMap = new HashMap<>();
@@ -99,15 +96,15 @@ public class SessionManagerImpl implements ISessionManager {
 		Map<String, PacketInfo> dnsRequestDomains = new HashMap<>();
 		Map<String, List<Session>> tcpSessions = new LinkedHashMap<>();
 		Map<InetAddress, PacketInfo> dnsResponsePackets = new HashMap<>();
-		
+
 		if (packets != null) {
 			for (PacketInfo packetInfo : packets) {
 				Packet packet = packetInfo.getPacket();
-				
+
 				if (packet instanceof UDPPacket) {
 					udpPackets.add(packetInfo);
-					if (((UDPPacket)packet).isDNSPacket()) {
-						DomainNameSystem dns = ((UDPPacket)packet).getDns();
+					if (((UDPPacket) packet).isDNSPacket()) {
+						DomainNameSystem dns = ((UDPPacket) packet).getDns();
 						if (dns != null && dns.isResponse()) {
 							for (InetAddress inet : dns.getIpAddresses()) {
 								hostMap.put(inet, dns.getDomainName());
@@ -115,18 +112,18 @@ public class SessionManagerImpl implements ISessionManager {
 							}
 						} else if (dns != null && !dns.isResponse()) {
 							dnsRequestDomains.put(dns.getDomainName(), packetInfo);
-						}	
+						}
 					}
 					associatePacketToUDPSessionAndPopulateCollections(sessions, udpSessions, packetInfo, (UDPPacket) packet);
 				}
-				
+
 				if (packet instanceof TCPPacket) {
 					TCPPacket tcpPacket = (TCPPacket) packet;
 					packetInfo.setTcpInfo(null);
 					Session session = associatePacketToTCPSessionAndPopulateCollections(sessions, tcpSessions, packetInfo, tcpPacket);
-					
+
 					populateTCPPacketInfo(packetInfo, tcpPacket);
-					
+
 					session.setSsl(session.isSsl() ? session.isSsl() : tcpPacket.isSsl());
 					if (tcpPacket.isDecrypted()) {
 						tcpPacket.setDataOffset(0);
@@ -134,7 +131,7 @@ public class SessionManagerImpl implements ISessionManager {
 					}
 					if (session.getDnsResponsePacket() == null && dnsResponsePackets.containsKey(session.getRemoteIP())) {
 						session.setDnsResponsePacket(dnsResponsePackets.get(session.getRemoteIP()));
-						session.setDomainName((((UDPPacket)(session.getDnsResponsePacket()).getPacket()).getDns()).getDomainName());
+						session.setDomainName((((UDPPacket) (session.getDnsResponsePacket()).getPacket()).getDns()).getDomainName());
 					}
 					if (session.getDnsRequestPacket() == null && StringUtils.isNotBlank(session.getDomainName()) && dnsRequestDomains.containsKey(session.getDomainName())) {
 						session.setRemoteHostName(session.getDomainName());
@@ -151,7 +148,7 @@ public class SessionManagerImpl implements ISessionManager {
 				}
 			}
 		}
-		
+
 		Collections.sort(sessions);
 		analyzeRequestResponses(sessions);
 		return sessions;
@@ -177,29 +174,29 @@ public class SessionManagerImpl implements ISessionManager {
 		Session session;
 		InetAddress localIP;
 		InetAddress remoteIP;
-		
+
 		switch (packetInfo.getDir()) {
-			case UPLINK:
-				localIP = packet.getSourceIPAddress();
-				localPort = packet.getSourcePort();
-				remoteIP = packet.getDestinationIPAddress();
-				remotePort = packet.getDestinationPort();
-				break;
-			case DOWNLINK:
-				localIP = packet.getDestinationIPAddress();
-				localPort = packet.getDestinationPort();
-				remoteIP = packet.getSourceIPAddress();
-				remotePort = packet.getSourcePort();
-				break;
-			default:
-				localIP = packet.getSourceIPAddress();
-				localPort = packet.getSourcePort();
-				remoteIP = packet.getDestinationIPAddress();
-				remotePort = packet.getDestinationPort();
-				LOGGER.warn("29 - Unable to determine packet direction");
-				break;
+		case UPLINK:
+			localIP = packet.getSourceIPAddress();
+			localPort = packet.getSourcePort();
+			remoteIP = packet.getDestinationIPAddress();
+			remotePort = packet.getDestinationPort();
+			break;
+		case DOWNLINK:
+			localIP = packet.getDestinationIPAddress();
+			localPort = packet.getDestinationPort();
+			remoteIP = packet.getSourceIPAddress();
+			remotePort = packet.getSourcePort();
+			break;
+		default:
+			localIP = packet.getSourceIPAddress();
+			localPort = packet.getSourcePort();
+			remoteIP = packet.getDestinationIPAddress();
+			remotePort = packet.getDestinationPort();
+			LOGGER.warn("29 - Unable to determine packet direction");
+			break;
 		}
-		
+
 		String sessionKey = localIP.getHostAddress() + " " + localPort + " " + remotePort + " " + remoteIP.getHostAddress();
 		if (!udpSessions.containsKey(sessionKey)) {
 			session = new Session(localIP, remoteIP, remotePort, localPort, sessionKey);
@@ -233,87 +230,86 @@ public class SessionManagerImpl implements ISessionManager {
 		InetAddress remoteIP;
 
 		switch (packetInfo.getDir()) {
-			case UPLINK:
-				localIP = tcpPacket.getSourceIPAddress();
-				localPort = tcpPacket.getSourcePort();
-				remoteIP = tcpPacket.getDestinationIPAddress();
-				remotePort = tcpPacket.getDestinationPort();
-				break;
-	
-			case DOWNLINK:
-				localIP = tcpPacket.getDestinationIPAddress();
-				localPort = tcpPacket.getDestinationPort();
-				remoteIP = tcpPacket.getSourceIPAddress();
-				remotePort = tcpPacket.getSourcePort();
-				break;
-	
-			default:
-				localIP = tcpPacket.getSourceIPAddress();
-				localPort = tcpPacket.getSourcePort();
-				remoteIP = tcpPacket.getDestinationIPAddress();
-				remotePort = tcpPacket.getDestinationPort();
-				LOGGER.warn("29 - Unable to determine packet direction. Assuming Uplink");
-				break;
+		case UPLINK:
+			localIP = tcpPacket.getSourceIPAddress();
+			localPort = tcpPacket.getSourcePort();
+			remoteIP = tcpPacket.getDestinationIPAddress();
+			remotePort = tcpPacket.getDestinationPort();
+			break;
+
+		case DOWNLINK:
+			localIP = tcpPacket.getDestinationIPAddress();
+			localPort = tcpPacket.getDestinationPort();
+			remoteIP = tcpPacket.getSourceIPAddress();
+			remotePort = tcpPacket.getSourcePort();
+			break;
+
+		default:
+			localIP = tcpPacket.getSourceIPAddress();
+			localPort = tcpPacket.getSourcePort();
+			remoteIP = tcpPacket.getDestinationIPAddress();
+			remotePort = tcpPacket.getDestinationPort();
+			LOGGER.warn("29 - Unable to determine packet direction. Assuming Uplink");
+			break;
 		}
-		
-		
+
 		String sessionKey = localIP.getHostAddress() + " " + localPort + " " + remotePort + " " + remoteIP.getHostAddress();
-		
+
 		if (!tcpSessions.containsKey(sessionKey)) {
-			
+
 			session = new Session(localIP, remoteIP, remotePort, localPort, sessionKey);
 			sessions.add(session);
 			List<Session> tcpSessionList = new ArrayList<>();
 			tcpSessionList.add(session);
 			tcpSessions.put(sessionKey, tcpSessionList);
-			
+
 		} else {
 
 			session = (tcpSessions.get(sessionKey)).get(tcpSessions.get(sessionKey).size() - 1);
 
 			if (tcpPacket.isSYN() && packetInfo.getDir().equals(PacketDirection.UPLINK)) {
-				
+
 				if (!session.getUplinkPackets().containsKey(tcpPacket.getSequenceNumber())) {
 					session = new Session(localIP, remoteIP, remotePort, localPort, sessionKey);
 					sessions.add(session);
 					tcpSessions.get(sessionKey).add(session);
-					
+
 				} else {
 					tcpPacket.setRetransmission(true);
 				}
 			}
 		}
-		
+
 		if (session.getBaseUplinkSequenceNumber() == 0 && packetInfo.getDir().equals(PacketDirection.UPLINK)) {
 			session.setBaseUplinkSequenceNumber(tcpPacket.getSequenceNumber());
-		} 
-		
+		}
+
 		if (session.getBaseDownlinkSequenceNumber() == 0 && packetInfo.getDir().equals(PacketDirection.DOWNLINK)) {
 			session.setBaseDownlinkSequenceNumber(tcpPacket.getSequenceNumber());
 		}
-		
+
 		if (!session.getPackets().isEmpty() && (tcpPacket.isFIN() || tcpPacket.isRST())) {
 			PacketInfo previousPacket = session.getPackets().get(session.getPackets().size() - 1);
 			double delay = packetInfo.getTimeStamp() - previousPacket.getTimeStamp();
 			session.setSessionTermination(new Termination(packetInfo, delay));
 		}
-		
+
 		boolean packetAdditionComplete = session.addTcpPacket(packetInfo, tcpPacket.getSequenceNumber());
 		session.setBytesTransferred(session.getBytesTransferred() + packetInfo.getPayloadLen());
 		if (!packetAdditionComplete) {
 			packetInfo.setTcpInfo(TcpInfo.TCP_DATA_DUP);
 		}
-		
+
 		return session;
 	}
 
 	private void analyzeRequestResponses(List<Session> sessions) {
-		
+
 		ArrayList<HttpRequestResponseInfo> results;
 		for (Session session : sessions) {
-			
+
 			results = new ArrayList<>();
-			
+
 			if (session.isUdpOnly()) {
 				HttpRequestResponseInfo rrInfo = null;
 				HttpRequestResponseInfo recentUpRRInfo = null;
@@ -392,9 +388,9 @@ public class SessionManagerImpl implements ISessionManager {
 						LOGGER.error("Error Storing data to UDP Request Response Obect. Session ID: " + session.getSessionKey());
 					}
 				}
-				
+
 			} else {
-				
+
 				analyzeACK(session);
 				analyzeZeroWindow(session);
 				analyzeRecoverPkts(session);
@@ -402,67 +398,82 @@ public class SessionManagerImpl implements ISessionManager {
 				TCPPacket tcpPacket = null;
 				HttpRequestResponseInfo rrInfo = null;
 				HttpRequestResponseInfo tempRRInfo = null;
-				
+
 				try {
-					
-					boolean isOSSecure = tryAndHandleIOSSescureSessions(session);
-					
-					if (!isOSSecure) {
-						long expectedUploadSeqNo = 0;
-						for (long uploadSequenceNumber : session.getUplinkPackets().keySet()) {
-							packetInfo = session.getUplinkPackets().get(uploadSequenceNumber);
-							tcpPacket = (TCPPacket) packetInfo.getPacket();
-							if (packetInfo.getPayloadLen() > 0) {
-								if (!session.isDataInaccessible()) {
-									rrInfo = extractHttpRequestResponseInfo(session, packetInfo, packetInfo.getDir());
-								}
-								if (rrInfo != null) {
-									tempRRInfo = rrInfo;
-									results.add(rrInfo);
-									rrInfo.setFirstDataPacket(packetInfo);
-									rrInfo.setLastDataPacket(packetInfo);
-									rrInfo.writeHeader(packetInfo, rrInfo.getHeaderOffset());
-									rrInfo.writePayload(packetInfo, true, rrInfo.getHeaderOffset());
-									expectedUploadSeqNo = uploadSequenceNumber + tcpPacket.getPayloadLen();
-								} else if (tempRRInfo != null) {
-									int headerDelta = 0;
-									boolean flag = false;
-									if (!session.isDataInaccessible() && !tempRRInfo.isHeaderParseComplete()) {
-										flag = true;
-										headerDelta = setHeaderOffset(tempRRInfo, packetInfo, tcpPacket);
-										tempRRInfo.writeHeader(packetInfo, headerDelta);
-									}
 
-									tempRRInfo.setLastDataPacket(packetInfo);
-									tempRRInfo.setRawSize(tempRRInfo.getRawSize() + packetInfo.getLen() - headerDelta);
-									if (tcpPacket.getSequenceNumber() == expectedUploadSeqNo) {
-										expectedUploadSeqNo = tcpPacket.getSequenceNumber() + tcpPacket.getPayloadLen();
-										tempRRInfo.writePayload(packetInfo, flag, headerDelta);
-									} else if (tcpPacket.getSequenceNumber() < expectedUploadSeqNo) {
-										tcpPacket.setRetransmission(true);
-									} else {
-										LOGGER.warn("Identified the following Request is corrupt. Session: " + session.getSessionKey() + ". Request Age: " + tempRRInfo.getAge());
-										tempRRInfo.setCorrupt(true);
-										tempRRInfo.writePayload(packetInfo, false, 0);
-									}
-								} else {
-									session.setDataInaccessible(true);
-									rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetInfo.getDir());
-									expectedUploadSeqNo = uploadSequenceNumber + tcpPacket.getPayloadLen();
-									rrInfo.setTCP(true);
-									results.add(rrInfo);
-									rrInfo.setDirection(HttpDirection.REQUEST);
-									tempRRInfo = rrInfo;
-									rrInfo.setFirstDataPacket(packetInfo);
-									rrInfo.setLastDataPacket(packetInfo);
-								}
-								rrInfo = null;
-								tempRRInfo.addTCPPacket(uploadSequenceNumber, packetInfo);
+					long expectedUploadSeqNo = 0;
+					for (long uploadSequenceNumber : session.getUplinkPackets().keySet()) {
+						packetInfo = session.getUplinkPackets().get(uploadSequenceNumber);
+						tcpPacket = (TCPPacket) packetInfo.getPacket();
+						if (packetInfo.getPayloadLen() > 0) {
+							if (!session.isDataInaccessible()) {
+								rrInfo = extractHttpRequestResponseInfo(session, packetInfo, packetInfo.getDir());
 							}
-						}
+							if (rrInfo != null) {
+								tempRRInfo = rrInfo;
 
-						rrInfo = null;
-						tempRRInfo = null;
+								String host = rrInfo.getHostName();
+
+								if (host != null) {
+									URI referrer = rrInfo.getReferrer();
+									session.setRemoteHostName(host);
+									session.setDomainName(referrer != null ? referrer.getHost() : host);
+								}
+
+								if (isAnIOSSecureSession(session)) {
+									break;
+								}
+
+								results.add(rrInfo);
+								rrInfo.setFirstDataPacket(packetInfo);
+								rrInfo.setLastDataPacket(packetInfo);
+								rrInfo.writeHeader(packetInfo, rrInfo.getHeaderOffset());
+								rrInfo.writePayload(packetInfo, true, rrInfo.getHeaderOffset());
+								expectedUploadSeqNo = uploadSequenceNumber + tcpPacket.getPayloadLen();
+							} else if (tempRRInfo != null) {
+								int headerDelta = 0;
+								boolean flag = false;
+								if (!session.isDataInaccessible() && !tempRRInfo.isHeaderParseComplete()) {
+									flag = true;
+									headerDelta = setHeaderOffset(tempRRInfo, packetInfo, tcpPacket);
+									tempRRInfo.writeHeader(packetInfo, headerDelta);
+								}
+
+								tempRRInfo.setLastDataPacket(packetInfo);
+								tempRRInfo.setRawSize(tempRRInfo.getRawSize() + packetInfo.getLen() - headerDelta);
+								if (tcpPacket.getSequenceNumber() == expectedUploadSeqNo) {
+									expectedUploadSeqNo = tcpPacket.getSequenceNumber() + tcpPacket.getPayloadLen();
+									tempRRInfo.writePayload(packetInfo, flag, headerDelta);
+								} else if (tcpPacket.getSequenceNumber() < expectedUploadSeqNo) {
+									tcpPacket.setRetransmission(true);
+								} else {
+									LOGGER.warn("Identified the following Request is corrupt. Session: " + session.getSessionKey() + ". Request Age: " + tempRRInfo.getAge());
+									tempRRInfo.setCorrupt(true);
+									tempRRInfo.writePayload(packetInfo, false, 0);
+								}
+							} else {
+								if (session.isDecrypted()) {
+									continue;
+								}
+								session.setDataInaccessible(true);
+								rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetInfo.getDir());
+								expectedUploadSeqNo = uploadSequenceNumber + tcpPacket.getPayloadLen();
+								rrInfo.setTCP(true);
+								results.add(rrInfo);
+								rrInfo.setDirection(HttpDirection.REQUEST);
+								tempRRInfo = rrInfo;
+								rrInfo.setFirstDataPacket(packetInfo);
+								rrInfo.setLastDataPacket(packetInfo);
+							}
+							rrInfo = null;
+							tempRRInfo.addTCPPacket(uploadSequenceNumber, packetInfo);
+						}
+					}
+
+					rrInfo = null;
+					tempRRInfo = null;
+
+					if (!session.isIOSSecureSession()) {
 
 						long expectedDownloadSeqNo = 0;
 						for (long downloadSequenceNumber : session.getDownlinkPackets().keySet()) {
@@ -502,6 +513,9 @@ public class SessionManagerImpl implements ISessionManager {
 										tempRRInfo.writePayload(packetInfo, false, 0);
 									}
 								} else {
+									if (session.isDecrypted()) {
+										continue;
+									}
 									rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetInfo.getDir());
 									expectedDownloadSeqNo = downloadSequenceNumber + tcpPacket.getPayloadLen();
 									rrInfo.setTCP(true);
@@ -515,21 +529,88 @@ public class SessionManagerImpl implements ISessionManager {
 								tempRRInfo.addTCPPacket(downloadSequenceNumber, packetInfo);
 							}
 						}
-
 					}
 				} catch (IOException e) {
 					LOGGER.error("Error Storing data to TCP Request Response Obect. Session ID: " + session.getSessionKey());
 				}
+
+				if (session.isIOSSecureSession()) {
+					results = analyzeRequestResponsesForSecureSessions(session);
+				}
+
 			}
-			
+
 			Collections.sort(results);
 			session.setRequestResponseInfo(results);
 			populateDataForRequestResponses(session);
-			
+
 			if (session.getDomainName() == null) {
 				session.setDomainName(session.getRemoteHostName() != null ? session.getRemoteHostName() : session.getRemoteIP().getHostAddress());
 			}
 		}
+	}
+
+	private ArrayList<HttpRequestResponseInfo> analyzeRequestResponsesForSecureSessions(Session session) {
+
+		ArrayList<HttpRequestResponseInfo> results = new ArrayList<>();
+
+		String sessionKey = session.getDomainName() + "_" + session.getLocalPort();
+		File clearSessionRecFileUL = new File(this.tracePath + sessionKey + "_UL");
+		File clearSessionRecFileDL = new File(this.tracePath + sessionKey + "_DL");
+
+		try {
+			BufferedReader uplinkFileReader = new BufferedReader(new FileReader(clearSessionRecFileUL));
+			BufferedReader downlinkFileReader = new BufferedReader(new FileReader(clearSessionRecFileDL));
+
+			results = readFileAndPopulateRequestResponse(session, results, uplinkFileReader, PacketDirection.UPLINK, HttpDirection.REQUEST);
+			results = readFileAndPopulateRequestResponse(session, results, downlinkFileReader, PacketDirection.DOWNLINK, HttpDirection.RESPONSE);
+
+			uplinkFileReader.close();
+			downlinkFileReader.close();
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+		}
+
+		return results;
+	}
+
+	private ArrayList<HttpRequestResponseInfo> readFileAndPopulateRequestResponse(Session session, ArrayList<HttpRequestResponseInfo> results, BufferedReader bufferedReader, PacketDirection packetDirection, HttpDirection httpDirection)
+			throws IOException {
+		String dataRead;
+		HttpRequestResponseInfo rrInfo = null;
+		while ((dataRead = bufferedReader.readLine()) != null) {
+			if (dataRead.length() > 0) {
+				Matcher matcher;
+				if (packetDirection == PacketDirection.UPLINK) {
+					matcher = HttpPattern.strRequestType.matcher(dataRead);
+				} else {
+					matcher = HttpPattern.strReResponseResults.matcher(dataRead);
+				}
+				if (matcher.lookingAt()) {
+					rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetDirection);
+					rrInfo.writeHeader(dataRead);
+					while ((dataRead = bufferedReader.readLine()) != null && dataRead.length() != 0) {
+						rrInfo.writeHeader(System.lineSeparator());
+						rrInfo.writeHeader(dataRead);
+						rrInfo.setTCP(true);
+						rrInfo.setDirection(httpDirection);
+						parseHeaderLine.parseHeaderLine(dataRead, rrInfo);
+					}
+					rrInfo.writeHeader(System.lineSeparator());
+					results.add(rrInfo);
+				} else if (rrInfo != null) {
+					rrInfo.writePayload(dataRead);
+					rrInfo.writePayload(System.lineSeparator());
+					while ((dataRead = bufferedReader.readLine()) != null && dataRead.length() != 0) {
+						rrInfo.writePayload(dataRead);
+						rrInfo.writePayload(System.lineSeparator());
+					}
+				}
+			}
+		}
+		return results;
 	}
 
 	private int setHeaderOffset(HttpRequestResponseInfo rrInfo, PacketInfo packetInfo, TCPPacket tcpPacket) {
@@ -545,25 +626,25 @@ public class SessionManagerImpl implements ISessionManager {
 			while ((line = storageReader.readLine()) != null && line.length() != 0) {
 				parseHeaderLine.parseHeaderLine(line, rrInfo);
 			}
-			
+
 			if (line != null && line.length() == 0) {
 				rrInfo.setHeaderParseComplete(true);
 			}
-			
+
 		} catch (Exception exception) {
 			LOGGER.error("Error Reading Data from TCP Packet: " + exception.getMessage());
 			return 0;
 		}
-		
+
 		return storageReader.getIndex();
 	}
 
 	private void populateDataForRequestResponses(Session session) {
-		
+
 		List<HttpRequestResponseInfo> requests = new ArrayList<HttpRequestResponseInfo>(session.getRequestResponseInfo().size());
-		
+
 		for (HttpRequestResponseInfo rrInfo : session.getRequestResponseInfo()) {
-			
+
 			if (rrInfo.getDirection() == HttpDirection.REQUEST) {
 				requests.add(rrInfo);
 				if (session.getDomainName() == null) {
@@ -583,7 +664,7 @@ public class SessionManagerImpl implements ISessionManager {
 					rrInfo.getAssocReqResp().setAssocReqResp(rrInfo);
 				}
 			}
-			
+
 			// Build an absolute URI if possible
 			if (rrInfo.getObjUri() != null && !rrInfo.getObjUri().isAbsolute()) {
 				try {
@@ -596,14 +677,14 @@ public class SessionManagerImpl implements ISessionManager {
 				}
 			}
 		}
-		
+
 		if (!session.isUdpOnly()) {
 			populateWaterfallContent(session);
 		}
 	}
 
 	private void populateWaterfallContent(Session session) {
-		
+
 		Double sslNegotiationDuration = null;
 		double contentDownloadDuration = 0;
 		double requestDuration = 0;
@@ -613,20 +694,19 @@ public class SessionManagerImpl implements ISessionManager {
 		if (session.getDnsRequestPacket() != null && session.getDnsResponsePacket() != null) {
 			dnsTime = session.getDnsRequestPacket().getTimeStamp();
 		}
-		
+
 		Double sslNegTime = null;
 		PacketInfo handshake = session.getLastSslHandshakePacket();
 		if (handshake != null) {
 			sslNegTime = handshake.getTimeStamp();
 		}
-		
+
 		for (HttpRequestResponseInfo rrinfo : session.getRequestResponseInfo()) {
-			if (rrinfo.getDirection() != HttpDirection.REQUEST || rrinfo.getAssocReqResp() == null
-					|| rrinfo.getFirstDataPacket() == null){
+			if (rrinfo.getDirection() != HttpDirection.REQUEST || rrinfo.getAssocReqResp() == null || rrinfo.getFirstDataPacket() == null) {
 				// Only process non-HTTPS request/response pairs
 				continue;
 			}
-			
+
 			double startTime = -1;
 			double firstReqPacket = rrinfo.getFirstDataPacket().getTimeStamp();
 			PacketInfo lastPkt = rrinfo.getLastDataPacket();
@@ -685,41 +765,39 @@ public class SessionManagerImpl implements ISessionManager {
 				}
 
 			}
-			RequestResponseTimeline reqRespTimeline = new RequestResponseTimeline(startTime, dnsDuration,
-					initConnDuration, sslNegotiationDuration, requestDuration, timeToFirstByte,
-					contentDownloadDuration);
+			RequestResponseTimeline reqRespTimeline = new RequestResponseTimeline(startTime, dnsDuration, initConnDuration, sslNegotiationDuration, requestDuration, timeToFirstByte, contentDownloadDuration);
 			rrinfo.setWaterfallInfos(reqRespTimeline);
 			rrinfo.getWaterfallInfos().setLastRespPacketTime(lastRespPacket);
 
 		}
-		
+
 	}
-	
+
 	private HttpRequestResponseInfo extractHttpRequestResponseInfo(Session session, PacketInfo packetInfo, PacketDirection packetDirection) {
-		
+
 		HttpRequestResponseInfo rrInfo = null;
-		
+
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		BufferedOutputStream bufferedStream = new BufferedOutputStream(stream);
-		
+
 		TCPPacket tcpPacket = null;
 		UDPPacket udpPacket = null;
 		if (packetInfo.getPacket() instanceof TCPPacket) {
 			tcpPacket = (TCPPacket) packetInfo.getPacket();
 			try {
-				bufferedStream.write(tcpPacket.getData(), tcpPacket.getDataOffset(), tcpPacket.getData().length-tcpPacket.getDataOffset());
+				bufferedStream.write(tcpPacket.getData(), tcpPacket.getDataOffset(), tcpPacket.getData().length - tcpPacket.getDataOffset());
 			} catch (Exception exception) {
 				LOGGER.error("Error Reading Data from TCP Packet: " + exception.getMessage());
 			}
 		} else {
 			udpPacket = (UDPPacket) packetInfo.getPacket();
 			try {
-				bufferedStream.write(udpPacket.getData(), udpPacket.getDataOffset(), udpPacket.getData().length-udpPacket.getDataOffset());
+				bufferedStream.write(udpPacket.getData(), udpPacket.getDataOffset(), udpPacket.getData().length - udpPacket.getDataOffset());
 			} catch (Exception exception) {
 				LOGGER.error("Error Reading Data from UDP Packet: " + exception.getMessage());
 			}
 		}
-		
+
 		try {
 			bufferedStream.flush();
 			storageReader.init(stream.toByteArray());
@@ -770,31 +848,30 @@ public class SessionManagerImpl implements ISessionManager {
 			}
 		} catch (IOException e1) {
 			LOGGER.error(e1.getMessage());
-		} 
-		
+		}
+
 		return rrInfo;
 	}
-	
-	
-	private HttpRequestResponseInfo populateRRInfo (Session session, TCPPacket tcpPacket, HttpRequestResponseInfo rrInfo) throws IOException {
-		
+
+	private HttpRequestResponseInfo populateRRInfo(Session session, TCPPacket tcpPacket, HttpRequestResponseInfo rrInfo) throws IOException {
+
 		String line;
-		
+
 		rrInfo.setSsl(session.isSsl());
 		rrInfo.setRawSize(tcpPacket.getLen());
 		while ((line = storageReader.readLine()) != null && line.length() != 0) {
 			parseHeaderLine.parseHeaderLine(line, rrInfo);
 		}
-		
+
 		if (line != null && line.length() == 0) {
 			rrInfo.setHeaderParseComplete(true);
 		}
-		
+
 		rrInfo.setHeaderOffset(storageReader.getIndex());
 		return rrInfo;
 	}
 
-	private boolean tryAndHandleIOSSescureSessions(Session session) {
+	private boolean isAnIOSSecureSession(Session session) {
 
 		if (session.getDomainName() == null) {
 			return false;
@@ -803,24 +880,13 @@ public class SessionManagerImpl implements ISessionManager {
 		String sessionKey = session.getDomainName() + "_" + session.getLocalPort();
 		File clearSessionRecFileUL = new File(this.tracePath + sessionKey + "_UL");
 		File clearSessionRecFileDL = new File(this.tracePath + sessionKey + "_DL");
-		LOGGER.debug("replaceCleariOSContent: " + sessionKey);
-		try {
-			if (clearSessionRecFileUL.exists() && clearSessionRecFileDL.exists()) {
-				session.setStorageUl(Files.readAllBytes(clearSessionRecFileUL.toPath()));
-				session.setStorageDl(Files.readAllBytes(clearSessionRecFileDL.toPath()));
-				session.setRequestResponseInfo(requestResponseBuilder.createRequestResponseInfo(session));
-				session.setIOSSecureSession(true);
-				return true;
-			}
-		} catch (FileNotFoundException fne) {
-			LOGGER.error("Error", fne);
-		} catch (IOException ioe) {
-			LOGGER.error("Error", ioe);
+		if (clearSessionRecFileUL.exists() && clearSessionRecFileDL.exists()) {
+			session.setIOSSecureSession(true);
+			return true;
 		}
 		return false;
 	}
-	
-	
+
 	/**
 	 * Analyze the packet to find the TCPInfo. Marked flags: TCP_ACK,
 	 * TCP_ACK_DUP, TCP_WINDOW_UPDATE, TCP_KEEP_ALIVE_ACK
@@ -914,8 +980,7 @@ public class SessionManagerImpl implements ISessionManager {
 
 		for (PacketInfo pInfo : sess.getPackets()) {
 			TCPPacket tPacket = (TCPPacket) pInfo.getPacket();
-			if (tPacket.getPayloadLen() == 0 && tPacket.getWindow() == 0 && !tPacket.isSYN() && !tPacket.isFIN()
-					&& !tPacket.isRST()) {
+			if (tPacket.getPayloadLen() == 0 && tPacket.getWindow() == 0 && !tPacket.isSYN() && !tPacket.isFIN() && !tPacket.isRST()) {
 				pInfo.setTcpInfo(TcpInfo.TCP_ZERO_WINDOW);
 			}
 		}

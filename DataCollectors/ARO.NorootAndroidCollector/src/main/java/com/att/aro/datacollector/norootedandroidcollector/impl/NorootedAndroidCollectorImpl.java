@@ -538,8 +538,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		if (isVideo()) {
 			startVideoCapture();
 		}
-		startUserInputCapture();
-		startUiXmlCapture();
 		if(atnrProfile){
 			startAttnrProfile(location);// wait for vpn collection start		
 		}
@@ -860,7 +858,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			LOG.error("Cannot force stop VPN Collector");
 		}
 		
-		userInputTraceCollector.stopUserInputTraceCapture(this.device);
 		if (isAndroidVersionNougatOrHigher(device) == true)
 			cpuTraceCollector.stopCpuTraceCapture(this.device);
 		if (isVideo()) {
@@ -871,7 +868,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		if(this.attnrScriptRun){
 			attnr.stopAtenuationScript(this.device);
 		}
-		uiXmlCollector.stopUiXmlCapture(this.device);
 		LOG.debug("pulling trace to local dir");
 		new LogcatCollector(adbService, device.getSerialNumber()).collectLogcat(localTraceFolder, "Logcat.log");
 		result = pullTrace(this.mDataDeviceCollectortraceFileNames);

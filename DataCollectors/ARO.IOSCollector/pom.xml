@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>3.0.0</version>
+        <version>3.0.1</version>
         <relativePath>../../ARO.Parent</relativePath>
     </parent>
 
@@ -17,6 +17,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.deploy.skip>true</maven.deploy.skip>
+		<vo.version>3.0.1</vo.version>		
 	</properties>
 	<licenses>
 		<license>
@@ -30,7 +31,7 @@
 		<repository>
 			<id>central</id>
 			<name>Central Repository</name>
-			<url>http://repo.maven.apache.org/maven2</url>
+			<url>https://repo1.maven.org/maven2/</url>
 		</repository>
 		<repository>
 			<id>apache.snapshots</id>
@@ -54,7 +55,7 @@
 		<pluginRepository>
 			<id>central</id>
 			<name>Maven Plugin Repository</name>
-			<url>http://repo1.maven.org/maven2</url>
+			<url>https://repo1.maven.org/maven2/</url>
 			<layout>default</layout>
 			<snapshots>
 				<enabled>false</enabled>
@@ -69,7 +70,7 @@
 		<dependency>
 			<groupId>com.att.aro</groupId>
 			<artifactId>vo-core</artifactId>
-			<version>3.0.0</version>
+			<version>${vo.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.media</groupId>
@@ -80,7 +81,7 @@
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
 			<version>2.4</version>
-			<scope>provided</scope>
+			<!-- <scope>provided</scope> -->
 		</dependency>
 		<dependency>
 		    <groupId>org.codehaus.mojo</groupId>
@@ -107,6 +108,12 @@
 		  <artifactId>lombok</artifactId>
 		  <version>1.18.2</version>
 		  <scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<version>3.11.1</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 

@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,7 +126,7 @@ public class VideoStreamConstructor {
 	}
 
 	public String extractFullNameFromRRInfo(HttpRequestResponseInfo req) {
-		String objName = req.getObjNameWithoutParams();
+		String objName = StringUtils.substringBefore(req.getObjNameWithoutParams(), ";");
 		if (objName.contains(".")) {
 			String part[] = objName.split("/");
 			for (int idx = part.length - 1; idx > 0; idx--) {
@@ -145,7 +146,9 @@ public class VideoStreamConstructor {
 		if (content == null) {
 			return;
 		}
-		LOG.info("Segment request:"+request.getAssocReqResp().getFirstDataPacket().getPacketId() + " : " + content.length + request.getFileName() + " : " + request.getTimeStamp() + " : " + request.getObjUri());
+		
+		LOG.debug(String.format("Segment request, packetID: %d, len:%d, name:%s, TS:%.3f, URL:%s"
+					, request.getAssocReqResp().getFirstDataPacket().getPacketId(), content.length, request.getFileName(), request.getTimeStamp(), request.getObjUri()));
 		
 		this.streamingVideoData = streamingVideoData;
 
@@ -206,7 +209,6 @@ public class VideoStreamConstructor {
 				filemanager.deleteFile(tempClippingFullPath);
 			}
 		}
-		LOG.info("segmentInfo.getStartTime() :" + segmentInfo.getStartTime());
 
 		if (thumbnail == null) {
 			thumbnail = getDefaultThumbnail();
@@ -217,7 +219,7 @@ public class VideoStreamConstructor {
 		}
 
 		VideoEvent videoEvent = new VideoEvent(thumbnail // imageArray
-				, manifest								// aroManifest
+				, manifest								// Manifest
 				, segmentInfo							// segmentID, quality, duration
 				, childManifest							// PixelHeight
 				, content.length						// segmentSize
@@ -293,9 +295,10 @@ public class VideoStreamConstructor {
 		childManifest = null;
 		segmentInfo = null;
 
-		LOG.info("request :" + request);
+		LOG.debug("request :" + request);
 
 		String key = manifestBuilder.locateKey(request);
+		LOG.debug(key + "\nmanifestCollection.getUriNameChildMap() :" + manifestCollection.getUriNameChildMap().keySet());
 		if ((childManifest = manifestCollection.getChildManifest(key)) != null) {
 			String brKey = buildByteRangeKey(request);
 			if (brKey != null) {
@@ -322,7 +325,7 @@ public class VideoStreamConstructor {
 			}
 
 			if (childManifest == null) {
-				LOG.info("ChildManifest wasn't found for segment request:" + request.getObjUri());
+				LOG.debug("ChildManifest wasn't found for segment request:" + request.getObjUri());
 				nullSegmentInfo();
 				return null;
 			}
@@ -341,7 +344,7 @@ public class VideoStreamConstructor {
 
 	public SegmentInfo nullSegmentInfo() {
 		if (segmentInfo != null) {
-			LOG.info("notnoll:" + segmentInfo);
+			LOG.debug("notnull:" + segmentInfo);
 		}
 		return segmentInfo = null;
 
@@ -375,7 +378,7 @@ public class VideoStreamConstructor {
 	 */
 	public Manifest extractManifestHLS(StreamingVideoData streamingVideoData, HttpRequestResponseInfo request) {
 		manifestBuilder = manifestBuilderHLS;
-		LOG.info("\nHLS request:\n" + request.getObjUri());
+		LOG.debug("\nHLS request:\n" + request.getObjUri());
 		this.streamingVideoData = streamingVideoData;
 
 		byte[] content = extractContent(request);
@@ -599,7 +602,7 @@ public class VideoStreamConstructor {
 		if (content != null && content.length > 0) {
 			try {
 				filemanager.saveFile(new ByteArrayInputStream(content), pathName);
-				LOG.info(">>>> SAVE payload :" + pathName);
+				LOG.debug(">>>> SAVE payload :" + pathName);
 				return true;
 			} catch (IOException e) {
 				LOG.error("Failed to save " + pathName, e);
@@ -678,7 +681,6 @@ public class VideoStreamConstructor {
 	 */
 	public Manifest extractManifestDash(StreamingVideoData streamingVideoData, HttpRequestResponseInfo request) {
 		manifestBuilder = manifestBuilderDASH;
-		LOG.info("extractManifestDash :" + request);
 		this.streamingVideoData = streamingVideoData;
 		byte[] content = extractContent(request);
 		if (content == null) {

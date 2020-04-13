@@ -46,7 +46,7 @@ public class VideoStream {
 	@NonNull@Setter(AccessLevel.NONE)
 	private TreeMap<String, VideoEvent> audioEventList = new TreeMap<>();
 	/** <pre>
-	 * key definition DLtimestamp-segment
+	 * key definition: segmentStartTime, endTS(in milliseconds)
 	 * value VideoEvent
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
@@ -69,7 +69,7 @@ public class VideoStream {
 	 * value VideoEvent
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
-	private SortedMap<String, VideoEvent> audioSegmentEventList = new TreeMap<>();
+	private TreeMap<String, VideoEvent> audioSegmentEventList = new TreeMap<>();
 	/** <pre>
 	 * key definition segment-quality-timestamp
 	 * value VideoEvent
@@ -107,7 +107,7 @@ public class VideoStream {
 	 */
 	public void addVideoEvent(VideoEvent videoEvent) {
 		String keyDLtime = generateEventKey(videoEvent.getEndTS(), videoEvent.getSegmentID());
-		String keyStartTime = generateTimestampKey(videoEvent.getSegmentStartTime());
+		String keyStartTime = generateEventKey(videoEvent.getSegmentStartTime(), videoEvent.getEndTS() * 1000);
 		switch (videoEvent.getContentType()) {
 		case VIDEO:
 		case MUXED:

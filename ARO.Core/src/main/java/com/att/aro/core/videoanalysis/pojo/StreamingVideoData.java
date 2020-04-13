@@ -15,8 +15,11 @@
 */
 package com.att.aro.core.videoanalysis.pojo;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -25,6 +28,8 @@ import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.util.Util;
+import com.att.aro.core.videoanalysis.impl.SortSelection;
+import com.att.aro.core.videoanalysis.impl.VideoEventComparator;
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
 import lombok.AccessLevel;
@@ -137,20 +142,21 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 												  , scanSegmentGaps(videoStream.getAudioStartTimeMap())));
 	}
 
-
-	double THRESHOLD=.1;
-
-	VideoEvent lastEvent = null;
 	
 	private int scanSegmentGaps(TreeMap<String, VideoEvent> eventMap) {
+		VideoEvent lastEvent = null;
+		double threshold = .01;
 		int count = 0;
-		for (VideoEvent event : eventMap.values()) {
+		ArrayList<VideoEvent> sorted = new ArrayList<>(eventMap.values());
+		Collections.sort(sorted, new VideoEventComparator(SortSelection.SEGMENT_ID));
+		Collections.sort(sorted, new VideoEventComparator(SortSelection.PLAY_TIME));
+		for (VideoEvent event : sorted) { //eventMap.values()
 			if (!event.isNormalSegment()) {
 				continue;
 			}
-			if (lastEvent != null) {
+			if (lastEvent != null && event.getSegmentID() != lastEvent.getSegmentID()) {
 				double dif = event.getPlayTime() - lastEvent.getPlayTimeEnd();
-				if (dif > THRESHOLD) {
+				if (dif > threshold) {
 					// found gap, could be one or many segments missing
 					count++;
 				}

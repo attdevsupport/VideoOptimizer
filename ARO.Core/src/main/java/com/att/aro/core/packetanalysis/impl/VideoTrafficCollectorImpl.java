@@ -178,10 +178,11 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 
 			String extn = videoStreamConstructor.extractExtensionFromRequest(req);
 			if (extn == null) {
-				extn = fname;
-			}
-			if (fname.contains("_audio_")) {
-				extn = "audio";
+				if (fname.contains("audio")) {
+					extn = "audio";
+				} else {
+					extn = fname;
+				}
 			}
 			
 			// catch offset filename, usually before a byte range, example: 4951221a-709b-4cb9-8f52-7bd7abb4b5c9_v5.ts/range/340280-740719
@@ -191,7 +192,10 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			if (fname.contains("aac\\/")) {
 				extn = ".aac";
 			}
-			
+			// for obfuscated yospace stuf, need to understand
+			//			if (req.getObjUri().toString().contains(".dash")) {
+			//				extn = ".mpd";
+			//			}
 			switch (extn) {
 			
 			// DASH - Amazon, Hulu, Netflix, Fullscreen
@@ -206,11 +210,6 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			case ".m4a": // 69169728
 			case ".aac": // audio
 			case "audio": // audio
-				if (audioEnabled) {
-					segmentRequests.add(req);
-					LOG.info("\taudio segment: " + trackManifestTimeStamp+": "+req.getObjNameWithoutParams());
-				}
-				break;
 			case ".dash":
 			case ".mp2t":
 			case ".mp4": // Dash/MPEG

@@ -23,6 +23,10 @@ import java.util.TreeMap;
 
 import org.apache.commons.collections4.trie.PatriciaTrie;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
+import com.att.aro.core.packetanalysis.impl.VideoTrafficCollectorImpl;
 import com.att.aro.core.videoanalysis.impl.SegmentInfo;
 
 import lombok.AccessLevel;
@@ -34,6 +38,7 @@ import lombok.Setter;
 @Data
 public class ManifestCollection {
 	
+	private static final Logger LOG = LogManager.getLogger(ManifestCollection.class.getName());
 	private Manifest manifest;
 	
 	private int commonBaseLength = -1;
@@ -63,10 +68,6 @@ public class ManifestCollection {
 	@Setter
 	private PatriciaTrie<ChildManifest> segmentChildManifestTrie = new PatriciaTrie<>();
 
-	public PatriciaTrie<ChildManifest> getSegmentChildManifestTrie() {
-		return segmentChildManifestTrie;
-	}
-
 	/**<pre>
 	 * TreeMap of ChildManifest
 	 * Key: childUriName
@@ -95,11 +96,15 @@ public class ManifestCollection {
 
 	public void addToUriNameChildMap(int count, String childUriName, ChildManifest childManifest) {
 		setChildUriNameSectionCount(count);
-		uriNameChildMap.put(childUriName, childManifest);
+		addToUriNameChildMap(childUriName, childManifest);
 	}
 	
 	public void addToUriNameChildMap(String childUriName, ChildManifest childManifest) {
-		uriNameChildMap.put(childUriName, childManifest);
+		if (!uriNameChildMap.containsKey(childUriName)) {
+			uriNameChildMap.put(childUriName, childManifest);
+		} else {
+			LOG.debug(childUriName + " already exists");
+		}
 	}
 	
 	public ChildManifest getChildManifest(String childUriName) {
@@ -159,7 +164,7 @@ public class ManifestCollection {
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("\nManifestCollection :");
-		strblr.append("Manifest " + manifest);
+		strblr.append("Manifest " + String.format("%.3f", manifest.getRequestTime()));
 		strblr.append(dumpUriNameChildMap());
 		strblr.append(dumpTrie(5));
 		strblr.append(dumpTimeChildMap());
@@ -176,7 +181,7 @@ public class ManifestCollection {
 					String key = keys.next();
 					strblr.append("\n\t\tchildMap_key: " + key);
 					if (uriNameChildMap.get(key).getManifest() != null) {
-						strblr.append("\n" + uriNameChildMap.get(key).getManifest());
+						strblr.append("\n" + uriNameChildMap.get(key).dumpSegmentList());
 					}
 				}
 			}
