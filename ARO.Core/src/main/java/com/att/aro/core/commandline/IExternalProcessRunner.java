@@ -46,7 +46,18 @@ public interface IExternalProcessRunner {
 	 * @return stdout and stderr
 	 */
 	String executeCmd(String cmd);
-		
+	/**
+	 * execute command in bash/CMD shell
+	 * 
+	 * @param cmd
+	 * @param b 
+	 * @return stdout and stderr
+	 */
+	String executeCmd(String cmd, boolean redirectErrorStream);
+	
 	String executeCmdRunner(String cmd, boolean earlyExit, String msg);
 	
+	String executeCmdRunner(String cmd, boolean earlyExit, String msg, boolean redirectErrorStream);
+
+
 }

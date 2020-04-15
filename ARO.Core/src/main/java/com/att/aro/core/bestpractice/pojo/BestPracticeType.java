@@ -79,6 +79,7 @@ public enum BestPracticeType {
 	, VIDEO_CONCURRENT_SESSION(VIDEO, "Concurrent Session")
 	, VIDEO_VARIABLE_BITRATE(VIDEO, "Variable Bitrate") 
 	, VIDEO_RESOLUTION_QUALITY(VIDEO, "Resolution and Perception") 
+	, VIDEO_ABR_LADDER(VIDEO, "Analyzing the Adaptive Bitrate Ladder")
 	, AUDIO_STREAM(VIDEO, "Streaming Separate Audio and Video"),
 
 	ACCESSING_PERIPHERALS(OTHER, "Accessing Peripheral Applications"),

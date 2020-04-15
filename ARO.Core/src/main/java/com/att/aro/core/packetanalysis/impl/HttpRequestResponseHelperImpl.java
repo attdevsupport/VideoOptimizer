@@ -128,6 +128,10 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 		String contentEncoding = request.getContentEncoding();
 		byte[] payload;
 		ByteArrayOutputStream output;
+		boolean logFlag = false;		
+		if(request.getAssocReqResp()==null) {
+			logFlag = true;//avoid through NPE when we tried to get logger or exception information
+		}
 
 		payload = request.getPayloadData().toByteArray();
 
@@ -177,15 +181,12 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 			if (request.isChunkModeFinished()) {
 				payload = output.toByteArray();
 			} else {
-				throw new Exception(String.format("Unexpected Chunk End %.3f: %s The content may be corrupted.",
-						request.getTimeStamp(), request.getAssocReqResp().getObjNameWithoutParams()));
+				throw new Exception(String.format("Unexpected Chunk End at request time: %.3f, request.getAssocReqResp() is %s The content may be corrupted.", request.getTimeStamp(), logFlag?"N/A":request.getAssocReqResp().getObjNameWithoutParams()));
 			}
 		} else if (payload.length < request.getContentLength()) {
 			request.setExtractable(false);
 			int percentage = payload.length / request.getContentLength() * 100;
-			throw new Exception(String.format(
-					"PayloadException %.3f: %s The content may be corrupted. Buffer exceeded: only %d percent arrived",
-					request.getTimeStamp(), request.getAssocReqResp().getObjNameWithoutParams(), percentage));
+			throw new Exception(String.format("PayloadException At request time: %.3f, request.getAssocReqResp() is %s . The content may be corrupted. Buffer exceeded: only %d percent arrived", request.getTimeStamp(), logFlag?"N/A":request.getAssocReqResp().getObjNameWithoutParams(), percentage));
 		}
 
 		// Decompress GZIP Content
@@ -202,8 +203,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 				gzip.close();
 			} catch (IOException ioe) {
 				LOG.error("Error Extracting Content from Request");
-				throw new Exception(String.format("Zip Extract Exception  %.3f: %s. The content may be corrupted.",
-						request.getTimeStamp(), request.getAssocReqResp()));
+				throw new Exception(String.format("Zip Extract Exception  At request time: %.3f, request.getAssocReqResp() is %s. The content may be corrupted.", request.getTimeStamp(), logFlag?"N/A":request.getAssocReqResp()));
 			}
 		} else {
 			return payload;

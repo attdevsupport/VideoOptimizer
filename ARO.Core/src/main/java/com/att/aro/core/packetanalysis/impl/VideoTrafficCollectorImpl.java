@@ -16,11 +16,11 @@
 */
 package com.att.aro.core.packetanalysis.impl;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.LogManager;
@@ -88,7 +88,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 
 	private StreamingVideoData streamingVideoData;
 
-	private List<HttpRequestResponseInfo> segmentRequests = new ArrayList<>();
+	private SortedMap<Integer, HttpRequestResponseInfo> segmentRequests = new TreeMap<>();
 
 	private Manifest manifest;
 	private double trackManifestTimeStamp;
@@ -109,7 +109,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		long analysisStartTime = System.currentTimeMillis();
 		
 		tracePath = result.getTraceDirectory() + Util.FILE_SEPARATOR;
-		LOG.info("VideoAnalysis for :" + tracePath);
+		LOG.debug("\n**** VideoAnalysis for :" + tracePath + "****");
 		
 		init();
 		
@@ -123,8 +123,10 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		streamingVideoData = new StreamingVideoData(result.getTraceDirectory());
 		videoStreamConstructor.setStreamingVideoData(streamingVideoData);
 
+		LOG.debug("\n**** processRequests(requestMap) ****");
 		processRequests(requestMap);
 		
+		LOG.debug("\n**** processSegments() ****");
 		processSegments();
 
 		streamingVideoData.scanVideoStreams();
@@ -133,7 +135,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 
 		LOG.debug("\nFinal results: \n" + streamingVideoData);
 		LOG.debug("\nTraffic HEALTH:\n" + displayFailedRequests());
-		LOG.info("\n**** FIN **** " + tracePath + "\n\n");
+		LOG.debug("\n**** FIN **** " + tracePath + "\n\n");
 		
 		videoSegmentAnalyzer.process(result, streamingVideoData);
 		
@@ -165,16 +167,15 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 
 	public void processRequests(SortedMap<Double, HttpRequestResponseInfo> requestMap) {
 		for (HttpRequestResponseInfo req : requestMap.values()) {
-			LOG.info(req.toString());
+			LOG.debug(req.toString());
 			
 			if (req.getAssocReqResp() == null) {
-				LOG.info("NO Content (skipped):" + req.getTimeStamp() + ": " + req.getObjUri());
-				videoStreamConstructor.addFailedRequest(req);
+				LOG.debug("NO Associated rrInfo (skipped):" + req.getTimeStamp() + ": " + req.getObjUri());
 				continue;
 			}
 			
 			String fname = videoStreamConstructor.extractFullNameFromRRInfo(req);
-			LOG.info("oName :" + req.getObjNameWithoutParams() + "\theader :" + req.getAllHeaders() + "\tresponse :" + req.getAssocReqResp().getAllHeaders());
+			LOG.debug("oName :" + req.getObjNameWithoutParams() + "\theader :" + req.getAllHeaders() + "\tresponse :" + req.getAssocReqResp().getAllHeaders());
 
 			String extn = videoStreamConstructor.extractExtensionFromRequest(req);
 			if (extn == null) {
@@ -189,13 +190,10 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			if (fname.contains(".ts\\/")) {
 				extn = ".ts";
 			}
-			if (fname.contains("aac\\/")) {
+			if (fname.contains(".aac\\/")) {
 				extn = ".aac";
 			}
-			// for obfuscated yospace stuf, need to understand
-			//			if (req.getObjUri().toString().contains(".dash")) {
-			//				extn = ".mpd";
-			//			}
+
 			switch (extn) {
 			
 			// DASH - Amazon, Hulu, Netflix, Fullscreen
@@ -206,18 +204,18 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			case ".m3u8": // HLS Manifest, iOS, DTV
 				processManifestHLS(req);
 				break;
-
-			case ".m4a": // 69169728
-			case ".aac": // audio
-			case "audio": // audio
+				
+			case ".m4a": // audio
+			case ".aac":
+			case "audio":
 			case ".dash":
-			case ".mp2t":
-			case ".mp4": // Dash/MPEG
+			case ".mp2t": // MPEG
+			case ".mp4":
 			case ".m4v":
 			case ".m4i":
-			case ".ts": // HLS video
-				segmentRequests.add(req);
-				LOG.info("\tsegment: " + trackManifestTimeStamp+": "+req.getObjNameWithoutParams());
+			case ".ts": // TransportStream
+				segmentRequests.put(req.getFirstDataPacket().getPacketId(), req);
+				LOG.debug("\tsegment: " + trackManifestTimeStamp+": "+req.getObjNameWithoutParams());
 				manifestReqMap.put(req.getObjNameWithoutParams(), trackManifestTimeStamp);
 				break;
 				
@@ -229,7 +227,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 				break;
 				
 			default:// items found here may need to be handled OR ignored as the above
-				LOG.info("skipped :" + fname);
+				LOG.debug("skipped :" + fname);
 				break;
 			}
 		}
@@ -241,7 +239,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 				trackManifestTimeStamp = req.getTimeStamp();
 				trackManifest = manifest;
 			}
-			LOG.info("extracted :" + manifest.getVideoName());
+			LOG.debug("extracted :" + manifest.getVideoName());
 		} else {
 			LOG.error("Failed to extract manifest:" + req);
 		}
@@ -249,26 +247,27 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 	
 	public void processManifestHLS(HttpRequestResponseInfo req) {
 		if ((manifest = videoStreamConstructor.extractManifestHLS(streamingVideoData, req)) != null) {
+			LOG.debug(String.format("(%s) Manifest videoName:%s, timestamp: %.3f", manifest.getManifestType(), manifest.getVideoName(), manifest.getRequestTime()));
 			if (manifest.getManifestType().equals(ManifestType.CHILD)
 					&& (manifest.getContentType().equals(ContentType.VIDEO) || manifest.getContentType().equals(ContentType.MUXED))) {
-				LOG.info("childManifest videoName:" + manifest.getVideoName() + ", timestamp: " + manifest.getRequestTime());
+				LOG.debug("childManifest videoName:" + manifest.getVideoName() + ", timestamp: " + manifest.getRequestTime());
 				trackManifestTimeStamp = req.getTimeStamp();
 				trackManifest = manifest;
 			} else if (manifest.getManifestType().equals(ManifestType.MASTER)) {
-				LOG.info("Manifest videoName:" + manifest.getVideoName() + ", timestamp: " + manifest.getRequestTime());
+				LOG.debug("Manifest videoName:" + manifest.getVideoName() + ", timestamp: " + manifest.getRequestTime());
 			}
-			LOG.info("extract :" + manifest.getVideoName());
-			LOG.info(manifest.displayContent(true, 20));
+			LOG.debug("extract :" + manifest.getVideoName());
+			LOG.debug(manifest.displayContent(true, 20));
 		}
 	}
 	
 	public void processSegments() {
 		Double trackManifestTimestamp = null;
-		LOG.info("\n>>>>>>>>>> segmentRequests: " + segmentRequests);
-		for (HttpRequestResponseInfo req : segmentRequests) {
-			LOG.info("\n>>>>>>>>>> Segment: " + req.getObjNameWithoutParams());
-			trackManifestTimestamp = manifestReqMap.get(req.getObjNameWithoutParams());
-			videoStreamConstructor.extractVideo(streamingVideoData, req, trackManifestTimestamp);
+		LOG.debug("\n>>>>>>>>>> segmentRequests: " + segmentRequests);
+		for (HttpRequestResponseInfo request : segmentRequests.values()) {
+			LOG.debug("\n>>>>>>>>>> Segment: " + request.getObjNameWithoutParams());
+			trackManifestTimestamp = manifestReqMap.get(request.getObjNameWithoutParams());
+			videoStreamConstructor.extractVideo(streamingVideoData, request, trackManifestTimestamp);
 		}
 	}
 	

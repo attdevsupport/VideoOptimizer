@@ -31,6 +31,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -189,6 +190,32 @@ public class FileManagerImpl implements IFileManager {
 			return false;
 		}
 		return true;
+	}
+	
+	@Override
+	public String[] findFiles(String path, final String fileName) {
+
+		if (path==null || fileName ==null) {
+			return new String[] {};
+		}
+		String name1 = StringUtils.substringBeforeLast(fileName, ".");
+		String extension1 = StringUtils.substringAfterLast(fileName, ".");
+
+		String[] files = list(path, new FilenameFilter() {
+
+			private boolean fileRes;
+
+			@Override
+			public boolean accept(File dir, String file) {
+				String prefix = StringUtils.substringBeforeLast(file, ".");
+				String extension = StringUtils.substringAfterLast(file, ".");
+				fileRes = (!name1.isEmpty()) ? prefix.startsWith(name1) : true;
+				fileRes = fileRes && (!extension1.isEmpty()) ? extension.equals(extension1) : fileRes;
+				return fileRes;
+			}
+		});
+		Arrays.sort(files);
+		return files;
 	}
 	
 	@Override

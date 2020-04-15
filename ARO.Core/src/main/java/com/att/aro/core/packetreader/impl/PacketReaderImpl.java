@@ -187,7 +187,7 @@ public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber 
 				aroWebPLibFileName = aroWebPLibName + ".dylib";
 			}
 		}
-		LOGGER.info("ARO WebP DLL lib file name: " + aroWebPLibFileName);
+		LOGGER.debug("ARO WebP DLL lib file name: " + aroWebPLibFileName);
 	}
 
 	public String getAroWebPLibFileName() {

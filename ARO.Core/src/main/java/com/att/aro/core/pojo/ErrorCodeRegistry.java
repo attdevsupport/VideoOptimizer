@@ -55,7 +55,7 @@ public final class ErrorCodeRegistry {
 	 */
 	public static ErrorCode getTraceFileNotFound() {
 		ErrorCode err = new ErrorCode();
-		err.setCode(101);
+		err.setCode(ErrorCodeEnum.TRACE_FILE_NOT_FOUND.getCode());
 		err.setName("Trace file not found.");
 		err.setDescription(ApplicationConfig.getInstance().getAppName() + " cannot find or access trace file user specified. Please check if the file exist.");
 		sendGAErrorCode(err);
@@ -69,7 +69,7 @@ public final class ErrorCodeRegistry {
 	 */
 	public static ErrorCode getTraceFolderNotFound() {
 		ErrorCode err = new ErrorCode();
-		err.setCode(102);
+		err.setCode(ErrorCodeEnum.TRACE_FOLDER_NOT_FOUND.getCode());
 		err.setName("Trace folder not found.");
 		err.setDescription(ApplicationConfig.getInstance().getAppName() + " cannot find or access trace folder.");
 		sendGAErrorCode(err);
@@ -78,7 +78,7 @@ public final class ErrorCodeRegistry {
 
 	public static ErrorCode getTraceDirectoryNotAnalyzed(){
 		ErrorCode err = new ErrorCode();
-		err.setCode(103);
+		err.setCode(ErrorCodeEnum.TRACE_FOLDER_NOT_ANALYSED.getCode());
 		err.setName("Analyzing trace directory Failure");
 		err.setDescription("Failed to analyze trace directory.");
 		sendGAErrorCode(err);
@@ -87,7 +87,7 @@ public final class ErrorCodeRegistry {
 	
 	public static ErrorCode getTraceFileNotAnalyzed(){
 		ErrorCode err = new ErrorCode();
-		err.setCode(104);
+		err.setCode(ErrorCodeEnum.TRACE_FILE_NOT_ANALYSED.getCode());
 		err.setName("Analyzing trace file Failure");
 		err.setDescription("Failed to analyze trace file.");
 		sendGAErrorCode(err);
@@ -97,7 +97,7 @@ public final class ErrorCodeRegistry {
 	
 	public static ErrorCode getUnRecognizedPackets(){
 		ErrorCode err = new ErrorCode();
-		err.setCode(105);
+		err.setCode(ErrorCodeEnum.UNRECOGNIZED_PACKETS.getCode());
 		err.setName("Unrecognized Packets");
 		err.setDescription("This trace has no packets or has unrecognized packets and their data will not be displayed");
 		sendGAErrorCode(err);
@@ -107,7 +107,7 @@ public final class ErrorCodeRegistry {
 	
 	public static ErrorCode getUnknownFileFormat(){
 		ErrorCode err = new ErrorCode();
-		err.setCode(106);
+		err.setCode(ErrorCodeEnum.UNKNOWN_FORMAT.getCode());
 		err.setName("Unknown file format");
 		err.setDescription("Result from executing all pcap packets: unknown file format");
 		sendGAErrorCode(err);
@@ -117,7 +117,7 @@ public final class ErrorCodeRegistry {
 	public static ErrorCode getPacketsNotFound() {
 		ErrorCode err = new ErrorCode();
 		err.setCode(107);
-		err.setName("Traffic file has no packet information");
+		err.setCode(ErrorCodeEnum.PACKETS_NOT_FOUND.getCode());
 		err.setDescription("There was no activity in the traffic file.");
 		sendGAErrorCode(err);
 		return err;
@@ -126,7 +126,7 @@ public final class ErrorCodeRegistry {
 	public static ErrorCode getTrafficFileNotFound() {
 		ErrorCode err = new ErrorCode();
 		err.setCode(108);
-		err.setName("Traffic file not found");
+		err.setCode(ErrorCodeEnum.TRAFFIC_FILE_NOT_FOUND.getCode());
 		err.setDescription("This trace doesn't seem to have a traffic file.");
 		sendGAErrorCode(err);
 		return err;
@@ -134,7 +134,7 @@ public final class ErrorCodeRegistry {
 	
 	public static ErrorCode getTraceDirExist() {
 		ErrorCode err = new ErrorCode();
-		err.setCode(202);
+		err.setCode(ErrorCodeEnum.DIR_EXIST.getCode());
 		err.setName("Found existing trace directory that is not empty");
 		err.setDescription(ApplicationConfig.getInstance().getAppName() + " found an existing directory that contains files and did not want to override it. Some files may be hidden.");
 		sendGAErrorCode(err);
@@ -143,7 +143,7 @@ public final class ErrorCodeRegistry {
 
 	public static ErrorCode getProblemAccessingDevice(String message) {
 		ErrorCode err = new ErrorCode();
-		err.setCode(215);
+		err.setCode(ErrorCodeEnum.DEVICE_ACCESS.getCode());
 		err.setName("Problem accessing device");
 		err.setDescription(ApplicationConfig.getInstance().getAppName() + " failed to access device :"+message);
 		sendGAErrorCode(err);
@@ -153,7 +153,7 @@ public final class ErrorCodeRegistry {
 
 	public static ErrorCode getOutOfMemoryError(){
 		ErrorCode err = new ErrorCode();
-		err.setCode(130);
+		err.setCode(ErrorCodeEnum.OUT_OF_MEMEORY.getCode());
 		err.setName("Out of memory");
 		err.setDescription("Trace too big to load");
 		sendGAErrorCode(err);
@@ -162,7 +162,7 @@ public final class ErrorCodeRegistry {
 
 	public static ErrorCode getPostError(String message){
 		ErrorCode err = new ErrorCode();
-		err.setCode(140);
+		err.setCode(ErrorCodeEnum.POST_ERROR.getCode());
 		err.setName("REST:POST failure");
 		err.setDescription(message);
 		sendGAErrorCode(err);
