@@ -6,14 +6,14 @@ import lombok.Data;
 
 @Data
 public class SegmentInfo {
-	int segmentID;
-	Manifest.ContentType contentType = Manifest.ContentType.UNKNOWN;
-	double startTime;
-	double duration;
-	boolean video;
-	String quality = "";
-	int size;
-	double bitrate;
+	private int segmentID;
+	private Manifest.ContentType contentType = Manifest.ContentType.UNKNOWN;
+	private double startTime;
+	private double duration;
+	private boolean video;
+	private String quality = "";
+	private int size;
+	private double bitrate;
 
 	@Override
 	public String toString() {

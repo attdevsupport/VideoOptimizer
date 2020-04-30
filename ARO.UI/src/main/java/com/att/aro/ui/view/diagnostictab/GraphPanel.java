@@ -96,6 +96,7 @@ import com.att.aro.ui.view.diagnostictab.plot.BatteryPlot;
 import com.att.aro.ui.view.diagnostictab.plot.BluetoothPlot;
 import com.att.aro.ui.view.diagnostictab.plot.BurstPlot;
 import com.att.aro.ui.view.diagnostictab.plot.CameraPlot;
+import com.att.aro.ui.view.diagnostictab.plot.ConnectionsPlot;
 import com.att.aro.ui.view.diagnostictab.plot.CpuPlot;
 import com.att.aro.ui.view.diagnostictab.plot.DLPacketPlot;
 import com.att.aro.ui.view.diagnostictab.plot.GpsPlot;
@@ -190,6 +191,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private AttenuatorPlot attnrPlot;
 	private SpeedThrottlePlot stPlot;
 	private CombinedDomainXYPlot combinedPlot;
+	private ConnectionsPlot connectionsPlot;
 
 	private double endTime = 0.0;
 
@@ -369,6 +371,9 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 		subplotMap.put(ChartPlotOptions.SPEED_THROTTLE, new GraphPanelPlotLabels(
 				ResourceBundleHelper.getMessageString("chart.attenuation"), getBarPlot().drawStepChartPlot(), 2));
+
+		subplotMap.put(ChartPlotOptions.CONNECTIONS, new GraphPanelPlotLabels(
+				ResourceBundleHelper.getMessageString("chart.options.dialog.connections"), getBarPlot().drawStepChartPlot(), 2));
 
 		Dimension screenDimension = Toolkit.getDefaultToolkit().getScreenSize();
 		double screenHeight = screenDimension.getHeight();
@@ -742,6 +747,11 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 							vcPlot.populate(entry.getValue().getPlot(), aroTraceData);
 						}
 					}
+					break;
+					
+				case CONNECTIONS:
+					connectionsPlot = new ConnectionsPlot();
+					connectionsPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
 				default:
 					break;

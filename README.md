@@ -33,6 +33,7 @@ Video Optimizer contains the following open source libraries or binaries within 
 **TCPDUMP/LIBPCAP**  
 > Video Optimizer uses Open Source Software that is licensed under the following BSD (the "License"), and you may not use this file except in compliance with the License. You may obtain a copy of the Licenses at: http://www.tcpdump.org/#contribute. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the Licenses for the specific language governing permissions and limitations under the Licenses. License: BSD Redistribution and use in source and binary forms, with or withoutmodification, are permitted provided that the following conditionsare met: 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer. 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/o> rials provided with the distribution. 3. The names of the authors may not be used to endorse or promote products derived from this software without specific prior written permission.  THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS ORIMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIEDWARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  
 
+
 ## Open Source Code Package
 
 Video Optimizer allows mobile application developers to test the network performance of video, images and other files for compression, speed, battery drain and other aspects of performance.
@@ -51,51 +52,43 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 3.0
+#### Video Optimizer 3.1
 
-**System Requirements for Video Optimizer 3.0:**
+**System Requirements for Video Optimizer 3.1:**
 
-Before you download Video Optimizer 3.0, make sure you meet the following system requirements for your operating system.
+Before you download Video Optimizer 3.1, make sure you meet the following system requirements for your operating system.
 
 1. At least 2GB of RAM, but recommend at least 8GB
 2. Java 8 or above
-3. For Android developers, Android SDK Level 19 or above
+3. For Android developers, Android SDK Level 23 or above
 4. Latest Xcode for collecting iOS devices trace
-5. WinPcap or NPcap for Windows platform
+5. Wireshark (Install Npcap addon with Winpcap API-compatible mode)
 6. FFMpeg library
-7. VLC media player for Windows and Linux platform
-8. Brew, Ifuse, OSXfuse ,libimobiledevice , ideviceinstallerfor, Wireshark  MacOS platform
+7. VLC media player 3.x.x for Windows and Linux platform
+8. Brew, Ifuse, OSXfuse ,libimobiledevice , ideviceinstallerfor, Wireshark  for MacOS platform
 
 
-#### Video Optimizer 3.0 Features
+#### Video Optimizer 3.1 Features
 
-#### • Audio Analyis added for Video Streaming Applications
-##### -	Added a new Audio Best Practice called "Streaming Separate Audio & Video" - Added as a self test detecting Muxed & Demuxed Video.
-##### - Video Tab has separate tables to display Audio Segments for Demuxed Video.
+#### • Added	New Best Practice "Adaptive Bitrate Ladder"
+##### -	under Video Best practices to help analyze Adaptive Bitrate and design it to stream files more efficiently over HTTP networks
 
 #### • Video Enhancements
-##### -	Corrected the Video Stall Indicator to display the exact stall.
-##### - The video segment table has been updated to support streams with separate audio & video segments. A “Content” column indicates whether a segment is audio, video, or muxed audio & video.
-##### -	A “Stall time” column has been added in the video/audio segment table to indicate the time when the stall occurred.
-##### - A “TCP state” column has been added to the video/audio segment table to indicate when a packet is a “reset” or “finished” packet.
-##### -	The “Quality” column in the video/audio segment table was renamed to the more accurate “Track.”.
-##### -	Any gaps in segments are now identified in the Video Stream section.
-##### -	Support has been added for more variance of HLS and DASH manifests for wider support of video streaming applications.
-
-#### • Device & Desktop OS Support
-##### -	Added Support for Collection on Android 10.
-##### -	Added Support for Mac OS Catalina
-
-#### • Other Enhancements
-##### - Simplified HD trace collection on iOS devices. No longer requires install of an app on iOS devices.
-##### - Export option in diagnostics tab is enhanced to support exporting only rows selected by the user.
-##### - Sorting feature has been added to the tables in the Statistics tab.
+##### -	HLS Live stream enhancements for wider support of live video streaming applications 
+##### - Additional support added to analyze traces supporting HLS and DASH manifest format for traces taken on Android devices
+##### -	Improved naming of Video Stream for better clarity - Stream names are displayed based on the URL of the Master manifest
+##### - In Diagnostic Tab, under TCP/UDP table, a new column called “Round Trip Time” is added to calculate TCP session round trip time. For UDP, DNS and QUIC sessions, the    round trip time is not applicable and will show N/A
+##### -	Graphic chart in Diagnostic Tab now includes a new label called "Session Count" along with a tool tip that displays the total number of sessions when user hovers on various points on the graph
+##### -	'Landscape' option is now enabled when capturing traces using Command-Line Interface
+##### -	Save & Close Functionality button under File -> Preferences -> Video is enhanced to check for precise values before saving it
 
 
-### Known issues in Release 3.0
+### Known issues in Release 3.1
 
 #### •	Some of the video traces don’t display Byte and time information under Video Summary table on Windows and Linux platform
 #### •	In some traces, not all segment gaps are identified.
+#### •	Playtime propagation and therefore stall detection issues appear intermittently in some traces
+
 
 
 ### Compilation instructions

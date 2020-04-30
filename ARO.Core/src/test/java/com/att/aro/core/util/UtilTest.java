@@ -265,6 +265,11 @@ public class UtilTest {
 	public void testParseForUTC_when_no_dashes_or_colons() {
 		long result;
 	
+		result = Util.parseForUTC("20191101T0243301975739");	assertEquals(1572576210198L, result);
+		result = Util.parseForUTC("20191101T024330197");	    assertEquals(1572576210197L, result);
+		result = Util.parseForUTC("20191101T024330197");	    assertEquals(1572576210197L, result);
+		result = Util.parseForUTC("20180111T221459");	assertEquals(1515708899000L, result);
+		result = Util.parseForUTC("20180111T221459456");	assertEquals(1515708899456L, result);
 		result = Util.parseForUTC("2018-01-11T22:14:59");	assertEquals(1515708899000L, result);
 		result = Util.parseForUTC("20180111T221459000");	assertEquals(1515708899000L, result);
 		result = Util.parseForUTC("20180111T221459");		assertEquals(1515708899000L, result);
@@ -276,31 +281,19 @@ public class UtilTest {
 	public void testParseForUTC() {
 
 		long result;
-
-		result = Util.parseForUTC("2016-11-22T22:30:27.000000Z");
-		assertEquals(1479853827000L, result);
-		
-		result = Util.parseForUTC("2016-11-22T22:30:27.591");
-		assertEquals(1479853827591L, result);
-		
-		result = Util.parseForUTC("2016-11-22T22:30:27.59100");
-		assertEquals(1479853827591L, result);
-		
-		result = Util.parseForUTC("2016-11-22T22:30:27.591000Z");
-		assertEquals(1479853827591L, result);
-		
-		// test for truncation, not rounding
-		result = Util.parseForUTC("2016-11-22T22:30:27.123999Z");
-		assertEquals(1479853827123L, result);
-		
-		result = Util.parseForUTC("2018-01-11T22:14:59.000000Z");
-		assertEquals(1515708899000L, result);
-		
-		result = Util.parseForUTC("2018-01-11T22:14:59");
-		assertEquals(1515708899000L, result);
-		
-		result = Util.parseForUTC("2018-01-11 22:14:59");
-		assertEquals(1515708899000L, result);
+		long result1 = Util.parseForUTC("2020-01-16T20:28:00.405Z");      
+		long result2 = Util.parseForUTC("2020-01-16T20:28:08.413Z");      assertEquals(8008L, result2-result1);
+		result = Util.parseForUTC("2020-01-16T20:41:37.221");		assertEquals(1579207297221L, result);
+		result = Util.parseForUTC("2020-01-16T20:41:37.221Z");		assertEquals(1579207297221L, result);
+		result = Util.parseForUTC("2016-11-22T22:30:27.000000Z");	assertEquals(1479853827000L, result);
+		result = Util.parseForUTC("2016-11-22T22:30:27.591");		assertEquals(1479853827591L, result);
+		result = Util.parseForUTC("2016-11-22T22:30:27.59100");     assertEquals(1479853827591L, result);
+		result = Util.parseForUTC("2016-11-22T22:30:27.591000Z");   assertEquals(1479853827591L, result);
+		// test for truncation, not rounding                        ;
+		result = Util.parseForUTC("2016-11-22T22:30:27.123999Z");   assertEquals(1479853827123L, result);
+		result = Util.parseForUTC("2018-01-11T22:14:59.000000Z");   assertEquals(1515708899000L, result);
+		result = Util.parseForUTC("2018-01-11T22:14:59");           assertEquals(1515708899000L, result);
+		result = Util.parseForUTC("2018-01-11 22:14:59");           assertEquals(1515708899000L, result);
 	}
 	
 	@Test

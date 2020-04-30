@@ -17,6 +17,9 @@ package com.att.aro.core.videoanalysis.pojo;
 
 import java.net.URI;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
@@ -25,6 +28,8 @@ import lombok.Data;
 
 @Data
 public class Manifest {
+	
+	private static final Logger LOG = LogManager.getLogger(Manifest.class.getName());
 	
 	// UNDECLARED means Playlist can be updated
 	public enum StreamType {
@@ -40,6 +45,10 @@ public class Manifest {
 	}
 
 	Manifest masterManifest = null;
+	
+	private UrlMatchDef urlMatchDef;
+	private UrlMatchDef segUrlMatchDef;
+	
 	Session session;                					// session that manifest arrived on
 	protected VideoFormat videoFormat = VideoFormat.UNKNOWN;
 	protected VideoType videoType = VideoType.UNKNOWN;            // DASH, HLS, Unknown
@@ -65,6 +74,13 @@ public class Manifest {
 
 	byte[] moovContent;
 	
+	public Manifest getMasterManifest() {
+		if (masterManifest == null || manifestType == ManifestType.MASTER) {
+			return this;
+		}
+		return masterManifest;
+	}
+
 	/**
 	 * delay is point in seconds video.mp4 or mov for when first segment starts to play
 	 */
@@ -94,6 +110,8 @@ public class Manifest {
 	 */
 	private boolean videoMetaDataExtracted = false;
 	private String setBaseURL;
+
+	private boolean programTimeChanged;
 
 	public double getStartupDelay() {
 		if (startupVideoEvent != null) {
@@ -136,14 +154,18 @@ public class Manifest {
 		StringBuilder strblr = new StringBuilder("\n\tManifest :");
 		strblr.append(" requestTime :").append(String.format("%.3f", requestTime));
 		strblr.append(", VideoType :" + getVideoType());
-		strblr.append(", Type :").append(getManifestType());
-		strblr.append(String.format(masterManifest == null ? "\n\t StreamProgramDateTime: %.3f" : "\n\t ProgramDateTime: %.3f", programDateTime));
+		strblr.append("\n\t, Type :").append(getManifestType());
+		strblr.append(String.format(manifestType.equals(ManifestType.MASTER)
+									? "\n\t, Stream-ProgramDateTime: %.3f" 
+									: "\n\t, ProgramDateTime: %.3f"
+					, programDateTime));
 		strblr.append("\n\t, Name :").append(getVideoName());
 		strblr.append(String.format("\n\t  CRC-32: %8.0f", checksumCRC32));
 		strblr.append("\n\t, ContentType :").append(getContentType());
 		strblr.append("\n\t, Encryption :").append(getEncryption());
 		strblr.append("\n\t, URIs :").append(uri != null ? uri.getRawPath() : "null");
-		strblr.append(", duration :").append(getDuration());
+		strblr.append("\n\t, " + getUrlMatchDef());
+		strblr.append("\n\t, duration :").append(getDuration());
 		strblr.append(", timeScale :").append(getTimeScale());
 		strblr.append("\n");
 		strblr.append(displayContent(true, 30));
@@ -156,13 +178,21 @@ public class Manifest {
 		}
 		return videoType.toString().contains(type.toString());
 	}
+	
+	public boolean isVideoFormat(VideoFormat videoFormat) {
+		if (videoFormat == null) {
+			return false;
+		}
+		return this.videoFormat.equals(videoFormat);
+	}
+
 
 	public String getVideoName() {
 		return videoName;
 	}
 
-	public void setVideoName(String videoName) {
-		this.videoName = videoName;
+	public void setVideoName(String videoNameNew) {
+		this.videoName = videoNameNew;
 	}
 
 	public ContentType matchContentType(String type) {
@@ -174,13 +204,47 @@ public class Manifest {
 		return ContentType.UNKNOWN;
 	}
 
-	public void updateStreamProgramDateTime(double programDateTime) {
-		if (programDateTime < this.programDateTime || this.programDateTime == 0) {
+	public boolean updateStreamProgramDateTime(double programDateTime) {
+		programTimeChanged = (this.programDateTime != 0 || programDateTime < this.programDateTime);
+		
+		if (this.programDateTime == 0 || programTimeChanged) {
 			setProgramDateTime(programDateTime);
 			if (masterManifest != null) {
 				masterManifest.updateStreamProgramDateTime(programDateTime);
 			}
 		}
+		return programTimeChanged;
+	}
+
+	public UrlMatchDef getUrlMatchDef() {
+		if (urlMatchDef == null) {
+			urlMatchDef = new UrlMatchDef();
+		}
+		return urlMatchDef;
+
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (requestTime * 1000);
+		result = prime * result + videoName.hashCode();
+		result = prime * result + getContent().length;
+		result = prime * result + getUrlName().hashCode();
+		result = prime * result + getVideoFormat().hashCode();
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		boolean result = false;
+		try {
+			result = super.equals(obj);
+		} catch (Exception e) {
+			LOG.error("Compare exeption:", e);
+		}
+		return result;
 	}
 
 }

@@ -18,8 +18,11 @@ package com.att.aro.ui.model.diagnostic;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
@@ -27,8 +30,14 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
+import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.Util;
+
 import com.att.aro.ui.commonui.CheckBoxRenderer;
 import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -49,6 +58,8 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 	
 	private static final String HOSTPORTSEPERATOR = ResourceBundleHelper.getMessageString("tcp.hostPortSeparator");
 	
+	private static final Logger LOGGER = LogManager.getLogger(TCPUDPFlowsTableModel.class.getName());
+
 	private  static final String[] COLUMNNAMES = { 
 		ResourceBundleHelper.getMessageString("tcp.time"),"", 
 		ResourceBundleHelper.getMessageString("tcp.domain"), 
@@ -90,14 +101,13 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 			}
 		});
 		
-
 	}
 	
 	public void refresh(AROTraceData aroTraceData) {
-		setData(aroTraceData.getAnalyzerResult().getSessionlist());
+		List<Session> sessionlist = aroTraceData.getAnalyzerResult().getSessionlist();
+		setData(sessionlist);
 		getCheckboxMap().clear();
-		for(int index = 0 ;index < aroTraceData.getAnalyzerResult().getSessionlist().size();index++) {
-			Session session = aroTraceData.getAnalyzerResult().getSessionlist().get(index);
+		for (Session session : sessionlist) {	
 			String sessionKey = getSessionKey(session);
 			sessionMap.put(sessionKey, session);
 			checkboxMap.put(sessionKey, new Boolean(true));
@@ -172,11 +182,15 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 	if (cols == null) {
 			cols = super.createDefaultTableColumnModel();
 			TableColumn col = cols.getColumn(TIME_COL);
-			col.setCellRenderer(new NumberFormatRenderer(new DecimalFormat(
-					"0.000")));
+			col.setCellRenderer(new NumberFormatRenderer(new DecimalFormat("0.000")));
 			col.setMaxWidth(60);
 
-			TableColumn appCol = cols.getColumn(DOMAIN_COL);
+			// Adding checkbox to column greg story
+			TableColumn appCol = cols.getColumn(CHECKBOX_COL);
+			appCol.setCellRenderer(new CheckBoxRenderer());
+			appCol.setMaxWidth(35);
+
+			appCol = cols.getColumn(DOMAIN_COL);
 			DefaultTableCellRenderer defaultTableCR = new DefaultTableCellRenderer();
 			appCol.setCellRenderer(defaultTableCR);
 			appCol.setPreferredWidth(130);
@@ -197,24 +211,13 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 			appCol.setPreferredWidth(85);
 			
 			appCol = cols.getColumn(NW_LATENCY_COL);
+			appCol.setMaxWidth(85);
+			appCol.setPreferredWidth(85);
 			
-			// Release 3.0 Fix. To be undone after the latency calculations are corrected. 
-			// appCol.setMaxWidth(85);
-			// appCol.setPreferredWidth(85);
-			appCol.setMaxWidth(0);
-			appCol.setPreferredWidth(0);
-			cols.removeColumn(appCol);
-
-			//Adding checkbox to column greg story
-			appCol = cols.getColumn(CHECKBOX_COL);
-			appCol.setCellRenderer(new CheckBoxRenderer());
-			appCol.setMaxWidth(35);
 		}
 		return cols;
 	}
 
-
-	
 	/**
 	 * This is the one method that must be implemented by subclasses. This method defines how 
 	 * the data object managed by this table model is mapped to its columns when displayed 
@@ -267,7 +270,8 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 			if(item.isUdpOnly()){
 				if(53==item.getLocalPort()||53==item.getRemotePort()){
 					return ResourceBundleHelper.getMessageString("tcp.dns");
-				}else if(443==item.getLocalPort()||443==item.getRemotePort()||80==item.getLocalPort()||80==item.getRemotePort()){
+				} else if (443 == item.getLocalPort() || 443 == item.getRemotePort() || 80 == item.getLocalPort()
+						|| 80 == item.getRemotePort()) {
 					return ResourceBundleHelper.getMessageString("tcp.quic");
 				}else{
 					return ResourceBundleHelper.getMessageString("tcp.udp");
@@ -276,11 +280,17 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 				return ResourceBundleHelper.getMessageString("tcp.tcp");
 			}
 		case NW_LATENCY_COL:
-				return	item.getLatency(item);	
+			if (!item.isUdpOnly() && !item.getSynAckPackets().isEmpty() && !item.getSynPackets().isEmpty()) {
+				return getLatency(item);
+			} else {
+				return "N/A";
+			}
+
 		default:
 			return null;
 		}
 	}
+	
 	/**
 	 * update the datamodel with data 
 	 */
@@ -299,5 +309,67 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
 		}
 
 	}
+	/*
+	 * Returns calculated Latency value
+	 * 
+	 * Packet Sequence : SYN - SYNACK
+	 * Latency = First SYNACK time - First SYN time
+	 * 
+	 * Packet Sequence: SYN1 -SYN2 - SYNACK
+	 * Latency = SYNACK time - SYN2 time
+	 * 
+	 * Packet Sequence: SYN1 - SYNACK - SYN2 Latency = SYNACK time - SYN1 time
+	 * 
+	 */
+
+	private String getLatency(Session session) {
+		double latencyValue = 0.0;
+		String latency = "N/A";
+		double syncAckTime = getSyncAckTimestamp(session.getSynAckPackets());
+		if (syncAckTime > 0.0) {
+			double syncTime = getSyncTimestamp(session.getSynPackets(), syncAckTime);
+			if (syncAckTime >= syncTime) {
+				latencyValue = syncAckTime - syncTime;
+				latency = latencyValue > 0 ? Util.formatDoubleToMicro(latencyValue) : "0.0";
+			} else {
+				LOGGER.debug("Negative latency value : " + session.getSessionKey());
+			}
+		}
+		return latency;
+	}
+
+	/*
+	 * Returns the timestamp of the packet with last SYN before the SYNACK
+	 */
+	private double getSyncTimestamp(TreeMap<Double, PacketInfo> synPackets, double syncAckTime) {
+		double timeStamp = 0.0;
+		
+		if (synPackets.containsKey(syncAckTime)) {
+			timeStamp = syncAckTime;
+		} else {
+			Entry<Double, PacketInfo> synEntry = synPackets.lowerEntry(syncAckTime);
+			if (synEntry != null) {
+				timeStamp = synEntry.getKey();
+			} else {
+				LOGGER.error("Packet info error : No SYN's found before the SYNACK - " + syncAckTime);
+			}
+		}
+
+		return timeStamp;
+
+	}
+
+	/*
+	 * Returns the timestamp of the first packet with the SYNACK flag
+	 */
+	public double getSyncAckTimestamp(TreeMap<Double, PacketInfo> synAckPackets) {
+		double timeStamp = 0.0;
+		for (PacketInfo packetInfo : synAckPackets.values()) {
+			timeStamp = packetInfo.getTimeStamp();
+			break;
+		}
+		return timeStamp;
+	}
+
 
 }

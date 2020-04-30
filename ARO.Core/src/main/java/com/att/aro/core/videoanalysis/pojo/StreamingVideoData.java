@@ -19,10 +19,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.springframework.util.CollectionUtils;
 
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
@@ -30,6 +33,7 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.impl.SortSelection;
 import com.att.aro.core.videoanalysis.impl.VideoEventComparator;
+import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
 import lombok.AccessLevel;
@@ -55,6 +59,8 @@ import lombok.Setter;
 @JsonIgnoreType
 public class StreamingVideoData extends AbstractBestPracticeResult {
 
+	private static final Logger LOG = LogManager.getLogger(StreamingVideoData.class.getName());
+	
 	@NonNull@Setter(AccessLevel.PROTECTED)
 	private BestPracticeType							bestPracticeType = BestPracticeType.VIDEOUSAGE;
 	@NonNull@Setter(AccessLevel.PROTECTED)
@@ -75,7 +81,8 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 	@Setter(AccessLevel.PROTECTED) 
 	private String videoPath;
 	
-	@NonNull private Boolean validatedCount 			= false;
+	@NonNull
+	private Boolean validatedCount = false;
 	@Setter(AccessLevel.PROTECTED)
 	private int totalSegmentCount = 0;
 	@Setter(AccessLevel.PROTECTED)
@@ -120,13 +127,14 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 
 			for (VideoStream videoStream : videoStreamMap.values()) {
 				checkMissing(videoStream);
+				scanFixMUX(videoStream);
 				if (videoStream.isValid()) {
 					validSegmentCount += videoStream.getSegmentCount();
 				} else {
 					nonValidSegmentCount += videoStream.getSegmentCount();
 					invalidManifestCount++;
 				}
-				if (videoStream.isSelected()) {
+				if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
 					selectedManifestCount++;
 					totalSegmentCount += videoStream.getSegmentCount();
 				}
@@ -134,6 +142,17 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 		}
 		validatedCount = true;
 	}
+	
+	private void scanFixMUX(VideoStream videoStream) {
+		if (!CollectionUtils.isEmpty(videoStream.getAudioSegmentEventList())) {
+			for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
+				if (videoEvent.getContentType().equals(ContentType.MUXED)) {
+					videoEvent.getSegmentInfo().setContentType(ContentType.VIDEO);
+				}
+			}
+		}
+	}
+
 
 	private void checkMissing(VideoStream videoStream) {
 		videoStream.getVideoEventsBySegment();
@@ -151,13 +170,14 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 		Collections.sort(sorted, new VideoEventComparator(SortSelection.SEGMENT_ID));
 		Collections.sort(sorted, new VideoEventComparator(SortSelection.PLAY_TIME));
 		for (VideoEvent event : sorted) { //eventMap.values()
-			if (!event.isNormalSegment()) {
+			if (!event.isNormalSegment() || event.getPlayTime() == 0) {
 				continue;
 			}
 			if (lastEvent != null && event.getSegmentID() != lastEvent.getSegmentID()) {
 				double dif = event.getPlayTime() - lastEvent.getPlayTimeEnd();
 				if (dif > threshold) {
 					// found gap, could be one or many segments missing
+					LOG.debug(String.format("GAP after %s, segment:%.0f", lastEvent.getContentType().toString(), lastEvent.getSegmentID()));
 					count++;
 				}
 			}

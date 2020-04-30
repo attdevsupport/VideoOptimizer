@@ -411,7 +411,7 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 							continue;
 						} else {
 							if (priorEvent.getSegmentID() == event.getSegmentID()) {
-								if (sort==SortOrder.HIGHEST && priorEvent.getQuality().compareTo(event.getQuality()) > 0) {
+								if (sort==SortOrder.HIGHEST && Integer.valueOf(priorEvent.getQuality()).compareTo(Integer.valueOf(event.getQuality())) > 0) {
 									priorEvent = event;
 								} else if (sort==SortOrder.FIRST && event.getEndTS() < priorEvent.getEndTS()) {
 									priorEvent = event;

@@ -4,20 +4,7 @@
     <string name="service_name">AROService</string>
     <string name="action_settings">Settings</string>
 
-    <!-- Flurry Analytics strings -->
-    <string name="flurry_networkType">Network Type</string>
-    <string name="flurry_networkInterface">Network Interface</string>
-    <string name="flurry_wifi">Wifi</string>
-    <string name="flurry_battery">Battery</string>
-    <string name="flurry_gps">GPS</string>
-    <string name="flurry_camera">Camera</string>
-    <string name="flurry_bluetooth">Bluetooth</string>
-    <string name="flurry_backgroundApps">Background Apps</string>
-    <string name="flurry_makeModel">Make and Model</string>
-    <string name="flurry_param_status">status</string>
-    <string name="flurry_param_time">time</string>
-    <string name="flurry_NA">NA</string>
-    <string name="flurry_param_traceVideoTaken">Trace video</string>
+
     <string name="timeout_message">Please wait...\nOr press the BackButton</string>
     <string name="quit">Quit</string>
     <string name="try_again">Try again</string>
@@ -25,13 +12,22 @@
     <!-- Branding & Product name changes -->
     <string name="app_name">VPN Collector</string>
     <string name="app_brand_name"></string>
-    <!-- <string name="app_short_name">ARO</string> -->
-    <string name="app_short_name">Video Optimizer</string>
+    <!-- --><string name="app_short_name">ARO</string>
+    <!-- <string name="app_short_name">Video Optimizer</string> -->
     <string name="app_url_name">VideoOptimizer</string>
-    <!-- <string name="splash_message">ARO-Attenuator Collector\nVPN Method</string> -->
-    <string name="splash_message">@string/app_name</string>
-    <!-- <string name="splashmessageopensource">Built from Public code supplied by \n AT&amp;T Developer Program \n \n http://developer.att.com/aro</string> -->
-    <string name="splashmessageopensource">Built from Public code supplied by \n %1$s Developer Program \n \n http://developer.att.com/%2$s</string>
+    <!-- --><string name="splash_message">@string/app_name</string>
+    <!-- <string name="splashmessageopensource">Built from Public code supplied by \n AT&amp;T Developer Program \n \n http://developer.att.com/aro</string>-->
+    <!----> <string name="splashmessageopensource">Built from Public code supplied by \n %1$s Developer Program \n \n http://developer.att.com/%2$s</string>
+
+    <string name="access_required">Permission request access are required for collect information.</string>
+    <string name="permission_not_available">Permission(s) is(are) not available. Requesting permission(s).</string>
+    <string name="permission_available">All permissions are available. Starting VPNCollector</string>
+    <string name="permission_granted">All permissions were granted. Starting VPNCollector.</string>
+    <string name="permission_denied">Permission request was denied.</string>
+    <string name="permission_unavailable"><b>VPNCollector could not be opened.</b>\nThis occurs when the request permission is not available or if the system has denied access (for example when the request permission access has been disabled).</string>
+    <string name="permission_last_confirmation">You must grant all of the requested permissions for VPN Collector in-order to collect and store the traces information.\nYou can update all permissions in Settings>Apps>VPN Collector.</string>
+
+    <string name="ok">OK</string>
 
     <!-- Default Data -->
     <string name="unavailable">Unavailable</string>

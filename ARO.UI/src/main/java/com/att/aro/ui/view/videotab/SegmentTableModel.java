@@ -25,6 +25,7 @@ import javax.swing.table.AbstractTableModel;
 
 import com.att.aro.core.packetanalysis.pojo.Termination;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class SegmentTableModel extends AbstractTableModel {
 	private static final long serialVersionUID = 1L;
@@ -37,43 +38,25 @@ public class SegmentTableModel extends AbstractTableModel {
 	
 	List<VideoEvent> videoEventList;
 	
-	public enum colNames {
-		 SegmentNo        { public String toString() { return "Segment"    ;} }
-		,Content       
-		,DLStartTime      { public String toString() { return "DL Start Time"  ;} }
-		,DLEndTime        { public String toString() { return "DL End Time"    ;} }
-		,StallTime
-		,PlayTime
-		,StartTime
-		,TrackQuality     { public String toString() { return "Track"  ;} }
-		,Resolution
-		,Bitrate
-		,TotalBytes       { public String toString() { return "Total Bytes"    ;} }
-		,Duration
-		,TCPSession       { public String toString() { return "TCP Session"    ;} }
-		,TCPState         { public String toString() { return "TCP State"      ;} }
-		,SessionLink 
-	}
-
 	public String[] columnNames = {
-			 colNames.SegmentNo     .toString() 
-			,colNames.Content       .toString()
-			,colNames.DLStartTime   .toString()
-			,colNames.DLEndTime     .toString()
-			,colNames.StallTime     .toString()
-			,colNames.PlayTime      .toString()
-			,colNames.StartTime     .toString()
-			,colNames.TrackQuality  .toString()
-			,colNames.Resolution    .toString()
-			,colNames.Bitrate       .toString()
-			,colNames.TotalBytes    .toString()
-			,colNames.Duration      .toString()
-			,colNames.TCPSession    .toString()
-			,colNames.TCPState      .toString()
-			,colNames.SessionLink   .toString()
+			 getColumn("Segment") 
+			,getColumn("Content")
+			,getColumn("DLStartTime")
+			,getColumn("DLEndTime")
+			,getColumn("StallTime")
+			,getColumn("PlayTime")
+			,getColumn("StartTime")
+			,getColumn("Track")
+			,getColumn("Resolution")
+			,getColumn("Bitrate")
+			,getColumn("TotalBytes")
+			,getColumn("Duration")
+			,getColumn("TCPSession")
+			,getColumn("TCPState")
+			,getColumn("SessionLink")
 			};
 
-	public VideoEvent getEventAt(int rowIndex) {
+	public VideoEvent 	EventAt(int rowIndex) {
 		return this.videoEventList.get(rowIndex);
 	}
 	
@@ -97,7 +80,7 @@ public class SegmentTableModel extends AbstractTableModel {
 		case "StartTime"     : value = String.format("%.6f", videoSegment.getSegmentStartTime()); break;
 		case "Track"         : value = videoSegment.getQuality(); break;
 		case "Resolution"    : value = videoSegment.getResolutionHeight() != 0 ? decimalFormat.format(videoSegment.getResolutionHeight()):"NA "; break;
-		case "Bitrate"       : value = String.format("%8.0f", videoSegment.getBitrate()); break;
+		case "Bitrate (Kbps)" : value = String.format("%8.0f", videoSegment.getBitrate()); break;
 		case "Total Bytes"   : value = String.format("%.0f", videoSegment.getTotalBytes()); break;
 		case "Duration"      : value = String.format("%.6f", videoSegment.getDuration()); break;
 		case "TCP Session"   : value = String.format("%06.3f", videoSegment.getSession().getSessionStartTime()); break;
@@ -141,6 +124,10 @@ public class SegmentTableModel extends AbstractTableModel {
 	@Override
 	public String getColumnName(int columnIndex) {
 		return columnNames[columnIndex];
+	}
+	
+	private String getColumn(String columnName) {
+		return ResourceBundleHelper.getMessageString("video.tab.segment." + columnName);
 	}
 
 }

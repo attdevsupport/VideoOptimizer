@@ -87,7 +87,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	// local directory in user machine to pull trace from device to
 	private String localTraceFolder;
 	private static final int MILLISECONDSFORTIMEOUT = 300;
-	private static String APK_FILE_NAME = "VPNCollector-2.4.%s.apk";
+	private static String APK_FILE_NAME = "VPNCollector-3.1.%s.apk";
 	private static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 	private static final String ARO_PACKAGE_NAME_GREP = "[c]om.att.arocollector";
 

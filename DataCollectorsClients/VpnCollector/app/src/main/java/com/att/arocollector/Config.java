@@ -15,10 +15,9 @@
  */
 package com.att.arocollector;
 
+import java.io.File;
 import android.media.MediaRecorder;
 import android.os.Environment;
-
-import java.io.File;
 
 public class Config {
 

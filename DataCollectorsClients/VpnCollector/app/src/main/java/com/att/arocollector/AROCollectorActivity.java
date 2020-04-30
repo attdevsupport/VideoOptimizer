@@ -28,6 +28,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -40,13 +41,18 @@ import android.net.VpnService;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+import android.security.KeyChain;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.att.arocollector.attenuator.AttenuatorManager;
 import com.att.arocollector.attenuator.AttenuatorUtil;
@@ -61,20 +67,29 @@ import com.att.arotracedata.AROCollectorService;
 import com.att.arotracedata.AROCpuTempService;
 import com.att.arotracedata.AROCpuTraceService;
 import com.att.arotracedata.AROGpsMonitorService;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.NetworkInterface;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
-public class AROCollectorActivity extends Activity {
+import javax.security.cert.CertificateException;
+import javax.security.cert.X509Certificate;
+
+public class AROCollectorActivity extends AppCompatActivity
+		implements ActivityCompat.OnRequestPermissionsResultCallback {
 
 	private static String TAG = AROCollectorActivity.class.getSimpleName();
+	private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
 	private Context context;
 	private Intent captureVpnServiceIntent;
@@ -88,12 +103,24 @@ public class AROCollectorActivity extends Activity {
 	private Orientation videoOrient = Orientation.PORTRAIT;
 	private int bitRate = 0;
 	private String screenSize = "";
-	private VideoCapture videoCapture;
 	private MediaProjectionManager mediaProjectionManager;
+	private boolean secureEnable = false;//do not change the default value
+	private boolean certInstall = false;
 	private boolean printLog = false;
 	private String selectedApp = "";
 	private File tempCertFile;
-	private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 1;
+	private View mLayout;
+
+	private String[] voPermissionList = {
+			Manifest.permission.ACCESS_COARSE_LOCATION,
+			Manifest.permission.ACCESS_FINE_LOCATION,
+			Manifest.permission.CAMERA,
+			Manifest.permission.READ_EXTERNAL_STORAGE,
+			Manifest.permission.READ_PHONE_STATE,
+			Manifest.permission.READ_CALL_LOG,
+			Manifest.permission.READ_CONTACTS,
+			Manifest.permission.READ_CALENDAR,
+			Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -105,17 +132,141 @@ public class AROCollectorActivity extends Activity {
 				handleUncaughtException (thread, e);
 			}
 		});
-
+		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.splash);
-		final TextView splashText = (TextView) findViewById(R.id.splash_message);
+		final TextView splashText = findViewById(R.id.splash_message);
 		splashText.setText(String.format(getString(R.string.splashmessageopensource), getString(R.string.app_brand_name), getString(R.string.app_url_name)));
-		AttenuatorManager.getInstance().init();
+		mLayout = findViewById(R.id.test);
+
+		if (isPermissionGranted()){
+			Snackbar.make(mLayout,
+					R.string.permission_available,
+					Snackbar.LENGTH_LONG).show();
+			startVpnCollector();
+		} else {
+			showRequestPermissions();
+		}
+	}
+
+	private void showRequestPermissions() {
+		if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+				Manifest.permission.CAMERA)) {
+			Snackbar.make(mLayout, R.string.access_required,
+					Snackbar.LENGTH_INDEFINITE).setAction(R.string.ok, new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					// Request the permission
+					ActivityCompat.requestPermissions(AROCollectorActivity.this, voPermissionList,0);
+				}
+			}).show();
+		}else{
+			Snackbar.make(mLayout, R.string.permission_unavailable, Snackbar.LENGTH_SHORT).show();
+			// Request the permission. The result will be received in onRequestPermissionResult().
+			ActivityCompat.requestPermissions(AROCollectorActivity.this, voPermissionList, 0);
+		}
+	}
+
+	private boolean isPermissionGranted() {
+		return	ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)== PackageManager.PERMISSION_GRANTED &&
+				ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)== PackageManager.PERMISSION_GRANTED &&
+				ActivityCompat.checkSelfPermission(this,Manifest.permission.CAMERA)== PackageManager.PERMISSION_GRANTED &&
+				ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED &&
+				ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_PHONE_STATE)== PackageManager.PERMISSION_GRANTED &&
+				ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_CALL_LOG)== PackageManager.PERMISSION_GRANTED &&
+				ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_CALENDAR)== PackageManager.PERMISSION_GRANTED &&
+				ActivityCompat.checkSelfPermission(this,Manifest.permission.READ_CONTACTS)== PackageManager.PERMISSION_GRANTED &&
+				ActivityCompat.checkSelfPermission(this,Manifest.permission.WRITE_EXTERNAL_STORAGE)== PackageManager.PERMISSION_GRANTED;
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		// BEGIN_INCLUDE(onRequestPermissionsResult)
+		int result = 0;
+		//Advanced for loop
+		for( int num : grantResults) {
+			result = result+num;
+		}
+		if (requestCode == 0) {
+			// Request for  permission.
+				if(result == PackageManager.PERMISSION_GRANTED){
+					Snackbar.make(mLayout, R.string.permission_granted,
+							Snackbar.LENGTH_LONG)
+							.show();
+					startVpnCollector();
+				}else{
+					new AlertDialog.Builder(this).setTitle("Usage Alert")
+							.setMessage(R.string.permission_last_confirmation)
+							.setPositiveButton(getString(R.string.try_again), new DialogInterface.OnClickListener() {
+								@Override
+								public void onClick(DialogInterface dialog, int which) {
+									showRequestPermissions();
+								}
+							}).setNegativeButton(getString(R.string.quit), new DialogInterface.OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							finish();
+						}
+					}).show();
+				}
+		}
+		// END_INCLUDE(onRequestPermissionsResult)
+	}
+
+	private void startVpnCollector() {
 		Intent intent = getIntent();
-		//delay
+
+		printLog = intent.getBooleanExtra(BundleKeyUtil.PRINT_LOG, false);
+
+		selectedApp = intent.getStringExtra(BundleKeyUtil.SELECTED_APP_NAME);
+
+		setVideoOption(intent);
+
+		bitRate = intent.getIntExtra(BundleKeyUtil.BIT_RATE, 0);
+		String screenSizeTmp = intent.getStringExtra(BundleKeyUtil.SCREEN_SIZE);
+		screenSize = screenSizeTmp == null? screenSize : screenSizeTmp;
+		setVideoOrient(intent);
+
+		launchAttenuate(intent);
+		launchAROCpuTraceService();
+		launchAROCpuTempService();
+
+		if (networkAndAirplaneModeCheck()) {
+			// register to listen for close down message
+			registerAnalyzerCloseCmdReceiver();
+			Log.d(TAG, "register the attenuator delay signal");
+			startVPN();
+		}
+
+		PackageInfo packageInfo = null;
+		try {
+			packageInfo = this.getPackageManager().getPackageInfo(this.getPackageName(), 0);
+		} catch (NameNotFoundException e) {
+			e.printStackTrace();
+		}
+		boolean typeValue = (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+
+		String display =
+				"App Build Date: "+  new Date(BuildConfig.TIMESTAMP) + "\n"
+						+ AttenuatorUtil.getInstance().notificationMessage() + "\n"
+						+" Version: " + packageInfo.versionName + " (" + (typeValue ? "Debug" : "Production") + ")";
+
+		((TextView) findViewById(R.id.version)).setText(display);
+
+		Log.i(TAG, "get from intent delayTime: " + AttenuatorManager.getInstance().getDelayDl()
+				+ "get from intent delayTimeUL: " + AttenuatorManager.getInstance().getDelayUl()
+				+ "get from intent throttleDL: " + AttenuatorManager.getInstance().getThrottleDL()
+				+ "get from intent throttleUL: " + AttenuatorManager.getInstance().getThrottleUL()
+				+ " video: " + videoOption
+				+ " bitRate: " + bitRate + " screenSize: " + screenSize
+				+ " orientation: " + videoOrient);
+	}
+
+	private void launchAttenuate(Intent intent) {
 		int delayDl = intent.getIntExtra(BundleKeyUtil.DL_DELAY, 0);
 		int delayUl = intent.getIntExtra(BundleKeyUtil.UL_DELAY, 0);
-
+		AttenuatorManager.getInstance().init();
 		if(delayDl >= 0){
 			AttenuatorManager.getInstance().setDelayDl(delayDl);
 		}else{
@@ -127,7 +278,6 @@ public class AROCollectorActivity extends Activity {
 		}else{
 			Log.i(TAG,"Invalid attenuation delay value"+ delayUl + "ms");
 		}
-
 		//throttle
 		int throttleDl = intent.getIntExtra(BundleKeyUtil.DL_THROTTLE, AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
 		int throttleUl = intent.getIntExtra(BundleKeyUtil.UL_THROTTLE, AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
@@ -137,63 +287,6 @@ public class AROCollectorActivity extends Activity {
 
 		AttenuatorManager.getInstance().setThrottleUL(throttleUl);
 		Log.d(TAG,"Upload speed throttle value: "+ throttleUl + " kbps");
-
-		printLog = intent.getBooleanExtra(BundleKeyUtil.PRINT_LOG, false);
-
-		selectedApp = intent.getStringExtra(BundleKeyUtil.SELECTED_APP_NAME);
-
-		setVideoOption(intent);
-
-		bitRate = intent.getIntExtra(BundleKeyUtil.BIT_RATE, 0);
-		String screenSizeTmp = intent.getStringExtra(BundleKeyUtil.SCREEN_SIZE);
-		screenSize = screenSizeTmp == null? screenSize : screenSizeTmp;
-
-		setVideoOrient(intent);
-
-		Log.i(TAG, "get from intent delayTime: " + AttenuatorManager.getInstance().getDelayDl()
-				+ "get from intent delayTimeUL: " + AttenuatorManager.getInstance().getDelayUl()
-				+ "get from intent throttleDL: " + AttenuatorManager.getInstance().getThrottleDL()
-				+ "get from intnetn throttleUL: " + AttenuatorManager.getInstance().getThrottleUL()
-				+ " video: " + videoOption
-				+ " bitRate: " + bitRate + " screenSize: " + screenSize
-				+ " orientation: " + videoOrient);
-
-
-		context = getApplicationContext();
-		launchAROCpuTraceService();
-		launchAROCpuTempService();
-		if (networkAndAirplaneModeCheck()) {
-
-			// register to listen for close down message
-			registerAnalyzerCloseCmdReceiver();
-			Log.d(TAG, "register the attenuator delay signal");
-
-			startVPN();
-		}
-
-		{ // test code
-			PackageInfo packageInfo = null;
-			try {
-				packageInfo = this.getPackageManager().getPackageInfo(this.getPackageName(), 0);
-			} catch (NameNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			boolean valu = (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-			// build datetime
-			Date buildDate = new Date(BuildConfig.TIMESTAMP);
-			String appBuildDate = "";
-			if( buildDate!=null){
-				appBuildDate = buildDate.toString();
-			}
-
-			String display =
-					"App Build Date: "+ appBuildDate + "\n"
-					+ AttenuatorUtil.getInstance().notificationMessage() + "\n"
-					+" Version: " + packageInfo.versionName + " (" + (valu ? "Debug" : "Production") + ")";
-
-			((TextView) findViewById(R.id.version)).setText(display);
-		}
 	}
 
 	private void setVideoOption(Intent intent) {
@@ -243,13 +336,11 @@ public class AROCollectorActivity extends Activity {
 		// for Security Best Practice 2 - Transmission of Private Data
 		// This service stops by itself.
 		launchCollectPrivateDataService();
-//		 launchAROCameraMonitorService();
 	}
 
 	private void stopServices() {
 		stopAROCollectorService();
 		stopAROGpsMonitorService();
-//		 stopAROCameraMonitorService();
 	}
 
 	/**
@@ -284,7 +375,8 @@ public class AROCollectorActivity extends Activity {
 	 * @param context
 	 * @param networkInterfaceName
 	 * @return true if interface exists and is active
- 	 */
+	 * @throws Exception
+	 */
 	private boolean checkForActiveInterface(Context context, String networkInterfaceName) throws Exception {
 
 		List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
@@ -306,10 +398,9 @@ public class AROCollectorActivity extends Activity {
 			case Config.Permission.VPN_PERMISSION_REQUEST_CODE:
 				if (resultCode == RESULT_OK) {
 
-
 					captureVpnServiceIntent = new Intent(getApplicationContext(), CaptureVpnService.class);
 					captureVpnServiceIntent.putExtra("TRACE_DIR", Config.TRACE_DIR);
-					captureVpnServiceIntent.putExtra(BundleKeyUtil.PRINT_LOG, printLog);
+					Intent intent = captureVpnServiceIntent.putExtra(BundleKeyUtil.PRINT_LOG, printLog);
 					captureVpnServiceIntent.putExtra(BundleKeyUtil.SELECTED_APP_NAME, selectedApp);
 
 					if(isExternalStorageWritable()){
@@ -323,11 +414,10 @@ public class AROCollectorActivity extends Activity {
 
 					// start collecting META data
 					startServices();
-
 					if (doVideoCapture()) {
-						getVideoCapturePermission();
-					}else{
-						pushAppToBackStack();
+							getVideoCapturePermission();
+					} else {
+							pushAppToBackStack();
 					}
 
 				} else if (resultCode == RESULT_CANCELED) {
@@ -338,18 +428,24 @@ public class AROCollectorActivity extends Activity {
 
 			case Config.Permission.VIDEO_PERMISSION_REQUEST_CODE:
 				Log.i("SecureCollector", "VIDEO_PERMISSION_REQUEST_CODE");
-				pushAppToBackStack();
-
 				if (resultCode != RESULT_OK) {
 					Toast.makeText(this, "Screen Cast Permission Denied, no SD/HD video will be captured.",
 							Toast.LENGTH_SHORT).show();
 					return;
 				}
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+					Intent intentMedia = new Intent(this, ScreenRecorderService.class);
+					ScreenRecorderService.setMediaProjection(mediaProjectionManager);
+					intentMedia.putExtras(data.getExtras());
+					startForegroundService(intentMedia);
+				}else{
+					MediaProjection mediaProjection = mediaProjectionManager.getMediaProjection(resultCode,  Objects.requireNonNull(data));
+					VideoCapture videoCapture = new VideoCapture(getApplicationContext(),
+							getWindowManager(), mediaProjection, bitRate, screenSize, videoOrient);
+					videoCapture.start();
 
-				MediaProjection mediaProjection = mediaProjectionManager.getMediaProjection(
-						resultCode, data);
-				videoCapture = new VideoCapture(getApplicationContext(), getWindowManager(), mediaProjection, bitRate, screenSize, videoOrient);
-				videoCapture.start();
+				}
+				pushAppToBackStack();
 				break;
 
 			default:
@@ -586,7 +682,7 @@ public class AROCollectorActivity extends Activity {
 	 * @return
 	 */
 	private boolean isConnectedToInternet() {
-		ConnectivityManager connectivity = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		ConnectivityManager connectivity = (ConnectivityManager) this.getSystemService(CONNECTIVITY_SERVICE);
 		if (connectivity != null) {
 			NetworkInfo[] info = connectivity.getAllNetworkInfo();
 			if (info != null)
@@ -602,13 +698,16 @@ public class AROCollectorActivity extends Activity {
 	}
 
 	/* Checks if external storage is available for read and write */
-	public boolean isExternalStorageWritable() {
-		String state = Environment.getExternalStorageState();
-		if (Environment.MEDIA_MOUNTED.equals(state)) {
-			return true;
-		}
-		return false;
+	private boolean isExternalStorageWritable() {
+		return Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED;
+
 	}
+	// Checks if a volume containing external storage is available to at least read.
+	private boolean isExternalStorageReadable() {
+		return Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED ||
+				Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED_READ_ONLY;
+	}
+
 
 	public void handleUncaughtException (Thread thread, Throwable e)  {
 		MemoryInfo mi = new MemoryInfo();
@@ -649,11 +748,7 @@ public class AROCollectorActivity extends Activity {
 		if (permissionCheck == PackageManager.PERMISSION_DENIED) {
 			ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
 			permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-			if (permissionCheck == PackageManager.PERMISSION_DENIED) {
-				return false;
-			} else {
-				return true;
-			}
+			return permissionCheck != PackageManager.PERMISSION_DENIED;
 		} else {
 			return true;
 		}
@@ -666,8 +761,7 @@ public class AROCollectorActivity extends Activity {
 				filepath.delete();
 			}
 			filepath.createNewFile();
-			try(
-				InputStream iStream = this.getResources().openRawResource(rsrc);
+			try(InputStream iStream = this.getResources().openRawResource(rsrc);
 				OutputStream oStream = new FileOutputStream(filepath)) {
 				final byte[] buffer = new byte[1024];
 				int length;

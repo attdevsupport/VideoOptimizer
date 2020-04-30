@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Lazy;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.impl.AccessingPeripheralImpl;
 import com.att.aro.core.bestpractice.impl.AsyncCheckInScriptImpl;
+import com.att.aro.core.bestpractice.impl.AudioStreamImpl;
 import com.att.aro.core.bestpractice.impl.CacheControlImpl;
 import com.att.aro.core.bestpractice.impl.CombineCsJssImpl;
 import com.att.aro.core.bestpractice.impl.ConnectionClosingImpl;
@@ -58,9 +59,9 @@ import com.att.aro.core.bestpractice.impl.VideoConcurrentSessionImpl;
 import com.att.aro.core.bestpractice.impl.VideoNetworkComparisonImpl;
 import com.att.aro.core.bestpractice.impl.VideoRedundancyImpl;
 import com.att.aro.core.bestpractice.impl.VideoResolutionQualityImpl;
+import com.att.aro.core.bestpractice.impl.VideoAdaptiveBitrateLadderImpl;
 import com.att.aro.core.bestpractice.impl.VideoSegmentPacingImpl;
 import com.att.aro.core.bestpractice.impl.VideoSegmentSizeImpl;
-import com.att.aro.core.bestpractice.impl.AudioStreamImpl;
 import com.att.aro.core.bestpractice.impl.VideoStallImpl;
 import com.att.aro.core.bestpractice.impl.VideoStartUpDelayImpl;
 import com.att.aro.core.bestpractice.impl.VideoTcpConnectionImpl;
@@ -100,6 +101,7 @@ import com.att.aro.core.bestpractice.impl.WeakCipherImpl;
  *   * httpsUsage
  *   * transmissionPrivateData
  *   * unsecureSSLVersion
+ *   * video
  *   * weakCipher
  *   * forward secrecy
  * </pre>
@@ -317,6 +319,11 @@ public class AROBestPracticeConfig {
 	@Bean(name = "videoResolutionQuality")
 	IBestPractice getVideoResolutionQuality() {
 		return new VideoResolutionQualityImpl();
+	}
+	
+	@Bean(name = "adaptiveBitrateLadder")
+	IBestPractice getVideoAdaptiveBitrateLadderImpl() {
+		return new VideoAdaptiveBitrateLadderImpl();
 	}
 	
 	@Bean(name = "audioStream")

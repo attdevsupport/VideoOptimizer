@@ -165,6 +165,9 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	private double segmentSize;
 	private ArrayList<ByteRange> rangeList = new ArrayList<>();
 	private double segmentID;
+	/**
+	 * a selected segment is considered available and is used in playtime and stall calculations
+	 */
 	private boolean selected = true;
 	/**
 	 * Segment Quality AKA Track
@@ -266,7 +269,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		strblr.append(", duration:").append(String.format("%.6f", duration * 1e0));
 		strblr.append(", Session:").append(String.format("%.4f", getSession().getSessionStartTime()));
 		strblr.append(", Quality:").append(quality);
-		strblr.append(", bitrate:").append(bitrate);
+		strblr.append(", bitrate:").append((int)bitrate);
 		if (getContentType().equals(ContentType.VIDEO)) {
 			strblr.append(", resolutionHeight:").append(resolutionHeight);
 		}
@@ -346,11 +349,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		setSegmentID(segmentInfo.getSegmentID());
 		setPlayTime(segmentInfo.getStartTime());
 		setDuration(segmentInfo.getDuration());
-		if (segmentInfo.getSize()>0) {
-			this.segmentSize = segmentInfo.getSize();
-		} else {
-			this.segmentSize = contentSize;
-		}
+		getSegmentInfo().setSize(contentSize);
 		
 		double temp = 0;
 		if (isNormalSegment()) {

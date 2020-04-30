@@ -52,60 +52,7 @@ public final class DeviceVideoHandler {
 	}
 	
 	public String executeCmd(String cmd) {
-		String line = cmd;
-		LOGGER.debug(cmd);
-		ProcessBuilder pbldr = new ProcessBuilder().redirectErrorStream(true);
-		StringBuilder builder = new StringBuilder();
-		
-		String binPath = Util.getBinPath();
-		if (!StringUtils.isEmpty(binPath)) {
-			Map<String, String> envs = pbldr.environment();
-			envs.put("PATH", System.getenv("PATH") + ":" + binPath);
-		}
-		
-		pbldr.command(new String[] { "bash", "-c", cmd });
-		try {
-			Process proc = pbldr.start();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-			try {
-				Thread.sleep(2000);
-			} catch (InterruptedException e) {
-				LOGGER.error("InterruptedException:", e);
-			}
-			if (reader.ready()) {
-				line = reader.readLine();
-				builder.append(line).append(System.getProperty("line.separator"));
-			}
-			reader.close();
-			proc.destroy();
-		} catch (IOException e) {
-			LOGGER.error("IOException during process command: ", e);
-		}
-		line = builder.toString();
-		LOGGER.debug(line);
-		return line;
-	}
-
-	public String executeProcessExtractionCmd(String processList, String iosDeployPath) {
-		TreeMap<Date, String> pidList = new TreeMap<>();
-		if (processList != null) {
-			String[] lineArr = processList.split(Util.LINE_SEPARATOR);
-			SimpleDateFormat formatter = new SimpleDateFormat("hh:mma");
-			for (String str : lineArr) {
-				String[] strArr = str.split(" +");
-				try {
-					if (str.contains(iosDeployPath) && strArr.length >= 8) {
-						Date timestamp = formatter.parse(strArr[8]);
-						pidList.put(timestamp, strArr[1]);
-					}
-
-				} catch (ParseException e) {
-					LOGGER.error("Exception during pid extraction");
-				}
-			}
-		}
-
-		return pidList.lastEntry().getValue();
+		return extProcRunner.executeCmd(cmd);
 	}
 
 	// as backup method for retrieved iOS version
@@ -118,8 +65,9 @@ public final class DeviceVideoHandler {
 			if ((!device.contains("Simulator")) && device.contains("iPhone")) {
 				try {
 					String versionStr = device.substring(device.indexOf("(") + 1, device.indexOf(")"));
-					if (versionStr.indexOf(".") != -1)
+					if (versionStr.indexOf(".") != -1) {
 						iosVersion = Integer.valueOf(versionStr.substring(0, versionStr.indexOf(".")));
+					}
 				} catch (NumberFormatException e) {
 					LOGGER.error("Non numeric value cannot represent ios version: " + iosVersion);
 				}
@@ -130,7 +78,8 @@ public final class DeviceVideoHandler {
 	}
 
 	public boolean verifyIFuse() {
-		return extProcRunner.executeCmdRunner(IFUSE_VERIFY, true, "success").contains(defaultBundle.getString("Message.ifuse.verify"));
+		String result = extProcRunner.executeCmdRunner(IFUSE_VERIFY, true, "success", true);
+		return result.contains(defaultBundle.getString("Message.ifuse.verify"));
 	}
 
 }

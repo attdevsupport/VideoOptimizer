@@ -26,7 +26,6 @@ import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-import com.att.aro.core.packetanalysis.impl.VideoTrafficCollectorImpl;
 import com.att.aro.core.videoanalysis.impl.SegmentInfo;
 
 import lombok.AccessLevel;
@@ -83,7 +82,7 @@ public class ManifestCollection {
 	@Setter(AccessLevel.NONE)
 	@NonNull
 	@Getter
-	private SortedMap<Double, ChildManifest> timestampChildManifestMap = new TreeMap<>(); 
+	private TreeMap<Double, ChildManifest> timestampChildManifestMap = new TreeMap<>(); 
 	
 	/**<pre>
 	 * TreeMap of ChildManifest
@@ -94,11 +93,6 @@ public class ManifestCollection {
 	@Getter
 	private SortedMap<Double, ChildManifest> bandwidthMap = new TreeMap<>();
 
-	public void addToUriNameChildMap(int count, String childUriName, ChildManifest childManifest) {
-		setChildUriNameSectionCount(count);
-		addToUriNameChildMap(childUriName, childManifest);
-	}
-	
 	public void addToUriNameChildMap(String childUriName, ChildManifest childManifest) {
 		if (!uriNameChildMap.containsKey(childUriName)) {
 			uriNameChildMap.put(childUriName, childManifest);
@@ -124,7 +118,9 @@ public class ManifestCollection {
 	}
 
 	public void addToSegmentChildManifestTrie(String segmentUriName, ChildManifest childManifest) {
-		segmentChildManifestTrie.put(segmentUriName, childManifest);
+			if (!segmentChildManifestTrie.containsKey(segmentUriName)) {
+			segmentChildManifestTrie.put(segmentUriName, childManifest);
+		}
 	}
 
 	// debugging - logging info

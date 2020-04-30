@@ -15,6 +15,8 @@
 */
 package com.att.aro.core.videoanalysis.impl;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -42,6 +44,10 @@ import com.att.aro.core.videoanalysis.pojo.Manifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ManifestType;
 import com.att.aro.core.videoanalysis.pojo.ManifestCollection;
+import com.att.aro.core.videoanalysis.pojo.UrlMatchDef;
+import com.att.aro.core.videoanalysis.pojo.UrlMatchDef.UrlMatchType;
+import com.att.aro.core.videoanalysis.pojo.UrlMatchDef;
+import com.att.aro.core.videoanalysis.pojo.UrlMatchDef.UrlMatchType;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 
 import lombok.Data;
@@ -58,6 +64,9 @@ public abstract class ManifestBuilder {
 
 	@NonNull
 	ChildManifest childManifest = null;
+	@NonNull
+	ChildManifest tempChildManifest = null;
+	SegmentInfo segmentInfo = null;
 
 	/**
 	 * Key1: MasterManifest "Name" request.getObjUri().getRawPath()
@@ -95,6 +104,17 @@ public abstract class ManifestBuilder {
 
 	}
 
+	/**
+	 * <pre>
+	 * Create a Manifest object from byte[] data.
+	 *  if manifest is a master, a new ManifestCollection will be created to hold the masterManifest
+	 *  if manifest is a "child" it will be attached to it's master
+	 * 
+	 * @param request - object
+	 * @param data - byte[]
+	 * @param videoPath
+	 * @return manifest, that was just created, master or child
+	 */
 	public Manifest create(HttpRequestResponseInfo request, byte[] data, String videoPath) {
 		crc32 = new CRC32();
 		manifest = new Manifest();
@@ -109,10 +129,16 @@ public abstract class ManifestBuilder {
 		manifest.setChecksumCRC32(crc32.getValue());
 		manifest.setRequestTime(request.getTimeStamp());
 		manifest.setEndTime(request.getAssocReqResp().getLastDataPacket().getTimeStamp());
-
  		parseManifestData(manifest, data);
 		return manifest;
 	}
+
+	public String shortFileName(String rawName) {
+		String objName = StringUtils.substringBefore(rawName, ";");
+		objName = StringUtils.substringAfterLast(objName, "/");
+		return objName;
+	}
+
 
 	protected void validateManifestVideoName(Manifest manifest, String childName) {
 		int pos = 0;
@@ -208,6 +234,12 @@ public abstract class ManifestBuilder {
 		return key;
 	}
 	
+	/**
+	 * Parse out Video Streaming information from the data object
+	 * 
+	 * @param newManifest
+	 * @param data
+	 */
 	public abstract void parseManifestData(Manifest newManifest, byte[] data);
 
 	protected void assignQuality(ManifestCollection manifestCollection) {
@@ -217,22 +249,44 @@ public abstract class ManifestBuilder {
 		}
 	}
 	
+	/**
+	 * Decode any potential encoding so that manifest declared URLs can be compared against real URLs
+	 * 
+	 * @param url
+	 * @return
+	 */
+	protected String decodeUrlEncoding(String url) {
+		if (StringUtils.isEmpty(url)) {
+			return "";
+		}
+		String result;
+		try {
+			result = URLDecoder.decode( url, "UTF-8" );
+		} catch (UnsupportedEncodingException e) {
+			LOG.error(String.format("Failed to decode %s :%s", e.getMessage(), url));
+			result = url;
+		}
+		return result;
+	}
+	
 	protected ChildManifest locateChildManifest(Manifest manifest) {
 		childManifest = null;
+
 		HttpRequestResponseInfo request = manifest.getRequest();
-		String uriReferencePath = request.getObjNameWithoutParams();
-		int sectionCount = manifestCollection.getChildUriNameSectionCount();
+		String uriReferencePath = decodeUrlEncoding(buildUriNameKey(manifest.getMasterManifest(), request));
 		
 		referenceKey = uriReferencePath;
+		
+		if ((childManifest = manifestCollection.getUriNameChildMap().get(decodeUrlEncoding(referenceKey))) == null) {
+			referenceKey = buildUriNameKey(masterManifest, manifest.getRequest());
+			// VID-TODO may remove this (if section) after UrlMatchType conversion is complete
+
 		if (!CollectionUtils.isEmpty(manifestCollection.getUriNameChildMap())) {
-			int[] matchPoints = getStringPositions(uriReferencePath, "/");
-			int count = matchPoints.length;
-			int point = count - sectionCount - 1;
-			if (point < 0) {
-				point = 0;
+				childManifest = manifestCollection.getUriNameChildMap().entrySet().stream()
+						.filter(x -> x.getKey().contains(referenceKey))
+						.findFirst().map(x -> x.getValue())
+						.orElseGet(() -> null);
 			}
-			referenceKey = uriReferencePath.substring(matchPoints[point] + 1);
-			childManifest = manifestCollection.getUriNameChildMap().entrySet().stream().filter(x -> x.getKey().contains(referenceKey)).findFirst().map(x-> x.getValue()).orElseGet(()-> null);
 		}
 		if (childManifest == null) {
 			// create an adhoc childManifest
@@ -242,10 +296,96 @@ public abstract class ManifestBuilder {
 		}
 		return childManifest;
 	}
+	
+	protected UrlMatchDef defineUrlMatching(Manifest tempManifest, String uriName) {
+		UrlMatchDef urlMatchDef = tempManifest.getUrlMatchDef();
+		if (uriName.startsWith("http")) {
+			urlMatchDef.setUrlMatchType(UrlMatchType.FULL);
+		} else {
+			String name = StringUtils.substringBeforeLast(uriName, ".");
+			int countSlash = StringUtils.countMatches(name, "/");
+			urlMatchDef.setUrlMatchLen(countSlash);
+			urlMatchDef.setUrlMatchType(UrlMatchType.COUNT);
+			urlMatchDef.setPrefix(uriName.startsWith("/"));
+		}
+		return urlMatchDef;
+	}
+
+	/**
+	 * builds a key for childUriName from request info
+	 * 
+	 * @param targetManifest
+	 * @param request
+	 * @return
+	 */
+	public String buildUriNameKey(Manifest targetManifest, HttpRequestResponseInfo request) {
+		UrlMatchDef targetUrlMatchDef = new UrlMatchDef();
+		try {
+			if (targetManifest != null && targetManifest.getUrlMatchDef() != null) {
+				targetUrlMatchDef = targetManifest.getUrlMatchDef();
+			}
+		} catch (Exception e) {
+			LOG.error("failed to load UrlMatchDef ", e);
+		}
+		
+		return buildUriNameKey(targetUrlMatchDef, request);
+	}
+
+	/**
+	 * Builds a key from request info, utilizing UrlMatchDef
+	 * 
+	 * @param targetUrlMatchDef
+	 * @param request
+	 * @return
+	 */
+	public String buildUriNameKey(UrlMatchDef targetUrlMatchDef, HttpRequestResponseInfo request) {
+		if (targetUrlMatchDef == null) {
+			return "";
+		}
+		return applyUriMatchDef(request, targetUrlMatchDef);
+	}
+
+	public String applyUriMatchDef(HttpRequestResponseInfo request, UrlMatchDef targetUrlMatchDef) {
+		String key = "";
+		
+		switch (targetUrlMatchDef.getUrlMatchType()) {
+		case FULL:
+			key = request.getObjUri().toString();
+			break;
+		case HEAD:
+			key = request.getObjUri().toString();
+			if (key.contains("?")) {
+				key = StringUtils.substringBefore(key, "?");
+			}
+			break;
+		case TAIL:
+		case OBJNAME:
+			key = request.getObjNameWithoutParams();
+			break;
+		case UNKNOWN:
+		case NAME:
+			key = request.getFileName();
+			break;
+		case COUNT: {
+			key = request.getObjNameWithoutParams();
+			int count = StringUtils.countMatches(key, "/");
+			int matchCount;
+			int skipSlash = targetUrlMatchDef.isPrefix() ? 0 : 1;
+			if (count != (matchCount = targetUrlMatchDef.getUrlMatchLen())) {
+				int[] pos = getStringPositions(key, "/");
+				key = key.substring(pos[pos.length - 1 - matchCount] + skipSlash);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+		return key;
+	}
 
 	private int[] getStringPositions(String inputStr, String matchStr) {
 		int count = StringUtils.countMatches(inputStr, matchStr);
-		if (count >= 0) {
+		if (count > 0) {
 			int[] position = new int[count];
 			int idx = 0;
 			int index = inputStr.indexOf(matchStr);
@@ -259,7 +399,8 @@ public abstract class ManifestBuilder {
 	}
 
 	protected SegmentInfo createSegmentInfo(ChildManifest childManifest, String parameters, String segmentUriName) {
-		int segmentID = childManifest.getNextSegmentID();
+		int segmentID = childManifest.getSegmentCount();
+		segmentID = childManifest.getNextSegmentID();
 		SegmentInfo segmentInfo = new SegmentInfo();
 		segmentInfo.setVideo(childManifest.isVideo());
 		segmentInfo.setDuration(StringParse.findLabeledDoubleFromString(":", ",", parameters));
@@ -272,7 +413,7 @@ public abstract class ManifestBuilder {
 	}
 
 	/**
-	 * Switch Manifest if there is no manifest for key and timestamp
+	 * Switch/Create a Manifest if there is no manifestCollection or key/timestamp for a manifest in manifestCollectionMap.
 	 * 
 	 * @param tmpManifest
 	 * @param key
@@ -290,6 +431,8 @@ public abstract class ManifestBuilder {
 			manifestCollection.setManifest(tmpManifest);
 			masterManifest = tmpManifest;
 			manifestCollectionMap.get(key).put(timestamp, manifestCollection);
+		} else {
+			LOG.error(String.format("Two Manifests, same key, same timestamp : %s, %.3f\n", key, timestamp));
 		}
 	}
 
@@ -297,8 +440,9 @@ public abstract class ManifestBuilder {
 		ChildManifest childManifest = new ChildManifest();
 		childManifest.setManifest(manifest);
 		childManifest.setUriName(childUriName);
-		childUriName = childUriName.replaceAll("%2f", "/");
-		manifestCollection.addToUriNameChildMap(StringUtils.countMatches(childUriName, "/"), childUriName, childManifest);
+		childUriName = decodeUrlEncoding(childUriName);
+		manifest.setUrlMatchDef(defineUrlMatching(manifest, childUriName));
+		manifestCollection.addToUriNameChildMap(childUriName, childManifest);
 		return childManifest;
 	}
 
@@ -308,13 +452,35 @@ public abstract class ManifestBuilder {
 
 	public ManifestCollection findManifest(HttpRequestResponseInfo request) {
 		
-		LOG.debug("locating manifest for :" + request.getObjUri());
+		LOG.debug(String.format("locating manifest for|<%s>|", request.getObjUri().toString()));
 		
 		identifiedManifestRequestTime = 0;
 		byteRangeKey = "";
+		double manifestReqTime = 0;
+		double lastManifestReqTime = 0;
+		for (Map<Double, ManifestCollection> innerMap : manifestCollectionMap.values()) {
+			for (ManifestCollection manifestCollection : innerMap.values()) {
+				if (manifestCollection.getManifest().getRequestTime() < request.getTimeStamp()) {
+					manifestReqTime = manifestCollection.getManifest().getRequestTime();
+					if (lastManifestReqTime == 0 || lastManifestReqTime < manifestReqTime) {
+						key = buildUriNameKey(manifestCollection.getManifest().getMasterManifest().getSegUrlMatchDef(), request);
+						key += "|" + formatTimeKey(manifestCollection.getManifest().getRequestTime());
+						if (!StringUtils.isEmpty(key)) {
+							if (locatePatKey(segmentManifestCollectionMap, key, request) != null) {
+								manifestCollectionToBeReturned = manifestCollection;
+								lastManifestReqTime = manifestReqTime;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (manifestCollectionToBeReturned != null) {
+			return manifestCollectionToBeReturned;
+		}
+		key = buildUriNameKey(masterManifest, request);
 		
-		key = keyMatch(request, buildKey(request));
-		if (StringUtils.isEmpty(key) && !segmentManifestCollectionMap.selectKey("#EXT-X-BYTERANGE:").isEmpty()) {
+		if (StringUtils.isEmpty(key) && segmentManifestCollectionMap.selectKey("#EXT-X-BYTERANGE:") != null) {
 			String[] range = stringParse.parse(request.getAllHeaders(), "Range: bytes=(\\d+)-(\\d+)");
 			if (range != null) {
 				String segName = String.format("#EXT-X-BYTERANGE:%.0f@%s", StringParse.stringToDouble(range[1], 0D) + 1, range[0]); // #EXT-X-BYTERANGE:207928@0 //
@@ -323,13 +489,12 @@ public abstract class ManifestBuilder {
 					key = keyMatch(request, segName);
 					byteRangeKey = segName;
 				} else {
-					LOG.debug(String.format("Bad key match <%s> %s<>", segName, key));
+					LOG.error(String.format("Bad key match <%s> %s<>", segName, key));
 					key = "";
 				}
 			}
 		}
 		String key1 = StringUtils.substringBefore(key, "|");
-		LOG.debug("Looking for +<" + key + ">+ VALUE=" + segmentManifestCollectionMap.get(key));
 		try {
 			List<Entry<String, String>> tempList = segmentManifestCollectionMap.entrySet().parallelStream()
 					.filter(segmentManifestCollectionMapEntry -> segmentManifestCollectionMapEntry.getKey().contains(key))
@@ -358,9 +523,6 @@ public abstract class ManifestBuilder {
 							&& f.getValue().getSegmentChildManifestTrie().containsKey(key1)
 							)
 					.forEach(innerMap -> { 
-						if (innerMap.getValue().getSegmentChildManifestTrie().containsKey(key1)) {
-							LOG.debug("found :"+innerMap.getValue().getSegmentChildManifestTrie().get(key1).getUriName());
-						}
 						manifestCollectionToBeReturned = innerMap.getValue();
 					});
 				});
@@ -382,46 +544,150 @@ public abstract class ManifestBuilder {
 		}
 		return manifestCollectionToBeReturned;
 	}
-
-	public String keyMatch(HttpRequestResponseInfo request, String targetKey) {
-		String key = "";
-		Set<Entry<String, String>> eSet = segmentManifestCollectionMap.entrySet();
-		for (Entry<String, String> sKey : eSet) {
-			String[] found = stringParse.parse(targetKey, StringUtils.substringBefore(sKey.getKey(), "|"));
-			if (found != null || sKey.getKey().contains(targetKey)) {
-				String[] tsString;
-				if ((tsString = stringParse.parse(sKey.getKey(), "\\|(.*)\\|")) != null) {
-					double keyTS = Double.valueOf(tsString[0]);
-					if (request.getTimeStamp()<keyTS) {
-						continue;
+	
+	public String locatePatChildManifestKey(PatriciaTrie<ChildManifest> patMap, String key) {
+		String foundKey = patMap.selectKey(key);
+		if (foundKey.startsWith(key)) {
+			return foundKey;
+		} else {
+			String priorKey = patMap.previousKey(foundKey);
+			if (priorKey != null && priorKey.startsWith(key)) {
+				return priorKey;
+			}
+		}
+		return null;
+	}
+	
+	public String locatePatKey(PatriciaTrie<String> patMap, String key, HttpRequestResponseInfo request) {
+		if (patMap.size() > 0) {
+			String foundKey = patMap.selectKey(key);
+			if (foundKey != null) {
+				if (foundKey.startsWith(key) || matchKey(key, foundKey)) {
+					return foundKey;
+				} else {
+					String priorKey = patMap.previousKey(foundKey);
+					if (priorKey != null && (priorKey.startsWith(key) || matchKey(key, priorKey))) {
+						return priorKey;
 					}
-				}
-				key = sKey.getKey();
-			} else {
-				if (!StringUtils.isEmpty(key)) {
-					break;
 				}
 			}
 		}
+		return null;
+	}
+
+	private boolean matchKey(String keyStr, String foundKey) {
+		String[] matched = null;
+		if (foundKey != null && foundKey.contains("(")) {
+			matched = stringParse.parse(keyStr, foundKey);
+		}
+		return matched != null;
+	}
+
+
+	public String keyMatch(HttpRequestResponseInfo request, String targetKey) {
+		String key = "";
+				String[] tsString;
+				String[] matched;
+				String scanKey = selectKey(request);
+				if (CollectionUtils.isEmpty(segmentManifestCollectionMap)) {
+					LOG.error("segmentManifestCollectionMap is empty");
+					return key;
+				}
+				if (scanKey.toUpperCase().startsWith(buildUriNameKey(manifest, request).toUpperCase())) {
+					while ((key = segmentManifestCollectionMap.nextKey(scanKey)) != null && key.startsWith(StringUtils.substringBefore(scanKey, "|"))) {
+						scanKey = key;
+					}
+					return scanKey;
+				}
+				
+				scanKey = segmentManifestCollectionMap.selectKey(targetKey);
+				
+				if (scanKey.contains("(")) {
+					matched = stringParse.parse(targetKey, StringUtils.substringBefore(scanKey, "|"));
+					if (matched!=null) {
+						return scanKey;
+					}
+				}
+				if (scanKey.startsWith(targetKey)) {
+					do {
+						if ((tsString = stringParse.parse(scanKey, "\\|(.*)\\|")) != null) {
+					double keyTS = Double.valueOf(tsString[0]);
+					if (request.getTimeStamp()<keyTS) {
+						if (!key.isEmpty()) {
+							return key;
+						} else {
+							return scanKey;
+
+				}
+			} else {
+				key = scanKey;
+				}
+			}
+					} while ((scanKey = segmentManifestCollectionMap.nextKey(scanKey)) != null);
+		}
 		return key;
 	}
+
+	public String selectKey(HttpRequestResponseInfo request) {
+		String key = buildUriNameKey(manifest, request);
+		String scanKey = segmentManifestCollectionMap.selectKey(key);
+
+		if (!domainSafeCompare(key, scanKey)) {
+			String pKey;
+			if ((pKey = segmentManifestCollectionMap.previousKey(scanKey)) != null) {
+				scanKey = pKey;
+			}
+		}
+		
+		return scanKey;
+	}
 	
-	public String locateKey(HttpRequestResponseInfo request) {
+	private boolean domainSafeCompare(String key, String scanKey) {
+		if (!scanKey.startsWith("http")) {
+			return scanKey.startsWith(key);
+		}
+
+		int pos1 = StringUtils.ordinalIndexOf(scanKey, "/", 3);
+		int pos2 = StringUtils.ordinalIndexOf(key, "/", 3);
+		if (pos1 != pos2 || !scanKey.substring(0, pos1).toLowerCase().contentEquals(key.substring(0, pos2).toLowerCase())) {
+			return false;
+		} else {
+			return scanKey.substring(pos1).contains(key.substring(pos2));
+		}
+	}
+
+	protected String cleanUriName(String segmentUriName) {
+		if (!segmentUriName.startsWith("http")) {
+			return segmentUriName;
+		}
+
+		int pos = StringUtils.ordinalIndexOf(segmentUriName, "/", 3);
+		if (pos > -1) {
+			return segmentUriName.substring(0, pos).toLowerCase() + segmentUriName.substring(pos);
+		}
+		return segmentUriName.toLowerCase();
+	}
+
+	//VID-TODO maybe enum this too
+	public String locateKey(UrlMatchDef urlMatchDef, HttpRequestResponseInfo request) {
 		if (!StringUtils.isEmpty(byteRangeKey)) {
 			return byteRangeKey;
 		}
 		String key = keyMatch(request, buildKey(request));
+		if (key.isEmpty()) {
+			key = buildUriNameKey(urlMatchDef, request);
+		}
 		key = StringUtils.substringBefore(key, "|");
 		return key;
 	}
 	
 	protected String formatTimeKey(double reqTimestamp) {
-		return String.format("%.3f", reqTimestamp);
+		return String.format("%8.3f", reqTimestamp);
 	}
 	
 	protected void addToSegmentManifestCollectionMap(String segmentUriName) {
 		String key = segmentUriName 
-				+ "|" + formatTimeKey(manifest.getRequestTime()) 
+				+ "|" + formatTimeKey(manifestCollection.getManifest().getRequestTime()) 
 				+ "|" + manifestCollection.getManifest().getVideoName();
 		if (!segmentManifestCollectionMap.containsKey(key)) {
 			if (key.startsWith("|")) {

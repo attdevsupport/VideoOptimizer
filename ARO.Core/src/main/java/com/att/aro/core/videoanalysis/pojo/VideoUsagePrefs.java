@@ -47,7 +47,7 @@ public class VideoUsagePrefs {
 	private double stallRecovery = 0.0D;
 	private double nearStall = 0.01D;
 	@Value("${preferences.video.defaultSegmentRedundancyWarnVal : 15 }")
-	private int segmentRedundancyWarnVal;
+	private double segmentRedundancyWarnVal;
 	@Value("${preferences.video.defaultStartUpDelayWarnVal : 8.0000 }")
 	private double startUpDelayWarnVal;
 	@Value("${preferences.video.defaultStallDurationWarnVal : 0.5000 }")
@@ -55,7 +55,7 @@ public class VideoUsagePrefs {
 	@Value("${preferences.video.defaultStallDurationFailVal : 1.0000 }")
 	private double stallDurationFailVal;
 	@Value("${preferences.video.defaultSegmentRedundancyFailVal : 25 }")
-	private int segmentRedundancyFailVal;
+	private double segmentRedundancyFailVal;
 
 	/**
 	 * Determine which segment should be used when there are duplicate segments

@@ -99,6 +99,7 @@ public class GraphPanelHelper{
 		plotOrder.add(ChartPlotOptions.ATTENUATION);
 		plotOrder.add(ChartPlotOptions.SPEED_THROTTLE);
 		plotOrder.add(ChartPlotOptions.THROUGHPUT);
+		plotOrder.add(ChartPlotOptions.CONNECTIONS);
 		plotOrder.add(ChartPlotOptions.UL_PACKETS);
 		plotOrder.add(ChartPlotOptions.DL_PACKETS);
 		plotOrder.add(ChartPlotOptions.BURSTS);

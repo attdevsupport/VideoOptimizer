@@ -79,10 +79,12 @@ import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataResult;
 import com.att.aro.core.bestpractice.pojo.UnnecessaryConnectionResult;
 import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionResult;
 import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
+import com.att.aro.core.bestpractice.pojo.VideoAdaptiveBitrateLadderResult;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.WeakCipherResult;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.videoanalysis.pojo.QualityTime;
 import com.att.aro.core.videoanalysis.pojo.VideoStartup;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.BrowserGenerator;
@@ -585,6 +587,9 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 		case STARTUP_DELAY:
 			learnMoreURI = ResourceBundleHelper.getURLResource("startUpDelay.url");
 			break;
+		case VIDEO_ABR_LADDER:
+			learnMoreURI = ResourceBundleHelper.getURLResource("adaptiveBitrateLadder.url");
+			break;
 		case BUFFER_OCCUPANCY:
 			learnMoreURI = ResourceBundleHelper.getURLResource("bufferOccupancy.url");
 			break;
@@ -892,6 +897,15 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 						results = ((VideoStartUpDelayResult) bpr).getResults();
 					}
 					startupDelayPanel.setData(results);
+					return;
+
+				case VIDEO_ABR_LADDER:
+					VideoAdaptiveBitrateLadderPanel adaptiveBitrateLadderPanel = (VideoAdaptiveBitrateLadderPanel) resultsChartPanel;
+					List<QualityTime> adaptiveBitrateLadderResults = Collections.emptyList();
+					if (bpr.getResultType() != BPResultType.NONE) {
+						adaptiveBitrateLadderResults = ((VideoAdaptiveBitrateLadderResult) bpr).getResults();
+					}
+					adaptiveBitrateLadderPanel.setData(adaptiveBitrateLadderResults);
 					return;
 
 				case VIDEO_CONCURRENT_SESSION:

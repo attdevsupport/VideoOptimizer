@@ -38,9 +38,9 @@ public class AttenuatorUtil {
     }
 
     public String notificationMessage() {
-        return "Speed Control - DL: " +
+        return "Speed Control - DL : " +
                 messageConvert(AttenuatorManager.getInstance().getThrottleDL())
-                + " UL: "
+                + " UL : "
                 + messageConvert(AttenuatorManager.getInstance().getThrottleUL())
                 ;
     }

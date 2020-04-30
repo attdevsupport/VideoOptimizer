@@ -24,6 +24,8 @@ import java.awt.Insets;
 import java.awt.Label;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.IOException;
 
 import javax.swing.JButton;
@@ -49,6 +51,7 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class VideoPreferencesPanel extends JPanel {
+	
 	private static final Logger LOG = LogManager.getLogger(VideoPreferencesPanel.class.getName());
 
 	private static final long serialVersionUID = 1L;
@@ -84,6 +87,8 @@ public class VideoPreferencesPanel extends JPanel {
 
 	private JTextField errorField;
 
+	private PreferencesDialog preferencesDialog;
+
 	private void loadVideoUsagePreferences() {
 		mapper = new ObjectMapper();
 		prefs = PreferenceHandlerImpl.getInstance();
@@ -108,8 +113,10 @@ public class VideoPreferencesPanel extends JPanel {
 		}
 	}
 
-	public VideoPreferencesPanel() {
+	public VideoPreferencesPanel(PreferencesDialog preferencesDialog) {
 		idx = 0;
+		this.preferencesDialog= preferencesDialog;
+
 		loadVideoUsagePreferences();
 
 		if (jDialogPanel == null) {
@@ -165,15 +172,22 @@ public class VideoPreferencesPanel extends JPanel {
 		segRedundancyWarnEdit = new JTextField(String.valueOf(videoUsagePrefs.getSegmentRedundancyWarnVal()), 5);
 		segRedundancyFailEdit = new JTextField(String.valueOf(videoUsagePrefs.getSegmentRedundancyFailVal()), 5);
 
-		startupDelayEdit.setInputVerifier(new NumericInputVerifier(MAX_STARTUPDELAY, 0.01, 3));
+		startupDelayEdit.setInputVerifier(getNumericInputVerifier(MAX_STARTUPDELAY, 0.01, 3));
+		startupDelayEdit.addKeyListener(getKeyListener(startupDelayEdit));
 
-		inputVerifier = new NumericInputVerifier(MAX_STALLDURATION, 0.01, 3);
+		inputVerifier = getNumericInputVerifier(MAX_STALLDURATION, 0.01, 3);
 		stallDurationWarnEdit.setInputVerifier(inputVerifier);
+		stallDurationFailEdit.addKeyListener(getKeyListener(stallDurationFailEdit));
+		
 		stallDurationFailEdit.setInputVerifier(inputVerifier);
+		stallDurationFailEdit.addKeyListener(getKeyListener(stallDurationFailEdit));
 
-		inputVerifier = new NumericInputVerifier(MAX_REDUNDANCY, 0.01, 3);
+		inputVerifier = getNumericInputVerifier(MAX_REDUNDANCY, 0.01, 3);
 		segRedundancyWarnEdit.setInputVerifier(inputVerifier);
+		segRedundancyWarnEdit.addKeyListener(getKeyListener(segRedundancyWarnEdit));
+		
 		segRedundancyFailEdit.setInputVerifier(inputVerifier);
+		segRedundancyFailEdit.addKeyListener(getKeyListener(segRedundancyFailEdit));
 
 		idx = 0;
 
@@ -189,24 +203,16 @@ public class VideoPreferencesPanel extends JPanel {
 				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		addMultipleEditsLine(segRedundancyLabel, segRedundancyWarnEdit, segRedundancyFailEdit, panel,
 				new Label(ResourceBundleHelper.getMessageString("units.count")));
-		addDefaultButton(panel, 1);
+		addDefaultButton(panel, 1, inputVerifier);
 		return panel;
 
 	}
+	
+	private NumericInputVerifier getNumericInputVerifier(double max, double min, int significands) {
+		return new NumericInputVerifier(max, min, significands, true, preferencesDialog);
+	}
 
 	private Component getVideoPrefencesPanel() {
-
-		Label stallTriggerTimeLabel = new Label(
-				ResourceBundleHelper.getMessageString("video.usage.dialog.stallTriggerTime"));
-		Label maxBufferLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.maxBuffer"));
-		Label duplicateHandlingLabel = new Label(
-				ResourceBundleHelper.getMessageString("video.usage.dialog.duplicateHandling"));
-		Label stallPausePointLabel = new Label(
-				ResourceBundleHelper.getMessageString("video.usage.dialog.stallPausePoint"));
-		Label stallRecoveryLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallRecovery"));
-		Label targetedStartupDelayLabel = new Label(
-				ResourceBundleHelper.getMessageString("video.usage.dialog.targetedStartupDelay"));
-		Label nearStallLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.nearStall"));
 
 		stallTriggerTimeEdit = new JTextField(String.format("%.3f", videoUsagePrefs.getStallTriggerTime()), 5);
 		maxBufferEdit = new JTextField(String.format("%.2f", videoUsagePrefs.getMaxBuffer()), 5);
@@ -215,12 +221,25 @@ public class VideoPreferencesPanel extends JPanel {
 		targetedStartupDelayEdit = new JTextField(String.format("%.2f", videoUsagePrefs.getStartupDelay()), 5);
 		nearStallEdit = new JTextField(String.format("%.4f", videoUsagePrefs.getNearStall()), 5);
 
-		stallTriggerTimeEdit.setInputVerifier(new NumericInputVerifier(MAX_STALLTRIGGERTIME, 0.01, 3));
-		maxBufferEdit.setInputVerifier(new NumericInputVerifier(MAX_BUFFER, 0, 2));
-		stallPausePointEdit.setInputVerifier(new NumericInputVerifier(MAX_STALLRECOVERY, 0, 4));
-		stallRecoveryEdit.setInputVerifier(new NumericInputVerifier(MAX_STALLRECOVERY, 0, 4));
-		targetedStartupDelayEdit.setInputVerifier(new NumericInputVerifier(MAX_TARGETEDSTARTUPDELAY, 0, 2));
-		nearStallEdit.setInputVerifier(new NumericInputVerifier(MAX_NEARSTALL, 0.01, 4));
+		stallTriggerTimeEdit.setInputVerifier(getNumericInputVerifier(MAX_STALLTRIGGERTIME, 0.01, 3));
+		stallTriggerTimeEdit.addKeyListener(getKeyListener(stallTriggerTimeEdit));
+		
+		maxBufferEdit.setInputVerifier(getNumericInputVerifier(MAX_BUFFER, 0, 2));
+		maxBufferEdit.addKeyListener(getKeyListener(maxBufferEdit));
+		
+		stallPausePointEdit.setInputVerifier(getNumericInputVerifier(MAX_STALLRECOVERY, 0, 4));
+		stallPausePointEdit.addKeyListener(getKeyListener(stallPausePointEdit));
+		
+		stallRecoveryEdit.setInputVerifier(getNumericInputVerifier(MAX_STALLRECOVERY, 0, 4));
+		stallRecoveryEdit.addKeyListener(getKeyListener(stallRecoveryEdit));
+		
+		targetedStartupDelayEdit.setInputVerifier(getNumericInputVerifier(MAX_TARGETEDSTARTUPDELAY, 0, 2));
+		targetedStartupDelayEdit.addKeyListener(getKeyListener(targetedStartupDelayEdit));
+		
+		NumericInputVerifier numericInputVerifier = getNumericInputVerifier(MAX_NEARSTALL, 0.01, 4);
+		nearStallEdit.setInputVerifier(numericInputVerifier);
+		nearStallEdit.addKeyListener(getKeyListener(nearStallEdit));
+		
 		startupDelayReminder = new JCheckBox();
 		duplicateHandlingEditCombo = new JComboBox<>();
 		for (DUPLICATE_HANDLING item : DUPLICATE_HANDLING.values()) {
@@ -236,6 +255,25 @@ public class VideoPreferencesPanel extends JPanel {
 
 		panel.setBorder(new RoundedBorder(new Insets(10, 10, 10, 10), null));
 
+		addVideoPreference(panel);
+		addDefaultButton(panel, 2, numericInputVerifier);
+		return panel;
+
+	}
+
+	private void addVideoPreference(JPanel panel) {
+		Label stallTriggerTimeLabel = new Label(
+				ResourceBundleHelper.getMessageString("video.usage.dialog.stallTriggerTime"));
+		Label maxBufferLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.maxBuffer"));
+		Label duplicateHandlingLabel = new Label(
+				ResourceBundleHelper.getMessageString("video.usage.dialog.duplicateHandling"));
+		Label stallPausePointLabel = new Label(
+				ResourceBundleHelper.getMessageString("video.usage.dialog.stallPausePoint"));
+		Label stallRecoveryLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallRecovery"));
+		Label targetedStartupDelayLabel = new Label(
+				ResourceBundleHelper.getMessageString("video.usage.dialog.targetedStartupDelay"));
+		Label nearStallLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.nearStall"));
+		
 		addLine(targetedStartupDelayLabel, targetedStartupDelayEdit, panel,
 				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		addLine(stallTriggerTimeLabel, stallTriggerTimeEdit, panel,
@@ -248,9 +286,39 @@ public class VideoPreferencesPanel extends JPanel {
 				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		addLine(maxBufferLabel, maxBufferEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.mbytes")));
 		addLineComboBox(duplicateHandlingLabel, duplicateHandlingEditCombo, panel);
-		addDefaultButton(panel, 2);
-		return panel;
 
+	}
+
+	private KeyListener getKeyListener(JTextField textField) {
+		KeyListener keyListener = new KeyListener() {
+         	
+			@Override
+			public void keyTyped(KeyEvent e) {
+			}
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				if(!textField.getInputVerifier().verify(textField) || !validateVideoPreferenceConfiguration()) {
+					toggleOtherFields(false);
+				} else {
+					toggleOtherFields(true);
+				}			
+			}
+			
+		};
+		return keyListener;
+	}
+	
+	private void toggleOtherFields(boolean isEnabled) {
+		preferencesDialog.getTabbedPane().setEnabledAt(0, isEnabled);
+		preferencesDialog.getTabbedPane().setEnabledAt(1, isEnabled);
+		preferencesDialog.getOKButton().setEnabled(isEnabled);
+		duplicateHandlingEditCombo.setEnabled(isEnabled);	
 	}
 
 	private void addLine(Label label, JTextField edit, JPanel panel, Label units) {
@@ -300,7 +368,8 @@ public class VideoPreferencesPanel extends JPanel {
 		idx++;
 	}
 
-	private void addDefaultButton(JPanel panel, int panelNumber) {
+	private void addDefaultButton(JPanel panel, int panelNumber, NumericInputVerifier numericInputVerifier) {
+
 		ActionListener actionListener;
 		if (panelNumber == 1) {
 			actionListener = (ActionEvent arg) -> setDefault();
@@ -308,12 +377,17 @@ public class VideoPreferencesPanel extends JPanel {
 			actionListener = (ActionEvent arg) -> setPreferencesDefault();
 		}
 
-		panel.add(getDefaultButton("Default", actionListener), new GridBagConstraints(4, idx, 1, 1, 0.1, 0.2,
+		panel.add(getDefaultButton(ResourceBundleHelper.getMessageString("preferences.video.default"), actionListener), new GridBagConstraints(4, idx, 1, 1, 0.1, 0.2,
 				GridBagConstraints.EAST, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
 		idx++;
 	}
 
 	private void setDefault() {
+		
+		if(preferencesDialog.getPopup() != null) {
+			preferencesDialog.getPopup().hide();
+		}	
+		toggleOtherFields(true);
 		
 		startupDelayEdit.setText(String.format("%.3f", Double.valueOf(
 				ResourceBundleHelper.getMessageString("preferences.video.defaultStartUpDelayWarnVal"))));
@@ -330,8 +404,15 @@ public class VideoPreferencesPanel extends JPanel {
 		this.repaint();
 	}
 
+	
+
 	private void setPreferencesDefault() {
 
+		if(preferencesDialog.getPopup() != null) {
+			preferencesDialog.getPopup().hide();
+		}	
+		toggleOtherFields(true);
+		
 		stallTriggerTimeEdit.setText(String.format("%.3f",
 				Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.stallTriggerTime"))));
 		maxBufferEdit.setText(String.format("%.2f",
@@ -351,7 +432,7 @@ public class VideoPreferencesPanel extends JPanel {
 
 	private JButton getDefaultButton(String text, ActionListener al) {
 		JButton button = new JButton();
-		button.setText("Default");
+		button.setText(text);
 		button.addActionListener(al);
 		return button;
 	}
@@ -401,8 +482,8 @@ public class VideoPreferencesPanel extends JPanel {
 		videoUsagePrefs.setStartUpDelayWarnVal(Double.parseDouble(startupDelayEdit.getText()));
 		videoUsagePrefs.setStallDurationWarnVal(Double.parseDouble(stallDurationWarnEdit.getText()));
 		videoUsagePrefs.setStallDurationFailVal(Double.parseDouble(stallDurationFailEdit.getText()));
-		videoUsagePrefs.setSegmentRedundancyWarnVal(Integer.parseInt(segRedundancyWarnEdit.getText()));
-		videoUsagePrefs.setSegmentRedundancyFailVal(Integer.parseInt(segRedundancyFailEdit.getText()));
+		videoUsagePrefs.setSegmentRedundancyWarnVal(Double.parseDouble(segRedundancyWarnEdit.getText()));
+		videoUsagePrefs.setSegmentRedundancyFailVal(Double.parseDouble(segRedundancyFailEdit.getText()));
 
 		videoUsagePrefs.setMaxBuffer(Double.valueOf(maxBufferEdit.getText()));
 		videoUsagePrefs.setStallTriggerTime(Double.valueOf(stallTriggerTimeEdit.getText()));
@@ -461,20 +542,21 @@ public class VideoPreferencesPanel extends JPanel {
 	}
 
 	private boolean validateVideoPreferenceConfiguration() {
-		boolean isValid = videoPreferenceModel.checkWarnFailValueValidation(stallDurationWarnEdit.getText(),
-				stallDurationFailEdit.getText())
-				&& videoPreferenceModel.checkWarnFailIntValidation(Integer.parseInt(segRedundancyWarnEdit.getText()),
-						Integer.parseInt(segRedundancyFailEdit.getText()));
+		boolean isValid = videoPreferenceModel.stallDurationValidation(Double.parseDouble(stallDurationWarnEdit.getText()),
+				Double.parseDouble(stallDurationFailEdit.getText()))
+				&& videoPreferenceModel.segmentRedundancyValidation(Double.parseDouble(segRedundancyWarnEdit.getText()),
+						Double.parseDouble(segRedundancyFailEdit.getText()));
 
 		if (!isValid || StringUtils.isNotBlank(videoPreferenceModel.getValidationError())) {
 
 			 String errorText = videoPreferenceModel.getValidationError();
 			if (videoPreferenceModel.getErrorComponent() == 1) {
-				inputVerifier.popup(stallDurationFailEdit, errorText);
 				stallDurationFailEdit.requestFocus();
+				inputVerifier.popup(stallDurationFailEdit, errorText);
 			} else if (videoPreferenceModel.getErrorComponent() == 2) {
-				inputVerifier.popup(segRedundancyFailEdit, errorText);
 				segRedundancyFailEdit.requestFocus();
+				inputVerifier.popup(segRedundancyFailEdit, errorText);
+				
 			}
 		}
 		return isValid;

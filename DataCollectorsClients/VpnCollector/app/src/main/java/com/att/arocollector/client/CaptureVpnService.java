@@ -18,6 +18,7 @@ package com.att.arocollector.client;
 
 import android.annotation.TargetApi;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -38,6 +39,9 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
 
 import com.att.arocollector.Config;
 import com.att.arocollector.R;
@@ -149,7 +153,8 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 	private ThrottleULBroadcastReceiver throttleULBroadcast = new ThrottleULBroadcastReceiver();
 	// Sets an ID for the notification, so it can be updated
 	private int notifyID = 1;
-	private Notification.Builder mBuilder;
+	private NotificationCompat.Builder mBuilder;
+	public static final String CHANNEL_ID = "VPN Collector VPN Notification";
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
@@ -924,21 +929,34 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		return true;
 	}
 
+	@RequiresApi(api = Build.VERSION_CODES.O)
 	public void startNotification() {
+		NotificationManager mNotificationManager =
+				(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
+		createNotificationChannel(mNotificationManager);
 		if (mBuilder == null) {
-			mBuilder = new Notification.Builder(this)
+			mBuilder = new NotificationCompat.Builder(this,CHANNEL_ID)
 					.setSmallIcon(R.drawable.icon)
-
 					.setContentTitle("Video Optimizer VPN Collector")
 					.setAutoCancel(false)
 					.setOngoing(true)
 					.setContentText(AttenuatorUtil.getInstance().notificationMessage());
 		}
 
-		NotificationManager mNotificationManager =
-				(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotificationManager.notify(notifyID, mBuilder.build());
+	}
+	private void createNotificationChannel(NotificationManager mNotificationManager) {
+		// Create the NotificationChannel, but only on API 26+ because
+		// the NotificationChannel class is new and not in the support library
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			NotificationChannel serviceChannel = new NotificationChannel(
+					CHANNEL_ID,
+					"VPN Collector",
+					NotificationManager.IMPORTANCE_DEFAULT
+			);
+			mNotificationManager.createNotificationChannel(serviceChannel);
+		}
 	}
 
 }
