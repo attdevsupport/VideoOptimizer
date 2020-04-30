@@ -74,20 +74,22 @@ Before you download Video Optimizer 3.1, make sure you meet the following system
 ##### -	under Video Best practices to help analyze Adaptive Bitrate and design it to stream files more efficiently over HTTP networks
 
 #### • Video Enhancements
-##### -	HLS Live stream enhancements for wider support of live video streaming applications 
+##### -	HLS Live stream enhancements for wider support of live video streaming applications
 ##### - Additional support added to analyze traces supporting HLS and DASH manifest format for traces taken on Android devices
 ##### -	Improved naming of Video Stream for better clarity - Stream names are displayed based on the URL of the Master manifest
+
+#### • Other Enhancements
 ##### - In Diagnostic Tab, under TCP/UDP table, a new column called “Round Trip Time” is added to calculate TCP session round trip time. For UDP, DNS and QUIC sessions, the    round trip time is not applicable and will show N/A
 ##### -	Graphic chart in Diagnostic Tab now includes a new label called "Session Count" along with a tool tip that displays the total number of sessions when user hovers on various points on the graph
 ##### -	'Landscape' option is now enabled when capturing traces using Command-Line Interface
 ##### -	Save & Close Functionality button under File -> Preferences -> Video is enhanced to check for precise values before saving it
 
 
-### Known issues in Release 3.1
+#### Known issues in Release 3.1
 
-#### •	Some of the video traces don’t display Byte and time information under Video Summary table on Windows and Linux platform
-#### •	In some traces, not all segment gaps are identified.
-#### •	Playtime propagation and therefore stall detection issues appear intermittently in some traces
+##### •	Some of the video traces don’t display Byte and time information under Video Summary table on Windows and Linux platform
+##### •	In some traces, not all segment gaps are identified.
+##### •	Playtime propagation and therefore stall detection issues appear intermittently in some traces
 
 
 
