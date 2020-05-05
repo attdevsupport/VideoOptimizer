@@ -56,44 +56,56 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 **System Requirements for Video Optimizer 3.1:**
 
-Before you download Video Optimizer 3.1, make sure you meet the following system requirements for your operating system.
+###### Before you download Video Optimizer 3.1, make sure you meet the following system requirements for your operating system.
 
-1. At least 2GB of RAM, but recommend at least 8GB
-2. Java 8 or above
-3. For Android developers, Android SDK Level 23 or above
-4. Latest Xcode for collecting iOS devices trace
-5. Wireshark (Install Npcap addon with Winpcap API-compatible mode)
-6. FFMpeg library
-7. VLC media player 3.x.x for Windows and Linux platform
-8. Brew, Ifuse, OSXfuse ,libimobiledevice , ideviceinstallerfor, Wireshark  for MacOS platform
-
-
-#### Video Optimizer 3.1 Features
-
-#### • Added	New Best Practice "Adaptive Bitrate Ladder"
-##### -	under Video Best practices to help analyze Adaptive Bitrate and design it to stream files more efficiently over HTTP networks
-
-#### • Video Enhancements
-##### -	HLS Live stream enhancements for wider support of live video streaming applications
-##### - Additional support added to analyze traces supporting HLS and DASH manifest format for traces taken on Android devices
-##### -	Improved naming of Video Stream for better clarity - Stream names are displayed based on the URL of the Master manifest
-
-#### • Other Enhancements
-##### - In Diagnostic Tab, under TCP/UDP table, a new column called “Round Trip Time” is added to calculate TCP session round trip time. For UDP, DNS and QUIC sessions, the    round trip time is not applicable and will show N/A
-##### -	Graphic chart in Diagnostic Tab now includes a new label called "Session Count" along with a tool tip that displays the total number of sessions when user hovers on various points on the graph
-##### -	'Landscape' option is now enabled when capturing traces using Command-Line Interface
-##### -	Save & Close Functionality button under File -> Preferences -> Video is enhanced to check for precise values before saving it
-
-
-#### Known issues in Release 3.1
-
-##### •	Some of the video traces don’t display Byte and time information under Video Summary table on Windows and Linux platform
-##### •	In some traces, not all segment gaps are identified.
-##### •	Playtime propagation and therefore stall detection issues appear intermittently in some traces
+##### • At least 2GB of RAM, but recommend at least 8GB
+##### • Java 8 or above
+##### •	For Android developers, Android SDK Level 23 or above
+##### •	FFmpeg
+##### •	Windows requirements
+######  -	Wireshark (Install Npcap addon with Winpcap API-compatible mode)
+######  -	VLC media player 3.x.x or higher
+##### •	Mac requirements
+######  -	Brew (or any similar package manager)
+######  -	Ifuse
+######  -	OSXFuse
+######  -	Libimobiledevice & ideviceinstaller
+######  -	For iOS developers, use latest version of Xcode and OS X
+######  -	VLC media player 3.x.x or higher
+######  -	Wireshark
+##### •	Linux requirements
+######  -	For Ubuntu 18.x.x and 20.x.x, use VLC media player version 3.0.8 and above
+######  -	For Ubuntu 16.0.4, use VLC media player version 3.0.8
+######  -	Wireshark
 
 
 
-### Compilation instructions
+**Video Optimizer 3.1 Features**
+
+##### • Added	New Best Practice "Adaptive Bitrate Ladder"
+######  - under Video Best practices to help analyze Adaptive Bitrate and design it to stream files more efficiently over HTTP networks
+
+##### • Video Enhancements
+######  - HLS Live stream enhancements for wider support of live video streaming applications
+######  - Additional support added to analyze traces supporting HLS and DASH manifest format for traces taken on Android devices
+######  -	Improved naming of Video Stream for better clarity - Stream names are displayed based on the URL of the Master manifest
+
+##### • Other Enhancements
+######  - In Diagnostic Tab, under TCP/UDP table, a new column called “Round Trip Time” is added to calculate TCP session round trip time. For UDP, DNS and QUIC sessions, the round trip time is not applicable and will show N/A
+######  -	Graphic chart in Diagnostic Tab now includes a new label called "Session Count" along with a tool tip that displays the total number of sessions when user hovers on various points on the graph
+######  -	'Landscape' option is now enabled when capturing traces using Command-Line Interface
+######  -	Save & Close Functionality button under File -> Preferences -> Video is enhanced to check for precise values before saving it
+
+
+**Known issues in Release 3.1**
+
+###### •	Some of the video traces don’t display Byte and time information under Video Summary table on Windows and Linux platform
+###### •	In some traces, not all segment gaps are identified.
+###### •	Playtime propagation and therefore stall detection issues appear intermittently in some traces
+###### •	With Ubuntu LTS Versions 16.x.x, VLC versions greater than 3.0.8 doesn't allow for video playback on Video Optimizer. Trace Collection and opening the trace will work but Video Player doesn’t play. 
+
+
+**Compilation instructions**
 + Please follow the order to compile projects
 + ../ARO.Parent
 + ../ARO.Core
