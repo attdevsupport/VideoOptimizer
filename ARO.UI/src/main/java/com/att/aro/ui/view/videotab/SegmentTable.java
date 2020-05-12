@@ -79,6 +79,22 @@ import com.att.aro.ui.view.video.IVideoPlayer;
 
 public class SegmentTable extends JPanel implements ActionListener {
 
+	private static final String START_TIME = ResourceBundleHelper.getMessageString("video.tab.segment.StartTime");
+	private static final String PLAY_TIME = ResourceBundleHelper.getMessageString("video.tab.segment.PlayTime");
+	private static final String STALL_TIME = ResourceBundleHelper.getMessageString("video.tab.segment.StallTime");
+	private static final String DURATION = ResourceBundleHelper.getMessageString("video.tab.segment.Duration");
+	private static final String DL_END_TIME = ResourceBundleHelper.getMessageString("video.tab.segment.DLEndTime");
+	private static final String SEGMENT_NO = ResourceBundleHelper.getMessageString("video.tab.segment.Segment");
+	private static final String TCP_SESSION = ResourceBundleHelper.getMessageString("video.tab.segment.TCPSession");
+	private static final String TOTAL_BYTES = ResourceBundleHelper.getMessageString("video.tab.segment.TotalBytes");
+	private static final String BIT_RATE = ResourceBundleHelper.getMessageString("video.tab.segment.Bitrate");
+	private static final String CONTENT = ResourceBundleHelper.getMessageString("video.tab.segment.Content");
+	private static final String RESOLUTION = ResourceBundleHelper.getMessageString("video.tab.segment.Resolution");
+	private static final String DL_START_TIME = ResourceBundleHelper.getMessageString("video.tab.segment.DLStartTime");
+	private static final String SESSION_LINK = ResourceBundleHelper.getMessageString("video.tab.segment.SessionLink");
+	private static final String TCP_STATE = ResourceBundleHelper.getMessageString("video.tab.segment.TCPState");
+	private static final String TRACK = ResourceBundleHelper.getMessageString("video.tab.segment.Track");
+	
 	private static final long serialVersionUID = 1L;
 	
 	private static final Logger LOG = LogManager.getLogger(SegmentTable.class);	
@@ -448,8 +464,8 @@ public class SegmentTable extends JPanel implements ActionListener {
 			jTable.getColumnModel().getColumn(idx).setCellRenderer(rightRenderer);
 		}
 		
-		jTable.getColumnModel().getColumn(((SegmentTableModel)tableModel).findColumn("Track")).setCellRenderer(centerRenderer);
-		jTable.getColumnModel().getColumn(((SegmentTableModel)tableModel).findColumn("TCP State")).setCellRenderer(centerRenderer);
+		jTable.getColumnModel().getColumn(((SegmentTableModel)tableModel).findColumn(TRACK)).setCellRenderer(centerRenderer);
+		jTable.getColumnModel().getColumn(((SegmentTableModel)tableModel).findColumn(TCP_STATE)).setCellRenderer(centerRenderer);
 
 		JTableHeader header = jTable.getTableHeader();
 		header.setFont(new Font(Font.SERIF, Font.PLAIN, 12));
@@ -504,36 +520,36 @@ public class SegmentTable extends JPanel implements ActionListener {
 
 	public void setColumnWidthDefaults(JTable jTable) {
 		// hidden
-		setColumnMinMaxWidth(jTable, "SessionLink", false,  0, 0);
+		setColumnMinMaxWidth(jTable, SESSION_LINK, false,  0, 0);
 		
 		// visible/hidden
-		setColumnMinMaxWidth(jTable, "DL Start Time",true, 65, COL_MAX_WIDTH);
-		setColumnMinMaxWidth(jTable, "Resolution"	,true, 40, COL_MAX_WIDTH);
-		setColumnMinMaxWidth(jTable, "Content"		,true, 50, 50);
-		setColumnMinMaxWidth(jTable, "Bitrate"		,true, 40, COL_MAX_WIDTH);
-		setColumnMinMaxWidth(jTable, "Total Bytes"	,true, 40, COL_MAX_WIDTH);
-		setColumnMinMaxWidth(jTable, "TCP State"	,true, 40, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, DL_START_TIME,true, 65, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, RESOLUTION,true, 40, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, CONTENT,true, 50, 50);
+		setColumnMinMaxWidth(jTable, BIT_RATE,true, 40, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, TOTAL_BYTES,true, 40, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, TCP_STATE,true, 40, COL_MAX_WIDTH);
 
 		// always visible
-		setColumnMinMaxWidth(jTable, "Segment"	,false, 50, COL_MAX_WIDTH);
-		setColumnMinMaxWidth(jTable, "DL End Time"	,true, 65, COL_MAX_WIDTH);
-		setColumnMinMaxWidth(jTable, "Track",true, 36, 36);
-		setColumnMinMaxWidth(jTable, "Duration"		,true, 80, COL_MAX_WIDTH);
-		setColumnMinMaxWidth(jTable, "TCP Session"	,true, 40, COL_MAX_WIDTH);
-		setColumnMinMaxWidth(jTable, "StallTime"	,true, 60, COL_MAX_WIDTH);
-		setColumnMinMaxWidth(jTable, "PlayTime"		,true, 80, COL_MAX_WIDTH);
-		setColumnMinMaxWidth(jTable, "StartTime"	,true, 80, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, SEGMENT_NO,false, 50, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, DL_END_TIME,true, 65, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, TRACK,true, 36, 36);
+		setColumnMinMaxWidth(jTable, DURATION,true, 80, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, TCP_SESSION,true, 40, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, STALL_TIME,true, 60, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, PLAY_TIME,true, 80, COL_MAX_WIDTH);
+		setColumnMinMaxWidth(jTable, START_TIME,true, 80, COL_MAX_WIDTH);
 	}
 
 	public void setColumnWidthMinimized(JTable jTable) {
 		// hidden
-		setColumnMinMaxWidth(jTable, "SessionLink"	,false, 0, 0);
-		setColumnMinMaxWidth(jTable, "DL Start Time",false, 0, 0);
-		setColumnMinMaxWidth(jTable, "Resolution"	,false, 0, 0);
-		setColumnMinMaxWidth(jTable, "Content"		,false, 0, 0);
-		setColumnMinMaxWidth(jTable, "Bitrate"		,false, 0, 0);
-		setColumnMinMaxWidth(jTable, "Total Bytes"	,false, 0, 0);
-		setColumnMinMaxWidth(jTable, "TCP Session"	,false, 0, 0);
+		setColumnMinMaxWidth(jTable, SESSION_LINK, false, 0, 0);
+		setColumnMinMaxWidth(jTable, DL_START_TIME, false, 0, 0);
+		setColumnMinMaxWidth(jTable, RESOLUTION, false, 0, 0);
+		setColumnMinMaxWidth(jTable, CONTENT, false, 0, 0);
+		setColumnMinMaxWidth(jTable, BIT_RATE, false, 0, 0);
+		setColumnMinMaxWidth(jTable, TOTAL_BYTES, false, 0, 0);
+		setColumnMinMaxWidth(jTable, TCP_SESSION, false, 0, 0);
 	}
 	
 	private void setColumnMinMaxWidth(JTable jTable, String colName, boolean isResizable, int minWidth, int maxWidth) {

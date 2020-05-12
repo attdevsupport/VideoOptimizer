@@ -181,7 +181,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		result.setMetaData(metaDataHelper.initMetaData(result));
 		PacketAnalyzerResult res = finalResult(result, profile, filter);
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(pktAnalysisTitle, System.currentTimeMillis() - bpStartTime, analysisCategory);
-		LOGGER.info(String.format("Time to process PacketAnalyzerImpl %s :%12.4f", pktAnalysisTitle, ((float) (System.currentTimeMillis() - bpStartTime)) / (60 * 60)));
+		LOGGER.debug(String.format("Time to process PacketAnalyzerImpl %s :%12.4f", pktAnalysisTitle, ((float) (System.currentTimeMillis() - bpStartTime)) / (60 * 60)));
 		return res;
 	}
 

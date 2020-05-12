@@ -53,6 +53,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.Popup;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
@@ -83,6 +84,7 @@ import com.att.aro.ui.view.menu.datacollector.HelpDialog;
  * @author Bharath Kesireddy
  *
  */
+
 public class PreferencesDialog extends JDialog {
 	private static final int BORDER_HEIGHT = 80;
 	private static final int BORDER_WIDTH = 15;
@@ -91,6 +93,7 @@ public class PreferencesDialog extends JDialog {
 	private JPanel jContentPane;
 	private JPanel buttonPanel;
 	private JPanel jButtonGrid;
+	
 	private JButton okButton;
 	private JPanel optionsPanel;
 	private EnableEscKeyCloseDialog enableEscKeyCloseDialog;
@@ -102,6 +105,7 @@ public class PreferencesDialog extends JDialog {
 	private JLabel helpLabel;
 	VideoPreferencesPanel videoPreferencesPanel;
 	private JTabbedPane tabbedPane;
+	private Popup popup;
 	/**
 	 * Type of configuration This is used to provide appropriate method for
 	 * displaying configuration
@@ -228,13 +232,14 @@ public class PreferencesDialog extends JDialog {
 			jContentPane = new JPanel();
 			jContentPane.setPreferredSize(new Dimension(750, 500));
 			jContentPane.setLayout(new BorderLayout());
-			videoPreferencesPanel = new VideoPreferencesPanel();
+			videoPreferencesPanel = new VideoPreferencesPanel(this);
 			tabbedPane = new JTabbedPane();
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.general.tabtile"), getGeneralTab());
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.bestpractice.tabtile"),
 					BPSelectionPanel.getBPPanel());
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.video.tabtitle"),
 					videoPreferencesPanel);
+
 			this.addComponentListener(new ComponentListener() {
 				@Override
 				public void componentResized(ComponentEvent e) {
@@ -518,4 +523,17 @@ public class PreferencesDialog extends JDialog {
 	public JTabbedPane getTabbedPane(){
 		return tabbedPane;
 	}
+	
+	public JButton getOKButton(){
+		return okButton;
+	}
+
+	public void setPopup(Popup popup) {
+		this.popup= popup;
+	}
+	
+	public Popup getPopup() {
+		return popup;	
+	}
+
 }

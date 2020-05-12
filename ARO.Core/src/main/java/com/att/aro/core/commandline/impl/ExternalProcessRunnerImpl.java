@@ -66,12 +66,28 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 	 */
 	@Override
 	public String executeCmd(String cmd) {
-		String result = executeCmdRunner(cmd, false, "");
+		return executeCmd(cmd, true);
+	}
+	
+	/**
+	 * execute command in bash/CMD shell
+	 * 
+	 * @param cmd
+	 * @return stdout and stderr
+	 */
+	@Override
+	public String executeCmd(String cmd, boolean redirectErrorStream) {
+		String result = executeCmdRunner(cmd, false, "", redirectErrorStream);
 		return result;
+	}
+	
+	@Override
+	public String executeCmdRunner(String cmd, boolean earlyExit, String msg) {
+		return executeCmdRunner(cmd, earlyExit, msg, false);
 	}
 
 	@Override
-	public String executeCmdRunner(String cmd, boolean earlyExit, String msg) {
+	public String executeCmdRunner(String cmd, boolean earlyExit, String msg, boolean redirectErrorStream) {
 		ProcessBuilder pbldr = new ProcessBuilder().redirectErrorStream(true);
 
 		String binPath = Util.getBinPath();
@@ -204,5 +220,6 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		}
 		return out;
 	}
+
 
 }

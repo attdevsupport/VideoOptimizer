@@ -99,7 +99,6 @@ public class ImageFormatImpl implements IBestPractice {
 		
 		if (Util.isFilesforAnalysisAvailable(new File(imageFolderPath))) {
 			if (isAndroid()) {
-
 				convExtn = "webp";
 			} else {
 				convExtn = "jp2";
@@ -283,14 +282,19 @@ public class ImageFormatImpl implements IBestPractice {
 				if (convExtn.equalsIgnoreCase("webp")) {
 					ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
 
-					WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
-					writeParam.setCompressionMode(WebPWriteParam.MODE_EXPLICIT);
-					writer.setOutput(imageOutputStream);
-					writer.write(null, new IIOImage(renderedImage, null, null), writeParam);
-
-					imageOutputStream.flush();
-					writer.dispose();
-
+					try {
+						WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
+						writeParam.setCompressionMode(WebPWriteParam.MODE_EXPLICIT);
+						writer.setOutput(imageOutputStream);
+						IIOImage iioImage = new IIOImage(renderedImage, null, null);
+						writer.write(null, iioImage, writeParam);
+						imageOutputStream.flush();
+						writer.dispose();
+					} catch (ArrayIndexOutOfBoundsException aioobe) {
+						LOGGER.error("ImageWriter writer ArrayIndexOutOfBoundsException : ", aioobe);
+					} catch (Exception ee) {
+						LOGGER.error("ImageWriter writer execution exception : ", ee);
+					}
 				} else {
 					ImageWriter jp2Writer = ImageIO.getImageWritersBySuffix("jp2").next();
 					J2KImageWriteParam writeParams = (J2KImageWriteParam) jp2Writer.getDefaultWriteParam();
@@ -303,7 +307,6 @@ public class ImageFormatImpl implements IBestPractice {
 					jp2Writer.write(null, new IIOImage(renderedImage, null, null), writeParams);
 					imageOutputStream.flush();
 					jp2Writer.dispose();
-
 				}
 			}
 			imageOutputStream.close();

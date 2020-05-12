@@ -142,7 +142,9 @@ public enum Images {
 	/**
 	 * The Red recording image key.
 	 */
-	RED_RECORDING_INDICATOR("redRecordingIndicator");
+	RED_RECORDING_INDICATOR("redRecordingIndicator"),
+
+	VLC_LOGO("vlcLogo");
 
 	private static Logger logger = LogManager.getLogger(Images.class.getName());
 

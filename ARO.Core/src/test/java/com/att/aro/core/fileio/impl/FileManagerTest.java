@@ -1,5 +1,6 @@
 package com.att.aro.core.fileio.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -28,7 +29,9 @@ import org.powermock.api.mockito.PowerMockito;
 
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.packetanalysis.impl.VideoStreamConstructor;
 import com.att.aro.core.util.Util;
+import com.google.common.io.Files;
 
 public class FileManagerTest extends BaseTest {
 
@@ -97,6 +100,37 @@ public class FileManagerTest extends BaseTest {
 		result.read(val);
 		assertTrue(val[0] == 1);
 		assertTrue(val[7] == 17);
+	}
+
+	@Test
+	public void findFiles() throws Exception {
+		String[] foundFiles;
+
+		VideoStreamConstructor videoStreamConstructor = context.getBean(VideoStreamConstructor.class);
+		IFileManager filemanager = context.getBean(IFileManager.class);
+
+		File tempFolder = Files.createTempDir();
+		filemanager.createFile(tempFolder.toString(), "file1");
+		String pathName1 = filemanager.createFile(tempFolder.toString(), "file1").toString();
+		String pathName1exten = filemanager.createFile(tempFolder.toString(), "file1.xyz").toString();
+		byte[] content = "dummy data".getBytes();
+		
+		videoStreamConstructor.savePayload(content, pathName1);
+		videoStreamConstructor.savePayload(content, pathName1exten);
+		
+		foundFiles = fileManager.findFiles(tempFolder.toString(), ".xyz");
+		assertThat(foundFiles).hasSize(1);
+		assertThat(foundFiles).contains("file1.xyz");
+		
+		foundFiles = fileManager.findFiles(tempFolder.toString(), "child.xyz");
+		assertThat(foundFiles).isEmpty();
+		
+		foundFiles = fileManager.findFiles(tempFolder.toString(), ".sh");
+		assertThat(foundFiles).isEmpty();
+
+		filemanager.directoryDeleteInnerFiles(tempFolder.toString());
+		filemanager.deleteFile(tempFolder.toString());
+		
 	}
 
 	@Test

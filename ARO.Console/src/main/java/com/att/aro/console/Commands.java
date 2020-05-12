@@ -15,6 +15,8 @@
 */
 package com.att.aro.console;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.beust.jcommander.Parameter;
 
 public class Commands {
@@ -45,6 +47,9 @@ public class Commands {
 	@Parameter(names="--video", description="yes or no - record video while capturing trace")
 	private String video = "no";
 	
+    @Parameter(names = "--videoOrientation", description = "portrait or landscape")
+    private String videoOrientation = "portrait";
+
 	@Parameter(names="--sudo", description="admin password, OSX only")
 	private String sudo = "";
 	
@@ -154,6 +159,15 @@ public class Commands {
 	public void setVideo(String video) {
 		this.video = video;
 	}
+	
+    public String getVideoOrientation() {
+        return videoOrientation;
+    }
+
+    public void setVideoOrientation(String videoOrientation) {
+        this.videoOrientation = videoOrientation;
+    }
+
 
 	public boolean isVerbose() {
 		return verbose;
@@ -242,6 +256,9 @@ public class Commands {
 			sb.append(", " + getVideo());
 		}
 		
+        if (StringUtils.isNotBlank(videoOrientation)) {
+            sb.append(", " + getVideoOrientation());
+        }
 
 		return sb.toString();
 	}

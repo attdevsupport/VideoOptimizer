@@ -183,26 +183,9 @@ public class Session implements Serializable, Comparable<Session> {
 	 */
 	private byte[] storageDlext = null;
 
-	/**
-	 * A ByteArrayOutputStream<br>
-	 * May be replaced by storageUl (Already defined above) after testing.<br>
-	 * unused, has been refactored out of this class
-	 */
-	private ByteArrayOutputStream pStorageULDCPT = new ByteArrayOutputStream(); //May be replaced by storageUl (Already defined above) after testing.
+	private TreeMap<Double, PacketInfo> synPackets = new TreeMap<>();
+	private TreeMap<Double, PacketInfo> synAckPackets = new TreeMap<>();
 
-	/**
-	 * A ByteArrayOutputStream<br>
-	 * May be replaced by storageDl (Already defined above) after testing.<br>
-	 * unused, has been refactored out of this class
-	 */
-	private ByteArrayOutputStream pStorageDLDCPT = new ByteArrayOutputStream(); //May be replaced by storageDl (Already defined above) after testing.
-
-	/**
-	 * A ByteArrayOutputStream<br>
-	 * unused, has been refactored out of this class
-	 */
-	private ByteArrayOutputStream pStorageBothDCPT = new ByteArrayOutputStream();
-	
 	/**
 	 * Initializes an instance of the TCPSession class, using the specified
 	 * remote IP, remote port, and local port.
@@ -305,8 +288,18 @@ public class Session implements Serializable, Comparable<Session> {
 	 * @return The end time of the session.
 	 */
 	public double getSessionEndTime() {
-		return packets.get(packets.size() - 1).getTimeStamp();
+		
+		if (packets != null && !packets.isEmpty()) {
+			return packets.get(packets.size() - 1).getTimeStamp();		
+		}
+		
+		if (udpPackets != null && !udpPackets.isEmpty()) {
+			return udpPackets.get(udpPackets.size() - 1).getTimeStamp();
+		}
+
+		return 0.0;
 	}
+
 
 	/**
 	 * Gets the start time of the UDP session, in seconds, relative to the start
@@ -448,4 +441,20 @@ public class Session implements Serializable, Comparable<Session> {
 	public void addUdpPacket(PacketInfo packetInfo) {
 		udpPackets.add(packetInfo);
 	}
+	/*
+	 * Function to add Packets with SYN flag to the Map
+	 * 
+	 */
+	public void addSynPackets(PacketInfo packetInfo) {
+		synPackets.put(packetInfo.getTimeStamp(), packetInfo);
+	}
+	
+	/*
+	 * Function to add Packets with SYNACK flag to the Map
+	 * 
+	 */
+	public void addSynAckPackets(PacketInfo packetInfo) {
+		synAckPackets.put(packetInfo.getTimeStamp(), packetInfo);
+	}
+
 }

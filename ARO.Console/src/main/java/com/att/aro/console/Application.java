@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -60,6 +61,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.ErrorCode;
 import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.core.util.Util;
+import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.mvc.AROController;
 import com.att.aro.mvc.IAROView;
@@ -99,12 +101,8 @@ public final class Application implements IAROView {
 			restoreSystemOut(outSave);
 		}
 		// command sanity check, if fails then reverts to help
-		if (cmds.isHelp()
-				|| !((cmds.isListcollector() || cmds.isListDevices())
-						|| !(cmds.getAnalyze() == null
-							&& cmds.getStartcollector() == null
-							&& cmds.getAsk() == null
-							))) {
+        if (cmds.isHelp() || !((cmds.isListcollector() || cmds.isListDevices())
+                || !(cmds.getAnalyze() == null && cmds.getStartcollector() == null && cmds.getAsk() == null))) {
 			usageHelp();
 			System.exit(1);
 		}
@@ -259,8 +257,8 @@ public final class Application implements IAROView {
 	}
 
 	/**
-	 * Performs a sanity check to guard against incompatible device/collector combinations.
-	 * returns a collector that is compatible if there is a mismatch.
+     * Performs a sanity check to guard against incompatible device/collector
+     * combinations. returns a collector that is compatible if there is a mismatch.
 	 * 
 	 * @param collector
 	 * @param device
@@ -331,8 +329,8 @@ public final class Application implements IAROView {
 
 	/**
 	 * Locates and displays any and all data collectors. Data collectors are jar
-	 * files that allow controlling and collecting data on devices such as
-	 * Android phone, tablets and emulators.
+     * files that allow controlling and collecting data on devices such as Android
+     * phone, tablets and emulators.
 	 * 
 	 * @param context
 	 *            - Spring ApplicationContext
@@ -394,8 +392,10 @@ public final class Application implements IAROView {
 	 *   --output output file, error if missing
 	 *   --format html or json, if missing defaults to json
 	 * 
-	 * @param context - Spring ApplicationContext
-	 * @param cmds - user commands
+     * @param context
+     *            - Spring ApplicationContext
+     * @param cmds
+     *            - user commands
 	 */
 	void runAnalyzer(ApplicationContext context, Commands cmds) {
 		String trace = cmds.getAnalyze();
@@ -455,13 +455,17 @@ public final class Application implements IAROView {
 		switch (videoOption) {
 		case "yes":
 		case "slow":
-			option = VideoOption.LREZ; break;
+			option = VideoOption.LREZ; 
+			break;
 		case "hd":
-			option = VideoOption.HDEF; break;
+			option = VideoOption.HDEF; 
+			break;
 		case "sd":
-			option = VideoOption.SDEF; break;
+			option = VideoOption.SDEF; 
+			break;
 		case "no":
-			option = VideoOption.NONE; break;
+			option = VideoOption.NONE; 
+			break;
 		default:
 			break;
 		}
@@ -474,6 +478,25 @@ public final class Application implements IAROView {
 		return option;
 	}
 	
+    /**
+     * Get orientation object from a string.
+     * 
+     * @param videoOrientation
+     * @return Orientation object
+     */
+    private Orientation getOrientation(String orientation) {
+        if (StringUtils.isNotBlank(orientation)) {
+            switch (orientation) {
+                case "landscape":
+                    return Orientation.LANDSCAPE;
+                case "portrait":
+                    return Orientation.PORTRAIT;
+            }
+        }
+
+        return null;
+    }
+
 	private int getThrottleUL() {
 		String throttleUL = cmds.getThrottleUL();
 		return ThrottleUtil.getInstance().parseNumCvtUnit(throttleUL);
@@ -491,8 +514,8 @@ public final class Application implements IAROView {
 	}
 
 	/**
-	 * Launches a DataCollection. Provides an input prompt for the user to stop
-	 * the collection by typing "stop"
+     * Launches a DataCollection. Provides an input prompt for the user to stop the
+     * collection by typing "stop"
 	 * 
 	 * <pre>
 	 * Note:
@@ -564,7 +587,10 @@ public final class Application implements IAROView {
 			videoOption = configureVideoOption(cmds.getVideo());			
 			try {
 				Hashtable<String,Object> extras = new Hashtable<String,Object>();
-				extras.put("video_option", getVideoOption());
+                Orientation videoOrientation = getOrientation(cmds.getVideoOrientation());
+
+                extras.put("video_option", getVideoOption());
+                extras.put("videoOrientation", videoOrientation == null ? Orientation.PORTRAIT : videoOrientation);
 				extras.put("AttenuatorModel", model);
 				result = runCommand(cmds, collector, cmds.getSudo(), extras);
 			} finally {
@@ -609,8 +635,8 @@ public final class Application implements IAROView {
 	}
 
 	/**
-	 * prints hotspot information in console, and gets user confirmation for hot spot setup environment 
-	 * to proceed with MITM throttle.
+     * prints hotspot information in console, and gets user confirmation for hot
+     * spot setup environment to proceed with MITM throttle.
 	 */
 	private boolean isIOSAttenuationConfirmed() {
 		println(MacHotspotUtil.getStatusMessage());
@@ -729,7 +755,8 @@ public final class Application implements IAROView {
 						?"\n  --video [hd|sd|slow|no]: optional command to record video when running collector. Default: no."
 						:"\n  --video [yes|no]: optional command to record video when running collector. Default: no."
 						)
-				.append("\n  --throttleUL [number in kbps/mbps]: optional command for throttle uplink throughput, range from 64k - 100m (102400k).")
+                .append("\n  --videoOrientation [portrait|landscape]: optional command to set the video orientation for non-rooted (vpn_android) collector. Default: portrait.")
+                .append("\n  --throttleUL [number in kbps/mbps]: optional command for throttle uplink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --throttleDL [number in kbps/mbps]: optional command for throttle downlink throughput, range from 64k - 100m (102400k).")
 				.append("\n  --profile [file_path]: optional command that provides a file with attenuation sequence")
 				.append("\n  --listcollectors: optional command to list available data collector.")
@@ -746,7 +773,7 @@ public final class Application implements IAROView {
 				.append("\n  --startcollector vpn_android --output /User/documents/test --video slow --throttleUL 2m --throttleDL 64k")
 				
 				.append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation using profile:")
-				.append("\n  --startcollector vpn_android --output /User/documents/test --video slow --profile /Users/{user}/config/attn_profile.txt")
+                .append("\n  --startcollector vpn_android --output /User/documents/test --video slow --videoOrientation landscape --profile /Users/{user}/config/attn_profile.txt")
 				
 				.append("\nRun iOS collector to capture trace with video: ")
 				.append("\n    trace will be overwritten if it exists: ")

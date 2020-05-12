@@ -48,13 +48,13 @@ public class VideoStreamConstructorTest {
 	@Test
 	public void testFindPathNameTiebreaker_when_noExtension() throws Exception {
 		String incrementedName = videoStreamConstructor.findPathNameTiebreaker(pathName1);
-		assertThat(incrementedName).isEqualTo(pathName1 + "(1)");
+		assertThat(incrementedName).isEqualTo(pathName1 + "(001)");
 	}
 
 	@Test
 	public void testFindPathNameTiebreaker_when_Extension() throws Exception {
 		String incrementedName = videoStreamConstructor.findPathNameTiebreaker(pathName1 + ".xyz");
-		assertThat(incrementedName).isEqualTo(pathName1 + "(1).xyz");
+		assertThat(incrementedName).isEqualTo(pathName1 + "(001).xyz");
 	}
 
 	@Test
@@ -67,6 +67,35 @@ public class VideoStreamConstructorTest {
 		String incrementedName = videoStreamConstructor.findPathNameTiebreaker(pathName);
 		assertThat(incrementedName).isEqualTo(tempFolder + "/file.xyz(duplicated)");
 	}
+	@Test
+	public void testShortenNameByParts() throws Exception {
+		String fullString = "one:two:three:four:five";
+		String shortString = videoStreamConstructor.shortenNameByParts(fullString, ":", 2);
+		assertThat(shortString).isEqualTo("four:five");
+	}
+
+	@Test
+	public void testShortenNameByParts_when_full_count() throws Exception {
+		String fullString = "one:two:three:four:five";
+		String shortString = videoStreamConstructor.shortenNameByParts(fullString, ":", 5);
+		assertThat(shortString).isEqualTo("one:two:three:four:five");
+	}
+
+	@Test
+	public void testShortenNameByParts_when_over_count() throws Exception {
+		String fullString = "one:two:three:four:five";
+		String shortString = videoStreamConstructor.shortenNameByParts(fullString, ":", 6);
+		assertThat(shortString).isEqualTo("one:two:three:four:five");
+	}
+
+	@Test
+	public void testShortenNameByParts_when_no_count() throws Exception {
+		String fullString = "one:two:three:four:five";
+		String shortString = videoStreamConstructor.shortenNameByParts(fullString, ":", 0);
+		assertThat(shortString).isEqualTo("one:two:three:four:five");
+	}
+
+
 
 }
 

@@ -148,6 +148,7 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice videoConcurrentSession;
 	private IBestPractice videoVariableBitrate;
 	private IBestPractice videoResolutionQuality;
+	private IBestPractice videoSegmentQuality;
 	private IBestPractice audioStream;
 
 	@Autowired
@@ -393,6 +394,12 @@ public class AROServiceImpl implements IAROService {
 	@Qualifier("videoResolutionQuality")
 	public void setVideoResolutionQualityImpl(IBestPractice videoResolutionQuality) {
 		this.videoResolutionQuality = videoResolutionQuality;
+	}
+	
+	@Autowired
+	@Qualifier("adaptiveBitrateLadder")
+	public void setvideoSegmentQualityImpl(IBestPractice videoSegmentQuality) {
+		this.videoSegmentQuality = videoSegmentQuality;
 	}
 	
 	@Autowired
@@ -769,6 +776,8 @@ public class AROServiceImpl implements IAROService {
 			return videoVariableBitrate;
 		case VIDEO_RESOLUTION_QUALITY:
 			return videoResolutionQuality;
+		case VIDEO_ABR_LADDER:
+			return videoSegmentQuality;
 		case AUDIO_STREAM:
 			return audioStream;
 		case HTTPS_USAGE:

@@ -247,6 +247,7 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"videoConcurrentSession"
 				  ,"videoVariableBitrate"
 				  ,"videoResolutionQuality"
+				  ,"adaptiveBitrateLadder"
 				  ,"audioStream"
 				  
 				  ,"other.accessingPeripherals"         //  #bp    Other: Accessing Peripheral Applications

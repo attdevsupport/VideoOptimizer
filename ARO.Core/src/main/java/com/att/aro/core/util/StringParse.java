@@ -19,6 +19,8 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
+
 public final class StringParse implements IStringParse{
 
 	public static Double findLabeledDoubleFromString(String fieldSearch, byte[] data) {
@@ -157,6 +159,21 @@ public final class StringParse implements IStringParse{
 			}
 		}
 		return temp;
+	}
+	
+	public static int[] getStringPositions(String inputStr, String matchStr) {
+		int count = StringUtils.countMatches(inputStr, matchStr);
+		if (count > 0) {
+			int[] position = new int[count];
+			int idx = 0;
+			int index = inputStr.indexOf(matchStr);
+			position[idx++] = index;
+			while ((index = inputStr.indexOf(matchStr, index + 1)) >= 0) {
+				position[idx++] = index;
+			}
+			return position;
+		}
+		return new int[0];
 	}
 
 }

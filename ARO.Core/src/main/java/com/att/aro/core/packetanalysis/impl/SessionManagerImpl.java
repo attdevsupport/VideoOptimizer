@@ -295,6 +295,15 @@ public class SessionManagerImpl implements ISessionManager {
 		}
 
 		boolean packetAdditionComplete = session.addTcpPacket(packetInfo, tcpPacket.getSequenceNumber());
+
+		if (tcpPacket.isSYN()) {
+			if (packetInfo.getDir() == PacketDirection.UPLINK) {
+				session.addSynPackets(packetInfo);
+			} else if (packetInfo.getDir() == PacketDirection.DOWNLINK) {
+				session.addSynAckPackets(packetInfo);
+			}
+		}
+		
 		session.setBytesTransferred(session.getBytesTransferred() + packetInfo.getPayloadLen());
 		if (!packetAdditionComplete) {
 			packetInfo.setTcpInfo(TcpInfo.TCP_DATA_DUP);

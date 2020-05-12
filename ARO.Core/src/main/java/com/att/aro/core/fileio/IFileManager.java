@@ -135,5 +135,7 @@ public interface IFileManager {
 	 * @return validated real path
 	 */
 	File deAlias(File tracePath);
+	
+	String[] findFiles(String localVidsFolder, String fileName);
 
 }

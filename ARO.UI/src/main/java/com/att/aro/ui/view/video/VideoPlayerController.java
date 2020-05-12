@@ -20,14 +20,12 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
-import org.apache.log4j.Logger;	
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;	
 
-import com.att.aro.core.AnalyzerOS;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.util.Util;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 
 public class VideoPlayerController implements Observer {
@@ -37,7 +35,6 @@ public class VideoPlayerController implements Observer {
 	private AbstractTraceResult traceResult;
 	private String traceDirectory;
 	private DiagnosticsTab diagnosticsTab;
-	private AnalyzerOS analyzerOS;
 	private static final Logger LOGGER = LogManager.getLogger(VideoPlayerController.class);	
 	
 	public VideoPlayerController(DiagnosticsTab diagnosticTab, List<IVideoPlayer> videoPlayers) {
@@ -62,24 +59,12 @@ public class VideoPlayerController implements Observer {
 	 * @return
 	 */
 	public IVideoPlayer getDefaultPlayer() {
-		if (analyzerOS == AnalyzerOS.MAC) {
-			return getMovPlayer();
-		} 
-		return getMp4VlcjPlayer();
+		return getPlayer(VideoPlayerType.MP4_VLCJ);
 	}
 
-	private IVideoPlayer getMp4JfxPlayer() {		
+	private IVideoPlayer getPlayer(VideoPlayerType playerType) {
 		for (IVideoPlayer player: players) {
-			if (player.getPlayerType() == VideoPlayerType.MP4_JFX) {
-				return player;
-			}
-		}		
-		return null;
-	}
-	
-	private IVideoPlayer getMp4VlcjPlayer() {		
-		for (IVideoPlayer player: players) {
-			if (player.getPlayerType() == VideoPlayerType.MP4_VLCJ) {
+			if (player.getPlayerType() == playerType) {
 				return player;
 			}
 		}		
@@ -113,47 +98,18 @@ public class VideoPlayerController implements Observer {
 			return;
 		}
 		
-		IVideoPlayer mp4JfxPlayer = getMp4JfxPlayer();
-		IVideoPlayer mp4VlcjPlayer = getMp4VlcjPlayer();
-		IVideoPlayer movPlayer = getMovPlayer();
-		
-		if(null != movPlayer && ((AROVideoPlayer) movPlayer).isPlaying()) {
-			((AROVideoPlayer) movPlayer).stopPlayer();
-		}
-		
-		IVideoPlayer player = null;
-		
-		if (analyzerOS == AnalyzerOS.MAC) {
-			
-			if (currentPlayer != null) {
-				currentPlayer.clear();
-			}
-			
-			if (VideoUtil.mp4VideoExists(traceDirectory) && mp4JfxPlayer != null) {
-				player = mp4JfxPlayer;
-			} else if (movPlayer != null) {
-				player = movPlayer;
-			}
-		} else {			 
-			if (mp4VlcjPlayer != null) {
-				player = mp4VlcjPlayer;
-				player.notifyLauncher(true);
-			}
-		}
-
+		IVideoPlayer player = getPlayer(VideoPlayerType.MP4_VLCJ);;
 		if (player == null) {
 			LOGGER.error("Error launching video player - no appropriate Mp4 or Mov player found");
 			return;
 		}
 		
 		player.loadVideo(traceResult);	
-		
-		if (analyzerOS == AnalyzerOS.MAC) {
 			diagnosticsTab.setVideoPlayer(player);
 			setCurrentVideoPlayer(player);
 			player.notifyLauncher(true);
-		}
 	}
+	
 
 	public void launchPlayer(int xPosition, int yPosition, int frameWidth, int frameHeight) {	
 
@@ -161,13 +117,7 @@ public class VideoPlayerController implements Observer {
 			LOGGER.error("No player available to launch");
 			return;
 		}
-		
-		if (Util.isMacOS()) {
-			analyzerOS = AnalyzerOS.MAC;
-		} else if (Util.isWindowsOS()) {
-			analyzerOS = AnalyzerOS.WIN;
-		} 
-		
+				
 		IVideoPlayer player = (IVideoPlayer) getDefaultPlayer();
 		
 		if (player == null) {

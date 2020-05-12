@@ -101,7 +101,7 @@ public final class SimultnsUtil {
 		int maxOverlap = 0;
 		int startTimeCounter = 0;
 		int endTimeCounter = 0;
-		while (startTimeCounter < startTimePointer && endTimeCounter < endTimePointer) {
+		while (startTimeCounter < start.length && endTimeCounter < end.length) {
 			startTime = start[startTimeCounter];
 			if (startTime < end[endTimeCounter]) {
 				currentOverlap++;

@@ -66,7 +66,6 @@ public class AROPrivateDataCollectorService extends Service{
 	 */
 	public void collect() {
 			
-		collectors.add(new IMEICollector(getApplicationContext(), dataFilePath));
 		collectors.add(new MACAddressCollector(getApplicationContext(), dataFilePath));
 		collectors.add(new PhoneNumberCollector(getApplicationContext(), dataFilePath));
 		collectors.add(new ContactsDataCollector(getApplicationContext(), dataFilePath, 

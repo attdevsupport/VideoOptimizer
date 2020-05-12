@@ -18,13 +18,17 @@ package com.att.arocollector.attenuator;
 
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.core.app.NotificationCompat;
 
 import com.att.arocollector.R;
 
@@ -36,24 +40,27 @@ public class ThrottleULBroadcastReceiver extends BroadcastReceiver {
 
     private static final String TAG = ThrottleULBroadcastReceiver.class.getSimpleName();
     private int notifyID = 1;
-    private Notification.Builder mBuilder;
+    private NotificationCompat.Builder mBuilder;
     private Context myContext; // pass to inner class
     private int uploadThrottleKbps = 0; //upstream throttle speed
+    public static final String CHANNEL_ID = "VPN Collector VPN Notification";
 
     public ThrottleULBroadcastReceiver() {
         super();
     }
     @Override
     public void onReceive(Context context, Intent intent) {
-
+        NotificationManager mNotificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        createNotificationChannel(mNotificationManager);
         uploadThrottleKbps = intent.getIntExtra("ulms", AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
 
         this.myContext = context;
 
         if (mBuilder == null) {
-            mBuilder = new Notification.Builder(context)
+            mBuilder = new NotificationCompat.Builder(context,CHANNEL_ID)
                     .setSmallIcon(R.drawable.icon)
-                    .setContentTitle("Video Optimizor VPN Collector")
+                    .setContentTitle("Video Optimizer VPN Collector")
                     .setAutoCancel(false)
                     .setOngoing(true)
                     .setContentText(AttenuatorUtil.getInstance().notificationMessage());
@@ -62,8 +69,6 @@ public class ThrottleULBroadcastReceiver extends BroadcastReceiver {
         Log.i(TAG, "Upload stream throttle for: " + uploadThrottleKbps + " kbps");
         AttenuatorManager.getInstance().setThrottleUL(uploadThrottleKbps);
 
-        NotificationManager mNotificationManager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         mBuilder.setContentText(AttenuatorUtil.getInstance().notificationMessage());
         mNotificationManager.notify(notifyID, mBuilder.build());
 
@@ -81,4 +86,18 @@ public class ThrottleULBroadcastReceiver extends BroadcastReceiver {
         },2000);
 
     }
+
+    private void createNotificationChannel(NotificationManager mNotificationManager) {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel serviceChannel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "VPN Collector",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            mNotificationManager.createNotificationChannel(serviceChannel);
+        }
+    }
+
 }

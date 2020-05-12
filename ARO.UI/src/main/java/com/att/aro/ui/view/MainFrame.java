@@ -66,6 +66,7 @@ import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.pojo.ErrorCodeEnum;
 import com.att.aro.core.pojo.VersionInfo;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.util.CrashHandler;
@@ -95,9 +96,7 @@ import com.att.aro.ui.view.menu.tools.DataDump;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
 import com.att.aro.ui.view.overviewtab.OverviewTab;
 import com.att.aro.ui.view.statistics.StatisticsTab;
-import com.att.aro.ui.view.video.AROVideoPlayer;
 import com.att.aro.ui.view.video.IVideoPlayer;
-import com.att.aro.ui.view.video.JFxPlayer;
 import com.att.aro.ui.view.video.LiveScreenViewDialog;
 import com.att.aro.ui.view.video.VideoPlayerController;
 import com.att.aro.ui.view.video.VlcjPlayer;
@@ -313,7 +312,7 @@ public class MainFrame implements SharedAttributesProcesses {
 
 		});
 
-		LOG.info(String.format("ARO UI started :%12.3f", ((float) (System.currentTimeMillis() - launchStartTime)) / (60 * 60)));
+		LOG.debug(String.format("ARO UI started :%12.3f", ((float) (System.currentTimeMillis() - launchStartTime)) / (60 * 60)));
 	}
 
 	private void sendGADiagnosticTabChartPlotViews(ChartPlotOptions  option) {
@@ -361,8 +360,6 @@ public class MainFrame implements SharedAttributesProcesses {
 	private void initVideoPlayerController() {
 		List<IVideoPlayer> players = new ArrayList<IVideoPlayer>();
 		// Add all the video players intended to be used
-		players.add(new AROVideoPlayer(this));
-		players.add(new JFxPlayer(this));
 		players.add(new VlcjPlayer(this));
 		videoPlayerController = new VideoPlayerController(diagnosticsTab, players);
 		modelObserver.registerObserver(videoPlayerController);
@@ -555,7 +552,10 @@ public class MainFrame implements SharedAttributesProcesses {
 					frmApplicationResourceOptimizer.getJMenuBar().updateUI();
 				}
 			} else if (traceData.getError() != null) {
+				if(isUpdateRequired(traceData.getError().getCode())){
 				Util.updateRecentItem(tracePath);
+				}
+				
 				tracePath = null;
 				if (aroSwingWorker != null) {
 					aroSwingWorker.cancel(true);
@@ -573,6 +573,15 @@ public class MainFrame implements SharedAttributesProcesses {
 			}
 
 		}
+	}
+
+	private boolean isUpdateRequired(int errorCode) {
+		boolean isUpdateRequired = false;
+		if(ErrorCodeEnum.DEVICE_ACCESS.getCode().equals(errorCode) || ErrorCodeEnum.POST_ERROR.getCode().equals(errorCode)
+				|| ErrorCodeEnum.DIR_EXIST.getCode().equals(errorCode)) {
+			isUpdateRequired = true;
+		}
+		return isUpdateRequired;
 	}
 
 	@Override

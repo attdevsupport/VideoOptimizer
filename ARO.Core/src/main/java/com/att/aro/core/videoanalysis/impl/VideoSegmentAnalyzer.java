@@ -59,6 +59,8 @@ public class VideoSegmentAnalyzer {
 	@Nonnull
 	private DUPLICATE_HANDLING duplicateHandling = DUPLICATE_HANDLING.LAST;
 
+	private double videoDuration = 0;
+
 	public void process(AbstractTraceResult result, StreamingVideoData streamingVideoData) {
 		if (result instanceof TraceDirectoryResult) {
 			videoStreamStartup = ((TraceDirectoryResult) result).getVideoStartup();
@@ -66,7 +68,7 @@ public class VideoSegmentAnalyzer {
 
 			if (!CollectionUtils.isEmpty(streamingVideoData.getVideoStreamMap())) {
 				for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
-					if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
+					if (videoStream.isSelected() && !CollectionUtils.isEmpty(videoStream.getVideoEventList())) {
 						double startupDelay;
 						VideoEvent chosenEvent;
 						if (videoStreamStartup != null && videoStream.getManifest().getVideoName().equals(videoStreamStartup.getManifestName())) {
@@ -79,11 +81,29 @@ public class VideoSegmentAnalyzer {
 						}
 
 						duplicateHandling = videoPrefs.getDuplicateHandling();
+						LOG.debug(String.format("Stream RQ:%10.3f", videoStream.getManifest().getRequestTime()));
 						propagatePlaytime(startupDelay, chosenEvent, videoStream);
+						videoStream.setDuration(totalDurations(videoStream));
 					}
 				}
 			}
 		}
+	}
+
+	/**
+	 * Sum all regular selected segments in videoStream to calculate total duration
+	 * 
+	 * @param videoStream
+	 * @return duration in seconds
+	 */
+	private double totalDurations(VideoStream videoStream) {
+		videoDuration = 0;
+		videoStream.getVideoStartTimeMap().entrySet().stream()
+		.filter(f -> f.getValue().isSelected())
+				.forEach(value -> {
+					videoDuration += value.getValue().getDuration();
+				});
+		return videoDuration;
 	}
 
 	/**
@@ -104,7 +124,12 @@ public class VideoSegmentAnalyzer {
 	public void propagatePlaytime(double startupTime, VideoEvent chosenEvent, VideoStream videoStream) {
 		
 		int baseEvent = videoStream.getManifest().isVideoTypeFamily(VideoType.DASH) ? 0 : -1;
-		double startupOffset = startupTime - chosenEvent.getSegmentStartTime();
+		double startupOffset;
+		if (startupTime > chosenEvent.getSegmentStartTime()) {
+			startupOffset = startupTime - chosenEvent.getSegmentStartTime();
+		} else {
+			startupOffset = startupTime;
+		}
 		stallOffset = 0;
 		totalStallOffset = 0;
 		VideoEvent priorEvent = null;
@@ -115,20 +140,22 @@ public class VideoSegmentAnalyzer {
 
 		TreeMap<String, VideoEvent> audioStreamMap = videoStream.getAudioStartTimeMap(); // key definition: segmentStartTime, endTS(in milliseconds)
 
-		scanStream(audioStreamMap);
-		scanStream(videoStream.getVideoStartTimeMap());
+		applyDuplicateHandlingRules(audioStreamMap);
+		applyDuplicateHandlingRules(videoStream.getVideoStartTimeMap());
 		
 		boolean isAudio = !CollectionUtils.isEmpty(audioStreamMap);
 
 		ArrayList<VideoEvent> videoStreamFiltered = new ArrayList<VideoEvent>(videoStream.getVideoEventList().values());
 
+		// sorting first by segment, then segmentStartTime assures that DASH 'moov' fragments (segment zero's) do not needlessly complicate matters
+		Collections.sort(videoStreamFiltered, new VideoEventComparator(SortSelection.SEGMENT_ID));
 		Collections.sort(videoStreamFiltered, new VideoEventComparator(SortSelection.SEGMENT_START_TS));
 
 		for (VideoEvent videoEvent : videoStreamFiltered) {
 			if (videoEvent.getSegmentID() > baseEvent) {
 
 				if (priorEvent != null && videoEvent.isSelected()) {
-					double playtime = videoEvent.getSegmentStartTime() + startupOffset + totalStallOffset;
+					double playtime = videoEvent.getSegmentStartTime() + startupOffset + totalStallOffset;// - programDateTime;
 
 					priorDuration = (priorEvent.getSegmentID() != videoEvent.getSegmentID()) ? priorEvent.getDuration() : priorDuration;
 					if (videoEvent.getDLLastTimestamp() > playtime) {
@@ -152,16 +179,20 @@ public class VideoSegmentAnalyzer {
 		}
 	}
 
-	private void scanStream(TreeMap<String, VideoEvent> eventStreamMap) {
+	private void applyDuplicateHandlingRules(TreeMap<String, VideoEvent> eventStreamMap) {
 		VideoEvent priorEvent = null;
 		for (VideoEvent event : eventStreamMap.values()) {
+			event.setSelected(true); // set to 'selected' so applyRules can judge
 			applyRules(event, priorEvent);
-			priorEvent = event;
+			if (event.isSelected()) {
+				priorEvent = event;
+			}
 		}
 	}
 
 	/**
-	 * Compare event and priorEvent against duplicateHandling rules
+	 * Compare event and priorEvent against duplicateHandling rules.
+	 * When a VideoEvent has a competing segmentID, the two VideoEvents will be compared with the "loser" being deselected
 	 * 
 	 * @param event
 	 * @param priorEvent
@@ -175,14 +206,12 @@ public class VideoSegmentAnalyzer {
 				tempFlag = event.getEndTS() > priorEvent.getEndTS();
 			} else if (duplicateHandling.equals(DUPLICATE_HANDLING.HIGHEST)) {
 				tempFlag = event.getQuality().compareTo(priorEvent.getQuality()) > 0;
-			}
-			eventsSelectionToggle(tempFlag, event, priorEvent);
+			tempFlag = Integer.valueOf(event.getQuality()).compareTo(Integer.valueOf(priorEvent.getQuality())) > 0;
 		}
+		event.setSelected(tempFlag);
+		priorEvent.setSelected(!tempFlag);
 	}
 
-	private void eventsSelectionToggle(boolean flag, VideoEvent event1, VideoEvent event2) {
-		event1.setSelected(flag);
-		event2.setSelected(!flag);
 	}
 
 	/** <pre>

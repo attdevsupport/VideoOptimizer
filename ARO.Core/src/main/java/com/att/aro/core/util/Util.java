@@ -269,7 +269,9 @@ public final class Util {
 		if (creationTime != null) {
 
 			int msecPos = creationTime.indexOf('.') + 1;
-
+			if (creationTime.indexOf("Z") == msecPos + 3) {
+				creationTime = creationTime.replaceAll("Z", "");
+			}
 			SimpleDateFormat sdf = new SimpleDateFormat(sdFormatStr);
 			sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
 			Date date = null;
@@ -291,9 +293,13 @@ public final class Util {
 	/**
 	 * <pre>
 	 * Supported date formats: 
+	 * 
 	 *  2018-01-11T22:14:59.123000Z 
 	 *  2018-01-11T22:14:59
 	 *  2018-01-11 22:14:59
+	 *  
+	 *	0123456789012345678901
+	 *	20191101T0243301975739	where characters beyond 18 are rounded into results from the first 18
 	 *  20191106T172805265
 	 *  20180111T221459000
 	 *  20180111T221459
@@ -307,10 +313,16 @@ public final class Util {
 		if (creationTime.contains("-")) {
 			return parseForUTC(creationTime, "yyyy-MM-dd HH:mm:ss");
 		} else {
+			long rounding = 0;
 			if (creationTime.length() < 16) {
 				creationTime += "000";
+			} else if (creationTime.length() > 18) {
+				if (Double.valueOf(creationTime.substring(18, 19)) > 4) {
+					rounding = 1;
+				}
+				creationTime = creationTime.substring(0, 18);
 			}
-			return parseForUTC(creationTime, "yyyyMMdd HHmmssSSS");
+			return parseForUTC(creationTime, "yyyyMMdd HHmmssSSS") + rounding;
 		}
 	}
 	
@@ -890,6 +902,10 @@ public final class Util {
 		return logLevel;
 	}
 	
+	public static boolean isTestMode() {
+		return SettingsImpl.getInstance().checkAttributeValue("test_only", "true");
+	}
+	
 	public static Comparator<String> getFloatSorter() {
 		if (floatValComparator == null) {
 			floatValComparator = new Comparator<String>() {
@@ -1166,5 +1182,11 @@ public final class Util {
 	public static String formatDouble(double toFormat) {
 		DecimalFormat decimalFormatter = new DecimalFormat("#.###");
 		return decimalFormatter.format(toFormat);	
+	}	
+	
+	public static String formatDoubleToMicro(double toFormat) {
+		DecimalFormat decimalFormatter = new DecimalFormat("#.######");
+		return decimalFormatter.format(toFormat);	
 	}
+
 }

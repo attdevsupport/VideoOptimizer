@@ -19,6 +19,7 @@ import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -30,15 +31,18 @@ import lombok.Data;
 public class PeriodST {
 
 	@XmlElement(name = "AdaptationSet") private List<AdaptationSetTL> adaptationSet;
+	@XmlAttribute private String start = "";
+	@XmlAttribute private String id = "";
+	@XmlAttribute private String duration = "";
 
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
 		strblr.append("\n\tPeriod:");
 		strblr.append(adaptationSet);
-//		for(AdaptationSetPR set:adaptationSet){
-//			strblr.append("\n\t\tAdaptationSetPR :"); strblr.append( set);
-//		}
+		for(AdaptationSetTL set:adaptationSet){
+			strblr.append("\n\t\tAdaptationSetPR :"); strblr.append( set);
+		}
 		return strblr.toString();
 	}
 

@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.JFileChooser;
 import javax.swing.JMenuItem;
@@ -34,6 +36,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.preferences.UserPreferencesFactory;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -43,6 +46,8 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
  * Represents the default popup menu for a data table in the ARO Data Analyzer.
  */
 public class DataTablePopupMenu extends JPopupMenu {
+	private static final char COMMA_SEPARATOR = ',';
+
 	private static final long serialVersionUID = 1L;
 
 	private DataTable<?> table;
@@ -113,19 +118,33 @@ public class DataTablePopupMenu extends JPopupMenu {
 						String defaultFileName = exportPath.getAbsolutePath() + "/VideoRequestTable.csv";
 						defaultFile = new File(defaultFileName);
 					}
-					if (table.getName() != null && "sessionTable".equalsIgnoreCase(table.getName())) {
-						boolean isRowSelected = false;
+
+					boolean isSessionsTable = table.getName() != null
+							&& "sessionTable".equalsIgnoreCase(table.getName());
+					if (isSessionsTable) {
+						boolean isAnyRowSelected = false;
 						for (int rowIndex = 0; rowIndex < table.getRowCount(); ++rowIndex) {
-							if (isRowSelected = isRowSelected || ((Boolean) table.getValueAt(rowIndex, 1)).booleanValue()) {
+							if (isAnyRowSelected = isAnyRowSelected
+								|| ((Boolean) table.getValueAt(rowIndex, 1)).booleanValue()) {
 								break;
 							}
 						}
 
-						if (!isRowSelected) {
-							MessageDialogFactory.showMessageDialog(table, ResourceBundleHelper.getMessageString("tcp.error.noRowSelected"));
+						if (!isAnyRowSelected) {
+							MessageDialogFactory.showMessageDialog(null,
+									ResourceBundleHelper.getMessageString("tcp.error.noRowSelected"));
 							return;
 						}
 					}
+					exportTable(defaultFile, isSessionsTable);
+				}
+
+			});
+		}
+		return exportMenuItem;
+	}
+
+	private void exportTable(File defaultFile, boolean isSessionsTable) {
 					JFileChooser chooser = new JFileChooser(exportPath);
 					if (defaultFile != null) {
 						chooser.setSelectedFile(defaultFile);
@@ -139,22 +158,15 @@ public class DataTablePopupMenu extends JPopupMenu {
 					chooser.setApproveButtonText(ResourceBundleHelper.getMessageString("fileChooser.Save"));
 					chooser.setMultiSelectionEnabled(false);
 					try {
-						saveFile(chooser);
-						if ("VideoRequestTable".equals(table.getName())
-								&& chooser.getCurrentDirectory() != exportPath) {
+						saveFile(chooser, isSessionsTable);
+						if ("VideoRequestTable".equals(table.getName()) && chooser.getCurrentDirectory() != exportPath) {
 							exportPath.delete();
 						}
 					} catch (Exception exp) {
-						String errorMsg = MessageFormat.format(
-								ResourceBundleHelper.getMessageString("exportall.errorFileOpen"),
+						String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("exportall.errorFileOpen"),
 								ApplicationConfig.getInstance().getAppShortName());
-						MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()),
-								errorMsg + exp.getMessage());
-					}
-				}
-			});
+						MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()), errorMsg + exp.getMessage());
 		}
-		return exportMenuItem;
 	}
 
 	/**
@@ -162,7 +174,7 @@ public class DataTablePopupMenu extends JPopupMenu {
 	 * 
 	 * @param chooser {@link JFileChooser} object to validate the save option.
 	 */
-	private void saveFile(JFileChooser chooser) throws Exception {
+	private void saveFile(JFileChooser chooser, boolean isSessionsTable) throws Exception {
 		Frame frame = Frame.getFrames()[0];// get parent frame
 		if (chooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
 			File file = chooser.getSelectedFile();
@@ -172,22 +184,18 @@ public class DataTablePopupMenu extends JPopupMenu {
 			}
 			if (file.exists()) {
 				if (MessageDialogFactory.getInstance().showConfirmDialog(frame,
-						MessageFormat.format(ResourceBundleHelper.getMessageString("fileChooser.fileExists"), file.getAbsolutePath()),
+						MessageFormat.format(ResourceBundleHelper.getMessageString("fileChooser.fileExists"),
+								file.getAbsolutePath()),
 						JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
-					saveFile(chooser);
+					saveFile(chooser, isSessionsTable);
 					return;
 				}
 			}
 
 			FileWriter writer = new FileWriter(file);
 			try {
-				if (table.getSelectedRowCount() > 1) {
-					writeFile(writer, false);
-				} else {
-					writeFile(writer, true);
-				}
-				// TODO take care about the commented code.
-				// UserPreferences.getInstance().setLastExportDirectory(file);
+				writeFile(writer, isSessionsTable);
+
 			} finally {
 				writer.close();
 			}
@@ -197,11 +205,13 @@ public class DataTablePopupMenu extends JPopupMenu {
 						Desktop desktop = Desktop.getDesktop();
 						desktop.open(file);
 					} catch (UnsupportedOperationException unsupportedException) {
-						MessageDialogFactory.showMessageDialog(frame, ResourceBundleHelper.getMessageString("Error.unableToOpen"));
+						MessageDialogFactory.showMessageDialog(frame,
+								ResourceBundleHelper.getMessageString("Error.unableToOpen"));
 					}
 				}
 			} else {
-				MessageDialogFactory.showMessageDialog(frame, ResourceBundleHelper.getMessageString("table.export.success"));
+				MessageDialogFactory.showMessageDialog(frame,
+						ResourceBundleHelper.getMessageString("table.export.success"));
 			}
 		}
 	}
@@ -230,50 +240,64 @@ public class DataTablePopupMenu extends JPopupMenu {
 		return writer.toString();
 	}
 
-	private FileWriter writeFile(FileWriter writer, boolean isAllRow) throws IOException {
-		final String lineSep = System.getProperty("line.separator");
-		// Write headers
-		for (int columnIndex = 0; columnIndex < table.getColumnCount(); ++columnIndex) {
-			if (table.getName() != null && columnIndex == 1 && "sessionTable".equalsIgnoreCase(table.getName())) {
-				continue;
+	private void writeFile(FileWriter writer, boolean isSessionsTable) throws IOException {
+
+		List<Integer> selectedRows = new ArrayList<>();
+		int count = 0;
+
+		if (isSessionsTable) {
+			for (int rowIndex = 0; rowIndex < table.getRowCount(); ++rowIndex) {
+				if (((Boolean) table.getValueAt(rowIndex, 1)).booleanValue()) {
+					selectedRows.add(rowIndex);
 			}
+			}
+		} else {
+			for (int index = 0; index < table.getSelectedRows().length; index++) {
+				selectedRows.add(table.getSelectedRows()[index]);
+			}
+		}
+
+		if (selectedRows.size() > 0) {
+			count = selectedRows.size();
+		} else if (!isSessionsTable) {
+			count = table.getRowCount();
+					}
+		for (int rowIndex = 0; rowIndex < count; ++rowIndex) {
+			for (int columnIndex = 0; columnIndex < table.getColumnCount(); ++columnIndex) {
+					if (columnIndex > 0) {
+						writer.append(COMMA_SEPARATOR);
+					}
+					if (columnIndex == 1 && isSessionsTable) {
+						continue;
+				}
+					if (rowIndex == 0 && columnIndex == 0) {
+						createHeader(writer, isSessionsTable);
+			}
+					if (selectedRows.size() > 0) {
+						writer.append(createCSVEntry(table.getValueAt(selectedRows.get(rowIndex), columnIndex)));
+
+		} else {
+			writer.append(createCSVEntry(table.getValueAt(rowIndex, columnIndex)));
+					}
+					}
+
+			writer.append(Util.LINE_SEPARATOR);
+				}
+
+			}
+
+	private void createHeader(FileWriter writer, boolean isSessionsTable) throws IOException {
+
+		for (int columnIndex = 0; columnIndex < table.getColumnCount(); ++columnIndex) {
 			if (columnIndex > 0) {
 				writer.append(',');
 			}
+			if (columnIndex == 1 && isSessionsTable) {
+				continue;
+		}
 			writer.append(createCSVEntry(table.getColumnModel().getColumn(columnIndex).getHeaderValue()));
 		}
-		writer.append(lineSep);
+		writer.append(Util.LINE_SEPARATOR);
 
-		if (isAllRow) {
-			// Write data
-			for (int rowIndex = 0; rowIndex < table.getRowCount(); ++rowIndex) {
-				for (int columnIndex = 0; columnIndex < table.getColumnCount(); ++columnIndex) {
-					if (columnIndex == 1 && "sessionTable".equalsIgnoreCase(table.getName())) {
-						continue;
-					}
-					if (columnIndex > 0) {
-						writer.append(',');
-					}
-					writer.append(createCSVEntry(table.getValueAt(rowIndex, columnIndex)));
-				}
-				writer.append(lineSep);
-			}
-		} else {
-			int[] rowIndex = table.getSelectedRows();
-			for (int sRow = 0; sRow < table.getSelectedRowCount(); ++sRow) {
-				for (int sColumn = 0; sColumn < table.getColumnCount(); ++sColumn) {
-					if (sColumn > 0) {
-						writer.append(',');
-					}
-					if (table.getName()!=null && sColumn == 1 && "sessionTable".equalsIgnoreCase(table.getName())) {
-						continue;
-					}
-					writer.append(createCSVEntry(table.getValueAt(rowIndex[sRow], sColumn)));
-				}
-				writer.append(lineSep);
-			}
-		}
-
-		return writer;
 	}
 }

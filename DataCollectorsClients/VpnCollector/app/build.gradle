@@ -1,27 +1,82 @@
+/**
+ * The first line in the build configuration applies the Android plugin for
+ * Gradle to this build and makes the android block available to specify
+ * Android-specific build options.
+ */
+apply plugin: 'base'
 apply plugin: 'com.android.application'
 
+/**
+ * The android block is where you configure all your Android-specific
+ * build options.
+ */
+
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    /**
+     * compileSdkVersion specifies the Android API level Gradle should use to
+     * compile your app. This means your app can use the API features included in
+     * this API level and lower.
+     */
+    compileSdkVersion 29
+    /**
+     * buildToolsVersion specifies the version of the SDK build tools, command-line
+     * utilities, and compiler that Gradle should use to build your app. You need to
+     * download the build tools using the SDK Manager.
+     *
+     * This property is optional because the plugin uses a recommended version of
+     * the build tools by default.
+     */
+    buildToolsVersion "29.0.0"
+    /**
+     * The defaultConfig block encapsulates default settings and entries for all
+     * build variants, and can override some attributes in main/AndroidManifest.xml
+     * dynamically from the build system. You can configure product flavors to override
+     * these values for different versions of your app.
+     */
 
     defaultConfig {
         applicationId "com.att.arocollector"
         def jenkinsBuildNumber = System.getenv("BUILD_NUMBER") as Integer ?: 1
         def releaseBuildId = jenkinsBuildNumber - 1
-        versionName "2.4." + releaseBuildId
-        minSdkVersion 19
-        targetSdkVersion 21
-
+        versionName "3.1." + releaseBuildId
+        minSdkVersion 23
+        targetSdkVersion 29
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
+        }
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
+
     }
 
-    buildTypes {
-        applicationVariants.all { variant ->
-            renameAPK(variant, defaultConfig)
+    signingConfigs {
+        release {
         }
+    }
+
+    /**
+     * The buildTypes block is where you can configure multiple build types.
+     * By default, the build system defines two build types: debug and release. The
+     * debug build type is not explicitly shown in the default build configuration,
+     * but it includes debugging tools and is signed with the debug key. The release
+     * build type applies Proguard settings and is not signed by default.
+     */
+
+    buildTypes {
+        android.applicationVariants.all { variant ->
+            variant.outputs.all { output ->
+                def builtType = variant.buildType.name
+                def versionName = variant.versionName
+                def versionCode = variant.versionCode
+                def flavor = variant.flavorName
+                outputFileName = "VPNCollector-${versionName}.apk"
+            }
+        }
+
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+            signingConfig signingConfigs.release
         }
     }
 
@@ -32,33 +87,17 @@ android {
         abortOnError false
     }
 
-    signingConfigs {
-        release {
-
-        }
-    }
-
-    buildTypes {
-        release {
-            signingConfig signingConfigs.release
-        }
-    }
 }
-def renameAPK(variant, defaultConfig) {
-    variant.outputs.all{ output ->
-        def applicationName = "VPNCollector"
-        def fileName = applicationName + "-" + defaultConfig.versionName + ".apk"
-        outputFileName = new File("rellease", fileName)
-    }
+'com.example.android:app-magic:12.3'
 
-}
 
 dependencies {
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.core:core:1.0.0'
+    implementation 'com.android.support:support-annotations:+'
 
-    implementation 'org.apache.commons:commons-collections4:4.0'
-    implementation 'com.android.support:support-v4:23.3.0'
-    implementation 'com.android.support:appcompat-v7:23.3.0'
-    implementation files('../libs/bcpkix-jdk15on-154.jar')
-    implementation files('../libs/bcprov-jdk15on-154.jar')
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.54'
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.54'
+    implementation 'com.google.android.material:material:1.0.0'
 
 }

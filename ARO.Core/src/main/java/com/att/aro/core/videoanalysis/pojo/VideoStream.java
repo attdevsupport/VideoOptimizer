@@ -82,6 +82,7 @@ public class VideoStream {
 	
 	private Boolean validatedCount = false;
 	private int segmentCount = 0;
+	private double duration = 0;
 	private int selectedManifestCount = 0;
 	private int validSegmentCount = 0;
 	private int nonValidSegmentCount = 0;

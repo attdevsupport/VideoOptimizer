@@ -116,7 +116,6 @@ public class AROBatteryReceiver extends AROBroadcastReceiver{
 		final String tempBatteryString = "level: " + mBatteryLevel + "%" + " " + 
 				   "temp: " + mBatteryTemp / 10 + "C" + " " + 
 				   "power source: " + mPowerSource;
-		writeToFlurryAndMaintainStateAndLogEvent(context.getString(R.string.flurry_param_status), tempBatteryString, true);
 	}
 
 

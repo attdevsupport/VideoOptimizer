@@ -72,20 +72,18 @@ public class VideoPreferenceModel {
 		return cellinfo;
 	}
 
-	public boolean checkWarnFailValueValidation(String stallDurationWarn, String stallDurationFail) {
+	public boolean stallDurationValidation(double stallDurationWarn, double stallDurationFail) {
 		String valError = "";
 		boolean isValid = true;
 
-		if (Double.parseDouble(stallDurationFail) <= Double
-				.parseDouble(stallDurationWarn)) {
+		if (stallDurationFail <= stallDurationWarn) {
 			valError = getWarnFailText(STALL_DURATION_ROW, WARNING_COLUMN) + "should be less than failure value "
 					+ stallDurationFail;
 			setErrorComponent(STALL_DURATION_ROW);
 			isValid = false;
 		}
 		if (isValid) {
-			if (Double.parseDouble(stallDurationWarn) >= Double
-					.parseDouble(stallDurationFail)) {
+			if (stallDurationWarn >= stallDurationFail) {
 				valError = getWarnFailText(STALL_DURATION_ROW, FAILURE_COLUMN) + "should be greater than warning value "
 						+ stallDurationWarn;
 				setErrorComponent(STALL_DURATION_ROW);
@@ -100,7 +98,7 @@ public class VideoPreferenceModel {
 		return isValid;
 	}
 
-	public boolean checkWarnFailIntValidation( int segmentRedundancyWarn, int segmentRedundancyFail) {
+	public boolean segmentRedundancyValidation( double segmentRedundancyWarn, double segmentRedundancyFail) {
 		String intValError = "";
 		boolean isValid = true;
 

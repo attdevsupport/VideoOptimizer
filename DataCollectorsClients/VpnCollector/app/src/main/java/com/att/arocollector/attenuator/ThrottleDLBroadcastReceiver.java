@@ -17,12 +17,16 @@
 package com.att.arocollector.attenuator;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.core.app.NotificationCompat;
 
 import com.att.arocollector.R;
 
@@ -33,7 +37,8 @@ import com.att.arocollector.R;
 public class ThrottleDLBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = ThrottleDLBroadcastReceiver.class.getSimpleName();
     private int notifyID = 1;
-    private Notification.Builder mBuilder;
+    private NotificationCompat.Builder mBuilder;
+    public static final String CHANNEL_ID = "VPN Collector VPN Notification";
 
     public ThrottleDLBroadcastReceiver() {
         super();
@@ -42,11 +47,13 @@ public class ThrottleDLBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         int downloadThrottleKbps = intent.getIntExtra("dlms", AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
-
+        NotificationManager mNotificationManager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        createNotificationChannel(mNotificationManager);
         if (mBuilder == null) {
-            mBuilder = new Notification.Builder(context)
+            mBuilder = new NotificationCompat.Builder(context,CHANNEL_ID)
                     .setSmallIcon(R.drawable.icon)
-                    .setContentTitle("Video Optimizor VPN Collector")
+                    .setContentTitle("Video Optimizer VPN Collector")
                     .setAutoCancel(false)
                     .setOngoing(true)
                     .setContentText(AttenuatorUtil.getInstance().notificationMessage());
@@ -54,14 +61,25 @@ public class ThrottleDLBroadcastReceiver extends BroadcastReceiver {
         Log.i(TAG, "Download stream speed throttle for: " + downloadThrottleKbps + " kbps");
         AttenuatorManager.getInstance().setThrottleDL(downloadThrottleKbps);
         String text = "Download stream throttle for " + AttenuatorUtil.getInstance().messageConvert(downloadThrottleKbps);
-        NotificationManager mNotificationManager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
         mBuilder.setContentText(AttenuatorUtil.getInstance().notificationMessage());
         mNotificationManager.notify(notifyID, mBuilder.build());
 
         Toast toast = Toast.makeText(context, text, Toast.LENGTH_SHORT);
         toast.show();
 
+    }
+    private void createNotificationChannel(NotificationManager mNotificationManager) {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel serviceChannel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "VPN Collector",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            mNotificationManager.createNotificationChannel(serviceChannel);
+        }
     }
 
 }

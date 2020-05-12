@@ -32,6 +32,8 @@ import javax.swing.Timer;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.att.aro.ui.view.menu.file.PreferencesDialog;
+
 /**
  * <pre>
  * Numeric verification of JTextField inputs.
@@ -53,8 +55,10 @@ public class NumericInputVerifier extends InputVerifier{
 	private static final Logger LOG = LogManager.getLogger(NumericInputVerifier.class.getSimpleName());	
 	private double min = 0;
 	private double max = 0;
+	private boolean isPreferenceTab = false;
 	private Timer timer;
 	private Popup popup;
+	private PreferencesDialog preferencesDialog;
 	private int significands;
 	String maxMssgFormat = null;
 	String minMssgFormat = null;
@@ -80,6 +84,26 @@ public class NumericInputVerifier extends InputVerifier{
 		minMssgFormat = (new StringBuilder()).append("Minimum value is %." + String.format("%d", significands) + "f").toString();
 	}
 
+	/**
+	 * Verify a String input for conversion to a numeric value and within range
+	 * 
+	 * @param max value
+	 * @param min value
+	 * @param significands - number of significant digits allowed below the decimal
+	 * @param isPreferenceTab - check for Preference Tab
+	 * @param preferencesDialog
+	 */
+	public NumericInputVerifier(double max, double min, int significands, boolean isPreferenceTab, PreferencesDialog preferencesDialog) {
+		this.max = max;
+		this.min = min;
+		this.significands = significands;
+		maxMssgFormat = (new StringBuilder()).append("Maximum value is %." + String.format("%d", significands) + "f")
+				.toString();
+		minMssgFormat = (new StringBuilder()).append("Minimum value is %." + String.format("%d", significands) + "f")
+				.toString();
+		this.isPreferenceTab = isPreferenceTab;
+		this.preferencesDialog = preferencesDialog;
+	}
 	
 	@Override
 	public boolean verify(JComponent component) {
@@ -103,16 +127,13 @@ public class NumericInputVerifier extends InputVerifier{
 			} else if (value.scale() > significands) {
 				popup(component, significands>0
 						? String.format("No more than %d digits beyond decimal point", significands)
-						: "Integer values only"
-						);
+								: "Integer values only");
 			} else {
 				result = true;
-			}
-			
+			}			
 		} catch (Exception e) {
 			popup(component, String.format("Illegal value!"));
 		}
-
 		return result;
 	}
 
@@ -133,21 +154,23 @@ public class NumericInputVerifier extends InputVerifier{
 			message.setBackground(COLOR);
 
 			popup = factory.getPopup(component.getParent(), message, xOffset, yOffset);
+			preferencesDialog.setPopup(popup);
 			popup.show();
 
+			if (!isPreferenceTab) {
 			ActionListener hider = new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					timer.stop();
 					popup.hide();
 				}
 			};
-
 			// Hide popup in 3 seconds
 			if (timer != null) {
 				timer.stop();
 			}
 			timer = new Timer(DISPLAYTIMER, hider);
 			timer.start();
+			}
 		} catch (IllegalComponentStateException e) {
 			LOG.error("ERROR: component location cannot be retrieved. " + e.getLocalizedMessage());
 		}
@@ -170,4 +193,6 @@ public class NumericInputVerifier extends InputVerifier{
 	public boolean getResult() {
 		return result == tested;
 	}
+	
+	
 }
