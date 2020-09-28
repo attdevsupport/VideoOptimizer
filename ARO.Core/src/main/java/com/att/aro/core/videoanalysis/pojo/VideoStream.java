@@ -8,7 +8,10 @@ import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import com.att.aro.core.videoanalysis.XYPair;
+
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.Setter;
@@ -32,8 +35,9 @@ public class VideoStream {
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
 	private SortedMap<String, VideoEvent> videoEventList = new TreeMap<>();
+	
 	/** <pre>
-	 * key definition DLtimestamp-segment
+	 * key definition DLtimestamp-segment, endTS(in milliseconds)
 	 * value VideoEvent
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
@@ -45,12 +49,14 @@ public class VideoStream {
 	 */	
 	@NonNull@Setter(AccessLevel.NONE)
 	private TreeMap<String, VideoEvent> audioEventList = new TreeMap<>();
+	
 	/** <pre>
 	 * key definition: segmentStartTime, endTS(in milliseconds)
 	 * value VideoEvent
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
-	private TreeMap<String, VideoEvent> audioStartTimeMap = new TreeMap<>();	
+	private TreeMap<String, VideoEvent> audioStartTimeMap = new TreeMap<>();
+	
 	/** <pre>
 	 * key definition DLtimestamp-segment
 	 * value VideoEvent
@@ -64,12 +70,14 @@ public class VideoStream {
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
 	private SortedMap<String, VideoEvent> videoSegmentEventList = new TreeMap<>();
+	
 	/** <pre>
 	 * key definition segment-quality-timestamp
 	 * value VideoEvent
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
 	private TreeMap<String, VideoEvent> audioSegmentEventList = new TreeMap<>();
+	
 	/** <pre>
 	 * key definition segment-quality-timestamp
 	 * value VideoEvent
@@ -95,12 +103,60 @@ public class VideoStream {
 
 	public VideoEvent audioEvent;
 	
+	private int boIndex = 0;
+	
+	@NonNull@Setter(AccessLevel.NONE)
+	private SortedMap<Integer, ToolTipDetail> toolTipDetailMap = new TreeMap<>();
+	
+	@NonNull@Setter(AccessLevel.NONE)
+	private ArrayList<XYPair> byteBufferList = new ArrayList<>();
+
+	private Double playRequestedTime;
+	
+	public void clearBufferOccupancyData() {
+		toolTipDetailMap.clear();
+		byteBufferList.clear();
+		boIndex = 0;
+	}
+	
+	public void addToolTipPoint(VideoEvent videoEvent, double totalBytes) {
+		if (!toolTipDetailMap.containsKey(boIndex)) {
+			toolTipDetailMap.put(boIndex++, new ToolTipDetail(boIndex, totalBytes, videoEvent));
+		}
+	}
+	
+	@Data
+	@AllArgsConstructor
+	public class ToolTipDetail{
+		int index;
+		double totalBytes;
+		VideoEvent videoEvent;
+		
+		public double getTS() {
+			return videoEvent.getEndTS();
+		}
+		public double getSize() {
+			return videoEvent.getSize();
+		}
+		
+		@Override
+		public String toString() {
+				StringBuilder strblr = new StringBuilder(83);
+				strblr.append("index:").append(index);
+				strblr.append(String.format(", totalBytes: %.0f", getTotalBytes()));
+				strblr.append(String.format(", endTS: %.3f", getTS()));
+				strblr.append(String.format(", bytes: %.0f", getSize()));
+				strblr.append("\n");
+			return strblr.toString();
+		}
+	}
+
 	public VideoEvent getFirstSegment() {
 		return ((TreeMap<String, VideoEvent>)videoSegmentEventList).firstEntry().getValue();
 	}
 
 	/**
-	 * Add VideoEvent to both videoEventList and segmentEventList.
+	 * Add VideoEvent to both  and segmentEventList.
 	 * 
 	 * @param segment
 	 * @param timestamp
@@ -274,4 +330,7 @@ public class VideoStream {
 		return strblr.toString();
 	}
 
+	public void setPlayRequestedTime(Double playRequestedTime) {
+		this.playRequestedTime=playRequestedTime;
+	}
 }

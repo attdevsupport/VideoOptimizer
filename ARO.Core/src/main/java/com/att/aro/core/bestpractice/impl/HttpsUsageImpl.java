@@ -37,6 +37,7 @@ import com.att.aro.core.bestpractice.pojo.HttpsUsageResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetreader.pojo.Packet;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 
@@ -82,19 +83,27 @@ public class HttpsUsageImpl implements IBestPractice {
 				totalNumConnectionsCurrentTrace);
 		HttpsUsageResult result = new HttpsUsageResult();
 		String testResultText = "";
+		Statistic stat = tracedata.getStatistic();
 		if (passTest()) {
 			result.setResultType(BPResultType.PASS);
 			testResultText = MessageFormat.format(testResultPassText, ApplicationConfig.getInstance().getAppShortName(),
-					totalNumHttpConnectionsCurrentTrace);
+					totalNumHttpConnectionsCurrentTrace, formatDoubleToString(stat.getTotalHTTPSByte()/1024.0, 2),
+					formatDoubleToString(stat.getTotalHTTPSByte()*100.0/stat.getTotalByte(), 2),
+					formatDoubleToString(stat.getTotalHTTPSBytesNotAnalyzed()/1024.0, 2));
 		} else if (failTest(httpsUsageEntries, httpConnectionsPercentageCurrentTrace)) {
 			result.setResultType(BPResultType.FAIL);
 			testResultText = MessageFormat.format(testResultAnyText, ApplicationConfig.getInstance().getAppShortName(),
-					totalNumHttpConnectionsCurrentTrace, httpConnectionsPercentageCurrentTrace);
+					totalNumHttpConnectionsCurrentTrace, httpConnectionsPercentageCurrentTrace,
+					formatDoubleToString(stat.getTotalHTTPSByte()/1024.0, 2), formatDoubleToString(stat.getTotalHTTPSByte()*100.0/stat.getTotalByte(), 2),
+                    formatDoubleToString(stat.getTotalHTTPSBytesNotAnalyzed()/1024.0, 2));
 		} else {
 			result.setResultType(BPResultType.WARNING);
 			testResultText = MessageFormat.format(testResultAnyText, ApplicationConfig.getInstance().getAppShortName(),
-					totalNumHttpConnectionsCurrentTrace, httpConnectionsPercentageCurrentTrace);
+					totalNumHttpConnectionsCurrentTrace, httpConnectionsPercentageCurrentTrace,
+					formatDoubleToString(stat.getTotalHTTPSByte()/1024.0, 2), formatDoubleToString(stat.getTotalHTTPSByte()*100.0/stat.getTotalByte(), 2),
+					formatDoubleToString(stat.getTotalHTTPSBytesNotAnalyzed()/1024.0, 2));
 		}
+
 		result.setOverviewTitle(overviewTitle);
 		result.setDetailTitle(detailedTitle);
 		result.setLearnMoreUrl(learnMoreUrl);
@@ -103,6 +112,21 @@ public class HttpsUsageImpl implements IBestPractice {
 		result.setResultText(testResultText);
 		result.setExportAll(exportAll);
 		return result;
+	}
+
+	/**
+	 * Format a double to string upto specified decimal points
+	 * @param number
+	 * @param decimalPoints
+	 * @return
+	 */
+	private String formatDoubleToString(Double number, int decimalPoints) {
+	    if (decimalPoints <= 0) {
+	        decimalPoints = 2;
+	    }
+
+	    String pattern = "%." + decimalPoints + "f";
+	    return String.format(pattern, number);
 	}
 
 	/*
@@ -154,7 +178,6 @@ public class HttpsUsageImpl implements IBestPractice {
 			int httpTrafficPercentage = 0;
 			for (Session session : ipSessions.getValue()) {
 				boolean isSslSession = false;
-				boolean isHttpsConnection = false;
 				// Excluding UDP Sessions
 				if (session.isUdpOnly()) {
 					continue;
@@ -182,34 +205,31 @@ public class HttpsUsageImpl implements IBestPractice {
 				 */
 				// total packet size (ip header + tcp header + payload) of all
 				// the packets in the session
-				int totalPacketsSize = 0;
 				// total payload size of all the packets in the session
 				int totalPacketsPayloadSize = 0;
 				for (PacketInfo packetInfo : packetsInfo) {
-					totalPacketsSize += packetInfo.getLen();
 					totalPacketsPayloadSize += packetInfo.getPayloadLen();
 				}
-				totalTrafficInByteCurrentIp += totalPacketsSize;
+				
 				totalNumConnectionsCurrentIp++;
+				totalTrafficInByteCurrentIp += totalPacketsPayloadSize;
 				/*
 				 * If the session does not contain any data (i.e. payload of all
 				 * the packets in the session is zero), or if it contains 1 or
 				 * more SSL packet, we group the session under the HTTPS
 				 * connection category.
 				 */
-				if (totalPacketsPayloadSize == 0 || isSslSession) {
-					isHttpsConnection = true;
-				}
-				if (!isHttpsConnection) {
-					totalHttpTrafficInByteCurrentIp += totalPacketsSize;
+
+				if (!(totalPacketsPayloadSize == 0 || isSslSession)) {								
+					totalHttpTrafficInByteCurrentIp += totalPacketsPayloadSize;
 					totalNumHttpConnectionsCurrentIp++;
 				}
 			} // End all sessions associated to an IP
 			if (totalNumHttpConnectionsCurrentIp > 0) {
 				BigDecimal totalTrafficInKBCurrentIp = new BigDecimal(totalTrafficInByteCurrentIp)
-						.divide(new BigDecimal(1024), 3, RoundingMode.HALF_UP);
+						.divide(new BigDecimal(1000), 3, RoundingMode.HALF_UP);
 				BigDecimal totalHttpTrafficInKBCurrentIp = new BigDecimal(totalHttpTrafficInByteCurrentIp)
-						.divide(new BigDecimal(1024), 3, RoundingMode.HALF_UP);
+						.divide(new BigDecimal(1000), 3, RoundingMode.HALF_UP);
 				int httpConnectionsPercentage = getHttpConnectionsPercentage(totalNumHttpConnectionsCurrentIp,
 						totalNumConnectionsCurrentIp);
 				/*

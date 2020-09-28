@@ -22,6 +22,7 @@ import javax.swing.JTable;
 
 import com.att.aro.core.bestpractice.pojo.VideoConcurrentSession;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.VideoConcurrentSessionTableModel;
 
 public class BPVideoConcurrentSessionTablePanel extends AbstractBpDetailTablePanel {
@@ -52,6 +53,9 @@ public class BPVideoConcurrentSessionTablePanel extends AbstractBpDetailTablePan
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) contentTable.getPopup();
+            popupMenu.initialize();
 		}
 		return contentTable;
 	}

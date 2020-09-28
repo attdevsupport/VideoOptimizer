@@ -343,11 +343,8 @@ public class SessionManager {
 		try {
 			channel.connect(addr);
 			ses.setConnected(channel.isConnected());
-		} catch (ClosedChannelException ex) {
-		} catch (UnresolvedAddressException ex2) {
-		} catch (UnsupportedAddressTypeException ex3) {
-		} catch (SecurityException ex4) {
-		} catch (IOException ex5) {
+		} catch (UnresolvedAddressException | UnsupportedAddressTypeException | SecurityException | IOException e) {
+			Log.e(TAG, "Channel cannot be connected for session " + sessionKey, e);
 		}
 
 		Object isudp = new Object();
@@ -389,7 +386,11 @@ public class SessionManager {
 			}
 		}
 		if (ses != null) {
-			Log.d(TAG, "new UDP session successfully created.");
+			if (found) {
+				Log.d(TAG, "UDP session already existed for " + sessionKey + ".");
+			} else {
+				Log.d(TAG, "New UDP session successfully created for " + sessionKey + ".");
+			}
 		}
 		return ses;
 	}

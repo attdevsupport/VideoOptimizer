@@ -185,7 +185,7 @@ public final class ErrorCodeRegistry {
 	 */
 	public static ErrorCode getMissingFolderName(){
 		ErrorCode err = new ErrorCode();
-		err.setCode(512);
+		err.setCode(513);
 		err.setName("missing folder name");
 		err.setDescription(defaultBundle.getString("Error.foldernamerequired"));
 		sendGAErrorCode(err);
@@ -350,12 +350,22 @@ public final class ErrorCodeRegistry {
 
 	public static ErrorCode getImageDecoderError(String message) {
 		ErrorCode err = new ErrorCode();
+		err.setCode(527);
 		err.setName("ImageDecoder Error");
 		err.setDescription(message);
 		sendGAErrorCode(err);
 		return err;
 	}
-	
+
+	public static ErrorCode getDumpcapError() {
+		ErrorCode err = new ErrorCode();
+		err.setCode(528);
+		err.setName("Dumpcap Error");
+		err.setDescription(defaultBundle.getString("Error.app.dumpcap"));
+		sendGAErrorCode(err);
+		return err;
+	}
+
 	private static void sendGAErrorCode(ErrorCode err){
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendErrorEvents(err.getName(),err.getDescription(), false);
 	}

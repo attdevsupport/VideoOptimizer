@@ -29,9 +29,13 @@ import org.apache.log4j.LogManager;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.SessionValues;
+import com.att.aro.core.util.Util;
 
 public final class SimultnsUtil {
+	
 	private static final Logger LOGGER = LogManager.getLogger(SimultnsUtil.class.getName());
+	private static final int MAX_CONNECTION_THRESHOLD = 7;
+	
 	TreeMap<Double, String> ipMap = new TreeMap<Double, String>();
 
 	public Map<String, ArrayList<Session>> getDistinctMap(List<Session> sessions) {
@@ -91,7 +95,16 @@ public final class SimultnsUtil {
 			int maxCount,
 			TreeMap<Double, Double> timeMap, boolean isManyEndpoints,
 			TreeMap<Double, HttpRequestResponseInfo> reqRespTimeMap, String ipInside) {
-		int startTimePointer = start.length, endTimePointer = end.length;
+		if (isManyEndpoints && Util.isTestMode()) {
+			LOGGER.debug("Start : ");
+			for (int startCounter = 0; startCounter < start.length; startCounter++) {
+				LOGGER.debug(String.valueOf(start[startCounter]));
+			}
+			LOGGER.debug("End : ");
+			for (int endCounter = 0; endCounter < start.length; endCounter++) {
+				LOGGER.debug(String.valueOf(end[endCounter]));
+			}
+		}
 		Arrays.sort(start);
 		Arrays.sort(end);
 		MultipleConnectionsEntry simultnsConnEntry = null;
@@ -107,7 +120,7 @@ public final class SimultnsUtil {
 				currentOverlap++;
 				if (currentOverlap >= maxCount && maxOverlap < currentOverlap) {
 					if (!isManyEndpoints) {
-						if (simultnsConnectionEntryMap.containsKey(domainVal) && maxCount == 3) {
+						if (simultnsConnectionEntryMap.containsKey(domainVal) && maxCount == MAX_CONNECTION_THRESHOLD) {
 							simultnsConnectionEntryMap.replace(domainVal,
 									new MultipleConnectionsEntry(reqRespTimeMap.get(startTime),
 											domainVal.substring(domainVal.lastIndexOf('/') + 1, domainVal.length()),
@@ -148,7 +161,6 @@ public final class SimultnsUtil {
 	}
 
 	public List<SessionValues> createDomainsTCPSessions(Collection<Session> allTCPSessions) {
-		LOGGER.info("Test Message");
 		List<SessionValues> sessionValues = new ArrayList<SessionValues>();
 		Session lastSession = null;
 		for (Session aSession : allTCPSessions) {

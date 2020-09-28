@@ -15,7 +15,6 @@
  */
 package com.att.aro.core.videoanalysis.impl;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,7 +23,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.math3.util.MathUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -364,9 +362,6 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 	private boolean isStallActive;
 
 	public void insertDataSet(double timestamp, double delta) {
-		if (skey == 20) {
-			System.out.print("");
-		}
 		if (delta > 0) {
 			bufferedTime += delta;
 		} else {
@@ -454,105 +449,6 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 		return buffer;
 	}
 
-	public double drawVeWithIn(List<VideoEvent> veWithIn, double beginBuffer) {
-		double buffer = beginBuffer;
-
-		if (veWithIn.size() == 0 && completedDownloads.contains(chunkPlaying)) {
-			buffer = bufferDrain(buffer);
-		} else if (completedDownloads.contains(chunkPlaying)) { // if not there then it is a stall
-			Collections.sort(veWithIn, new VideoEventComparator(SortSelection.END_TS));
-
-			boolean drained = false;
-			VideoEvent chunk;
-			double timeRange;
-			double durationLeft = chunkPlayTimeDuration;
-
-			seriesDataSets.put(key++, chunkPlayStartTime + "," + buffer);
-
-			if (stallStarted) {
-				updateStallInformation(chunkPlayStartTime);
-				stallStarted = false;
-			}
-
-			for (int index = 0; index < veWithIn.size(); index++) {
-				chunk = veWithIn.get(index);
-				if (MathUtils.equals(chunk.getEndTS(), chunkPlayEndTime)) {
-					// finish draining
-					buffer = buffer - durationLeft;
-					if (buffer <= 0) {
-						buffer = 0;
-						updateStallInformation(chunk.getEndTS());
-					}
-					seriesDataSets.put(key++, chunkPlayEndTime + "," + buffer);
-					drained = true;
-
-					buffer = buffer + chunk.getDuration();
-
-					seriesDataSets.put(key++, chunk.getEndTS() + "," + buffer);
-
-					completedDownloads.add(chunk);
-					chunkDownload.remove(chunk);
-				} else {
-					if (index == 0) {
-						timeRange = chunk.getEndTS() - chunkPlayStartTime;
-					} else {
-						timeRange = chunk.getEndTS() - veWithIn.get(index - 1).getEndTS();
-					}
-
-					buffer = buffer - timeRange;
-					if (buffer <= 0) {
-						buffer = 0;
-						stallStarted = true;
-						updateStallInformation(chunk.getEndTS());
-					}
-					durationLeft = durationLeft - timeRange;
-
-					seriesDataSets.put(key++, chunk.getEndTS() + "," + buffer);
-
-					buffer = buffer + chunk.getDuration();
-
-					seriesDataSets.put(key++, chunk.getEndTS() + "," + buffer);
-
-					completedDownloads.add(chunk);
-					chunkDownload.remove(chunk);
-				}
-			}
-
-			if (drained == false) {
-				buffer = buffer - durationLeft;
-				if (buffer <= 0) {
-					buffer = 0;
-					stallStarted = true;
-					updateStallInformation(chunkPlayEndTime);
-				}
-				seriesDataSets.put(key++, chunkPlayEndTime + "," + buffer);
-
-			}
-
-		} else {
-			/*
-			 * chunkPlaying has not yet arrived, therefore a stall has occurred
-			 */
-
-			boolean skipStallStart = false;
-			for (VideoStall stall : videoStallResult) {
-				if (BigDecimal.valueOf(stall.getStallEndTimestamp()) == BigDecimal.valueOf(chunkPlayStartTime)) {
-					skipStallStart = true;
-					break;
-				}
-			}
-			if (skipStallStart == false) {
-				stallStarted = true;
-				VideoStall stall = new VideoStall(chunkPlayStartTime - stallPausePoint);
-				videoStallResult.add(stall);
-			}
-			return -1;
-		}
-
-		return buffer;
-
-	}
-
 	private void initialize(StreamingVideoData streamingVideoData) {
 		this.streamingVideoData = streamingVideoData;
 		filteredChunks = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments(); // filterVideoSegment(videoUsage);
@@ -564,31 +460,6 @@ public class BufferInSecondsCalculatorImpl extends AbstractBufferOccupancyCalcul
 		}
 
 		runInit(streamingVideoData, streamingVideoData.getStreamingVideoCompiled().getChunksBySegmentID());
-	}
-
-	public void updateUnfinishedDoneVideoEvent() {
-		for (VideoEvent ve : chunkDownload) {
-			if (ve.getEndTS() <= chunkPlayStartTime) {
-				veDone.add(ve);
-			} else if (ve.getEndTS() > chunkPlayStartTime && ve.getEndTS() <= chunkPlayEndTime) { // late? stall?
-				veWithIn.add(ve);
-			}
-		}
-	}
-
-	public void updateSegmentsDownloadedList() {
-		List<VideoEvent> toBeRemovedSegments = new ArrayList<>();
-		for (VideoEvent ve : chunkDownloadCopy) {
-			if (ve.getDLTimeStamp() < chunkPlayStartTime && ve.getEndTS() - (nearStall + stallPausePoint) <= chunkPlayStartTime) {
-				completedDownloadsWithOutNearStalls.add(ve);
-				toBeRemovedSegments.add(ve);
-			} else if (ve.getEndTS() - (nearStall + stallPausePoint) > chunkPlayStartTime && ve.getEndTS() - (nearStall + stallPausePoint) <= chunkPlayEndTime) {
-				veWithInPlayDownloadedSegments.add(ve);
-			}
-		}
-		for (VideoEvent ve : toBeRemovedSegments) {
-			chunkDownloadCopy.remove(ve);
-		}
 	}
 
 	public void updateStallInformation(double stallTime) {

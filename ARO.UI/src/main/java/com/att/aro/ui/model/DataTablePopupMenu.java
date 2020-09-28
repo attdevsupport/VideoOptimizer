@@ -15,289 +15,96 @@
 */
 package com.att.aro.ui.model;
 
-import java.awt.Desktop;
-import java.awt.Frame;
-import java.awt.Window;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JFileChooser;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
-import com.att.aro.core.ApplicationConfig;
-import com.att.aro.core.preferences.UserPreferencesFactory;
-import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
-import com.att.aro.core.util.Util;
-import com.att.aro.ui.commonui.MessageDialogFactory;
+import com.att.aro.ui.model.listener.DefaultMenuItemListener;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
+ * Represents the default popup menu for a data table in the ARO Data Analyzer.<br><br>
  *
+ * After creating an  object of this class, users are required to call method {@see #initialize()} to associate menuitems to pop up menu.
+ * By default, the pop up menu associates a default export item to the menu whose behavior is to export either all or selected rows from the datatable.<br><br>
  *
- * Represents the default popup menu for a data table in the ARO Data Analyzer.
+ * Users can also use {@see #DataTablePopupMenu(DataTable, List)} constructor or {@see #setMenuItems(List)} to provide their custom menu items to the pop up menu.
+ *
+ *  @author arpitbansal ab090c
+ *
  */
 public class DataTablePopupMenu extends JPopupMenu {
-	private static final char COMMA_SEPARATOR = ',';
-
 	private static final long serialVersionUID = 1L;
 
 	private DataTable<?> table;
 
-	private JMenuItem exportMenuItem;
-
-	private File exportPath = UserPreferencesFactory.getInstance().create().getLastExportDirectory();
-	private String titleDialog = ResourceBundleHelper.getMessageString("fileChooser.Title");
+	private List<JMenuItem> menuItems;
 
 	/**
-	 * Initializes a new instance of the DataTablePopupMenu class using the
-	 * specified DataTable object.
-	 * 
+	 * Initializes a new instance of the DataTablePopupMenu class using the specified DataTable object.
+	 * A default export menu item is added to pop up menu with a behavior of exporting all the rows and columns in xls, xlsx or csv format.
+	 *
 	 * @param table The DataTable to associate with the DataTablePopupMenu.
 	 */
 	public DataTablePopupMenu(DataTable<?> table) {
 		this.table = table;
-		initialize();
-	}
-
-	public void setExportPath(File exportPath) {
-		this.exportPath = exportPath;
-	}
-
-	private File getVideoRequestExportDriectory() {
-		String tracePath = PreferenceHandlerImpl.getInstance().getPref("TRACE_PATH");
-		File exportPathDirectory = UserPreferencesFactory.getInstance().create().getLastExportDirectory();
-		if (tracePath != null) {
-			tracePath = tracePath + "/exports";
-			File exportPath = new File(tracePath);
-			if (!exportPath.isDirectory()) {
-				exportPath.mkdirs();
-			}
-			exportPathDirectory = exportPath;
-		}
-		return exportPathDirectory;
-	}
-
-	public void setTitleDialog(String titleDialog) {
-		this.titleDialog = titleDialog;
+		
+		// Add default table export menu item to pop up
+		menuItems = new ArrayList<>();
+		menuItems.add(getExportMenuItem());
 	}
 
 	/**
-	 * Method to put the Export menu item in table.
+	 * Initializes a new instance of the DataTablePopupMenu class using the specified DataTable object and menu items.
+	 *
+	 * @param table The DataTable to associate with the DataTablePopupMenu
+	 * @param menuItems Menu items to be added to the pop up menu
 	 */
-	private void initialize() {
-		this.add(getExportMenuItem());
+	public DataTablePopupMenu(DataTable<?> table, List<JMenuItem> menuItems) {
+	    this.table = table;
+	    this.menuItems = menuItems;
 	}
 
 	/**
-	 * Method to initialize the Export menu item for the table.
-	 * 
-	 * @return the exportMenuItem
+	 * Initializes the menu items on the current pop up menu
 	 */
+	public void initialize() {
+	    if (menuItems != null) {
+	        menuItems.stream()
+	                 .filter(item -> item != null)
+                     .forEach(item -> this.add(item));
+	    }
+	}
+
+	public List<JMenuItem> getMenuItems() {
+	    return menuItems;
+	}
+
+	public void setMenuItems(List<JMenuItem> menuItems) {
+        this.menuItems = menuItems;
+    }
+
+	/**
+	 * Adds additional menu items
+	 * @param items
+	 */
+	public void addMenuItems(List<JMenuItem> items) {
+        if (items != null) {
+            if (menuItems == null) {
+                menuItems = new ArrayList<>();
+            }
+
+            items.stream()
+                 .filter(item -> item != null)
+                 .forEach(item -> menuItems.add(item));
+        }
+    }
+
 	private JMenuItem getExportMenuItem() {
-		if (exportMenuItem == null) {
-			exportMenuItem = new JMenuItem(ResourceBundleHelper.getMessageString("table.export"));
-			exportMenuItem.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent aEvent) {
-					File defaultFile = null;
-					if (table == null) {
-						return;
-					}
-					if ("VideoRequestTable".equals(table.getName())) {
-						setExportPath(getVideoRequestExportDriectory());
-						String defaultFileName = exportPath.getAbsolutePath() + "/VideoRequestTable.csv";
-						defaultFile = new File(defaultFileName);
-					}
-
-					boolean isSessionsTable = table.getName() != null
-							&& "sessionTable".equalsIgnoreCase(table.getName());
-					if (isSessionsTable) {
-						boolean isAnyRowSelected = false;
-						for (int rowIndex = 0; rowIndex < table.getRowCount(); ++rowIndex) {
-							if (isAnyRowSelected = isAnyRowSelected
-								|| ((Boolean) table.getValueAt(rowIndex, 1)).booleanValue()) {
-								break;
-							}
-						}
-
-						if (!isAnyRowSelected) {
-							MessageDialogFactory.showMessageDialog(null,
-									ResourceBundleHelper.getMessageString("tcp.error.noRowSelected"));
-							return;
-						}
-					}
-					exportTable(defaultFile, isSessionsTable);
-				}
-
-			});
-		}
-		return exportMenuItem;
-	}
-
-	private void exportTable(File defaultFile, boolean isSessionsTable) {
-					JFileChooser chooser = new JFileChooser(exportPath);
-					if (defaultFile != null) {
-						chooser.setSelectedFile(defaultFile);
-					}
-					chooser.setDialogTitle(titleDialog);
-					FileNameExtensionFilter filter = new FileNameExtensionFilter(
-							ResourceBundleHelper.getMessageString("fileChooser.desc.csv"),
-							ResourceBundleHelper.getMessageString("fileChooser.contentType.csv"));
-					chooser.setFileFilter(filter);
-					chooser.addChoosableFileFilter(null);
-					chooser.setApproveButtonText(ResourceBundleHelper.getMessageString("fileChooser.Save"));
-					chooser.setMultiSelectionEnabled(false);
-					try {
-						saveFile(chooser, isSessionsTable);
-						if ("VideoRequestTable".equals(table.getName()) && chooser.getCurrentDirectory() != exportPath) {
-							exportPath.delete();
-						}
-					} catch (Exception exp) {
-						String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("exportall.errorFileOpen"),
-								ApplicationConfig.getInstance().getAppShortName());
-						MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()), errorMsg + exp.getMessage());
-		}
-	}
-
-	/**
-	 * Method to export the table content in to the CSV file format.
-	 * 
-	 * @param chooser {@link JFileChooser} object to validate the save option.
-	 */
-	private void saveFile(JFileChooser chooser, boolean isSessionsTable) throws Exception {
-		Frame frame = Frame.getFrames()[0];// get parent frame
-		if (chooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
-			File file = chooser.getSelectedFile();
-			if (!chooser.getFileFilter().accept(file)) {
-				file = new File(file.getAbsolutePath() + "."
-						+ ResourceBundleHelper.getMessageString("fileChooser.contentType.csv"));
-			}
-			if (file.exists()) {
-				if (MessageDialogFactory.getInstance().showConfirmDialog(frame,
-						MessageFormat.format(ResourceBundleHelper.getMessageString("fileChooser.fileExists"),
-								file.getAbsolutePath()),
-						JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
-					saveFile(chooser, isSessionsTable);
-					return;
-				}
-			}
-
-			FileWriter writer = new FileWriter(file);
-			try {
-				writeFile(writer, isSessionsTable);
-
-			} finally {
-				writer.close();
-			}
-			if (file.getName().contains(".csv")) {
-				if (MessageDialogFactory.getInstance().showExportConfirmDialog(frame) == JOptionPane.YES_OPTION) {
-					try {
-						Desktop desktop = Desktop.getDesktop();
-						desktop.open(file);
-					} catch (UnsupportedOperationException unsupportedException) {
-						MessageDialogFactory.showMessageDialog(frame,
-								ResourceBundleHelper.getMessageString("Error.unableToOpen"));
-					}
-				}
-			} else {
-				MessageDialogFactory.showMessageDialog(frame,
-						ResourceBundleHelper.getMessageString("table.export.success"));
-			}
-		}
-	}
-
-	/**
-	 * Method to convert the {@link Object} values in to {@link String} values.
-	 * 
-	 * @param val {@link Object} value retrieved from the table cell.
-	 * @return Cell data in string format.
-	 */
-	private String createCSVEntry(Object val) {
-		StringBuffer writer = new StringBuffer();
-		String str = val != null ? val.toString() : "";
-		writer.append('"');
-		for (char strChar : str.toCharArray()) {
-			switch (strChar) {
-			case '"':
-				// Add an extra
-				writer.append("\"\"");
-				break;
-			default:
-				writer.append(strChar);
-			}
-		}
-		writer.append('"');
-		return writer.toString();
-	}
-
-	private void writeFile(FileWriter writer, boolean isSessionsTable) throws IOException {
-
-		List<Integer> selectedRows = new ArrayList<>();
-		int count = 0;
-
-		if (isSessionsTable) {
-			for (int rowIndex = 0; rowIndex < table.getRowCount(); ++rowIndex) {
-				if (((Boolean) table.getValueAt(rowIndex, 1)).booleanValue()) {
-					selectedRows.add(rowIndex);
-			}
-			}
-		} else {
-			for (int index = 0; index < table.getSelectedRows().length; index++) {
-				selectedRows.add(table.getSelectedRows()[index]);
-			}
-		}
-
-		if (selectedRows.size() > 0) {
-			count = selectedRows.size();
-		} else if (!isSessionsTable) {
-			count = table.getRowCount();
-					}
-		for (int rowIndex = 0; rowIndex < count; ++rowIndex) {
-			for (int columnIndex = 0; columnIndex < table.getColumnCount(); ++columnIndex) {
-					if (columnIndex > 0) {
-						writer.append(COMMA_SEPARATOR);
-					}
-					if (columnIndex == 1 && isSessionsTable) {
-						continue;
-				}
-					if (rowIndex == 0 && columnIndex == 0) {
-						createHeader(writer, isSessionsTable);
-			}
-					if (selectedRows.size() > 0) {
-						writer.append(createCSVEntry(table.getValueAt(selectedRows.get(rowIndex), columnIndex)));
-
-		} else {
-			writer.append(createCSVEntry(table.getValueAt(rowIndex, columnIndex)));
-					}
-					}
-
-			writer.append(Util.LINE_SEPARATOR);
-				}
-
-			}
-
-	private void createHeader(FileWriter writer, boolean isSessionsTable) throws IOException {
-
-		for (int columnIndex = 0; columnIndex < table.getColumnCount(); ++columnIndex) {
-			if (columnIndex > 0) {
-				writer.append(',');
-			}
-			if (columnIndex == 1 && isSessionsTable) {
-				continue;
-		}
-			writer.append(createCSVEntry(table.getColumnModel().getColumn(columnIndex).getHeaderValue()));
-		}
-		writer.append(Util.LINE_SEPARATOR);
-
+	    JMenuItem exportMenuItem = new JMenuItem(ResourceBundleHelper.getMessageString("table.export"));
+	    exportMenuItem.addActionListener(new DefaultMenuItemListener(table));
+	    return exportMenuItem;
 	}
 }

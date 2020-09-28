@@ -85,8 +85,10 @@ public class VlcjPlayer implements IVideoPlayer {
     private SharedAttributesProcesses aroView;
     private double duration;
     private State mediaPlayerStatus;
+    private JPanel dummyMediaComponentCard;
     private JPanel dummyMediaComponentCardPanel;
     private String currentCard;
+    private String videoPath;
 
     private static final String[] MEDIA_PLAYER_FACTORY_ARGS = {
             "--video-title=vlcj video output",
@@ -144,7 +146,7 @@ public class VlcjPlayer implements IVideoPlayer {
         dummyMediaComponentCardPanel.setBackground(Color.BLACK);
         dummyMediaComponentCardPanel.setPreferredSize(new Dimension(playerContentWidth, playerContentHeight));
 
-        JPanel dummyMediaComponentCard = new JPanel(new GridBagLayout());
+        dummyMediaComponentCard = new JPanel(new GridBagLayout());
         dummyMediaComponentCard.add(dummyMediaComponentCardPanel, getGridBagConstraintsObject());
         dummyMediaComponentCard.setName(DUMMY_PLAYER_CARD);
         dummyMediaComponentCard.setVisible(true);
@@ -340,6 +342,11 @@ public class VlcjPlayer implements IVideoPlayer {
     public void setMediaTime(final double hairlineTime) {
         double videoTime = hairlineTime - this.videoOffset;
         updateUserInterfaceElements(hairlineTime);
+        if (!player.status().isSeekable()) {
+        	String videoOptions = "start-time=" + String.valueOf(videoTime);
+        	player.media().play(videoPath, videoOptions);
+        	player.controls().setPause(true);
+        }
         player.controls().setTime(Math.round(videoTime * 1000));
     }
 
@@ -405,9 +412,17 @@ public class VlcjPlayer implements IVideoPlayer {
     @Override
 	public void clear() {
 		frame.setVisible(false);
+		changeMediaComponentDisplayTo(DUMMY_PLAYER_CARD);
+		playButton.setText(">");
+		duration = 0.0;
+		playtimeLabel.setText(formatPlaytimeDisplay(0.0));
+		slider.setValue(0);
 		if (player != null) {
 			player.controls().stop();
+			player.release();
+			player = null;
 		}
+
 		frame.dispose();
 		videoOffset = 0.0;
 	}
@@ -450,12 +465,15 @@ public class VlcjPlayer implements IVideoPlayer {
             JPanel mediaComponentCard = new JPanel(new GridBagLayout());
             mediaComponentCard.add((JPanel) mediaPlayerComponent, getGridBagConstraintsObject());
             mediaComponentCard.setName(MEDIA_PLAYER_CARD);
+            childContentPaneCards.removeAll();
+            childContentPaneCards.add(dummyMediaComponentCard, DUMMY_PLAYER_CARD);
             childContentPaneCards.add(mediaComponentCard, MEDIA_PLAYER_CARD);
         } else {
             changeMediaComponentDisplayTo(DUMMY_PLAYER_CARD);
-            currentCard = DUMMY_PLAYER_CARD;
             ((JPanel) mediaPlayerComponent).setPreferredSize(new Dimension(playerContentWidth, playerContentHeight));
         }
+
+        currentCard = DUMMY_PLAYER_CARD;
     }
 
     private MediaPlayerEventAdapter getMediaPlayerEventListener() {
@@ -522,7 +540,8 @@ public class VlcjPlayer implements IVideoPlayer {
          */
         String movVideoPath = traceResult.getTraceDirectory() + Util.FILE_SEPARATOR + ResourceBundleHelper.getMessageString("video.videoDisplayFile");
         String mp4VideoPath = traceResult.getTraceDirectory() + Util.FILE_SEPARATOR + ResourceBundleHelper.getMessageString("video.videoFileOnDevice");
-        String videoPath = new File(mp4VideoPath).exists() ? mp4VideoPath : movVideoPath;
+        
+        videoPath = new File(mp4VideoPath).exists() ? mp4VideoPath : movVideoPath;
 
         /*
          * start then pause in order for graph panel and video player to be able to go

@@ -34,12 +34,16 @@ public class AdaptationSetTL {
 	@XmlAttribute(name = "mimeType")	private String mimeType;
 	@XmlElement(name = "Representation")  private List<RepresentationST> representation;
 	@XmlElement(name = "SegmentTemplate") private SegmentTemplateST segmentTemplate;
+	@XmlElement(name = "AudioChannelConfiguration") private AudioChannelConfiguration audioChannelConfiguration;	
 
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
 		strblr.append("\n\t\tAdaptationSet\n\t\t\tmimeType:").append(mimeType);
 		strblr.append("\n\t\t\tcontentType:").append(getContentType());
+		if(audioChannelConfiguration != null) {
+			strblr.append("\n\t\t AudioChannelConfiguration: ").append(audioChannelConfiguration.getValue());
+		}
 		int cntr = 0;
 		strblr.append(segmentTemplate);
 		for (RepresentationST repSet : representation) {

@@ -1,5 +1,7 @@
 /target/
 /libs/
 /bin/
-/.classpath
+.classpath
 /.settings/
+.DS_Store
+.project

@@ -26,6 +26,7 @@ import com.att.aro.core.bestpractice.pojo.MinificationEntry;
 import com.att.aro.core.bestpractice.pojo.MultipleConnectionsEntry;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.SimultnsConnTableModel;
 
 public class BPConnectionsSimultnsTablePanel extends AbstractBpDetailTablePanel {
@@ -70,8 +71,11 @@ public class BPConnectionsSimultnsTablePanel extends AbstractBpDetailTablePanel 
 			contentTable.setRowSorter(sorter);
 			sorter.setComparator(SimultnsConnTableModel.COL_2, Util.getDomainSorter());
 			sorter.setComparator(SimultnsConnTableModel.COL_3, Util.getDomainSorter());
-			sorter.setComparator(SimultnsConnTableModel.COL_4, Util.getDomainIntSorter());
+			sorter.setComparator(SimultnsConnTableModel.COL_4, Util.getIntSorter());
 			sorter.toggleSortOrder(SimultnsConnTableModel.COL_1);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) contentTable.getPopup();
+            popupMenu.initialize();
 		}
 		return contentTable;
 	}

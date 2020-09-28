@@ -1,6 +1,7 @@
 /target/
 /libs/
 /bin/
-/.classpath
+.classpath
 /.settings/
 /hs_err_pid*.log
+.DS_Store

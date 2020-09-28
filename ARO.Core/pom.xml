@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>com.att.aro</groupId>
 		<artifactId>vo-parent</artifactId>
-		<version>3.1</version>
+		<version>3.2.0</version>
 		<relativePath>../ARO.Parent</relativePath>
 	</parent> 
 
@@ -22,7 +22,7 @@
 		<build.number>dev</build.number>
 		<maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
 		<maven.deploy.skip>true</maven.deploy.skip>
-		<vo.version>3.1</vo.version>
+		<poi-version>4.1.2</poi-version>
 	</properties>
 
 	<repositories>
@@ -176,7 +176,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-collections4</artifactId>
-			<version>4.3</version>
+			<version>4.4</version>
 		</dependency>
 
 		<dependency>
@@ -188,7 +188,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-math3</artifactId>
-			<version>3.5</version>
+			<version>3.6.1</version>
 		</dependency>
 
 		<dependency>
@@ -383,7 +383,22 @@
             <groupId>com.github.vidstige</groupId>
             <artifactId>jadb</artifactId>
             <version>94ebf38</version>
-        </dependency>	
+        </dependency>
+      		
+		<!-- dependency used for XLSX file format -->
+		<dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi-ooxml</artifactId>
+		    <version>${poi-version}</version>
+		</dependency>
+		
+		<!-- dependency used for XLS older file format -->
+		<dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi</artifactId>
+		    <version>${poi-version}</version>
+		</dependency>
+        	
        </dependencies>
 
 	<build>

@@ -39,6 +39,7 @@ import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.report.IReport;
+import com.att.aro.core.util.Util;
 
 public class HtmlReportImpl implements IReport {
 
@@ -135,26 +136,6 @@ public class HtmlReportImpl implements IReport {
 			if(TraceResultType.TRACE_DIRECTORY.equals(traceType)){
 				TraceDirectoryResult traceDirResult = (TraceDirectoryResult)traceResults;
 				sbuffer.append(tableLIne());
-				sbuffer.append("<th>Application Names</th><td>");					
-				Map<String, String> appVersionMap = traceDirResult.getAppVersionMap();
-				
-				//getAppInfos() and getAppVersionMap() are never null
-				if(traceDirResult.getAppInfos().size() > 0){
-					for(String appname : traceDirResult.getAppInfos()){
-						sbuffer.append("<p>").append(appname);
-						if(appVersionMap.containsKey(appname)){
-							sbuffer.append(':').append(appVersionMap.get(appname));
-						}
-						sbuffer.append("</p>");
-					}
-				}else{
-					sbuffer.append("<p>Not Available</p>");
-				}
-				sbuffer.append(tableChange());			
-				
-				sbuffer.append(System.getProperty(lineSeperator()));
-				
-				sbuffer.append(tableLIne());
 				sbuffer.append("<th>Device Make/Model</th>");
 				if(traceDirResult.getDeviceMake()!=null&&traceDirResult.getDeviceModel()!=null){
 					sbuffer.append("<td>" + traceDirResult.getDeviceMake() + " / " + traceDirResult.getDeviceModel()+ "</td>");
@@ -180,19 +161,23 @@ public class HtmlReportImpl implements IReport {
 		Statistic statistic = analyzerResults.getStatistic();
 		if(statistic!=null){
 			EnergyModel energyModel = analyzerResults.getEnergyModel();
-			sbuffer.append(tableLIne()+"<th>Total Data (Byte)</th><td>" + statistic.getTotalByte() 
+			sbuffer.append(tableLIne() + "<th>Total Data (Byte)</th><td>" + statistic.getTotalByte()
 					+ tableChange()+System.getProperty(lineSeperator())
 					+ tableLIne()+"<th>Total PayLoad Data (Byte)</th><td>" + statistic.getTotalPayloadBytes() 
 					+ tableChange()+System.getProperty(lineSeperator())+
-					tableLIne()+"<th>HTTPS Data Not Analyzed (Byte)</th><td>" 
-					+ statistic.getTotalHTTPSByte() + tableChange()+System.getProperty(lineSeperator())
+					tableLIne()+"<th>Total HTTPS Data (Byte)</th><td>" + statistic.getTotalHTTPSByte() + " ("
+					    + String.format("%.2f", statistic.getTotalHTTPSByte()*100.0/statistic.getTotalByte()) + "%)"
+                    + tableChange()+System.getProperty(lineSeperator())
+					+ tableLIne()+"<th>Total Unanalyzed HTTPS Data (Byte)</th><td>" + statistic.getTotalHTTPSBytesNotAnalyzed() + " ("
+					    + String.format("%.2f", statistic.getTotalHTTPSBytesNotAnalyzed()*100.0/statistic.getTotalByte()) + "%)"
+					+ tableChange()+System.getProperty(lineSeperator())
 					+tableLIne()+"<th>Energy Consumed (J)</th><td>" + getRoundDouble(energyModel.getTotalEnergyConsumed()) 
 					+ tableChange()+System.getProperty(lineSeperator()));
 
 		}
 		return sbuffer.toString();
 	}
- 
+
 	private double getRoundDouble(double number){
 		if(Double.isNaN(number)) {
 			return number;

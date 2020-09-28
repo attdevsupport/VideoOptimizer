@@ -44,7 +44,7 @@ import java.util.Date;
 public class VideoCapture {
 
 	public static String TAG = "VideoCapture";
-	private Context context = null;
+	private Context context ;
 
 	private WindowManager windowManager;
 	private int bitRate;
@@ -147,7 +147,7 @@ public class VideoCapture {
 		int dimensionBint = isInteger(dimensionB)? Integer.valueOf(dimensionB) : screenWidth;
 		screenHeight = videoOrient == Orientation.PORTRAIT? dimensionAint : dimensionBint;
 		screenWidth = videoOrient == Orientation.PORTRAIT? dimensionBint : dimensionAint;
-		Log.e(TAG, "screen width: " + screenWidth + ", screen height: " + screenHeight);
+		Log.d(TAG, "screen width: " + screenWidth + ", screen height: " + screenHeight);
 	}
 
 	private boolean isInteger(String dimension) {
@@ -245,8 +245,8 @@ public class VideoCapture {
 		File videoTimeFile = new File(videoTimeFilePath);
 		Log.i(TAG, "create file:" + videoTimeFile.getAbsolutePath());
 
-		FileOutputStream fileOutputStream = null;
-		OutputStreamWriter outputStreamWriter = null;
+		FileOutputStream fileOutputStream;
+		OutputStreamWriter outputStreamWriter;
 		BufferedWriter bufferedWriter = null;
 
 		try {
@@ -275,7 +275,7 @@ public class VideoCapture {
 		}
 	}
 
-	public void stop() {
+	private void stop() {
 		Log.i(TAG, "stop()");
 		stopMediaRecorder();
 		releaseVirtualDisplay();

@@ -283,15 +283,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			extras.put("videoOrientation", dialog.getVideoOrientation());
 			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getAttenuatorModel());
 			extras.put("TraceFolderName", traceFolderName);
-			if (dialog.getDeviceOptionPanel().isTestEnvironment()) {
-				if(Platform.iOS!=device.getPlatform()) {
-					extras.put("selectedAppName", dialog.getDeviceOptionPanel().getAppSelected());
-				}
-				extras.put("traceDesc", StringUtils.isEmpty(dialog.getDeviceOptionPanel().getTraceDesc())?traceFolderName:dialog.getDeviceOptionPanel().getTraceDesc());
-				extras.put("traceType", dialog.getDeviceOptionPanel().getTraceType());
-				extras.put("targetedApp", dialog.getDeviceOptionPanel().getTargetedApp());
-				extras.put("appProducer", dialog.getDeviceOptionPanel().getAppProducer());				
-			}
 			
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			

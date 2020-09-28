@@ -155,6 +155,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	private int maxW = 20;
 
 	private Manifest manifest;
+	private ChildManifest childManifest;
 	private VideoType videoType;
 	private SegmentInfo segmentInfo;
 	private URI uri;
@@ -206,9 +207,13 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	 * segment is marked as active in stream
 	 */
 	private boolean active;
+	
+	private String channels;
 
 	private long crc32Value;
 
+	private double playRequestedTime;
+	
 	private SortedMap<String, VideoEvent> audioMap = new TreeMap<>();
 
 	public boolean isMpeg() {
@@ -283,6 +288,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		if (getContentType().equals(ContentType.VIDEO) && !CollectionUtils.isEmpty(audioMap)) {
 			strblr.append("\nAudioMap:").append(dumpAudioMap());
 		}
+		strblr.append(", channels:").append(channels);		
 		return strblr.toString();
 	}
 
@@ -344,13 +350,16 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		this.manifest = manifest2 != null ? manifest2 : new Manifest();
 		this.videoType = manifest.getVideoType();
 		setBitrate(segmentInfo.getBitrate());
+		setChildManifest(childManifest);
 		setResolutionHeight(childManifest.getPixelHeight());
+		setChannels(childManifest.getChannels());
 		setQuality(segmentInfo.getQuality());
 		setSegmentID(segmentInfo.getSegmentID());
 		setPlayTime(segmentInfo.getStartTime());
 		setDuration(segmentInfo.getDuration());
+		setSegmentSize(contentSize);
 		getSegmentInfo().setSize(contentSize);
-		
+
 		double temp = 0;
 		if (isNormalSegment()) {
 			if (manifest.getTimeScale() > 0 && segmentInfo.getStartTime() > manifest.getTimeScale()) {

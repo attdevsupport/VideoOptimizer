@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,13 +27,13 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+
 import com.att.aro.core.packetanalysis.pojo.BufferOccupancyBPResult;
 import com.att.aro.core.videoanalysis.AbstractBufferOccupancyCalculator;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
-
 
 public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalculator { 
 	
@@ -166,7 +167,7 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 		}
 		return buffer;
 	}
-
+	
 	public Map<Integer, String> populateBufferOccupancyDataSet(StreamingVideoData streamingVideoData, Map<VideoEvent, Double> chunkPlayTimeList) {
 		key = 0;
 		seriesDataSets.clear();
@@ -176,8 +177,8 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 			veDone = new ArrayList<>();
 			completedDownloads.clear();
 			filteredSegments = new ArrayList<VideoEvent>();
-			beginByte=0; 
-			endByte =0;
+			beginByte = 0;
+			endByte = 0;
 			initialize(streamingVideoData);
 
 			double bufferFill = 0;
@@ -190,18 +191,16 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 				veDone.clear();
 
 				endByte = bufferFill;
-				
+
 				beginByte = endByte;
 
-				if (index + 1 <= filteredSegments.size() - 1) { //chunkPlay.size()
-					setNextPlayingChunk(index + 1,filteredSegments); //, videoUsage);
+				if (index + 1 <= filteredSegments.size() - 1) { // chunkPlay.size()
+					setNextPlayingChunk(index + 1, filteredSegments); // , videoUsage);
 				}
 
 			}
 		}
-
 		return seriesDataSets;
-
 	}
 
 	@Override

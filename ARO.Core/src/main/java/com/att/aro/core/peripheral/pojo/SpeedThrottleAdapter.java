@@ -15,46 +15,27 @@
  */
 package com.att.aro.core.peripheral.pojo;
 
+import lombok.Data;
+
 /**
  * POJO for speed throttle record
  * format Duration, UL_speed, DL_speed, (future) , (future),......
  */
 
+@Data
 public class SpeedThrottleAdapter {
 
 	private int throttleDL;
 	private int throttleUL;
+	private int delayDL;
 	private int timeDuration;
 
 	public SpeedThrottleAdapter() {}
 
-	public SpeedThrottleAdapter(int timeDuration, int throttleDL, int throttleUL){
+	public SpeedThrottleAdapter(int timeDuration, int throttleDL, int throttleUL, int delayDL){
 		this.timeDuration = timeDuration;
 		this.throttleDL = throttleDL;
-		this.throttleUL = throttleUL;		
-	}
-	
-	public int getThrottleDL() {
-		return throttleDL;
-	}
-
-	public void setThrottleDL(int throttleDL) {
-		this.throttleDL = throttleDL;
-	}
-
-	public int getThrottleUL() {
-		return throttleUL;
-	}
-
-	public void setThrottleUL(int throttleUL) {
 		this.throttleUL = throttleUL;
-	}
-
-	public int getTimeDuration() {
-		return timeDuration;
-	}
-
-	public void setTimeDuration(int timeDuration) {
-		this.timeDuration = timeDuration;
+		this.delayDL = delayDL;
 	}
 }

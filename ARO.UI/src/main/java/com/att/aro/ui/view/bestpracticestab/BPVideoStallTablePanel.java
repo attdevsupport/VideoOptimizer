@@ -25,6 +25,7 @@ import javax.swing.table.TableRowSorter;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.SimultnsConnTableModel;
 import com.att.aro.ui.model.bestpractice.VideoStallTableModel;
 
@@ -57,11 +58,14 @@ public class BPVideoStallTablePanel extends AbstractBpDetailTablePanel {
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
 			TableRowSorter<TableModel> sorter = new TableRowSorter<>(tableModel);
 			contentTable.setRowSorter(sorter);
-			sorter.setComparator(VideoStallTableModel.COL_2, Util.getDomainIntSorter());
+			sorter.setComparator(VideoStallTableModel.COL_2, Util.getIntSorter());
 			sorter.setComparator(VideoStallTableModel.COL_3, Util.getFloatSorter());
 			sorter.setComparator(VideoStallTableModel.COL_4, Util.getFloatSorter());
 			sorter.setComparator(VideoStallTableModel.COL_5, Util.getFloatSorter());
 			sorter.toggleSortOrder(SimultnsConnTableModel.COL_1);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) contentTable.getPopup();
+            popupMenu.initialize();
 		}
 		return contentTable;
 	}

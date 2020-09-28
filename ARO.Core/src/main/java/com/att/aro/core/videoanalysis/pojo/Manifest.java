@@ -178,14 +178,13 @@ public class Manifest {
 		}
 		return videoType.toString().contains(type.toString());
 	}
-	
+
 	public boolean isVideoFormat(VideoFormat videoFormat) {
 		if (videoFormat == null) {
 			return false;
 		}
 		return this.videoFormat.equals(videoFormat);
 	}
-
 
 	public String getVideoName() {
 		return videoName;
@@ -209,7 +208,7 @@ public class Manifest {
 		
 		if (this.programDateTime == 0 || programTimeChanged) {
 			setProgramDateTime(programDateTime);
-			if (masterManifest != null) {
+			if (masterManifest != null && !this.equals(masterManifest)) {
 				masterManifest.updateStreamProgramDateTime(programDateTime);
 			}
 		}
@@ -221,7 +220,6 @@ public class Manifest {
 			urlMatchDef = new UrlMatchDef();
 		}
 		return urlMatchDef;
-
 	}
 	
 	@Override
@@ -246,5 +244,4 @@ public class Manifest {
 		}
 		return result;
 	}
-
 }

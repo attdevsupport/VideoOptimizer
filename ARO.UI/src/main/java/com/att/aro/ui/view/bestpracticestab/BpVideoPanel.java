@@ -42,7 +42,7 @@ public class BpVideoPanel extends BpDetail {
 		addPanel(row++, new BpDetailItem("videoStall"             , BestPracticeType.VIDEO_STALL		, new BPVideoStallTablePanel(), aroView));
 		addPanel(row++, new BpDetailItem("startUpDelay"           , BestPracticeType.STARTUP_DELAY		, new StartupDelayComparisonPanel(), aroView));
 		addPanel(row++, new BpDetailItem("bufferOccupancy"        , BestPracticeType.BUFFER_OCCUPANCY	, aroView));
-		addPanel(row++, new BpDetailItem("networkComparison"      , BestPracticeType.NETWORK_COMPARISON ));
+		addPanel(row++, new BpDetailItem("networkComparison"      , BestPracticeType.NETWORK_COMPARISON , new BPNetworkComparisonTablePanel(), aroView));
 		addPanel(row++, new BpDetailItem("tcpConnection"          , BestPracticeType.TCP_CONNECTION     ));
 		addPanel(row++, new BpDetailItem("segmentSize"            , BestPracticeType.CHUNK_SIZE         ));
 		addPanel(row++, new BpDetailItem("segmentPacing"          , BestPracticeType.CHUNK_PACING       ));
@@ -50,7 +50,7 @@ public class BpVideoPanel extends BpDetail {
 		addPanel(row++, new BpDetailItem("videoConcurrentSession" , BestPracticeType.VIDEO_CONCURRENT_SESSION, new BPVideoConcurrentSessionTablePanel()));
 		addPanel(row++, new BpDetailItem("videoVariableBitrate"   , BestPracticeType.VIDEO_VARIABLE_BITRATE));
 		addPanel(row++, new BpDetailItem("videoResolutionQuality" , BestPracticeType.VIDEO_RESOLUTION_QUALITY));
-		addPanel(row++, new BpDetailItem("adaptiveBitrateLadder"  , BestPracticeType.VIDEO_ABR_LADDER	, new VideoAdaptiveBitrateLadderPanel(), aroView));
+		addPanel(row++, new BpDetailItem("adaptiveBitrateLadder"  , BestPracticeType.VIDEO_ABR_LADDER	, new BPAdaptiveBitrateTablePanel(), new VideoAdaptiveBitrateLadderPanel(), aroView));
 		addPanel(row++, new BpDetailItem("audioStream"            , BestPracticeType.AUDIO_STREAM));
 		
 		fullPanel.add(dataPanel, BorderLayout.CENTER);

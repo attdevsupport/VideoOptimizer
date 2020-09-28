@@ -48,6 +48,7 @@ import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 
@@ -314,6 +315,9 @@ public class FilterProcessesDialog extends JDialog {
 		if (jProcessesTable == null) {
 			jProcessesTable = new DataTable<ProcessSelection>(jProcessesTableModel);
 			jProcessesTable.setAutoCreateRowSorter(true);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) jProcessesTable.getPopup();
+            popupMenu.initialize();
 		}
 		return jProcessesTable;
 	}

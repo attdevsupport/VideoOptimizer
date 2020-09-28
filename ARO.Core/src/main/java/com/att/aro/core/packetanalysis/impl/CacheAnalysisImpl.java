@@ -59,7 +59,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 	IHttpRequestResponseHelper rrhelper;
 	private static final Logger LOG = LogManager.getLogger(CacheAnalysisImpl.class.getName());
 	int itindex = 0;
-	List<DuplicateEntry> dulpicateEntires;
+	List<DuplicateEntry> duplicateEntries;
 	@Value("${ga.request.timing.cacheAnalysisTimings.title}")
 	private String cacheAnalysisTitle;
 	@Value("${ga.request.timing.analysisCategory.title}")
@@ -79,7 +79,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		List<CacheEntry> duplicateContent = new ArrayList<CacheEntry>();
 		List<CacheEntry> duplicateContentWithOriginals = new ArrayList<CacheEntry>();
 		Map<CacheExpiration, List<CacheEntry>> cacheExpirationResponses = result.getCacheExpirationResponses();
-		dulpicateEntires = new ArrayList<DuplicateEntry>();
+		duplicateEntries = new ArrayList<DuplicateEntry>();
 		// Initialize cache expiration lists
 		for (CacheExpiration expiration : CacheExpiration.values()) {
 			cacheExpirationResponses.put(expiration, new ArrayList<CacheEntry>());
@@ -165,7 +165,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 				if (cacheDuplicateEntry != null) {
 					diagnosis = Diagnosis.CACHING_DIAG_ETAG_DUPLICATE;
 				}
-				dulpicateEntires.add(new DuplicateEntry(request, response, diagnosis, firstPacket, session,
+				duplicateEntries.add(new DuplicateEntry(request, response, diagnosis, firstPacket, session,
 						getContent(response, session)));
 				continue;
 			} else {
@@ -188,7 +188,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 				case CACHE_NOT_EXPIRED_HEURISTIC:
 					newCacheEntry = new CacheEntry(request, response, Diagnosis.CACHING_DIAG_NOT_EXPIRED_DUP,
 							firstPacket);
-					dulpicateEntires.add(new DuplicateEntry(request, response, Diagnosis.CACHING_DIAG_NOT_EXPIRED_DUP,
+					duplicateEntries.add(new DuplicateEntry(request, response, Diagnosis.CACHING_DIAG_NOT_EXPIRED_DUP,
 							firstPacket, session, getContent(response, session)));
 					diagnosisResults.add(newCacheEntry);
 					break;
@@ -210,7 +210,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 				case CACHE_NOT_EXPIRED_HEURISTIC:
 					newCacheEntry = new CacheEntry(request, response, Diagnosis.CACHING_DIAG_NOT_EXPIRED_DUP_PARTIALHIT,
 							bytesInCache, firstPacket);
-					dulpicateEntires.add(new DuplicateEntry(request, response, Diagnosis.CACHING_DIAG_NOT_EXPIRED_DUP,
+					duplicateEntries.add(new DuplicateEntry(request, response, Diagnosis.CACHING_DIAG_NOT_EXPIRED_DUP,
 							firstPacket, session, getContent(response, session)));
 					diagnosisResults.add(newCacheEntry);
 					break;
@@ -227,24 +227,24 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		} // END: Iterate through responses looking for duplicates
 			// Get cache problems
 		Set<CacheEntry> dupsWithOrig = new HashSet<CacheEntry>();
-		Map<String, DuplicateEntry> dulpicateEntiresMap = new HashMap<String, DuplicateEntry>();
+		Map<String, DuplicateEntry> duplicateEntriesMap = new HashMap<String, DuplicateEntry>();
 		CacheEntry cache;
-		for (DuplicateEntry dupEntry : dulpicateEntires) {
+		for (DuplicateEntry dupEntry : duplicateEntries) {
 			if (dupEntry.getContentLength() > 0) {
 				String key = dupEntry.getRequest().getHostName() + dupEntry.getHttpObjectName()
 						+ dupEntry.getContentLength();
 				if (dupEntry.getHttpObjectName() != null) {
-					if (!dulpicateEntiresMap.containsKey(key)) {
+					if (!duplicateEntriesMap.containsKey(key)) {
 						dupEntry.setCount(1);
-						dulpicateEntiresMap.put(key, dupEntry);
+						duplicateEntriesMap.put(key, dupEntry);
 					} else {
-						if (Arrays.equals(dulpicateEntiresMap.get(key).getContent(), dupEntry.getContent())) {
-							int count = dulpicateEntiresMap.get(key).getCount();
+						if (Arrays.equals(duplicateEntriesMap.get(key).getContent(), dupEntry.getContent())) {
+							int count = duplicateEntriesMap.get(key).getCount();
 							if (count == 1) {
-								cache = new CacheEntry(dulpicateEntiresMap.get(key).getRequest(),
-										dulpicateEntiresMap.get(key).getResponse(),
-										dulpicateEntiresMap.get(key).getDiagnosis(),
-										dulpicateEntiresMap.get(key).getSessionFirstPacket());
+								cache = new CacheEntry(duplicateEntriesMap.get(key).getRequest(),
+										duplicateEntriesMap.get(key).getResponse(),
+										duplicateEntriesMap.get(key).getDiagnosis(),
+										duplicateEntriesMap.get(key).getSessionFirstPacket());
 								cache.setSession(dupEntry.getSession());
 								dupsWithOrig.add(cache);
 							}
@@ -255,13 +255,13 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 									dupEntry.getDiagnosis(), dupEntry.getSessionFirstPacket(), dupEntry.getSession(),
 									dupEntry.getContent());
 							dupEntry.setCount(count + 1);
-							dulpicateEntiresMap.replace(key, dupEntry);
+							duplicateEntriesMap.replace(key, dupEntry);
 						}
 					}
 				}
 			}
 		}
-		for (Entry<String, DuplicateEntry> cacheEntry2 : dulpicateEntiresMap.entrySet()) {
+		for (Entry<String, DuplicateEntry> cacheEntry2 : duplicateEntriesMap.entrySet()) {
 			if (cacheEntry2.getValue().getCount() > 1) {
 				int count = cacheEntry2.getValue().getCount();
 				cache = new CacheEntry(cacheEntry2.getValue().getRequest(), cacheEntry2.getValue().getResponse(),
@@ -300,13 +300,13 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 			if (request.isIfModifiedSince() || request.isIfNoneMatch()) {
 				newCacheEntry = new CacheEntry(request, response,
 						Diagnosis.CACHING_DIAG_OBJ_NOT_CHANGED_DUP_PARTIALHIT_SERVER, bytesInCache, firstPacket);
-				dulpicateEntires.add(new DuplicateEntry(request, response,
+				duplicateEntries.add(new DuplicateEntry(request, response,
 						Diagnosis.CACHING_DIAG_OBJ_NOT_CHANGED_DUP_PARTIALHIT_SERVER, firstPacket, session,
 						getContent(response, session)));
 			} else {
 				newCacheEntry = new CacheEntry(request, response,
 						Diagnosis.CACHING_DIAG_OBJ_NOT_CHANGED_DUP_PARTIALHIT_CLIENT, bytesInCache, firstPacket);
-				dulpicateEntires.add(new DuplicateEntry(request, response,
+				duplicateEntries.add(new DuplicateEntry(request, response,
 						Diagnosis.CACHING_DIAG_OBJ_NOT_CHANGED_DUP_PARTIALHIT_CLIENT, firstPacket, session,
 						getContent(response, session)));
 			}
@@ -321,13 +321,13 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 			if (request.isIfModifiedSince() || request.isIfNoneMatch()) {
 				newCacheEntry = new CacheEntry(request, response, Diagnosis.CACHING_DIAG_OBJ_NOT_CHANGED_DUP_SERVER,
 						firstPacket);
-				dulpicateEntires
+				duplicateEntries
 						.add(new DuplicateEntry(request, response, Diagnosis.CACHING_DIAG_OBJ_NOT_CHANGED_DUP_SERVER,
 								firstPacket, session, getContent(response, session)));
 			} else {
 				newCacheEntry = new CacheEntry(request, response, Diagnosis.CACHING_DIAG_OBJ_NOT_CHANGED_DUP_CLIENT,
 						firstPacket);
-				dulpicateEntires
+				duplicateEntries
 						.add(new DuplicateEntry(request, response, Diagnosis.CACHING_DIAG_OBJ_NOT_CHANGED_DUP_CLIENT,
 								firstPacket, session, getContent(response, session)));
 			}

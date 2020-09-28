@@ -34,7 +34,7 @@ import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
  * best practice for Duplicate Content Date: November 25, 2014
  */
 public class DuplicateContentImpl implements IBestPractice {
-	private static final int DUPLICATE_CONTENT_DENOMINATOR = 1048576;
+	private static final int DUPLICATE_CONTENT_DENOMINATOR = 1000000;
 	@Value("${caching.duplicateContent.title}")
 	private String overviewTitle;
 	@Value("${caching.duplicateContent.detailedTitle}")
@@ -64,7 +64,7 @@ public class DuplicateContentImpl implements IBestPractice {
 		result.setDuplicateContentsize(duplicateContentsize);
 		int totalTCPBytes = 0;
 		if (tracedata.getStatistic() != null) {
-			totalTCPBytes = tracedata.getStatistic().getTotalTCPBytes();
+			totalTCPBytes = tracedata.getStatistic().getTotalTCPPayloadBytes();
 		}
 		result.setTotalContentBytes(totalTCPBytes);
 		List<CacheEntry> caUResult = cacheAnalysis.getDuplicateContent();

@@ -87,7 +87,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	// local directory in user machine to pull trace from device to
 	private String localTraceFolder;
 	private static final int MILLISECONDSFORTIMEOUT = 300;
-	private static String APK_FILE_NAME = "VPNCollector-3.1.%s.apk";
+	private static String APK_FILE_NAME = "VPNCollector-3.2.%s.apk";
 	private static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 	private static final String ARO_PACKAGE_NAME_GREP = "[c]om.att.arocollector";
 
@@ -500,6 +500,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 //					+ " --ei delayDL " + delayTimeDL + " --ei delayUL " + delayTimeUL
 					+ " --ei throttleDL " + throttleDL + " --ei throttleUL " + throttleUL
 					+ (atnrProfile ? (" --ez profile " + atnrProfile + " --es profilename '" + location + "'") : "")
+					+ " --es video "+ videoOption.toString()
 					+ " --ei bitRate " + bitRate + " --es screenSize " + screenSize 
 					+ " --es videoOrientation " + videoOrientation.toString() 
 					+ " --es selectedAppName " + (StringUtils.isEmpty(selectedAppName)?"EMPTY":selectedAppName) ;
@@ -535,6 +536,8 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		if (isAndroidVersionNougatOrHigher(this.device) == true) {
 			startCpuTraceCapture();
 		}
+		startUserInputCapture();
+		startUiXmlCapture();
 		if (isVideo()) {
 			startVideoCapture();
 		}
@@ -858,6 +861,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			LOG.error("Cannot force stop VPN Collector");
 		}
 		
+		userInputTraceCollector.stopUserInputTraceCapture(this.device);
 		if (isAndroidVersionNougatOrHigher(device) == true)
 			cpuTraceCollector.stopCpuTraceCapture(this.device);
 		if (isVideo()) {
@@ -868,6 +872,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		if(this.attnrScriptRun){
 			attnr.stopAtenuationScript(this.device);
 		}
+		uiXmlCollector.stopUiXmlCapture(this.device);
 		LOG.debug("pulling trace to local dir");
 		new LogcatCollector(adbService, device.getSerialNumber()).collectLogcat(localTraceFolder, "Logcat.log");
 		result = pullTrace(this.mDataDeviceCollectortraceFileNames);

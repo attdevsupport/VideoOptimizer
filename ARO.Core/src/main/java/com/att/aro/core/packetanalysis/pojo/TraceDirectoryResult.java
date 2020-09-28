@@ -37,6 +37,7 @@ import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -181,6 +182,8 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	 * from collect options directory - collect_options
 	 */
 	private CollectOptions collectOptions;
+
+	private boolean secureTrace;
 
 	/**
 	 * default screen size width<br>
@@ -802,7 +805,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 		this.traceResultType = TraceResultType.TRACE_DIRECTORY;
 		return traceResultType;
 	}
-	
+
 	public VideoStreamStartup getVideoStartup() {
 		return videoStreamStartup;
 	}
@@ -819,7 +822,16 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 		this.metaData = metaData;
 	}
 
-	@Override
+
+	public boolean isSecureTrace() {
+	    return secureTrace;
+	}
+
+	public void setSecureTrace(boolean secureTrace) {
+	    this.secureTrace = secureTrace;
+	}
+
+    @Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();

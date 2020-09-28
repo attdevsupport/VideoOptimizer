@@ -35,6 +35,9 @@ import javax.swing.JScrollPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
@@ -43,16 +46,18 @@ import com.att.aro.ui.commonui.ContentViewer;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.diagnostic.RequestResponseTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-
-public class RequestResponseDetailsPanel extends  JPanel {
+public class RequestResponseDetailsPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
-	
+	private static final Logger LOG = LogManager.getLogger(RequestResponseDetailsPanel.class.getSimpleName());
+
 	private JScrollPane scrollPane;
 	private DataTable<HttpRequestResponseInfo> jRequestResponseTable;
 	private RequestResponseTableModel jRequestResponseTableModel = new RequestResponseTableModel();
+
 	public RequestResponseTableModel getjRequestResponseTableModel() {
 		return jRequestResponseTableModel;
 	}
@@ -60,33 +65,32 @@ public class RequestResponseDetailsPanel extends  JPanel {
 	private JPanel buttonsPanel;
 	private JButton viewBtn;
 	private JButton saveBtn;
-	private IHttpRequestResponseHelper httpHelper = ContextAware.getAROConfigContext().getBean(IHttpRequestResponseHelper.class);
+	private IHttpRequestResponseHelper httpHelper = ContextAware.getAROConfigContext()
+			.getBean(IHttpRequestResponseHelper.class);
 
 	private Session session;
-	
+
 	public Session getSession() {
 		return session;
 	}
-
 
 	public void setSession(Session session) {
 		this.session = session;
 	}
 
-
 	/**
 	 * The default constructor that initializes a new instance of the
 	 * RequestResponseDetailsPanel class.
+	 * 
 	 * @param tab
 	 */
 	public RequestResponseDetailsPanel() {
-		
+
 		setLayout(new BorderLayout());
 		add(getScrollPane(), BorderLayout.CENTER);
 		add(getButtonsPanel(), BorderLayout.EAST);
 
 	}
-
 
 	/**
 	 * Returns the ScrollPane that contains the RequestResponse table.
@@ -104,44 +108,45 @@ public class RequestResponseDetailsPanel extends  JPanel {
 	 */
 	public DataTable<HttpRequestResponseInfo> getJRequestResponseTable() {
 		if (jRequestResponseTable == null) {
-			jRequestResponseTable = new DataTable<HttpRequestResponseInfo>(
-					jRequestResponseTableModel);
+			jRequestResponseTable = new DataTable<HttpRequestResponseInfo>(jRequestResponseTableModel);
 			jRequestResponseTable.setAutoCreateRowSorter(true);
 			jRequestResponseTable.setGridColor(Color.LIGHT_GRAY);
-			jRequestResponseTable.getSelectionModel().addListSelectionListener(
-					new ListSelectionListener() {
 
-						@Override
-						public void valueChanged(ListSelectionEvent event) {
-							// Enable view and save as buttons appropriately
-							HttpRequestResponseInfo httpRRInfo = jRequestResponseTable
-									.getSelectedItem();
-							boolean validResponse = httpRRInfo != null
-									&& httpRRInfo.getContentLength() > 0
-									&& httpRRInfo.getDirection() == HttpDirection.RESPONSE
-									&& httpRRInfo.getStatusCode() != 0;
-							boolean isVideo = (validResponse)
-									? ((httpRRInfo != null && httpRRInfo.getContentType() != null)
-									? httpRRInfo.getContentType().contains("video/")
-									: false) : false;
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) jRequestResponseTable.getPopup();
+			popupMenu.initialize();
 
-							boolean isApplicationZip = httpRRInfo != null && httpRRInfo.getContentType() != null
-									&& httpRRInfo.getContentType().contains("application/zip");
-							
-							boolean isContentTypeAvailable = httpRRInfo != null && httpRRInfo.getContentType() != null;
-							
-							getViewBtn().setEnabled(!isApplicationZip && !isVideo && validResponse && isContentTypeAvailable);
-							getSaveBtn().setEnabled(!isApplicationZip && validResponse && isContentTypeAvailable);
-						}
-					});
+			jRequestResponseTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+				@Override
+				public void valueChanged(ListSelectionEvent event) {
+					// Enable view and save as buttons appropriately
+					HttpRequestResponseInfo httpRRInfo = jRequestResponseTable.getSelectedItem();
+					boolean validResponse = httpRRInfo != null && httpRRInfo.getContentLength() > 0
+							&& httpRRInfo.getDirection() == HttpDirection.RESPONSE && httpRRInfo.getStatusCode() != 0;
+					boolean isVideo = (validResponse) ? ((httpRRInfo != null && httpRRInfo.getContentType() != null)
+							? httpRRInfo.getContentType().contains("video/")
+							: false) : false;
+
+					boolean isApplicationZip = httpRRInfo != null && httpRRInfo.getContentType() != null
+							&& httpRRInfo.getContentType().contains("application/zip");
+
+					boolean isContentTypeAvailable = httpRRInfo != null && httpRRInfo.getContentType() != null;
+
+					getViewBtn().setEnabled(!isApplicationZip && !isVideo && validResponse && isContentTypeAvailable);
+					getSaveBtn().setEnabled(!isApplicationZip && validResponse && isContentTypeAvailable);
+				}
+			});
 			jRequestResponseTable.addMouseListener(new MouseAdapter() {
 				public void mouseClicked(MouseEvent event) {
 					if (event.getClickCount() == 2 && getViewBtn().isEnabled()) {
 						try {
 							viewContent(jRequestResponseTable.getSelectedItem());
-						} catch ( Exception ex) {
-							new MessageDialogFactory().showUnexpectedExceptionDialog(
-									RequestResponseDetailsPanel.this.getTopLevelAncestor(), ex);
+						} catch (Exception e) {
+							LOG.error("Failed to open the content in the view window with unexpected error", e);
+							new MessageDialogFactory().showPlainDialog(
+									RequestResponseDetailsPanel.this.getTopLevelAncestor(),
+									ResourceBundleHelper.getMessageString("view.requestresponsedetails.error.Message"),
+									ResourceBundleHelper.getMessageString("view.requestresponsedetails.error.Title"));
 						}
 					}
 
@@ -150,10 +155,10 @@ public class RequestResponseDetailsPanel extends  JPanel {
 		}
 		return jRequestResponseTable;
 	}
-	
+
 	/**
-	 * Initializes and returns the JPanel that contains the View and Save As
-	 * buttons for the Request-Response Table.
+	 * Initializes and returns the JPanel that contains the View and Save As buttons
+	 * for the Request-Response Table.
 	 */
 	private JPanel getButtonsPanel() {
 		if (buttonsPanel == null) {
@@ -163,9 +168,8 @@ public class RequestResponseDetailsPanel extends  JPanel {
 			panel.add(getViewBtn());
 			panel.add(getSaveBtn());
 
-			buttonsPanel.add(panel,
-					new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTH,
-							GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
+			buttonsPanel.add(panel, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTH,
+					GridBagConstraints.NONE, new Insets(5, 5, 5, 5), 0, 0));
 		}
 		return buttonsPanel;
 	}
@@ -182,9 +186,14 @@ public class RequestResponseDetailsPanel extends  JPanel {
 				public void actionPerformed(ActionEvent arg0) {
 					try {
 						viewContent(jRequestResponseTable.getSelectedItem());
-					} catch ( Exception e) {
-						new MessageDialogFactory().showUnexpectedExceptionDialog(
-								RequestResponseDetailsPanel.this.getTopLevelAncestor(), e);
+
+					} catch (Exception e) {
+						LOG.error("Failed to open the content in the view window with unexpected error", e);
+						new MessageDialogFactory().showPlainDialog(
+								RequestResponseDetailsPanel.this.getTopLevelAncestor(),
+								ResourceBundleHelper.getMessageString("view.requestresponsedetails.error.Message"),
+								ResourceBundleHelper.getMessageString("view.requestresponsedetails.error.Title"));
+
 					}
 				}
 			});
@@ -193,8 +202,7 @@ public class RequestResponseDetailsPanel extends  JPanel {
 	}
 
 	/**
-	 * Initializes and returns the "Save AS" button for the Request-Response
-	 * Table.
+	 * Initializes and returns the "Save AS" button for the Request-Response Table.
 	 */
 	private JButton getSaveBtn() {
 		if (saveBtn == null) {
@@ -203,23 +211,20 @@ public class RequestResponseDetailsPanel extends  JPanel {
 			saveBtn.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					ContentViewer.getInstance().saveContent(
-							RequestResponseDetailsPanel.this.getTopLevelAncestor(),
-							getSession(),jRequestResponseTable.getSelectedItem());
+					ContentViewer.getInstance().saveContent(RequestResponseDetailsPanel.this.getTopLevelAncestor(),
+							getSession(), jRequestResponseTable.getSelectedItem());
 				}
 			});
 
 		}
 		return saveBtn;
 	}
- 
- 
 
-	public void updateTable(Session session){
+	public void updateTable(Session session) {
 		setSession(session);
 		jRequestResponseTableModel.refresh(session);
 	}
- 	
+
 	public void setHighlightedRequestResponse(HttpRequestResponseInfo rr) {
 		getJRequestResponseTable().selectItem(rr);
 	}
@@ -231,9 +236,9 @@ public class RequestResponseDetailsPanel extends  JPanel {
 	 * @throws IOException
 	 */
 	private void viewContent(HttpRequestResponseInfo rrInfo) throws Exception {
-		if ((rrInfo.getContentType()!=null)&& (!rrInfo.getContentType().contains("video"))) {
-			if (httpHelper.getActualByteCount(rrInfo,getSession()) < 5242880) {
-				ContentViewer.getInstance().viewContent(getSession(),rrInfo);
+		if ((rrInfo.getContentType() != null) && (!rrInfo.getContentType().contains("video"))) {
+			if (httpHelper.getActualByteCount(rrInfo, getSession()) < 5242880) {
+				ContentViewer.getInstance().viewContent(getSession(), rrInfo);
 			} else {
 				new MessageDialogFactory().showErrorDialog(new Window(new Frame()),
 						ResourceBundleHelper.getMessageString("Error.fileSize"));

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.att.aro.core.ApplicationConfig;
@@ -21,6 +22,7 @@ import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 
+@Ignore
 public class HttpsUsageImplTest extends BaseTest {
 	private HttpsUsageImpl httpsUsageImpl;
 	private PacketAnalyzerResult pktAnalyzerResult;

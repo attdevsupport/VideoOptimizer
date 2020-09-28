@@ -51,6 +51,7 @@ import com.att.aro.ui.commonui.ContentViewer;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.overview.DuplicateContentTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -153,8 +154,14 @@ public class DuplicateContentTablePanel extends TabPanelJPanel implements MouseL
 					getSaveBtn().setEnabled(enabled);
 				}
 			});
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) duplicateContentTable.getPopup();
+            popupMenu.initialize();
 		}
-		
+
+		DataTablePopupMenu popupMenu = (DataTablePopupMenu) duplicateContentTable.getPopup();
+        popupMenu.initialize();
+
 		return duplicateContentTable;
 	}
 	

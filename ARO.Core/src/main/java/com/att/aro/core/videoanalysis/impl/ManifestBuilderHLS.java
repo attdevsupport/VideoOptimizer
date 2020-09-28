@@ -110,9 +110,9 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 		String[] flag;
 		
 		for (int itr = 0; itr < sData.length; itr++) {
+			
 			if (!sData[itr].startsWith("#") || (flag = stringParse.parse(sData[itr], pattern)) == null) {continue;}
 
-			
 			ContentType contentType;
 			switch (flag[0]) {
 			
@@ -128,7 +128,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				} else if (strData.contains("#EXTINF:")) { // child manifest
 					
 					LOG.debug(" ****** Parsing new Child Manifest");
-					if (manifestCollection == null) { 
+					if (manifestCollection == null) {
 						// special handling of childManifest when there is no parent manifest
 						switchManifestCollection(newManifest, key, manifest.getRequestTime());
 					}
@@ -143,7 +143,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					}
 					
 					if (childManifest.getManifest() == null) {
-					childManifest.setManifest(newManifest);
+						childManifest.setManifest(newManifest);
 					}
 					// set name on (child)manifest
 					childManifest.getManifest().setVideoName(StringUtils.substringBefore(buildUriNameKey(manifest.getMasterManifest(), childManifest.getManifest().getRequest()), ";"));
@@ -180,6 +180,11 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					switch (StringParse.findLabeledDataFromString("TYPE=", ",", sData[itr])) {
 					case "AUDIO":
 						contentType = ContentType.AUDIO;
+						String channels = StringParse.findLabeledDataFromString("CHANNELS=", ",", sData[itr]);
+						if (StringUtils.isNotEmpty(channels)) {
+							childManifest.setChannels(
+									channels.startsWith("") ? channels.substring(1, channels.length()-1) : channels);
+						}
 						break;
 					case "CLOSED-CAPTIONS":
 						contentType = ContentType.SUBTITLES;
@@ -196,7 +201,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 			case "#EXT-X-STREAM-INF": // ChildManifest Map itr:metadata-Info, ++itr:childManifestName
 				String childParameters = sData[itr];
 				childUriName = decodeUrlEncoding(sData[++itr]);
-
+				
 				manifest.setUrlMatchDef(defineUrlMatching(newManifest, childUriName));
 				LOG.debug("defineUrlMatching(newManifest, childUriName) :" + manifest.getUrlMatchDef());
 				
@@ -228,8 +233,8 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					String segmentUriName;
 
 					if (sData[itr + 1].startsWith("#EXT-X-BYTERANGE:")) {
-						segmentUriName = sData[++itr];
-						++itr; // skip next line
+						itr = itr + 2;
+						segmentUriName = sData[itr];
 					} else {
 						segmentUriName = sData[++itr];
 					}
@@ -242,7 +247,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					}
 					
 					segmentInfo = createSegmentInfo(childManifest, parameters, segmentUriName);
-					
+
 					String[] segmentMatch = stringParse.parse(segmentUriName, "-([0-9]*T[0-9]*)-([0-9]*)-");
 					if (segmentMatch != null) {
 						newManifest.getTimeScale();
@@ -258,6 +263,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					}
 				}
 				break;
+				
 			case "#EXT-X-ENDLIST": // Segment ENDLIST for VOD (STATIC)
 				break;
 
@@ -291,11 +297,17 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 			case "#USP-X-MEDIA":
 				double bandwidth = StringParse.findLabeledDoubleFromString("BANDWIDTH=", ",", sData[itr]);
 				childManifest.setBandwidth(bandwidth);
-				childManifest.setCodecs(StringParse.findLabeledDataFromString("CODECS=\"", "\"", sData[itr]));
+				childManifest.setCodecs(StringParse.findLabeledDataFromString("CODECS=", "\"", sData[itr]));
 				String content = StringParse.findLabeledDataFromString("TYPE=", ",", sData[itr]);
 				if (StringUtils.isNotEmpty(content)) {
 					if ("AUDIO".equals(content)) {
 						childManifest.setContentType(ContentType.AUDIO);
+						String val = StringParse.findLabeledDataFromString("CHANNELS=", "\"", sData[itr]);
+						if(val.contentEquals("")) {
+							val = "NA ";
+						}
+						LOG.debug("Parsing audio channels values: " + val);					
+						childManifest.setChannels(val);
 					} else if ("VIDEO".equals(content)) {
 						childManifest.setContentType(ContentType.VIDEO);
 					}
@@ -313,11 +325,9 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 		if (manifest.getManifestType().equals(Manifest.ManifestType.MASTER)) {
 			assignQuality(manifestCollection);
 		}
-
-		if (adjustDurationNeeded ) {
-			adjustDurations(childManifest);		
+		if (adjustDurationNeeded) {
+			adjustDurations(childManifest);
 		}
-		
 	}
 
 	/**
@@ -373,7 +383,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				}
 			}
 			
-			String codecs = StringParse.findLabeledDataFromString("CODECS=\"", "\"", parameters);
+			String codecs = StringParse.findLabeledDataFromString("CODECS=", "\"", parameters);
 			childManifest.setCodecs(codecs);
 			
 			if (codecs.contains(",")) {
@@ -394,7 +404,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 		manifestCollection.addToUriNameChildMap(childUriName, childManifest);
 		return childManifest;
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("\nManifestBuilderHLS :\n");

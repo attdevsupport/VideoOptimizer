@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.att.aro.core.peripheral.impl;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -30,18 +31,25 @@ import com.att.aro.core.peripheral.pojo.UserEvent.UserEventType;
 import com.att.aro.core.util.Util;
 
 /**
- * read user event captured in the file
- * Date: October 6, 2014
+ * read user event captured in the file Date: October 6, 2014
  *
  */
 public class UserEventReaderImpl extends PeripheralBase implements IUserEventReader {
 
 	private static final Logger LOGGER = LogManager.getLogger(UserEventReaderImpl.class.getName());
-	
-	public List<UserEvent> readGetEventsFile(String directory, double eventTime0, double startTime) {
+
+	/**
+	 * It is method for read VPN collector user event (screen and physical button
+	 * press) file
+	 * 
+	 * @param directory
+	 * @param eventTime0 the time stamp from VPN collector
+	 *                   SystemClock.uptimeMillis() when VO launched
+	 * @return
+	 */
+	private List<UserEvent> readGetEventsFile(String filePath, double eventTime0) {
 
 		List<UserEvent> userEvents = new ArrayList<UserEvent>();
-		String filePath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.USER_GETEVENTS_FILE;
 		String[] lines = null;
 		try {
 			lines = filereader.readAllLine(filePath);
@@ -50,25 +58,10 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 		}
 
 		if (lines != null && lines.length > 0) {
-			int idx = 1;
-			double monotonicTime = 0;
 			for (String lineBuf : lines) {
-
-				// CLOCK_MONOTONIC to refer against getevent timestamps
-				if (idx == 1) {
-					String monotonicFields[] = lineBuf.split(" ");
-
-					if (monotonicFields.length > 2) {
-						// Store the value in seconds
-						monotonicTime = (Double.parseDouble(monotonicFields[2])) / 1000000000;
-					}
-					idx++;
-					continue;
-				}
-
-				// Ignore empty line
-				// getevent file ouput devices and their names to be neglected
-				if (lineBuf.trim().isEmpty() || lineBuf.contains("add device") || lineBuf.contains("name:")) {
+				// Ignore empty line getevent file ouput devices and their names to be neglected
+				if (lineBuf.trim().isEmpty() || lineBuf.contains("add device") || lineBuf.contains("name:")
+						|| lineBuf.contains("now")) {
 					continue;
 				}
 
@@ -96,7 +89,7 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 					}
 				} else {
 					// TODO: Review User Events and Add More Handling.
-					// LOGGER.warn("Invalid user event type in trace: " + lineBuf);
+					LOGGER.warn("Invalid user event type in trace: " + lineBuf);
 					continue;
 				}
 
@@ -106,62 +99,61 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 				}
 				String timeArray[] = strFields[0].split(" ");
 				Double currentTime = Double.parseDouble(timeArray[timeArray.length - 1]);
-
-				double dTimeStamp = currentTime - monotonicTime;
+				double dTimeStamp = currentTime - eventTime0;
 				userEvents.add(new UserEvent(actionType, dTimeStamp, dTimeStamp));
 
 			}
 		}
 		return userEvents;
 	}
-	
+
 	@Override
 	public List<UserEvent> readData(String directory, double eventTime0, double startTime) {
 		List<UserEvent> userEvents = new ArrayList<UserEvent>();
-		Map<UserEventType, Double> lastEvent = new EnumMap<UserEventType, Double>(
-				UserEventType.class);
+		Map<UserEventType, Double> lastEvent = new EnumMap<UserEventType, Double>(UserEventType.class);
 		String filepath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.USER_EVENTS_FILE;
 		String getEventsFilePath = directory + Util.FILE_SEPARATOR + TraceDataConst.FileName.USER_GETEVENTS_FILE;
-		
-		if(filereader.fileExist(filepath)) {
+
+		if (filereader.fileExist(filepath)) {
 			userEvents = readUserInputFile(lastEvent, filepath, startTime, eventTime0);
 		} else if (filereader.fileExist(getEventsFilePath)) {
 			// Its a VPN Trace
-			userEvents = readGetEventsFile(directory, eventTime0, startTime);
+			userEvents = readGetEventsFile(getEventsFilePath, eventTime0);
 		}
 		return userEvents;
 	}
 
-	private List<UserEvent> readUserInputFile(Map<UserEventType, Double> lastEvent, String filepath, double startTime,  double eventTime0) {
-		
+	private List<UserEvent> readUserInputFile(Map<UserEventType, Double> lastEvent, String filepath, double startTime,
+			double eventTime0) {
+
 		List<UserEvent> userEventsList = new ArrayList<UserEvent>();
 		String[] lines = null;
 		try {
 			lines = filereader.readAllLine(filepath);
 		} catch (IOException e) {
-			LOGGER.error("failed to read user event file: "+filepath);
+			LOGGER.error("failed to read user event file: " + filepath);
 		}
-		if(lines != null && lines.length > 0){
+		if (lines != null && lines.length > 0) {
 			for (String lineBuf : lines) {
-	
+
 				// Ignore empty line
 				if (lineBuf.trim().isEmpty()) {
 					continue;
 				}
-	
+
 				// Parse entry
 				String strFields[] = lineBuf.split(" ");
-	
+
 				// Get timestamp
 				double dTimeStamp = Double.parseDouble(strFields[0]);
 				if (dTimeStamp > 1.0e9) {
 					dTimeStamp = Util.normalizeTime(dTimeStamp, startTime);
 				} else {
-	
+
 					// Old data collector method (backward compatible)
 					dTimeStamp -= eventTime0;
 				}
-	
+
 				// Get event type
 				UserEvent.UserEventType actionType = UserEvent.UserEventType.EVENT_UNKNOWN;
 				String processedEvent;
@@ -194,11 +186,11 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 						actionType = UserEventType.KEY_RED;
 					}
 				} else {
-					
+
 					LOGGER.warn("Invalid user event type in trace: " + lineBuf);
 					continue;
 				}
-	
+
 				// Get press or release
 				boolean bPress = false;
 				if (TraceDataConst.UserEvent.PRESS.equalsIgnoreCase(processedEvent)) {
@@ -206,11 +198,11 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 				} else if (TraceDataConst.UserEvent.RELEASE.equalsIgnoreCase(processedEvent)) {
 					bPress = false;
 				} else {
-					LOGGER.warn("211 - Key event does not have press/release indication: "+ lineBuf);
-				
+					LOGGER.warn("211 - Key event does not have press/release indication: " + lineBuf);
+
 					continue;
 				}
-	
+
 				if (bPress) {
 					lastEvent.put(actionType, dTimeStamp);
 				} else {
@@ -218,13 +210,13 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 					if (lastTime != null) {
 						userEventsList.add(new UserEvent(actionType, lastTime, dTimeStamp));
 					} else {
-						LOGGER.warn("Found key release event with no associated press event: "+ lineBuf);
+						LOGGER.warn("Found key release event with no associated press event: " + lineBuf);
 						continue;
 					}
 				}
 			}
 		}
-	return userEventsList;
+		return userEventsList;
 	}
 
 }

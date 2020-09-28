@@ -103,7 +103,7 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_size, String.format(intFormatString,
 					statistic.getTotalTCPBytes()));
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_duration, String.format(
-					doubleFormatString, statistic.getTCPPacketDuration()));
+					doubleFormatString, statistic.getTcpPacketDuration()));
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_packets, String.format(
 					intFormatString, statistic.getTotalTCPPackets()));
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_throughput, String.format(

@@ -43,6 +43,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.overview.AccessedDomainsTableModel;
 import com.att.aro.ui.model.overview.DomainsTCPSessions;
 import com.att.aro.ui.model.overview.ExpandedDomainTableModel;
@@ -182,6 +183,9 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 	public JTable getAccessedDomainContentTable() {
 		if (accessedDataTable == null) {
 			accessedDataTable = new DataTable<DomainsTCPSessions>(accessDomainModel);
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) accessedDataTable.getPopup();
+            popupMenu.initialize();
+
 			accessedDataTable.setAutoCreateRowSorter(true);
 			accessedDataTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			accessedDataTable.setGridColor(Color.LIGHT_GRAY);
@@ -238,7 +242,9 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 			TableRowSorter<TableModel> sorter = new TableRowSorter<>(expandedDomainModel);
 			expandedDataTable.setRowSorter(sorter);
 			sorter.setComparator(1, Util.getDomainSorter());
-//			expandedDataTable.getSelectionModel().addListSelectionListener(this);			
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) expandedDataTable.getPopup();
+            popupMenu.initialize();
 		}
 		
 		return expandedDataTable;

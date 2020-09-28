@@ -93,7 +93,7 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 	private int nonValidSegmentCount = 0;
 	@Setter(AccessLevel.PROTECTED)
 	private int invalidManifestCount = 0;	
-	
+
 	/**
 	 * handy debugging info
 	 */
@@ -139,10 +139,10 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 					totalSegmentCount += videoStream.getSegmentCount();
 				}
 			}
-		}
+		}	
 		validatedCount = true;
 	}
-	
+
 	private void scanFixMUX(VideoStream videoStream) {
 		if (!CollectionUtils.isEmpty(videoStream.getAudioSegmentEventList())) {
 			for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
@@ -153,7 +153,6 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 		}
 	}
 
-
 	private void checkMissing(VideoStream videoStream) {
 		videoStream.getVideoEventsBySegment();
 		videoStream.getAudioSegmentEventList();
@@ -161,10 +160,10 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 												  , scanSegmentGaps(videoStream.getAudioStartTimeMap())));
 	}
 
-	
 	private int scanSegmentGaps(TreeMap<String, VideoEvent> eventMap) {
 		VideoEvent lastEvent = null;
 		double threshold = .01;
+		
 		int count = 0;
 		ArrayList<VideoEvent> sorted = new ArrayList<>(eventMap.values());
 		Collections.sort(sorted, new VideoEventComparator(SortSelection.SEGMENT_ID));

@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -158,12 +159,12 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 				BufferOccupancyBPResult bufferBPResult = tracedata.getBufferOccupancyResult();
 				BufferTimeBPResult bufferTimeBPResult = tracedata.getBufferTimeResult();
 				if (bufferBPResult != null && bufferBPResult.getBufferByteDataSet().size() > 0) {
-					maxBufferReached = bufferBPResult.getMaxBuffer();// maxBufferReached is in KB (1024)
-					maxBufferReached = maxBufferReached / 1024;
+					maxBufferReached = bufferBPResult.getMaxBuffer();// maxBufferReached is in KB (1000)
+					maxBufferReached = maxBufferReached / 1000;
 					List<Double> bufferDataSet = bufferBPResult.getBufferByteDataSet();
-					result.setMinBufferByte(bufferDataSet.get(0) / 1024);
+					result.setMinBufferByte(bufferDataSet.get(0) / 1000);
 					double bufferSum = bufferDataSet.stream().reduce((a, b) -> a + b).get();
-					result.setAvgBufferByte((bufferSum / bufferDataSet.size()) / 1024);
+					result.setAvgBufferByte((bufferSum / bufferDataSet.size()) / 1000);
 				} else {
 					maxBufferReached = 0;
 				}
@@ -180,8 +181,10 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 
 				updateVideoPrefMaxBuffer();
 				double percentage = 0;
+				double maxBufferInMB = 0;
 				if (maxBufferSet != 0) {
-					percentage = (maxBufferReached / maxBufferSet) * 100;
+					maxBufferInMB = maxBufferReached / 1000;
+					percentage = (maxBufferInMB / maxBufferSet) * 100;
 				}
 				if (MapUtils.isEmpty(streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList())) {
 					result.setResultText(MessageFormat.format(startUpDelayNotSet, String.format("%.2f", percentage), String.format("%.2f", maxBufferReached),
@@ -192,7 +195,7 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 						bpResultType = BPResultType.WARNING;
 					}
 					bpResultType = BPResultType.PASS;
-					result.setResultText(MessageFormat.format(this.textResults, String.format("%.2f", percentage), String.format("%.2f", maxBufferReached),
+					result.setResultText(MessageFormat.format(this.textResults, String.format("%.2f", percentage), String.format("%.2f", maxBufferInMB),
 							String.format("%.2f", maxBufferSet)));
 				}
 			}

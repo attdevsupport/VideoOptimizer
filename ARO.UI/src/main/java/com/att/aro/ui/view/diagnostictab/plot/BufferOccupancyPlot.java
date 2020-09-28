@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 AT&T
+ *  Copyright 2017,2020 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,13 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
-
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
@@ -38,102 +37,111 @@ import org.jfree.data.xy.XYSeriesCollection;
 import com.att.aro.core.packetanalysis.pojo.BufferOccupancyBPResult;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
+import com.att.aro.core.videoanalysis.XYPair;
 import com.att.aro.core.videoanalysis.impl.BufferOccupancyCalculatorImpl;
+import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-
 public class BufferOccupancyPlot implements IPlot {
 
+	private static final Logger LOG = LogManager.getLogger(BufferOccupancyPlot.class.getName());
 	private static final String BUFFEROCCUPANCY_TOOLTIP = ResourceBundleHelper.getMessageString("bufferoccupancy.tooltip");
 	private Shape shape  = new Ellipse2D.Double(0,0,10,10);
 
 	private List<Double> bufferSizeList = new ArrayList<>();
 	
 	XYSeriesCollection bufferFillDataCollection = new XYSeriesCollection();
-	XYSeries seriesBufferFill;
-	Map<Integer,String> seriesDataSets; 
+	XYSeries seriesByteBuffer;
 	BufferOccupancyCalculatorImpl bufferOccupancyCalculatorImpl= (BufferOccupancyCalculatorImpl) ContextAware.getAROConfigContext().getBean("bufferOccupancyCalculatorImpl",PlotHelperAbstract.class);
-	Map<VideoEvent,Double> chunkPlayTimeList;
-	
-	public void setChunkPlayTimeList(Map<VideoEvent,Double> chunkPlayTime){
-		this.chunkPlayTimeList = chunkPlayTime;
-	}
+	private StreamingVideoData streamingVideoData;
+	private VideoStream videoStream;
 	
 	public void clearPlot(XYPlot plot){
 		plot.setDataset(null);	
 	}
 	
-
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
-
+		
 		if (analysis != null) {
-			StreamingVideoData streamingVideoData = analysis.getAnalyzerResult().getStreamingVideoData();
+
+			streamingVideoData = analysis.getAnalyzerResult().getStreamingVideoData();
+			
+			double maxBuffer = 0;
 			bufferFillDataCollection.removeAllSeries();
-			seriesBufferFill = new XYSeries("Buffer Fill");
-			seriesDataSets = new TreeMap<>();
 			
-			seriesDataSets = bufferOccupancyCalculatorImpl.populateBufferOccupancyDataSet(streamingVideoData,chunkPlayTimeList);
-			bufferSizeList.clear();
-			
-			double xCoordinate,yCoordinate;
-			String ptCoordinate[] = new String[2]; // to hold x & y values
-			double videoPlayStartTime = 0;
-			for (VideoEvent key : chunkPlayTimeList.keySet()) {
-				videoPlayStartTime = chunkPlayTimeList.get(key);
-				break;
-			}
-			List<VideoEvent> filteredSegments = streamingVideoData.getStreamingVideoCompiled().getFilteredSegments();
-			double lastArrivedSegmentTimeStamp = filteredSegments.get(filteredSegments.size() - 1).getEndTS();
-			if (!seriesDataSets.isEmpty()) {
-				for (int key : seriesDataSets.keySet()) {
-					ptCoordinate = seriesDataSets.get(key).trim().split(",");
-					xCoordinate = Double.parseDouble(ptCoordinate[0]);
-					yCoordinate = Double.parseDouble(ptCoordinate[1]);
-					yCoordinate = yCoordinate / 1024; // Converting Buffer size measurement unit to KB
-					if (xCoordinate >= videoPlayStartTime && xCoordinate <= lastArrivedSegmentTimeStamp) {
-						bufferSizeList.add(yCoordinate);
+			for (VideoStream videoStream : streamingVideoData.getVideoStreams()) {
+				if (videoStream.isSelected()) {
+					this.videoStream = videoStream;
+					LOG.debug("VideoStream :" + videoStream.getManifest().getVideoName());
+					seriesByteBuffer = new XYSeries("Byte Buffer");
+					ArrayList<XYPair> byteBufferList = videoStream.getByteBufferList();
+					double yPlotValue = 0.00;
+					for (XYPair xy : byteBufferList) {
+						 yPlotValue = xy.getYVal();
+						
+						if (maxBuffer < yPlotValue) {
+							maxBuffer = yPlotValue;
+						}
+						bufferSizeList.add(yPlotValue);
+						seriesByteBuffer.add(xy.getXVal(), yPlotValue);
+						LOG.debug(String.format("%.3f\t%.0f", xy.getXVal(), yPlotValue));
+						
 					}
-					seriesBufferFill.add(xCoordinate, yCoordinate);
+					Collections.sort(bufferSizeList);
+					bufferFillDataCollection.addSeries(seriesByteBuffer);
+					LOG.debug(videoStream.getToolTipDetailMap());
 				}
 			}
-			Collections.sort(bufferSizeList);
-			Double maxBuffer = bufferSizeList.size() == 0 ? 0.0 : bufferSizeList.get(bufferSizeList.size()-1);
-			BufferOccupancyBPResult bufferOccupancyResult = bufferOccupancyCalculatorImpl.setMaxBuffer(maxBuffer);
-			bufferOccupancyResult.setBufferByteDataSet(bufferSizeList);
-			analysis.getAnalyzerResult().setBufferOccupancyResult(bufferOccupancyResult);
-			// populate collection
-			bufferFillDataCollection.addSeries(seriesBufferFill);
 
 			XYItemRenderer renderer = new StandardXYItemRenderer();
-			renderer.setBaseToolTipGenerator(new XYToolTipGenerator() {
-
-				@Override
-				public String generateToolTip(XYDataset dataset, int series, int item) {
-
-					// Tooltip value
-					Number timestamp = dataset.getX(series, item);
-					Number bufferSize = dataset.getY(series, item);
-					StringBuffer tooltipValue = new StringBuffer();
-					tooltipValue.append(String.format("%.2f", (double) bufferSize / 1024) + "," + String.format("%.2f", timestamp));
- 
-				    String[] value = tooltipValue.toString().split(",");
-					return (MessageFormat.format(BUFFEROCCUPANCY_TOOLTIP,value[0],value[1]));
-				}
-
-			});
+			renderer.setBaseToolTipGenerator(toolTipGenerator());
 			renderer.setSeriesStroke(0, new BasicStroke(2.0f));
 			renderer.setSeriesPaint(0, Color.blue);
 			renderer.setSeriesShape(0, shape);
-			
-			plot.setRenderer(renderer);
 
+			plot.setRenderer(renderer);
+			
+			BufferOccupancyBPResult bufferOccupancyResult = bufferOccupancyCalculatorImpl.setMaxBuffer(maxBuffer);
+			bufferOccupancyResult.setBufferByteDataSet(bufferSizeList);
+			analysis.getAnalyzerResult().setBufferOccupancyResult(bufferOccupancyResult);
 		}
+
 		plot.setDataset(bufferFillDataCollection);
 	}
 
+	public XYToolTipGenerator toolTipGenerator() {
+		return new XYToolTipGenerator() {
 
+			@Override
+			public String generateToolTip(XYDataset dataset, int series, int item) {
+
+				// Tooltip value	
+				Number timestamp = dataset.getX(series, item);
+				Number bufferSize = dataset.getY(series, item);
+				StringBuffer tooltipValue = new StringBuffer();
+				
+				VideoEvent event = videoStream.getToolTipDetailMap().get(item).getVideoEvent();
+				double segmentID = event.getSegmentID();
+				ContentType type = event.getContentType();
+				double play = event.getPlayTime();
+				
+				tooltipValue.append(String.format("%s,%.0f,%.2f,%.3f,%.3f", type.toString(), segmentID, (double) bufferSize / 1000, timestamp, play));
+
+				String[] value = tooltipValue.toString().split(",");
+		
+				if (play != timestamp.doubleValue()) {
+					return (MessageFormat.format(BUFFEROCCUPANCY_TOOLTIP, value[0], value[1], value[2], value[3],
+							value[4]));
+				}
+				return("");
+				
+			}
+		};
+	}
+	
 }

@@ -219,44 +219,50 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 	}
 
 	public void reselectPriorOptions(AttenuatorModel attenuatorModel, boolean isIOS) {
-		
-		this.attenuatorModel = attenuatorModel;
-		attnrTTPanel.setAttenuatorModel(attenuatorModel);
-		attnrLoadPanel.setAttenuatorModel(attenuatorModel);
-		if (attenuatorModel.isConstantThrottle() && !attenuatorModel.isFreeThrottle() && !isIOS) {
-			sliderBtn.setSelected(true);
-			parentPanel.getAttnrHolder().remove(getLoadProfilePanel());
-			getLoadProfilePanel().resetComponent();
-			parentPanel.getAttnrHolder().add(getThroughputPanel(), BorderLayout.CENTER);
-			parentPanel.getAttnrHolder().revalidate();
-			parentPanel.getAttnrHolder().repaint();
-			if(ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
-				startDialog.resizeUltra();
-			} else {
-				startDialog.resizeLarge();
+
+		DataCollectorType deviceType = deviceInfo.getCollector().getType();
+		switch (deviceType) {
+		case NON_ROOTED_ANDROID:
+			this.attenuatorModel = attenuatorModel;
+			attnrTTPanel.setAttenuatorModel(attenuatorModel);
+			attnrLoadPanel.setAttenuatorModel(attenuatorModel);
+			if (attenuatorModel.isConstantThrottle() && !attenuatorModel.isFreeThrottle()) {
+				sliderBtn.setSelected(true);
+				parentPanel.getAttnrHolder().remove(getLoadProfilePanel());
+				getLoadProfilePanel().resetComponent();
+				parentPanel.getAttnrHolder().add(getThroughputPanel(), BorderLayout.CENTER);
+				parentPanel.getAttnrHolder().revalidate();
+				parentPanel.getAttnrHolder().repaint();
+				if (ResourceBundleHelper.getMessageString("preferences.test.env")
+						.equals(SettingsImpl.getInstance().getAttribute("env"))) {
+					startDialog.resizeUltra();
+				} else {
+					startDialog.resizeLarge();
+				}
+				attnrTTPanel.reselectPriorOptions(attenuatorModel);
+			} else if (!attenuatorModel.isConstantThrottle() && attenuatorModel.isLoadProfile()) {
+				loadFileBtn.setSelected(true);
+				parentPanel.getAttnrHolder().remove(getThroughputPanel());
+				getThroughputPanel().resetComponent();
+				parentPanel.getAttnrHolder().add(getLoadProfilePanel());
+				parentPanel.getAttnrHolder().revalidate();
+				parentPanel.getAttnrHolder().repaint();
+				resizeStartDialog();
+				attnrLoadPanel.reselectPriorOptions(attenuatorModel);
 			}
-			DataCollectorType collectorType = deviceInfo.getCollector().getType();
-			if(DataCollectorType.IOS.equals(collectorType) && deviceInfo.isSharedNetworkActive()){
-				MessageDialogFactory.getInstance().showInformationDialog(this, deviceInfo.messageComposed(),
-						DeviceDialogOptions.ATTENUATION_TITLE);
-			}else if(DataCollectorType.IOS.equals(collectorType)) {
-				new IOSStepsDialog(startDialog);
-			}
-			attnrTTPanel.reselectPriorOptions(attenuatorModel);
-		} else if (!attenuatorModel.isConstantThrottle() && attenuatorModel.isLoadProfile() && !isIOS) {
-			loadFileBtn.setSelected(true);
-			parentPanel.getAttnrHolder().remove(getThroughputPanel());
-			getThroughputPanel().resetComponent();
-			parentPanel.getAttnrHolder().add(getLoadProfilePanel());
-			parentPanel.getAttnrHolder().revalidate();
-			parentPanel.getAttnrHolder().repaint();
-			resizeStartDialog();
-			attnrLoadPanel.reselectPriorOptions(attenuatorModel);
-		} else {
+			break;
+		case IOS:
+		case ROOTED_ANDROID:
+			AttenuatorModel attenuatorModelReset = new AttenuatorModel();// reset
+			this.attenuatorModel = attenuatorModelReset;
+			deviceInfo.setAttenuatorModel(attenuatorModelReset);
+			attnrTTPanel.setAttenuatorModel(attenuatorModelReset);
+			attnrLoadPanel.setAttenuatorModel(attenuatorModelReset);
+			loadFileBtn.setEnabled(false);
+			break;
+		case DEFAULT:
 			defaultBtn.setSelected(true);
-			if (isIOS) {
-				loadFileBtn.setEnabled(false);
-			}
+			break;
 		}
 	}
 }

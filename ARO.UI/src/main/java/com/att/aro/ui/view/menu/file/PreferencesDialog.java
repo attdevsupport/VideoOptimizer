@@ -121,7 +121,8 @@ public class PreferencesDialog extends JDialog {
 	enum Config {
 		MEM("Xmx", "Max heap in MB", TEXT, JvmSettings.getInstance(), isHeapEnabled()),
 		ADB("adb", "Adb Path", FILE, SettingsImpl.getInstance(), true),
-		DUMP_CAP("dumpCap", "Dumpcap Path", FILE, SettingsImpl.getInstance(), Util.isMacOS(), null, ()->Util.getDumpCap()),
+		DUMP_CAP("dumpCap", "Wireshark Path", FILE, SettingsImpl.getInstance(), Util.isMacOS(), null, () -> Util
+				.getWireshark()),
 		IDEVICE_SCREENSHOT("iDeviceScreenshot", "iDeviceScreenshot Path", FILE, SettingsImpl.getInstance(),
 				Util.isMacOS(), null, () -> Util.getIdeviceScreenshot()),
 		FFMPEG("ffmpeg", "FFMpeg Path", FILE, SettingsImpl.getInstance(), true, null, () -> Util.getFFMPEG()),

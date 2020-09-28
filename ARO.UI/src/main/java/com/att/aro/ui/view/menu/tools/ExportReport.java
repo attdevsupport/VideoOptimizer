@@ -24,6 +24,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.att.aro.core.preferences.UserPreferences;
 import com.att.aro.core.preferences.UserPreferencesFactory;
+import com.att.aro.core.util.Util;
 import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.AROUIWorker;
 import com.att.aro.ui.commonui.MessageDialogFactory;
@@ -47,17 +48,20 @@ public class ExportReport extends AROUIWorker<Void, Void> {
 	@Override
 	public void before() {
 		chooser = new JFileChooser();
-		chooser = new JFileChooser(userPreferences.getLastExportDirectory());
 		chooser.setDialogTitle(ResourceBundleHelper.getMessageString("fileChooser.Title"));
 		chooser.setApproveButtonText(ResourceBundleHelper.getMessageString("fileChooser.Save"));
 		chooser.setMultiSelectionEnabled(false);
 		chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		if (json) {
-			FileNameExtensionFilter htmlFilter = new FileNameExtensionFilter(
+		
+		String tracePath = userPreferences.getTracePath();
+		String fileName = tracePath.substring(tracePath.lastIndexOf(Util.FILE_SEPARATOR));
+		chooser.setSelectedFile(new File(tracePath+ Util.FILE_SEPARATOR+fileName));
+		if (json) {	
+			FileNameExtensionFilter jsonFilter = new FileNameExtensionFilter(
 					ResourceBundleHelper.getMessageString("fileChooser.desc.json"),
 					ResourceBundleHelper.getMessageString("fileChooser.contentType.json"));
-			chooser.addChoosableFileFilter(htmlFilter);
-			chooser.setFileFilter(htmlFilter);
+			chooser.addChoosableFileFilter(jsonFilter);
+			chooser.setFileFilter(jsonFilter);
 		} else {
 			FileNameExtensionFilter htmlFilter = new FileNameExtensionFilter(
 					ResourceBundleHelper.getMessageString("fileChooser.desc.html"),

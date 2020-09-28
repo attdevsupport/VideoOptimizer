@@ -46,8 +46,6 @@ import com.att.aro.core.videoanalysis.pojo.Manifest.ManifestType;
 import com.att.aro.core.videoanalysis.pojo.ManifestCollection;
 import com.att.aro.core.videoanalysis.pojo.UrlMatchDef;
 import com.att.aro.core.videoanalysis.pojo.UrlMatchDef.UrlMatchType;
-import com.att.aro.core.videoanalysis.pojo.UrlMatchDef;
-import com.att.aro.core.videoanalysis.pojo.UrlMatchDef.UrlMatchType;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 
 import lombok.Data;
@@ -119,7 +117,7 @@ public abstract class ManifestBuilder {
 		crc32 = new CRC32();
 		manifest = new Manifest();
 		manifest.setRequest(request);
-		manifest.setVideoName(StringUtils.substringBefore(request.getObjNameWithoutParams(),";"));
+		manifest.setVideoName(StringUtils.substringBefore(request.getObjNameWithoutParams(), ";"));
 		manifest.setUri(request.getObjUri());
 		manifest.setUriStr(request.getObjUri().toString());
 		manifest.setSession(request.getAssocReqResp().getSession());
@@ -274,14 +272,13 @@ public abstract class ManifestBuilder {
 
 		HttpRequestResponseInfo request = manifest.getRequest();
 		String uriReferencePath = decodeUrlEncoding(buildUriNameKey(manifest.getMasterManifest(), request));
-		
+
 		referenceKey = uriReferencePath;
 		
 		if ((childManifest = manifestCollection.getUriNameChildMap().get(decodeUrlEncoding(referenceKey))) == null) {
 			referenceKey = buildUriNameKey(masterManifest, manifest.getRequest());
 			// VID-TODO may remove this (if section) after UrlMatchType conversion is complete
-
-		if (!CollectionUtils.isEmpty(manifestCollection.getUriNameChildMap())) {
+			if (!CollectionUtils.isEmpty(manifestCollection.getUriNameChildMap())) {
 				childManifest = manifestCollection.getUriNameChildMap().entrySet().stream()
 						.filter(x -> x.getKey().contains(referenceKey))
 						.findFirst().map(x -> x.getValue())
@@ -294,9 +291,10 @@ public abstract class ManifestBuilder {
 			manifestCollection.addToTimestampChildManifestMap(request.getTimeStamp(), childManifest);
 			childManifest.setVideo(false);
 		}
+
 		return childManifest;
 	}
-	
+
 	protected UrlMatchDef defineUrlMatching(Manifest tempManifest, String uriName) {
 		UrlMatchDef urlMatchDef = tempManifest.getUrlMatchDef();
 		if (uriName.startsWith("http")) {
@@ -382,8 +380,8 @@ public abstract class ManifestBuilder {
 		}
 		return key;
 	}
-
-	private int[] getStringPositions(String inputStr, String matchStr) {
+		
+	public int[] getStringPositions(String inputStr, String matchStr) {
 		int count = StringUtils.countMatches(inputStr, matchStr);
 		if (count > 0) {
 			int[] position = new int[count];
@@ -453,7 +451,7 @@ public abstract class ManifestBuilder {
 	public ManifestCollection findManifest(HttpRequestResponseInfo request) {
 		
 		LOG.debug(String.format("locating manifest for|<%s>|", request.getObjUri().toString()));
-		
+		manifestCollectionToBeReturned = null;//initial
 		identifiedManifestRequestTime = 0;
 		byteRangeKey = "";
 		double manifestReqTime = 0;
@@ -522,7 +520,7 @@ public abstract class ManifestBuilder {
 					.filter(f -> f.getKey() <= request.getTimeStamp() 
 							&& f.getValue().getSegmentChildManifestTrie().containsKey(key1)
 							)
-					.forEach(innerMap -> { 
+					.forEach(innerMap -> {
 						manifestCollectionToBeReturned = innerMap.getValue();
 					});
 				});
@@ -544,6 +542,7 @@ public abstract class ManifestBuilder {
 		}
 		return manifestCollectionToBeReturned;
 	}
+
 	
 	public String locatePatChildManifestKey(PatriciaTrie<ChildManifest> patMap, String key) {
 		String foundKey = patMap.selectKey(key);
@@ -583,47 +582,45 @@ public abstract class ManifestBuilder {
 		return matched != null;
 	}
 
-
 	public String keyMatch(HttpRequestResponseInfo request, String targetKey) {
 		String key = "";
-				String[] tsString;
-				String[] matched;
-				String scanKey = selectKey(request);
-				if (CollectionUtils.isEmpty(segmentManifestCollectionMap)) {
-					LOG.error("segmentManifestCollectionMap is empty");
-					return key;
-				}
-				if (scanKey.toUpperCase().startsWith(buildUriNameKey(manifest, request).toUpperCase())) {
-					while ((key = segmentManifestCollectionMap.nextKey(scanKey)) != null && key.startsWith(StringUtils.substringBefore(scanKey, "|"))) {
-						scanKey = key;
-					}
-					return scanKey;
-				}
-				
-				scanKey = segmentManifestCollectionMap.selectKey(targetKey);
-				
-				if (scanKey.contains("(")) {
-					matched = stringParse.parse(targetKey, StringUtils.substringBefore(scanKey, "|"));
-					if (matched!=null) {
-						return scanKey;
-					}
-				}
-				if (scanKey.startsWith(targetKey)) {
-					do {
-						if ((tsString = stringParse.parse(scanKey, "\\|(.*)\\|")) != null) {
+		String[] tsString;
+		String[] matched;
+		String scanKey = selectKey(request);
+		if (CollectionUtils.isEmpty(segmentManifestCollectionMap)) {
+			LOG.error("segmentManifestCollectionMap is empty");
+			return key;
+		}
+		if (scanKey.toUpperCase().startsWith(buildUriNameKey(manifest, request).toUpperCase())) {
+			while ((key = segmentManifestCollectionMap.nextKey(scanKey)) != null && key.startsWith(StringUtils.substringBefore(scanKey, "|"))) {
+				scanKey = key;
+			}
+			return scanKey;
+		}
+		
+		scanKey = segmentManifestCollectionMap.selectKey(targetKey);
+		
+		if (scanKey.contains("(")) {
+			matched = stringParse.parse(targetKey, StringUtils.substringBefore(scanKey, "|"));
+			if (matched!=null) {
+				return scanKey;
+			}
+		}
+		if (scanKey.startsWith(targetKey)) {
+			do {
+				if ((tsString = stringParse.parse(scanKey, "\\|(.*)\\|")) != null) {
 					double keyTS = Double.valueOf(tsString[0]);
-					if (request.getTimeStamp()<keyTS) {
+					if (request.getTimeStamp() < keyTS) {
 						if (!key.isEmpty()) {
 							return key;
 						} else {
 							return scanKey;
-
+						}
+					} else {
+						key = scanKey;
+					}
 				}
-			} else {
-				key = scanKey;
-				}
-			}
-					} while ((scanKey = segmentManifestCollectionMap.nextKey(scanKey)) != null);
+			} while ((scanKey = segmentManifestCollectionMap.nextKey(scanKey)) != null);
 		}
 		return key;
 	}
@@ -678,6 +675,9 @@ public abstract class ManifestBuilder {
 			key = buildUriNameKey(urlMatchDef, request);
 		}
 		key = StringUtils.substringBefore(key, "|");
+		if(key.contains("?amzn")) {
+			key = StringUtils.substringBefore(key, "?");
+		}
 		return key;
 	}
 	
@@ -740,7 +740,5 @@ public abstract class ManifestBuilder {
 	}
 
 	public abstract String buildSegmentName(HttpRequestResponseInfo request, String extension);
-
-
 
 }

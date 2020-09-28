@@ -126,11 +126,8 @@ public class SearchHelper {
 							return foundIt;
 						}
 					}
-				} catch (ContentException e) {
+				} catch (Exception e) {
 					// nothing can be done here if the content is not available 
-					LOGGER.debug(format("Search - Unexpected Exception {0}", e.getMessage()));
-				} catch (IOException e) {
-					// nothing can be done here in case of IO Exception 
 					LOGGER.debug(format("Search - Unexpected Exception {0}", e.getMessage()));
 				}
 			} // END:  Request/Response iteration

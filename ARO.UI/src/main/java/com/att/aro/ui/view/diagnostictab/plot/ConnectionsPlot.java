@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 AT&T
+ *  Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jfree.chart.labels.XYToolTipGenerator;
@@ -74,7 +75,7 @@ public class ConnectionsPlot implements IPlot {
 		Collections.sort(sessionList);
 
 		start = new double[sessionList.size()];
-		end = new double[sessionList.size()];
+		List<Double> endTimeList = new ArrayList<Double>();
 		int iterator = 0;
 		int startTimeCounter = 0;
 		int endTimeCounter = 0;
@@ -84,12 +85,21 @@ public class ConnectionsPlot implements IPlot {
 
 		for (Session session : sessionList) {
 			start[iterator] = session.getSessionStartTime();
-			end[iterator] = session.getSessionEndTime();
-
-			if (Util.isTestMode()) {
-				LOGGER.debug("Start : " + session.getSessionStartTime() + " , End : " + session.getSessionEndTime());
-			}
 			iterator++;
+			if (Util.isTestMode()) {
+				LOGGER.debug("Start : " + session.getSessionStartTime());
+			}
+			if ((!session.isUdpOnly() && session.isSessionComplete()) || session.isUdpOnly()) {
+				endTimeList.add(session.getSessionEndTime());
+				if (Util.isTestMode()) {
+					LOGGER.debug("End : " + session.getSessionEndTime());
+				}
+			}
+		}
+
+		if (!endTimeList.isEmpty()) {
+			Double[] endListTime = endTimeList.toArray(new Double[endTimeList.size()]);
+			end = ArrayUtils.toPrimitive(endListTime);
 		}
 
 		Arrays.sort(start);
@@ -115,6 +125,13 @@ public class ConnectionsPlot implements IPlot {
 				series.add(endTime, currentOverlap);
 				toolTipList.add("Time : " + Util.formatDouble(endTime) + " -> " + String.valueOf(currentOverlap));
 			}
+		}
+		while (startTimeCounter < start.length) {
+			startTime = start[startTimeCounter];
+			currentOverlap++;
+			startTimeCounter++;
+			series.add(startTime, currentOverlap);
+			toolTipList.add("Time : " + Util.formatDouble(startTime) + " -> " + String.valueOf(currentOverlap));
 		}
 
 		while (endTimeCounter < end.length) {

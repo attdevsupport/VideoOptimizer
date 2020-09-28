@@ -34,12 +34,15 @@ import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
+import com.att.aro.core.videoanalysis.XYPair;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs.DUPLICATE_HANDLING;
+
+import lombok.NonNull;
 
 public class VideoSegmentAnalyzer {
 
@@ -125,17 +128,14 @@ public class VideoSegmentAnalyzer {
 		
 		int baseEvent = videoStream.getManifest().isVideoTypeFamily(VideoType.DASH) ? 0 : -1;
 		double startupOffset;
-		if (startupTime > chosenEvent.getSegmentStartTime()) {
-			startupOffset = startupTime - chosenEvent.getSegmentStartTime();
-		} else {
-			startupOffset = startupTime;
-		}
+		startupOffset = startupTime - chosenEvent.getSegmentStartTime();
 		stallOffset = 0;
 		totalStallOffset = 0;
 		VideoEvent priorEvent = null;
 		double priorDuration = 0;
 
 		clearStalls(videoStream);
+		videoStream.clearBufferOccupancyData();
 		videoStream.applyStartupOffset(startupOffset);
 
 		TreeMap<String, VideoEvent> audioStreamMap = videoStream.getAudioStartTimeMap(); // key definition: segmentStartTime, endTS(in milliseconds)
@@ -147,15 +147,13 @@ public class VideoSegmentAnalyzer {
 
 		ArrayList<VideoEvent> videoStreamFiltered = new ArrayList<VideoEvent>(videoStream.getVideoEventList().values());
 
-		// sorting first by segment, then segmentStartTime assures that DASH 'moov' fragments (segment zero's) do not needlessly complicate matters
 		Collections.sort(videoStreamFiltered, new VideoEventComparator(SortSelection.SEGMENT_ID));
 		Collections.sort(videoStreamFiltered, new VideoEventComparator(SortSelection.SEGMENT_START_TS));
 
 		for (VideoEvent videoEvent : videoStreamFiltered) {
 			if (videoEvent.getSegmentID() > baseEvent) {
-
 				if (priorEvent != null && videoEvent.isSelected()) {
-					double playtime = videoEvent.getSegmentStartTime() + startupOffset + totalStallOffset;// - programDateTime;
+					double playtime = videoEvent.getSegmentStartTime() + startupOffset + totalStallOffset;
 
 					priorDuration = (priorEvent.getSegmentID() != videoEvent.getSegmentID()) ? priorEvent.getDuration() : priorDuration;
 					if (videoEvent.getDLLastTimestamp() > playtime) {
@@ -169,7 +167,9 @@ public class VideoSegmentAnalyzer {
 						LOG.debug(String.format("VideoStall %.0f: %8.6f", videoEvent.getSegmentID(), videoEvent.getStallTime()));
 					}
 					VideoEvent audioStall;
-					if (isAudio && (audioStall = syncWithAudio(startupOffset, videoStream, audioStreamMap, videoEvent)) != null && audioStall.getStallTime() > 0) {
+					if (isAudio 
+							&& (audioStall = syncWithAudio(startupOffset, videoStream, audioStreamMap, videoEvent)) != null 
+							&& audioStall.getStallTime() > 0) {
 						LOG.debug(String.format("audioStall %.0f: %8.6f", audioStall.getSegmentID(), audioStall.getStallTime()));
 					}
 					videoEvent.setPlayTime(playtime);
@@ -177,6 +177,68 @@ public class VideoSegmentAnalyzer {
 				priorEvent = videoEvent;
 			}
 		}
+
+		generateByteBufferData(videoStream);
+		LOG.debug(videoStream.getToolTipDetailMap());
+	}
+	
+	@NonNull private ArrayList<XYPair> byteBufferList;
+	@NonNull private VideoStream videoStream;
+	
+	private void generateByteBufferData(VideoStream videoStream) {
+		this.videoStream = videoStream;
+		videoStream.clearBufferOccupancyData();
+		
+		TreeMap<Double, VideoEvent> mergedPlayMap = new TreeMap<>();
+		TreeMap<String, VideoEvent> mergedMap = new TreeMap<>();
+		mergedMap.putAll(videoStream.getVideoEventList());
+		mergedMap.putAll(videoStream.getAudioEventList());
+		
+		byteBufferList = videoStream.getByteBufferList();
+		
+		Double buffer = 0D;
+		LOG.debug("\ntime     buffer");
+		VideoEvent eventDL;
+		@NonNull VideoEvent eventPlay = null;
+		double timeKey = 0D;
+		for (String key : mergedMap.keySet()) {
+			eventDL = mergedMap.get(key);
+			if (eventDL.isNormalSegment()) {
+				if (timeKey > 0 && (timeKey < eventDL.getEndTS())) {
+					eventPlay = mergedPlayMap.get(timeKey);
+					while (eventPlay != null && eventPlay.getPlayTime() <= eventDL.getEndTS()) {
+						mergedPlayMap.remove(eventPlay.getPlayTime());
+						buffer = addBufferPoints(buffer, eventPlay, eventPlay.getPlayTime(), -eventPlay.getSize());
+						timeKey = mergedPlayMap.isEmpty() ? 0 : mergedPlayMap.firstKey();
+						eventPlay = mergedPlayMap.isEmpty() ? null : mergedPlayMap.get(mergedPlayMap.firstKey());
+					}
+				}
+				mergedPlayMap.put(eventDL.getPlayTime(), eventDL);
+				timeKey = mergedPlayMap.firstKey();
+				buffer = addBufferPoints(buffer, eventDL, eventDL.getEndTS(), eventDL.getSize());
+				
+			}
+		}
+		timeKey = mergedPlayMap.isEmpty() ? 0 : mergedPlayMap.firstKey();
+		while (!mergedPlayMap.isEmpty()) {
+			eventPlay = mergedPlayMap.remove(timeKey);
+			buffer = addBufferPoints(buffer, eventPlay, eventPlay.getPlayTime(), -eventPlay.getSize());
+			timeKey = mergedPlayMap.isEmpty() ? 0 : mergedPlayMap.firstKey();
+			eventPlay = mergedPlayMap.isEmpty() ? null : mergedPlayMap.get(mergedPlayMap.firstKey());
+		}
+		LOG.debug("done");
+		
+	}
+
+	public Double addBufferPoints(Double buffer, VideoEvent event, double startTS, double delta) {
+		double buffer2 = buffer + delta;
+		byteBufferList.add(new XYPair(startTS, buffer));
+		byteBufferList.add(new XYPair(startTS, buffer2));
+		this.videoStream.addToolTipPoint(event, buffer);
+		this.videoStream.addToolTipPoint(event, buffer2);
+		LOG.debug(String.format("%.3f\t%.0f", startTS, buffer));
+		LOG.debug(String.format("%.3f\t%.0f", startTS, buffer2));
+		return buffer2;
 	}
 
 	private void applyDuplicateHandlingRules(TreeMap<String, VideoEvent> eventStreamMap) {
@@ -205,13 +267,11 @@ public class VideoSegmentAnalyzer {
 			} else if (duplicateHandling.equals(DUPLICATE_HANDLING.LAST)) {
 				tempFlag = event.getEndTS() > priorEvent.getEndTS();
 			} else if (duplicateHandling.equals(DUPLICATE_HANDLING.HIGHEST)) {
-				tempFlag = event.getQuality().compareTo(priorEvent.getQuality()) > 0;
-			tempFlag = Integer.valueOf(event.getQuality()).compareTo(Integer.valueOf(priorEvent.getQuality())) > 0;
+				tempFlag = Integer.valueOf(event.getQuality()).compareTo(Integer.valueOf(priorEvent.getQuality())) > 0;
+			}
+			event.setSelected(tempFlag);
+			priorEvent.setSelected(!tempFlag);
 		}
-		event.setSelected(tempFlag);
-		priorEvent.setSelected(!tempFlag);
-	}
-
 	}
 
 	/** <pre>

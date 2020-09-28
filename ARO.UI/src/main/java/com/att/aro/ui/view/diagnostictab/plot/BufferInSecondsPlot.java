@@ -30,7 +30,6 @@ import java.util.TreeMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.labels.XYToolTipGenerator;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.StandardXYItemRenderer;
@@ -125,69 +124,6 @@ public class BufferInSecondsPlot implements IPlot {
 		plot.setDataset(bufferFillDataCollection);
 	}
 
-	public XYToolTipGenerator toolTipGenerator_standard(StreamingVideoData streamingVideoData) {
-		return new StandardXYToolTipGenerator() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public String generateToolTip(XYDataset dataset, int series, int item) {
-
-				// Tooltip value
-				Number timestamp = dataset.getX(series, item);
-				Number bufferTime = dataset.getY(series, item);
-				StringBuffer tooltipValue = new StringBuffer();
-
-				Map<Double, Long> segmentEndTimeMap = bufferInSecondsCalculatorImpl.getSegmentEndTimeMap();
-				Map<Long, Double> segmentStartTimeMap = bufferInSecondsCalculatorImpl.getSegmentStartTimeMap();
-				double firstSegmentNo = streamingVideoData.getStreamingVideoCompiled().getChunksBySegmentID().get(0).getSegmentID();
-
-				DecimalFormat decimalFormat = new DecimalFormat("0.##");
-				if (segmentStartTimeMap == null || segmentStartTimeMap.isEmpty()) {
-					return "-,-,-";
-				}
-
-				List<Long> segmentList = new ArrayList<Long>(segmentEndTimeMap.values());
-				Collections.sort(segmentList);
-				Long lastSegmentNo = -1L;
-				if (segmentList.size() != 0) {
-					lastSegmentNo = segmentList.get(segmentList.size() - 1);
-				}
-				Long segmentNumber = 0L;
-				boolean isSegmentPlaying = false;
-				boolean startup = false;
-				boolean endPlay = false;
-
-				for (double segmentEndTime : segmentEndTimeMap.keySet()) {
-					if (segmentEndTime > timestamp.doubleValue()) {
-						segmentNumber = segmentEndTimeMap.get(segmentEndTime);
-						if (segmentNumber == firstSegmentNo) {
-							startup = true;
-						}
-						if (segmentStartTimeMap.get(segmentNumber) <= timestamp.doubleValue()) {
-							tooltipValue.append(decimalFormat.format(segmentNumber) + ",");
-							isSegmentPlaying = true;
-							startup = false;
-						}
-					} else if (lastSegmentNo.equals(segmentEndTimeMap.get(segmentEndTime)) && segmentEndTime == timestamp.doubleValue()) {
-						endPlay = true;
-					}
-				}
-
-				if (endPlay || startup) {
-					tooltipValue.append("-,");
-				} else if (!isSegmentPlaying && !startup) {
-					tooltipValue.append("Stall,");
-				}
-
-				tooltipValue.append(String.format("%.2f", bufferTime) + "," + String.format("%.2f", timestamp));
-
-				String[] value = tooltipValue.toString().split(",");
-				return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP, value[0], value[1], value[2]));
-			}
-		};
-	}
-		
-		
 	public XYToolTipGenerator toolTipGenerator(StreamingVideoData streamingVideoData) {
 		return new XYToolTipGenerator() {
 
@@ -234,7 +170,8 @@ public class BufferInSecondsPlot implements IPlot {
 							isSegmentPlaying = true;
 							startup = false;
 						}
-					} else if (lastSegmentNo.equals(segmentEndTimeMap.get(segmentEndTime)) && segmentEndTime == timestamp.doubleValue()) {
+					} else if (lastSegmentNo.equals(segmentEndTimeMap.get(segmentEndTime)) 
+						   &&  segmentEndTime == timestamp.doubleValue()) {
 						endPlay = true;
 					}
 				}
@@ -250,7 +187,6 @@ public class BufferInSecondsPlot implements IPlot {
 				String[] value = tooltipValue.toString().split(",");
 				return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP, value[0], value[1], value[2]));
 			}
-
 		};
 	}
 

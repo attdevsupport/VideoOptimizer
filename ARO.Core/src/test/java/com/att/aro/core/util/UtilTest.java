@@ -194,10 +194,11 @@ public class UtilTest {
 	
 	@Test
 	public void testIntComparator() {
-		Comparator<Integer> result = Util.getDomainIntSorter();
+		Comparator<Integer> result = Util.getIntSorter();
 		assertNotNull(result);
-		assertNotEquals(0,result.compare(1, 2));
 		assertEquals(0,result.compare(1,1));
+		assertEquals(-1,result.compare(1, 2));
+		assertEquals(1,result.compare(2, 1));
 	}
 
 	
@@ -264,7 +265,6 @@ public class UtilTest {
 	@Test
 	public void testParseForUTC_when_no_dashes_or_colons() {
 		long result;
-	
 		result = Util.parseForUTC("20191101T0243301975739");	assertEquals(1572576210198L, result);
 		result = Util.parseForUTC("20191101T024330197");	    assertEquals(1572576210197L, result);
 		result = Util.parseForUTC("20191101T024330197");	    assertEquals(1572576210197L, result);
@@ -279,7 +279,6 @@ public class UtilTest {
 
 	@Test
 	public void testParseForUTC() {
-
 		long result;
 		long result1 = Util.parseForUTC("2020-01-16T20:28:00.405Z");      
 		long result2 = Util.parseForUTC("2020-01-16T20:28:08.413Z");      assertEquals(8008L, result2-result1);

@@ -59,7 +59,8 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 	private Insets noInsets = new Insets(0, 0, 0, 0);
 	private ArrayList<TabPanelJPanel> localRefreshList = new ArrayList<>();
 	private VideoManifestPanel videoManifestPanel;
-	
+	private VideoSummaryPanel videoSummaryPanel;
+
 	private String trace = "";
 	private long lastOpenedTrace;
 	int graphPanelIndex = 0;
@@ -183,8 +184,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		summaryPane.setOpaque(false);
 
 		// VideoSummaryPanel
-		VideoSummaryPanel videoSummaryPanel = new VideoSummaryPanel();
-		localRefreshList.add(videoSummaryPanel);
+		localRefreshList.add(getVideoSummaryPanel());
 		bpObservable.registerObserver(videoSummaryPanel);
 
 		Insets inset = new Insets(0, 1, 10, 1);
@@ -194,6 +194,13 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		inset = new Insets(10, 40, 10, 1);
 
 		return summaryPane;
+	}
+	
+	public VideoSummaryPanel getVideoSummaryPanel() {
+		if(videoSummaryPanel == null) {
+			videoSummaryPanel = new VideoSummaryPanel();
+		}
+		return videoSummaryPanel;
 	}
 	
 	private JPanel buildGraphPanel() {
@@ -216,7 +223,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		pane.add(videoManifestPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));		
 		bpObservable.registerObserver(videoManifestPanel);
         
-		JPanel wrapper = getTitledWrapper("video.tab.manifest.title", new LoadManifestDialog(aroView));
+		JPanel wrapper = getTitledWrapper("video.tab.manifest.title", new ExportManifestDialog(videoManifestPanel), new LoadManifestDialog(aroView));
 		wrapper.add(pane, new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
 
 		pane.setBorder(BorderFactory.createLineBorder(Color.WHITE));
@@ -238,12 +245,12 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		pane.add(requestPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
 		bpObservable.registerObserver(requestPanel);
 		
-		JPanel wrapper = getTitledWrapper("video.tab.request.title", null);
+		JPanel wrapper = getTitledWrapper("video.tab.request.title");
 		wrapper.add(pane, new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
 		return wrapper;
 	}
 	
-	private JPanel getTitledWrapper(String title, JComponent component) {
+	private JPanel getTitledWrapper(String title, JComponent... components) {
 
 		JPanel pane = new JPanel(new GridBagLayout());
 
@@ -258,9 +265,27 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		// Create the header bar
 		BpHeaderPanel header = new BpHeaderPanel(ResourceBundleHelper.getMessageString(title));
 		header.setImageTitle(Images.BLUE_HEADER.getImage(), null);
-		if (component != null) {
-			header.add(component, BorderLayout.EAST);
+
+		// Add buttons to title bar
+		JPanel buttonPanel = null;
+	    if (components.length > 0) {
+	        buttonPanel = new JPanel();
+	        buttonPanel.setLayout(new BorderLayout());
+	        for (JComponent component : components) {
+	            if (ExportManifestDialog.class.getName().equals(component.getName())) {
+	                buttonPanel.add(components[0], BorderLayout.WEST);
+	            }
+
+	            if (LoadManifestDialog.class.getName().equals(component.getName())) {
+	                buttonPanel.add(components[1], BorderLayout.EAST);
 		}
+	        }
+
+	        if (buttonPanel != null && buttonPanel.getComponentCount() != 0) {
+	            header.add(buttonPanel, BorderLayout.EAST);
+	        }
+	    }
+
 		fullPanel.add(header, BorderLayout.NORTH);
 		pane.add(fullPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0
 				, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL

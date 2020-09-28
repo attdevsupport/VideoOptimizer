@@ -48,7 +48,7 @@ public class SimultnsConnImpl implements IBestPractice {
 	private String textResultPass;
 	@Value("${connections.simultaneous.results}")
 	private String textResults;
-	int maxConnections = 3;
+	int maxConnections = 7;
 	private PacketAnalyzerResult traceDataResult = null;
 	private List<MultipleConnectionsEntry> simultnsConnectionEntryList;
 	private SortedMap<Double, MultipleConnectionsEntry> simultnsConnectionEntryMap;

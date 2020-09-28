@@ -52,6 +52,7 @@ import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 
@@ -557,9 +558,11 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 		if (jApplicationsTable == null) {
 
 			// Make sure to make a copy of the current data before modifying
-			jApplicationsTable = new DataTable<ApplicationSelection>(
-					jApplicationsTableModel);
+			jApplicationsTable = new DataTable<ApplicationSelection>(jApplicationsTableModel);
 			jApplicationsTable.setAutoCreateRowSorter(true);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) jApplicationsTable.getPopup();
+            popupMenu.initialize();
 		}
 		return jApplicationsTable;
 	}
@@ -572,9 +575,11 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 		if (jIpAddressTable == null) {
 
 			// Make sure to make a copy of the current data before modifying
-			jIpAddressTable = new DataTable<FilterIpAddressesTableModel.AppIPAddressSelection>(
-					jIpAddressesTableModel);
+			jIpAddressTable = new DataTable<FilterIpAddressesTableModel.AppIPAddressSelection>(jIpAddressesTableModel);
 			jIpAddressTable.setAutoCreateRowSorter(true);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) jIpAddressTable.getPopup();
+            popupMenu.initialize();
 		}
 		return jIpAddressTable;
 	}

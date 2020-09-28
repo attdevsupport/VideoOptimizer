@@ -54,6 +54,7 @@ import com.att.aro.datacollector.ioscollector.IOSDevice;
 import com.att.aro.datacollector.ioscollector.IOSDeviceStatus;
 import com.att.aro.datacollector.ioscollector.ImageSubscriber;
 import com.att.aro.datacollector.ioscollector.attenuator.MitmAttenuatorImpl;
+import com.att.aro.datacollector.ioscollector.attenuator.SaveCollectorOptions;
 import com.att.aro.datacollector.ioscollector.reader.ExternalDeviceMonitorIOS;
 import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 import com.att.aro.datacollector.ioscollector.reader.UDIDReader;
@@ -96,6 +97,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private VideoOption videoOption;
 	private AttenuatorModel attenuatorModel;
 	private MitmAttenuatorImpl mitmAttenuator;
+	private SaveCollectorOptions saveCollectorOptions;
 	private boolean hdVideoPulled = true;
 	private boolean validPW;
 	private String udId = "";
@@ -344,9 +346,16 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 		launchCollection(trafficFilePath, udId, status);
 		// Start Attenuation
-		if ((attenuatorModel.isConstantThrottle() && (attenuatorModel.isThrottleDLEnabled() || attenuatorModel.isThrottleULEnabled()))) {
-			startAttenuatorCollection(datadir, attenuatorModel, false);
+		
+		if (saveCollectorOptions == null) {
+			saveCollectorOptions = new SaveCollectorOptions();
 		}
+
+		if ((attenuatorModel.isConstantThrottle()
+				&& (attenuatorModel.isThrottleDLEnabled() || attenuatorModel.isThrottleULEnabled()))) {
+			startAttenuatorCollection(datadir, attenuatorModel, saveCollectorOptions);
+		} else {
+			saveCollectorOptions.recordCollectOptions(datadir, 0, 0, -1, -1, false, "", "PORTRAIT");		}
 		return status;
 	}
 
@@ -364,7 +373,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (!status.isSuccess()) {
 			return status;
 		}
-
+		
+		status = checkDumpcap(status);
+		if (!status.isSuccess()) {
+			return status;
+		}
+			
 		// packet capture start
 		startPacketCollection();
 
@@ -386,7 +400,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		return status;
 	}
 
-	private void startAttenuatorCollection(String trafficFilePath, AttenuatorModel attenuatorModel, boolean secure) {
+	private void startAttenuatorCollection(String trafficFilePath, AttenuatorModel attenuatorModel, SaveCollectorOptions saveCollectorOptions) {
 
 		int throttleDL = 0;
 		int throttleUL = 0;
@@ -401,8 +415,9 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (mitmAttenuator == null) {
 			mitmAttenuator = new MitmAttenuatorImpl();
 		}
-		LOG.info("ios attenuation setting: " + " trafficFilePath: " + trafficFilePath + " throttleDL: " + throttleDL + "throttleUL: " + throttleUL + "secure :" + secure);
-		mitmAttenuator.startCollect(trafficFilePath, throttleDL, throttleUL, false);
+		LOG.info("ios attenuation setting: " + " trafficFilePath: " + trafficFilePath + " throttleDL: " + throttleDL
+				+ "throttleUL: " + throttleUL );
+		mitmAttenuator.startCollect(trafficFilePath, throttleDL, throttleUL, saveCollectorOptions);
 
 	}
 
@@ -500,6 +515,27 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getrviError());
 		}
+		return status;
+	}
+
+	private StatusResult checkDumpcap(StatusResult status) {
+		ExternalProcessRunner runner = new ExternalProcessRunner();
+		String cmd = Util.getDumpCap() + " -D";
+		String data = null;
+		try {
+			data = runner.runCmd(new String[] { "bash", "-c", cmd });
+		} catch (IOException e) {
+			LOG.debug("IOException:", e);
+			status.setSuccess(false);
+			status.setError(ErrorCodeRegistry.getDumpcapError());
+		}
+		if (data != null && data.length() > 1 && !data.contains("command not found:")) {
+			status.setSuccess(true);
+		} else {
+			status.setSuccess(false);
+			status.setError(ErrorCodeRegistry.getDumpcapError());
+		}
+
 		return status;
 	}
 

@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>3.1</version>
+        <version>3.2.0</version>
         <relativePath>../ARO.Parent</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
 		<main.class>com.att.aro.ui.view.MainFrame</main.class>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.deploy.skip>true</maven.deploy.skip>
-		<vo.version>3.1</vo.version>
+		<vo.version>3.2.0</vo.version>
 		<jna.version>5.2.0</jna.version>
 	</properties>
 
@@ -142,6 +142,11 @@
 		    <version>1.18.2</version>
 		    <scope>provided</scope>
 		</dependency>
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-csv</artifactId>
+		    <version>1.8</version>
+		</dependency>		
 	</dependencies>
 
 	<!-- build -->

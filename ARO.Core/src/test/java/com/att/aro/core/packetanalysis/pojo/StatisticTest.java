@@ -41,7 +41,7 @@ public class StatisticTest {
 		other.setApplicationPacketSummary(list);
 		other.setAverageTCPKbps(10.0);
 		other.setPacketDuration(10.0);
-		other.setTCPPacketDuration(10.0);
+		other.setTcpPacketDuration(10.0);
 		other.setTotalTCPBytes(10);
 		other.setTotalHTTPSByte(10);
 		other.setTotalByte(10);
@@ -63,7 +63,7 @@ public class StatisticTest {
 		obj.setApplicationPacketSummary(list);
 		obj.setAverageTCPKbps(10.0);
 		obj.setPacketDuration(10.0);
-		obj.setTCPPacketDuration(10.0);
+		obj.setTcpPacketDuration(10.0);
 		obj.setTotalTCPBytes(10);
 		obj.setTotalHTTPSByte(10);
 		obj.setTotalByte(10);
@@ -96,7 +96,7 @@ public class StatisticTest {
 		assertFalse(obj.equals(other));
 		
 		other = getOther();
-		other.setTCPPacketDuration(5.0);
+		other.setTcpPacketDuration(5.0);
 		assertFalse(obj.equals(other));
 		
 		other = getOther();

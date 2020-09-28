@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>3.1</version>
+        <version>3.2.0</version>
         <relativePath>../ARO.Parent</relativePath>
     </parent>
 
@@ -16,7 +16,7 @@
 
 	<properties>
 		<maven.deploy.skip>true</maven.deploy.skip>
-		<vo.version>3.1</vo.version>
+		<vo.version>3.2.0</vo.version>
 	</properties>
 	
 	<repositories>
@@ -57,6 +57,21 @@
 			<name>Sonatype Flex</name>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</repository>
+				<repository>
+			<id>atlassian-public</id>
+			<name>atlassian</name>
+			<url>https://packages.atlassian.com/maven/repository/public</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+				<checksumPolicy>warn</checksumPolicy>
+			</releases>
+		</repository>
+		
 
 	</repositories>
 	<pluginRepositories>

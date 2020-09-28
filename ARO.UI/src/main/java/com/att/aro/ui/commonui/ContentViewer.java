@@ -27,6 +27,9 @@ import java.util.ArrayList;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
@@ -35,6 +38,8 @@ import com.att.aro.ui.model.diagnostic.ContentException;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class ContentViewer {
+    private static final Logger LOG = LoggerFactory.getLogger(ContentViewer.class);
+
 	private static final ContentViewer instance = new ContentViewer();
 
 	private static String contentViewerDirectory;
@@ -130,10 +135,10 @@ public class ContentViewer {
 			try {
 				content = httpHelper.getContent(httpReqResInfo, session);
 			} catch (Exception e) {
-				String errorMsg =ResourceBundleHelper
-						.getMessageString("fileChooser.errorWritingToFile").concat(e.getMessage());
-				MessageDialogFactory
-						.showMessageDialog(parent, errorMsg);
+			    LOG.error("Failed to save content, ", e);
+				String errorMsg =ResourceBundleHelper.getMessageString("fileChooser.errorWritingToFile")
+				                    .concat(ResourceBundleHelper.getMessageString("viewer.contentUnavailable"));
+				MessageDialogFactory.showMessageDialog(parent, errorMsg);
 				return;
 			}
 		}

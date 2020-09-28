@@ -23,6 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.UIManager;
 
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
@@ -33,10 +34,11 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 
 	private static final long serialVersionUID = 1L;
 	private JPanel videoManifestPanel;
-	private List<SegmentTable> segmentTableList = new ArrayList<>();
+	private List<SegmentPanel> segmentTableList = new ArrayList<>();
 	private IARODiagnosticsOverviewRoute overviewRoute;
 	private JPanel manifestPanel;
 	private MainFrame aroView;
+	private VideoEvent videoEvent;
 
 	public VideoManifestPanel(IARODiagnosticsOverviewRoute overviewRoute, MainFrame aroView) {
 
@@ -55,7 +57,7 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 		panel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-		for (SegmentTable segmentTable : segmentTableList) {
+		for (SegmentPanel segmentTable : segmentTableList) {
 			panel.add(segmentTable);
 		}
 		return panel;
@@ -66,8 +68,10 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 		segmentTableList.clear();
 		if (analyzerResult != null && analyzerResult.getAnalyzerResult() != null && analyzerResult.getAnalyzerResult().getStreamingVideoData() != null) {
 			for (VideoStream videoStream : analyzerResult.getAnalyzerResult().getStreamingVideoData().getVideoStreamMap().values()) {
-				if (videoStream != null && videoStream.getVideoEventList() != null && !videoStream.getVideoEventList().isEmpty()) {
-					SegmentTable component = new SegmentTable(videoStream, this.overviewRoute, analyzerResult, aroView);
+				if (videoStream != null && videoStream.getVideoEventList() != null
+						&& !videoStream.getVideoEventList().isEmpty()) {
+					//boolean isplayRequestedTimeSet = videoStream.getPlayRequestedTime() != null ? true : false;
+					SegmentPanel component = new SegmentPanel(videoStream, this.overviewRoute, analyzerResult, aroView, this);
 					component.setVisible(false);
 					segmentTableList.add(component);
 				}
@@ -79,8 +83,13 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 		videoManifestPanel.updateUI();
 	}
 	
+	public void reload(AROTraceData analyzerResult, VideoEvent videoEvent) {
+		this.videoEvent=videoEvent;
+		refresh(analyzerResult);
+	}
+	
 	public void refreshLocal(AROTraceData analyzerResult) {
-		for (SegmentTable segmentTable : segmentTableList) {
+		for (SegmentPanel segmentTable : segmentTableList) {
 			segmentTable.updateTitleButton(analyzerResult);
 		}
 	}
@@ -92,5 +101,10 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 	
 	@Override
 	public void setScrollLocationMap() {
+	}
+	 
+	
+	public List<SegmentPanel> getSegmentTableList() {
+	        return segmentTableList;
 	}
 }

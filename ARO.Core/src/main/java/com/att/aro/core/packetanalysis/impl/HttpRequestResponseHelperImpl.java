@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipException;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -128,67 +129,109 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 		String contentEncoding = request.getContentEncoding();
 		byte[] payload;
 		ByteArrayOutputStream output;
-		boolean logFlag = false;		
-		if(request.getAssocReqResp()==null) {
-			logFlag = true;//avoid through NPE when we tried to get logger or exception information
-		}
-
-		payload = request.getPayloadData().toByteArray();
-
-		if (request.isChunked()) {
-			storageReader.init(payload);
-			String line;
+		String objectName = request.getAssocReqResp() == null ? "N/A" : request.getAssocReqResp().getObjNameWithoutParams();
+		
+		if (session.isIOSSecureSession()) {
 			output = new ByteArrayOutputStream();
-			while (true) {
-
-				line = storageReader.readLine();
-
-				if (line != null) {
-					String[] str = line.split(";");
-					int size = 0;
-					try {
-						String trim = str[0].trim();
-						size = Integer.parseInt(trim, 16);
-					} catch (NumberFormatException e) {
-						LOG.warn("Unexpected begin of the chunk format : " + line);
+			SortedMap<Integer, Integer> contentOffsetLength = request.getContentOffsetLength();
+			if (contentOffsetLength != null) {
+				byte[] buffer = getStorageBuffer(request, session);
+				if (buffer == null) {
+					request.setExtractable(false);
+					return new byte[0];			
+				}
+				for (Map.Entry<Integer, Integer> entry : contentOffsetLength.entrySet()) {
+					int start = entry.getKey();
+					int size = entry.getValue();
+					if (start + size < 0) {
+						request.setExtractable(false);
+						throw new Exception("The content may be too big.");
 					}
-					if (size > 0) {
-
-						// Save content offsets
-						output.write(
-								Arrays.copyOfRange(payload, storageReader.getIndex(), storageReader.getIndex() + size));
-						storageReader.skipForward(size);
-
-						// CRLF at end of each chunk
-						line = storageReader.readLine();
-
-						if (line != null && line.length() > 0) {
-							LOG.warn("Unexpected end of chunk: " + line);
+					if (buffer.length < start + size) {
+						request.setExtractable(false);
+						if (request.getContentType().contains("text/html")) {
+							LOG.error(String.format("At request time: %.3f, request.getAssocReqResp() is %s .The content may be corrupted.",
+							        request.getTimeStamp(), objectName));
+							throw new Exception(String.format("PayloadException: At request time: %.3f, request.getAssocReqResp() is %s . The content may be corrupted.",
+							        request.getTimeStamp(), objectName));
+						} else {
+							int part = buffer.length - start;
+							float payloadPercentage = (float)part / size * 100;
+							LOG.error(String.format("at request time: %.3f: request.getAssocReqResp() is %s . The content may be corrupted. Buffer exceeded: only %.2f percent arrived",
+							        request.getTimeStamp(), objectName, payloadPercentage));
+							throw new Exception(String.format("PayloadException: At request time: %.3f, request.getAssocReqResp() is %s . "
+							        + "The content may be corrupted. Buffer exceeded: only %.2f percent arrived",
+							        request.getTimeStamp(), objectName, payloadPercentage));
 						}
-					} else {
-						request.setChunkModeFinished(true);
-						line = storageReader.readLine(); // End of chunks
-
-						if (line != null && line.length() > 0) {
-							LOG.warn("Unexpected end of chunked data: " + line);
-						}
-						break;
 					}
-				} else {
-					break;
+
+					for (int i = start; i < start + size; ++i) {
+						if (output == null) {
+							output = new ByteArrayOutputStream((int) getActualByteCount(request, session));
+						}
+						output.write(buffer[i]);
+					}
 				}
 			}
-			if (request.isChunkModeFinished()) {
-				payload = output.toByteArray();
-			} else {
-				throw new Exception(String.format("Unexpected Chunk End at request time: %.3f, request.getAssocReqResp() is %s The content may be corrupted.", request.getTimeStamp(), logFlag?"N/A":request.getAssocReqResp().getObjNameWithoutParams()));
-			}
-		} else if (payload.length < request.getContentLength()) {
-			request.setExtractable(false);
-			int percentage = payload.length / request.getContentLength() * 100;
-			throw new Exception(String.format("PayloadException At request time: %.3f, request.getAssocReqResp() is %s . The content may be corrupted. Buffer exceeded: only %d percent arrived", request.getTimeStamp(), logFlag?"N/A":request.getAssocReqResp().getObjNameWithoutParams(), percentage));
-		}
+			payload = output.toByteArray();
+		} else {
+			
+			payload = request.getPayloadData().toByteArray();
+			
+			if (request.isChunked()) {
+				storageReader.init(payload);
+				String line;
+				output = new ByteArrayOutputStream();
+				while (true) {
+					
+					line = storageReader.readLine();
 
+					if (line != null) {
+						String[] str = line.split(";");
+						int size = 0;
+						try {
+							String trim = str[0].trim();
+							size = Integer.parseInt(trim, 16);
+						} catch (NumberFormatException e) {
+							LOG.warn("Unexpected begin of the chunk format : " + line);
+						}
+						if (size > 0) {
+							// Save content offsets
+							output.write(Arrays.copyOfRange(payload, storageReader.getIndex(), storageReader.getIndex() + size));
+							storageReader.skipForward(size);
+							// CRLF at end of each chunk
+							line = storageReader.readLine();
+							if (line != null && line.length() > 0) {
+								LOG.warn("Unexpected end of chunk: " + line);
+							}
+						} else {
+							request.setChunkModeFinished(true);
+							line = storageReader.readLine(); // End of chunks
+							if (line != null && line.length() > 0) {
+								LOG.warn("Unexpected end of chunked data: " + line);
+							}
+							break;
+						}						
+					} else {
+						break;
+					}
+				}
+
+				if (request.isChunkModeFinished()) {
+					payload = output.toByteArray();
+				} else {
+					throw new Exception(String.format("Unexpected Chunk End at request time: %.3f, request.getAssocReqResp() is %s. The content may be corrupted.",
+					        request.getTimeStamp(), objectName));
+				}
+			} else if (payload.length < request.getContentLength()) {
+				request.setExtractable(false);
+				float payloadPercentage = (float)payload.length / request.getContentLength() * 100;
+				throw new Exception(String.format("PayloadException: At request time: %.3f, request.getAssocReqResp() is %s. "
+				        + "The content may be corrupted. Buffer exceeded: only %.2f percent arrived",
+				        request.getTimeStamp(), objectName, payloadPercentage));
+			}
+		}
+		
 		// Decompress GZIP Content
 		if ("gzip".equals(contentEncoding) && payload != null) {
 			GZIPInputStream gzip = null;
@@ -202,13 +245,13 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 				}
 				gzip.close();
 			} catch (IOException ioe) {
-				LOG.error("Error Extracting Content from Request");
-				throw new Exception(String.format("Zip Extract Exception  At request time: %.3f, request.getAssocReqResp() is %s. The content may be corrupted.", request.getTimeStamp(), logFlag?"N/A":request.getAssocReqResp()));
+				throw new ZipException(String.format("UnzipException: At request time: %.3f, request.getAssocReqResp() is %s. The content may be corrupted.",
+				        request.getTimeStamp(), request.getAssocReqResp() == null ? "N/A" : request.getAssocReqResp()));
 			}
 		} else {
 			return payload;
 		}
-
+		
 		if (output.size() > 0) {
 			return output.toByteArray();
 		} else {

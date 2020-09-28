@@ -21,7 +21,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map.Entry;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
@@ -52,8 +51,8 @@ import com.att.aro.core.videoanalysis.pojo.Manifest.ManifestType;
 import com.att.aro.core.videoanalysis.pojo.ManifestCollection;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
-import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
+import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
 
@@ -165,9 +164,7 @@ public class VideoStreamConstructor {
 			LOG.debug("ChildManifest wasn't found for segment request:" + request.getObjUri());
 			return;
 		}
-
-		Manifest manifest = manifestCollection.getManifest();
-
+		
 		if ((videoStream = streamingVideoData.getVideoStream(manifestCollection.getManifest().getRequestTime())) == null) {
 			videoStream = new VideoStream();
 			videoStream.setManifest(manifestCollection.getManifest());
@@ -207,8 +204,9 @@ public class VideoStreamConstructor {
 			}
 			if (segmentInfo.isVideo()) {
 				thumbnail = extractThumbnail(childManifest, content, tempClippingFullPath);
- 			}
+			}
 			if (thumbnail != null || (!segmentInfo.isVideo() && childManifest.getMoovContent() != null)) {
+				videoStream.getManifest().setVideoMetaDataExtracted(true);
 				collectFromFFMPEG(tempClippingFullPath, childManifest, manifestCollection.getManifest());
 			}
 			if (!childManifest.getManifest().isVideoTypeFamily(VideoType.DASH)) {
@@ -241,7 +239,7 @@ public class VideoStreamConstructor {
 		fullPathName = String.format("%s%09.0f%s", fullPathName.substring(0, pos1), videoEvent.getEndTS() * 1000, fullPathName.substring(pos1 + pos2));
 		savePayload(content, fullPathName);
 	}
-	
+
 	/**
 	 * Control the length of a VideoName so that is 40 characters or less.
 	 */
@@ -253,7 +251,6 @@ public class VideoStreamConstructor {
 		}
 	}
 
-	
 	/**<pre>
 	 * Locate and return the n substrings defined by the matchStr
 	 * Example: "one:two:three:four:five"
@@ -279,7 +276,6 @@ public class VideoStreamConstructor {
 		}
 		return srcString;
 	}
-
 
 	public String buildSegmentFullPathName(StreamingVideoData streamingVideoData, HttpRequestResponseInfo request) {
 		String fileName = request.getFileName();
@@ -363,7 +359,6 @@ public class VideoStreamConstructor {
 	public ChildManifest locateChildManifestAndSegmentInfo(HttpRequestResponseInfo request, Double timeStamp, ManifestCollection manifestCollection) {
 		childManifest = null;
 		segmentInfo = null;
-
 		String key0 = manifestBuilder.locateKey(manifestCollection.getManifest().getSegUrlMatchDef(), request);
 		String key = genKey(key0, request);
 		Double timeKey =  timeStamp;
@@ -379,7 +374,7 @@ public class VideoStreamConstructor {
 				childManifest = manifestCollection.getTimestampChildManifestMap().get(timeKey);
 			}
 		} while (timeKey != null && (segmentInfo = childManifest.getSegmentList().get(key)) == null);
-
+		
 		if ((childManifest = manifestCollection.getSegmentChildManifestTrie().get(key0)) != null || (childManifest = manifestCollection.getChildManifest(key0)) != null) {
 			String brKey = buildByteRangeKey(request);
 			if (brKey != null) {
@@ -396,7 +391,7 @@ public class VideoStreamConstructor {
 				}
 			}
 			
-			LOG.debug("childManifest:"+childManifest);			
+			LOG.debug("childManifest:"+childManifest);
 			
 		} else if (timeStamp != null) {
 			childManifest = manifestCollection.getTimestampChildManifestMap().get(timeStamp);
@@ -448,14 +443,11 @@ public class VideoStreamConstructor {
 	}
 
 	/**
-	 * <pre>
-	 * Extract a HLS manifest from traffic data
+	 * <pre>Extract a HLS manifest from traffic data
 	 *
 	 * Types: movie, livetv
-	 * 
 	 * </pre>
 	 * @param streamingVideoData
-	 *
 	 * @param request
 	 * @return Manifest
 	 */
@@ -468,7 +460,6 @@ public class VideoStreamConstructor {
 		if (content == null) {
 			return null;
 		}
-
 		Manifest manifest = manifestBuilderHLS.create(request, content, "blank");
 		
 		String fileName;
@@ -479,7 +470,7 @@ public class VideoStreamConstructor {
 		}
 		fileName = StringUtils.substringBefore(fileName, ";");
 		savePayload(content, buildPath(streamingVideoData, request, -1, "m", fileName));
-
+ 		
 		return manifest;
 	}
 
@@ -702,7 +693,6 @@ public class VideoStreamConstructor {
 		return false;
 	}
 
-	/**
 	/**<pre>
 	 * Rebuild a fully qualified pathname to contain a tie-breaker 
 	 * 
@@ -710,7 +700,6 @@ public class VideoStreamConstructor {
 	 * filepath/filename(1)
 	 * 
 	 * attempts to resolve over 200 attempts, then resorts to logging an error
-	 * 
 	 * </pre>
 	 * @param pathName
 	 * @return pathName with embedded tie-breaker or when all else fails, appends (duplicated) to the pathName

@@ -15,6 +15,7 @@
 */
 package com.att.aro.core.packetanalysis.impl;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -220,7 +221,16 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		if (result != null) {
 			result.setAllpackets(filteredPackets);
 			sessionmanager.setiOSSecureTracePath(result.getTraceDirectory());// for iOS trace
+
+			// Check if secure trace path exists
+			if (result instanceof TraceDirectoryResult) {
+			    File file = new File(((SessionManagerImpl)sessionmanager).getTracePath());
+			    if (file.exists()) {
+			        ((TraceDirectoryResult) result).setSecureTrace(true);
+			    }
+			}
 		}
+
 		List<Session> sessionList = sessionmanager.processPacketsAndAssembleSessions(filteredPackets);
 		generateRequestMap(sessionList);
 		List<PacketInfo> filteredPacketsNoDNSUDP = new ArrayList<PacketInfo>();
@@ -246,8 +256,16 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		}
 		stat.setTotalByte(totBytes);
 		stat.setTotalPayloadBytes(totPayloadBytes);
-		// stat is used to get some info for RrcStateMachine etc
 
+		// get Unanalyzed HTTPS bytes
+		boolean isSecureTrace = result instanceof TraceDirectoryResult ? ((TraceDirectoryResult) result).isSecureTrace() : false;
+		if (isSecureTrace) {
+		    stat.setTotalHTTPSBytesNotAnalyzed(getHttpsBytesNotAnalyzed(sessionList));
+		} else {
+		    stat.setTotalHTTPSBytesNotAnalyzed(stat.getTotalHTTPSByte());
+		}
+
+		// stat is used to get some info for RrcStateMachine etc
 		if (result != null) {
 			LOGGER.debug("Starting pre processing in PAI");
 			AbstractRrcStateMachine statemachine = statemachinefactory.create(filteredPackets, aProfile, stat.getPacketDuration(), result.getTraceDuration(), stat.getTotalByte(),
@@ -297,6 +315,33 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			data.setDeviceKeywords(result.getDeviceKeywordInfos());
 		}
 		return data;
+	}
+
+	/**
+	 * Calculates total Https data not analyzed where responses are determined to be Unknown
+	 * @param sessions
+	 * @return
+	 */
+	private int getHttpsBytesNotAnalyzed(List<Session> sessions) {
+	    return
+	        sessions.stream()
+            .filter(s -> !s.isUdpOnly() && s.getRemotePort() == 443)
+            .mapToInt(
+                session -> {
+                    return
+                        session.getRequestResponseInfo().stream()
+                        .filter(
+                            rrInfo -> (
+                                rrInfo.getDirection() != null &&
+                                HttpDirection.RESPONSE.equals(rrInfo.getDirection()) &&
+                                rrInfo.getStatusCode() == 0
+                            )
+                        )
+                        .mapToInt(HttpRequestResponseInfo::getContentLength)
+                        .sum();
+                  }
+            )
+            .sum();
 	}
 
 	/**
@@ -365,6 +410,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		if (!packets.isEmpty()) {
 			int totalHTTPSBytes = 0;
 			int totalTCPBytes = 0;
+		    int totalTCPPayloadBytes = 0;
 			int totalBytes = 0;
 			double avgKbps = 0;
 			double packetsDuration = 0;
@@ -384,6 +430,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 						totalHTTPSBytes += packet.getLen();
 					}
 					totalTCPBytes += packet.getLen();
+					totalTCPPayloadBytes += packet.getPayloadLen();
 				}
 
 				String appName = packet.getAppName();
@@ -435,9 +482,10 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			stat.setAverageTCPKbps(avgKbps);
 			stat.setIpPacketSummary(ipPacketSummary);
 			stat.setPacketDuration(packetsDuration);
-			stat.setTCPPacketDuration(packetsDuration);
+			stat.setTcpPacketDuration(packetsDuration);
 			stat.setTotalByte(totalBytes);
 			stat.setTotalTCPBytes(totalTCPBytes);
+			stat.setTotalTCPPayloadBytes(totalTCPPayloadBytes);
 			stat.setTotalHTTPSByte(totalHTTPSBytes);
 			stat.setTotalPackets(packets.size());
 			stat.setTotalTCPPackets(packets.size());

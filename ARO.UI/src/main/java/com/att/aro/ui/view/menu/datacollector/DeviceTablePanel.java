@@ -36,6 +36,7 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 
 public class DeviceTablePanel extends JPanel implements MouseListener{
 	private static final Logger logger = LogManager.getLogger(DeviceTablePanel.class.getName()); 
@@ -132,6 +133,9 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 			contentTable.setRowHeight(ROW_HEIGHT);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
 			contentTable.addMouseListener(this);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) contentTable.getPopup();
+            popupMenu.initialize();
 		}
 
 		return contentTable;
@@ -195,15 +199,7 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 			boolean validated = false;
 			if (optionPanel != null) {
 				validated = optionPanel.setDevice(selectedIAroDevice);
-				if (optionPanel.isTestEnvironment()) {
-					if (selectedIAroDevice!=null && !selectedIAroDevice.getPlatform().equals(IAroDevice.Platform.Android)) {
-						optionPanel.getAppSelector().setVisible(false);
-						optionPanel.getLabelAppSelectorTitle().setVisible(false);
-					} else {
-						optionPanel.getAppSelector().setVisible(true);
-						optionPanel.getLabelAppSelectorTitle().setVisible(true);
-					}
-				}
+
 				dialog.enableStart(validated);
 			} else if (dialog != null) {
 				dialog.enableStart(true);

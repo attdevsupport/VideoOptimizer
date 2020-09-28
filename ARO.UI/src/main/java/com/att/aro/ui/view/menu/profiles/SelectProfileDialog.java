@@ -49,6 +49,7 @@ import com.att.aro.core.preferences.UserPreferencesFactory;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 /**
@@ -366,6 +367,9 @@ public class SelectProfileDialog extends JDialog {
 								getFilenameTextField().setText(null);
 							}
 						});
+				
+				DataTablePopupMenu popupMenu = (DataTablePopupMenu) jProfilesTable.getPopup();
+	            popupMenu.initialize();
 
 			} catch (IOException e) {
 				dialog.showErrorDialog(

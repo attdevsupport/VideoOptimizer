@@ -25,6 +25,7 @@ import javax.swing.table.TableRowSorter;
 import com.att.aro.core.bestpractice.pojo.HttpsUsageEntry;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.HttpsUsageTableModel;
 
 public class BpSecurityHttpsUsageTablePanel extends AbstractBpDetailTablePanel {
@@ -65,11 +66,14 @@ public class BpSecurityHttpsUsageTablePanel extends AbstractBpDetailTablePanel {
 			TableRowSorter<TableModel> sorter = new TableRowSorter<>(tableModel);
 			contentTable.setRowSorter(sorter);
 			sorter.setComparator(0, Util.getDomainSorter());
-			sorter.setComparator(7, Util.getDomainIntSorter());
-			sorter.setComparator(4, Util.getDomainIntSorter());
+			sorter.setComparator(7, Util.getIntSorter());
+			sorter.setComparator(4, Util.getIntSorter());
 			sorter.setComparator(5, Util.getFloatSorter());
 			sorter.setComparator(6, Util.getFloatSorter());
 			sorter.setComparator(1, Util.getDomainSorter());
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) contentTable.getPopup();
+            popupMenu.initialize();
 		}
 		return contentTable;
 	}
