@@ -3,8 +3,10 @@
 local.properties
 .idea/*
 build/
-bin/
-app/libs/
-app/build/
+/bin/
+/app/libs/
+/app/build/
 gen/
 import-summary.txt
+.classpath
+gradle.properties

@@ -72,9 +72,9 @@ public class AttnScriptUtil {
 				LOGGER.info(line);
 				String trimWhiteSpace = line.replaceAll("\\s+","");
 				String[] valueTemp = trimWhiteSpace.split(",");
-				if (valueTemp.length >= 3) {
+				if (valueTemp.length >= 4) {
 					eventList.add(new SpeedThrottleAdapter(parseInt(valueTemp[0]), parseInt(valueTemp[1]),
-							parseInt(valueTemp[2])));
+							parseInt(valueTemp[2]), parseInt(valueTemp[3])));
 				}else if(valueTemp.length == 1 && valueTemp[0].equals("")){
 					continue;
 				}else {
@@ -100,12 +100,14 @@ public class AttnScriptUtil {
 	}
 
 	private String scriptVPN(SpeedThrottleAdapter throttleProfile) {
-		StringBuffer bodyScript = new StringBuffer(100);
+		StringBuilder bodyScript = new StringBuilder(100);
 		bodyScript.append("check_aro\n");
 		bodyScript.append(
 				"am broadcast -a com.att.arocollector.throttle.dl --ei dlms " + throttleProfile.getThrottleDL() + "\n");
 		bodyScript.append(
 				"am broadcast -a com.att.arocollector.throttle.ul --ei ulms " + throttleProfile.getThrottleUL() + "\n");
+		bodyScript.append(
+                "am broadcast -a com.att.arocollector.attenuator.dl --ei dlms " + throttleProfile.getDelayDL() + "\n");
 		bodyScript.append("sleep " + throttleProfile.getTimeDuration() + "\n");
 		return bodyScript.toString();
 	}

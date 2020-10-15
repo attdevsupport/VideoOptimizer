@@ -198,8 +198,8 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 	}
 	
 	private void addNullSummary() {
-		String[] bpSections = {	                        //  in the original Analyzer order
-				   "textFileCompression"                //  #bp 01   File Download: Text File Compression
+		String[] bpSections = {						    //  in the original Analyzer order
+				  "textFileCompression"                 //  #bp 01   File Download: Text File Compression
 				  ,"caching.duplicateContent"           //  #bp 02   File Download: Duplicate Content
 				  ,"caching.usingCache"                 //  #bp 03   File Download: Cache Control
 				  ,"caching.cacheControl"               //  #bp 04   File Download: Content Expiration

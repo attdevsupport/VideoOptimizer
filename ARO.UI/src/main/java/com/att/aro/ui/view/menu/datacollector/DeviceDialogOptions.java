@@ -794,9 +794,10 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private void enableVideoOritenation(Orientation videoOrientation) {
 		if (Platform.iOS.equals(selectedDevice.getPlatform())) {
 			showVideoOrientation(false);
+		} else {
+			labelVideoOrientTitle.setVisible(true);
 		}
 		this.videoOrient = videoOrientation;
-		labelVideoOrientTitle.setVisible(true);
 		switch (videoOrientation) {
 			case LANDSCAPE:
 				btn_landscape.setSelected(true);
@@ -814,7 +815,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		switch (videoOption) {
 			case HDEF:
 				if (Platform.iOS.equals(selectedDevice.getPlatform())) {
-					btn_lrez.setSelected(true);
 					btn_hdef.setEnabled(true);
 					btn_sdef.setEnabled(false);
 					showVideoOrientation(false);

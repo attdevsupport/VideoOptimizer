@@ -110,7 +110,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		
 		tracePath = result.getTraceDirectory() + Util.FILE_SEPARATOR;
 		LOG.debug("\n**** VideoAnalysis for :" + tracePath + "****");
-		
+	      
 		init();
 		
 		videoPath = tracePath + fileVideoSegments + Util.FILE_SEPARATOR;
@@ -204,13 +204,15 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			case ".m3u8": // HLS Manifest, iOS, DTV
 				processManifestHLS(req);
 				break;
-				
+
 			case ".m4a": // audio
+			case ".mp4a": // audio
 			case ".aac":
 			case "audio":
 			case ".dash":
 			case ".mp2t": // MPEG
 			case ".mp4":
+			case ".mp4v":
 			case ".m4v":
 			case ".m4i":
 			case ".ts": // TransportStream

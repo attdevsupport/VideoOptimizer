@@ -121,18 +121,32 @@ public class VideoAdaptiveBitrateLadderImpl implements IBestPractice {
 				double maxTime = 0;
 				QualityTime maxSection = null;
 				double videoRatio = 1;
+				double durationTotal = 0;
 				for (VideoStream videoStream : videoStreamCollection.values()) {
 					if (videoStream.isSelected() && MapUtils.isNotEmpty(videoStream.getVideoEventList())) {
 						videoRatio = PERCENTILE_LINE / videoStream.getDuration();
 						for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
 							if (videoEvent.isNormalSegment() && videoEvent.isSelected()) {
 								double duration = videoEvent.getDuration();
+								durationTotal  += duration;
 								Integer track = StringParse.stringToDouble(videoEvent.getQuality(), 0).intValue();
 								if ((qualityTime = qualityMap.get(track)) != null) {
+									int count = qualityTime.getCount();
 									qualityTime.setDuration(qualityTime.getDuration() + duration);
 									qualityTime.setPercentage(qualityTime.getDuration() * videoRatio);
+									qualityTime.setBitrateAverage((qualityTime.getBitrateAverage() * count + videoEvent.getBitrate()) / ++count);
+									qualityTime.setCount(count);
 								} else {
-									qualityTime = new QualityTime(videoEvent.getManifest().getVideoName(), track, duration, duration * videoRatio);
+									qualityTime = new QualityTime(videoEvent.getManifest().getVideoName()
+																, 1
+																, track
+																, duration
+																, duration * videoRatio
+																, videoEvent.getResolutionHeight()
+																, videoEvent.getSegmentStartTime()
+																, videoEvent.getChildManifest().getBandwidth() / 1000	// bitrateDeclared (kbps)
+																, videoEvent.getBitrate()	// bitrateAverage (kbps)
+											);
 									qualityMap.put(track, qualityTime);
 								}
 								if (maxTime < qualityTime.getDuration()) {
@@ -158,7 +172,8 @@ public class VideoAdaptiveBitrateLadderImpl implements IBestPractice {
 						, count == 1 ? "" : "s"
 						, track
 						, String.format("%.2f", maxDuration)
-						, String.format("%.0f", percentage)
+						, String.format("%.2f", percentage)
+						, String.format("%.3f", durationTotal)
 						));
 			} else {
 				bpResultType = BPResultType.CONFIG_REQUIRED;

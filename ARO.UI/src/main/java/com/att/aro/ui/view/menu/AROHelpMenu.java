@@ -36,7 +36,6 @@ public class AROHelpMenu implements ActionListener{
 	private static AROHelpMenu instance = null;
 	
 	private static final String faqUriString = ResourceBundleHelper.getURLResource("help.faq.url");
-	private static final String forumUriString = ResourceBundleHelper.getURLResource("help.forum.url");
 	private static final String supportUriString = ResourceBundleHelper.getURLResource("about.support.url");
 	private static final String learnmoreUriString = ResourceBundleHelper.getURLResource("help.learnmore.url");	
 	private static final String VO_USER_GUIDE_URL = ResourceBundleHelper.getURLResource("help.userguide.url");
@@ -49,7 +48,6 @@ public class AROHelpMenu implements ActionListener{
 		menu_help_faq,
 		menu_help_aroguides,
 		menu_help_dependencies,
-		menu_help_forum,
 		menu_help_support,
 		menu_help_downloads,
 		menu_help_learnmore,
@@ -72,9 +70,6 @@ public class AROHelpMenu implements ActionListener{
 			if (dependenciesDialog.isNoticesRead()) {
 				dependenciesDialog.setVisible(true);
 			}
-		}
-		else if (menuAdder.isMenuSelected(MenuItem.menu_help_forum, e)) {
-			bg.launchURI(forumUriString);
 		}
 		else if (menuAdder.isMenuSelected(MenuItem.menu_help_support, e)) {
 			bg.launchURI(supportUriString);
@@ -109,7 +104,6 @@ public class AROHelpMenu implements ActionListener{
 			helpMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_help_faq));
 			helpMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_help_aroguides));
 			helpMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_help_dependencies));
-			helpMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_help_forum));
 			helpMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_help_support));
 			helpMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_help_downloads));
 			helpMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_help_learnmore));

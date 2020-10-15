@@ -371,7 +371,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 		subplotMap.put(ChartPlotOptions.SPEED_THROTTLE, new GraphPanelPlotLabels(
 				ResourceBundleHelper.getMessageString("chart.attenuation"), getBarPlot().drawStepChartPlot(), 2));
-
+		
 		subplotMap.put(ChartPlotOptions.CONNECTIONS, new GraphPanelPlotLabels(
 				ResourceBundleHelper.getMessageString("chart.options.dialog.connections"), getBarPlot().drawStepChartPlot(), 2));
 
@@ -1328,19 +1328,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		}
 	}
 
-	public void launchStartUpDelayDialog(int indexKey) {
-		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("StartupDelayDialog");
-		IVideoPlayer player = parent.getVideoPlayer();
-		double maxDuration = player.getDuration();
-		if (maxDuration >= 0) {
-			JDialog dialog = new StartUpDelayDialog(this, maxDuration, chunkInfo, indexKey, vcPlot.getAllChunks());
-			dialog.pack();
-			dialog.setSize(dialog.getPreferredSize());
-			dialog.validate();
-			dialog.setModalityType(ModalityType.APPLICATION_MODAL);
-			dialog.setVisible(true);
-		}
-	}
 
 	public DiagnosticsTab getGraphPanelParent() {
 		return this.parent;

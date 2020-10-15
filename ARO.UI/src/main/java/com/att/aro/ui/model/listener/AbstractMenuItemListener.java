@@ -1,0 +1,210 @@
+package com.att.aro.ui.model.listener;
+
+import java.awt.Desktop;
+import java.awt.Frame;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
+import java.text.MessageFormat;
+
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.att.aro.core.ApplicationConfig;
+import com.att.aro.core.preferences.UserPreferencesFactory;
+import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
+import com.att.aro.core.util.Util;
+import com.att.aro.ui.commonui.MessageDialogFactory;
+import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.utils.ResourceBundleHelper;
+
+public abstract class AbstractMenuItemListener implements ActionListener {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractMenuItemListener.class);
+
+    protected static final String COMMA_SEPARATOR = ",";
+
+    protected DataTable<?> table;
+    private File exportPath;
+
+    public AbstractMenuItemListener(DataTable<?> table) {
+        this.table = table;
+        String defaultExportPath = UserPreferencesFactory.getInstance().create().getTracePath() != null
+                                    ? UserPreferencesFactory.getInstance().create().getTracePath() : "";
+        exportPath = new File(defaultExportPath);
+    }
+
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        File defaultFile = null;
+
+        if (table != null && "VideoRequestTable".equals(table.getName())) {
+            exportPath = getVideoRequestExportDriectory();
+            String defaultFileName = exportPath.getAbsolutePath() + "/VideoRequestTable.csv";
+            defaultFile = new File(defaultFileName);
+        }
+
+        exportTable(defaultFile);
+    }
+
+    private File getVideoRequestExportDriectory() {
+        String tracePath = PreferenceHandlerImpl.getInstance().getPref("TRACE_PATH");
+        File exportPathDirectory = UserPreferencesFactory.getInstance().create().getLastExportDirectory();
+
+        if (tracePath != null) {
+            tracePath = tracePath + "/exports";
+            File exportPath = new File(tracePath);
+
+            if (!exportPath.isDirectory()) {
+                exportPath.mkdirs();
+            }
+
+            exportPathDirectory = exportPath;
+        }
+
+        return exportPathDirectory;
+    }
+
+    private void exportTable(File defaultFile) {
+        try {
+            JFileChooser chooser = getDefaultFileChooser(defaultFile);
+            saveFile(chooser);
+
+            if (table != null && "VideoRequestTable".equals(table.getName()) && chooser.getCurrentDirectory() != exportPath) {
+                exportPath.delete();
+            }
+        } catch (Exception exp) {
+            LOG.error("Something went wrong while exporting table {}", table != null ? table.getName() : "", exp);
+            String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("exportall.errorFileOpen"),
+                    ApplicationConfig.getInstance().getAppShortName());
+            MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()), errorMsg + exp.getMessage());
+        }
+    }
+
+    protected JFileChooser getDefaultFileChooser(File file) {
+        JFileChooser chooser;
+        if (file != null) {
+            chooser = new JFileChooser(file);
+        } else {
+            String defaultFilePath = UserPreferencesFactory.getInstance().create().getTracePath();
+            if (table != null && table.getName() != null) {
+                defaultFilePath = defaultFilePath + Util.FILE_SEPARATOR + table.getName();
+            } else {
+                defaultFilePath = defaultFilePath + Util.FILE_SEPARATOR + "table";
+            }
+
+            chooser = new JFileChooser();
+            chooser.setSelectedFile(new File(defaultFilePath));
+        }
+
+        String titleDialog = table != null && "VideoRequestTable".equals(table.getName())
+                                ? ResourceBundleHelper.getMessageString("fileChooser.Title.videoRequest") : ResourceBundleHelper.getMessageString("fileChooser.Title");
+        chooser.setDialogTitle(titleDialog);
+        // Set allowed file extensions
+        FileNameExtensionFilter csvFilter = new FileNameExtensionFilter(ResourceBundleHelper.getMessageString("fileChooser.desc.csv"),
+                                                ResourceBundleHelper.getMessageString("fileChooser.contentType.csv"));
+        FileNameExtensionFilter xlsxFilter = new FileNameExtensionFilter(ResourceBundleHelper.getMessageString("fileChooser.desc.excel"),
+                ResourceBundleHelper.getMessageString("fileChooser.contentType.xls"), ResourceBundleHelper.getMessageString("fileChooser.contentType.xlsx"));
+        chooser.addChoosableFileFilter(csvFilter);
+        chooser.addChoosableFileFilter(xlsxFilter);
+        chooser.setFileFilter(xlsxFilter);
+        chooser.setApproveButtonText(ResourceBundleHelper.getMessageString("fileChooser.Save"));
+        chooser.setMultiSelectionEnabled(false);
+
+        return chooser;
+    }
+
+    /**
+     * Method to export the table content in to the CSV, XLS or XLSX file formats.
+     * 
+     * @param chooser    {@link JFileChooser} object to validate the save option.
+     */
+    private void saveFile(JFileChooser chooser) throws Exception {
+        Frame frame = Frame.getFrames()[0];// get parent frame
+        boolean isCSV = true;
+
+        if (chooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
+            File file = chooser.getSelectedFile();
+
+            if (chooser.getFileFilter().getDescription().equals(ResourceBundleHelper.getMessageString("fileChooser.desc.excel"))) {
+                isCSV = false;
+                if (!chooser.getFileFilter().accept(file)) {
+                    file = new File(file.getAbsolutePath() + "." + ResourceBundleHelper.getMessageString("fileChooser.contentType.xlsx"));
+                }
+            } else {
+                if (!file.getAbsolutePath().endsWith(".csv")) {
+                    file = new File(file.getAbsolutePath() + "." + ResourceBundleHelper.getMessageString("fileChooser.contentType.csv"));
+                }
+            }
+
+            if (file.exists()) {
+                if (MessageDialogFactory.getInstance().showConfirmDialog(frame,
+                        MessageFormat.format(ResourceBundleHelper.getMessageString("fileChooser.fileExists"),
+                                file.getAbsolutePath()),
+                        JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
+                    saveFile(chooser);
+                    return;
+                }
+            }
+
+            if (isCSV) {
+                writeCSV(file);
+            } else {
+                writeExcel(file);
+            }
+
+			if (MessageDialogFactory.getInstance().showExportConfirmDialog(frame) == JOptionPane.YES_OPTION) {
+				try {
+					Desktop desktop = Desktop.getDesktop();
+					desktop.open(file);
+				} catch (UnsupportedOperationException unsupportedException) {
+					MessageDialogFactory.showMessageDialog(frame,
+							ResourceBundleHelper.getMessageString("Error.unableToOpen"));
+				}
+			}
+            
+        }
+    }
+
+    /**
+     * Method to convert the {@link Object} values in to {@link String} values.
+     * 
+     * @param val {@link Object} value retrieved from the table cell.
+     * @param isCSV if entry is for CSV file or not
+     * @return Cell data in string format.
+     */
+    protected String createCSVEntry(Object val, boolean isCSV) {
+        StringBuilder writer = new StringBuilder();
+        String str = val != null ? val.toString() : "";
+
+        if (isCSV) {
+            writer.append('"');
+        }
+
+        for (char strChar : str.toCharArray()) {
+            switch (strChar) {
+            case '"':
+                // Add an extra
+                writer.append("\"\"");
+                break;
+            default:
+                writer.append(strChar);
+            }
+        }
+
+        if (isCSV) {
+            writer.append('"');
+        }
+
+        return writer.toString();
+    }
+
+    public abstract void writeExcel(File file) throws IOException;
+    public abstract void writeCSV(File file) throws IOException;
+}

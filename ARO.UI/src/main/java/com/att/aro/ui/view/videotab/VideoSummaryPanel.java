@@ -71,7 +71,7 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 		this.setLayout(new GridBagLayout());
 
 		JLabel titleLabel = getTitle();
-		JScrollPane bufferPane = getBufferTable();
+		JScrollPane bufferPane = new JScrollPane(getBufferTable());
 		int line = 0;
 		add(titleLabel		 , new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(0, 1, 10, 1), 0, 0));
 		add(bufferPane		 , new GridBagConstraints(0, line++, 1, 1, 1.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, new Insets(10, 1, 10, 1), 0, 0));
@@ -84,29 +84,32 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 		return VideoResultSummaryLabel;
 	}
 	
-	public JScrollPane getBufferTable(){
-		bufferData= new String[2][4];
-		bufferData[0][0] = ResourceBundleHelper.getMessageString("videoSummary.buffer.byte");
-		bufferData[1][0] = ResourceBundleHelper.getMessageString("videoSummary.buffer.time");
-		
-		String[] columnNames = { ResourceBundleHelper.getMessageString("videoSummary.buffer.title"),
-				ResourceBundleHelper.getMessageString("videoSummary.buffer.average"),
-				ResourceBundleHelper.getMessageString("videoSummary.buffer.minimum"),
-				ResourceBundleHelper.getMessageString("videoSummary.buffer.maximum") };
-		
-		bufferTable = new JTable(bufferData, columnNames);
-		
-		// Table Property settings
-		bufferTable.setPreferredScrollableViewportSize(bufferTable.getPreferredSize());
-		bufferTable.setFocusable(false);
-		bufferTable.setRowSelectionAllowed(false);
-		bufferTable.setEnabled(false);
-		((DefaultTableCellRenderer)bufferTable.getTableHeader().getDefaultRenderer()).setHorizontalAlignment(JLabel.CENTER);
-		DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer();
-		cellRenderer.setHorizontalAlignment(JLabel.CENTER);
-		bufferTable.getColumnModel().getColumn(0).setCellRenderer(cellRenderer);
-		bufferTable.setGridColor(Color.LIGHT_GRAY);
-		return (new JScrollPane(bufferTable));
+	public JTable getBufferTable() {
+		if (bufferTable == null) {
+			bufferData = new String[2][4];
+			bufferData[0][0] = ResourceBundleHelper.getMessageString("videoSummary.buffer.byte");
+			bufferData[1][0] = ResourceBundleHelper.getMessageString("videoSummary.buffer.time");
+
+			String[] columnNames = { ResourceBundleHelper.getMessageString("videoSummary.buffer.title"),
+					ResourceBundleHelper.getMessageString("videoSummary.buffer.average"),
+					ResourceBundleHelper.getMessageString("videoSummary.buffer.minimum"),
+					ResourceBundleHelper.getMessageString("videoSummary.buffer.maximum") };
+
+			bufferTable = new JTable(bufferData, columnNames);
+
+			// Table Property settings
+			bufferTable.setPreferredScrollableViewportSize(bufferTable.getPreferredSize());
+			bufferTable.setFocusable(false);
+			bufferTable.setRowSelectionAllowed(false);
+			bufferTable.setEnabled(false);
+			((DefaultTableCellRenderer) bufferTable.getTableHeader().getDefaultRenderer())
+					.setHorizontalAlignment(JLabel.CENTER);
+			DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer();
+			cellRenderer.setHorizontalAlignment(JLabel.CENTER);
+			bufferTable.getColumnModel().getColumn(0).setCellRenderer(cellRenderer);
+			bufferTable.setGridColor(Color.LIGHT_GRAY);
+		}
+		return bufferTable;
 	}
 	
 	public void updateBufferTableData(List<VideoBufferData> bufferDataList) {
@@ -120,9 +123,9 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 			if (rowIdx == 1 || bf.getBufferType().equals(ResourceBundleHelper.getMessageString("videoSummary.buffer.time"))) {
 				rowIdx = 1;
 			}
-			bufferData[rowIdx][colIdx++] = decimalFormat.format(bf.getAverage());
-			bufferData[rowIdx][colIdx++] = decimalFormat.format(bf.getMinimum());
-			bufferData[rowIdx][colIdx++] = decimalFormat.format(bf.getMaximum());
+			getBufferTable().getModel().setValueAt(decimalFormat.format(bf.getAverage()), rowIdx, colIdx++);
+			getBufferTable().getModel().setValueAt(decimalFormat.format(bf.getMinimum()), rowIdx, colIdx++);
+			getBufferTable().getModel().setValueAt(decimalFormat.format(bf.getMaximum()), rowIdx, colIdx++);
 		}
 	}
 	

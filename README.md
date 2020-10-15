@@ -52,13 +52,13 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 3.1
+#### Video Optimizer 3.2
 
-**System Requirements for Video Optimizer 3.1:**
+**System Requirements for Video Optimizer 3.2:**
 
-*Before you download Video Optimizer 3.1, make sure you meet the following system requirements for your operating system.*
+*Before you download Video Optimizer 3.2, make sure you meet the following system requirements for your operating system.*
 
-- At least 2GB of RAM, but recommend at least 8GB
+- At least 4GB of RAM, but recommend at least 8GB
 - Java 8 or above
 - For Android developers, Android SDK Level 23 or above
 - FFmpeg
@@ -80,30 +80,44 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 
-**Video Optimizer 3.1 Features**
+**Video Optimizer 3.2 Features**
 
-- Added	New Best Practice "Adaptive Bitrate Ladder"
-  - under Video Best practices to help analyze Adaptive Bitrate and design it to stream files more efficiently over HTTP networks
+- New “Delay” feature is added to Request Response panel under Diagnostics tab. It displays the HTTP Level Delay for every HTTP Request and Response
+  - This new Delay tab will display Request Time Stamp, First Packet Arrival Time, First Packet Delay, Last Packet Arrival Time, Last Packet Delay and Content length
 
-- Video Enhancements
-  - HLS Live stream enhancements for wider support of live video streaming applications
-  - Additional support added to analyze traces supporting HLS and DASH manifest format for traces taken on Android devices
-  - Improved naming of Video Stream for better clarity - Stream names are displayed based on the URL of the Master manifest
+- Export feature in the TCP/UDP table includes timestamps for SYN and SYN-ACK
 
-- Other Enhancements
-  - In Diagnostic Tab, under TCP/UDP table, a new column called “Round Trip Time” is added to calculate TCP session round trip time. For UDP, DNS and QUIC sessions, the round trip time is not applicable and will show N/A
-  - Graphic chart in Diagnostic Tab now includes a new label called "Session Count" along with a tool tip that displays the total number of sessions when user hovers on various points on the graph
-  -	'Landscape' option is now enabled when capturing traces using Command-Line Interface
-  -	Save & Close Functionality button under File -> Preferences -> Video is enhanced to check for precise values before saving it
+- In the Diagnostics tab, Session Count graph is updated to reflect the session closure flags
+
+- In the Diagnostics tab, User Input graph includes additional user events such as screen touch, volume, power and screen orientation
+
+- Dynamic Network Attenuator is enhanced to simulate network latency
+
+- Startup delay dialog is enhanced to identify/select the video playback requested time based on user touch
+
+- Video stream table is redesigned to accommodate more information
+
+- Video stream table includes Export feature
+
+- Best Practice test “Network Comparison” results table includes “Declared Manifest Bandwidth” & “Calculated Network Bitrate data”
+
+- Best Practice test “Multiple Simultaneous Connections to One Endpoint” is modified to fail the test if it detects more than 7 connections to the same server
+
+- Best Practice test “Analyzing the Adaptive Bitrate Ladder” results table displays Resolution, Playback %, Segment Count, Total Duration, Segment Position, Declared Bitrate, and
+
+- Average Bitrate information for each Track
+
+- Best Practice test “HTTPS Usage” includes Total HTTPS Data, percentage of Total HTTPS Data, and Total Unanalyzed HTTPS Data
+
+- macOS users will be able to configure the Wireshark path under Video Optimizer->File->Preferences
+
+- Export options are enhanced with default file name based on the trace and saves the file under the trace folder
 
 
-**Known issues in Release 3.1**
+**Known issues in Release 3.2**
 
-- Some of the video traces don’t display Byte and time information under Video Summary table on Windows and Linux platform
-- In some traces, not all segment gaps are identified.
 - Playtime propagation and therefore stall detection issues appear intermittently in some traces
-- With Ubuntu LTS Versions 16.x.x, VLC versions greater than 3.0.8 doesn't allow for video playback on Video Optimizer. Trace Collection and opening the trace will work but Video Player doesn’t play.
-
+- Time stamp shows 0.00 in the Request/Response view for some of the iOS traces
 
 **Compilation instructions**
 + Please follow the order to compile projects

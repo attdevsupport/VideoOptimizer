@@ -37,6 +37,7 @@ public class ChildManifest {
 	private boolean video;
 	private Manifest manifest;
 	private double segmentStartTime;
+	private String channels;//audio only
 	protected ContentType contentType = ContentType.UNKNOWN;
 	
 	private byte[] moovContent;
@@ -61,6 +62,7 @@ public class ChildManifest {
 		strblr.append("\n\t\t\tBandwidth        :").append(bandwidth);
 		strblr.append("\n\t\t\tCodecs           :").append(codecs);
 		strblr.append("\n\t\t\tQuality          :").append(quality);
+		strblr.append("\n\t\t\tChannels         :").append(channels);
 		strblr.append("\n\t\t\tPixelWidth       :").append(pixelWidth);
 		strblr.append("\n\t\t\tPixelHeight      :").append(pixelHeight);
 		strblr.append(dumpSegmentList());
@@ -73,15 +75,14 @@ public class ChildManifest {
 		manifest.updateStreamProgramDateTime(programDateTime);
 	}
 	
-	public int getNextSegmentID() {
+	public int getNextSegmentID() {	
 		return segmentCount++;
 	}
-	
+
 	private void incrementSegmentStartTime(double duration) {
 		segmentStartTime += duration;
 	}
 	
-
 	/**
 	 * Add to segmentList if not already there.
 	 * 
@@ -100,9 +101,8 @@ public class ChildManifest {
 				segmentInfo.setContentType(getContentType());
 			}
 			return segmentInfo;
-	}
+		}
 		return segmentList.get(segmentUriName);
-
 	}
 
 	public String dumpManifest(int cutoff) {

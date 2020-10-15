@@ -39,22 +39,27 @@ public class TableSortComparator implements Comparator<String> {
 	@Override
 	public int compare(String objectA, String objectB) {
 		switch (columnIndex) {
-		case -1: res =  0;                        			break;    // 
-		case  0: res = compareInteger(objectA, objectB);    break;    // column  0 = Segment No.      - n
-		case  1: res = objectA.compareTo(objectB);          break;    // column  1 = Content          - a
-		case  2: res = compareDouble(objectA, objectB);     break;    // column  2 = DL Start Time    - n
-		case  3: res = compareDouble(objectA, objectB);     break;    // column  3 = DL End Time      - n
-		case  4: res = compareDouble(objectA, objectB);     break;    // column  4 = StallTime        - n
-		case  5: res = compareDouble(objectA, objectB);     break;    // column  5 = PlayTime         - n
-		case  6: res = compareDouble(objectA, objectB);     break;    // column  6 = StartTime        - n
-		case  7: res = compareInteger(objectA, objectB);    break;    // column  7   Track Quality    - a
-		case  8: res = compareDouble(objectA, objectB);     break;    // column  8   Resolution       - n
-		case  9: res = compareDouble(objectA, objectB);     break;    // column  9   Bitrate          - n
-		case 10: res = compareDouble(objectA, objectB);     break;    // column 10   Total Bytes      - n
-		case 11: res = compareDouble(objectA, objectB);     break;    // column 11   Duration         - n
-		case 12: res = compareDouble(objectA, objectB);     break;    // column 12   TCP Session      - n
-		case 13: res = objectA.compareTo(objectB);          break;    // column 13   TCP State        - a
-		case 14: res = 0;          				  			break;    // column 14   SessionLink      - a
+		case -1:
+		case 15: // column 15   SessionLink     - don't sort
+			res =  0; break;
+		case  0:// column  0 = Segment No.      - n
+		case  1:// column  1   Track Quality    - n
+			res = compareInteger(objectA, objectB);     break;
+		case  4:// column  4   Resolution       - n
+		case  5:// column  5   Bitrate          - n
+		case  6:// column  6   Total Bytes      - n
+		case  7:// column  7 = StartTime        - n
+		case  8:// column  8   Duration         - n
+		case  9:// column  9 = DL Start Time    - n
+		case 10:// column 10 = DL End Time      - n
+		case 11:// column 11 = PlayTime         - n
+		case 12:// column 12 = StallTime        - n
+		case 13:// column 13   TCP Session      - n
+			res = compareDouble(objectA, objectB);     break;
+		case  2:// column  2 = Content          - a
+		case  3:// column  3 = CHANNELS,		- a
+		case 14:// column 14   TCP State        - a
+			res = objectA.compareTo(objectB);          break;
 
 		default:
 			res = objectA.compareTo(objectB); 
@@ -64,31 +69,15 @@ public class TableSortComparator implements Comparator<String> {
 	}
 	
 	private int compareInteger(String objectA, String objectB) {
-		if (isNormalCompare(objectA, objectB)) {
-			int val1 = Integer.parseInt(objectA);
-			int val2 = Integer.parseInt(objectB);
-			if (val1 > val2) {
-				return 1;
-			}
-			if (val1 < val2) {
-				return -1;
-			}
-		} 
-		return objectA.compareTo(objectB);
+		return (isNormalCompare(objectA, objectB)) 
+				? Integer.compare(Integer.parseInt(objectA), Integer.parseInt(objectB)) 
+				: objectA.compareTo(objectB);
 	}
 
 	private int compareDouble(String objectA, String objectB) {
-		if (isNormalCompare(objectA, objectB)) {
-			double val1 = Double.parseDouble(objectA);
-			double val2 = Double.parseDouble(objectB);
-			if (val1 > val2) {
-				return 1;
-			}
-			if (val1 < val2) {
-				return -1;
-			}
-		}
-		return objectA.compareTo(objectB);
+		return (isNormalCompare(objectA, objectB)) 
+				? Double.compare(Double.parseDouble(objectA), Double.parseDouble(objectB)) 
+				: objectA.compareTo(objectB);
 	}
 
 	/**
@@ -102,7 +91,7 @@ public class TableSortComparator implements Comparator<String> {
 		if (StringUtils.isEmpty(notApplicableString)) {
 			return true;
 		}
-		return !( objectA.contains(notApplicableString) || objectB.contains(notApplicableString));
+		return !((objectA.contains(notApplicableString) || objectB.contains(notApplicableString)) || (objectA.contains("NA") || objectB.contains("NA")));
 	}
 	
 }

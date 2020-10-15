@@ -21,6 +21,8 @@ import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -70,18 +72,11 @@ public class DataTable<T> extends JTable {
 		this(null, null);
 	}
 
-	/**
-	 * Initializes a new instance of the DataTable class using the specified
-	 * table model.
-	 *
-	 * @param dtm
-	 *            The table model.
-	 */
 	public DataTable(DataTableModel<T> dtm) {
 		this(dtm, dtm.createDefaultTableColumnModel());
 		super.autoCreateColumnsFromModel = true;
 	}
-
+	
 	/**
 	 * Initializes a new instance of the DataTable class using the specified
 	 * table model and table column model.
@@ -100,6 +95,27 @@ public class DataTable<T> extends JTable {
 		this.addMouseListener(mouseListener);
 		this.popup = new DataTablePopupMenu(this);
 	}
+
+	/**
+     * Initializes a new instance of the DataTable class using the specified
+     * table model, table column model and pop up menu items
+     *
+     * @param dtm
+     *            The table model.
+     * @param tcm
+     *            The table column model.
+     * @param popupMenuItems
+     *            List of pop up menu items
+     */
+    public DataTable(DataTableModel<T> dtm, TableColumnModel tcm, List<JMenuItem> popupMenuItems) {
+        super(dtm, tcm);
+        setDefaultRenderer(Object.class, new DataTableCellRenderer());
+        setDefaultRenderer(Double.class, new DataTableCellRenderer());
+        setDefaultRenderer(Number.class, new DataTableCellRenderer());
+        setDefaultRenderer(Float.class, new DataTableCellRenderer());
+        this.addMouseListener(mouseListener);
+        this.popup = new DataTablePopupMenu(this, popupMenuItems);
+    }
 
 	/**
 	 * Sets a data table model.

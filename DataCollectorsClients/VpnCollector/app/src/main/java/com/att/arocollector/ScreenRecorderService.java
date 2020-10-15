@@ -10,20 +10,25 @@ import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
 import android.os.Build;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import com.att.arocollector.utils.BundleKeyUtil;
 import com.att.arocollector.video.Orientation;
 import com.att.arocollector.video.VideoCapture;
 import com.att.arocollector.attenuator.AttenuatorUtil;
+import com.att.arocollector.video.VideoOption;
 
 public class ScreenRecorderService extends Service {
     private static MediaProjectionManager smediaProjectionManager;
+    private static final String CHANNEL_ID = "VPN Collector VPN Notification";
+    private static String TAG = ScreenRecorderService.class.getSimpleName();
     private int notifyID = 1;
+
     private NotificationCompat.Builder mBuilder;
-    public static final String CHANNEL_ID = "VPN Collector VPN Notification";
 
     public static void setMediaProjection(MediaProjectionManager mediaProjectionManager) {
         if (mediaProjectionManager == null) {
@@ -59,15 +64,17 @@ public class ScreenRecorderService extends Service {
         WindowManager window = (WindowManager) getSystemService(WINDOW_SERVICE);
         int resultCode = intent.getIntExtra("code",-1);
         MediaProjection mediaProjection = smediaProjectionManager.getMediaProjection(resultCode,  intent);
-        Orientation videoOrient = ((Orientation)intent.getSerializableExtra("videoorientation")==null)
-                ?(Orientation)intent.getSerializableExtra("videoorientation"):Orientation.PORTRAIT;
-					intent.putExtra("code", resultCode);
-					intent.putExtra("bitrate",8000000);
-					intent.putExtra("screensize","1280x720");
-					intent.putExtra("videoorientation",videoOrient);
-        VideoCapture videoCapture = new VideoCapture(getApplicationContext(), window
-                , mediaProjection, intent.getIntExtra("bitrate",0),
-                intent.getStringExtra("screensize" ), videoOrient);
+        int bitRate = intent.getIntExtra(BundleKeyUtil.BIT_RATE,0);
+        String screenSize = intent.getStringExtra(BundleKeyUtil.SCREEN_SIZE);
+        Orientation videoOrient = (Orientation) intent.getSerializableExtra(BundleKeyUtil.VIDEO_ORIENTATION);
+        VideoCapture videoCapture = new VideoCapture(
+                getApplicationContext(),
+                window,
+                mediaProjection,
+                bitRate,
+                screenSize,
+                videoOrient
+        );
         videoCapture.start();
 
         return super.onStartCommand(intent, flags, startId);
@@ -81,7 +88,8 @@ public class ScreenRecorderService extends Service {
                     NotificationManager.IMPORTANCE_DEFAULT
             );
             NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(serviceChannel);
+            if(manager!=null)
+                manager.createNotificationChannel(serviceChannel);
         }
     }
     @Nullable

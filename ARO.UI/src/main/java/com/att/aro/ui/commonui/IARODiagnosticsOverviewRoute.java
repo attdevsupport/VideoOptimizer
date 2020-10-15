@@ -63,12 +63,6 @@ public interface IARODiagnosticsOverviewRoute {
 	public void routeHyperlink(BestPracticeType bpType);
 	/**
 	 * <p>
-	 * Interface to route to the diagnostic Tab & launch slider dialog 
-	 * 
-	 */
-	public void launchStartUpDelayDialog();
-	/**
-	 * <p>
 	 * Interface to route to the video Tab & launch slider dialog 
 	 * 
 	 */

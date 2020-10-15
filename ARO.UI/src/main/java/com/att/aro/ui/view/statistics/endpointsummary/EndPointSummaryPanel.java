@@ -34,6 +34,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
@@ -141,6 +142,9 @@ public class EndPointSummaryPanel extends JSplitPane {
 		if (table == null) {
 			table = new DataTable<ApplicationPacketSummary>(tableModel);
 			table.setAutoCreateRowSorter(true);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) table.getPopup();
+            popupMenu.initialize();
 		}
 		return table;
 	}
@@ -157,6 +161,9 @@ public class EndPointSummaryPanel extends JSplitPane {
 			TableRowSorter<TableModel> sorter = new TableRowSorter<>(ipTableModel);	
 			sorter.setComparator(0, Util.getDomainSorter());
 			ipTable.setRowSorter(sorter);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) table.getPopup();
+            popupMenu.initialize();
 		}
 		return ipTable;
 	}

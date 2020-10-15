@@ -110,7 +110,6 @@ public class VideoChunksPlot implements IPlot {
 
 		videoChunkPlotter.setChunkPlayTimeList(chunkPlayTime);
 		setChunkPlayBackTimeCollection(traceData);
-		boPlot.setChunkPlayTimeList(chunkPlayTime);
 		boTimePlot.setChunkPlayTimeList(chunkPlayTime);
 
 		populate(plot, traceData);
@@ -122,7 +121,7 @@ public class VideoChunksPlot implements IPlot {
 
 		boTimePlot.populate(bufferTimePlot, traceData);
 
-		boPlot.populate(bufferOccupancyPlot, traceData);
+		boPlot.populate(bufferOccupancyPlot, traceData); // byte buffer occupancy
 
 		refreshVCPlot(plot, traceData);
 
@@ -350,17 +349,6 @@ public class VideoChunksPlot implements IPlot {
 	}
 
 	/**
-	 * Validates if x & y data values represent the first video chunk
-	 */
-	public boolean isFirstDataItemPoint(double xDataValue, double yDataValue) {
-		if (videoChunkPlotter.getFirstChunkTimestamp() == xDataValue && yDataValue == 0) {
-			return true;
-		} else
-			return false;
-
-	}
-
-	/**
 	 * Validates if x & y data values represent the video chunk
 	 */
 	public boolean isDataItemPoint(double xDataValue, double yDataValue) {
@@ -415,8 +403,7 @@ public class VideoChunksPlot implements IPlot {
 	}
 
 	public List<VideoEvent> getAllChunks() {
-		StreamingVideoCompiled streamingVideoCompiled = videoChunkPlotter.getStreamingVideoData().getStreamingVideoCompiled();
-		return streamingVideoCompiled.getAllSegments();
+		return videoChunkPlotter.getStreamingVideoData().getStreamingVideoCompiled().getAllSegments();
 	}
 
 	public List<XYSeriesCollection> getStartUpDelayCollection() {

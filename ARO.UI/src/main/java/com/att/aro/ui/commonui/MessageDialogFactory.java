@@ -95,6 +95,11 @@ public class MessageDialogFactory extends JOptionPane{
 				MessageFormat.format(ResourceBundleHelper.getMessageString("Error.unexpected"), throwable.getClass().getName(),
 						msg), ResourceBundleHelper.getMessageString("error.title"), ERROR_MESSAGE);
 	}
+	
+	public void showPlainDialog(Component parentComponent,String msg,String title) {
+		showMessageDialog(parentComponent,msg, title, PLAIN_MESSAGE);
+	}
+	
 
 	/**
 	 * Displays an error dialog for the specified invalid trace file name. The

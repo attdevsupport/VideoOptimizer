@@ -17,6 +17,7 @@
 package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -33,7 +34,9 @@ import com.att.aro.core.bestpractice.pojo.VideoNetworkComparisonResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.util.StringParse;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
+import com.att.aro.core.videoanalysis.pojo.SegmentComparison;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
@@ -41,12 +44,21 @@ import com.att.aro.core.videoanalysis.pojo.VideoStream;
  * <pre>
  * VBP #4 Video File and Network Comparison
  * 
- * Criteria: ARO will compare the bitrate of a streaming file with the bitrate/bandwidth of the network.
+ * Criteria: ARO will compare the bitrate of a streaming file with the
+ * bitrate/bandwidth of the network.
  * 
- * About: Deliver video at a rate within the network capability, while factoring in the HTTP/TCP protocol behavior.
+ * About: Deliver video at a rate within the network capability, while factoring
+ * in the HTTP/TCP protocol behavior.
  * 
- * Result: Your video was delivered at X rate of speed. The network was capable of X bitrate. Your video could be X% faster ( or should be X% slower) for this
- * type network.
+ * Result: Your video was delivered at X rate of speed. The network was capable
+ * of X bitrate. Your video could be X% faster ( or should be X% slower) for
+ * this type network.
+ * 
+ * Added a new table for video network comparison BP. The table displayed four
+ * columns, segment track, usage, segment declared bitrate and network
+ * calculated throughput (Kbps) Each segment download throughput formula :
+ * (Total byte * 8 (bit) / 1000 (K)) / (durationInMilliseconds(ms) / 1000). When traces have
+ * multiple segments, VO added it up and calculated the average.
  * 
  * Link: goes to a view of network
  */
@@ -104,6 +116,7 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 
 		VideoNetworkComparisonResult result = new VideoNetworkComparisonResult();
 		init(result);
+		SortedMap<Integer, SegmentComparison> qualityMap = new TreeMap<>();
 
 		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
 				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
@@ -129,6 +142,36 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 				result.setResultText(multipleManifestsSelected);
 				result.setSelfTest(false);
 			} else {
+				SegmentComparison segmentComparison;
+				for (VideoStream videoStream : videoStreamCollection.values()) {
+					if (videoStream.isSelected() && MapUtils.isNotEmpty(videoStream.getVideoEventList())) {
+						for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
+							if (videoEvent.isNormalSegment() && videoEvent.isSelected()) {
+								Integer track = StringParse.stringToDouble(videoEvent.getQuality(), 0).intValue();
+								double endTS = videoEvent.getEndTS();
+								double startTS = videoEvent.getStartTS();
+								double durationInMilliseconds = endTS - startTS;
+								double throughput = 0.0;
+								if (durationInMilliseconds > 0) {
+									throughput = (videoEvent.getTotalBytes() * 8) / durationInMilliseconds;
+								}
+								if ((segmentComparison = qualityMap.get(track)) != null) {
+									int count = segmentComparison.getCount();
+									segmentComparison.setCount(++count);
+									segmentComparison.getCalculatedThroughputList().add(throughput);
+								} else {
+									List<Double> throughputs = new ArrayList<Double>();
+									throughputs.add(throughput);
+									segmentComparison = new SegmentComparison(videoEvent.getManifest().getVideoName(),
+											1, track, videoEvent.getChildManifest().getBandwidth() / 1000.0 // declaredBitrate (kbps)
+											, throughputs);
+									qualityMap.put(track, segmentComparison);
+								}
+							}
+						}
+					}
+				}
+				result.setResults(qualityMap);
 				avgBitRate = getAvgBitRate(summaryBitRate, filteredVideoSegment);
 				avgKbps = getAvgThroughput(tracedata);
 				result.setAvgBitRate(avgBitRate);

@@ -19,7 +19,7 @@ import java.util.ResourceBundle;
 
 public final class AnalyticsCommon {
 	// Google Analytics Messages
-	public static final boolean GA_SENDFLAG = true;
+	public static final boolean GA_SENDFLAG = false;
 	public static final String GA_TRACK_ID = getAnalyticsId();
 	public static final int GA_VERSION_ID = 1;
 	public static final int GA_CAPACITY = 50;

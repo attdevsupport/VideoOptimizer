@@ -72,6 +72,8 @@ public class Session implements Serializable, Comparable<Session> {
 	private boolean iOSSecureSession;
 	
 	private boolean dataInaccessible = false;
+	
+	private boolean sessionComplete = false;
 
 	/**
 	 * Domain name is the initial host name requested that initiated a TCP
@@ -182,10 +184,10 @@ public class Session implements Serializable, Comparable<Session> {
 	 * An array of bytes containing the extended downlink storage.
 	 */
 	private byte[] storageDlext = null;
-
+		
 	private TreeMap<Double, PacketInfo> synPackets = new TreeMap<>();
 	private TreeMap<Double, PacketInfo> synAckPackets = new TreeMap<>();
-
+	
 	/**
 	 * Initializes an instance of the TCPSession class, using the specified
 	 * remote IP, remote port, and local port.
@@ -290,16 +292,15 @@ public class Session implements Serializable, Comparable<Session> {
 	public double getSessionEndTime() {
 		
 		if (packets != null && !packets.isEmpty()) {
-			return packets.get(packets.size() - 1).getTimeStamp();		
+			return packets.get(packets.size() - 1).getTimeStamp();
 		}
-		
+
 		if (udpPackets != null && !udpPackets.isEmpty()) {
 			return udpPackets.get(udpPackets.size() - 1).getTimeStamp();
 		}
 
 		return 0.0;
 	}
-
 
 	/**
 	 * Gets the start time of the UDP session, in seconds, relative to the start
@@ -456,5 +457,5 @@ public class Session implements Serializable, Comparable<Session> {
 	public void addSynAckPackets(PacketInfo packetInfo) {
 		synAckPackets.put(packetInfo.getTimeStamp(), packetInfo);
 	}
-
+	
 }

@@ -71,7 +71,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 	private Double segmentTimeScale;
 	private Pattern nameRegex = Pattern.compile("\\/([^\\/]*)\\/$");
 	private String[] urlName;
-
+	
 	@NonNull
 	private Double lastPresentationTimeOffset = -1D;
 	
@@ -169,7 +169,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 				Double presentationTimeOffset = StringParse.stringToDouble(segmentTemplate.getPresentationTimeOffset(), 0);
 				Double timescale = StringParse.stringToDouble(segmentTemplate.getTimescale(), 1);
 				Double timeLineStart = StringParse.stringToDouble(segmentList.get(0).getStartTime(), 0);
-			
+				
 				if (isDynamic && (lastPresentationTimeOffset == -1D || ((Double.compare(lastPresentationTimeOffset, presentationTimeOffset) != 0)))) {
 					lastPresentationTimeOffset = presentationTimeOffset;
 					switchManifestCollection(newManifest, key, manifest.getRequestTime());
@@ -226,7 +226,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 							
 					if (segmentList.size() > 0) {
 						SegmentST segment0 = segmentList.get(0);
-						
+
 						timePos = StringParse.stringToDouble(segment0.getStartTime(), 0);
 						if (childManifest.getInitialStartTime() == -1) {
 							initialStartTime = timePos;
@@ -234,7 +234,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 						}
 
 						// segment moov
-						segmentInfo = genSegmentInfo(contentType, timescale, qualityID, segmentID, timePos, 0D);
+						segmentInfo = genSegmentInfo(contentType, timescale, qualityID, segmentID, timePos - initialStartTime, 0D);
 						segmentUriName = initialization.replaceAll("\\$(.*)\\$", rid);
 						LOG.debug(String.format("moov >> %d :%s", segmentID, segmentUriName));
 						if (newManifest.getSegUrlMatchDef() == null) {
@@ -265,10 +265,14 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 					addToSegmentManifestCollectionMap(childManifest.getUriName());
 
 				}
-				
 				lastTimeLineStart = timeLineStart;
 				if (getChildManifest() == null) {
 					childManifest = createChildManifest(newManifest, "", newManifest.getUriStr());
+				}
+				if (adaptationSet.getContentType().equals("audio")) {
+					if (adaptationSet.getAudioChannelConfiguration() != null) {
+						childManifest.setChannels(adaptationSet.getAudioChannelConfiguration().getValue());
+					}
 				}
 			}
 		}
@@ -333,7 +337,10 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 		childManifest.setQuality(qualityID);
 		childManifest.setPixelHeight(StringParse.stringToDouble(representation.getHeight(), 0).intValue());
 		childManifest.setPixelWidth(StringParse.stringToDouble(representation.getWidth(), 0).intValue());
-
+		if (representation.getRepresentationACC() != null) {
+			LOG.debug("Parsing audio channels values: " + representation.getRepresentationACC().getValue());
+			childManifest.setChannels(representation.getRepresentationACC().getValue());
+		}
 		Double duration = StringParse.stringToDouble(representation.getEncodedSegment().getDuration(), 0);
 		String[] encodedSegments = representation.getEncodedSegment().getEncodedSegmentListValue().split(";");
 

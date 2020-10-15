@@ -25,6 +25,7 @@ import javax.swing.table.TableRowSorter;
 import com.att.aro.core.bestpractice.pojo.WeakCipherEntry;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.WeakCipherTableModel;
 
 public class BpSecurityWeakCipherTablePanel extends AbstractBpDetailTablePanel {
@@ -62,6 +63,9 @@ public class BpSecurityWeakCipherTablePanel extends AbstractBpDetailTablePanel {
 			TableRowSorter<TableModel> sorter = new TableRowSorter<>(tableModel);
 			contentTable.setRowSorter(sorter);
 			sorter.setComparator(0, Util.getDomainSorter());
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) contentTable.getPopup();
+            popupMenu.initialize();
 		}
 		
 		return contentTable;

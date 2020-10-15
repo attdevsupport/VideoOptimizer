@@ -16,20 +16,30 @@
 package com.att.aro.ui.view.overviewtab;
 
 import java.awt.BorderLayout;
+import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
 import java.text.NumberFormat;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.utils.CommonHelper;
@@ -54,6 +64,8 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 
 	private static final Font LABEL_FONT = new Font("TEXT_FONT", Font.BOLD, 12);
 	private static final Font TEXT_FONT = new Font("TEXT_FONT", Font.PLAIN, 12);
+	
+	private static final Logger LOG = LogManager.getLogger(DeviceNetworkProfilePanel.class.getName());
 
 	public JPanel layoutDataPanel() {
 		final int borderGap = 10;
@@ -190,7 +202,12 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 	
 	public void refresh(AROTraceData aModel){
 		this.dateValueLabel.setText(aModel.getAnalyzerResult().getTraceresult().getTraceDateTime().toString());
-		this.traceValueLabel.setText(aModel.getAnalyzerResult().getTraceresult().getTraceDirectory());
+		
+		this.traceValueLabel.setText(getTracePath(aModel.getAnalyzerResult().getTraceresult().getTraceDirectory()));
+		this.traceValueLabel.addMouseListener(getOpenFolderAdapter());
+		this.traceValueLabel.setToolTipText(ResourceBundleHelper.getMessageString("trace.hyperlink"));
+		this.traceValueLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
 		this.byteCountTotalLabel.setText(Integer.toString(aModel.getAnalyzerResult().getStatistic().getTotalByte()));
 		this.profileValueLabel.setText(aModel.getAnalyzerResult().getProfile().getName());
 
@@ -247,5 +264,32 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 			this.uplinkValueLabel.setText("");
 		}
 	}
+
+	private String getTracePath(String traceDirectory) {
+		StringBuilder tracePath = new StringBuilder();
+		tracePath.append("<html><a href=\"#\">");
+		tracePath.append(traceDirectory);
+		tracePath.append("</a></html>");
+		return tracePath.toString();
+	}
 	
+	private MouseAdapter getOpenFolderAdapter() {
+		MouseAdapter openFolderAction = new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+
+				Desktop desktop = null;
+				if (Desktop.isDesktopSupported()) {
+					desktop = Desktop.getDesktop();
+					try {
+						File traceFile = new File(PreferenceHandlerImpl.getInstance().getPref("TRACE_PATH"));
+						desktop.open(traceFile);
+					} catch (IOException ex) {
+						LOG.error("Error opening the Trace Folder : " +ex.getMessage());
+					}
+				}
+			}
+		};
+		return openFolderAction;
+	}
 }

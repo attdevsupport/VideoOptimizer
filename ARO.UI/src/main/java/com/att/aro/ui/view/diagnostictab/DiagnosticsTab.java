@@ -47,8 +47,8 @@ import javax.swing.plaf.basic.BasicArrowButton;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.bestpractice.pojo.ForwardSecrecyEntry;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
@@ -65,6 +65,7 @@ import com.att.aro.ui.commonui.GUIPreferences;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.diagnostic.PacketViewTableModel;
 import com.att.aro.ui.model.diagnostic.TCPUDPFlowsTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -89,6 +90,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	private JLabel tcpFlowsLabel;
 	private DataTable<PacketInfo> jPacketViewTable;
 	private RequestResponseDetailsPanel jHttpReqResPanel;
+	private HttpDelayPanel jHttpDelayPanel;
 	private TCPFlowsDataTable<Session> tcpflowsTable;
 	// Model
 	private TCPUDPFlowsTableModel jTcpUdpFlowsModel = new TCPUDPFlowsTableModel();
@@ -162,6 +164,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 
 	JPanel chartAndTablePanel;
 	GUIPreferences guiPreferences;
+	
 
 	public DiagnosticsTab(IAROView aroview, IARODiagnosticsOverviewRoute diagnosticRoute) {
 		super(true);
@@ -266,6 +269,8 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 					getJPacketViewTapScrollPane(), null);
 			jTCPFlowsContentTabbedPane.addTab(ResourceBundleHelper.getMessageString("tcp.tab.content"), null,
 					getJContentViewPanel(), null);
+			jTCPFlowsContentTabbedPane.addTab(ResourceBundleHelper.getMessageString("tcp.tab.delay"), null,
+					getHttpDelayPanel(), null);
 			// jTCPFlowsPanel.setPreferredSize(new Dimension(400, 110));
 			jTCPFlowsPanel.setMinimumSize(new Dimension(400, 110));
 		}
@@ -312,6 +317,9 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 					this.packetInfo = packetInfo;
 				}
 			});
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) jPacketViewTable.getPopup();
+            popupMenu.initialize();
 		}
 		return jPacketViewTable;
 	}
@@ -324,6 +332,19 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			jContentViewPanel = new ContentViewJPanel();
 		}
 		return jContentViewPanel;
+	}
+	
+	/**
+	 * Initializes and returns the Panel for the Delay tab at the bottom.
+	 * @param httpDelayPanel 
+	 * @return 
+	 */
+	private HttpDelayPanel getHttpDelayPanel() {
+		if (jHttpDelayPanel == null) {
+			jHttpDelayPanel = new HttpDelayPanel();
+		}
+		return jHttpDelayPanel;
+
 	}
 
 	/**
@@ -478,6 +499,11 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			tcpflowsTable.setAutoCreateRowSorter(true);
 			tcpflowsTable.setGridColor(Color.LIGHT_GRAY);
 			tcpflowsTable.getSelectionModel().addListSelectionListener(this);
+			
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) tcpflowsTable.getPopup();
+            popupMenu.setMenuItems(tcpflowsTable.getMenuItems());
+            popupMenu.initialize();
+
 			// Adding the table listener for getting the check box changes
 			tcpflowsTable.getModel().addTableModelListener(new TableModelListener() {
 				@Override
@@ -524,6 +550,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		// clear table
 		jPacketViewTableModel.removeAllRows();
 		getJHttpReqResPanel().getjRequestResponseTableModel().removeAllRows();
+		getHttpDelayPanel().getHttpDelayTableModel().removeAllRows();
 		getJContentViewPanel().getJContentTextArea().setText("");
 	}
 
@@ -555,8 +582,11 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 				if (session == null) {
 					jPacketViewTableModel.removeAllRows();
 					getJHttpReqResPanel().getjRequestResponseTableModel().removeAllRows();
+					getHttpDelayPanel().getHttpDelayTableModel().removeAllRows();
 					getJContentViewPanel().getJContentTextArea().setText("");
 				} else {
+					getHttpDelayPanel().updateTable(session);
+					getJHttpReqResPanel().updateTable(session);
 					if (session.isUdpOnly()) {
 						jPacketViewTableModel.setData(session.getUdpPackets());
 						getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
@@ -566,8 +596,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 						if (jTCPFlowsContentTabbedPane.getSelectedComponent() == getJContentViewPanel()) {
 							getJContentViewPanel().updateContext(session);
 						}
-						getJContentViewPanel().getJContentTextArea().setCaretPosition(0);
-						getJHttpReqResPanel().updateTable(session);
+						getJContentViewPanel().getJContentTextArea().setCaretPosition(0);						
 					} else {
 						jPacketViewTableModel.setData(session.getPackets());
 						getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
@@ -576,7 +605,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 						}
 						getJContentViewPanel().updateContext(session);
 						getJContentViewPanel().getJContentTextArea().setCaretPosition(0);
-						getJHttpReqResPanel().updateTable(session);
+						
 					}
 				}
 			}
@@ -754,11 +783,6 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		} else {
 			LOGGER.warn("No timestamp for Diagnostic Tab routing");
 		}
-	}
-
-	public void launchStartUpDelayDialog() {
-		if (null != getGraphPanel())
-			getGraphPanel().launchStartUpDelayDialog(0);
 	}
 
 	// only for security best practice table route

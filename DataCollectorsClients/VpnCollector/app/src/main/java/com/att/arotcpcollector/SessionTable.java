@@ -106,7 +106,7 @@ class SessionTable implements Map<String, Session>{
             Log.i(TAG, "Eviction initiated:" + oldSession.getSessionKey());
             SessionManager.getInstance().closeSession(oldSession);
         } else {
-            Log.e(TAG, "Error evicting entry");
+            Log.e(TAG, "Error evicting entry: " + ((oldSession != null) ? oldSession.getSessionKey() : "Null Session"));
         }
     }
 

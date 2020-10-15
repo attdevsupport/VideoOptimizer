@@ -153,12 +153,8 @@ public class AROCollectorActivity extends AppCompatActivity
 		if (ActivityCompat.shouldShowRequestPermissionRationale(this,
 				Manifest.permission.CAMERA)) {
 			Snackbar.make(mLayout, R.string.access_required,
-					Snackbar.LENGTH_INDEFINITE).setAction(R.string.ok, new View.OnClickListener() {
-				@Override
-				public void onClick(View view) {
-					// Request the permission
+					Snackbar.LENGTH_INDEFINITE).setAction(R.string.ok, (View v) ->{
 					ActivityCompat.requestPermissions(AROCollectorActivity.this, voPermissionList,0);
-				}
 			}).show();
 		}else{
 			Snackbar.make(mLayout, R.string.permission_unavailable, Snackbar.LENGTH_SHORT).show();
@@ -437,6 +433,10 @@ public class AROCollectorActivity extends AppCompatActivity
 					Intent intentMedia = new Intent(this, ScreenRecorderService.class);
 					ScreenRecorderService.setMediaProjection(mediaProjectionManager);
 					intentMedia.putExtras(data.getExtras());
+					Log.d(TAG,"screenSize: "+ screenSize + " bitRate: "+ bitRate+ " videoOrient: "+ videoOrient);
+					intentMedia.putExtra(BundleKeyUtil.SCREEN_SIZE,screenSize);
+					intentMedia.putExtra(BundleKeyUtil.BIT_RATE,bitRate);
+					intentMedia.putExtra(BundleKeyUtil.VIDEO_ORIENTATION,videoOrient);
 					startForegroundService(intentMedia);
 				}else{
 					MediaProjection mediaProjection = mediaProjectionManager.getMediaProjection(resultCode,  Objects.requireNonNull(data));

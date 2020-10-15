@@ -100,9 +100,11 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 			};
 
 			requestListTable = new DataTable<HttpRequestResponseInfo>();
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) requestListTable.getPopup();
+            popupMenu.initialize();
+
 			requestListTable.setName("VideoRequestTable");
-			DataTablePopupMenu tablePopUp = ((DataTablePopupMenu)requestListTable.getPopup());
-			tablePopUp.setTitleDialog( ResourceBundleHelper.getMessageString("fileChooser.Title.videoRequest"));
 			requestListTable.setModel(model);
 			JTableHeader header = requestListTable.getTableHeader();
 			requestListTable.setGridColor(Color.LIGHT_GRAY);

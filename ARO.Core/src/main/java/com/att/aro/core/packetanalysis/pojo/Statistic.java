@@ -21,9 +21,8 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * Statistic contains an accumulation of certain statistics pertaining to some
@@ -45,7 +44,7 @@ import lombok.Setter;
  * Date: October 24, 2014
  */
 
-@EqualsAndHashCode
+@Data
 public class Statistic {
 	/**
 	 * Total bytes
@@ -63,6 +62,11 @@ public class Statistic {
 	 * total HTTPS bytes
 	 */
 	private int totalHTTPSByte;
+
+	/**
+     * Total HTTPS bytes not analyzed
+     */
+    private int totalHTTPSBytesNotAnalyzed;
 	
 	/**
 	 * packet Duration
@@ -71,7 +75,7 @@ public class Statistic {
 	/**
 	 * packet Duration
 	 */
-	private double packetTCPDuration;
+	private double tcpPacketDuration;
 	/**
 	 * average Kbps
 	 */
@@ -91,9 +95,10 @@ public class Statistic {
 	 * appName List
 	 */
 	private Set<String> appName;
-	
-	@Getter @Setter
+
 	private int totalPayloadBytes;
+
+	private int totalTCPPayloadBytes;
 	
 	/**
 	 * ip Packet Summary List
@@ -120,204 +125,4 @@ public class Statistic {
 	@JsonIgnore
 	@EqualsAndHashCode.Exclude
 	private Map<Integer, Integer> packetSizeToCountMap = null;
-
-	/**
-	 * Returns total bytes
-	 * @return total bytes
-	 */
-	public int getTotalByte() {
-		return totalByte;
-	}
-
-	/**
-	 * Sets total bytes
-	 * @param totalByte total bytes
-	 */
-	public void setTotalByte(int totalByte) {
-		this.totalByte = totalByte;
-	}
-
-	/**
-	 * Returns total TCP bytes
-	 * 
-	 * @return total TCP bytes
-	 */
-	public int getTotalTCPBytes() {
-		return totalTCPBytes;
-	}
-
-	/**
-	 * Sets total TCP bytes
-	 * 
-	 * @param totalByte
-	 *            total TCP bytes
-	 */
-	public void setTotalTCPBytes(int totalTCPBytes) {
-		this.totalTCPBytes = totalTCPBytes;
-	}
-
-	/**
-	 * Returns total HTTPS bytes
-	 * 
-	 * @return total HTTPS bytes
-	 */
-	public int getTotalHTTPSByte() {
-		return totalHTTPSByte;
-	}
-
-	/**
-	 * Sets total HTTPS bytes
-	 * @param totalHTTPSByte - total HTTPS bytes
-	 */
-	public void setTotalHTTPSByte(int totalHTTPSByte) {
-		this.totalHTTPSByte = totalHTTPSByte;
-	}
-
-	/**
-	 * Returns packet Duration
-	 * @return - packet Duration
-	 */
-	public double getPacketDuration() {
-		return packetDuration;
-	}
-
-	/**
-	 * Sets packet Duration
-	 * @param packetDuration - packet Duration
-	 */
-	public void setPacketDuration(double packetDuration) {
-		this.packetDuration = packetDuration;
-	}
-
-	/**
-	 * Returns average Kbps
-	 * @return the average Kbps
-	 */
-	public double getAverageKbps() {
-		return averageKbps;
-	}
-
-	/**
-	 * Sets average Kbps
-	 * @param averageKbps - average Kbps
-	 */
-	public void setAverageKbps(double averageKbps) {
-		this.averageKbps = averageKbps;
-	}
-
-	/**
-	 * Returns total Packets
-	 * @return total Packets
-	 */
-	public int getTotalPackets() {
-		return totalPackets;
-	}
-
-	/**
-	 * Sets total Packets
-	 * @param totalPackets - total Packets
-	 */
-	public void setTotalPackets(int totalPackets) {
-		this.totalPackets = totalPackets;
-	}
-
-	/**
-	 * Returns appName List
-	 * @return appName List
-	 */
-	public Set<String> getAppName() {
-		return appName;
-	}
-
-	/**
-	 * Sets appName List
-	 * @param appName - appName List
-	 */
-	public void setAppName(Set<String> appName) {
-		this.appName = appName;
-	}
-
-	/**
-	 * Returns ip Packet Summary List
-	 * @return ip Packet Summary List
-	 */
-	public List<IPPacketSummary> getIpPacketSummary() {
-		return ipPacketSummary;
-	}
-
-	/**
-	 * Sets ip Packet Summary List
-	 * @param ipPacketSummary - ip Packet Summary List
-	 */
-	public void setIpPacketSummary(List<IPPacketSummary> ipPacketSummary) {
-		this.ipPacketSummary = ipPacketSummary;
-	}
-
-	/**
-	 * Returns application Packet Summary List
-	 * @return application Packet Summary List
-	 */
-	public List<ApplicationPacketSummary> getApplicationPacketSummary() {
-		return applicationPacketSummary;
-	}
-
-	/**
-	 * Sets application Packet Summary List
-	 * 
-	 * @param applicationPacketSummary - application Packet Summary List
-	 */
-	public void setApplicationPacketSummary(List<ApplicationPacketSummary> applicationPacketSummary) {
-		this.applicationPacketSummary = applicationPacketSummary;
-	}
-
-	/**
-	 * Returns a Map to contain a count of packets by size.
-	 * 
-	 * @return a Map to contain a count of packets by size.
-	 */
-	public Map<Integer, Integer> getPacketSizeToCountMap() {
-		return packetSizeToCountMap;
-	}
-
-	/**
-	 * Sets a Map to contain a count of packets by size.
-	 * 
-	 * @param packetSizeToCountMap - a Map to contain a count of packets by size.
-	 */
-	public void setPacketSizeToCountMap(Map<Integer, Integer> packetSizeToCountMap) {
-		this.packetSizeToCountMap = packetSizeToCountMap;
-	}
-
-	/**
-	 * Returns total TCP Packets
-	 * @return total TCP Packets
-	 */
-	public int getTotalTCPPackets() {
-		return totalTCPPackets;
-	}
-
-	/**
-	 * Sets total TCP Packets
-	 * @param total TCP Packets
-	 */
-	public void setTotalTCPPackets(int totalTCPPackets) {
-		this.totalTCPPackets = totalTCPPackets;
-	}
-
-	public double getAverageTCPKbps() {
-		return averageTCPKbps;
-	}
-
-	public void setAverageTCPKbps(double averageTCPKbps) {
-		this.averageTCPKbps = averageTCPKbps;
-	}
-
-	public double getTCPPacketDuration() {
-		return packetTCPDuration;
-	}
-
-	public void setTCPPacketDuration(double packetTCPDuration) {
-		this.packetTCPDuration = packetTCPDuration;
-	}
-
 }

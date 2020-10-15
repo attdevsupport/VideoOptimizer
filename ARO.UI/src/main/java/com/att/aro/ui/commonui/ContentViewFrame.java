@@ -110,7 +110,7 @@ public class ContentViewFrame extends JFrame {
 	 * @throws ContentException
 	 * @throws IOException
 	 */
-	private void initialize() throws ContentException, IOException,Exception {
+	private void initialize() throws IOException,Exception {
 		this.setMinimumSize(new Dimension(400, 400));
 		this.setTitle(ResourceBundleHelper.getMessageString("fileChooser.rrContentViewerTitle"));
 		this.setLocationByPlatform(true);
@@ -146,8 +146,7 @@ public class ContentViewFrame extends JFrame {
 		this.setContentPane(panel);
 	}
 	
-	private JScrollPane getContentComponent() throws ContentException,
-			IOException, Exception {
+	private JScrollPane getContentComponent() throws IOException, Exception {
 		if (contentComponent == null) {
 			JComponent result = null;
 			if (rrInfo.getContentType() != null && rrInfo.getContentType()

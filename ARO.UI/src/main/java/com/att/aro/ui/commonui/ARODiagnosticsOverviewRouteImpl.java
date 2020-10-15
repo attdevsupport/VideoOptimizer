@@ -421,13 +421,6 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 		}
 	}
 
-	@Override
-	public void launchStartUpDelayDialog() {
-		jtabbedPane.setSelectedIndex(DIAGNOSTIC_INDEX);
-		DiagnosticsTab diagnosticTab = (DiagnosticsTab) jtabbedPane.getSelectedComponent();
-		diagnosticTab.launchStartUpDelayDialog();
-	}
-
 	public void updateOverviewTab(Object routeInfo) {
 		int oldPanelIndex = jtabbedPane.getSelectedIndex();
 		jtabbedPane.setSelectedIndex(OVERVIEW_INDEX);

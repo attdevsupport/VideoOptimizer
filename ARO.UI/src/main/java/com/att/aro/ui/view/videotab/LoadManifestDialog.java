@@ -44,6 +44,7 @@ public class LoadManifestDialog extends JPanel {
 		this.aroView = aroView;
 
 		setLayout(new FlowLayout());
+		setName(LoadManifestDialog.class.getName());
 
 		loadBtn = new JButton(ResourceBundleHelper.getMessageString("videoTab.load"));
 

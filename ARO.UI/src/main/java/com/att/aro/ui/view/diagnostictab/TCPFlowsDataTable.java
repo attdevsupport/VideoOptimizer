@@ -22,15 +22,19 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.AbstractButton;
 import javax.swing.JCheckBox;
+import javax.swing.JMenuItem;
 import javax.swing.JTable;
 import javax.swing.table.TableColumn;
 
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.model.diagnostic.TCPUDPFlowsTableModel;
+import com.att.aro.ui.model.listener.TCPFlowsTableMenuItemListener;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 /**
  * Added this class for adding the check boxes for existing TCP flow table.  
  *
@@ -65,10 +69,21 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 		setDefaultRenderer(Boolean.class, checkBoxHeader);
 		this.rendererComponent = checkBoxHeader;
 		table.addMouseListener(new MyMouseListener());
-		
-		
 	}
 	
+	public List<JMenuItem> getMenuItems () {
+        List<JMenuItem> menuItems = new ArrayList<>();
+        menuItems.add(getExportMenuItem());
+        return menuItems;
+	}
+
+
+    private JMenuItem getExportMenuItem() {
+        JMenuItem exportRTTMenuItem = new JMenuItem(ResourceBundleHelper.getMessageString("table.export"));
+        exportRTTMenuItem.addActionListener(new TCPFlowsTableMenuItemListener(this));
+        return exportRTTMenuItem;
+    }
+
 	public void showHighlightedSession(int row){
 		table.getSelectionModel().setSelectionInterval(row, row);
 		table.scrollRectToVisible(new Rectangle(0,row*table.getRowHeight(),table.getWidth(),table.getHeight())); 
@@ -110,7 +125,7 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 		if(dataModel.getRowCount() == table.getRowCount()){ 
 			for (int i = 0; i<dataModel.getRowCount(); i++){
 				
-				if((Boolean)dataModel.getValueAt(i, 1)){
+				if((Boolean)dataModel.getValueAt(i, table.convertColumnIndexToView(1))){
 					selectedRows.add(dataModel.getValueAt(convertRowIndexToModel(i)));
 				}
 			}
@@ -128,7 +143,7 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 	          if (rendererComponent instanceof JCheckBox) {  
 	              boolean[] flags = new boolean[table.getRowCount()];  
 	              for (int i = 0; i < table.getRowCount(); i++) {  
-	                  flags[i] = ((Boolean) table.getValueAt(i, 1)).booleanValue();  
+	                  flags[i] = ((Boolean) table.getValueAt(i, table.convertColumnIndexToView(1))).booleanValue();
 	                  if(flags[i]){  
 	                      checkedCount++;  
 	                  }  
@@ -146,11 +161,14 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 	      }  
 	  }
 	  
-	  public void setHeaderDefaultValue(){
+	public void setHeaderDefaultValue() {
+		((JCheckBox) rendererComponent).setSelected(true);
+		table.getTableHeader().repaint();
+	}
 		
-		  ((JCheckBox)rendererComponent).setSelected(true);
-		  table.getTableHeader().repaint();  
-	  }
+	public TCPUDPFlowsTableModel getModel() {
+		return ((TCPUDPFlowsTableModel) dataModel);
+	}
 
-	
+
  }

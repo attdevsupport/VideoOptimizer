@@ -79,6 +79,10 @@ public class SessionManagerImpl implements ISessionManager {
 		this.tracePath = tracePath + Util.FILE_SEPARATOR + "iosSecure" + Util.FILE_SEPARATOR;
 	}
 
+	public String getTracePath() {
+	    return tracePath;
+	}
+
 	Map<String, Integer> wellKnownPorts = new HashMap<String, Integer>(5);
 
 	public SessionManagerImpl() {
@@ -145,12 +149,18 @@ public class SessionManagerImpl implements ISessionManager {
 					if (packetInfo.getAppName() != null) {
 						session.getAppNames().add(packetInfo.getAppName());
 					}
+					
+					if (!session.isSessionComplete() && (packetInfo.getTcpFlagString().contains("R")
+							|| packetInfo.getTcpFlagString().contains("F"))) {
+						session.setSessionComplete(true);
+					}
 				}
 			}
 		}
 
 		Collections.sort(sessions);
 		analyzeRequestResponses(sessions);
+
 		return sessions;
 	}
 

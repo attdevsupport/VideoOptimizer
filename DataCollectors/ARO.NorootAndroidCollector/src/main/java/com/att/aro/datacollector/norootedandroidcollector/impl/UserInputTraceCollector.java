@@ -23,6 +23,7 @@ import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.util.Util;
 
 /** 
  * Initiates userinput.sh & parse the output file
@@ -91,7 +92,9 @@ public class UserInputTraceCollector implements Runnable {
 				+ remoteExecutable
 				+ " "
 				+ remoteUserInputFilesPath;
-		
+		if (Util.isWindowsOS()) {
+			cmd = Util.wrapText(cmd);
+		} 	
 		String line = extrunner.executeCmd(cmd);
 		
 		LOGGER.info("start process userinput mon script response:" + line);

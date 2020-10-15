@@ -680,12 +680,27 @@ public final class Util {
 		return path;
 	}
 
+	public static String getWireshark() {
+		String config = SettingsImpl.getInstance().getAttribute(DUMPCAP);
+		if (StringUtils.isBlank(config)) {
+			return "/Applications/Wireshark.app";
+		}
+		if (config.equalsIgnoreCase(getBinPath() + "dumpcap")) {
+			return validateInputLink(config);// old setting
+		}
+		return validateInputLink(config);
+	}
+
 	public static String getDumpCap() {
 		String config = SettingsImpl.getInstance().getAttribute(DUMPCAP);
-		if (StringUtils.isNotBlank(config)) {
-			return validateInputLink(config);
+		if (StringUtils.isBlank(config)) {
+			return getWireshark() + "/Contents/MacOS/dumpcap";
 		}
-		return getBinPath() + "dumpcap";
+		if (config.equalsIgnoreCase(getBinPath() + "dumpcap")) {
+			return validateInputLink(config);// old setting
+		}
+		return validateInputLink(config) + "/Contents/MacOS/dumpcap";
+
 	}
 
 	public static String getFFMPEG() {
@@ -814,22 +829,6 @@ public final class Util {
 		return comparator;
 	}
 
-	public static Comparator<Integer> getDomainIntSorter() {
-		intComparator = new Comparator<Integer>() {
-			@Override
-			public int compare(Integer a, Integer b) {
-				if (a.compareTo(b) > 0) {
-					return -1;
-				} else if (a.compareTo(b) < 0) {
-					return 1;
-				} else {
-					return 0;
-				}
-			}
-		};
-		return intComparator;
-	}
-
 	public static BPResultType checkPassFailorWarning(int resultSize, int warning, int fail) {
 		BPResultType bpResultType = BPResultType.PASS;
 		if (resultSize >= warning) {
@@ -902,10 +901,14 @@ public final class Util {
 		return logLevel;
 	}
 	
+	public static boolean checkDevMode() {
+		return SettingsImpl.getInstance().checkAttributeValue("env", "dev");
+	}
+	
 	public static boolean isTestMode() {
 		return SettingsImpl.getInstance().checkAttributeValue("test_only", "true");
 	}
-	
+
 	public static Comparator<String> getFloatSorter() {
 		if (floatValComparator == null) {
 			floatValComparator = new Comparator<String>() {
@@ -916,6 +919,16 @@ public final class Util {
 			};
 		}
 		return floatValComparator;
+	}
+
+	public static Comparator<Integer> getIntSorter() {
+		intComparator = new Comparator<Integer>() {
+			@Override
+			public int compare(Integer a, Integer b) {
+				return Integer.compare(a, b);
+			}
+		};
+		return intComparator;
 	}
 
 	public static String getIdeviceScreenshot() {
@@ -1182,7 +1195,7 @@ public final class Util {
 	public static String formatDouble(double toFormat) {
 		DecimalFormat decimalFormatter = new DecimalFormat("#.###");
 		return decimalFormatter.format(toFormat);	
-	}	
+	}
 	
 	public static String formatDoubleToMicro(double toFormat) {
 		DecimalFormat decimalFormatter = new DecimalFormat("#.######");

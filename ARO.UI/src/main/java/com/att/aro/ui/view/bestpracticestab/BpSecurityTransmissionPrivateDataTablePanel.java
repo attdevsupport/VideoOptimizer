@@ -25,6 +25,7 @@ import javax.swing.table.TableRowSorter;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.TransmissionPrivateDataTableModel;
 
 public class BpSecurityTransmissionPrivateDataTablePanel extends AbstractBpDetailTablePanel {
@@ -62,6 +63,9 @@ public class BpSecurityTransmissionPrivateDataTablePanel extends AbstractBpDetai
 			TableRowSorter<TableModel> sorter = new TableRowSorter<>(tableModel);
 			contentTable.setRowSorter(sorter);
 			sorter.setComparator(0, Util.getDomainSorter());
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) contentTable.getPopup();
+            popupMenu.initialize();
 		}
 		
 		return contentTable;

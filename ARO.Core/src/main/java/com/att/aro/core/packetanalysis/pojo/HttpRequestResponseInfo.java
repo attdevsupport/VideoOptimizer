@@ -113,6 +113,8 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	// packets
 	private PacketInfo firstDataPacket;
 	private PacketInfo lastDataPacket;
+	
+	private HttpDelayInfo httpDelayInfo;
 
 	// Cache info
 	private Date date;
@@ -883,7 +885,25 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	public double getTimeStamp() {
 		return firstDataPacket != null ? firstDataPacket.getTimeStamp() : 0.0;
 	}
+	
+	public HttpDelayInfo getHttpDelayInfo() {
+		return httpDelayInfo = httpDelayInfo!=null ? httpDelayInfo : new HttpDelayInfo(this);
+	}
 
+	/**
+	 * Returns the timestamp of the last packet associated with this HttpRequestResponseInfo . This is the offset of the request/response within the current
+	 * trace.
+	 * 
+	 * @return A double that is the last packet timestamp associated with this HttpRequestResponseInfo. If the first packet is null, then this method returns
+	 *         0.
+	 */
+	public double getLastPacketTimeStamp() {
+
+		if (getDirection() == HttpDirection.RESPONSE) {
+			return lastDataPacket != null ? lastDataPacket.getTimeStamp() : 0.0;
+		}
+		return 0.0;
+	}
 	/**
 	 * Gets the real Date (the first packet Date) for the request/response.
 	 * 
@@ -998,7 +1018,7 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 			dataStream.flush();
 		}
 	}
-	
+
 	public void writeHeader(String dataRead) throws IOException {
 		writeDataToStream(dataRead, headerData);
 	}
@@ -1012,5 +1032,4 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 		dataStream.write(dataRead.getBytes());
 		dataStream.flush();
 	}
-	
 }

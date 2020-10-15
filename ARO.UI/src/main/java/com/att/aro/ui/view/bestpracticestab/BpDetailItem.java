@@ -78,13 +78,13 @@ import com.att.aro.core.bestpractice.pojo.SpriteImageResult;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataResult;
 import com.att.aro.core.bestpractice.pojo.UnnecessaryConnectionResult;
 import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionResult;
-import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
 import com.att.aro.core.bestpractice.pojo.VideoAdaptiveBitrateLadderResult;
+import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
+import com.att.aro.core.bestpractice.pojo.VideoNetworkComparisonResult;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.bestpractice.pojo.WeakCipherResult;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.videoanalysis.pojo.QualityTime;
 import com.att.aro.core.videoanalysis.pojo.VideoStartup;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.BrowserGenerator;
@@ -146,122 +146,86 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 	public BpDetailItem(String name, BestPracticeType bpType, AbstractBpDetailTablePanel resultsTablePanel) {
 		super();
 		this.bpType = bpType;
-		imageLabel = new JLabel(loadImageIcon(null));
-		nameLabel = new JLabel();
-		aboutLabel = new JLabel();
-		resultsLabel = new JLabel();
-		nameTextLabel = new JLabel();
 		this.resultsTablePanel = resultsTablePanel;
-		add(layoutPanel(name), BorderLayout.CENTER);
+		setDefaultLayout(name);
 	}
 
-	public BpDetailItem(String name, BestPracticeType bpType, AbstractBpDetailTablePanel resultsTablePanel,
-			MainFrame aroView) {
+	public BpDetailItem(String name, BestPracticeType bpType, AbstractBpDetailTablePanel resultsTablePanel, MainFrame aroView) {
 		super();
 		this.aroView = aroView;
 		this.bpType = bpType;
-		imageLabel = new JLabel(loadImageIcon(null));
-		nameLabel = new JLabel();
-		buttonPrivateData = new JButton();
-		aboutLabel = new JLabel();
-		resultsLabel = new JLabel();
-		nameTextLabel = new JLabel();
 		this.resultsTablePanel = resultsTablePanel;
-		add(layoutPanel(name), BorderLayout.CENTER);
+		buttonPrivateData = new JButton();
+		setDefaultLayout(name);
 	}
 	
-	public BpDetailItem(String name, BestPracticeType bpType, AbstractChartPanel resultsChart,
-			MainFrame aroView) {
+	public BpDetailItem(String name, BestPracticeType bpType, AbstractBpDetailTablePanel resultsTablePanel, AbstractChartPanel resultsChart, MainFrame aroView) {
 		super();
 		this.aroView = aroView;
 		this.bpType = bpType;
-		imageLabel = new JLabel(loadImageIcon(null));
-		nameLabel = new JLabel();
-		aboutLabel = new JLabel();
-		resultsLabel = new JLabel();
-		nameTextLabel = new JLabel();
+		this.resultsTablePanel = resultsTablePanel;
+		this.resultsChartPanel = resultsChart;
+		setDefaultLayout(name);
+	}
+
+	public BpDetailItem(String name, BestPracticeType bpType, AbstractChartPanel resultsChart, MainFrame aroView) {
+		super();
+		this.aroView = aroView;
+		this.bpType = bpType;
 		this.resultsTablePanel = null;
 		this.resultsChartPanel = resultsChart;
-		add(layoutPanel(name), BorderLayout.CENTER);
-	
+		setDefaultLayout(name);
 	}
 
 	public BpDetailItem(String name, BestPracticeType bpType, MainFrame aroView) {
 		super();
 		this.aroView = aroView;
-		AbstractBpDetailTablePanel resultTablePanel = null;
 		this.bpType = bpType;
-		imageLabel = new JLabel(loadImageIcon(null));
-		nameLabel = new JLabel();
-		aboutLabel = new JLabel();
-		resultsLabel = new JLabel();
-		nameTextLabel = new JLabel();
-		this.resultsTablePanel = resultTablePanel;
-		add(layoutPanel(name), BorderLayout.CENTER);
+		this.resultsTablePanel = null;
+		setDefaultLayout(name);
 	}
 
 	public BpDetailItem(String name, BestPracticeType bpType) {
 		super();
-		AbstractBpDetailTablePanel resultTablePanel = null;
 		this.bpType = bpType;
-		imageLabel = new JLabel(loadImageIcon(null));
-		nameLabel = new JLabel();
-		aboutLabel = new JLabel();
-		resultsLabel = new JLabel();
-		nameTextLabel = new JLabel();
-		this.resultsTablePanel = resultTablePanel;
-		add(layoutPanel(name), BorderLayout.CENTER);
+		this.resultsTablePanel = null;
+		setDefaultLayout(name);
 	}
 
-	public BpDetailItem(String name, BestPracticeType imageMdata,
-			BpFileImageMDataTablePanel bpFileImageMDataTablePanel) {
+	public BpDetailItem(String name, BestPracticeType imageMdata, BpFileImageMDataTablePanel bpFileImageMDataTablePanel) {
 		super();
 		this.bpType = imageMdata;
-		imageLabel = new JLabel(loadImageIcon(null));
-		nameLabel = new JLabel();
-		aboutLabel = new JLabel();
-		resultsLabel = new JLabel();
-		nameTextLabel = new JLabel();
 		this.imgMdataResultsTablePanel = bpFileImageMDataTablePanel;
-		add(layoutPanel(name), BorderLayout.CENTER);
+		setDefaultLayout(name);
 	}
 
-	public BpDetailItem(String name, BestPracticeType imageMdata,
-			BpFileImageCompressionTablePanel imageCompressionResultsTablePanel) {
+	public BpDetailItem(String name, BestPracticeType imageMdata, BpFileImageCompressionTablePanel imageCompressionResultsTablePanel) {
 		super();
 		this.bpType = imageMdata;
-		imageLabel = new JLabel(loadImageIcon(null));
-		nameLabel = new JLabel();
-		aboutLabel = new JLabel();
-		resultsLabel = new JLabel();
-		nameTextLabel = new JLabel();
 		this.imageCompressionResultsTablePanel = imageCompressionResultsTablePanel;
-		add(layoutPanel(name), BorderLayout.CENTER);
+		setDefaultLayout(name);
 	}
 
-	public BpDetailItem(String name, BestPracticeType imageFormat,
-			BpFileImageFormatTablePanel imageFormatResultsTablePanel) {
+	public BpDetailItem(String name, BestPracticeType imageFormat, BpFileImageFormatTablePanel imageFormatResultsTablePanel) {
 		super();
 		this.bpType = imageFormat;
-		imageLabel = new JLabel(loadImageIcon(null));
-		nameLabel = new JLabel();
-		aboutLabel = new JLabel();
-		resultsLabel = new JLabel();
-		nameTextLabel = new JLabel();
 		this.imageFormatResultsTablePanel = imageFormatResultsTablePanel;
-		add(layoutPanel(name), BorderLayout.CENTER);
+		setDefaultLayout(name);
 	}
 
-	public BpDetailItem(String name, BestPracticeType imageFormat,
-			BpFileImageComparisionTablePanel imageComparisionTablePanel) {
+	public BpDetailItem(String name, BestPracticeType imageFormat, BpFileImageComparisionTablePanel imageComparisionTablePanel) {
 		super();
 		this.bpType = imageFormat;
+		this.imageComparisonResultsTablePanel = imageComparisionTablePanel;
+		setDefaultLayout(name);
+	}
+
+	public void setDefaultLayout(String name) {
 		imageLabel = new JLabel(loadImageIcon(null));
 		nameLabel = new JLabel();
 		aboutLabel = new JLabel();
 		resultsLabel = new JLabel();
 		nameTextLabel = new JLabel();
-		this.imageComparisonResultsTablePanel = imageComparisionTablePanel;
 		add(layoutPanel(name), BorderLayout.CENTER);
 	}
 
@@ -403,11 +367,6 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 						GridBagConstraints.NORTHWEST, insets, 0, 0));
 			}
 			
-			// Chart
-			if (resultsChartPanel != null) {
-				dataPanel.add(resultsChartPanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
-			}
-
 			// Table
 			if (resultsTablePanel != null) {
 				dataPanel.add(resultsTablePanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0,
@@ -425,6 +384,12 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 				dataPanel.add(imageComparisonResultsTablePanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0,
 						GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
 			}
+			
+			// Chart
+			if (resultsChartPanel != null) {
+				dataPanel.add(resultsChartPanel, new GridBagConstraints(2, ++idx, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.BOTH, insets, 0, 0));
+			}
+
 		}
 		return dataPanel;
 	}
@@ -434,10 +399,8 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 		if (privateDataDialog == null) {
 			privateDataDialog = new PrivateDataDialog(aroView);
 		}
-		if (privateDataDialog != null) {
-			privateDataDialog.setVisible(true);
-			privateDataDialog.setAlwaysOnTop(true);
-		}
+		privateDataDialog.setVisible(true);
+		privateDataDialog.setAlwaysOnTop(true);
 	}
 
 	void routeHyperlink() {
@@ -707,7 +670,7 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 				imageLabel.setIcon(loadImageIcon(bpr));
 				
 				if (bpType == BestPracticeType.VIDEO_STALL 
-						|| bpType == BestPracticeType.STARTUP_DELAY
+						|| bpType == BestPracticeType.STARTUP_DELAY 
 						|| bpType == BestPracticeType.BUFFER_OCCUPANCY) {
 					if (bpr.getResultType().equals(BPResultType.CONFIG_REQUIRED)) {
 						addConfigIconActions();
@@ -899,13 +862,16 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 					startupDelayPanel.setData(results);
 					return;
 
-				case VIDEO_ABR_LADDER:
-					VideoAdaptiveBitrateLadderPanel adaptiveBitrateLadderPanel = (VideoAdaptiveBitrateLadderPanel) resultsChartPanel;
-					List<QualityTime> adaptiveBitrateLadderResults = Collections.emptyList();
-					if (bpr.getResultType() != BPResultType.NONE) {
-						adaptiveBitrateLadderResults = ((VideoAdaptiveBitrateLadderResult) bpr).getResults();
-					}
-					adaptiveBitrateLadderPanel.setData(adaptiveBitrateLadderResults);
+				case VIDEO_ABR_LADDER:				 
+					VideoAdaptiveBitrateLadderPanel adaptiveBitrateLadderPanel = (VideoAdaptiveBitrateLadderPanel) resultsChartPanel;					
+					if (bpr.getResultType() == BPResultType.NONE || bpr.getResultType() == BPResultType.NO_DATA) {
+						adaptiveBitrateLadderPanel.setData(Collections.emptyList());
+						((BPAdaptiveBitrateTablePanel) resultsTablePanel).setData(Collections.emptyList());
+					} else {
+						adaptiveBitrateLadderPanel.setData(((VideoAdaptiveBitrateLadderResult) bpr).getResults());
+						((BPAdaptiveBitrateTablePanel) resultsTablePanel).setData(((VideoAdaptiveBitrateLadderResult) bpr).getResults());
+
+					}					
 					return;
 
 				case VIDEO_CONCURRENT_SESSION:
@@ -916,6 +882,16 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 								.setData(((VideoConcurrentSessionResult) bpr).getResults());
 					}
 					return;
+					
+				case NETWORK_COMPARISON:
+					if (bpr.getResultType() == BPResultType.NONE || bpr.getResultType() == BPResultType.NO_DATA) {
+						((BPNetworkComparisonTablePanel) resultsTablePanel).setData(Collections.emptyList());
+					} else {
+						((BPNetworkComparisonTablePanel) resultsTablePanel)
+								.setData(((VideoNetworkComparisonResult) bpr).getResults());
+					}
+					return;
+
 				default:
 					return;
 				}

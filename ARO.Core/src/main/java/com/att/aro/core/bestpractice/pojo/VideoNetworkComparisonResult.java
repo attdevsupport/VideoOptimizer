@@ -15,14 +15,42 @@
 */
 package com.att.aro.core.bestpractice.pojo;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SortedMap;
+
+import javax.annotation.Nonnull;
+
+import org.springframework.util.CollectionUtils;
+
+import com.att.aro.core.videoanalysis.pojo.SegmentComparison;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class VideoNetworkComparisonResult extends AbstractBestPracticeResult {
 
 	private double avgKbps = 0.0;
 	private double avgBitRate = 0.0;
+	
+	@Nonnull
+	private List<SegmentComparison> results  = new ArrayList<>();
+	
  	
 	@Override
 	public BestPracticeType getBestPracticeType() {
 		return BestPracticeType.NETWORK_COMPARISON;
+	}
+	
+	@JsonIgnore
+	public List<SegmentComparison> getResults() {
+		return results;
+	}
+	
+	public void setResults(SortedMap<Integer, SegmentComparison> qualityMap) {
+		if (!CollectionUtils.isEmpty(qualityMap)) {
+			this.results = new ArrayList<SegmentComparison>(qualityMap.values());
+		} else {
+			this.results.clear();
+		}
 	}
 	
 	public double getAvgKbps() {

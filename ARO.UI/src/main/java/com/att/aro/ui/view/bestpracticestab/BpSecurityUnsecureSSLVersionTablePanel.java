@@ -22,6 +22,7 @@ import javax.swing.JTable;
 
 import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionEntry;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.UnsecureSSLVersionTableModel;
 
 public class BpSecurityUnsecureSSLVersionTablePanel extends AbstractBpDetailTablePanel {
@@ -56,6 +57,9 @@ public class BpSecurityUnsecureSSLVersionTablePanel extends AbstractBpDetailTabl
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) contentTable.getPopup();
+            popupMenu.initialize();
 		}
 		
 		return contentTable;

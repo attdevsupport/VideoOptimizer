@@ -23,6 +23,7 @@ import javax.swing.JTable;
 import com.att.aro.core.bestpractice.pojo.Http4xx5xxStatusResponseCodesEntry;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.Http4xx5xxStatusResponseCodesTableModel;
 
 /**
@@ -76,6 +77,9 @@ public class BpConnectionsHttp4xx5xxTablePanel extends AbstractBpDetailTablePane
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);
 			contentTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) contentTable.getPopup();
+            popupMenu.initialize();
 		}
 
 		return contentTable;

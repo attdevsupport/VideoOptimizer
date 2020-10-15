@@ -36,6 +36,7 @@ public final class UserPreferences {
 	private static final String PROFILE_WIFI = "PROFILE_WIFI";
 	private static final String EXPORT_PATH = "EXPORT_PATH";
 	private static final String PRIVATE_DATA = "PRIVATE_DATA";
+	private static final String TRACE_PATH = "TRACE_PATH";
 
 	private IPreferenceHandler prefHandler;
 
@@ -68,6 +69,11 @@ public final class UserPreferences {
 	public File getLastTraceDirectory() {
 		String path = prefHandler.getPref(TD_PATH);
 		return path != null ? new File(path) : null;
+	}
+	
+	public String getTracePath() {
+		String path = prefHandler.getPref(TRACE_PATH);
+		return path != null ? path : prefHandler.getPref(TD_PATH);
 	}
 
 	public void setLastTraceDirectory(File tdPath) {

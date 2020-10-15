@@ -161,16 +161,25 @@ public class VideoPreferencesPanel extends JPanel {
 		Label stallDurationLabel = new Label(ResourceBundleHelper.getMessageString("videoStall.table.col3"));
 		Label segRedundancyLabel = new Label(ResourceBundleHelper.getMessageString("segmentRedundancy.title"));
 
-		startupDelayEdit = new JTextField(
-				String.format("%.3f", Double.valueOf(videoUsagePrefs.getStartUpDelayWarnVal())), 5);
+		startupDelayEdit = new JTextField(String.format("%.3f",
+				Double.valueOf(videoUsagePrefs.getStartUpDelayWarnVal() == 0.0 ?
+						Double.valueOf( ResourceBundleHelper.getMessageString("preferences.video.defaultStartUpDelayWarnVal"))
+						: videoUsagePrefs.getStartUpDelayWarnVal())), 5);
 
-		stallDurationWarnEdit = new JTextField(
-				String.format("%.3f", Double.valueOf(videoUsagePrefs.getStallDurationWarnVal())), 5);
-		stallDurationFailEdit = new JTextField(
-				String.format("%.3f", Double.valueOf(videoUsagePrefs.getStallDurationFailVal())), 5);
+		stallDurationWarnEdit = new JTextField(String.format("%.3f",
+				Double.valueOf(videoUsagePrefs.getStallDurationWarnVal() == 0.0 ?
+						Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.defaultStallDurationWarnVal"))
+						: videoUsagePrefs.getStallDurationWarnVal())), 5);
+		stallDurationFailEdit = new JTextField(String.format("%.3f",
+				Double.valueOf(videoUsagePrefs.getStallDurationFailVal() == 0.0 ?
+						Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.defaultStallDurationFailVal"))
+						: videoUsagePrefs.getStallDurationFailVal())), 5);
 
-		segRedundancyWarnEdit = new JTextField(String.valueOf(videoUsagePrefs.getSegmentRedundancyWarnVal()), 5);
-		segRedundancyFailEdit = new JTextField(String.valueOf(videoUsagePrefs.getSegmentRedundancyFailVal()), 5);
+		segRedundancyWarnEdit = new JTextField(String.valueOf(videoUsagePrefs.getSegmentRedundancyWarnVal() == 0.0 ? 
+				ResourceBundleHelper.getMessageString("preferences.video.defaultSegmentRedundancyWarnVal") : videoUsagePrefs.getSegmentRedundancyWarnVal()), 5);
+		segRedundancyFailEdit = new JTextField(String.valueOf(videoUsagePrefs.getSegmentRedundancyFailVal() == 0.0 ? 
+				ResourceBundleHelper.getMessageString("preferences.video.defaultSegmentRedundancyFailVal")
+				: videoUsagePrefs.getSegmentRedundancyFailVal()), 5);
 
 		startupDelayEdit.setInputVerifier(getNumericInputVerifier(MAX_STARTUPDELAY, 0.01, 3));
 		startupDelayEdit.addKeyListener(getKeyListener(startupDelayEdit));

@@ -35,14 +35,18 @@ public class RepresentationESL {
 	@XmlElement(name = "BaseURL")				String baseURL = "";
 	@XmlElement(name = "EncodedSegmentList")	EncodedSegmentList encodedSegment;
 	@XmlElement(name = "SegmentList")			SegmentListESL segmentList;
+	@XmlElement(name = "AudioChannelConfiguration")  		RepresentationACC representationACC;
 
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
 		strblr.append(" bandwidth:");
 		strblr.append(bandwidth);
+		strblr.append(", AudioChannelConfiguration:");
+		strblr.append(representationACC);
 		strblr.append(", baseURL:");
 		strblr.append(baseURL);
+		
 		if (encodedSegment != null) {
 			strblr.append("\n\t\t\t\tEncodedSegmentList :");
 			strblr.append(encodedSegment);

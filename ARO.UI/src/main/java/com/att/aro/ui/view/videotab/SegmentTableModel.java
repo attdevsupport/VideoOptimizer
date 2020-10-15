@@ -15,10 +15,8 @@
 */
 package com.att.aro.ui.view.videotab;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Formatter;
 import java.util.List;
 
 import javax.swing.table.AbstractTableModel;
@@ -30,31 +28,43 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class SegmentTableModel extends AbstractTableModel {
 	private static final long serialVersionUID = 1L;
 
-	DecimalFormat decimalFormat = new DecimalFormat("0.##");
-	DecimalFormat decimal3Format = new DecimalFormat("0.###");
-	DecimalFormat decimal6Format = new DecimalFormat("0.######");
-
-    Formatter fmt = new Formatter();
+	public static final String SEGMENT_POSITION = ResourceBundleHelper.getMessageString("video.tab.segment.SegmentPosition");
+	public static final String PLAYBACK_TIME = ResourceBundleHelper.getMessageString("video.tab.segment.PlayBackTime");
+	public static final String STALL_TIME = ResourceBundleHelper.getMessageString("video.tab.segment.StallTime");
+	public static final String DURATION = ResourceBundleHelper.getMessageString("video.tab.segment.Duration");
+	public static final String DL_END_TIME = ResourceBundleHelper.getMessageString("video.tab.segment.DLEndTime");
+	public static final String SEGMENT_NO = ResourceBundleHelper.getMessageString("video.tab.segment.Segment");
+	public static final String TCP_SESSION = ResourceBundleHelper.getMessageString("video.tab.segment.TCPSession");
+	public static final String TOTAL_BYTES = ResourceBundleHelper.getMessageString("video.tab.segment.TotalBytes");
+	public static final String BIT_RATE = ResourceBundleHelper.getMessageString("video.tab.segment.Bitrate");
+	public static final String CONTENT = ResourceBundleHelper.getMessageString("video.tab.segment.Content");
+	public static final String RESOLUTION = ResourceBundleHelper.getMessageString("video.tab.segment.Resolution");
+	public static final String DL_START_TIME = ResourceBundleHelper.getMessageString("video.tab.segment.DLStartTime");
+	public static final String SESSION_LINK = ResourceBundleHelper.getMessageString("video.tab.segment.SessionLink");
+	public static final String TCP_STATE = ResourceBundleHelper.getMessageString("video.tab.segment.TCPState");
+	public static final String TRACK = ResourceBundleHelper.getMessageString("video.tab.segment.Track");
+	public static final String CHANNELS = ResourceBundleHelper.getMessageString("video.tab.segment.Channels");
 	
 	List<VideoEvent> videoEventList;
 	
 	public String[] columnNames = {
-			 getColumn("Segment") 
-			,getColumn("Content")
-			,getColumn("DLStartTime")
-			,getColumn("DLEndTime")
-			,getColumn("StallTime")
-			,getColumn("PlayTime")
-			,getColumn("StartTime")
-			,getColumn("Track")
-			,getColumn("Resolution")
-			,getColumn("Bitrate")
-			,getColumn("TotalBytes")
-			,getColumn("Duration")
-			,getColumn("TCPSession")
-			,getColumn("TCPState")
-			,getColumn("SessionLink")
-			};
+        SEGMENT_NO,
+		TRACK,
+		CONTENT,
+		CHANNELS,
+		RESOLUTION,
+		BIT_RATE,
+		TOTAL_BYTES,
+		SEGMENT_POSITION,
+		DURATION,
+		DL_START_TIME,
+		DL_END_TIME,
+		PLAYBACK_TIME,
+		STALL_TIME,
+		TCP_SESSION,
+		TCP_STATE,
+		SESSION_LINK
+	};
 
 	public VideoEvent 	EventAt(int rowIndex) {
 		return this.videoEventList.get(rowIndex);
@@ -67,28 +77,28 @@ public class SegmentTableModel extends AbstractTableModel {
 
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
-		Object value = "";
 		VideoEvent videoSegment = this.videoEventList.get(rowIndex);
-		
-		switch (columnNames[columnIndex]) {
-		case "Segment"       : value = String.format("%.0f", videoSegment.getSegmentID()); break;
-		case "Content"       : value = videoSegment.getSegmentInfo().getContentType().toString() ; break;
-		case "DL Start Time" : value = String.format("%.3f", videoSegment.getStartTS()); break;
-		case "DL End Time"   : value = String.format("%.3f", videoSegment.getEndTS()); break;
-		case "StallTime"     : value = String.format("%.3f", videoSegment.getStallTime()); break;
-		case "PlayTime"      : value = videoSegment.isSelected() && videoSegment.isNormalSegment() ? String.format("%.6f", videoSegment.getPlayTime()) : " -   "; break;
-		case "StartTime"     : value = String.format("%.6f", videoSegment.getSegmentStartTime()); break;
-		case "Track"         : value = videoSegment.getQuality(); break;
-		case "Resolution"    : value = videoSegment.getResolutionHeight() != 0 ? decimalFormat.format(videoSegment.getResolutionHeight()):"NA "; break;
-		case "Bitrate (Kbps)" : value = String.format("%8.0f", videoSegment.getBitrate()); break;
-		case "Total Bytes"   : value = String.format("%.0f", videoSegment.getTotalBytes()); break;
-		case "Duration"      : value = String.format("%.6f", videoSegment.getDuration()); break;
-		case "TCP Session"   : value = String.format("%06.3f", videoSegment.getSession().getSessionStartTime()); break;
-		case "TCP State"     : value = findTermination(videoSegment); break;
-		case "SessionLink"   : value = videoSegment.getSession(); break;
-		
-		}
-		return value;
+
+		return
+        (
+            SEGMENT_NO.equals(columnNames[columnIndex])       ? Integer.valueOf(String.format("%.0f", videoSegment.getSegmentID())) :
+            CONTENT.equals(columnNames[columnIndex])          ? videoSegment.getSegmentInfo().getContentType().toString() :
+            DL_START_TIME.equals(columnNames[columnIndex])    ? Double.valueOf(String.format("%.3f", videoSegment.getStartTS())) :
+            DL_END_TIME.equals(columnNames[columnIndex])      ? Double.valueOf(String.format("%.3f", videoSegment.getEndTS())) :
+            STALL_TIME.equals(columnNames[columnIndex])       ? Double.valueOf(String.format("%.3f", videoSegment.getStallTime())) :
+            PLAYBACK_TIME.equals(columnNames[columnIndex])    ? (videoSegment.isSelected() && videoSegment.isNormalSegment() ? Double.valueOf(String.format("%.6f", videoSegment.getPlayTime())) : " -   ") :
+            SEGMENT_POSITION.equals(columnNames[columnIndex]) ? Double.valueOf(String.format("%.6f", videoSegment.getSegmentStartTime())) :
+            TRACK.equals(columnNames[columnIndex])            ? videoSegment.getQuality() :
+            RESOLUTION.equals(columnNames[columnIndex])       ? (videoSegment.getResolutionHeight() != 0 ? (int)videoSegment.getResolutionHeight() : "NA ") :
+            BIT_RATE.equals(columnNames[columnIndex])         ? Integer.valueOf(String.format("%.0f", videoSegment.getBitrate())) :
+            TOTAL_BYTES.equals(columnNames[columnIndex])      ? Integer.valueOf(String.format("%.0f", videoSegment.getTotalBytes())) :
+            DURATION.equals(columnNames[columnIndex])         ? Double.valueOf(String.format("%.6f", videoSegment.getDuration())) :
+            TCP_SESSION.equals(columnNames[columnIndex])      ? Double.valueOf(String.format("%06.3f", videoSegment.getSession().getSessionStartTime())) :
+            TCP_STATE.equals(columnNames[columnIndex])        ? findTermination(videoSegment) :
+            SESSION_LINK.equals(columnNames[columnIndex])     ? videoSegment.getSession() :
+            CHANNELS.equals(columnNames[columnIndex])         ? videoSegment.getChannels() == null ? "NA " : videoSegment.getChannels() :
+            ""
+        );
 	}
 
 
@@ -125,9 +135,4 @@ public class SegmentTableModel extends AbstractTableModel {
 	public String getColumnName(int columnIndex) {
 		return columnNames[columnIndex];
 	}
-	
-	private String getColumn(String columnName) {
-		return ResourceBundleHelper.getMessageString("video.tab.segment." + columnName);
-	}
-
 }
