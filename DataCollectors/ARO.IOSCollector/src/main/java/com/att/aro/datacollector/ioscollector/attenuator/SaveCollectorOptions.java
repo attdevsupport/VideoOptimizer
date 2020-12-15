@@ -37,10 +37,7 @@ public class SaveCollectorOptions {
 					+ "attnrProfileName=" + atnrProfileName);
 			bw.close();
 		} catch (IOException e) {
-			LOG.info("setDeviceDetails() Exception:" + e.getMessage());
-			e.printStackTrace();
-			return;
+			LOG.error("recordCollectOptions() Exception:", e);
 		}
-
 	}
 }

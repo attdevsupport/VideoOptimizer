@@ -233,7 +233,6 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 				  ,"security.httpsUsage"				// 	#bp 15	 Security: HTTPS Usage
 				  ,"security.transmissionPrivateData"	//  #bp 16	 Security: Transmission of Personal Information
 				  ,"security.unsecureSSLVersion"		// 	#bp 17	 Security: Unsecure SSL Versions
-				  ,"security.weakCipher"				//  #bp 18	 Security: Weak Cipher
 				  ,"security.forwardSecrecy"			//  #bp 19	 Security: Forward Secrecy
 				  
 				  ,"videoStall"

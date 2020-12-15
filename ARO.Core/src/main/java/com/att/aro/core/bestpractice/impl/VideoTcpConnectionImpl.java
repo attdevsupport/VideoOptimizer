@@ -69,6 +69,9 @@ public class VideoTcpConnectionImpl implements IBestPractice{
 	@Value("${tcpConnection.results}")
 	private String textResults;
 
+	@Value("${tcpConnection.excel.results}")
+    private String textExcelResults;
+
 	@Value("${video.noData}")
 	private String noData;
 
@@ -117,27 +120,38 @@ public class VideoTcpConnectionImpl implements IBestPractice{
 					result.setResultText(noStreamsSelected);
 				}
 				bpResultType = BPResultType.CONFIG_REQUIRED;
+				result.setResultExcelText(bpResultType.getDescription());
 				result.setSelfTest(false);
 			} else if (selectedCount > 1) {
 				bpResultType = BPResultType.CONFIG_REQUIRED;
 				result.setResultText(multipleStreamsSelected);
+				result.setResultExcelText(bpResultType.getDescription());
 				result.setSelfTest(false);
 			} else {
-				ArrayList<Session> uniqSessions = new ArrayList<>();
+				ArrayList<Session> uniqVideoSessions = new ArrayList<>();
+				ArrayList<Session> uniqAudioSessions = new ArrayList<>();
 				for (VideoStream videoStream : videoStreamCollection.values()) {
-					if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
-						for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
-							if (!uniqSessions.contains(videoEvent.getSession())) {
-								uniqSessions.add(videoEvent.getSession());
+					if (videoStream.isSelected() && !videoStream.getVideoEventMap().isEmpty()) {
+						for (VideoEvent videoEvent : videoStream.getVideoEventMap().values()) {
+							if (!uniqVideoSessions.contains(videoEvent.getSession())) {
+								uniqVideoSessions.add(videoEvent.getSession());
 							}
 						}
+						for (VideoEvent videoEvent : videoStream.getAudioSegmentEventList().values()) {
+							if (!uniqAudioSessions.contains(videoEvent.getSession())) {
+								uniqAudioSessions.add(videoEvent.getSession());
+							}
+						}
+					
 					}
 				}
-				sessionCount = uniqSessions.size();
-				uniqSessions.clear();
+
+				sessionCount = uniqVideoSessions.size() > uniqAudioSessions.size() ? uniqVideoSessions.size() : uniqAudioSessions.size();
+
 				bpResultType = BPResultType.SELF_TEST;
 				result.setResultText(MessageFormat.format(textResults,
 						ApplicationConfig.getInstance().getAppShortName(), sessionCount, sessionCount == 1 ? "" : "s"));
+				result.setResultExcelText(MessageFormat.format(textExcelResults, bpResultType.getDescription(), sessionCount));
 				result.setTcpConnections(sessionCount);
 				result.setSelfTest(true);
 			}
@@ -145,6 +159,7 @@ public class VideoTcpConnectionImpl implements IBestPractice{
 			result.setSelfTest(false);
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(bpResultType.getDescription());
 		}
 		
 		result.setResultType(bpResultType);

@@ -34,7 +34,7 @@ public class VideoStream {
 	 * value VideoEvent
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
-	private SortedMap<String, VideoEvent> videoEventList = new TreeMap<>();
+	private SortedMap<String, VideoEvent> videoEventMap = new TreeMap<>();
 	
 	/** <pre>
 	 * key definition DLtimestamp-segment, endTS(in milliseconds)
@@ -48,7 +48,7 @@ public class VideoStream {
 	 * value VideoEvent
 	 */	
 	@NonNull@Setter(AccessLevel.NONE)
-	private TreeMap<String, VideoEvent> audioEventList = new TreeMap<>();
+	private TreeMap<String, VideoEvent> audioEventMap = new TreeMap<>();
 	
 	/** <pre>
 	 * key definition: segmentStartTime, endTS(in milliseconds)
@@ -100,6 +100,7 @@ public class VideoStream {
 	private boolean valid = true;
 	private boolean selected = false;
 	private boolean activeState = false;
+	private boolean currentStream = false;
 
 	public VideoEvent audioEvent;
 	
@@ -112,6 +113,7 @@ public class VideoStream {
 	private ArrayList<XYPair> byteBufferList = new ArrayList<>();
 
 	private Double playRequestedTime;
+	private Double videoPlayBackTime;
 	
 	public void clearBufferOccupancyData() {
 		toolTipDetailMap.clear();
@@ -168,11 +170,11 @@ public class VideoStream {
 		switch (videoEvent.getContentType()) {
 		case VIDEO:
 		case MUXED:
-			videoEventList.put(keyDLtime, videoEvent);
+			videoEventMap.put(keyDLtime, videoEvent);
 			videoStartTimeMap.put(keyStartTime, videoEvent);
 			break;
 		case AUDIO:
-			audioEventList.put(keyDLtime, videoEvent);
+			audioEventMap.put(keyDLtime, videoEvent);
 			audioStartTimeMap.put(keyStartTime, videoEvent);
 			break;
 		default:
@@ -299,8 +301,8 @@ public class VideoStream {
 	}
 	
 	public void applyStartupOffset(double startupOffset) {
-		videoEventList.entrySet().stream().forEach(x -> x.getValue().setStartupOffset(startupOffset));
-		audioEventList.entrySet().stream().forEach(x -> x.getValue().setStartupOffset(startupOffset));
+		videoEventMap.entrySet().stream().forEach(x -> x.getValue().setStartupOffset(startupOffset));
+		audioEventMap.entrySet().stream().forEach(x -> x.getValue().setStartupOffset(startupOffset));
 		ccEventList.   entrySet().stream().forEach(x -> x.getValue().setStartupOffset(startupOffset));
 	}
 	
@@ -318,12 +320,12 @@ public class VideoStream {
 		strblr.append("\n\t\t\tSelected              :").append(selected);
 		strblr.append("\n\t\t\tActiveState           :").append(activeState);
 		
-		strblr.append("\n\t\t\tVideoEventList:").append(videoEventList.size());
-		if (videoEventList.size() > 0) {
-			Iterator<String> keys = videoEventList.keySet().iterator();
+		strblr.append("\n\t\t\tVideoEventList:").append(videoEventMap.size());
+		if (videoEventMap.size() > 0) {
+			Iterator<String> keys = videoEventMap.keySet().iterator();
 			while (keys.hasNext()) {
 				String key = keys.next();
-				strblr.append("\n\t\t\t\t<").append(key + ">: " + videoEventList.get(key));
+				strblr.append("\n\t\t\t\t<").append(key + ">: " + videoEventMap.get(key));
 			}
 		}
 		strblr.append("\n");

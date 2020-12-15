@@ -70,6 +70,9 @@ public class VideoSegmentPacingImpl implements IBestPractice{
 	
 	@Value("${segmentPacing.results}")
 	private String textResults;
+
+	@Value("${segmentPacing.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${video.noData}")
 	private String noData;
@@ -123,10 +126,12 @@ public class VideoSegmentPacingImpl implements IBestPractice{
 					result.setResultText(noManifestsSelected);
 				}
 				bpResultType = BPResultType.CONFIG_REQUIRED;
+				result.setResultExcelText(bpResultType.getDescription());
 				result.setSelfTest(false);
 			} else if (selectedCount > 1) {
 				result.setResultText(multipleManifestsSelected);
 				bpResultType = BPResultType.CONFIG_REQUIRED;
+				result.setResultExcelText(bpResultType.getDescription());
 				result.setSelfTest(false);
 			} else {
 				for (VideoStream videoStream : videoStreamCollection.values()) {
@@ -158,12 +163,24 @@ public class VideoSegmentPacingImpl implements IBestPractice{
 						,count == 1 ? "was" : "were"
 						,segmentPacing
 						,MathUtils.equals(segmentPacing, 1.0) ? "" : "s"));
+				
+				result.setResultExcelText(
+			        MessageFormat.format(textExcelResults,
+			                bpResultType.getDescription(),
+			                count,
+			                count <= 1 ? "" : "different",
+	                        count <= 1 ? "" : "s",
+			                count <= 1 ? "was" : "were",
+	                        segmentPacing,
+	                        segmentPacing <= 1.0 ? "" : "s")
+		        );
 				result.setChunkPacing(segmentPacing);
 				result.setSelfTest(true);
 			}
 		  } else {
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(bpResultType.getDescription());
 		}
 		
 		result.setResultType(bpResultType);

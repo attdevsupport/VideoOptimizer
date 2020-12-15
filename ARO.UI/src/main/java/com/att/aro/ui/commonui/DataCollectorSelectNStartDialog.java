@@ -57,12 +57,14 @@ import org.apache.log4j.Logger;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.datacollector.IDataCollector;
+import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.menu.datacollector.AttnrRadioGroupPanel;
 import com.att.aro.ui.view.menu.datacollector.DeviceDialogOptions;
@@ -374,7 +376,18 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 														ApplicationConfig.getInstance().getAppShortName())
 								, JOptionPane.ERROR_MESSAGE);					
 						traceFolderNameField.requestFocus();
-					} 
+					}
+					
+					if (deviceTablePanel.getSelection().isPlatform(Platform.Android) &&  !((AROAndroidDevice)deviceTablePanel.getSelection()).isAPKInstalled()) {
+						if (MessageDialogFactory.showConfirmDialog(getCollectorDialogComponent(), ResourceBundleHelper.getMessageString("Message.permissions.warning")
+								, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
+														ApplicationConfig.getInstance().getAppShortName())
+								, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+							((MainFrame) getMainframeParent()).setAutoAssignPermissions(true);
+						} else {
+							((MainFrame) getMainframeParent()).setAutoAssignPermissions(false);
+						}
+					}
 				}
 			});
 			if (deviceTablePanel.getSelection() != null && traceFolderNameField != null){

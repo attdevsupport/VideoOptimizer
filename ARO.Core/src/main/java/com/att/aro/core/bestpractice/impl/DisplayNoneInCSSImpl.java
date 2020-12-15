@@ -66,6 +66,9 @@ public class DisplayNoneInCSSImpl implements IBestPractice {
 
 	@Value("${html.displaynoneincss.results}")
 	private String textResults;
+	
+	@Value("${html.displaynoneincss.excel.results}")
+    private String textExcelResults;
 
 	@Value("${exportall.csvNumberOfFilesWithDisplayNone}")
 	private String exportAll;
@@ -117,6 +120,10 @@ public class DisplayNoneInCSSImpl implements IBestPractice {
 										ApplicationConfig.getInstance().getAppShortName(), 
 										numOfCSSFiles);
 		}
+
+		result.setResultExcelText(
+		    MessageFormat.format(textExcelResults, result.getResultType().getDescription(), numOfCSSFiles)
+        );
 		result.setResultText(text);
 		result.setResults(results);
 		result.setAboutText(aboutText);

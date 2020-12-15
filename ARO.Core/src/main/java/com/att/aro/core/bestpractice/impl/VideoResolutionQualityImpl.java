@@ -93,6 +93,9 @@ public class VideoResolutionQualityImpl implements IBestPractice {
 	@Value("${videoResolutionQuality.results.noData}")
 	private String textResultsNoData;
 
+	@Value("${videoResolutionQuality.excel.results}")
+    private String textExcelResults;
+
 	@Value("${videoResolutionQuality.noDPI}")
 	private String noDPI;
 
@@ -153,6 +156,7 @@ public class VideoResolutionQualityImpl implements IBestPractice {
 				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
 			bpResultType = BPResultType.CONFIG_REQUIRED;
+			result.setResultExcelText(bpResultType.getDescription());
 			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			validSegmentCount = streamingVideoData.getValidSegmentCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
@@ -199,12 +203,29 @@ public class VideoResolutionQualityImpl implements IBestPractice {
 						bpResultType = decideResultType(BPResultType.FAIL);
 					}
 				}
+
+				switch (bpResultType) {
+				    case PASS:
+				    case SELF_TEST:
+				    case CONFIG_REQUIRED:
+				    case NO_DATA:
+				        result.setResultExcelText(bpResultType.getDescription());
+				        break;
+				    case FAIL:
+				    case WARNING:
+				        result.setResultExcelText(MessageFormat.format(textExcelResults, bpResultType.getDescription(), overSizeCount));
+				        break;
+			        default:
+			            break;
+				}
+
 				result.setOverSizeCount(overSizeCount);
 				result.setMaxHeight(maxHeightUsed);
 			}
 		} else {
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(bpResultType.getDescription());
 		}
 		result.setResultType(bpResultType);
 		return result;
@@ -253,7 +274,7 @@ public class VideoResolutionQualityImpl implements IBestPractice {
 		
 		for (VideoStream videoStream : videoStreamCollection.values()) {
 			if (videoStream.isSelected()) {
-				for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
+				for (VideoEvent videoEvent : videoStream.getVideoEventMap().values()) {
 					double height = videoEvent.getResolutionHeight();
 					if (height > maxHeightUsed) {
 						maxHeightUsed = height;

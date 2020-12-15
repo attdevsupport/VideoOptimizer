@@ -60,6 +60,7 @@ public class ExternalProcessRunner {
 	 */
 	public String runCmd(String[] command) throws IOException {
 
+	    LOG.debug("Executing command: " + String.join(" ", command));
 		Process process = Runtime.getRuntime().exec(command);
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();

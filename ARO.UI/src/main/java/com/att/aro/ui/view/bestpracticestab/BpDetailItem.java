@@ -83,7 +83,6 @@ import com.att.aro.core.bestpractice.pojo.VideoConcurrentSessionResult;
 import com.att.aro.core.bestpractice.pojo.VideoNetworkComparisonResult;
 import com.att.aro.core.bestpractice.pojo.VideoStallResult;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
-import com.att.aro.core.bestpractice.pojo.WeakCipherResult;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.pojo.VideoStartup;
 import com.att.aro.ui.commonui.AROUIManager;
@@ -538,9 +537,6 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 		case UNSECURE_SSL_VERSION:
 			learnMoreURI = ResourceBundleHelper.getURLResource("security.unsecureSSLVersion.url");
 			break;
-		case WEAK_CIPHER:
-			learnMoreURI = ResourceBundleHelper.getURLResource("security.weakCipher.url");
-			break;
 		case FORWARD_SECRECY:
 			learnMoreURI = ResourceBundleHelper.getURLResource("security.forwardSecrecy.url");
 			break;
@@ -816,13 +812,6 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 					else
 						((BpSecurityUnsecureSSLVersionTablePanel) resultsTablePanel)
 								.setData(((UnsecureSSLVersionResult) bpr).getResults());
-					return;
-				case WEAK_CIPHER:
-					if (bpr.getResultType() == BPResultType.NONE)
-						((BpSecurityWeakCipherTablePanel) resultsTablePanel).setData(Collections.emptyList());
-					else
-						((BpSecurityWeakCipherTablePanel) resultsTablePanel)
-								.setData(((WeakCipherResult) bpr).getResults());
 					return;
 				case FORWARD_SECRECY:
 					if (bpr.getResultType() == BPResultType.NONE)

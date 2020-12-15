@@ -115,10 +115,12 @@ public class LiveScreenViewDialog extends JDialog implements IVideoImageSubscrib
 			JPanel timerPane = new JPanel();
 			timeBox = new JTextField();
 			timeBox.setText("00:00:00");
+			timeBox.setEditable(false);
 			timerPane.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 			JTextArea timeBoxLabel = new JTextArea();
 			timeBoxLabel.setBackground(SystemColor.window);
 			timeBoxLabel.setText("Elapsed Time:");
+			timeBoxLabel.setEditable(false);
 			timerPane.add(timeBoxLabel);
 			timerPane.add(timeBox);
 			dashBoardPane.add(timerPane, BorderLayout.WEST);

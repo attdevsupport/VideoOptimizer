@@ -52,6 +52,9 @@ public class SpriteImageImpl implements IBestPractice{
 	
 	@Value("${spriteimages.results}")
 	private String textResults;
+
+	@Value("${spriteimages.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${exportall.csvNumberOfSpriteFiles}")
 	private String exportAllNumberOfSpriteFiles;
@@ -114,12 +117,17 @@ public class SpriteImageImpl implements IBestPractice{
 			result.setResultType(BPResultType.PASS);
 			text = MessageFormat.format(textResultPass, analysisResults.size());
 			result.setResultText(text);
+	        result.setResultExcelText(BPResultType.PASS.getDescription());
 		}else{
 			result.setResultType(BPResultType.FAIL);
 			text = MessageFormat.format(textResults, 
 										ApplicationConfig.getInstance().getAppShortName(), 
 										analysisResults.size());
 			result.setResultText(text);
+
+			result.setResultExcelText(
+		        MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), analysisResults.size())
+	        );
 		}
 		
 		result.setAboutText(aboutText);

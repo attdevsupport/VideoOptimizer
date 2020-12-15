@@ -56,6 +56,9 @@ public class AccessingPeripheralImpl implements IBestPractice {
 	
 	@Value("${other.accessingPeripherals.results}")
 	private String textResults;
+
+	@Value("${other.accessingPeripherals.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${exportall.csvAccGPSDesc}")
 	private String exportAllGPSDesc;
@@ -140,9 +143,13 @@ public class AccessingPeripheralImpl implements IBestPractice {
 			}
 			String text = MessageFormat.format(key, activeGPSRatio, activeBluetoothRatio, cameraPer);
 			result.setResultText(text);
+			result.setResultExcelText(
+		        MessageFormat.format(textExcelResults, result.getResultType().getDescription(), activeGPSRatio, activeBluetoothRatio, cameraPer)
+	        );
 		} else {
 			result.setResultText(noData);
 			result.setResultType(BPResultType.NO_DATA);
+			result.setResultExcelText(BPResultType.NO_DATA.getDescription());
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);

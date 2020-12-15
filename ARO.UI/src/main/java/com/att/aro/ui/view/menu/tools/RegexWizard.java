@@ -57,6 +57,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -167,15 +168,19 @@ public class RegexWizard extends JDialog implements ActionListener, FocusListene
 	
 	private TableCellEditor cellEditor;
 
-	public static RegexWizard regexWizard = new RegexWizard();
+	private static RegexWizard regexWizard = null;
 	
-	public static RegexWizard getInstance(){
-		regexWizard.clear();
-		regexWizard.init();
+	public synchronized static RegexWizard getInstance(JFrame parent) {
+		if (regexWizard == null) {
+			regexWizard = new RegexWizard(parent);
+			regexWizard.clear();
+			regexWizard.init();
+		}
 		return regexWizard;
 	}
-	
-	private RegexWizard() {
+
+	private RegexWizard(JFrame parent) {
+		super(parent);
 		getFieldPanel();
 		getMatcherPanel();
 		getResultPanel();

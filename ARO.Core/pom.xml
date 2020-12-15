@@ -8,7 +8,7 @@
 	<parent>
 		<groupId>com.att.aro</groupId>
 		<artifactId>vo-parent</artifactId>
-		<version>3.2.0</version>
+		<version>4.0.0</version>
 		<relativePath>../ARO.Parent</relativePath>
 	</parent> 
 
@@ -58,18 +58,17 @@
 			</snapshots>
 		</repository>
 		<repository>
-			<id>atlassian-public</id>
-			<name>atlassian</name>
-			<url>https://packages.atlassian.com/maven/repository/public</url>
-			<snapshots>
-				<enabled>true</enabled>
-				<updatePolicy>never</updatePolicy>
-				<checksumPolicy>warn</checksumPolicy>
-			</snapshots>
-			<releases>
-				<enabled>true</enabled>
-				<checksumPolicy>warn</checksumPolicy>
-			</releases>
+		      <id>atlassian-public</id>
+		      <url>https://maven.atlassian.com/content/repositories/atlassian-public/</url>
+		      <snapshots>
+		        <enabled>true</enabled>
+		        <updatePolicy>never</updatePolicy>
+		        <checksumPolicy>warn</checksumPolicy>
+		      </snapshots>
+		       <releases>
+		         <enabled>true</enabled>
+		         <checksumPolicy>warn</checksumPolicy>
+		      </releases>
 		</repository>
 		<repository>
       <id>rso-public-grid</id>
@@ -118,6 +117,11 @@
 	</dependencyManagement>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.mp4parser</groupId>
+			<artifactId>isoparser</artifactId>
+			<version>1.9.41</version>
+		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-s3</artifactId>
@@ -397,6 +401,12 @@
 		    <groupId>org.apache.poi</groupId>
 		    <artifactId>poi</artifactId>
 		    <version>${poi-version}</version>
+		</dependency>
+        
+        <dependency>
+			<groupId>com.nixxcode.jvmbrotli</groupId>
+			<artifactId>jvmbrotli</artifactId>
+			<version>0.2.0</version>
 		</dependency>
         	
        </dependencies>

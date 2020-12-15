@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 AT&T
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -80,6 +80,9 @@ public class VideoRedundancyImpl implements IBestPractice {
 	@Value("${videoRedundancy.results}")
 	private String textResults;
 
+	@Value("${videoRedundancy.excel.results}")
+    private String textExcelResults;
+
 	@Value("${video.noData}")
 	private String noData;
 
@@ -127,6 +130,7 @@ public class VideoRedundancyImpl implements IBestPractice {
 				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
 			bpResultType = BPResultType.CONFIG_REQUIRED;
+			result.setResultExcelText(BPResultType.CONFIG_REQUIRED.getDescription());
 
 			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
@@ -156,11 +160,15 @@ public class VideoRedundancyImpl implements IBestPractice {
 						, videoPref.getVideoUsagePreference().getSegmentRedundancyFailVal());
 				result.setResultType(bpResultType);
 
+				// TODO: Validate the logic
 				if (redundantPercentage != 0.0) {
 					result.setResultText(MessageFormat.format(textResults, (String.format("%d", redundantPercentage))));
+					result.setResultExcelText(MessageFormat.format(textExcelResults, bpResultType.getDescription(), String.format("%d", redundantPercentage)));
 				} else {
 					result.setResultText(MessageFormat.format(textResultPass, redundantPercentage));
+					result.setResultExcelText(bpResultType.getDescription());
 				}
+
 				result.setRedundantPercentage(redundantPercentage);
 				result.setSegmentCount(countSegment);
 				result.setRedundantCount(countRedundant);
@@ -171,6 +179,7 @@ public class VideoRedundancyImpl implements IBestPractice {
 			result.setSelfTest(false);
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(bpResultType.getDescription());
 		}
 		result.setResultType(bpResultType);
 		return result;

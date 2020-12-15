@@ -60,7 +60,7 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 		try {
 			proc = builder.start();
 		} catch (IOException e) {
-			LOG.debug("IOException:", e);
+			LOG.error("IOException:", e);
 			return;
 		}
 
@@ -146,7 +146,7 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 					String[] pscmd = new String[] { "bash", "-c", cmd };
 					runner.runCmd(pscmd);
 				} catch (IOException e) {
-					LOG.error(e.getMessage());
+					LOG.error("Exception while stopping tcpdump", e);
 				}
 			}
 			if (processReader != null) {
@@ -173,9 +173,10 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 		String result = null;
 		try {
 			result = runner.runCmd(command);
+			LOG.info(result);
 		} catch (IOException e) {
+		    LOG.error("Something went wrong while  enabling access to trace path " + pcappath, e);
 		}
-		LOG.info(result);
 	}
 
 	/**

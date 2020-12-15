@@ -15,11 +15,15 @@
 */
 package com.att.aro.core.mobiledevice.pojo;
 
+import java.util.Objects;
+
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IDevice.DeviceState;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.android.impl.AndroidImpl;
 import com.att.aro.core.datacollector.IDataCollector;
+import com.att.aro.core.util.StringParse;
+import com.att.aro.core.util.Util;
 
 public class AROAndroidDevice implements IAroDevice {
 
@@ -236,5 +240,26 @@ public class AROAndroidDevice implements IAroDevice {
 	public void setStatus(AroDeviceState state) {
 		this.devState = state;
 
+	}
+	
+	public boolean isAPKInstalled() {
+		if (Util.APK_FILE_NAME.contains("%s")) {
+			ClassLoader loader = AROAndroidDevice.class.getClassLoader();
+			for (int i = 0; i < 500; i++) {
+				String tempFile = String.format(Util.APK_FILE_NAME, i);
+				if (loader.getResource(tempFile) != null) {
+					Util.APK_FILE_NAME = tempFile;
+					break;
+				}
+			}
+		}
+		String deviceAPKVersion = null;
+		String newAPKVersion = StringParse.findLabeledDataFromString("VPNCollector-", ".apk", Util.APK_FILE_NAME);
+		String cmdAROAPKVersion = "dumpsys package " + Util.ARO_PACKAGE_NAME + " | grep versionName";
+		String[] result = android.getShellReturn(this.device, cmdAROAPKVersion);
+		if (result != null && (result.length > 0) && result[0] != null) {
+			deviceAPKVersion = StringParse.findLabeledDataFromString("versionName=", "=", result[0].trim());
+		}
+		return (Objects.equals(deviceAPKVersion, newAPKVersion));
 	}
 }

@@ -15,20 +15,20 @@
 */
 package com.att.aro.core.video.impl;
 
+import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.RawImage;
-import com.android.ddmlib.TimeoutException;
 import com.att.aro.core.concurrent.IThreadExecutor;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
 import com.att.aro.core.util.ImageHelper;
@@ -120,6 +120,10 @@ public class VideoCaptureImpl implements IVideoCapture {
 	 */
 	public void run() {
 
+		RawImage priorImage = null;
+		boolean captureFail = false;
+	    int failCounter = 0;
+		
 		if (device != null) {
 
 			RawImage rawImage = null;
@@ -135,21 +139,33 @@ public class VideoCaptureImpl implements IVideoCapture {
 					// Screen shot is captured from the emulator.
 					synchronized (device) {
 						if (isUSBConnected) {
-							rawImage = device.getScreenshot();
+							try {
+								rawImage = device.getScreenshot();
+								priorImage = rawImage;
+								failCounter = 0;
+							} catch (Exception e) {
+								if (priorImage != null) {
+									// set this flag to allow image reuse in the video 
+									captureFail = true;
+								}
+								rawImage = priorImage;
+							}
 						} else {
 							rawImage = null;
 						}
 					}
 					if (rawImage != null) {
 						Date timestamp = new Date();
-						int duration = Math.round((float) (timestamp.getTime() - lastFrameTime.getTime())
-								* videowriter.getTimeUnits() / 1000f);
+						int duration = Math.round((float) (timestamp.getTime() - lastFrameTime.getTime()) * videowriter.getTimeUnits() / 1000f);
 						if (duration > 0) {
 							if (image == null) {
 								image = new BufferedImage(rawImage.width, rawImage.height, BufferedImage.TYPE_INT_RGB);
 							}
 							ImageHelper.convertImage(rawImage, image);
-
+							if (captureFail) {
+								overlayMessage(image, rawImage.width, rawImage.height, String.format("Screen Capture Blocked :%d", failCounter++));
+								captureFail = false;
+							}
 							videowriter.writeFrame(image, duration);
 							lastFrameTime = timestamp;
 							callSubscriber(image);
@@ -181,16 +197,6 @@ public class VideoCaptureImpl implements IVideoCapture {
 						}
 						LOGGER.error("IOException ", ioExp);
 					}
-				} catch (TimeoutException timeOutExp) {
-					if (isUSBConnected) {
-						iExceptionCount++;
-						LOGGER.error("Time out exception ", timeOutExp);
-					}
-				} catch (AdbCommandRejectedException adbExp) {
-					if (isUSBConnected) {
-						LOGGER.error("Device Offline!", adbExp);
-						iExceptionCount++;
-					}
 				}
 				if (iExceptionCount > MAX_FETCH_EXCEPTIONS) {
 					allDone = true;
@@ -207,6 +213,24 @@ public class VideoCaptureImpl implements IVideoCapture {
 			hasExited = true;
 		}
 
+	}
+
+	public void overlayMessage(BufferedImage image, int width, int height, String message) {
+		float fontSize = 80;
+		int portraitHeight = height;
+		int portraitwidth = width;
+		if (width > height) {
+			portraitHeight = width;
+			portraitwidth = height;
+		}
+		int backGroundX = portraitHeight / 5;
+		int textX = backGroundX + (int) (fontSize * 2);
+		Graphics graphics = image.getGraphics();
+		graphics.setFont(graphics.getFont().deriveFont(fontSize));
+		graphics.setColor(Color.RED);
+		graphics.clearRect(0, backGroundX, portraitwidth, backGroundX / 2);
+		graphics.drawString(message, portraitwidth / 8, textX);
+		graphics.dispose();
 	}
 
 	/**
@@ -245,6 +269,8 @@ public class VideoCaptureImpl implements IVideoCapture {
 	 * Stops the process of capturing images.
 	 */
 	public void stopRecording() {
+	    LOGGER.info("Video capture stopRecording()");
+
 		this.allDone = true;
 		int count = 0;
 		while (!hasExited && count < 20) {
@@ -259,7 +285,7 @@ public class VideoCaptureImpl implements IVideoCapture {
 				videowriter.close();
 				videoCaptureActive = false;
 			} catch (IOException e) {
-				LOGGER.error(e.getMessage());
+				LOGGER.warn("Exception while closing video writer stream", e);
 			}
 		}
 	}

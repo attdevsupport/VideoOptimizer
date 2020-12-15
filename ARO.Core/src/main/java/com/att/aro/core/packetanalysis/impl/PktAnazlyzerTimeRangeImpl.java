@@ -188,25 +188,19 @@ public class PktAnazlyzerTimeRangeImpl implements IPktAnazlyzerTimeRangeUtil {
 		List<NetworkBearerTypeInfo> filteredBearerInfos = new ArrayList<NetworkBearerTypeInfo>();
 		for (NetworkBearerTypeInfo bearerInfo : orifilteredBearerInfos) {
 
-			if (bearerInfo.getBeginTimestamp() >= beginTime
-					&& bearerInfo.getEndTimestamp() <= endTime) {
+			if (bearerInfo.getBeginTimestamp() >= beginTime && bearerInfo.getEndTimestamp() <= endTime) {
 				filteredBearerInfos.add(bearerInfo);
-			} else if (bearerInfo.getBeginTimestamp() <= beginTime
-					&& bearerInfo.getEndTimestamp() <= endTime
+			} else if (bearerInfo.getBeginTimestamp() <= beginTime && bearerInfo.getEndTimestamp() <= endTime
 					&& bearerInfo.getEndTimestamp() > beginTime) {
-				filteredBearerInfos.add(new NetworkBearerTypeInfo(beginTime,
-						bearerInfo.getEndTimestamp(), bearerInfo
-								.getNetworkType()));
-			} else if (bearerInfo.getBeginTimestamp() <= beginTime
+				filteredBearerInfos.add(new NetworkBearerTypeInfo(beginTime, bearerInfo.getEndTimestamp(),
+						bearerInfo.getNetworkType(), bearerInfo.getOverrideNetworkType()));
+			} else if (bearerInfo.getBeginTimestamp() <= beginTime && bearerInfo.getEndTimestamp() >= endTime) {
+				filteredBearerInfos.add(new NetworkBearerTypeInfo(beginTime, endTime, bearerInfo.getNetworkType(),
+						bearerInfo.getOverrideNetworkType()));
+			} else if (bearerInfo.getBeginTimestamp() >= beginTime && bearerInfo.getBeginTimestamp() < endTime
 					&& bearerInfo.getEndTimestamp() >= endTime) {
-				filteredBearerInfos.add(new NetworkBearerTypeInfo(beginTime,
-						endTime, bearerInfo.getNetworkType()));
-			} else if (bearerInfo.getBeginTimestamp() >= beginTime
-					&& bearerInfo.getBeginTimestamp() < endTime
-					&& bearerInfo.getEndTimestamp() >= endTime) {
-				filteredBearerInfos.add(new NetworkBearerTypeInfo(bearerInfo
-						.getBeginTimestamp(), endTime, bearerInfo
-						.getNetworkType()));
+				filteredBearerInfos.add(new NetworkBearerTypeInfo(bearerInfo.getBeginTimestamp(), endTime,
+						bearerInfo.getNetworkType(), bearerInfo.getOverrideNetworkType()));
 			}
 		}
 		result.setNetworkTypeInfos(filteredBearerInfos);

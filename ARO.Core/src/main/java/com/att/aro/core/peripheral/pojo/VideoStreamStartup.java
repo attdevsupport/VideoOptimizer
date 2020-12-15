@@ -32,9 +32,9 @@ public class VideoStreamStartup {
 
 	@Override
 	public String toString() {
-		StringBuilder strblr = new StringBuilder("\n\tVideoStartup :\n\t\t");
-		strblr.append(manifestName)
-		.append("\t\t").append(String.format("%.3f", manifestReqTime))
+		StringBuilder strblr = new StringBuilder("\n\tVideoStartup :");
+		strblr.append("\t" + (manifestName != null ? manifestName : ""))
+		.append("\n\t\tRequest Time:    \t").append(String.format("%.3f", manifestReqTime))
 		.append("\n\t\tSegment:         \t").append(firstSegID)
 		.append("\n\t\tOffset:          \t").append(String.format("%.3f", offset))
 		.append("\n\t\tStartupDelay:    \t").append(String.format("%.3f", startupDelay))

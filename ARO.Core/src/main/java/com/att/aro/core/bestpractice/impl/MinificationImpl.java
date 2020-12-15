@@ -88,9 +88,15 @@ public class MinificationImpl implements IBestPractice {
 
 	@Value("${minification.results}")
 	private String textResults;
+
+	@Value("${minification.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${minification.resultsFail}")
 	private String textResultFail;
+
+	@Value("${minification.excel.resultsFail}")
+    private String textExcelResultsFail;
 
 	@Value("${exportall.csvNumberOfMinifyFiles}")
 	private String exportAllNumberOfMinifyFiles;
@@ -195,11 +201,16 @@ public class MinificationImpl implements IBestPractice {
 			result.setResultType(BPResultType.PASS);
 			text = MessageFormat.format(textResultPass, numberOfFiles, savingInKb);
 			result.setResultText(text);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		} else if (savingInKb < 1) {
 			result.setResultType(BPResultType.FAIL);
 			text = MessageFormat.format(textResultFail, ApplicationConfig.getInstance().getAppShortName(),
 					numberOfFiles);
 			result.setResultText(text);
+
+			result.setResultExcelText(
+		        MessageFormat.format(textExcelResultsFail, BPResultType.FAIL.getDescription(), numberOfFiles)
+	        );
 		} else {
 			result.setResultType(BPResultType.FAIL);
 			String percentageSaving = String.valueOf(Math.round(((double) totalSavingInBytes / totalBytes) * 100));
@@ -209,6 +220,10 @@ public class MinificationImpl implements IBestPractice {
 										savingInKb, 
 										percentageSaving);
 			result.setResultText(text);
+
+			result.setResultExcelText(
+                MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), numberOfFiles, savingInKb, percentageSaving)
+            );
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
@@ -232,7 +247,7 @@ public class MinificationImpl implements IBestPractice {
 			String contentEncoding = req.getContentEncoding();
 			if ("gzip".equals(contentEncoding)) {
 				content = "";
-			}else{
+			} else{
 				content = reqhelper.getContentString(req, session);
 			}
 		} catch (Exception e) {

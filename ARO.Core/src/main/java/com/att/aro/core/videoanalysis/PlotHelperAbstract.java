@@ -60,13 +60,13 @@ public abstract class PlotHelperAbstract {
 		if (videoData != null && !CollectionUtils.isEmpty(videoData.getVideoStreamMap())) {
 			for (VideoStream videoStream : videoData.getVideoStreamMap().values()) {
 				// don't count if no videos with manifest, or only one video
-				if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
+				if (videoStream.isSelected() && !videoStream.getVideoEventMap().isEmpty()) {
 					TreeMap<String, VideoEvent> segmentEventList = (TreeMap<String, VideoEvent>) videoStream.getVideoSegmentEventList();
 					Entry<String, VideoEvent> segmentValue = segmentEventList.higherEntry("00000000:z");
 					double firstSeg = segmentValue != null ? segmentValue.getValue().getSegmentID() : 0;
 					
 					VideoEvent first = null;
-					for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
+					for (VideoEvent videoEvent : videoStream.getVideoEventMap().values()) {
 						if (videoEvent.getSegmentID() == firstSeg) {
 							first = videoEvent;
 						}
@@ -110,8 +110,8 @@ public abstract class PlotHelperAbstract {
 
 		for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
 			// don't count if no videos with manifest, or only one video
-			if (videoStream != null && videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
-				for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
+			if (videoStream != null && videoStream.isSelected() && !videoStream.getVideoEventMap().isEmpty()) {
+				for (VideoEvent videoEvent : videoStream.getVideoEventMap().values()) {
 					if (!(videoEvent.getSegmentID() == 0 && videoStream.getManifest().getVideoFormat().equals(VideoFormat.MPEG4)) && (!chunkDownload.contains(videoEvent))) {
 
 						switch (segmentFilterChoice) {

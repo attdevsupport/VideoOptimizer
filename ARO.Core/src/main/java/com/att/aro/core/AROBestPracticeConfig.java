@@ -59,14 +59,13 @@ import com.att.aro.core.bestpractice.impl.VideoConcurrentSessionImpl;
 import com.att.aro.core.bestpractice.impl.VideoNetworkComparisonImpl;
 import com.att.aro.core.bestpractice.impl.VideoRedundancyImpl;
 import com.att.aro.core.bestpractice.impl.VideoResolutionQualityImpl;
-import com.att.aro.core.bestpractice.impl.VideoAdaptiveBitrateLadderImpl;
 import com.att.aro.core.bestpractice.impl.VideoSegmentPacingImpl;
+import com.att.aro.core.bestpractice.impl.VideoAdaptiveBitrateLadderImpl;
 import com.att.aro.core.bestpractice.impl.VideoSegmentSizeImpl;
 import com.att.aro.core.bestpractice.impl.VideoStallImpl;
 import com.att.aro.core.bestpractice.impl.VideoStartUpDelayImpl;
 import com.att.aro.core.bestpractice.impl.VideoTcpConnectionImpl;
 import com.att.aro.core.bestpractice.impl.VideoVariableBitrateImpl;
-import com.att.aro.core.bestpractice.impl.WeakCipherImpl;
 
 /**
  * Spring configuration for all best practices.
@@ -101,8 +100,7 @@ import com.att.aro.core.bestpractice.impl.WeakCipherImpl;
  *   * httpsUsage
  *   * transmissionPrivateData
  *   * unsecureSSLVersion
- *   * video
- *   * weakCipher
+ *   * videos
  *   * forward secrecy
  * </pre>
  *
@@ -345,11 +343,6 @@ public class AROBestPracticeConfig {
 	@Bean(name = "unsecureSSLVersion")
 	IBestPractice getUnsecureSSLVersion() {
 		return new UnsecureSSLVersionImpl();
-	}
-
-	@Bean(name = "weakCipher")
-	IBestPractice getWeakCipher() {
-		return new WeakCipherImpl();
 	}
 
 	@Bean(name = "forwardSecrecy")

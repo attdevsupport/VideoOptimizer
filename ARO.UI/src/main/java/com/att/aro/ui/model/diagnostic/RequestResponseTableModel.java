@@ -50,14 +50,14 @@ public class RequestResponseTableModel extends DataTableModel<HttpRequestRespons
 		ResourceBundleHelper.getMessageString("tcp.latency") 
 	};
 	
-	private static final int TIME_COL = 0;
-	private static final int DIR_COL = 1;
-	private static final int REQ_TYPE_STATUS_COL = 2;
-	private static final int HOST_NAME_CONTENT_TYPE_COL = 3;
-	private static final int OBJ_NAME_CONTENT_LENGTH = 4;
-	private static final int ON_WIRE_CONTENT_LENGTH = 5;
-	private static final int HTTP_COMPRESSION = 6;
-	private static final int NETWORK_LATENCY_COL = 7;
+	public static final int TIME_COL = 0;
+	public static final int DIR_COL = 1;
+	public static final int REQ_TYPE_STATUS_COL = 2;
+	public static final int HOST_NAME_CONTENT_TYPE_COL = 3;
+	public static final int OBJ_NAME_CONTENT_LENGTH = 4;
+	public static final int ON_WIRE_CONTENT_LENGTH = 5;
+	public static final int HTTP_COMPRESSION = 6;
+	public static final int NETWORK_LATENCY_COL = 7;
 
 	private Session session;
 	public Session getSession() {
@@ -191,11 +191,13 @@ public class RequestResponseTableModel extends DataTableModel<HttpRequestRespons
 				item.getContentType() != null && 
 				fileCompression.isTextContent(item.getContentType())) {
 			//same logic apply in FileCompressionImpl.java 
-			if ("gzip".equals(contentEncoding)) {
+			if (HttpRequestResponseInfo.CONTENT_ENCODING_GZIP.equals(contentEncoding)) {
 				return TextFileCompression.GZIP.toString();
-			} else if ("compress".equals(contentEncoding)) {
+			} else if (HttpRequestResponseInfo.CONTENT_ENCODING_BROTLI.equals(contentEncoding)) {
+				return TextFileCompression.BROTLI.toString();
+			} else if (HttpRequestResponseInfo.CONTENT_ENCODING_COMPRESS.equals(contentEncoding)) {
 				return TextFileCompression.COMPRESS.toString();
-			} else if ("deflate".equals(contentEncoding)) {
+			} else if (HttpRequestResponseInfo.CONTENT_ENCODING_DEFLATE.equals(contentEncoding)) {
 				return TextFileCompression.DEFLATE.toString();
 			}else{
 				// the content should be compressed but is not				

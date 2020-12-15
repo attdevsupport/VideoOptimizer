@@ -34,6 +34,7 @@ import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.ToolTipManager;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -101,6 +102,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 	public AROFileMenu(SharedAttributesProcesses parent){
 		super();
 		this.parent = parent;
+		ToolTipManager.sharedInstance().setInitialDelay(0);
 	}
 		
 	/**
@@ -121,26 +123,29 @@ public class AROFileMenu implements ActionListener, MenuListener {
 				@Override
 				public void mouseEntered(MouseEvent e) {
 					boolean getRecentMenuItems = false;
-					if (recentMenuItems.isEmpty() || recentMenuItems.size() != Util.getRecentOpenMenuItems().size()) {
+					Map<String, String> recentItemsMap = Util.getRecentOpenMenuItems();
+					if (recentMenuItems.isEmpty() || recentMenuItems.size() != recentItemsMap.size()) {
 						getRecentMenuItems = true;
 					}
+
 					if (!getRecentMenuItems) {
-						Set<String> keyset = Util.getRecentOpenMenuItems().keySet();
-						Iterator<String> iterator = keyset.iterator();
+					    Iterator<String> iterator = recentItemsMap.keySet().iterator();
 						for (String key : recentMenuItems.keySet()) {
 							String keyValue = iterator.hasNext() ? iterator.next() : null;
-							if (!key.equals(keyValue)) {
+							if (!recentMenuItems.get(key).equals(recentItemsMap.get(keyValue))) {
 								getRecentMenuItems = true;
 								break;
 							}
 						}
 					}
+
 					if (getRecentMenuItems) {
-						recentMenuItems = Util.getRecentOpenMenuItems();
+						recentMenuItems = recentItemsMap;
 						recentMenu.removeAll();
 						for (Map.Entry<String, String> entry : recentMenuItems.entrySet()) {
-							recentMenu.add(menuAdder.getMenuItemInstance(entry.getKey(),
-									ResourceBundleHelper.getMessageString("menu.file.recent")));
+						    JMenuItem menuItem = menuAdder.getMenuItemInstance(entry.getValue(), ResourceBundleHelper.getMessageString("menu.file.recent"));
+						    menuItem.setToolTipText(entry.getKey());
+							recentMenu.add(menuItem);
 						}
 					}
 				}
@@ -209,7 +214,8 @@ public class AROFileMenu implements ActionListener, MenuListener {
 					traceFolder = chooseFileOrFolder(JFileChooser.DIRECTORIES_ONLY, ResourceBundleHelper.getMessageString(MenuItem.menu_file_open));
 					traceFolder = new File(fileManager.deAlias(traceFolder).toString());
 				} else {
-					traceFolder = new File(recentMenuItems.get(aEvent.getActionCommand()));
+				    JMenuItem menuItem = (JMenuItem) aEvent.getSource();
+					traceFolder = new File(menuItem.getToolTipText());
 				}
 
 				if (traceFolder.isDirectory()) {

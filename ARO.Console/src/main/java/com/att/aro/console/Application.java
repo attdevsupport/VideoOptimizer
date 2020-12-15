@@ -592,6 +592,7 @@ public final class Application implements IAROView {
                 extras.put("video_option", getVideoOption());
                 extras.put("videoOrientation", videoOrientation == null ? Orientation.PORTRAIT : videoOrientation);
 				extras.put("AttenuatorModel", model);
+                extras.put("assignPermission", false);
 				result = runCommand(cmds, collector, cmds.getSudo(), extras);
 			} finally {
 				restoreSystemOut(outSave);

@@ -16,5 +16,20 @@
 package com.att.aro.core.bestpractice.pojo;
 
 public enum BPResultType {
-	PASS, FAIL, WARNING, SELF_TEST, CONFIG_REQUIRED, NO_DATA, NONE
+	PASS("Pass"),
+	FAIL("Fail"),
+	WARNING("Warning"),
+	SELF_TEST("Self Test"),
+	CONFIG_REQUIRED("Configure"),
+	NO_DATA("No Data"),
+	NONE("None");
+    
+    private String description;
+    private BPResultType(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
 }

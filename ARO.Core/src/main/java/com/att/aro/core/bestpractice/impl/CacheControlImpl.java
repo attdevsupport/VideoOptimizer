@@ -48,6 +48,9 @@ public class CacheControlImpl implements IBestPractice {
 	
 	@Value("${caching.cacheControl.results}")
 	private String textResults;
+
+	@Value("${caching.cacheControl.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${exportall.csvCacheConNExpDesc}")
 	private String exportAllCacheConNExpDesc;
@@ -75,10 +78,12 @@ public class CacheControlImpl implements IBestPractice {
 		if(cacheControl){
 			result.setResultType(BPResultType.PASS);
 			result.setResultText(textResultPass);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		}else{
 			result.setResultType(BPResultType.WARNING);// ref. old analyzer give warning in this best practice
 			String text = MessageFormat.format(textResults, hitNotExpiredDup,hitExpired304);
 			result.setResultText(text);
+			result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.WARNING.getDescription(), hitNotExpiredDup, hitExpired304));
 		}
 		result.setHitExpired304Count(hitExpired304);
 		result.setHitNotExpiredDupCount(hitNotExpiredDup);

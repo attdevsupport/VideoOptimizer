@@ -61,6 +61,9 @@ public class ScriptsImpl implements IBestPractice {
 	@Value("${3rd.party.scripts.results}")
 	private String textResults;
 
+	@Value("${3rd.party.scripts.excel.results}")
+    private String textExcelResults;
+
 	@Value("${exportall.csvNumberOfScriptFiles}")
 	private String exportAllNumberOfScriptsFiles;
 
@@ -84,18 +87,24 @@ public class ScriptsImpl implements IBestPractice {
 				}
 			}
 		}
+
 		String text = "";
 		if (result.getFirstFailedHtml() == null) {
 			result.setResultType(BPResultType.PASS);
 			text = MessageFormat.format(textResultPass, result.getNumberOfFailedFiles());
 			result.setResultText(text);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		} else {
 			result.setResultType(BPResultType.FAIL);
 			text = MessageFormat.format(textResults, 
 										ApplicationConfig.getInstance().getAppShortName(), 
 										result.getNumberOfFailedFiles());
 			result.setResultText(text);
+			result.setResultExcelText(
+		        MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), result.getNumberOfFailedFiles())
+	        );
 		}
+
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
 		result.setLearnMoreUrl(learnMoreUrl);

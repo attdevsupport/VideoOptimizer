@@ -42,14 +42,14 @@ public class HttpDelayInfo {
 
 	private void getResponedata() {
 		HttpRequestResponseInfo response = httpRequestResponseInfo.getAssocReqResp();
-		if (response != null) {
+		if (response != null && response.getFirstDataPacket() != null) {
 			double firstPacketTime = response.getFirstDataPacket().getTimeStamp();
 			double lastPacketTime = response.getLastPacketTimeStamp();
 			firstPacketTimeStamp = Util.formatDouble(firstPacketTime);
-			firstPacketDelay = Util.formatDouble(firstPacketTime-requestTimeStamp);
-			lastPacketTimeStamp =  Util.formatDouble(lastPacketTime);
+			firstPacketDelay = Util.formatDouble(firstPacketTime - requestTimeStamp);
+			lastPacketTimeStamp = Util.formatDouble(lastPacketTime);
 			contentLength = response.getContentLength();
-			lastPacketDelay= Util.formatDouble(lastPacketTime-requestTimeStamp);
+			lastPacketDelay = Util.formatDouble(lastPacketTime - requestTimeStamp);
 		}
 
 	}

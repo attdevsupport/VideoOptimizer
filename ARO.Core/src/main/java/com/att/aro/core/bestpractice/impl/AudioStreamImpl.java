@@ -18,8 +18,11 @@
 package com.att.aro.core.bestpractice.impl;
 
 import java.text.MessageFormat;
+import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,6 +33,7 @@ import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.AudioStreamResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
+import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 /**
@@ -63,7 +67,10 @@ public class AudioStreamImpl implements IBestPractice {
 	
 	@Value("${audioStream.results}")
 	private String textResults;
-	
+
+	@Value("${audioStream.excel.results}")
+    private String textExcelResults;
+
 	@Value("${video.noData}")
 	private String noData;
 
@@ -102,6 +109,7 @@ public class AudioStreamImpl implements IBestPractice {
 				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 			
 			bpResultType = BPResultType.CONFIG_REQUIRED;
+			result.setResultExcelText(bpResultType.getDescription());
 			
 			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
@@ -120,7 +128,7 @@ public class AudioStreamImpl implements IBestPractice {
 			} else if (hasSelectedManifest) {
 				for (VideoStream videoStream : videoStreamCollection.values()) {
 					if (videoStream != null && videoStream.isSelected()) {
-						count += videoStream.getAudioEventList().size();
+						count += videoStream.getAudioEventMap().size();
 					}
 				}
 				bpResultType = BPResultType.SELF_TEST;
@@ -132,10 +140,13 @@ public class AudioStreamImpl implements IBestPractice {
 						));
 				result.setCount(count);
 				result.setSelfTest(true);
+
+				result.setResultExcelText(MessageFormat.format(textExcelResults, bpResultType.getDescription(), getAudioResolutions(videoStreamCollection)));
 			}
 		} else {
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(bpResultType.getDescription());
 		}
 
 		result.setResultType(bpResultType);
@@ -154,4 +165,19 @@ public class AudioStreamImpl implements IBestPractice {
 		result.setLearnMoreUrl(learnMoreUrl);
 	}
 
+	private String getAudioResolutions(Map<Double, VideoStream> videoStreams) {
+	    Set<String> bitRates = new TreeSet<>();
+
+	    for (VideoStream stream : videoStreams.values()) {
+	        if (stream != null && stream.isSelected()) {
+                Map<String, VideoEvent> audioEvents = stream.getAudioEventMap();
+
+                for (VideoEvent event : audioEvents.values()) {
+                    bitRates.add(Long.toString(Math.round(event.getBitrate())));
+                }
+            }
+	    }
+
+	    return String.join("k, ", bitRates) + "k";
+	}
 }

@@ -53,7 +53,6 @@ import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.impl.SortSelection;
 import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
 import com.att.aro.core.videoanalysis.impl.VideoEventComparator;
-import com.att.aro.core.videoanalysis.pojo.StreamingVideoCompiled;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
@@ -211,7 +210,7 @@ public class VideoChunksPlot implements IPlot {
 
 	public void setDelayVideoStream(double seconds, Collection<VideoStream> videoStreams) {
 		for (VideoStream videoStream : videoStreams) {
-			if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
+			if (videoStream.isSelected() && !videoStream.getVideoEventMap().isEmpty()) {
 				videoStream.getManifest().setDelay(seconds);
 			}
 		}

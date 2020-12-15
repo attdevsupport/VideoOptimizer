@@ -170,7 +170,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				timestr += " " + Double.toString(rvi.getTcpdumpInitDate().getTime() / 1000.0);
 				videoTimeStampWriter.write(timestr);
 			} catch (IOException e) {
-				LOG.info("Error writing video time to file: " + e.getMessage());
+				LOG.info("Error writing video time to file: ", e);
 			}
 			if (videoCapture.isAlive()) {
 				videoCapture.interrupt();
@@ -185,6 +185,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			LOG.info("disposed videoworker");
 		}
 		running = false;
+		status.setSuccess(true);
 		return status;
 	}
 
@@ -293,6 +294,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		// initialize monitor, xcode and rvi
 		status = init(status);
 		if (!status.isSuccess()) {// an error has occurred in initialization
+		    LOG.error("Something went wrong while initializing monitor, xcode or rvi");
 			return status;
 		}
 
@@ -326,6 +328,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		String deviceDetails = datadir + Util.FILE_SEPARATOR + "device_details";
 		status = collectDeviceDetails(status, udId, deviceDetails);
 		if (!status.isSuccess()) {
+		    LOG.error("Something went wrong while fetching the device information");
 			return status; // device info error
 		}
 
@@ -334,9 +337,10 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 																																													// Request
 
 		if ("".equals(this.sudoPassword) || !validPW) {
+		    LOG.info(defaultBundle.getString("Error.sudopasswordissue"));
+
 			if (isCommandLine) {
 				status.setError(ErrorCodeRegistry.getSudoPasswordIssue());
-				LOG.info(defaultBundle.getString("Error.sudopasswordissue"));
 				return status;
 			} else {
 				status.setData("requestPassword");
@@ -345,17 +349,19 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		}
 
 		launchCollection(trafficFilePath, udId, status);
-		// Start Attenuation
-		
-		if (saveCollectorOptions == null) {
-			saveCollectorOptions = new SaveCollectorOptions();
-		}
+		if (status.isSuccess()) {
+		    // Start Attenuation
+		    if (saveCollectorOptions == null) {
+		        saveCollectorOptions = new SaveCollectorOptions();
+		    }
 
-		if ((attenuatorModel.isConstantThrottle()
-				&& (attenuatorModel.isThrottleDLEnabled() || attenuatorModel.isThrottleULEnabled()))) {
-			startAttenuatorCollection(datadir, attenuatorModel, saveCollectorOptions);
-		} else {
-			saveCollectorOptions.recordCollectOptions(datadir, 0, 0, -1, -1, false, "", "PORTRAIT");		}
+		    if ((attenuatorModel.isConstantThrottle()
+		            && (attenuatorModel.isThrottleDLEnabled() || attenuatorModel.isThrottleULEnabled()))) {
+		        startAttenuatorCollection(datadir, attenuatorModel, saveCollectorOptions);
+		    } else {
+		        saveCollectorOptions.recordCollectOptions(datadir, 0, 0, -1, -1, false, "", "PORTRAIT");
+		    }
+		}
 		return status;
 	}
 
@@ -371,11 +377,13 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		// check RVI status, and reinitialize it if not initialized already
 		status = initRVI(status, trafficFilePath, serialNumber);
 		if (!status.isSuccess()) {
+		    LOG.error("Failed to setup RVI");
 			return status;
 		}
-		
+
 		status = checkDumpcap(status);
 		if (!status.isSuccess()) {
+		    LOG.error("Something went wrong while setting up dumpcap");
 			return status;
 		}
 			
@@ -385,6 +393,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (isCapturingVideo) {
 			status = startVideoCapture(status);
 			if (!status.isSuccess()) {
+			    LOG.error("Something went wrong while starting the video capture");
 				return status;
 			}
 		}
@@ -397,6 +406,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				LOG.info("Device not connected");
 			}
 		}
+
 		return status;
 	}
 
@@ -461,7 +471,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 						status.setSuccess(temp.isSuccess());
 					}
 				} catch (Exception ex) {
-					LOG.info("Error thrown by videoworker: " + ex.getMessage());
+					LOG.error("Error thrown by videoworker: ", ex);
 				}
 			}
 		};
@@ -486,7 +496,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				try {
 					get();
 				} catch (Exception ex) {
-					LOG.info("Error thrown by packetworker: " + ex.getMessage());
+					LOG.error("Error thrown by packetworker: ", ex);
 				}
 			}
 		};
@@ -510,11 +520,12 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				status.setSuccess(false);
 				status.setError(ErrorCodeRegistry.getrviError());
 			}
-		} catch (Exception e1) {
-			LOG.error(e1.getMessage());
+		} catch (Exception e) {
+			LOG.error("Exception while trying to setup RVI", e);
 			status.setSuccess(false);
 			status.setError(ErrorCodeRegistry.getrviError());
 		}
+
 		return status;
 	}
 
@@ -549,7 +560,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			status.setError(ErrorCodeRegistry.getDeviceInfoIssue());
 		} else {
 			// get device version number
-			String version = deviceinfo.getDeviceVersion(); 
+			String version = deviceinfo.getDeviceVersion();
 			LOG.info("Device Version :" + version);
 			if (version != null && version.length() > 0) {
 				int versionNumber = 0;
@@ -558,7 +569,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 					dotIndex = version.indexOf(".");
 					versionNumber = Integer.parseInt(version.substring(0, dotIndex));
 					LOG.info("Parsed Version Number : " + versionNumber);
-				} catch (NumberFormatException nfe) {
+				} catch (NumberFormatException | StringIndexOutOfBoundsException e) {
 					LOG.error(defaultBundle.getString("Error.deviceversionissue"));
 					status.setSuccess(false);
 					status.setError(ErrorCodeRegistry.getDeviceVersionIssue());
@@ -723,7 +734,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			timeFile = new File(datadir + Util.FILE_SEPARATOR + sFileName);
 			timeStream = new FileOutputStream(timeFile);
 		} catch (IOException e) {
-			LOG.error("file creation error: " + e.getMessage());
+			LOG.error("file creation error: ", e);
 		}
 
 		String str = String.format("%s\n%.3f\n%d\n%.3f\n", "Synchronized timestamps" // line
@@ -741,7 +752,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			timeStream.flush();
 			timeStream.close();
 		} catch (IOException e) {
-			LOG.error("closeTimeFile() IOException:" + e.getMessage());
+			LOG.error("closeTimeFile() IOException:", e);
 		}
 
 	}

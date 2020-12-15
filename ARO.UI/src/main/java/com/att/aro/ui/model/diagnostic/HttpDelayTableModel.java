@@ -40,7 +40,8 @@ public class HttpDelayTableModel extends DataTableModel<HttpRequestResponseInfo>
 			.getBean("textFileCompression");
 
 	private static final String[] COLUMNS = { ResourceBundleHelper.getMessageString("httpDelay.requestTime"),
-			ResourceBundleHelper.getMessageString("httpDelay.firstPacketTime"), ResourceBundleHelper.getMessageString("httpDelay.firstPacketDelay"),
+			ResourceBundleHelper.getMessageString("httpDelay.firstPacketTime"),
+			ResourceBundleHelper.getMessageString("httpDelay.firstPacketDelay"),
 			ResourceBundleHelper.getMessageString("httpDelay.lastPacketTime"),
 			ResourceBundleHelper.getMessageString("httpDelay.lastPacketDelay"),
 			ResourceBundleHelper.getMessageString("httpDelay.contentLength") };
@@ -123,21 +124,24 @@ public class HttpDelayTableModel extends DataTableModel<HttpRequestResponseInfo>
 
 	@Override
 	protected Object getColumnValue(HttpRequestResponseInfo item, int columnIndex) {
-		if (item.getHttpDelayInfo() != null && item.getDirection() == HttpDirection.REQUEST && item.getAssocReqResp()!=null) {
+		if (item.getHttpDelayInfo() != null && item.getDirection() == HttpDirection.REQUEST
+				&& item.getAssocReqResp() != null) {
 			HttpDelayInfo httpDelayInfo = item.getHttpDelayInfo();
-			switch (columnIndex) {
-			case REQ_TIME_COL:
-				return httpDelayInfo.getRequestTimeStamp();
-			case FIRST_PACKET_ARRIVAL_COL:
-				return httpDelayInfo.getFirstPacketTimeStamp();
-			case FIRST_PACKET_DELAY:
-				return httpDelayInfo.getFirstPacketDelay();
-			case LAST_PACKET_ARRIVAL_COL:
-				return httpDelayInfo.getLastPacketTimeStamp();
-			case PAYLOAD_COL:
-				return httpDelayInfo.getContentLength();
-			case LAST_PACKET_DELAY:
-				return httpDelayInfo.getLastPacketDelay();
+			if (httpDelayInfo.getLastPacketTimeStamp() != null) {
+				switch (columnIndex) {
+				case REQ_TIME_COL:
+					return httpDelayInfo.getRequestTimeStamp();
+				case FIRST_PACKET_ARRIVAL_COL:
+					return httpDelayInfo.getFirstPacketTimeStamp();
+				case FIRST_PACKET_DELAY:
+					return httpDelayInfo.getFirstPacketDelay();
+				case LAST_PACKET_ARRIVAL_COL:
+					return httpDelayInfo.getLastPacketTimeStamp();
+				case PAYLOAD_COL:
+					return httpDelayInfo.getContentLength();
+				case LAST_PACKET_DELAY:
+					return httpDelayInfo.getLastPacketDelay();
+				}
 			}
 		}
 		return null;

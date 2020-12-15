@@ -66,6 +66,9 @@ public class ImageMetaDataImpl implements IBestPractice {
 	@Value("${imageMetadata.results}")
 	private String textResults;
 
+	@Value("${imageMetadata.excel.results}")
+    private String textExcelResults;
+
 	@Value("${exportall.csvNumberOfMdataImages}")
 	private String exportNumberOfMdataImages;
 	
@@ -113,14 +116,20 @@ public class ImageMetaDataImpl implements IBestPractice {
 				result.setResultType(BPResultType.PASS);
 				text = MessageFormat.format(textResultPass, entrylist.size());
 				result.setResultText(text);
+				result.setResultExcelText(BPResultType.PASS.getDescription());
 			} else {
 				result.setResultType(BPResultType.FAIL);
 				text = MessageFormat.format(textResults, ApplicationConfig.getInstance().getAppShortName(),
 						entrylist.size());
 				result.setResultText(text);
+
+				result.setResultExcelText(
+			        MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), entrylist.size())
+		        );
 			}
 		} else {
 			result.setResultText(noData);
+			result.setResultExcelText(BPResultType.NO_DATA.getDescription());
 			result.setResultType(BPResultType.NO_DATA);
 		}
 		result.setAboutText(aboutText);

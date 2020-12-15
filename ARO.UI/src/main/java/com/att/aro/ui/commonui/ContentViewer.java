@@ -238,8 +238,8 @@ public class ContentViewer {
 							.getMessageString("fileChooser.contentType.css");
 					fileType = ResourceBundleHelper.getMessageString("fileChooser.contentType.css");
 					iMatchedFileTypes++;
-				} else if (contentType.contains("text/javascript") || contentType.contains("application/x-javascript")
-						|| strUriLowerCase.contains("json")) {
+				} else if (contentType.contains("application/x-javascript") || contentType.contains("application/javascript")
+				            || strUriLowerCase.contains(ResourceBundleHelper.getMessageString("fileChooser.contentType.js"))) {
 					tempfileTypes[iMatchedFileTypes] = ResourceBundleHelper
 							.getMessageString("fileChooser.contentType.js");
 					fileType = ResourceBundleHelper.getMessageString("fileChooser.contentType.js");
@@ -250,7 +250,17 @@ public class ContentViewer {
 							.getMessageString("fileChooser.contentType.txt");
 					iMatchedFileTypes++;
 				}
-			} else if (contentType.contains("image")) {
+			} else if (contentType.contains("text/javascript")
+                        || strUriLowerCase.contains(ResourceBundleHelper.getMessageString("fileChooser.contentType.js"))) {
+                tempfileTypes[iMatchedFileTypes] = ResourceBundleHelper.getMessageString("fileChooser.contentType.js");
+                fileType = ResourceBundleHelper.getMessageString("fileChooser.contentType.js");
+                iMatchedFileTypes++;
+            } else if (contentType.contains("text/css")
+                        || strUriLowerCase.contains(ResourceBundleHelper.getMessageString("fileChooser.contentType.css"))) {
+                tempfileTypes[iMatchedFileTypes] = ResourceBundleHelper.getMessageString("fileChooser.contentType.css");
+                fileType = ResourceBundleHelper.getMessageString("fileChooser.contentType.css");
+                iMatchedFileTypes++;
+            } else if (contentType.contains("image")) {
 				if (contentType.contains("image/jpeg") || (strUriLowerCase
 						.contains(ResourceBundleHelper.getMessageString("fileChooser.contentType.jpg"))
 						|| strObjNameLowerCase.contains("xml"))) {

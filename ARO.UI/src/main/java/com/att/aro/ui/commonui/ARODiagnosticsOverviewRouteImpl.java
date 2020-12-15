@@ -41,7 +41,6 @@ import com.att.aro.core.bestpractice.pojo.UnnecessaryConnectionEntry;
 import com.att.aro.core.bestpractice.pojo.UnnecessaryConnectionResult;
 import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionEntry;
 import com.att.aro.core.bestpractice.pojo.UsingCacheResult;
-import com.att.aro.core.bestpractice.pojo.WeakCipherEntry;
 import com.att.aro.core.packetanalysis.pojo.CacheEntry;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
@@ -408,7 +407,7 @@ public class ARODiagnosticsOverviewRouteImpl implements IARODiagnosticsOverviewR
 			UnnecessaryConnectionEntry unConnectionEntry = (UnnecessaryConnectionEntry) routeInfo;
 			diagnosticsTab.setHighlightedTCP(unConnectionEntry.getLowTime());
 		} else if (routeInfo instanceof TransmissionPrivateDataEntry || routeInfo instanceof UnsecureSSLVersionEntry
-				|| routeInfo instanceof WeakCipherEntry || routeInfo instanceof ForwardSecrecyEntry) {
+				|| routeInfo instanceof ForwardSecrecyEntry) {
 			diagnosticsTab.setHighlightedTCP(routeInfo);
 		} else if (routeInfo instanceof VideoStall) {
 			double timestamp = ((VideoStall) routeInfo).getSegmentTryingToPlay().getStartTS();

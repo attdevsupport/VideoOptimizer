@@ -125,7 +125,7 @@ public class SliderDialogBox extends JDialog {
 				this.videoStream = videoStream;
 				this.manifestName = videoStream.getManifest().getVideoName() + ", "
 						+ resourceBundle.getString("sliderdialog.manifest.segmentcount")
-						+ String.valueOf(videoStream.getVideoEventList().size());
+						+ String.valueOf(videoStream.getVideoEventMap().size());
 			}
 		}
 

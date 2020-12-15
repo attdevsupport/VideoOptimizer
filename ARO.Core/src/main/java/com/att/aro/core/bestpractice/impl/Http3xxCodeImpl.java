@@ -15,6 +15,7 @@
  */
 package com.att.aro.core.bestpractice.impl;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +58,9 @@ public class Http3xxCodeImpl implements IBestPractice {
 	
 	@Value("${connections.http3xx.results}")
 	private String textResults;
+
+	@Value("${connections.http3xx.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${connections.http3xx.errorSingular}")
 	private String errorSingular;
@@ -99,9 +103,11 @@ public class Http3xxCodeImpl implements IBestPractice {
 		if(httpRedirectCounts3XX.isEmpty()){
 			result.setResultType(BPResultType.PASS);
 			result.setResultText(textResultPass);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		}else{
 			result.setResultType(BPResultType.FAIL);
 			result.setResultText(Http3xx4xxHelper.createFailResult(httpRedirectCounts3XX, textResults, errorPlural, errorSingular));
+			result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), Http3xx4xxHelper.formatErrorCodesToText(httpRedirectCounts3XX)));
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);

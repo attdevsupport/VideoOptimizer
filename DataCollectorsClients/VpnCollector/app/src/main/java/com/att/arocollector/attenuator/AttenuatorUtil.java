@@ -38,11 +38,9 @@ public class AttenuatorUtil {
     }
 
     public String notificationMessage() {
-        return "Speed Control - DL : " +
-                messageConvert(AttenuatorManager.getInstance().getThrottleDL())
-                + " UL : "
-                + messageConvert(AttenuatorManager.getInstance().getThrottleUL())
-                ;
+        return "Speed Control - DL: " + messageConvert(AttenuatorManager.getInstance().getThrottleDL()) +
+                " UL: " + messageConvert(AttenuatorManager.getInstance().getThrottleUL()) +
+                " Packet Delay: " + AttenuatorManager.getInstance().getDelayDl() + " ms";
     }
 
     public String toastMessage(int kbps) {

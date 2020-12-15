@@ -18,6 +18,7 @@ package com.att.aro.core.packetanalysis.pojo;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Date;
@@ -68,6 +69,7 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	 */
 	public static final String HTTP_POST = "POST";
 	public static final String HTTP_SCHEME = "HTTP";
+	public static final String CONTENT_ENCODING_BROTLI = "br";
 	public static final String CONTENT_ENCODING_GZIP = "gzip";
 	public static final String CONTENT_ENCODING_COMPRESS = "compress";
 	public static final String CONTENT_ENCODING_DEFLATE = "deflate";
@@ -145,6 +147,9 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	@Getter @Setter
 	private int headerOffset;
 	private Session session;
+	
+	@Getter @Setter
+	private double time;
 	
 	/**
 	 * List of Upload Packets ordered by Sequence Numbers for TCP Session.
@@ -883,7 +888,7 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	 *         0.
 	 */
 	public double getTimeStamp() {
-		return firstDataPacket != null ? firstDataPacket.getTimeStamp() : 0.0;
+		return firstDataPacket != null ? firstDataPacket.getTimeStamp() : time;
 	}
 	
 	public HttpDelayInfo getHttpDelayInfo() {
@@ -1026,6 +1031,18 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	public void writePayload(String dataRead) throws IOException {
 		writeDataToStream(dataRead, payloadData);
 	}
+	
+	public void writePayload(InputStream stream) throws IOException {
+	    byte[] buffer = new byte[8 * 1024];
+	    int bytesRead;
+	    dataStream = new BufferedOutputStream(payloadData);
+
+        while ((bytesRead = stream.read(buffer)) > 0) {
+            dataStream.write(buffer, 0, bytesRead);
+        }
+
+        dataStream.flush();
+    }
 
 	private void writeDataToStream(String dataRead, ByteArrayOutputStream stream) throws IOException {
 		dataStream = new BufferedOutputStream(stream);

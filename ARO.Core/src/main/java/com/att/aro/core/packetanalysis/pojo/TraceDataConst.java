@@ -108,20 +108,28 @@ public class TraceDataConst {
 	
 	/**
 	 * value of network type found when reading trace file
+	 * Constant number Reference from the Android document TelephonyManager.java
 	 *
 	 */
 	public class TraceNetworkType{
-		public static final int NONE = 0;
 		public static final int WIFI = -1;
+		public static final int UNKNOWN = 0;
 		public static final int GPRS = 1;
 		public static final int EDGE = 2;
 		public static final int UMTS = 3;
-		public static final int ETHERNET = 5;
+		public static final int CDMA = 4;
+		public static final int EVDO0 = 5;
+		public static final int EVDOA = 6;
 		public static final int HSDPA = 8;
 		public static final int HSUPA = 9;
 		public static final int HSPA = 10;
-		public static final int HSPAP = 15;
+		public static final int EVDOB = 12;
 		public static final int LTE = 13;
+		public static final int HSPAP = 15;
+		public static final int GSM = 16;
+		public static final int IWLAN = 18;
+		public static final int NR = 20; // new radio 5G
+
 	}
 	public class FileName{
 		/**

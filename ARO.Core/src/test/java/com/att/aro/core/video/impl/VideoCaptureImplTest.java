@@ -27,6 +27,7 @@ import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -88,6 +89,7 @@ public class VideoCaptureImplTest extends BaseTest{
 		
 	}
 	 
+	@Ignore
 	@Test
 	public void run_test() throws TimeoutException, AdbCommandRejectedException, IOException  {
 		videoCapture.setDevice(device);
@@ -96,6 +98,7 @@ public class VideoCaptureImplTest extends BaseTest{
 		assertEquals(31,videoCapture.getiExceptionCount());
 	}
 	
+	@Ignore
 	@Test
 	public void run_test_exception() throws TimeoutException, AdbCommandRejectedException, IOException {
 		videoCapture.setDevice(device);

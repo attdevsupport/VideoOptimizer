@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2020 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.videoanalysis.parsers;
 
 import java.io.ByteArrayInputStream;
@@ -9,6 +24,7 @@ import javax.xml.bind.Unmarshaller;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.att.aro.core.videoanalysis.parsers.dashif.MPD;
 import com.att.aro.core.videoanalysis.parsers.encodedsegment.MPDEncodedSegment;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.MPDSegmentTimeline;
 import com.att.aro.core.videoanalysis.parsers.smoothstreaming.SSM;
@@ -44,27 +60,57 @@ public class XmlManifestHelper {
 			return;
 		}
 		String sData = new String(data);
-		if (sData.contains("MPD") && sData.contains("EncodedSegmentList")) {
-			manifestType = ManifestFormat.MPD_EncodedSegmentList;
-			manifest = xml2EncodedSegmentList(new ByteArrayInputStream(data));
 
-		} else if (sData.contains("MPD") && sData.contains("<SegmentTimeline>")) {
-			manifestType = ManifestFormat.MPD_SegmentTimeline;
-			manifest = xml2SegmentTimeline(new MPDSegmentTimeline(), new ByteArrayInputStream(data));
+		if (sData.contains("MPD")) {
+		    ByteArrayInputStream bis = new ByteArrayInputStream(data);
 
+		    if (sData.contains("EncodedSegmentList")) {
+		        manifestType = ManifestFormat.MPD_EncodedSegmentList;
+	            manifest = xml2EncodedSegmentList(bis);
+		    } else if (sData.contains("<SegmentTimeline>")) {
+		        manifestType = ManifestFormat.MPD_SegmentTimeline;
+	            manifest = xml2SegmentTimeline(new MPDSegmentTimeline(), bis);
+		    } else {
+		        manifestType = ManifestFormat.MPD;
+	            manifest = xml2StandardMPD(bis);
+		    }
 		} else if (sData.contains("SmoothStreamingMedia")) {
-			manifestType = ManifestFormat.SmoothStreamingMedia;
-			manifest = xml2SSM(new ByteArrayInputStream(data));
-
-		} else if (sData.contains("MPD")) {
-			manifestType = ManifestFormat.MPD;
-			manifest = xml2EncodedSegmentList(new ByteArrayInputStream(data));
+		    manifestType = ManifestFormat.SmoothStreamingMedia;
+            manifest = xml2SSM(new ByteArrayInputStream(data));
 		}
 	}
 
 	String getMajorVersion(){
 		return manifest.getMajorVersion();
 	}
+
+
+	/**
+     * Load Standard DASH manifest into an DASH IF MPD object
+     *
+     * @param xmlByte
+     * @return an MPDAmz object
+     */
+    private MPD xml2StandardMPD(ByteArrayInputStream xmlByte) {
+        JAXBContext context;
+        Unmarshaller unMarshaller;
+        MPD mpdOutput = null;
+
+        try {
+            context = JAXBContext.newInstance(MPD.class);
+
+            unMarshaller = context.createUnmarshaller();
+            mpdOutput = (MPD) unMarshaller.unmarshal(xmlByte);
+            if (mpdOutput.getPeriods().isEmpty()) {
+                LOG.error("MPD NULL");
+            }
+        } catch (Exception ex) {
+            LOG.error("JaxB parse Exception", ex);
+            mpdOutput = new MPD();
+        }
+
+        return mpdOutput;
+    }
 
 	/**
 	 * Load Amazon manifest into an MPDAmz object

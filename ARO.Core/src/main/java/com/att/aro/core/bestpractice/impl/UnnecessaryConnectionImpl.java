@@ -58,6 +58,9 @@ public class UnnecessaryConnectionImpl implements IBestPractice {
 	
 	@Value("${connections.unnecssaryConn.results}")
 	private String textResults;
+
+	@Value("${connections.unnecssaryConn.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${exportall.csvMultiConnDesc}")
 	private String exportAllMultiConnDesc;
@@ -70,10 +73,12 @@ public class UnnecessaryConnectionImpl implements IBestPractice {
 		if(tightlyCoupledBurstCount < 4){
 			result.setResultType(BPResultType.PASS);
 			result.setResultText(textResultPass);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		}else{
 			result.setResultType(BPResultType.FAIL);
 			String text = MessageFormat.format(this.textResults, this.tightlyCoupledBurstCount);
 			result.setResultText(text);
+			result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), tightlyCoupledBurstCount));
 		}
 		result.setTightlyCoupledBurstCount(tightlyCoupledBurstCount);
 		result.setTightlyCoupledBurstTime(tightlyCoupledBurstTime);

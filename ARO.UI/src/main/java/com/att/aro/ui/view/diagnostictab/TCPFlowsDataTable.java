@@ -22,7 +22,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.AbstractButton;
 import javax.swing.JCheckBox;
@@ -170,5 +169,8 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 		return ((TCPUDPFlowsTableModel) dataModel);
 	}
 
+	public TCPFlowsDataTable<T> getData() {
+		return this;
+	}
 
  }

@@ -69,7 +69,7 @@ public class BufferOccupancyCalculatorImpl extends AbstractBufferOccupancyCalcul
 	
 		for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
 			if (videoStream.isSelected()) {
-				for (VideoEvent ve : videoStream.getVideoEventList().values()) {
+				for (VideoEvent ve : videoStream.getVideoEventMap().values()) {
 					if (ve.getSegmentID() != 0) {
 						chunkDownload.add(ve);
 					}

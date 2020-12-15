@@ -76,6 +76,9 @@ public class TransmissionPrivateDataImpl implements IBestPractice {
 	
 	@Value("${security.transmissionPrivateData.results}")
 	private String testResultAnyText;
+
+	@Value("${security.transmissionPrivateData.excel.results}")
+    private String testExcelResults;
 	
 	@Autowired
 	@Qualifier("keywordSearchingHandler")
@@ -251,10 +254,14 @@ public class TransmissionPrivateDataImpl implements IBestPractice {
 	private SearchingPattern getRegexPattern(Map<String, String> expressions) {
 		SearchingPatternBuilder patternBuilder = new SearchingPatternBuilder();
 		
+		// ARO defined expression (default)
+		// addRegex(patternBuilder, phoneNumberRegex, PrivateDataType.regex_phone_number.toString());
+		// addRegex(patternBuilder, dateBirthRegex, PrivateDataType.regex_date_birth.toString());
 		addRegex(patternBuilder, creditCardAmericanExpress, PrivateDataType.regex_credit_card_number.toString());
 		addRegex(patternBuilder, creditCardMasterCard, PrivateDataType.regex_credit_card_number.toString());
 		addRegex(patternBuilder, creditCardDiscover, PrivateDataType.regex_credit_card_number.toString());
 		addRegex(patternBuilder, creditCardVisa, PrivateDataType.regex_credit_card_number.toString());
+		// addRegex(patternBuilder, ssnList, PrivateDataType.regex_ssn.toString());
 		
 		if (expressions == null || expressions.isEmpty()) {
 			return patternBuilder.build();
@@ -302,6 +309,7 @@ public class TransmissionPrivateDataImpl implements IBestPractice {
 													entries.size());
 		}
 		
+		result.setResultExcelText(MessageFormat.format(testExcelResults, result.getResultType().getDescription(), entries.size()));
 		result.setOverviewTitle(overviewTitle);
 		result.setDetailTitle(detailedTitle);
 		result.setAboutText(aboutText);

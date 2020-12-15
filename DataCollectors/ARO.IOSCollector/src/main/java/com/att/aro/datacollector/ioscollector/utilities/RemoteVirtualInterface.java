@@ -109,7 +109,7 @@ public class RemoteVirtualInterface {
 		}		
 		
 		if (!success){
-			this.errorMsg = "Failed to connect to device. \r\nTry disconnect your device and reconnect it back. \r\n If problem still exit, try again or restarting ARO or Machine.";
+			this.errorMsg = "Failed to connect to device. \r\nTry disconnecting your device and reconnect it back. \r\n If the problem still exists, try again or restarting ARO or Machine.";
 			LOG.error(this.errorMsg);
 		}
 		
@@ -233,7 +233,9 @@ public class RemoteVirtualInterface {
 				this.totalPacketCaptured = dumpcapExecutor.getTotalPacketCaptured();
 				dumpcapExecutor.interrupt();
 			} catch (Exception ex) {
+			    LOG.warn("Exception while trying to stop dumpcap process", ex);
 			}
+
 			dumpcapExecutor = null;
 
 			LOG.info("destroyed dumpcap executor thread");

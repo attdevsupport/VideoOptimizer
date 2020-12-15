@@ -23,7 +23,7 @@ public enum NetworkType {
 	/**
 	 * Identifies an unknown network type.
 	 */
-	none,
+	UNKNOWN,
 	
 	/**
 	 * Identifies the Wireless Fidelity (Wi-Fi) network.
@@ -56,7 +56,7 @@ public enum NetworkType {
 	HSDPA,
 	
 	/**
-	 * Identifies the High-Speed Packet Access (HSPA) network.
+	 * Identifies the High-Speed Packet Access (HSPA) network.evdo
 	 */
 	HSPA,
 	
@@ -73,5 +73,67 @@ public enum NetworkType {
 	/**
 	 * Identifies the Long Term Evolution (LTE) network.
 	 */
-	LTE
+	LTE,
+	
+	/**
+	 * Identifies the Code-division multiple access (CDMA).
+	 */	
+	CDMA,
+	
+	/**
+	 * Identifies the Evolution-Data Optimized (EV-DO, EVDO) revision 0
+	 */
+	EVDO0,
+	
+	/**
+	 * Identifies the Evolution-Data Optimized (EV-DO, EVDO) revision A.
+	 */
+	EVDOA,
+	
+	/**
+	 * Identifies the Evolution-Data Optimized (EV-DO, EVDO) revision B.
+	 */
+	EVDOB,
+	
+	/**
+	 * Identifies Global System for Mobile Communications.
+	 */
+	GSM,
+	
+	/**
+	 * Identifies Industrial Wireless Local Area Network
+	 */
+	IWLAN,
+	
+	/**
+	 * Identifies the  NR(New Radio) 5G.
+	 */
+	NR,
+
+	/**
+	 * Identifies Advanced pro LTE (5Ge)
+	 */
+	OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO,
+		
+	/**
+	 * Identifies NR (5G) for 5G Sub-6 networks
+	 */
+	OVERRIDE_NETWORK_TYPE_NR_NSA,
+	
+	/**
+	 * Identifies (5G+/5G UW) for 5G mmWave networks
+	 */
+	OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE,
+	
+	/**
+	 * Identifies cellular network and is using carrier aggregation.
+	 */
+	OVERRIDE_NETWORK_TYPE_LTE_CA,
+	
+	/**
+	 * No override. getNetworkType() should be used for display network type.
+	 */
+	OVERRIDE_NETWORK_TYPE_NONE,
+
+
 }

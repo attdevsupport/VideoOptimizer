@@ -67,6 +67,7 @@ public class ScreenRotationImpl implements IBestPractice {
 				break; 
 			}
 		}
+
 		result.setScreenRotationBurstTime(screenRotationBurstTime);
 		if(passScreenRotation){
 			result.setResultType(BPResultType.PASS);
@@ -75,8 +76,9 @@ public class ScreenRotationImpl implements IBestPractice {
 			result.setResultType(BPResultType.FAIL);
 			result.setResultText(textResults);
 		}
+
+		result.setResultExcelText(result.getResultType().getDescription());
 		result.setScreenRotationBurstTime(screenRotationBurstTime);
-		
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
 		result.setLearnMoreUrl(learnMoreUrl);

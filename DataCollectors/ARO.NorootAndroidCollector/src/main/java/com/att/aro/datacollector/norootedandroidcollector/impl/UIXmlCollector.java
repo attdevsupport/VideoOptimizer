@@ -25,14 +25,13 @@ import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
-import com.att.aro.core.util.Util;
 
 /**
  * Initiates uidump.sh & parse the output file
  */
 public class UIXmlCollector implements Runnable {
 	public enum State {
-		INITIALISED, CAPTURING, STOPPING, DONE, ERROR, UNDEFINED
+		INITIALIZED, CAPTURING, STOPPING, DONE, ERROR, UNDEFINED
 	}
 
 	private static final Logger logger = LogManager.getLogger(UIXmlCollector.class.getName());
@@ -79,19 +78,18 @@ public class UIXmlCollector implements Runnable {
 		String cmd = path+ " -s " + this.aroDevice.getId() + " shell" + " sh "
 				+ remoteExecutable + " " + remoteFilesPath + " " + killUiXmlPayload;
 		boolean iscommandSuccessful = false;
+
 		try {
-			if(Util.isWindowsOS()) {
-				cmd = Util.wrapText(cmd);
-			}
 			String commandOutput = extrunner.executeCmd(cmd);
+
 			if (!commandOutput.isEmpty() && commandOutput.contains("adb: error")) {
 				iscommandSuccessful = true;
 				logger.info("ADB command execute: " + commandOutput);
 			}
-		} catch (Exception e1) {
-			iscommandSuccessful = true;
-			e1.printStackTrace();
+		} catch (Exception e) {
+		    logger.error(String.format("Something went wrong while executing Command '%s'", cmd), e);
 		}
+
 		return iscommandSuccessful;
 	}
 
@@ -102,6 +100,8 @@ public class UIXmlCollector implements Runnable {
 	 * @return
 	 */
 	public boolean stopUiXmlCapture(IDevice device) {
+	    logger.info("Stopping UI XML collection...");
+
 		setCurrentState(State.STOPPING);
 		String command = "sh " + remoteFilesPath + killUiXmlPayload;
 		String[] response = android.getShellReturn(device, command);
@@ -119,6 +119,8 @@ public class UIXmlCollector implements Runnable {
 		}
 		response = null;
 		setCurrentState(State.DONE);
+
+		logger.info("UI XML trace collection state: " + getCurrentState().name());
 		return true;
 	}
 
@@ -130,18 +132,26 @@ public class UIXmlCollector implements Runnable {
 	 * @return state
 	 */
 	public State init(IAndroid android, IAroDevice aroDevice, String localTraceFolder) {
+	    logger.info("Initializing UI XML collection...");
 		this.android = android;
 		this.aroDevice = aroDevice;
 		this.device = (IDevice) aroDevice.getDevice();
 		this.localTraceFolder = localTraceFolder;
+
+		logger.debug("Remove existing xml collector directories:");
 		android.getShellReturn(device, "rm -rf" + remoteFilesPath + "/UIComparator");
+
+		logger.debug("Create xml collector directories:");
 		this.filemanager.mkDir(localTraceFolder);
 		android.getShellReturn(device, "mkdir " + "/sdcard/ARO");
 		traceActive = this.adbservice.installPayloadFile(aroDevice, localTraceFolder, payloadFileName,
 				remoteExecutable);
+
 		if (traceActive) {
-			setCurrentState(State.INITIALISED);
+			setCurrentState(State.INITIALIZED);
 		}
+
+		logger.info("UI XML trace collection state: " + getCurrentState().name());
 		return getCurrentState();
 	}
 }

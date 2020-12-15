@@ -815,6 +815,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		switch (videoOption) {
 			case HDEF:
 				if (Platform.iOS.equals(selectedDevice.getPlatform())) {
+					btn_hdef.setSelected(true);
 					btn_hdef.setEnabled(true);
 					btn_sdef.setEnabled(false);
 					showVideoOrientation(false);

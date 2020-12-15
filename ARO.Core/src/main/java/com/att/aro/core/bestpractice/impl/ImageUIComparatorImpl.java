@@ -71,20 +71,31 @@ public class ImageUIComparatorImpl implements IBestPractice {
 	@Autowired
 	private IStringParse iStringParse;
 	private static final Logger LOG = LogManager.getLogger(ImageUIComparatorImpl.class.getName());
+
 	@Value("${uiComparator.title}")
 	private String overviewTitle;
+
 	@Value("${uiComparator.detailedTitle}")
 	private String detailTitle;
+
 	@Value("${uiComparator.desc}")
 	private String aboutText;
+
 	@Value("${uiComparator.url}")
 	private String learnMoreUrl;
+
 	@Value("${uiComparator.pass}")
 	private String textResultPass;
+
 	@Value("${uiComparator.results}")
 	private String textResults;
+
+	@Value("${uiComparator.excel.results}")
+    private String textExcelResults;
+
 	@Value("${exportall.csvNumberOfUIComparatorImages}")
 	private String numberOfImages;
+
 	@Value("${bestPractices.noData}")
 	private String noData;
 
@@ -134,15 +145,18 @@ public class ImageUIComparatorImpl implements IBestPractice {
 				result.setResultType(BPResultType.PASS);
 				text = MessageFormat.format(textResultPass, entrylist.size());
 				result.setResultText(text);
+				result.setResultExcelText(BPResultType.PASS.getDescription());
 			} else {
 				result.setResultType(BPResultType.FAIL);
 				text = MessageFormat.format(textResults, entrylist.size());
 				result.setResultText(text);
 				result.setNumberOfImages(String.valueOf(entrylist.size()));
+				result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), String.valueOf(entrylist.size())));
 			}
 		} else {
 			result.setResultText(noData);
 			result.setResultType(BPResultType.NO_DATA);
+			result.setResultExcelText(BPResultType.NO_DATA.getDescription());
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
@@ -220,6 +234,10 @@ public class ImageUIComparatorImpl implements IBestPractice {
 										&& !emptyBounds.equalsIgnoreCase(eElement.getAttribute("bounds"))) {
 									int imageDimension = getXYPoints(eElement.getAttribute("bounds"));
 									if (imageDimension > 0) {
+										if (Util.checkDevMode()) {
+											LOG.debug("XML : " + uiXMLFile.getName() + " IMG : "
+													+ eElement.getAttribute("content-desc"));
+										}
 										uiXmlMap.put(eElement.getAttribute("content-desc"), imageDimension);
 									}
 								}

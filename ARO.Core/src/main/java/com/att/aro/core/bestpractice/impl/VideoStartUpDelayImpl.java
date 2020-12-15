@@ -78,6 +78,9 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 	@Value("${startUpDelay.results}")
 	private String textResults;
 
+	@Value("${startUpDelay.excel.results}")
+    private String textExcelResults;
+
 	@Value("${startUpDelay.init}")
 	private String startUpDelayNotSet;
 
@@ -146,6 +149,7 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 			startupDelaySet = false;
 			
 			bpResultType = BPResultType.CONFIG_REQUIRED;
+            result.setResultExcelText(BPResultType.CONFIG_REQUIRED.getDescription());
 				
 			if (selectedManifestCount == 0) {
 				if (invalidCount == videoStreamCollection.size()) {
@@ -167,7 +171,7 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 				startupDelaySet = true;
 
 				for (VideoStream videoStream : videoStreamCollection.values()) {
-					if (videoStream.isSelected() && MapUtils.isNotEmpty(videoStream.getVideoEventList()) && videoStream.getManifest().getStartupVideoEvent() != null) {
+					if (videoStream.isSelected() && MapUtils.isNotEmpty(videoStream.getVideoEventMap()) && videoStream.getManifest().getStartupVideoEvent() != null) {
 						Manifest manifest = videoStream.getManifest();
 						manifestRequestTime = manifest.getRequestTime();
 						// - tracedata.getTraceresult().getPcapTimeOffset();
@@ -191,6 +195,7 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 						bpResultType = Util.checkPassFailorWarning(startupDelay, warningValue);
 						if (bpResultType.equals(BPResultType.PASS)) {
 							result.setResultText(MessageFormat.format(textResultPass, startupDelay, startupDelay == 1 ? "" : "s"));
+							result.setResultExcelText(BPResultType.PASS.getDescription());
 						} else {
 							result.setResultText(MessageFormat.format(
 									textResults
@@ -199,6 +204,9 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 									, String.format("%.04f", warningValue)
 									, warningValue == 1 ? "" : "s"
 								));
+							result.setResultExcelText(
+						        MessageFormat.format(textExcelResults, bpResultType.getDescription(), String.format("%.03f", startupDelay))
+					        );
 						}
 
 						break;
@@ -208,6 +216,7 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 			} else {
 				bpResultType = BPResultType.CONFIG_REQUIRED;
 				result.setResultText(novalidManifestsFound);
+				result.setResultExcelText(BPResultType.CONFIG_REQUIRED.getDescription());
 			}
 
 			result.setStartUpDelay(startupDelay);
@@ -216,6 +225,7 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 			// No Data
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(BPResultType.NO_DATA.getDescription());
 		}
 		result.setResultType(bpResultType);
 		return result;

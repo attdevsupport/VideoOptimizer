@@ -56,16 +56,17 @@ public class IOSDeviceInfo {
 		File exefile = new File(IDEVICE_INFO);
 		LOG.debug("exepath :"+IDEVICE_INFO);
 		this.currentFilepath = filepath;
+
 		if (!exefile.exists()) {
 			LOG.error(" " + IDEVICE_INFO + " is not found.");
-		}else {
+		} else {
  			try {
 				String data = getDeviceData(deviceId);
 				readData(data);
 				writeData(filepath);
 				retrievedSuccess = true;
 			} catch (IOException e) {
-				LOG.error("getDeviceInfo IOException:", e);							
+				LOG.error("recordDeviceInfo IOException:", e);
 			}
  		}
 		return retrievedSuccess;
@@ -169,6 +170,7 @@ public class IOSDeviceInfo {
 
 			bw.close();
 		} catch (Exception e) {
+		    LOG.error("Exception while writing data", e);
 		}
 
 	}

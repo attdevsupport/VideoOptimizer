@@ -342,12 +342,14 @@ public class VlcjPlayer implements IVideoPlayer {
     public void setMediaTime(final double hairlineTime) {
         double videoTime = hairlineTime - this.videoOffset;
         updateUserInterfaceElements(hairlineTime);
-        if (!player.status().isSeekable()) {
-        	String videoOptions = "start-time=" + String.valueOf(videoTime);
-        	player.media().play(videoPath, videoOptions);
-        	player.controls().setPause(true);
+        if (player != null) {
+	        if (!player.status().isSeekable()) {
+	        	String videoOptions = "start-time=" + String.valueOf(videoTime);
+	        	player.media().play(videoPath, videoOptions);
+	        	player.controls().setPause(true);
+	        }
+	        player.controls().setTime(Math.round(videoTime * 1000));
         }
-        player.controls().setTime(Math.round(videoTime * 1000));
     }
 
     private void updateUserInterfaceElements(final double hairlineTime) {
