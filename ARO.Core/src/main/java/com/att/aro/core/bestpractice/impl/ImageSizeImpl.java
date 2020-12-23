@@ -69,6 +69,9 @@ public class ImageSizeImpl implements IBestPractice {
 	@Value("${imageSize.results}")
 	private String textResults;
 
+	@Value("${imageSize.excel.results}")
+    private String textExcelResults;
+
 	@Value("${exportall.csvNumberOfLargeImages}")
 	private String exportNumberOfLargeImages;
 	
@@ -135,12 +138,17 @@ public class ImageSizeImpl implements IBestPractice {
 			result.setResultType(BPResultType.PASS);
 			text = MessageFormat.format(textResultPass, entrylist.size());
 			result.setResultText(text);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		} else {
 			result.setResultType(BPResultType.FAIL);
 			text = MessageFormat.format(textResults, 
 										ApplicationConfig.getInstance().getAppShortName(), 
 										entrylist.size());
 			result.setResultText(text);
+
+			result.setResultExcelText(
+		        MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), entrylist.size())
+	        );
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);

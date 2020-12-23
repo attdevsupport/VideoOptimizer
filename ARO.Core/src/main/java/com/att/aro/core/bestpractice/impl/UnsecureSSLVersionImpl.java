@@ -59,6 +59,9 @@ public class UnsecureSSLVersionImpl implements IBestPractice {
 	
 	@Value("${security.unsecureSSLVersion.results}")
 	private String testResultAnyText;
+
+	@Value("${security.unsecureSSLVersion.excel.results}")
+    private String testExcelResults;
 	
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
@@ -148,7 +151,8 @@ public class UnsecureSSLVersionImpl implements IBestPractice {
 													ApplicationConfig.getInstance().getAppShortName(), 
 													entries.size());
 		}
-		
+
+		result.setResultExcelText(MessageFormat.format(testExcelResults, result.getResultType().getDescription(), entries.size()));
 		result.setOverviewTitle(overviewTitle);
 		result.setDetailTitle(detailedTitle);
 		result.setAboutText(aboutText);

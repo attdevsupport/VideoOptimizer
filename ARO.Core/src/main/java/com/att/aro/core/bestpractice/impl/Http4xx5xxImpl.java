@@ -15,10 +15,13 @@
  */
 package com.att.aro.core.bestpractice.impl;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -55,6 +58,9 @@ public class Http4xx5xxImpl implements IBestPractice {
 	
 	@Value("${connections.http4xx5xx.results}")
 	private String textResults;
+
+	@Value("${connections.http4xx5xx.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${connections.http4xx5xx.errorSingular}")
 	private String errorSingular;
@@ -99,9 +105,11 @@ public class Http4xx5xxImpl implements IBestPractice {
 		if(httpErrorCounts4XX.isEmpty()){
 			result.setResultType(BPResultType.PASS);
 			result.setResultText(textResultPass);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		}else{
 			result.setResultType(BPResultType.FAIL);
 			result.setResultText(Http3xx4xxHelper.createFailResult(httpErrorCounts4XX, textResults, errorPlural, errorSingular));
+			result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), Http3xx4xxHelper.formatErrorCodesToText(httpErrorCounts4XX)));
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
@@ -113,6 +121,4 @@ public class Http4xx5xxImpl implements IBestPractice {
 		result.setHttpResCodelist(httpResCodelist);
 		return result;
 	}
-	
-
 }

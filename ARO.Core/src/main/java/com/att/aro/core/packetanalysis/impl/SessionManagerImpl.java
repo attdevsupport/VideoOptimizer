@@ -12,15 +12,20 @@
  */
 package com.att.aro.core.packetanalysis.impl;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -34,6 +39,7 @@ import java.util.regex.Matcher;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.poi.ss.formula.functions.Count;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.packetanalysis.IByteArrayLineReader;
@@ -69,6 +75,16 @@ public class SessionManagerImpl implements ISessionManager {
 	private String tracePath = "";
 
 	private IByteArrayLineReader storageReader;
+	
+	private double pcapTimeOffset;
+	
+	public double getPcapTimeOffset() {
+		return pcapTimeOffset;
+	}
+
+	public void setPcapTimeOffset(double pcapTimeOffset) {
+		this.pcapTimeOffset = pcapTimeOffset;
+	}
 
 	@Autowired
 	public void setByteArrayLineReader(IByteArrayLineReader reader) {
@@ -574,62 +590,112 @@ public class SessionManagerImpl implements ISessionManager {
 		ArrayList<HttpRequestResponseInfo> results = new ArrayList<>();
 
 		String sessionKey = session.getDomainName() + "_" + session.getLocalPort();
-		File clearSessionRecFileUL = new File(this.tracePath + sessionKey + "_UL");
-		File clearSessionRecFileDL = new File(this.tracePath + sessionKey + "_DL");
+		String uplinkFilePath = this.tracePath + sessionKey + "_UL";
+		String downlinkFilePath = this.tracePath + sessionKey + "_DL";
 
 		try {
-			BufferedReader uplinkFileReader = new BufferedReader(new FileReader(clearSessionRecFileUL));
-			BufferedReader downlinkFileReader = new BufferedReader(new FileReader(clearSessionRecFileDL));
-
-			results = readFileAndPopulateRequestResponse(session, results, uplinkFileReader, PacketDirection.UPLINK, HttpDirection.REQUEST);
-			results = readFileAndPopulateRequestResponse(session, results, downlinkFileReader, PacketDirection.DOWNLINK, HttpDirection.RESPONSE);
-
-			uplinkFileReader.close();
-			downlinkFileReader.close();
-
+			results = readFileAndPopulateRequestResponse(session, results, uplinkFilePath, PacketDirection.UPLINK, HttpDirection.REQUEST);
+			results = readFileAndPopulateRequestResponse(session, results, downlinkFilePath, PacketDirection.DOWNLINK, HttpDirection.RESPONSE);
 		} catch (IOException e) {
-
-			e.printStackTrace();
+		    LOGGER.error("", e);
 		}
 
 		return results;
 	}
 
-	private ArrayList<HttpRequestResponseInfo> readFileAndPopulateRequestResponse(Session session, ArrayList<HttpRequestResponseInfo> results, BufferedReader bufferedReader, PacketDirection packetDirection, HttpDirection httpDirection)
+	private ArrayList<HttpRequestResponseInfo> readFileAndPopulateRequestResponse(Session session, ArrayList<HttpRequestResponseInfo> results, String filePath, PacketDirection packetDirection, HttpDirection httpDirection)
 			throws IOException {
 		String dataRead;
+		long timeStamp = 0;
 		HttpRequestResponseInfo rrInfo = null;
-		while ((dataRead = bufferedReader.readLine()) != null) {
-			if (dataRead.length() > 0) {
-				Matcher matcher;
-				if (packetDirection == PacketDirection.UPLINK) {
-					matcher = HttpPattern.strRequestType.matcher(dataRead);
-				} else {
-					matcher = HttpPattern.strReResponseResults.matcher(dataRead);
-				}
-				if (matcher.lookingAt()) {
-					rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetDirection);
-					rrInfo.writeHeader(dataRead);
-					while ((dataRead = bufferedReader.readLine()) != null && dataRead.length() != 0) {
-						rrInfo.writeHeader(System.lineSeparator());
-						rrInfo.writeHeader(dataRead);
-						rrInfo.setTCP(true);
-						rrInfo.setDirection(httpDirection);
-						parseHeaderLine.parseHeaderLine(dataRead, rrInfo);
-					}
-					rrInfo.writeHeader(System.lineSeparator());
-					results.add(rrInfo);
-				} else if (rrInfo != null) {
-					rrInfo.writePayload(dataRead);
-					rrInfo.writePayload(System.lineSeparator());
-					while ((dataRead = bufferedReader.readLine()) != null && dataRead.length() != 0) {
-						rrInfo.writePayload(dataRead);
-						rrInfo.writePayload(System.lineSeparator());
-					}
-				}
-			}
-		}
-		return results;
+		int requestCount = 0;
+		BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath));
+
+		try {
+    		while ((dataRead = bufferedReader.readLine()) != null) {
+    			if (dataRead.length() > 0) {
+    				String comparisonString = "RequestTime: ";
+    				if (dataRead.startsWith(comparisonString)) {
+    				    ++requestCount;
+    					timeStamp = Long.parseLong(dataRead.substring(comparisonString.length(), dataRead.length()));
+    					continue;
+    				}
+    
+                    rrInfo = initializeRequestResponseObject(dataRead, session, packetDirection);
+                    if (rrInfo != null) {
+                        rrInfo.setTCP(true);
+                        rrInfo.setRawSize(-1);
+
+                        // Converting the System Time in Millis to Seconds and Microsecond format.
+                        double time = ((double) timeStamp/1000) + (((double) timeStamp%1000) / 1000000.0);
+                        // The math below allows the request time to have a start time relative to trace capture.
+                        rrInfo.setTime(time - pcapTimeOffset);
+
+                        rrInfo.writeHeader(dataRead);
+                        while ((dataRead = bufferedReader.readLine()) != null && dataRead.length() != 0) {
+                            rrInfo.writeHeader(System.lineSeparator());
+                            rrInfo.writeHeader(dataRead);
+                            parseHeaderLine.parseHeaderLine(dataRead, rrInfo);
+                        }
+                        rrInfo.writeHeader(System.lineSeparator());
+    
+                        // Check for payload and read
+                        File file = new File(filePath + "_" + requestCount);
+                        if (file.exists()) {
+                            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
+                            rrInfo.writePayload(bis);
+                            bis.close();
+                        }
+
+                        results.add(rrInfo);
+                    }
+                }
+            }
+        } finally {
+            bufferedReader.close();
+        }
+
+        return results;
+    }
+
+	private HttpRequestResponseInfo initializeRequestResponseObject(String line, Session session, PacketDirection packetDirection) {
+	    HttpRequestResponseInfo rrInfo = null;
+
+	    if (PacketDirection.UPLINK.equals(packetDirection)) {
+            Matcher matcher = HttpPattern.strRequestType.matcher(line);
+            if (matcher.lookingAt()) {
+                rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetDirection);
+                rrInfo.setStatusLine(line);
+                rrInfo.setRequestType(matcher.group(1));
+                rrInfo.setDirection(HttpDirection.REQUEST);
+                rrInfo.setObjName(matcher.group(2));
+                try {
+                    rrInfo.setObjUri(new URI(URLEncoder.encode(rrInfo.getObjName(), StandardCharsets.UTF_8.toString())));
+                    rrInfo.setHostName(rrInfo.getObjUri().getHost());
+                } catch (URISyntaxException | UnsupportedEncodingException e) {
+                    // Ignore since value does not have to be a URI
+                    LOGGER.info("", e);
+                }
+
+                rrInfo.setVersion(matcher.group(3));
+                rrInfo.setScheme(rrInfo.getVersion().split("/")[0]);
+                rrInfo.setPort(session.getRemotePort());
+            }
+        } else {
+            Matcher matcher = HttpPattern.strReResponseResults.matcher(line);
+            if (matcher.lookingAt()) {
+                rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetDirection);
+                rrInfo.setStatusLine(line);
+                rrInfo.setDirection(HttpDirection.RESPONSE);
+                rrInfo.setVersion(matcher.group(1));
+                rrInfo.setScheme(rrInfo.getVersion().split("/")[0]);
+                rrInfo.setStatusCode(Integer.parseInt(matcher.group(2)));
+                rrInfo.setResponseResult(matcher.group(3));
+                rrInfo.setPort(session.getLocalPort());
+            }
+        }
+
+        return rrInfo;
 	}
 
 	private int setHeaderOffset(HttpRequestResponseInfo rrInfo, PacketInfo packetInfo, TCPPacket tcpPacket) {
@@ -821,49 +887,12 @@ public class SessionManagerImpl implements ISessionManager {
 			bufferedStream.flush();
 			storageReader.init(stream.toByteArray());
 			String line = storageReader.readLine();
-			if (!(line == null || line.length() == 0)) {
-				if (packetDirection.equals(PacketDirection.UPLINK)) {
-					Matcher matcher = HttpPattern.strRequestType.matcher(line);
-					if (matcher.lookingAt()) {
-						rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetDirection);
-						rrInfo.setStatusLine(line);
-						rrInfo.setRequestType(matcher.group(1));
-						rrInfo.setDirection(HttpDirection.REQUEST);
-						rrInfo.setObjName(matcher.group(2));
-						try {
-							rrInfo.setObjUri(new URI(rrInfo.getObjName()));
-							if (rrInfo.getObjUri().getHost() != null) {
-								rrInfo.setHostName(rrInfo.getObjUri().getHost());
-							}
-						} catch (URISyntaxException e) {
-							// Ignore since value does not have to be a URI
-							LOGGER.error(e.getMessage());
-						}
-						rrInfo.setVersion(matcher.group(3));
-						rrInfo.setScheme(rrInfo.getVersion().split("/")[0]);
-						rrInfo.setPort(session.getRemotePort());
-						if (tcpPacket != null) {
-							rrInfo.setTCP(true);
-							rrInfo = populateRRInfo(session, tcpPacket, rrInfo);
-						}
-					}
-				} else {
-					Matcher matcher = HttpPattern.strReResponseResults.matcher(line);
-					if (matcher.lookingAt()) {
-						rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetDirection);
-						rrInfo.setStatusLine(line);
-						rrInfo.setDirection(HttpDirection.RESPONSE);
-						rrInfo.setVersion(matcher.group(1));
-						rrInfo.setScheme(rrInfo.getVersion().split("/")[0]);
-						rrInfo.setStatusCode(Integer.parseInt(matcher.group(2)));
-						rrInfo.setResponseResult(matcher.group(3));
-						rrInfo.setPort(session.getLocalPort());
-						if (tcpPacket != null) {
-							rrInfo.setTCP(true);
-							rrInfo = populateRRInfo(session, tcpPacket, rrInfo);
-						}
-					}
-				}
+			if (line != null && line.length() != 0) {
+			    rrInfo = initializeRequestResponseObject(line, session, packetDirection);
+			    if (rrInfo != null && tcpPacket != null) {
+			        rrInfo.setTCP(true);
+                    rrInfo = populateRRInfo(session, tcpPacket, rrInfo);
+			    }
 			}
 		} catch (IOException e1) {
 			LOGGER.error(e1.getMessage());

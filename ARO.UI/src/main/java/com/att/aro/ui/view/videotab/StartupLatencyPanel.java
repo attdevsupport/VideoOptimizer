@@ -65,7 +65,7 @@ public class StartupLatencyPanel extends JPanel {
 	 */
 
 	public JTable getStartupDelayTable(VideoStream videoStream) {	
-		Collection<VideoEvent> videoEventList = validateVideoEvents(videoStream.getVideoEventList().values());
+		Collection<VideoEvent> videoEventList = validateVideoEvents(videoStream.getVideoEventMap().values());
 		startupLatancyTableModel.setData(videoEventList);	
 		DataTable<VideoEvent> startupLatancyTable = new DataTable<VideoEvent>(startupLatancyTableModel);
 		startupLatancyTable.setAutoCreateRowSorter(true);

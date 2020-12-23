@@ -52,6 +52,9 @@ public class ConnectionClosingImpl implements IBestPractice {
 	
 	@Value("${connections.connClosing.results}")
 	private String textResults;
+
+	@Value("${connections.connClosing.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${exportall.csvConnClosingDesc}")
 	private String exportAllConnClosingDesc;
@@ -92,9 +95,14 @@ public class ConnectionClosingImpl implements IBestPractice {
 												nfo.format(tcpControlEnergy), 
 												nfo.format(tcpControlEnergyRatio*100));
 			result.setResultText(text);
+
+			result.setResultExcelText(
+		        MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), nfo.format(tcpControlEnergy), nfo.format(tcpControlEnergyRatio*100))
+	        );
 		}else{
 			result.setResultType(BPResultType.PASS);
 			result.setResultText(textResultPass);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		}
 		result.setWastedBurstEnergy(wastedBurstEnergy);
 		result.setConClosingProb(conClosingProbPassed);

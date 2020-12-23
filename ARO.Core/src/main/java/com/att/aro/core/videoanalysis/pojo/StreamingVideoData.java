@@ -134,7 +134,7 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 					nonValidSegmentCount += videoStream.getSegmentCount();
 					invalidManifestCount++;
 				}
-				if (videoStream.isSelected() && !videoStream.getVideoEventList().isEmpty()) {
+				if (videoStream.isSelected() && !videoStream.getVideoEventMap().isEmpty()) {
 					selectedManifestCount++;
 					totalSegmentCount += videoStream.getSegmentCount();
 				}

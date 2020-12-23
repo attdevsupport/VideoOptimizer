@@ -104,6 +104,9 @@ import com.att.aro.ui.view.videotab.VideoTab;
 import com.att.aro.ui.view.waterfalltab.WaterfallTab;
 import com.att.aro.view.images.Images;
 
+import lombok.Data;
+
+@Data
 public class MainFrame implements SharedAttributesProcesses {
 	private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("messages"); //$NON-NLS-1$
 	public static final String FILE_SEPARATOR = System.getProperty("file.separator");
@@ -163,6 +166,8 @@ public class MainFrame implements SharedAttributesProcesses {
 	private AROSwingWorker<Void, Void> aroSwingWorker;
 	
 	private Hashtable<String,Object> previousOptions;
+	
+	private boolean autoAssignPermissions = false;
 	
 	public static MainFrame getWindow() {
 		return window;
@@ -264,6 +269,7 @@ public class MainFrame implements SharedAttributesProcesses {
 	 */
 	public MainFrame() {
 		Thread.setDefaultUncaughtExceptionHandler(new CrashHandler());
+		aroController = new AROController(this);
 		initialize();
 	}
 
@@ -291,7 +297,6 @@ public class MainFrame implements SharedAttributesProcesses {
 		modelObserver = new AROModelObserver();
 		frmApplicationResourceOptimizer.setJMenuBar(mainMenu.getAROMainFileMenu());
 
-		aroController = new AROController(this);
 		frmApplicationResourceOptimizer.setContentPane(getJTabbedPane());
 		for (ChartPlotOptions option : GUIPreferences.getInstance().getChartPlotOptions()) {
 			new Thread(() -> sendGADiagnosticTabChartPlotViews(option)).start();
@@ -422,7 +427,6 @@ public class MainFrame implements SharedAttributesProcesses {
 			
 		} else if (getCurrentTabComponent() == videoTab) {
 			tabPanel = TabPanels.tab_panel_video_tab;
-			getVideoTab().addGraphPanel();
 		} else {
 			tabPanel = TabPanels.tab_panel_other;
 		}
@@ -488,7 +492,11 @@ public class MainFrame implements SharedAttributesProcesses {
 	public void refreshBestPracticesTab() {
 		bestPracticesTab.refresh(aroController.getTheModel());
 	}
-
+	
+	public void refreshVideoTab() {
+		videoTab.refresh(aroController.getTheModel());
+	}
+	
 	@Override
 	public void updateReportPath(File path) {
 		if (path != null) {
@@ -553,7 +561,7 @@ public class MainFrame implements SharedAttributesProcesses {
 				}
 			} else if (traceData.getError() != null) {
 				if(isUpdateRequired(traceData.getError().getCode())){
-				Util.updateRecentItem(tracePath);
+					Util.updateRecentItem(tracePath);
 				}
 				
 				tracePath = null;
@@ -750,7 +758,7 @@ public class MainFrame implements SharedAttributesProcesses {
 		if (statusResult == null) {
 			return;
 		}
-		LOG.info("updateCollectorStatus :STATUS :" + statusResult);
+		LOG.info(String.format("updateCollectorStatus - Collector state: %s, Result status: %s", collectorStatus == null ? "null" : collectorStatus.name(), statusResult));
 		if (!isDeviceDataPulled()) {
 			JOptionPane.showMessageDialog(window.getJFrame(), BUNDLE.getString("MainFrame.pulldata.message"),
 					BUNDLE.getString("MainFrame.pulldata.title"), JOptionPane.WARNING_MESSAGE);
@@ -877,6 +885,14 @@ public class MainFrame implements SharedAttributesProcesses {
 	
 	public VideoTab getVideoTab(){
 		return videoTab;
+	}
+
+	public void postToAmvots(AbstractTraceResult traceResult, VideoStream videoStream) {
+		if (TraceResultType.TRACE_DIRECTORY.equals(traceResult.getTraceResultType())) {
+			new Thread(() -> {
+				SwingUtilities.invokeLater(() -> window.launchDialog(new VideoPostDialog(traceResult, videoStream)));
+			}).start();
+		}
 	}
 	
 	@Override

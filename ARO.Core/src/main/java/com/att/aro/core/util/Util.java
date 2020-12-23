@@ -76,7 +76,11 @@ public final class Util {
 	private static Logger logger = LogManager.getLogger(Util.class.getName());
 	private static final IExternalProcessRunner extrunner = SpringContextUtil.getInstance().getContext()
 			.getBean(IExternalProcessRunner.class);
-
+	
+	public static String APK_FILE_NAME = "VPNCollector-4.0.%s.apk";
+	
+	public static final String ARO_PACKAGE_NAME = "com.att.arocollector";
+	
 	public static boolean isMacOS() {
 		return Util.OS_NAME.contains("Mac OS");
 	}
@@ -1026,7 +1030,7 @@ public final class Util {
 							recentItems[i] = StringEscapeUtils
 									.unescapeJava(StringEscapeUtils.unescapeCsv(recentItems[i]));
 							if (!recentMenuItem.isEmpty() && new File(recentItems[i]).exists()) {
-								recentMenuItems.put(recentMenuItem, recentItems[i]);
+								recentMenuItems.put(recentItems[i], recentMenuItem);
 							}
 						}
 					}

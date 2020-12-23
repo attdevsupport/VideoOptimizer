@@ -53,6 +53,9 @@ public class ForwardSecrecyImpl implements IBestPractice {
 	
 	@Value("${security.forwardSecrecy.results}")
 	private String testResultAnyText;
+
+	@Value("${security.forwardSecrecy.excel.results}")
+    private String testExcelResults;
 	
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
@@ -115,7 +118,8 @@ public class ForwardSecrecyImpl implements IBestPractice {
 													ApplicationConfig.getInstance().getAppShortName(), 
 													entries.size());
 		}
-		
+
+		result.setResultExcelText(MessageFormat.format(testExcelResults, result.getResultType().getDescription(), entries.size()));
 		result.setOverviewTitle(overviewTitle);
 		result.setDetailTitle(detailedTitle);
 		result.setAboutText(aboutText);

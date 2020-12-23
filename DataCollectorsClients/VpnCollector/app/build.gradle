@@ -17,7 +17,7 @@ android {
      * compile your app. This means your app can use the API features included in
      * this API level and lower.
      */
-    compileSdkVersion 29
+    compileSdkVersion 30
     /**
      * buildToolsVersion specifies the version of the SDK build tools, command-line
      * utilities, and compiler that Gradle should use to build your app. You need to
@@ -26,7 +26,7 @@ android {
      * This property is optional because the plugin uses a recommended version of
      * the build tools by default.
      */
-    buildToolsVersion "29.0.0"
+    buildToolsVersion "29.0.2"
     /**
      * The defaultConfig block encapsulates default settings and entries for all
      * build variants, and can override some attributes in main/AndroidManifest.xml
@@ -38,7 +38,7 @@ android {
         applicationId "com.att.arocollector"
         def jenkinsBuildNumber = System.getenv("BUILD_NUMBER") as Integer ?: 1
         def releaseBuildId = jenkinsBuildNumber - 1
-        versionName "3.2." + releaseBuildId
+        versionName "4.0." + releaseBuildId
         minSdkVersion 23
         targetSdkVersion 29
         compileOptions {

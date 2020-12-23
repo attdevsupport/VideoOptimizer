@@ -77,6 +77,9 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 	@Value("${bufferOccupancy.results}")
 	private String textResults;
 
+	@Value("${bufferOccupancy.excel.results}")
+    private String textExcelResults;
+
 	@Value("${startUpDelay.init}")
 	private String startUpDelayNotSet;
 
@@ -117,15 +120,14 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 	@Nonnull
 	private BPResultType bpResultType = BPResultType.CONFIG_REQUIRED;;
 
-	private double maxBufferSet;
-	private double maxBufferReached;
-
 	private int invalidCount;
 
-	public void updateVideoPrefMaxBuffer() {
+	public double getVideoPrefMaxBuffer() {
 		if (videoUsagePrefs.getVideoUsagePreference() != null) {
-			maxBufferSet = videoUsagePrefs.getVideoUsagePreference().getMaxBuffer();
+			return videoUsagePrefs.getVideoUsagePreference().getMaxBuffer();
 		}
+
+		return 0.0d;
 	}
 
 	@Override
@@ -135,10 +137,11 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 		init(result);
 
 		if ((streamingVideoData = tracedata.getStreamingVideoData()) != null 
-				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null 
+				&& (videoStreamCollection = streamingVideoData.getVideoStreamMap()) != null
 				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
 			bpResultType = BPResultType.CONFIG_REQUIRED;
+			result.setResultExcelText(bpResultType.getDescription());
 
 			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
@@ -155,19 +158,21 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 			} else if (selectedManifestCount > 1) {
 				result.setResultText(multipleManifestsSelected);
 			} else if (hasSelectedManifest) {
-
 				BufferOccupancyBPResult bufferBPResult = tracedata.getBufferOccupancyResult();
 				BufferTimeBPResult bufferTimeBPResult = tracedata.getBufferTimeResult();
+				double maxBufferInMB = 0;
+
 				if (bufferBPResult != null && bufferBPResult.getBufferByteDataSet().size() > 0) {
-					maxBufferReached = bufferBPResult.getMaxBuffer();// maxBufferReached is in KB (1000)
-					maxBufferReached = maxBufferReached / 1000;
+				    double megabyteDivisor = 1000 * 1000;
+				    maxBufferInMB = bufferBPResult.getMaxBuffer() / megabyteDivisor; // getMaxBuffer() returns in bytes
 					List<Double> bufferDataSet = bufferBPResult.getBufferByteDataSet();
-					result.setMinBufferByte(bufferDataSet.get(0) / 1000);
+					result.setMinBufferByte(bufferDataSet.get(0) / megabyteDivisor); // In MB
 					double bufferSum = bufferDataSet.stream().reduce((a, b) -> a + b).get();
-					result.setAvgBufferByte((bufferSum / bufferDataSet.size()) / 1000);
+					result.setAvgBufferByte((bufferSum / bufferDataSet.size()) / megabyteDivisor);
 				} else {
-					maxBufferReached = 0;
+				    maxBufferInMB = 0;
 				}
+
 				if (bufferTimeBPResult != null && bufferTimeBPResult.getBufferTimeDataSet().size() > 0) {
 					List<Double> bufferTimeDataSet = bufferTimeBPResult.getBufferTimeDataSet();
 					result.setMinBufferTime(bufferTimeDataSet.get(0));
@@ -177,18 +182,16 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 				}
 
 				result.setSelfTest(true);
-				result.setMaxBuffer(maxBufferReached);
+				result.setMaxBuffer(maxBufferInMB);
 
-				updateVideoPrefMaxBuffer();
 				double percentage = 0;
-				double maxBufferInMB = 0;
+				double maxBufferSet = getVideoPrefMaxBuffer();
 				if (maxBufferSet != 0) {
-					maxBufferInMB = maxBufferReached / 1000;
 					percentage = (maxBufferInMB / maxBufferSet) * 100;
 				}
+
 				if (MapUtils.isEmpty(streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList())) {
-					result.setResultText(MessageFormat.format(startUpDelayNotSet, String.format("%.2f", percentage), String.format("%.2f", maxBufferReached),
-							String.format("%.2f", maxBufferSet)));
+					result.setResultText(startUpDelayNotSet);
 					bpResultType = BPResultType.CONFIG_REQUIRED;
 				} else {
 					if (percentage > 100) {
@@ -197,13 +200,18 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 					bpResultType = BPResultType.PASS;
 					result.setResultText(MessageFormat.format(this.textResults, String.format("%.2f", percentage), String.format("%.2f", maxBufferInMB),
 							String.format("%.2f", maxBufferSet)));
+					result.setResultExcelText(
+				        MessageFormat.format(textExcelResults, bpResultType.getDescription(), String.format("%.2f", percentage), String.format("%.2f", maxBufferInMB))
+			        );
 				}
 			}
 		} else {
 			result.setSelfTest(false);
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(bpResultType.getDescription());
 		}
+
 		result.setResultType(bpResultType);
 		return result;
 	}
@@ -213,13 +221,10 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 		selectedManifestCount = 0;
 		hasSelectedManifest = false;
 
-		maxBufferSet = 0;
-		maxBufferReached = 0;
-
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
 		result.setOverviewTitle(overviewTitle);
 		result.setLearnMoreUrl(learnMoreUrl);
 	}
 
-}// end class
+}

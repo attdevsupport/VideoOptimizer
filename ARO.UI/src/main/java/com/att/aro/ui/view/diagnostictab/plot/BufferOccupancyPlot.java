@@ -120,26 +120,19 @@ public class BufferOccupancyPlot implements IPlot {
 			@Override
 			public String generateToolTip(XYDataset dataset, int series, int item) {
 
-				// Tooltip value	
+				// Tooltip value
 				Number timestamp = dataset.getX(series, item);
 				Number bufferSize = dataset.getY(series, item);
-				StringBuffer tooltipValue = new StringBuffer();
-				
+
 				VideoEvent event = videoStream.getToolTipDetailMap().get(item).getVideoEvent();
 				double segmentID = event.getSegmentID();
 				ContentType type = event.getContentType();
 				double play = event.getPlayTime();
-				
-				tooltipValue.append(String.format("%s,%.0f,%.2f,%.3f,%.3f", type.toString(), segmentID, (double) bufferSize / 1000, timestamp, play));
 
-				String[] value = tooltipValue.toString().split(",");
-		
-				if (play != timestamp.doubleValue()) {
-					return (MessageFormat.format(BUFFEROCCUPANCY_TOOLTIP, value[0], value[1], value[2], value[3],
-							value[4]));
-				}
-				return("");
-				
+				return (MessageFormat.format(BUFFEROCCUPANCY_TOOLTIP, String.format("%s", type.toString()),
+						String.format("%.0f", segmentID), String.format("%.2f", (double) bufferSize / (1000 * 1000)),
+						String.format("%.3f", timestamp), String.format("%.3f", play)));
+
 			}
 		};
 	}

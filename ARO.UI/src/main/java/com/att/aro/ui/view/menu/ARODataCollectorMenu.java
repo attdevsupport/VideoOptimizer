@@ -211,9 +211,9 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			throttleULEnable = dialog.getDeviceOptionPanel().getAttenuatorModel().isThrottleULEnabled();
 			profileLocation = dialog.getDeviceOptionPanel().getAttenuatorModel().getLocalPath();
 			profileBoolean = dialog.getDeviceOptionPanel().getAttenuatorModel().isLoadProfile();			
-			LOG.info("set U delay: "+ delayTimeDL + "set D delay: "+ delayTimeDL 
-					+ "set U throttle: "+ throttleUL + "set D throttle: "+ throttleDL 
-					+ "set profile: " + profileBoolean+ "set profileLocation: "+ profileLocation);
+			LOG.info("set U delay: "+ delayTimeDL + ", set D delay: "+ delayTimeDL 
+					+ ", set U throttle: "+ throttleUL + ", set D throttle: "+ throttleDL 
+					+ ", set profile: " + profileBoolean+ ", set profileLocation: "+ profileLocation);
 			
 			if (device.isPlatform(IAroDevice.Platform.iOS)) {
 				IDataCollector iosCollector = findIOSCollector(collectors);
@@ -283,7 +283,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			extras.put("videoOrientation", dialog.getVideoOrientation());
 			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getAttenuatorModel());
 			extras.put("TraceFolderName", traceFolderName);
-			
+			extras.put("assignPermission", ((MainFrame) parent).isAutoAssignPermissions());
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			
 		} else {

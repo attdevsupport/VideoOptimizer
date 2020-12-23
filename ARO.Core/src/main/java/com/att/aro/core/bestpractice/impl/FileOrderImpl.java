@@ -66,6 +66,9 @@ public class FileOrderImpl implements IBestPractice {
 	@Value("${html.fileorder.singresults}")
 	private String textResult;
 
+	@Value("${html.fileorder.excel.results}")
+    private String textExcelResults;
+
 	@Value("${exportall.csvFileOrderCount}")
 	private String exportAll;
 	
@@ -98,12 +101,14 @@ public class FileOrderImpl implements IBestPractice {
 
 			}
 		}
+
 		String text = "";
 		if (results.isEmpty()) {
 			result.setResultType(BPResultType.PASS);
 			text = MessageFormat.format(textResultPass, 
 										ApplicationConfig.getInstance().getAppShortName(), 
 										results.size());
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		} else {
 			result.setResultType(BPResultType.FAIL);
 			if (results.size() > 1) {
@@ -115,7 +120,10 @@ public class FileOrderImpl implements IBestPractice {
 											ApplicationConfig.getInstance().getAppShortName(), 
 											results.size());
 			}
+
+			result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), results.size()));
 		}
+
 		result.setResultText(text);
 		result.setResults(results);
 		result.setAboutText(aboutText);

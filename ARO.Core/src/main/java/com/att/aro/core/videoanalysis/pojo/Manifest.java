@@ -16,6 +16,9 @@
 package com.att.aro.core.videoanalysis.pojo;
 
 import java.net.URI;
+import java.util.Comparator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -45,10 +48,19 @@ public class Manifest {
 	}
 
 	Manifest masterManifest = null;
-	
-	private UrlMatchDef urlMatchDef;
-	private UrlMatchDef segUrlMatchDef;
-	
+
+	// A descending order by length sorted unique list of UrlMatchDef for a better URL resolution
+	// to match a specific request to corresponding master and child manifest
+	private SortedSet<UrlMatchDef> segUrlMatchDef = new TreeSet<>(new Comparator<UrlMatchDef>() {
+        @Override
+        public int compare(UrlMatchDef o1, UrlMatchDef o2) {
+            if (o1 == null || o2 == null) {
+                return 0;
+            }
+            return Integer.compare(o2.getUrlMatchLen(), o1.getUrlMatchLen());
+        }
+	});
+
 	Session session;                					// session that manifest arrived on
 	protected VideoFormat videoFormat = VideoFormat.UNKNOWN;
 	protected VideoType videoType = VideoType.UNKNOWN;            // DASH, HLS, Unknown
@@ -164,7 +176,6 @@ public class Manifest {
 		strblr.append("\n\t, ContentType :").append(getContentType());
 		strblr.append("\n\t, Encryption :").append(getEncryption());
 		strblr.append("\n\t, URIs :").append(uri != null ? uri.getRawPath() : "null");
-		strblr.append("\n\t, " + getUrlMatchDef());
 		strblr.append("\n\t, duration :").append(getDuration());
 		strblr.append(", timeScale :").append(getTimeScale());
 		strblr.append("\n");
@@ -196,7 +207,7 @@ public class Manifest {
 
 	public ContentType matchContentType(String type) {
 		for (ContentType contentType : ContentType.values()) {
-			if (type.equalsIgnoreCase(contentType.toString())) {
+			if (contentType.name().equalsIgnoreCase(type)) {
 				return contentType;
 			}
 		}
@@ -213,13 +224,6 @@ public class Manifest {
 			}
 		}
 		return programTimeChanged;
-	}
-
-	public UrlMatchDef getUrlMatchDef() {
-		if (urlMatchDef == null) {
-			urlMatchDef = new UrlMatchDef();
-		}
-		return urlMatchDef;
 	}
 	
 	@Override

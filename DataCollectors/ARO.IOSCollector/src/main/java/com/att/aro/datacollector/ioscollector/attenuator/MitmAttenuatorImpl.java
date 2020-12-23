@@ -16,6 +16,7 @@ public class MitmAttenuatorImpl {
  	private static final int THREAD_NUM = 3;
     public void startCollect(String trafficFilePath,int throttleReadStream, int throttleWriteStream,
     		SaveCollectorOptions saveCollectorOptions) {
+		LOG.info("Launch mitm and pcap4j thread pool");
  
 		int throttleReadStreambps =  throttleReadStream*128;
 		int throttleWriteStreambps = throttleWriteStream*128;
@@ -32,10 +33,10 @@ public class MitmAttenuatorImpl {
      }
     
     public void stopCollect() {
+        LOG.info("Stopping attenuator...");
     	if(littleProxy!=null) {
     		littleProxy.stop();		
     	}
-    	
 		if(pool!=null) {
 			pool.shutdown();
 			try {
@@ -47,6 +48,7 @@ public class MitmAttenuatorImpl {
 						LOG.error("Pool did not terminate");
 				}
 			} catch (InterruptedException ie) {
+			    LOG.warn("Attenuator thread interrupted. Trying again to terminate all tasks.");
 				// (Re-)Cancel if current thread also interrupted
 				pool.shutdownNow();
 				// Preserve interrupt status
@@ -60,17 +62,16 @@ public class MitmAttenuatorImpl {
 			SaveCollectorOptions writeCollectOption) {
 		LOG.info("set Down stream Delay Time: " + delayTimeDL + " set Up stream Delay Time: " + delayTimeUL
 				+ " set Profile: " + atnrProfile + " set Profile name: " + atnrProfileName);
-		//compatibility for throttle definition
-		if(throttleDL == 0) {
+		// compatibility for throttle definition
+		if (throttleDL == 0) {
 			throttleDL = -1;
 		}
-		if(throttleUL == 0) {
+		if (throttleUL == 0) {
 			throttleUL = -1;
 		}
 		writeCollectOption.recordCollectOptions(trafficFilePath, 0, 0, throttleDL, throttleUL, atnrProfile,
 				atnrProfileName, "PORTRAIT");
 
 	}
-
  	
 }

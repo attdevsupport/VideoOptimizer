@@ -131,7 +131,6 @@ public class AROServiceImpl implements IAROService {
 	private IBestPractice httpsUsage;
 	private IBestPractice transmissionPrivateData;
 	private IBestPractice unsecureSSLVersion;
-	private IBestPractice weakCipher;
 	private IBestPractice forwardSecrecy;
 	private IBestPractice simultaneous;
 	private IBestPractice multipleSimultaneous;
@@ -424,12 +423,6 @@ public class AROServiceImpl implements IAROService {
 	@Qualifier("unsecureSSLVersion")
 	public void setUnsecureSSLVersion(IBestPractice unsecureSSLVersion) {
 		this.unsecureSSLVersion = unsecureSSLVersion;
-	}
-
-	@Autowired
-	@Qualifier("weakCipher")
-	public void setWeakCipher(IBestPractice weakCipher) {
-		this.weakCipher = weakCipher;
 	}
 
 	@Autowired
@@ -786,8 +779,6 @@ public class AROServiceImpl implements IAROService {
 			return transmissionPrivateData;
 		case UNSECURE_SSL_VERSION:
 			return unsecureSSLVersion;
-		case WEAK_CIPHER:
-			return weakCipher;
 		case FORWARD_SECRECY:
 			return forwardSecrecy;
 		default:

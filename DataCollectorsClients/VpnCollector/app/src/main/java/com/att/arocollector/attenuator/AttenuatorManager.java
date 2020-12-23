@@ -51,9 +51,8 @@ public class AttenuatorManager {
     private AtomicInteger throttleDLAtomic = new AtomicInteger(AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
     private AtomicInteger throttleULAtomic = new AtomicInteger(AttenuatorUtil.DEFAULT_THROTTLE_SPEED);
 
-    private AttenuatorManager() {
-//        init();
-    }
+    private AttenuatorManager() {}
+
     public static AttenuatorManager getInstance() {
 
         return amInstance;
@@ -89,7 +88,7 @@ public class AttenuatorManager {
     public void setDelayDl(int delayDl) {
         delayDLAtomic.set(delayDl);
         try {
-            printDelayLog(delayDl, TAG_UL);
+            printDelayLog(delayDl, TAG_DL);
         } catch (FileNotFoundException e) {
             Log.e(TAG,e.getMessage(),e);
         }

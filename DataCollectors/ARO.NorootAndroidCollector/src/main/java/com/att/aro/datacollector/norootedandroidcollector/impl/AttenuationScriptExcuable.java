@@ -49,33 +49,39 @@ public class AttenuationScriptExcuable implements Runnable {
 	 * Initiation method for preparing launch the attenuation script 
 	 */
 	public void init(IAndroid android, IAroDevice aroDevice, String localTraceFolder,String location){
-		
+		LOGGER.info("Initializing attenuation script preparation...");
 		this.android = android;
 		this.aroDevice = aroDevice;
 		this.device = (IDevice) aroDevice.getDevice();
  		
+		LOGGER.debug("Remove existing attenuation script directories:");
 		String[] res = android.getShellReturn(device, "rm " + REMOTE_FILEPATH + "*");
 		for (String line : res) {
 			if (line.length() > 0) {
 				LOGGER.debug(">>" + line + "<<");
 			}
 		}
+
+		LOGGER.debug("Create attenuation script directories:");
  		String[] response;
 		response = android.getShellReturn(device, "mkdir " +"/sdcard/ARO");
 		for (String line : response) {
-			LOGGER.info("check the folder:" + line);
+		    LOGGER.debug(">>" + line + "<<");
 		}
+
 		response = null;
 		response = android.getShellReturn(device, "mkdir " + REMOTE_FILEPATH);
 		for (String line : response) {
-			LOGGER.info("create a folder for attenuation:" + line);
+		    LOGGER.debug(">>" + line + "<<");
 		}
+
 		if(PAYLOAD_FILENAME.equals(location)){
 			this.adbService.installPayloadFile(aroDevice, localTraceFolder, PAYLOAD_FILENAME, REMOTE_EXECUTABLE);
 		}else{
 			android.pushFile(device, location, REMOTE_EXECUTABLE);
 		}
 
+		LOGGER.info("Finished attenuation script preparation...");
  	}
 	
 	@Override
@@ -92,12 +98,13 @@ public class AttenuationScriptExcuable implements Runnable {
 				+ " "
 				+ REMOTE_FILEPATH;				
 		extrunner.executeCmd(cmd);
-		LOGGER.info("start process ");
+		LOGGER.info("Attenuation process started");
 	    
 	}
 	
-	public void stopAtenuationScript(IDevice device){
-  
+	public void stopAtenuationScript(IDevice device) {
+	    LOGGER.info("Stopping attenuation script...");
+
 		String command = "sh " + REMOTE_FILEPATH + "killattnr.sh";
 		String[] response = android.getShellReturn(device, command);
 		for (String line : response) {

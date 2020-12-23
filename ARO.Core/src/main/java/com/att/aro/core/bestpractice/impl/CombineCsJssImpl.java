@@ -154,6 +154,8 @@ public class CombineCsJssImpl implements IBestPractice {
 			result.setResultText(textResults);
 			result.setFilesDetails(fileDetails);  //Changes for US432336
 		}
+
+		result.setResultExcelText(result.getResultType().getDescription());
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
 		result.setLearnMoreUrl(learnMoreUrl);

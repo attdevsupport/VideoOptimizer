@@ -79,6 +79,9 @@ public class PeriodicTransferImpl implements IBestPractice {
 	
 	@Value("${connections.periodic.results}")
 	private String textResults;
+
+	@Value("${connections.periodic.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${connections.periodic.result}")
 	private String textResult;
@@ -109,11 +112,16 @@ public class PeriodicTransferImpl implements IBestPractice {
 		if(this.minimumPeriodicRepeatTime == 0.0){
 			result.setResultType(BPResultType.PASS);
 			result.setResultText(textResultPass);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		}else{
 			result.setResultType(BPResultType.FAIL);
 			String text = MessageFormat.format( diffPeriodicCount > 1 ? this.textResults : this.textResult, 
 					this.diffPeriodicCount, this.periodicCount, this.minimumPeriodicRepeatTime);
 			result.setResultText(text);
+			// TODO: Fix verbiage
+			result.setResultExcelText(
+		        MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), diffPeriodicCount, periodicCount, minimumPeriodicRepeatTime)
+	        );
 		}
 		result.setDiffPeriodicCount(diffPeriodicCount);
 		result.setPeriodicCount(periodicCount);

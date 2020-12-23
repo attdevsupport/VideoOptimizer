@@ -31,6 +31,7 @@ public abstract class AbstractBestPracticeResult {
 	private String aboutText = "";
 	private String learnMoreUrl = "";
 	private String resultText = "";
+	private String resultExcelText;
 	private String bestPracticeDescription = "";
 	
 	protected BPResultType resultType = BPResultType.PASS;
@@ -154,6 +155,25 @@ public abstract class AbstractBestPracticeResult {
 	public void setResultText(String resultText) {
 		this.resultText = resultText;
 	}
+	
+	/**
+     * Returns a string containing the results of the best practices test based
+     * on the specified analysis data to be used in Excel export.
+     * 
+     * @return A string containing the test results.
+     */
+    public String getResultExcelText() {
+        return resultExcelText;
+    }
+
+    /**
+     * Set the descriptive result of a Test to be used in Excel export.
+     * 
+     * @param resultText a descriptive result of a Test
+     */
+    public void setResultExcelText(String resultExcelText) {
+        this.resultExcelText = resultExcelText;
+    }
 
 	/**
 	 * Result of test, which could be PASS, FAIL or WARNING

@@ -139,10 +139,11 @@ public class ChildManifest {
 	}
 	
 	public ContentType getContentType() {
-		if (manifest == null) {
-			return this.contentType;
-		}
-		return manifest.getContentType();
+	    if (contentType != null) {
+	        return contentType;
+	    }
+
+		return manifest == null ? ContentType.UNKNOWN : manifest.getContentType();
 	}
 	
 	public void setManifest(Manifest manifest) {

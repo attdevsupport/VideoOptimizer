@@ -16,18 +16,26 @@
 package com.att.aro.core.packetanalysis.impl;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.mp4parser.Box;
+import org.mp4parser.IsoFile;
+import org.mp4parser.boxes.iso14496.part12.SegmentIndexBox;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -50,6 +58,7 @@ import com.att.aro.core.videoanalysis.pojo.Manifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ManifestType;
 import com.att.aro.core.videoanalysis.pojo.ManifestCollection;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
+import com.att.aro.core.videoanalysis.pojo.UrlMatchDef;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 import com.att.aro.core.videoanalysis.pojo.VideoFormat;
@@ -63,6 +72,7 @@ import lombok.NonNull;
 public class VideoStreamConstructor {
 
 	private static final Logger LOG = LogManager.getLogger(VideoStreamConstructor.class.getName());
+	private static final Random RANDOM = new Random();
 
 	@Autowired
 	private IFileManager filemanager;
@@ -102,6 +112,10 @@ public class VideoStreamConstructor {
 	private byte[] defaultThumbnail = null;
 
 	private ManifestCollection manifestCollection;
+
+	// Used for tracking segments by request object name to avoid repeated analysis
+	// Inner map is mapped from segment's byte range as key and duration as value
+	private Map<ChildManifest, Map<String, Double>> segmentInformationByFile = new HashMap<>();
 
 	public VideoStreamConstructor() {
 		init();
@@ -156,12 +170,15 @@ public class VideoStreamConstructor {
 		this.streamingVideoData = streamingVideoData;
 
 		if (manifestBuilder == null || (manifestCollection = manifestBuilder.findManifest(request)) == null) {
+		    System.out.println("manifestCollection is null for " + request.getFileName());
 			LOG.debug("manifestCollection is null :" + request.getObjUri());
+			extractedSaveUnhandledContent(streamingVideoData, request, content);	
 			return;
 		}
 
-		if ((childManifest = locateChildManifestAndSegmentInfo(request, timeStamp, manifestCollection)) == null) {
+		if ((childManifest = locateChildManifestAndSegmentInfo(request, content, timeStamp, manifestCollection)) == null) {
 			LOG.debug("ChildManifest wasn't found for segment request:" + request.getObjUri());
+			extractedSaveUnhandledContent(streamingVideoData, request, content);	
 			return;
 		}
 		
@@ -173,11 +190,13 @@ public class VideoStreamConstructor {
 
 		if (segmentInfo == null) {
 			LOG.debug("segmentInfo is null :" + request.getObjUri());
+			extractedSaveUnhandledContent(streamingVideoData, request, content);			
 			return;
 		}
 
 		if (segmentInfo.getQuality().equals("0") && manifestCollection.getManifest().isVideoTypeFamily(VideoType.DASH)) {
 			LOG.debug("Found DASH Track 0, determine what happened and if it is a problem :" + request.getObjNameWithoutParams());
+			extractedSaveUnhandledContent(streamingVideoData, request, content);	
 			return;
 		}
 
@@ -237,6 +256,11 @@ public class VideoStreamConstructor {
 		int pos1 = fullPathName.lastIndexOf(Util.FILE_SEPARATOR) + 1;
 		int pos2 = fullPathName.substring(pos1).indexOf('_');
 		fullPathName = String.format("%s%09.0f%s", fullPathName.substring(0, pos1), videoEvent.getEndTS() * 1000, fullPathName.substring(pos1 + pos2));
+		savePayload(content, fullPathName);
+	}
+
+	public void extractedSaveUnhandledContent(StreamingVideoData streamingVideoData, HttpRequestResponseInfo request, byte[] content) {
+		String fullPathName = filemanager.createFile(streamingVideoData.getVideoPath(), "[unhandled_video]_"+request.getFileName()).toString();
 		savePayload(content, fullPathName);
 	}
 
@@ -323,11 +347,13 @@ public class VideoStreamConstructor {
 					segmentInfo.setStartTime(val);
 				}
 			}
-			if (childManifest.getPixelHeight() == 0) {
-				val = metaData.get("Resolution");
-				if (val != null && val > 0) {
+
+			val = metaData.get("Resolution");
+			if (val != null && val > 0) {
+				if (childManifest.getPixelHeight() == 0) {
 					childManifest.setPixelHeight(metaData.get("Resolution").intValue());
 				}
+				segmentInfo.setResolutionHeight(metaData.get("Resolution").intValue());
 			}
 		}
 	}
@@ -339,12 +365,15 @@ public class VideoStreamConstructor {
 	 * @param request
 	 * @return
 	 */
-	private String genKey(String key, HttpRequestResponseInfo request) {
+	private String genKey(String key, HttpRequestResponseInfo request, UrlMatchDef urlMatchDef) {
 		if (key.contains("(")) {
-			String requestStr = manifestBuilder.buildUriNameKey(manifestCollection.getManifest().getMasterManifest().getSegUrlMatchDef(), request);
-			String[] matched = stringParse.parse(requestStr, key);
-			key = matched != null ? requestStr : key;
+		    String requestStr = manifestBuilder.buildUriNameKey(urlMatchDef, request);
+		    String[] matched = stringParse.parse(requestStr, key);
+		    if (matched != null) {
+		        key = requestStr;
+		    }
 		}
+
 		return key;
 	}
 	
@@ -356,89 +385,213 @@ public class VideoStreamConstructor {
 	 * @param manifestCollection
 	 * @return
 	 */
-	public ChildManifest locateChildManifestAndSegmentInfo(HttpRequestResponseInfo request, Double timeStamp, ManifestCollection manifestCollection) {
+	public ChildManifest locateChildManifestAndSegmentInfo(HttpRequestResponseInfo request, byte[] content, Double timeStamp, ManifestCollection manifestCollection) {
 		childManifest = null;
 		segmentInfo = null;
-		String key0 = manifestBuilder.locateKey(manifestCollection.getManifest().getSegUrlMatchDef(), request);
-		String key = genKey(key0, request);
-		Double timeKey =  timeStamp;
-		if ((childManifest = manifestCollection.getTimestampChildManifestMap().get(timeKey)) != null) {
-			LOG.debug("childManifest :" + childManifest);
-			if ((segmentInfo = childManifest.getSegmentList().get(key)) != null) {
-				return childManifest;
-			}
-		}
-		timeKey = request.getTimeStamp();
-		do {
-			if ((timeKey = manifestCollection.getTimestampChildManifestMap().lowerKey(timeKey)) != null) {
-				childManifest = manifestCollection.getTimestampChildManifestMap().get(timeKey);
-			}
-		} while (timeKey != null && (segmentInfo = childManifest.getSegmentList().get(key)) == null);
 		
-		if ((childManifest = manifestCollection.getSegmentChildManifestTrie().get(key0)) != null || (childManifest = manifestCollection.getChildManifest(key0)) != null) {
-			String brKey = buildByteRangeKey(request);
-			if (brKey != null) {
-				if ((segmentInfo = childManifest.getSegmentList().get(brKey.toLowerCase())) == null) {
-					segmentInfo = childManifest.getSegmentList().get(brKey.toUpperCase());
-				}
-			}
-			
-			if (segmentInfo == null && (segmentInfo = childManifest.getSegmentList().get(key)) == null) {
-				if (segmentInfo == null && (segmentInfo = childManifest.getSegmentList().get(manifestBuilder.buildUriNameKey(childManifest.getManifest().getSegUrlMatchDef(), request))) == null) {
-					if (segmentInfo == null && (segmentInfo = childManifest.getSegmentList().get(manifestBuilder.buildKey(request))) == null) {
-						LOG.debug("Failed to find SegmentInfo");
-					}
-				}
-			}
-			
-			LOG.debug("childManifest:"+childManifest);
-			
-		} else if (timeStamp != null) {
-			childManifest = manifestCollection.getTimestampChildManifestMap().get(timeStamp);
-			if (childManifest == null || !childManifest.getSegmentList().keySet().parallelStream().filter(segmentUriName -> {
-				return request.getObjUri().toString().contains(segmentUriName);
-			}).findFirst().isPresent()) {
-				childManifest = manifestCollection.getUriNameChildMap().entrySet().stream()
-						.filter(x -> {
-							return x.getValue().getSegmentList().keySet().parallelStream().filter(segmentUriName -> {
-								return request.getObjUri().toString().contains(segmentUriName);
-							}).findFirst().isPresent();
-						})
-						.findFirst().map(x -> x.getValue()).orElseGet(() -> null);
-			}
+		for (UrlMatchDef urlMatchDef : manifestCollection.getManifest().getSegUrlMatchDef()) {
+		    String key0 = manifestBuilder.locateKey(urlMatchDef, request);
+		    String key = genKey(key0, request, urlMatchDef);
+    
+    		Double timeKey =  timeStamp;
+    		if ((childManifest = manifestCollection.getTimestampChildManifestMap().get(timeKey)) != null) {
+    			LOG.debug("childManifest :" + childManifest);
+    			if ((segmentInfo = childManifest.getSegmentList().get(key)) != null) {
+    				return childManifest;
+    			}
+    		}
+    
+    		timeKey = request.getTimeStamp();
+    		do {
+    			if ((timeKey = manifestCollection.getTimestampChildManifestMap().lowerKey(timeKey)) != null) {
+    				childManifest = manifestCollection.getTimestampChildManifestMap().get(timeKey);
+    			}
+    		} while (timeKey != null && (segmentInfo = childManifest.getSegmentList().get(key)) == null);
+    		
+    		if ((childManifest = manifestCollection.getSegmentChildManifestTrie().get(key0)) != null || (childManifest = manifestCollection.getChildManifest(key0)) != null) {
+    		    boolean encoded = childManifest.getSegmentList().size() != 0 && !VideoType.DASH_IF.equals(childManifest.getManifest().getVideoType()) ? true : false;
+    			String brKey = buildByteRangeKey(request, encoded);
+    
+    			if (brKey != null) {
+    			    // If Segment list is empty, it is possible that the manifest is part of standard dash implementation.
+    			    // As part of standard dash implementation, we assume that the segment information exists in sidx box in the fragmented mp4 received in the response of the request.
+    		        populateSegmentInformation(request, content, childManifest);
+    
+    				if ((segmentInfo = childManifest.getSegmentList().get(brKey.toLowerCase())) == null) {
+    					segmentInfo = childManifest.getSegmentList().get(brKey.toUpperCase());
+    				}
+    			}
+    			
+    			if (segmentInfo == null && (segmentInfo = childManifest.getSegmentList().get(brKey)) == null) {
+    			    if (!encoded) {
+        			    Map.Entry<String, SegmentInfo> entry = childManifest.getSegmentList().select(brKey);
+        			    if (entry.getKey().split("-")[1].equals(brKey.split("-")[1])) {
+        			        segmentInfo = entry.getValue();
+        			    }
+    			    } else {
+    			        if (segmentInfo == null && (segmentInfo = childManifest.getSegmentList().get(manifestBuilder.buildUriNameKey(urlMatchDef, request))) == null) {
+        					if ((segmentInfo = childManifest.getSegmentList().get(manifestBuilder.buildKey(request))) == null) {
+        						LOG.debug("Failed to find SegmentInfo for url match: " + urlMatchDef);
+        					}
+        				}
+    			    }
 
-			if (childManifest == null) {
-				LOG.debug("ChildManifest wasn't found for segment request:" + request.getObjUri());
-				nullSegmentInfo();
-				return null;
-			}
-
-			segmentInfo = null;
-			if ((segmentInfo = childManifest.getSegmentList().get(key)) == null) {
-				childManifest.getSegmentList().entrySet()
-				.stream().filter(segmentInfoEntry -> segmentInfoEntry.getKey().contains(key))
-				.findFirst()
-				.map(segmentInfoEntry -> segmentInfo = segmentInfoEntry.getValue())
-				.orElseGet(() -> nullSegmentInfo());
-			}
+    			}
+    			
+    			LOG.debug("childManifest: " + childManifest.getUriName() + ", URL match def: " + urlMatchDef);
+    			break;
+    		} else if (timeStamp != null) {
+    			childManifest = manifestCollection.getTimestampChildManifestMap().get(timeStamp);
+    			if (childManifest == null || !childManifest.getSegmentList().keySet().parallelStream().filter(segmentUriName -> {
+    				return request.getObjUri().toString().contains(segmentUriName);
+    			}).findFirst().isPresent()) {
+    				childManifest = manifestCollection.getUriNameChildMap().entrySet().stream()
+    						.filter(x -> {
+    							return x.getValue().getSegmentList().keySet().parallelStream().filter(segmentUriName -> {
+    								return request.getObjUri().toString().contains(segmentUriName);
+    							}).findFirst().isPresent();
+    						})
+    						.findFirst().map(x -> x.getValue()).orElseGet(() -> null);
+    			}
+    
+    			if (childManifest == null) {
+    				LOG.debug("ChildManifest wasn't found for segment request: " + request.getObjUri() + ", URL match def: " + urlMatchDef);
+    				nullSegmentInfo();
+    				continue;
+    			}
+    
+    			segmentInfo = null;
+    			if ((segmentInfo = childManifest.getSegmentList().get(key)) == null) {
+    				childManifest.getSegmentList().entrySet()
+    				.stream().filter(segmentInfoEntry -> segmentInfoEntry.getKey().contains(key))
+    				.findFirst()
+    				.map(segmentInfoEntry -> segmentInfo = segmentInfoEntry.getValue())
+    				.orElseGet(() -> nullSegmentInfo());
+    			}
+    			break;
+    		}
 		}
+
 		return childManifest;
+	}
+
+	/**
+	 * Try to populate segment information to child manifest by locating sidx box in the fragmented mp4 type files
+	 * @param request
+	 * @param content
+	 * @param childManifest
+	 */
+	private void populateSegmentInformation(HttpRequestResponseInfo request, byte[] content, ChildManifest childManifest) {
+	    // Either the segment list could be empty initially or it could have one initialization segment information.
+	    // We only proceed to look for a sidx box if the condition is satisfied
+        if (childManifest.getSegmentList().size() < 2) {
+	        // Make sure corresponding entry map isn't already populated
+	        Map<String, Double> segmentMap = segmentInformationByFile.get(childManifest);
+	        if (segmentMap != null && segmentMap.size() != 0 ) {
+	            return;
+	        }
+
+	        if (segmentMap == null) {
+	            segmentMap = new LinkedHashMap<>();
+
+	            // Populate the chunk range to duration map with the first segment if it exists
+	            if (childManifest.getSegmentList().size() == 1) {
+	                segmentMap.put(childManifest.getSegmentList().firstKey(), 0.0d);
+	            }
+
+	            segmentInformationByFile.put(childManifest, segmentMap);
+	        }
+
+	        processSidxBox(content, childManifest);
+        }
+	}
+
+	private void processSidxBox(byte[] content, ChildManifest childManifest) {
+	    LOG.info("Processing sidx information for URI: " + childManifest.getUriName());
+
+	    File tempFile = null;
+	    IsoFile isoFile = null;
+	    try {
+	        // Write content data (mp4 file) to a temporary file 
+            tempFile = File.createTempFile("temp" + RANDOM.nextInt(), ".mp4");
+            FileUtils.writeByteArrayToFile(tempFile, content);
+
+            // Parse mp4 file and process Segment Box
+            isoFile = new IsoFile(tempFile);
+            for (Box box : isoFile.getBoxes()) {
+                if (box instanceof SegmentIndexBox) {
+                    SegmentIndexBox sidxBox = (SegmentIndexBox) box;
+
+                    int lastSegmentIndex = -1;
+                    // Update last segment index to last entry in the segment list for the corresponding child manifest's segments
+                    if (!childManifest.getSegmentList().isEmpty()) {
+                        lastSegmentIndex = Integer.valueOf(childManifest.getSegmentList().lastKey().split("-")[1]);
+                    }
+
+                    double timePos = 0;
+                    int idx = childManifest.getSegmentList().size();
+                    Map<String, Double> segmentInformationMap = segmentInformationByFile.get(childManifest);
+                    // Iterate through Segment Index Box entries
+                    for (SegmentIndexBox.Entry entry : sidxBox.getEntries()) {
+                        String key = String.valueOf((lastSegmentIndex + 1)) + "-" + String.valueOf((lastSegmentIndex + entry.getReferencedSize()));
+                        segmentInformationMap.put(key, (double)entry.getSubsegmentDuration()/sidxBox.getTimeScale());
+
+                        // Add SegmentInfo to Child Manifest
+                        SegmentInfo segmentInfo = new SegmentInfo();
+                        segmentInfo.setDuration((double)entry.getSubsegmentDuration()/sidxBox.getTimeScale());
+                        segmentInfo.setStartTime(timePos);
+                        segmentInfo.setSegmentID(idx++);
+                        segmentInfo.setContentType(childManifest.getContentType());
+                        segmentInfo.setVideo(childManifest.isVideo());
+                        segmentInfo.setSize(entry.getReferencedSize());
+                        segmentInfo.setQuality(String.valueOf(childManifest.getQuality()));
+                        childManifest.addSegment(key, segmentInfo);
+
+                        timePos += segmentInfo.getDuration();
+                        lastSegmentIndex += entry.getReferencedSize();
+                    }
+
+                    // Not expecting and will not process another Segment Index Box
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("Something went wrong while reading sidx box", e);
+        } finally {
+            if (tempFile != null && !tempFile.delete()) {
+                tempFile.deleteOnExit();
+            }
+
+            if (isoFile != null) {
+                try {
+                    isoFile.close();
+                } catch (IOException e) {
+                    LOG.warn("Unable to close iso file resource", e);
+                }
+            }
+        }
 	}
 
 	public SegmentInfo nullSegmentInfo() {
 		return segmentInfo = null;
 	}
 
-	public String buildByteRangeKey(HttpRequestResponseInfo request) {
+	private String buildByteRangeKey(HttpRequestResponseInfo request, boolean encoded) {
 		String key = null;
+
 		String[] range = stringParse.parse(request.getAllHeaders().toString(), "Range: bytes=(\\d+)-(\\d+)");
 		if (range != null) {
 			try {
-				key = String.format("%1$016X-%2$016X", Integer.valueOf(range[0]), Integer.valueOf(range[1]));
+			    if (encoded) {
+			        key = String.format("%1$016X-%2$016X", Integer.valueOf(range[0]), Integer.valueOf(range[1]));
+			    } else {
+			        key = range[0] + "-" + range[1];
+			    }
 			} catch (NumberFormatException e) {
 				LOG.error("Failed to create ByteRangeKey: ", e);
 			}
 		}
+
 		return key;
 	}
 
@@ -464,7 +617,7 @@ public class VideoStreamConstructor {
 		
 		String fileName;
 		if (!manifest.getManifestType().equals(ManifestType.MASTER)) {
-			fileName = manifestBuilder.buildUriNameKey(manifest.getMasterManifest().getUrlMatchDef(), request);
+			fileName = manifestBuilder.buildUriNameKey(request);
 		} else {
 			fileName = manifest.getVideoName();
 		}
@@ -740,7 +893,7 @@ public class VideoStreamConstructor {
 				content = null;
 			}
 		} catch (Exception e) {
-			LOG.error("Download FAILED :" + request.getObjUri()+e.getMessage());
+			LOG.error("Download FAILED :" + request.getObjUri(), e);
 			content = null;
 		}
 

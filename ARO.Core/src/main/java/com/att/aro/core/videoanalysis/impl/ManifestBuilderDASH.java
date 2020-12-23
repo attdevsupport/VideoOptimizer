@@ -15,10 +15,12 @@
 */
 package com.att.aro.core.videoanalysis.impl;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.apache.commons.lang.StringUtils;
@@ -33,7 +35,11 @@ import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.StringParse;
 import com.att.aro.core.videoanalysis.parsers.DashEncodedSegmentParser;
 import com.att.aro.core.videoanalysis.parsers.DashSegmentTimelineParser;
+import com.att.aro.core.videoanalysis.parsers.DashIFParser;
 import com.att.aro.core.videoanalysis.parsers.XmlManifestHelper;
+import com.att.aro.core.videoanalysis.parsers.dashif.AdaptationSet;
+import com.att.aro.core.videoanalysis.parsers.dashif.MPD;
+import com.att.aro.core.videoanalysis.parsers.dashif.Representation;
 import com.att.aro.core.videoanalysis.parsers.encodedsegment.AdaptationSetESL;
 import com.att.aro.core.videoanalysis.parsers.encodedsegment.MPDEncodedSegment;
 import com.att.aro.core.videoanalysis.parsers.encodedsegment.RepresentationESL;
@@ -43,7 +49,6 @@ import com.att.aro.core.videoanalysis.parsers.segmenttimeline.PeriodST;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.RepresentationST;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.SegmentST;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.SegmentTemplateST;
-import com.att.aro.core.videoanalysis.parsers.smoothstreaming.SSM;
 import com.att.aro.core.videoanalysis.pojo.ChildManifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
@@ -56,28 +61,16 @@ import lombok.NonNull;
 public class ManifestBuilderDASH extends ManifestBuilder {
 
 	protected static final Logger LOG = LogManager.getLogger(ManifestBuilderDASH.class.getName());
-	protected static final Pattern pattern = Pattern.compile("^(#[A-Z0-9\\-]*)");
 
 	ApplicationContext context = new AnnotationConfigApplicationContext(AROConfig.class);
-	IStringParse stringParse = context.getBean(IStringParse.class);
+	private IStringParse stringParse = context.getBean(IStringParse.class);
 
-	private MPDEncodedSegment mpdOut;
-	@SuppressWarnings("unused")
-	private SSM ssmOut;
-	private MPDSegmentTimeline mpdSegmentTimeline;
-	private boolean manifestLiveUpdate;
-	private boolean isDynamic;
-	private String[] encodedSegmentDurationList;
-	private Double segmentTimeScale;
-	private Pattern nameRegex = Pattern.compile("\\/([^\\/]*)\\/$");
-	private String[] urlName;
 	
 	@NonNull
 	private Double lastPresentationTimeOffset = -1D;
-	
-	@NonNull
-	private Double lastTimeLineStart = 0D;
+
 	private double initialStartTime;
+
 
 	public ManifestBuilderDASH() {
 	}
@@ -136,186 +129,270 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 		String encoding = manifestView.getManifest().getClass().getSimpleName();
 		manifestView.getManifestType();
 		
-		isDynamic = "dynamic".equals(manifestView.getManifest().getType());
+		boolean isDynamic = "dynamic".equals(manifestView.getManifest().getType());
 
 		switch (encoding) {
-		case "MPDSegmentTimeline":{ //  DASH SegmentTimeline
-			
-			newManifest.setVideoType(VideoType.DASH_SEGMENTTIMELINE);
-			mpdSegmentTimeline = (MPDSegmentTimeline) manifestView.getManifest();
-			if ((urlName = stringParse.parse(mpdSegmentTimeline.getBaseURL(), nameRegex)) != null) {
-				newManifest.setUrlName(urlName[0]);
-			}
-			mpdSegmentTimeline.getBaseURL();
-			List<PeriodST> periods = mpdSegmentTimeline.getPeriod();
-			if (periods.size() > 1) {
-				LOG.debug("period count :" + periods.size() + ", " + newManifest.getUriStr());
-				return;
-			}
-			DashSegmentTimelineParser parseDashdynamic = new DashSegmentTimelineParser(mpdSegmentTimeline, newManifest, manifestCollection, childManifest);
-			
-			List<AdaptationSetTL> adaptationSetList = parseDashdynamic.getAdaptationSet();
-			for (AdaptationSetTL adaptationSet : adaptationSetList) {
-				ContentType contentType = manifest.matchContentType(adaptationSet.getContentType());
-				if (adaptationSet.getContentType().equals("text")) {
-					// skipping Closed Caption for now
-					continue;
-				}
-				SegmentTemplateST segmentTemplate = adaptationSet.getSegmentTemplate();
-				List<SegmentST> segmentList = segmentTemplate.getSegmentTimeline().getSegmentList();
-				
-				String initialization = segmentTemplate.getInitialization(); // segment 0 'moov'
-				String media = segmentTemplate.getMedia(); // segment x 'moof'
-				Double presentationTimeOffset = StringParse.stringToDouble(segmentTemplate.getPresentationTimeOffset(), 0);
-				Double timescale = StringParse.stringToDouble(segmentTemplate.getTimescale(), 1);
-				Double timeLineStart = StringParse.stringToDouble(segmentList.get(0).getStartTime(), 0);
-				
-				if (isDynamic && (lastPresentationTimeOffset == -1D || ((Double.compare(lastPresentationTimeOffset, presentationTimeOffset) != 0)))) {
-					lastPresentationTimeOffset = presentationTimeOffset;
-					switchManifestCollection(newManifest, key, manifest.getRequestTime());
-					manifestLiveUpdate = false;
-				} else if (isDynamic) {
-					manifestLiveUpdate = isDynamic;
-					LOG.info("update manifest");
-				} else {
-					switchManifestCollection(newManifest, key, manifest.getRequestTime());
-					manifestLiveUpdate = false;
-				}
-				
-				manifest.setTimeScale(timescale);
-				Integer qualityID = 0;
+    		case "MPDSegmentTimeline":
+    		    //  DASH SegmentTimeline
+    			newManifest.setVideoType(VideoType.DASH_SEGMENTTIMELINE);
+    			MPDSegmentTimeline mpdSegmentTimeline = (MPDSegmentTimeline) manifestView.getManifest();
 
-				for (RepresentationST representation : adaptationSet.getRepresentation()) {
-					int segmentID = 0;
-					qualityID++;
-					String rid = representation.getContentID();
-					String childUriName = media.replaceAll("\\$(RepresentationID)\\$", rid).replaceAll("\\$(Time)\\$", "(\\\\d+)"); // generate REGEX for locating Byte position
-					
-					if (manifestLiveUpdate && ((childManifest = manifestCollection.getUriNameChildMap().get(childUriName)) != null)) {
-						PatriciaTrie<SegmentInfo> segmentInfoList = childManifest.getSegmentList();
-						for (String segmentKey : segmentInfoList.keySet()) {
-							SegmentInfo segmentInfo = segmentInfoList.get(segmentKey);
-							int sid = segmentInfo.getSegmentID();
-							if (segmentID < sid) {
-								segmentID = sid + 1;
-							}
-						}
-					} else {
-						// segment 1-end (moof) a regex for all
-						childManifest = createChildManifest(newManifest, "", childUriName);
-						childManifest.setPixelHeight(StringParse.stringToDouble(representation.getHeight(), 0).intValue());
-						childManifest.setPixelWidth(StringParse.stringToDouble(representation.getWidth(), 0).intValue());
+    			Pattern nameRegex = Pattern.compile("\\/([^\\/]*)\\/$");
+    			String[] urlName;
+    			if ((urlName = stringParse.parse(mpdSegmentTimeline.getBaseURL(), nameRegex)) != null) {
+    				newManifest.setUrlName(urlName[0]);
+    			}
 
-						childManifest.setBandwidth(StringParse.stringToDouble(representation.getBandwidth(), 0));
-						childManifest.setQuality(qualityID);
+    			List<PeriodST> periods = mpdSegmentTimeline.getPeriod();
+    			if (periods.size() > 1) {
+    				LOG.debug("period count :" + periods.size() + ", " + newManifest.getUriStr());
+    				return;
+    			}
+    			DashSegmentTimelineParser parseDashdynamic = new DashSegmentTimelineParser(mpdSegmentTimeline, newManifest, manifestCollection, childManifest);
+    			
+    			List<AdaptationSetTL> adaptationSetList = parseDashdynamic.getAdaptationSet();
+    			for (AdaptationSetTL adaptationSet : adaptationSetList) {
+    				ContentType contentType = manifest.matchContentType(adaptationSet.getContentType());
+    				if (adaptationSet.getContentType().equals("text")) {
+    					// skipping Closed Caption for now
+    					continue;
+    				}
+    				SegmentTemplateST segmentTemplate = adaptationSet.getSegmentTemplate();
+    				List<SegmentST> segmentList = segmentTemplate.getSegmentTimeline().getSegmentList();
+    				
+    				String initialization = segmentTemplate.getInitialization(); // segment 0 'moov'
+    				String media = segmentTemplate.getMedia(); // segment x 'moof'
+    				Double presentationTimeOffset = StringParse.stringToDouble(segmentTemplate.getPresentationTimeOffset(), 0);
+    				Double timescale = StringParse.stringToDouble(segmentTemplate.getTimescale(), 1);
+    				
+    				boolean manifestLiveUpdate;
+    				if (isDynamic && (lastPresentationTimeOffset == -1D || ((Double.compare(lastPresentationTimeOffset, presentationTimeOffset) != 0)))) {
+    					lastPresentationTimeOffset = presentationTimeOffset;
+    					switchManifestCollection(newManifest, key, manifest.getRequestTime());
+    					manifestLiveUpdate = false;
+    				} else if (isDynamic) {
+    					manifestLiveUpdate = isDynamic;
+    					LOG.info("update manifest");
+    				} else {
+    					switchManifestCollection(newManifest, key, manifest.getRequestTime());
+    					manifestLiveUpdate = false;
+    				}
+    				
+    				manifest.setTimeScale(timescale);
+    				Integer qualityID = 0;
+    
+    				for (RepresentationST representation : adaptationSet.getRepresentation()) {
+    					int segmentID = 0;
+    					qualityID++;
+    					String rid = representation.getContentID();
+    					String childUriName = media.replaceAll("\\$(RepresentationID)\\$", rid).replaceAll("\\$(Time)\\$", "(\\\\d+)"); // generate REGEX for locating Byte position
+    					
+    					if (manifestLiveUpdate && ((childManifest = manifestCollection.getUriNameChildMap().get(childUriName)) != null)) {
+    						PatriciaTrie<SegmentInfo> segmentInfoList = childManifest.getSegmentList();
+    						for (String segmentKey : segmentInfoList.keySet()) {
+    							SegmentInfo segmentInfo = segmentInfoList.get(segmentKey);
+    							int sid = segmentInfo.getSegmentID();
+    							if (segmentID < sid) {
+    								segmentID = sid + 1;
+    							}
+    						}
+    					} else {
+    						// segment 1-end (moof) a regex for all
+    						childManifest = createChildManifest(newManifest, "", childUriName);
+    						childManifest.setPixelHeight(StringParse.stringToDouble(representation.getHeight(), 0).intValue());
+    						childManifest.setPixelWidth(StringParse.stringToDouble(representation.getWidth(), 0).intValue());
+    
+    						childManifest.setBandwidth(StringParse.stringToDouble(representation.getBandwidth(), 0));
+    						childManifest.setQuality(qualityID);
+    
+    						if (!StringUtils.isEmpty(initialization)) {
+    							// segment 0 (moov)
+    							String moovUriName = initialization.replaceAll("\\$(RepresentationID)\\$", rid);
+    							manifestCollection.addToUriNameChildMap(moovUriName, childManifest);
+    						}
+    						manifestCollection.addToSegmentChildManifestTrie(childManifest.getUriName(), childManifest);
+    					}
+    
+    					String segmentUriName;
+    					SegmentInfo segmentInfo;
+    					
+    					Double timePos    =  0D;
+    					Double duration   =  0D;
+    					Double repetition =  0D;
+    							
+    					if (segmentList.size() > 0) {
+    						SegmentST segment0 = segmentList.get(0);
+    
+    						timePos = StringParse.stringToDouble(segment0.getStartTime(), 0);
+    						if (childManifest.getInitialStartTime() == -1) {
+    							initialStartTime = timePos;
+    							childManifest.setInitialStartTime(initialStartTime);
+    						}
+    
+    						// segment moov
+    						segmentInfo = genSegmentInfo(contentType, timescale, qualityID, segmentID, timePos - initialStartTime, 0D);
+    						segmentUriName = initialization.replaceAll("\\$(.*)\\$", rid);
+    						LOG.debug(String.format("moov >> %d :%s", segmentID, segmentUriName));
 
-						if (!StringUtils.isEmpty(initialization)) {
-							// segment 0 (moov)
-							String moovUriName = initialization.replaceAll("\\$(RepresentationID)\\$", rid);
-							manifestCollection.addToUriNameChildMap(moovUriName, childManifest);
-						}
-						manifestCollection.addToSegmentChildManifestTrie(childManifest.getUriName(), childManifest);
-					}
+							masterManifest.getSegUrlMatchDef().add(defineUrlMatching(segmentUriName));
+    						addToSegmentManifestCollectionMap(segmentUriName);
+    
+    						// segments moof
+    						segmentID = 1;
+    						for (SegmentST segment : segmentList) {
+    							duration = StringParse.stringToDouble(segment.getDuration(), 0);
+    							repetition = StringParse.stringToDouble(segment.getRepeat(), 0);
+    							for (Double countdown = repetition; countdown > -1; countdown--) {
+    								segmentInfo = genSegmentInfo(contentType, timescale, qualityID, segmentID, timePos - initialStartTime, duration);
+    								segmentUriName = media.replaceAll("\\$(RepresentationID)\\$", rid).replaceAll("\\$(Time)\\$", String.format("%.0f", timePos));
+								    masterManifest.getSegUrlMatchDef().add(defineUrlMatching(segmentUriName));
+    								LOG.debug(String.format("moof >> %d :%s", segmentID, segmentUriName));
+    								
+    								segmentInfo = childManifest.addSegment(segmentUriName, segmentInfo);
+    								timePos += duration;
+    								segmentID = segmentInfo.getSegmentID() + 1;
+    							}
+    						}
+    					}
+    
+    					addToSegmentManifestCollectionMap(childManifest.getUriName());
+    
+    				}
 
-					String segmentUriName;
-					SegmentInfo segmentInfo;
-					
-					Double timePos    =  0D;
-					Double duration   =  0D;
-					Double repetition =  0D;
-							
-					if (segmentList.size() > 0) {
-						SegmentST segment0 = segmentList.get(0);
+    				if (getChildManifest() == null) {
+    					childManifest = createChildManifest(newManifest, "", newManifest.getUriStr());
+    				}
+    				if (adaptationSet.getContentType().equals("audio")) {
+    					if (adaptationSet.getAudioChannelConfiguration() != null) {
+    						childManifest.setChannels(adaptationSet.getAudioChannelConfiguration().getValue());
+    					}
+    				}
+    			}
+    			break;
+    		case "MPDEncodedSegment":
+    		    // DASH-VOD EncodedSegmentList
+    			switchManifestCollection(newManifest, key, manifest.getRequestTime());
+    			newManifest.setVideoType(VideoType.DASH_ENCODEDSEGMENTLIST);
+    			MPDEncodedSegment mpdEncodedSegment = (MPDEncodedSegment) manifestView.getManifest();
+    			DashEncodedSegmentParser dashEncodedSegmentParser = new DashEncodedSegmentParser(mpdEncodedSegment, newManifest, manifestCollection, childManifest);
+    			
+    
+    			List<AdaptationSetESL> adaptationSet = dashEncodedSegmentParser.getAdaptationSet();
+    			String[] encodedSegmentDurationList = null;
+    			Double segmentTimeScale = null;
+    			for (AdaptationSetESL adaptation : adaptationSet) {
+    
+    				ContentType contentType = manifest.matchContentType(adaptation.getContentType());
+    
+    				if (adaptation.getEncodedSegmentDurations() != null) {
+    					segmentTimeScale = StringParse.stringToDouble(adaptation.getEncodedSegmentDurations().getTimescale(), 1);
+    					encodedSegmentDurationList = adaptation.getEncodedSegmentDurations().getEncodedSegmentDurationList().split(";");
+    				}
+    				SortedMap<Double, RepresentationESL> sortedRepresentationESL = sortRepresentationByBandwidth(adaptation.getRepresentation());
 
-						timePos = StringParse.stringToDouble(segment0.getStartTime(), 0);
-						if (childManifest.getInitialStartTime() == -1) {
-							initialStartTime = timePos;
-							childManifest.setInitialStartTime(initialStartTime);
-						}
+    				Integer qualityID = 0;
+    				for (RepresentationESL representation : sortedRepresentationESL.values()) {
+    					if (representation.getEncodedSegment() != null) {
+    						qualityID++;
+    
+    						manifest.setTimeScale(StringParse.stringToDouble(representation.getEncodedSegment().getTimescale(), 1));
+    
+    						LOG.debug(String.format("representation.getBandwidth() %d:%s", qualityID, representation.getBandwidth()));
+    						generateChildManifestFromEncodedSegmentList(newManifest, contentType, qualityID, representation, encodedSegmentDurationList, segmentTimeScale);
+    						addToSegmentManifestCollectionMap(childManifest.getUriName());
+    					}
+    				}
+    			}
+    			break;
+    		case "MPD":
+    		    // DASH-IF parser implementation
+                switchManifestCollection(newManifest, key, manifest.getRequestTime());
+                newManifest.setVideoType(VideoType.DASH_IF);
+                MPD mpd = (MPD) manifestView.getManifest();
+                DashIFParser dashIFParser = new DashIFParser(VideoType.DASH, mpd, newManifest, manifestCollection, childManifest);
+                List<AdaptationSet> adaptationList = dashIFParser.getAdaptationSet();
 
-						// segment moov
-						segmentInfo = genSegmentInfo(contentType, timescale, qualityID, segmentID, timePos - initialStartTime, 0D);
-						segmentUriName = initialization.replaceAll("\\$(.*)\\$", rid);
-						LOG.debug(String.format("moov >> %d :%s", segmentID, segmentUriName));
-						if (newManifest.getSegUrlMatchDef() == null) {
-							masterManifest.setSegUrlMatchDef(defineUrlMatching(newManifest, segmentUriName));
-						}
-						addToSegmentManifestCollectionMap(segmentUriName);
+                if (adaptationList != null) {
+                    int audioQualityId = 0;
+                    int videoQualityId = 0;
+                    for (AdaptationSet adaptation : adaptationList) {
+                        ContentType contentType = manifest.matchContentType(adaptation.getContentType());
 
-						// segments moof
-						segmentID = 1;
-						for (SegmentST segment : segmentList) {
-							duration = StringParse.stringToDouble(segment.getDuration(), 0);
-							repetition = StringParse.stringToDouble(segment.getRepeat(), 0);
-							for (Double countdown = repetition; countdown > -1; countdown--) {
-								segmentInfo = genSegmentInfo(contentType, timescale, qualityID, segmentID, timePos - initialStartTime, duration);
-								segmentUriName = media.replaceAll("\\$(RepresentationID)\\$", rid).replaceAll("\\$(Time)\\$", String.format("%.0f", timePos));
-								if (newManifest.getSegUrlMatchDef() == null) {
-									masterManifest.setSegUrlMatchDef(defineUrlMatching(newManifest, segmentUriName));
-								}
-								LOG.debug(String.format("moof >> %d :%s", segmentID, segmentUriName));
-								
-								segmentInfo = childManifest.addSegment(segmentUriName, segmentInfo);
-								timePos += duration;
-								segmentID = segmentInfo.getSegmentID() + 1;
-							}
-						}
-					}
+                        // TODO: Add audio channel configuration information
 
-					addToSegmentManifestCollectionMap(childManifest.getUriName());
+                        // Sort the representations by bandwidth to assign incremental quality id
+                        List<Representation> sortedRepresentations = adaptation.getRepresentations().stream().sorted(new Comparator<Representation>() {
+                                                                         @Override
+                                                                         public int compare(Representation o1, Representation o2) {
+                                                                             if (o1 == null || o2 == null) {
+                                                                                 return 0;
+                                                                             }
+                                                                             return o1.getBandwidth().compareTo(o2.getBandwidth());
+                                                                         }
+                                                                     }).collect(Collectors.toList());
+                        for (Representation representation : sortedRepresentations) {
+                            if (representation.getSegmentBase() != null) {
+                                if (representation.getSegmentBase().getTimescale() != null) {
+                                    // TODO: Setting timescale value for manifest is overwritten every time a child manifest is created for individual representation.
+                                    // Timescale should be set on the Child Manifest level. Revisit this some time later.
+                                    manifest.setTimeScale(representation.getSegmentBase().getTimescale().doubleValue());
+                                }
 
-				}
-				lastTimeLineStart = timeLineStart;
-				if (getChildManifest() == null) {
-					childManifest = createChildManifest(newManifest, "", newManifest.getUriStr());
-				}
-				if (adaptationSet.getContentType().equals("audio")) {
-					if (adaptationSet.getAudioChannelConfiguration() != null) {
-						childManifest.setChannels(adaptationSet.getAudioChannelConfiguration().getValue());
-					}
-				}
-			}
-		}
-		break;
-		
-		case "MPDEncodedSegment":{ // DASH-VOD EncodedSegmentList
+                                // Generate child manifests for each individual representation
+                                childManifest = createChildManifest(newManifest, "", representation.getBaseURL());
+                                if (ContentType.AUDIO.equals(contentType)) {
+                                    childManifest.setQuality(++audioQualityId);
+                                } else if (ContentType.VIDEO.equals(contentType)) {
+                                    childManifest.setQuality(++videoQualityId);
+                                }
+                                childManifest.setBandwidth(representation.getBandwidth());
+                                childManifest.setCodecs(representation.getCodecs());
+                                childManifest.setVideo(ContentType.VIDEO.equals(contentType));
+                                childManifest.setContentType(contentType);
+                                if (representation.getHeight() != null) {
+                                    childManifest.setPixelHeight(representation.getHeight());
+                                }
+                                if (representation.getWidth() != null) {
+                                    childManifest.setPixelWidth(representation.getWidth());
+                                }
+                                if (representation.getAudioChannelConfiguration() != null) {
+                                    childManifest.setChannels(representation.getAudioChannelConfiguration().getValue());
+                                }
 
-			switchManifestCollection(newManifest, key, manifest.getRequestTime());
-			newManifest.setVideoType(VideoType.DASH_ENCODEDSEGMENTLIST);
-			mpdOut = (MPDEncodedSegment) manifestView.getManifest();
-			DashEncodedSegmentParser dashEncodedSegmentParser = new DashEncodedSegmentParser(mpdOut, newManifest, manifestCollection, childManifest);
-			
+                                // Set first segment info to the child manifest
+                                SegmentInfo segmentInfo = new SegmentInfo();
+                                segmentInfo.setDuration(0);
+                                segmentInfo.setStartTime(0);
+                                segmentInfo.setSegmentID(0);
+                                segmentInfo.setContentType(contentType);
+                                segmentInfo.setVideo(childManifest.isVideo());
+                                segmentInfo.setQuality(String.valueOf(childManifest.getQuality()));
+                                // Add chunk size for the first initializing segment
+                                int chunkSize = 0;
+                                if (representation.getSegmentBase().getIndexRange() != null) {
+                                    chunkSize += calcSizeFromSegmentElement(representation.getSegmentBase().getIndexRange(), false);
+                                }
+                                if (representation.getSegmentBase().getInitialization() != null) {
+                                    chunkSize += calcSizeFromSegmentElement(representation.getSegmentBase().getInitialization().getRange(), false);
+                                }
+                                segmentInfo.setSize(chunkSize);
+                                // Add segment to child manifest segment list
+                                childManifest.addSegment("0-" + String.valueOf(chunkSize != 0 ? chunkSize-1 : 0), segmentInfo);
 
-			List<AdaptationSetESL> adaptationSetList = dashEncodedSegmentParser.getAdaptationSet();
-			for (AdaptationSetESL adaptationSet : adaptationSetList) {
+                                masterManifest.getSegUrlMatchDef().add(defineUrlMatching(childManifest.getUriName()));
+                                manifestCollection.addToSegmentChildManifestTrie(childManifest.getUriName(), childManifest);
+                                addToSegmentManifestCollectionMap(childManifest.getUriName());
+                            } else if (representation.getSegmentList() != null || representation.getSegmentTemplate() != null) {
+                                // TOOD: Implement Segment List or Template parser
+                                LOG.warn("MPD: Represenation segment base is null but segment list or template is not null!");
+                            }
+                        }
+                    }
+                }
 
-				ContentType contentType = manifest.matchContentType(adaptationSet.getContentType());
-
-				if (adaptationSet.getEncodedSegmentDurations() != null) {
-					segmentTimeScale = StringParse.stringToDouble(adaptationSet.getEncodedSegmentDurations().getTimescale(), 1);
-					encodedSegmentDurationList = adaptationSet.getEncodedSegmentDurations().getEncodedSegmentDurationList().split(";");
-				}
-				SortedMap<Double, RepresentationESL> sortedRepresentationESL = sortRepresentationByBandwidth(adaptationSet.getRepresentation());
-				
-				Integer qualityID = 0;
-				for (RepresentationESL representation : sortedRepresentationESL.values()) {
-					if (representation.getEncodedSegment() != null) {
-						qualityID++;
-
-						manifest.setTimeScale(StringParse.stringToDouble(representation.getEncodedSegment().getTimescale(), 1));
-
-						LOG.info(String.format("representation.getBandwidth() %d:%s", qualityID, representation.getBandwidth()));
-						generateChildManifestFromEncodedSegmentList(newManifest, contentType, qualityID, representation);
-						addToSegmentManifestCollectionMap(childManifest.getUriName());
-					}
-				}
-			}
-		}
-		break;
-		
-		default:
-			LOG.error("Encoding not yet supported :" + encoding);
-			break;
+                break;
+    		default:
+    			LOG.error("Encoding not yet supported :" + encoding);
 		}
 	}
 
@@ -330,7 +407,8 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 		return tempSegmentInfo;
 	}
 
-	public void generateChildManifestFromEncodedSegmentList(Manifest newManifest, ContentType contentType, Integer qualityID, RepresentationESL representation) {
+	public void generateChildManifestFromEncodedSegmentList(Manifest newManifest, ContentType contentType, Integer qualityID,
+	        RepresentationESL representation, String[] encodedSegmentDurationList, Double segmentTimeScale) {
 		childManifest = createChildManifest(newManifest, "", representation.getBaseURL());
 		childManifest.setBandwidth(StringParse.stringToDouble(representation.getBandwidth(), 0));
 		childManifest.setCodecs(representation.getCodecs());
@@ -361,20 +439,19 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 			segmentInfo.setSegmentID(idx);
 			segmentInfo.setContentType(contentType);
 			segmentInfo.setVideo("video".equalsIgnoreCase(contentType.toString()));
-			segmentInfo.setSize(calcSizeFromEncodedSegmentElement(encodedSegmentElement));
+			segmentInfo.setSize(calcSizeFromSegmentElement(encodedSegmentElement, true));
 			segmentInfo.setQuality(qualityID.toString());
 			timePos += duration;
 
 			childManifest.addSegment(encodedSegmentElement, segmentInfo);
 
 		}
-		if (newManifest.getSegUrlMatchDef() == null) {
-			masterManifest.setSegUrlMatchDef(defineUrlMatching(newManifest, childManifest.getUriName()));
-		}
+
+		masterManifest.getSegUrlMatchDef().add(defineUrlMatching(childManifest.getUriName()));
 		manifestCollection.addToSegmentChildManifestTrie(childManifest.getUriName(), childManifest);
 	}
 
-	public double calcDuration(String hex, Double duration, Double timescale) {
+	private double calcDuration(String hex, Double duration, Double timescale) {
 		if (hex != null) {
 			duration = (double) Integer.parseInt(hex, 16);
 		}
@@ -388,16 +465,22 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 	 * @param segment
 	 * @return int size
 	 */
-	public int calcSizeFromEncodedSegmentElement(String encodedSegmentElement) {
+	private int calcSizeFromSegmentElement(String segmentElement, boolean encoded) {
+	    int size = 0;
 		try {
-			Long beginByte = Long.valueOf(encodedSegmentElement.substring(0, 16), 16);
-			Long endByte = Long.valueOf(encodedSegmentElement.substring(17, 33), 16);
-			int size = (int) (endByte - beginByte);
-			return size;
+		    if (encoded) {
+    			Long beginByte = Long.valueOf(segmentElement.substring(0, 16), 16);
+    			Long endByte = Long.valueOf(segmentElement.substring(17, 33), 16);
+    			size = (int) (endByte - beginByte);
+		    } else {
+		        String[] rangeValues = segmentElement.split("-");
+                size += Integer.valueOf(rangeValues[1]) - Integer.valueOf(rangeValues[0]) + 1;
+		    }
 		} catch (NumberFormatException e) {
 			LOG.error("failed to convert Hex to Long :", e);
-			return 0;
 		}
+
+		return size;
 	}
 
 	/**<pre>

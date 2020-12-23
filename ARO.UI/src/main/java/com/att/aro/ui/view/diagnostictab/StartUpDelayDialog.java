@@ -142,23 +142,35 @@ public class StartUpDelayDialog extends JDialog {
 	public StartUpDelayDialog(GraphPanel parentPanel, double maxVideoTime, VideoStream videoStream,
 			List<UserEvent> userEventList, SegmentPanel segmentTablePanel) {
 		this.parentPanel = parentPanel;
-		this.segmentTablePanel=segmentTablePanel;
+		this.segmentTablePanel = segmentTablePanel;
 		DiagnosticsTab parent = parentPanel.getGraphPanelParent();
 		mainFrame = (MainFrame) parent.getAroView();
 		player = parent.getVideoPlayer();
 		vcPlot = parentPanel.getVcPlot();
 		chunkSelectionList = new TreeMap<>();
 		userEventSelectionList = new TreeMap<>();
-		this.allChunks.addAll(new ArrayList<VideoEvent>(videoStream.getVideoEventList().values()));
+		this.allChunks.addAll(new ArrayList<VideoEvent>(videoStream.getVideoEventMap().values()));
 		if (!userEventList.isEmpty()) {
+			double pivotTime = -1.0;
+			int totalUserEvents = 0;
+			int skipEvent = 0;
 			for (UserEvent userEvent : userEventList) {
 				if (UserEventType.SCREEN_TOUCH.equals(userEvent.getEventType())) {
-					allListUserEvent.add(userEvent);
+					totalUserEvents++;
+					double deltaTime = userEvent.getPressTime() - pivotTime;
+					if (deltaTime >= 1) {
+						allListUserEvent.add(userEvent);
+						pivotTime = userEvent.getPressTime();
+					} else {
+						LOGGER.debug("skip time event : " + userEvent.getPressTime() + " delta time: " + deltaTime);
+						skipEvent++;
+					}
 				}
 			}
+			LOGGER.debug("Skip event: " + skipEvent + " Total touch event: " + totalUserEvents);
 		}
 		createSliderDialog(maxVideoTime, player, vcPlot, 0);
-		if(!allListUserEvent.isEmpty()) {
+		if (!allListUserEvent.isEmpty()) {
 			dialogLaunchUserEvent();
 		}
 		dialogLaunch();
@@ -261,6 +273,8 @@ public class StartUpDelayDialog extends JDialog {
 			userEventTableModel.setColumnCount(SLIDERDIALOG_COLUMN_COUNT);
 
 			userEventJTable = new JTable(userEventTableModel) {
+				private static final long serialVersionUID = 1L;
+
 				@Override
 				public TableCellRenderer getCellRenderer(int row, int column) {
 					if (getValueAt(row, column) instanceof Boolean) {
@@ -322,8 +336,7 @@ public class StartUpDelayDialog extends JDialog {
 
 			playRequestedTime = new JTextField("       0");
 			playRequestedTime.setText(Double.toString(getStartTime()));
-			playRequestedTime
-					.addActionListener(startTimeTextFieldActionListener(playRequestedTime, userEventSlider));
+			playRequestedTime.addActionListener(startTimeTextFieldActionListener(playRequestedTime, userEventSlider));
 			playRequestedTime.addKeyListener(new KeyListener() {
 
 				@Override
@@ -409,6 +422,8 @@ public class StartUpDelayDialog extends JDialog {
 		tableModel.setColumnCount(SLIDERDIALOG_COLUMN_COUNT);
 		// JTable Renderer listeners
 		jTable = new JTable(tableModel) {
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			public TableCellRenderer getCellRenderer(int row, int column) {
 				if (getValueAt(row, column) instanceof Boolean) {
@@ -766,12 +781,11 @@ public class StartUpDelayDialog extends JDialog {
 	}
 
 	private double getUserEventTimeStamp(UserEventJTableItem itemObject) {
-		return itemObject.getUserEvent().getPressTime() != 0
-				? itemObject.getUserEvent().getPressTime()
+		return itemObject.getUserEvent().getPressTime() != 0 ? itemObject.getUserEvent().getPressTime()
 				: itemObject.getUserEvent().getReleaseTime();
-		
+
 	}
-	
+
 	public void selectSegment() {
 		int column = jTable.getSelectedColumn();
 		int row = jTable.getSelectedRow();
@@ -931,14 +945,10 @@ public class StartUpDelayDialog extends JDialog {
 				if (null != videoStream) {
 					allChunks.clear();
 					allChunks = new ArrayList<VideoEvent>();
-					if (videoStream.getManifest().getVideoFormat() == VideoFormat.MPEG4) {
-						for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
-							if (videoEvent.getSegmentID() != 0) {
-								allChunks.add(videoEvent);
-							}
+					for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
+						if (videoEvent.isNormalSegment() && videoEvent.isSelected()) {
+							allChunks.add(videoEvent);
 						}
-					} else {
-						allChunks = new ArrayList<VideoEvent>(videoStream.getVideoEventsBySegment());
 					}
 					listSegments.clear();
 					populateList();
@@ -993,6 +1003,15 @@ public class StartUpDelayDialog extends JDialog {
 					videoSegmentAnalyzer.propagatePlaytime(startupTime, segmentChosen.getVideoEvent(), videoStream);
 
 					segmentChosen.getVideoEvent().setPlayTime(startupTime);
+					videoStream.setVideoPlayBackTime(startupTime);
+					
+					for (VideoStream stream : segmentTablePanel.getVideoStreamMap()) {
+						if (!stream.equals(videoStream)) {
+							stream.setCurrentStream(false);
+						} else {
+							stream.setCurrentStream(true);
+						}
+					}
 					if (!allListUserEvent.isEmpty()) {
 						segmentChosen.getVideoEvent().setPlayRequestedTime(Double.valueOf(playRequestedTime.getText()));
 						videoStream.setPlayRequestedTime(Double.valueOf(playRequestedTime.getText()));
@@ -1037,9 +1056,9 @@ public class StartUpDelayDialog extends JDialog {
 						getGraphPanel().getTraceData(), startupTime, segmentChosen.getVideoEvent());
 
 				getGraphPanel().setTraceData(traceData);
-				mainFrame.getVideoTab().refreshLocal(traceData);
+
 				VideoManifestPanel videoManifestPanel = segmentTablePanel.getVideoManifestPanel();
-				videoManifestPanel.reload(segmentTablePanel.getAnalyzerResult(), segmentChosen.getVideoEvent());
+				videoManifestPanel.refresh(segmentTablePanel.getAnalyzerResult());
 
 				mainFrame.refreshBestPracticesTab();
 				dispose();
@@ -1095,7 +1114,7 @@ public class StartUpDelayDialog extends JDialog {
 				this.videoStream = videoStream;
 				this.manifestName = videoStream.getManifest().getVideoName() + ", "
 						+ resourceBundle.getString("sliderdialog.manifest.segmentcount")
-						+ String.valueOf(videoStream.getVideoEventList().size());
+						+ String.valueOf(videoStream.getVideoEventMap().size());
 			}
 		}
 
@@ -1110,6 +1129,7 @@ public class StartUpDelayDialog extends JDialog {
 	}
 
 	private class UserEventDataModel extends DefaultTableModel {
+	private static final long serialVersionUID = 1L;
 
 		@Override
 		public void setValueAt(Object aValue, int row, int col) {
@@ -1144,7 +1164,7 @@ public class StartUpDelayDialog extends JDialog {
 		UserEventJTableItem(UserEvent userEvent, int row) {
 			StringBuffer sb = new StringBuffer();
 			sb.append("User Event type: ").append(userEvent.getEventType());
-			sb.append(", Time: ").append(String.format("%.2f", userEvent.getPressTime()));
+			sb.append(", Time: ").append(String.format("%.2f", userEvent.getPressTime())).append(" s");
 
 			this.value = sb.toString();
 			this.row = row;

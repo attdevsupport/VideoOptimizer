@@ -49,9 +49,6 @@ public class BpDetailSecurityPanel extends BpDetail {
 		// Unsecure SSL Version
 		addPanel(row++, new BpDetailItem("security.unsecureSSLVersion", BestPracticeType.UNSECURE_SSL_VERSION, new BpSecurityUnsecureSSLVersionTablePanel()));
 		
-		// Weak Cipher
-		addPanel(row++, new BpDetailItem("security.weakCipher", BestPracticeType.WEAK_CIPHER, new BpSecurityWeakCipherTablePanel()));
-		
 		// Forward Secrecy
 		addPanel(row++, new BpDetailItem("security.forwardSecrecy", BestPracticeType.FORWARD_SECRECY, new BpSecurityForwardSecrecyTablePanel()));
 		

@@ -17,7 +17,6 @@ package com.att.aro.ui.view.diagnostictab;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -43,7 +42,6 @@ import java.util.TreeMap;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -78,7 +76,6 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoFormat;
@@ -111,7 +108,6 @@ import com.att.aro.ui.view.diagnostictab.plot.UserEventPlot;
 import com.att.aro.ui.view.diagnostictab.plot.VideoChunksPlot;
 import com.att.aro.ui.view.diagnostictab.plot.WakeLockPlot;
 import com.att.aro.ui.view.diagnostictab.plot.WifiPlot;
-import com.att.aro.ui.view.video.IVideoPlayer;
 import com.att.aro.view.images.Images;
 
 /**
@@ -509,7 +505,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			AnalysisFilter filter = filteredSessionTraceData.getAnalyzerResult().getFilter();
 			filter.setTimeRange(timeRange);
 			filteredSessionTraceData.getAnalyzerResult().setFilter(filter);
-			Statistic stat = packetanalyzer.getStatistic(packetsForSelectedSession);
+			Statistic stat = packetanalyzer.getStatistic(tcpsessionsList);
 			int totaltemp = 0;
 			for (Session byteCountSession : tcpsessionsList) {
 				totaltemp += byteCountSession.getBytesTransferred();
@@ -774,8 +770,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	}
 
 	public void showChartOptions() {
-		// these log.error lines are for tracking down a problem in jfreechart, leave in until problem is resolved
-		// if "showChartOptions()" is not followed by " done" then VO is stuck in a deadlock
 		advancedGraphPanel.setVisible(true);
 	}
 

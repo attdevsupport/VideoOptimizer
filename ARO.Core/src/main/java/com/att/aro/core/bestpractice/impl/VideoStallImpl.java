@@ -70,6 +70,9 @@ public class VideoStallImpl implements IBestPractice {
 	@Value("${videoStall.results}")
 	private String textResults;
 
+	@Value("${videoStall.excel.results}")
+    private String textExcelResults;
+
 	@Value("${startUpDelay.init}")
 	private String startUpDelayNotSet;
 
@@ -119,7 +122,8 @@ public class VideoStallImpl implements IBestPractice {
 				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 			
 			bpResultType = BPResultType.CONFIG_REQUIRED;
-			
+			result.setResultExcelText(BPResultType.CONFIG_REQUIRED.getDescription());
+
 			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
 			invalidCount = streamingVideoData.getInvalidManifestCount();
@@ -168,7 +172,7 @@ public class VideoStallImpl implements IBestPractice {
 					// Meaning startup delay is not set yet
 					bpResultType = BPResultType.CONFIG_REQUIRED;
 					result.setResultText(MessageFormat.format(startUpDelayNotSet, startupDelay, startupDelay == 1 ? "" : "s"));
-
+					result.setResultExcelText(BPResultType.CONFIG_REQUIRED.getDescription());
 				} else {
 					result.setResultText(MessageFormat.format(this.textResults
 							, stallCount
@@ -176,6 +180,20 @@ public class VideoStallImpl implements IBestPractice {
 							, count == 1 ? "was" : "were"
 							, count, count == 1 ? "" : "s"
 							, bpResultType.toString().toLowerCase()));
+
+					switch (bpResultType) {
+					    case PASS:
+					        result.setResultExcelText(BPResultType.PASS.getDescription());
+					        break;
+					    case SELF_TEST:
+					        result.setResultExcelText(BPResultType.SELF_TEST.getDescription());
+					    case WARNING:
+					    case FAIL:
+					        result.setResultExcelText(MessageFormat.format(textExcelResults, bpResultType.getDescription(), stallCount));
+					        break;
+                        default:
+                            break;
+					}
 				}
 				result.setVideoStallResult(stallCount);
 				result.setResults(stallResult);
@@ -183,6 +201,7 @@ public class VideoStallImpl implements IBestPractice {
 		} else {
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(BPResultType.NO_DATA.getDescription());
 		}
 
 		result.setResultType(bpResultType);

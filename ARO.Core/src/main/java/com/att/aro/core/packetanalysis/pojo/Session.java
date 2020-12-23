@@ -27,6 +27,9 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.util.Util;
 
@@ -188,6 +191,8 @@ public class Session implements Serializable, Comparable<Session> {
 	private TreeMap<Double, PacketInfo> synPackets = new TreeMap<>();
 	private TreeMap<Double, PacketInfo> synAckPackets = new TreeMap<>();
 	
+	private static final Logger LOGGER = LogManager.getLogger(Session.class.getName());
+	
 	/**
 	 * Initializes an instance of the TCPSession class, using the specified
 	 * remote IP, remote port, and local port.
@@ -331,40 +336,30 @@ public class Session implements Serializable, Comparable<Session> {
 		
 		// Limit Content Viewer to 20000 Bytes to prevent the system from hanging
 		
-		ByteArrayOutputStream uplinkData = new ByteArrayOutputStream();
-		BufferedOutputStream uplinkWrapper = new BufferedOutputStream(uplinkData);
-		
-		ByteArrayOutputStream downlinkData = new ByteArrayOutputStream();
-		BufferedOutputStream downlinkWrapper = new BufferedOutputStream(downlinkData);
+		ByteArrayOutputStream contentData = new ByteArrayOutputStream();
+		BufferedOutputStream outputStream = new BufferedOutputStream(contentData);
 		
 		try {
-			uplinkWrapper.write("\n--UPLINK--\n".getBytes());
-			downlinkWrapper.write("\n--DOWNLINK--\n".getBytes());
 			int totalBytesWritten = 0;
 			for (HttpRequestResponseInfo rrInfo : getRequestResponseInfo()) {
 				if (totalBytesWritten < 20000) {
 					totalBytesWritten+=rrInfo.getContentLength();
 					if (rrInfo.getDirection().equals(HttpDirection.REQUEST)) {
-						uplinkWrapper.write(rrInfo.getHeaderData().toByteArray());
-						uplinkWrapper.write(rrInfo.getPayloadData().toByteArray());
-	 				} else {
-	 					downlinkWrapper.write(rrInfo.getHeaderData().toByteArray());
-	 					downlinkWrapper.write(rrInfo.getPayloadData().toByteArray());
-	 				}
+						outputStream.write("\n--UPLINK--\n".getBytes());
+					} else {
+						outputStream.write("\n--DOWNLINK--\n".getBytes());
+					}
+					outputStream.write(rrInfo.getHeaderData().toByteArray());
+					outputStream.write(rrInfo.getPayloadData().toByteArray());
 				} else {
 					break;
 				}
 			}
-			
-			uplinkWrapper.flush();
-			downlinkWrapper.flush();
-		} catch (IOException e) {
-			
+			outputStream.flush();
+		} catch (IOException exception) {
+			LOGGER.error("Error while retrieving content : ", exception);
 		}
-		StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(Util.byteArrayToString(uplinkData.toByteArray()));
-		stringBuilder.append(Util.byteArrayToString(downlinkData.toByteArray()));
-		return stringBuilder.toString();
+		return Util.byteArrayToString(contentData.toByteArray());
 	}
 
 	/**

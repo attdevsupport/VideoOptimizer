@@ -63,16 +63,21 @@ public class NetworkTypePlot implements IPlot {
 				if (iter.hasNext()) {
 					while (iter.hasNext()) {
 						NetworkBearerTypeInfo networkInfo = iter.next();
-						if (networkInfo.getNetworkType() != NetworkType.none) {
-							seriesMap.get(networkInfo.getNetworkType()).add(
-									networkInfo.getBeginTimestamp(),
-									networkInfo.getBeginTimestamp(),
-									networkInfo.getEndTimestamp(), 0.5, 0, 1);
+						if (networkInfo.getNetworkType() != NetworkType.UNKNOWN) {
+							if ( NetworkType.LTE == networkInfo.getNetworkType() && (NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA == networkInfo.getOverrideNetworkType()
+									|| NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE == networkInfo
+											.getOverrideNetworkType() || NetworkType.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO == networkInfo.getOverrideNetworkType())  ) {
+								seriesMap.get(networkInfo.getOverrideNetworkType()).add(networkInfo.getBeginTimestamp(),
+										networkInfo.getBeginTimestamp(), networkInfo.getEndTimestamp(), 0.5, 0, 1);
+							} else {
+								seriesMap.get(networkInfo.getNetworkType()).add(networkInfo.getBeginTimestamp(),
+										networkInfo.getBeginTimestamp(), networkInfo.getEndTimestamp(), 0.5, 0, 1);
+							}
 						}
 					}
 				} else {
 					NetworkType nt = traceresult.getNetworkType();
-					if (nt != null && nt != NetworkType.none) {
+					if (nt != null && nt != NetworkType.UNKNOWN) {
 						seriesMap.get(nt).add(0, 0,
 								traceresult.getTraceDuration(), 0.5, 0, 1);
 					}
@@ -99,7 +104,6 @@ public class NetworkTypePlot implements IPlot {
 			}
 
 		}
-//		return plot;
 	}
 
 	private void createDataSeriesForAllNetworkTypes(
@@ -112,28 +116,24 @@ public class NetworkTypePlot implements IPlot {
 		}
 	}
 
-	private void setRenderingColorForDataSeries(XYItemRenderer renderer,
-			final XYIntervalSeriesCollection dataSeries) {
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.none),
-				Color.WHITE);
+	private void setRenderingColorForDataSeries(XYItemRenderer renderer, final XYIntervalSeriesCollection dataSeries) {
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.UNKNOWN), Color.WHITE);
 		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.LTE), Color.RED);
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.WIFI),
-				Color.BLUE);
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.UMTS),
-				Color.PINK);
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.ETHERNET),
-				Color.BLACK);
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSDPA),
-				Color.YELLOW);
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSPA),
-				Color.ORANGE);
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSPAP),
-				Color.MAGENTA);
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSUPA),
-				Color.CYAN);
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.GPRS),
-				Color.GRAY);
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.EDGE),
-				Color.LIGHT_GRAY);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.NR), Color.GREEN);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.WIFI), Color.BLUE);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA), Color.YELLOW);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE), Color.BLACK);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO), Color.MAGENTA);
+				
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.GSM), Color.DARK_GRAY);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.UMTS), Color.PINK);		
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.EVDO0), Color.BLACK);		
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSDPA), Color.YELLOW);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSPA), Color.ORANGE);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSPAP), Color.MAGENTA);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSUPA), Color.CYAN);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.GPRS), Color.GRAY);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.EDGE), Color.LIGHT_GRAY);
+
 	}
 }

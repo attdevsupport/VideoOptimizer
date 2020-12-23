@@ -57,15 +57,18 @@ public class XCodeInfo {
 		boolean isAvailable = false;
 		String[] cmd = new String[] { "bash", "-c", "which " + path + "rvictl" };
 		String result = "";
+
 		try {
 			result = runner.runCmd(cmd);
 		} catch (IOException e) {
 			LOG.debug("IOException:", e);
 		}
-		if (result.length() > 1) {
+
+		if (result != null && result.length() > 1) {
 			isAvailable = true;
 			this.path = result.trim();
 		}
+
 		return isAvailable;
 	}
 
@@ -88,15 +91,18 @@ public class XCodeInfo {
 		boolean flag = false;
 		String[] cmd = new String[] { "bash", "-c", "which xcodebuild" };
 		String xCode = "";
+
 		try {
 			xCode = runner.runCmd(cmd);
 			LOG.info("xCode Installation Dir : " + xCode);
 		} catch (IOException ioE) {
 			LOG.debug("IOException:", ioE);
 		}
-		if (xCode.length() > 1) {
+
+		if (xCode != null && xCode.length() > 1) {
 			flag = true;
 		}
+
 		return flag;
 	}
 

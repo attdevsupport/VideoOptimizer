@@ -25,9 +25,9 @@ import javax.xml.bind.annotation.XmlRootElement;
 import lombok.Data;
 
 @Data
-@XmlRootElement(name = "Period")
+@XmlRootElement(name="Period")
 @XmlAccessorType(XmlAccessType.FIELD)public class Period {
 
-	@XmlElement(name = "AdaptationSet") private List<AdaptationSet> adaptationSet;
+	@XmlElement(name="AdaptationSet") private List<AdaptationSet> adaptationSet;
 
 }

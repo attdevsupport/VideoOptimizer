@@ -52,8 +52,6 @@ public class TCPFlowsTableMenuItemListener extends AbstractMenuItemListener {
     @Override
     public void writeExcel(File file) throws IOException {
         LOG.info("Starting export data to {}", file.getAbsolutePath());
-
-        boolean isCSV = false;
         // Get index of checkbox column which is to skip while exporting
         int columnIndexToSkip = table.convertColumnIndexToView(TCPUDPFlowsTableModel.CHECKBOX_COL);
         LOG.info("Checkbox column view index {}", columnIndexToSkip);

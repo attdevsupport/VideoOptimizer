@@ -62,6 +62,9 @@ public class EmptyUrlImpl implements IBestPractice {
 	
 	@Value("${empty.url.results}")
 	private String textResults;
+
+	@Value("${empty.url.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${exportall.csvNumberOfEmptyUrlFiles}")
 	private String exportAllEmptyUrlFiles;
@@ -90,10 +93,12 @@ public class EmptyUrlImpl implements IBestPractice {
 			result.setResultType(BPResultType.PASS);
 			text = MessageFormat.format(this.textResultPass, result.getNumberOfFailedFiles());
 			result.setResultText(text);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		}else{
 			text = MessageFormat.format(textResults, result.getNumberOfFailedFiles());
 			result.setResultText(text);
 			result.setResultType(BPResultType.FAIL);
+			result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), result.getNumberOfFailedFiles()));
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);

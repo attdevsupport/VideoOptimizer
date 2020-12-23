@@ -53,7 +53,6 @@ import org.apache.log4j.Logger;
 import com.att.aro.core.bestpractice.pojo.ForwardSecrecyEntry;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
 import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionEntry;
-import com.att.aro.core.bestpractice.pojo.WeakCipherEntry;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfoWithSession;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
@@ -73,6 +72,9 @@ import com.att.aro.ui.view.overviewtab.DeviceNetworkProfilePanel;
 import com.att.aro.ui.view.video.IVideoPlayer;
 import com.att.aro.view.images.Images;
 
+import lombok.Data;
+
+@Data
 public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListener {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LogManager.getLogger(DiagnosticsTab.class);	
@@ -290,7 +292,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	/**
 	 * Initializes and returns the Packet View Table.
 	 */
-	private DataTable<PacketInfo> getJPacketViewTable() {
+	public DataTable<PacketInfo> getJPacketViewTable() {
 		if (jPacketViewTable == null) {
 			jPacketViewTable = new DataTable<PacketInfo>(jPacketViewTableModel);
 			jPacketViewTable.setAutoCreateRowSorter(true);
@@ -795,10 +797,6 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			destIP = entry.getDestIP();
 		} else if (routeInfo instanceof UnsecureSSLVersionEntry) {
 			UnsecureSSLVersionEntry entry = (UnsecureSSLVersionEntry) routeInfo;
-			timestamp = entry.getSessionStartTime();
-			destIP = entry.getDestIP();
-		} else if (routeInfo instanceof WeakCipherEntry) {
-			WeakCipherEntry entry = (WeakCipherEntry) routeInfo;
 			timestamp = entry.getSessionStartTime();
 			destIP = entry.getDestIP();
 		} else if (routeInfo instanceof ForwardSecrecyEntry) {

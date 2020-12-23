@@ -38,16 +38,25 @@ import com.att.aro.core.packetanalysis.pojo.SessionValues;
 public class MultipleSimultnsConnImpl implements IBestPractice {
 	@Value("${connections.multiSimultaneous.title}")
 	private String overviewTitle;
+
 	@Value("${connections.multiSimultaneous.detailedTitle}")
 	private String detailTitle;
+
 	@Value("${connections.multiSimultaneous.desc}")
 	private String aboutText;
+
 	@Value("${connections.multiSimultaneous.url}")
 	private String learnMoreUrl;
+
 	@Value("${connections.multiSimultaneous.pass}")
 	private String textResultPass;
+
 	@Value("${connections.multiSimultaneous.results}")
 	private String textResults;
+
+	@Value("${connections.multiSimultaneous.excel.results}")
+    private String textExcelResults;
+
 	int maxConnections = 12;
 	private PacketAnalyzerResult traceDataResult = null;
 	private List<MultipleConnectionsEntry> simultnsConnectionAllServersEntryList;
@@ -73,9 +82,12 @@ public class MultipleSimultnsConnImpl implements IBestPractice {
 			result.setResultType(BPResultType.PASS);
 			text = MessageFormat.format(textResultPass, simultnsConnectionAllServersEntryList.size());
 			result.setResultText(text);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		} else {
 			result.setResultType(BPResultType.FAIL);
 			result.setResultText(textResults);
+			// TODO: Validate conditional statement
+			result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), simultnsConnectionAllServersEntryList.get(0).getConcurrentSessions(), (simultnsConnectionAllServersEntryList.size()>1?"s":"")));
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);

@@ -94,6 +94,7 @@ public class VideoWriterImpl implements IVideoWriter{
 	@Override
 	public void init(String videoOutputFile, VideoFormat format, float compressionQuality, int timeUnits) throws IOException {
 
+	    LOGGER.info(String.format("Initializing video writer with file %s, format %s and quality %.2f", videoOutputFile, format.name(), compressionQuality));
 		checkSetDefaults();
 		
 		setTimeUnits(timeUnits);

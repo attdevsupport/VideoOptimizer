@@ -16,15 +16,25 @@
 package com.att.arocollector.attenuator;
 
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.core.app.NotificationCompat;
+
+import com.att.arocollector.R;
 
 
 public class AttenuatorDLBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = AttenuatorDLBroadcastReceiver.class.getSimpleName();
+
+    private NotificationCompat.Builder mBuilder;
+    public static final String CHANNEL_ID = "VPN Collector VPN Notification";
 
     public AttenuatorDLBroadcastReceiver() {
         super();
@@ -33,20 +43,45 @@ public class AttenuatorDLBroadcastReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-
         int dlMs = intent.getIntExtra("dlms" ,0);
+        String text = "Download stream delay for "+ dlMs+ " ms";
+        Log.i(TAG, text);
 
-        if(dlMs>=0){//range check for negative throttle number
-            Log.i(TAG, "Download stream delay for: "+ dlMs+ " ms");
+        // Check for negative delay
+        if(dlMs >= 0) {
             AttenuatorManager.getInstance().setDelayDl(dlMs);
-            CharSequence text = "Download stream delay for "+ dlMs+ " ms";
-            int duration = Toast.LENGTH_SHORT;
-            Toast toast = Toast.makeText(context, text, duration);
-            toast.show();
-        }else{
-            Log.i(TAG,"Invalid attenuation delay value"+ dlMs + "ms");
+            Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+
+            NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            createNotificationChannel(mNotificationManager);
+            if (mBuilder == null) {
+                mBuilder = new NotificationCompat.Builder(context, CHANNEL_ID)
+                                                 .setSmallIcon(R.drawable.icon)
+                                                 .setContentTitle("Video Optimizer VPN Collector")
+                                                 .setAutoCancel(false)
+                                                 .setOngoing(true);
+            }
+
+            mBuilder.setContentText(AttenuatorUtil.getInstance().notificationMessage());
+            mNotificationManager.notify(1, mBuilder.build());
+        } else{
+            Log.i(TAG,"Invalid attenuation delay packet value: "+ dlMs + "ms");
         }
 
+    }
+
+    private void createNotificationChannel(NotificationManager mNotificationManager) {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel serviceChannel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "VPN Collector",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+
+            mNotificationManager.createNotificationChannel(serviceChannel);
+        }
     }
 
 }

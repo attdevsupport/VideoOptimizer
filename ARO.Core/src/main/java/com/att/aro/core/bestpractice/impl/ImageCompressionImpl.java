@@ -98,6 +98,9 @@ public class ImageCompressionImpl implements IBestPractice {
 
 	@Value("${imageCompression.results}")
 	private String textResults;
+
+	@Value("${imageCompression.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${bestPractices.noData}")
 	private String noData;
@@ -136,6 +139,7 @@ public class ImageCompressionImpl implements IBestPractice {
 				result.setResultType(BPResultType.PASS);
 				text = MessageFormat.format(textResultPass, entrylist.size());
 				result.setResultText(text);
+				result.setResultExcelText(BPResultType.PASS.getDescription());
 			} else {
 				result.setResultType(BPResultType.FAIL);
 				long savings = orginalImagesSize - midQualImgsSize;
@@ -146,9 +150,14 @@ public class ImageCompressionImpl implements IBestPractice {
 				}
 				text = MessageFormat.format(textResults, totalSavings);
 				result.setResultText(text);
+
+				result.setResultExcelText(
+			        MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), totalSavings)
+		        );
 			}
 		} else {
 			result.setResultText(noData);
+			result.setResultExcelText(BPResultType.NO_DATA.getDescription());
 			result.setResultType(BPResultType.NO_DATA);
 		}
 		result.setAboutText(aboutText);

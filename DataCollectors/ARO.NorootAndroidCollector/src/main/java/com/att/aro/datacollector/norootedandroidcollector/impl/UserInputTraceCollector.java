@@ -23,7 +23,6 @@ import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
-import com.att.aro.core.util.Util;
 
 /** 
  * Initiates userinput.sh & parse the output file
@@ -92,9 +91,7 @@ public class UserInputTraceCollector implements Runnable {
 				+ remoteExecutable
 				+ " "
 				+ remoteUserInputFilesPath;
-		if (Util.isWindowsOS()) {
-			cmd = Util.wrapText(cmd);
-		} 	
+		
 		String line = extrunner.executeCmd(cmd);
 		
 		LOGGER.info("start process userinput mon script response:" + line);
@@ -107,6 +104,7 @@ public class UserInputTraceCollector implements Runnable {
 	 * @return
 	 */
 	public boolean stopUserInputTraceCapture(IDevice device) {
+	    LOGGER.info("Stopping user input trace capture...");
 
 		setCurrentState(State.Stopping);
 		String command = "sh " + remoteUserInputFilesPath + killUserInputPayload;
@@ -125,6 +123,8 @@ public class UserInputTraceCollector implements Runnable {
 		}
 		response = null;
 		setCurrentState(State.Done);
+
+		LOGGER.info("User input trace collection state: " + getCurrentState().name());
 		return true;
 	}
 	
@@ -135,29 +135,34 @@ public class UserInputTraceCollector implements Runnable {
 	 * @return state
 	 */
 	public State init(IAndroid android, IAroDevice aroDevice, String localTraceFolder){
-		
+	    LOGGER.info("Initializing User Input trace collection...");
 		this.android = android;
 		this.aroDevice = aroDevice;
 		this.device = (IDevice) aroDevice.getDevice();
 		this.localTraceFolder = localTraceFolder;
-		
+
+		LOGGER.debug("Remove existing user input directories:");
 		String[] res = android.getShellReturn(device, "rm " + remoteUserInputFilesPath + userEventLogFile);
 		for (String line : res) {
 			if (line.length() > 0) {
 				LOGGER.debug(">>" + line + "<<");
 			}
 		}
+
+		LOGGER.debug("Create user input directories:");
 		this.filemanager.mkDir(localTraceFolder);
 		String[] response;
 		response = android.getShellReturn(device, "mkdir " + "/sdcard/ARO");
 		for (String line : response) {
-			LOGGER.info("stop userinput trace response:" + line);
+		    LOGGER.debug(">>" + line + "<<");
 		}
+
 		traceActive = this.adbservice.installPayloadFile(aroDevice, localTraceFolder, payloadFileName, remoteExecutable);
 		if (traceActive) {
 			setCurrentState(State.Initialized);
 		}
-		
+
+		LOGGER.info("User input trace collection state: " + getCurrentState().name());
 		return getCurrentState();
 	}
 }

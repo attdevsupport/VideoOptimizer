@@ -78,25 +78,38 @@ public class CreateBarPlot{
 		return barPlot;
 	}
 	
+	public XYPlot drawXYBarPlots(Color color,StandardXYItemRenderer renderer,NumberAxis xAxis, NumberAxis yAxis) {
+		// Create renderer
+		XYBarRenderer barRenderer = new XYBarRenderer();
+		barRenderer.setDrawBarOutline(false);
+		barRenderer.setUseYInterval(true);
+		barRenderer.setBasePaint(color);
+		barRenderer.setAutoPopulateSeriesPaint(false);
+		barRenderer.setShadowVisible(false);
+		barRenderer.setGradientPaintTransformer(null);
+		barRenderer.setBarPainter(new StandardXYBarPainter());
+				
+		// Create result plot
+		return new XYPlot(null, xAxis, yAxis, renderer);
+		 
+	}
+	
 	//createBatteryPlot(), createRadioPlot(), createCpuPlot(), createTemperaturePlot
 	public XYPlot drawStandardXYPlot(Shape shape,Color color, int minSignal, int maxSignal){
 		// Set up renderer
-		StandardXYItemRenderer batteryRenderer = new StandardXYItemRenderer(
+		StandardXYItemRenderer renderer = new StandardXYItemRenderer(
 				StandardXYItemRenderer.SHAPES_AND_LINES);
-		batteryRenderer.setAutoPopulateSeriesShape(false);
-		batteryRenderer.setBaseShape(shape);
-		batteryRenderer.setSeriesPaint(0, color);
+		renderer.setAutoPopulateSeriesShape(false);
+		renderer.setBaseShape(shape);
+		renderer.setSeriesPaint(0, color);
 
 		// Normalize the throughput axis so that it represents max value
 		NumberAxis axis = new NumberAxis();
-		axis.setVisible(false);
-		axis.setAutoRange(false);
 		axis.setRange(minSignal, maxSignal);
-
+		
 		// Create plot
-		XYPlot barPlot = new XYPlot(null, null, axis, batteryRenderer);
-		barPlot.setRangeAxisLocation(AxisLocation.BOTTOM_OR_LEFT);
-		barPlot.getRangeAxis().setVisible(false);
+		XYPlot barPlot = new XYPlot(null, null, axis, renderer);
+		barPlot.setRangeAxisLocation(AxisLocation.TOP_OR_LEFT);
 
 		return barPlot;		
 	}

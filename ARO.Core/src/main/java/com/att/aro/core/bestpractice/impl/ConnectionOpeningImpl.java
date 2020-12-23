@@ -54,6 +54,7 @@ public class ConnectionOpeningImpl implements IBestPractice {
 		result.setLearnMoreUrl(learnMoreUrl);
 		result.setOverviewTitle(overviewTitle);
 		result.setResultText(textResult);
+		result.setResultExcelText(BPResultType.SELF_TEST.getDescription());
 		result.setResultType(BPResultType.SELF_TEST);
 		
 		return result;

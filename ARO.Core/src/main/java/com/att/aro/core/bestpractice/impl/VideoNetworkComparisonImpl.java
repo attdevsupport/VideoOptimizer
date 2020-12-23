@@ -84,6 +84,9 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 	@Value("${networkComparison.results}")
 	private String textResults;
 
+	@Value("${networkComparison.excel.results}")
+    private String textExcelResults;
+
 	@Value("${video.noData}")
 	private String noData;
 
@@ -110,6 +113,7 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 	@Override
 	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
 		BPResultType bpResultType = BPResultType.SELF_TEST;
+
 		double avgKbps = 0.0;
 		double avgBitRate = 0.0;
 		double summaryBitRate = 0.0;
@@ -136,16 +140,18 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 					result.setResultText(noManifestsSelected);
 				}
 				bpResultType = BPResultType.CONFIG_REQUIRED;
+				result.setResultExcelText(BPResultType.CONFIG_REQUIRED.getDescription());
 				result.setSelfTest(false);
 			} else if (selectedCount > 1) {
 				bpResultType = BPResultType.CONFIG_REQUIRED;
 				result.setResultText(multipleManifestsSelected);
+				result.setResultExcelText(BPResultType.CONFIG_REQUIRED.getDescription());
 				result.setSelfTest(false);
 			} else {
 				SegmentComparison segmentComparison;
 				for (VideoStream videoStream : videoStreamCollection.values()) {
-					if (videoStream.isSelected() && MapUtils.isNotEmpty(videoStream.getVideoEventList())) {
-						for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
+					if (videoStream.isSelected() && MapUtils.isNotEmpty(videoStream.getVideoEventMap())) {
+						for (VideoEvent videoEvent : videoStream.getVideoEventMap().values()) {
 							if (videoEvent.isNormalSegment() && videoEvent.isSelected()) {
 								Integer track = StringParse.stringToDouble(videoEvent.getQuality(), 0).intValue();
 								double endTS = videoEvent.getEndTS();
@@ -179,9 +185,11 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 				result.setSelfTest(true);
 				bpResultType = BPResultType.SELF_TEST;
 				result.setResultText(MessageFormat.format(textResults, avgKbps, avgBitRate));
+				result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.SELF_TEST.getDescription(), avgKbps, avgBitRate));
 			}
 		}else {
 			result.setResultText(noData);
+			result.setResultExcelText(BPResultType.NO_DATA.getDescription());
 			bpResultType = BPResultType.NO_DATA;
 		}
 

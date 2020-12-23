@@ -63,6 +63,9 @@ public class VideoSegmentSizeImpl implements IBestPractice{
 	@Value("${segmentSize.results}")
 	private String textResults;
 
+	@Value("${segmentSize.excel.results}")
+    private String textExcelResults;
+
 	@Value("${video.noData}")
 	private String noData;
 	
@@ -114,9 +117,11 @@ public class VideoSegmentSizeImpl implements IBestPractice{
 					result.setResultText(noManifestsSelected);
 				}
 				bpResultType = BPResultType.CONFIG_REQUIRED;
+				result.setResultExcelText(bpResultType.getDescription());
 			} else if (selectedCount > 1) {
 				bpResultType = BPResultType.CONFIG_REQUIRED;
 				result.setResultText(multipleManifestsSelected);
+				result.setResultExcelText(bpResultType.getDescription());
 				result.setSelfTest(false);
 			} else {
 				for (VideoStream videoStream : videoStreamCollection.values()) {
@@ -139,13 +144,18 @@ public class VideoSegmentSizeImpl implements IBestPractice{
 				result.setResultText(MessageFormat.format(textResults
 						, count == 1 ? "was" : "were", count
 						, count == 1 ? "" : "different"
-						, count == 1 ? "" : "s", (int) averageSize / 1024));
+						, count == 1 ? "" : "s", (int) averageSize / 1024));				
+				result.setResultExcelText(
+			        MessageFormat.format(textExcelResults, bpResultType.getDescription(), count, (int) averageSize / 1024)
+				);
+
 				result.setSegmentSize((int) averageSize / 1024); // Size in KB
 				result.setSegmentCount((int) count);
 			}
 		} else {
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(bpResultType.getDescription());
 			result.setSelfTest(false);
 		}
 		

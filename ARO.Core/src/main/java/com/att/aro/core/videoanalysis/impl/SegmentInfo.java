@@ -14,6 +14,7 @@ public class SegmentInfo {
 	private String quality = "";
 	private int size;
 	private double bitrate;
+	private int resolutionHeight = 0;
 
 	@Override
 	public String toString() {

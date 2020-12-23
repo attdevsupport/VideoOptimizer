@@ -17,6 +17,7 @@
 
 package com.att.aro.core.bestpractice.impl;
 
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -52,6 +53,9 @@ public class VideoVariableBitrateImpl implements IBestPractice {
 
 	@Value("${videoVariableBitrate.results}")
 	private String textResults;
+
+	@Value("${videoVariableBitrate.excel.drmBlocking}")
+    private String textExcelDRMBlocking;
 
 	@Value("${videoVariableBitrate.init}")
 	private String textResultInit;
@@ -114,6 +118,7 @@ public class VideoVariableBitrateImpl implements IBestPractice {
 			invalidCount = streamingVideoData.getInvalidManifestCount();
 			
 			bpResultType = BPResultType.CONFIG_REQUIRED;
+			result.setResultExcelText(bpResultType.getDescription());
 			
 			if (selectedManifestCount == 0) {
 				if (invalidCount == videoStreamCollection.size()) {
@@ -139,6 +144,7 @@ public class VideoVariableBitrateImpl implements IBestPractice {
 						} else {
 							result.setResultText(drmBlocking);
 							result.setResultType(BPResultType.SELF_TEST);
+							result.setResultExcelText(MessageFormat.format(textExcelDRMBlocking, BPResultType.SELF_TEST.getDescription()));
 							return result;
 						}
 					}
@@ -150,10 +156,13 @@ public class VideoVariableBitrateImpl implements IBestPractice {
 					result.setResultText(textResults);
 					bpResultType = BPResultType.WARNING;
 				}
+
+				result.setResultExcelText(bpResultType.getDescription());
 			}
 		} else {
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(bpResultType.getDescription());
 		}
 		result.setResultType(bpResultType);
 		return result;

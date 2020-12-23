@@ -92,6 +92,7 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
 		try {
 			proc.waitFor();
 		} catch (InterruptedException e) {
+		    LOG.warn("Thread interrupted", e);
 		}
 	}
 

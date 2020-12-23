@@ -19,8 +19,10 @@ package com.att.aro.core.bestpractice.impl;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.apache.commons.collections.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,6 +53,9 @@ public class VideoAdaptiveBitrateLadderImpl implements IBestPractice {
 
 	@Value("${adaptiveBitrateLadder.results}")
 	private String textResults;
+
+	@Value("${adaptiveBitrateLadder.excel.results}")
+    private String textExcelResults;
 
 	@Value("${videoSegment.empty}")
 	private String novalidManifestsFound;
@@ -105,6 +110,7 @@ public class VideoAdaptiveBitrateLadderImpl implements IBestPractice {
 			invalidCount = streamingVideoData.getInvalidManifestCount();
 			
 			bpResultType = BPResultType.CONFIG_REQUIRED;
+			result.setResultExcelText(bpResultType.getDescription());
 				
 			if (selectedManifestCount == 0) {
 				if (invalidCount == videoStreamCollection.size()) {
@@ -122,11 +128,15 @@ public class VideoAdaptiveBitrateLadderImpl implements IBestPractice {
 				QualityTime maxSection = null;
 				double videoRatio = 1;
 				double durationTotal = 0;
+				Set<String> resolutions = new TreeSet<>();
+
 				for (VideoStream videoStream : videoStreamCollection.values()) {
-					if (videoStream.isSelected() && MapUtils.isNotEmpty(videoStream.getVideoEventList())) {
+					if (videoStream.isSelected() && MapUtils.isNotEmpty(videoStream.getVideoEventMap())) {
 						videoRatio = PERCENTILE_LINE / videoStream.getDuration();
-						for (VideoEvent videoEvent : videoStream.getVideoEventList().values()) {
+
+						for (VideoEvent videoEvent : videoStream.getVideoEventMap().values()) {
 							if (videoEvent.isNormalSegment() && videoEvent.isSelected()) {
+								resolutions.add(String.valueOf(videoEvent.getResolutionHeight()));
 								double duration = videoEvent.getDuration();
 								durationTotal  += duration;
 								Integer track = StringParse.stringToDouble(videoEvent.getQuality(), 0).intValue();
@@ -149,6 +159,7 @@ public class VideoAdaptiveBitrateLadderImpl implements IBestPractice {
 											);
 									qualityMap.put(track, qualityTime);
 								}
+
 								if (maxTime < qualityTime.getDuration()) {
 									maxTime = qualityTime.getDuration();
 									maxSection = qualityTime;
@@ -157,6 +168,7 @@ public class VideoAdaptiveBitrateLadderImpl implements IBestPractice {
 						}
 					}
 				}
+
 				bpResultType = BPResultType.SELF_TEST;
 				int count = qualityMap.size();
 				double maxDuration = 0;
@@ -167,6 +179,7 @@ public class VideoAdaptiveBitrateLadderImpl implements IBestPractice {
 					percentage = maxSection.getPercentage();
 					track = maxSection.getTrack();
 				}
+
 				result.setResultText(MessageFormat.format(textResults
 						, count == 1 ? "was" : "were", count
 						, count == 1 ? "" : "s"
@@ -175,9 +188,11 @@ public class VideoAdaptiveBitrateLadderImpl implements IBestPractice {
 						, String.format("%.2f", percentage)
 						, String.format("%.3f", durationTotal)
 						));
+				result.setResultExcelText(MessageFormat.format(textExcelResults, bpResultType.getDescription(), String.join("p, ", resolutions) + "p"));
 			} else {
 				bpResultType = BPResultType.CONFIG_REQUIRED;
 				result.setResultText(novalidManifestsFound);
+				result.setResultExcelText(bpResultType.getDescription());
 			}
 
 			result.setResults(qualityMap);
@@ -186,6 +201,7 @@ public class VideoAdaptiveBitrateLadderImpl implements IBestPractice {
 			// No Data
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(bpResultType.getDescription());
 		}
 		result.setResultType(bpResultType);
 		result.setResults(qualityMap);

@@ -113,8 +113,8 @@ public class PktAnazlyzerTimeRangeImplTest extends BaseTest {
 		result.setNetworkTypesList(networkTypesList);
 		
 		List<NetworkBearerTypeInfo> networkTypeInfos = new ArrayList<NetworkBearerTypeInfo>();
-		networkTypeInfos.add(new NetworkBearerTypeInfo(1.0, 3.0, NetworkType.HSPA));
-		networkTypeInfos.add(new NetworkBearerTypeInfo(8.0, 12.0, NetworkType.HSPA));
+		networkTypeInfos.add(new NetworkBearerTypeInfo(1.0, 3.0, NetworkType.HSPA, NetworkType.OVERRIDE_NETWORK_TYPE_NONE));
+		networkTypeInfos.add(new NetworkBearerTypeInfo(8.0, 12.0, NetworkType.HSPA, NetworkType.OVERRIDE_NETWORK_TYPE_NONE));
 
 		result.setNetworkTypeInfos(networkTypeInfos);
 		

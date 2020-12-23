@@ -22,7 +22,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.commons.collections4.trie.PatriciaTrie;
-
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -36,7 +35,6 @@ import lombok.Setter;
 
 @Data
 public class ManifestCollection {
-	
 	private static final Logger LOG = LogManager.getLogger(ManifestCollection.class.getName());
 	private Manifest manifest;
 	
@@ -92,12 +90,16 @@ public class ManifestCollection {
 	@NonNull
 	@Getter
 	private SortedMap<Double, ChildManifest> bandwidthMap = new TreeMap<>();
-
+	
 	public void addToUriNameChildMap(String childUriName, ChildManifest childManifest) {
-		if (!uriNameChildMap.containsKey(childUriName)) {
-			uriNameChildMap.put(childUriName, childManifest);
+		if (childUriName != null) {
+			if (!uriNameChildMap.containsKey(childUriName)) {
+				uriNameChildMap.put(childUriName, childManifest);
+			} else {
+				LOG.debug(childUriName + " already exists");
+			}
 		} else {
-			LOG.debug(childUriName + " already exists");
+			LOG.error("invalid (null) key for childUriName" + childManifest);
 		}
 	}
 	
@@ -118,7 +120,7 @@ public class ManifestCollection {
 	}
 
 	public void addToSegmentChildManifestTrie(String segmentUriName, ChildManifest childManifest) {
-			if (!segmentChildManifestTrie.containsKey(segmentUriName)) {
+		if (!segmentChildManifestTrie.containsKey(segmentUriName)) {
 			segmentChildManifestTrie.put(segmentUriName, childManifest);
 		}
 	}

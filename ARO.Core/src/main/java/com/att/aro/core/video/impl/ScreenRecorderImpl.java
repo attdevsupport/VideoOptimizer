@@ -106,6 +106,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 	@Override
 	public State init(IAroDevice aroDevice, String localTraceFolder, VideoOption videoOption) {
 
+	    LOGGER.info("Initializing screen recorder...");
 		this.aroDevice = aroDevice;
 		device = (IDevice) aroDevice.getDevice();
 		this.localTraceFolder = localTraceFolder + Util.FILE_SEPARATOR;
@@ -121,6 +122,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 		// FIXME: try to find a better way for updating resolution for kitcat
 		updateResolutionForKitCat(videoOption);
 
+		LOGGER.debug("Remove existing screen recorder directories:");
 		String[] res = android.getShellReturn(device, "rm " + remoteVideoPath + "*");
 		for (String line : res) {
 			if (line.length() > 0) {
@@ -133,6 +135,8 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 		if (traceActive) {
 			setState(State.Initialized);
 		}
+
+		LOGGER.info("Screen recorder state: " + getStatus().name());
 		return getStatus();
 	}
 
@@ -152,6 +156,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 
 	@Override
 	public boolean stopRecording() {
+	    LOGGER.info("Screen recording stopRecording()");
 
 		if (!currentState.equals(State.Recording) || !stopVidCapture(device)) {
 			setState(State.Error);
@@ -171,10 +176,14 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 			setVideoTime();
 			deleteSrcVideos();
 		} catch (Exception e) {
+		    LOGGER.error("Something went wrong while processing video after screen recording was stopped", e);
 			setState(State.Error);
 			return false;
 		}
+
 		setState(State.Done);
+
+		LOGGER.info("Screen recorder state: " + getStatus().name());
 		return true;
 	}
 
@@ -185,7 +194,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 			try {
 				filemanager.saveFile(stream, localTraceFolder + "/video_time");
 			} catch (IOException e) {
-				LOGGER.error("Failed to set video_time "+e.getMessage());
+				LOGGER.error("Failed to set video_time ", e);
 			}
 		}
 	}
@@ -413,8 +422,6 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 		String line = extrunner.executeCmd(cmd);
 		
 		LOGGER.info("start screenrecord response:" + line);
-		LOGGER.info("start screenrecord response:" + line);
-
 	}
 	
 	/**
@@ -424,6 +431,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 	 * @return
 	 */
 	private boolean stopVidCapture(IDevice device) {
+	    LOGGER.info("Stopping screen recording...");
 
 		setState(State.Stopping);
 		String cmd = "touch " + remoteVideoPath + "cmdstop";
@@ -431,6 +439,7 @@ public class ScreenRecorderImpl implements IScreenRecorder {
 		for (String line : response) {
 			LOGGER.info("stop screenrecord response:" + line);
 		}
+
 		return true;
 	}
 

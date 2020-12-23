@@ -3,7 +3,7 @@
 
 All works distributed in this package are covered by the Apache 2.0 License unless otherwise stated.
 
-> Copyright 2019
+> Copyright 2020
 Intellectual Property
 
 > Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,11 +52,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 3.2
+#### Video Optimizer 4.0
 
-**System Requirements for Video Optimizer 3.2:**
+**System Requirements for Video Optimizer 4.0:**
 
-*Before you download Video Optimizer 3.2, make sure you meet the following system requirements for your operating system.*
+*Before you download Video Optimizer 4.0, make sure you meet the following system requirements for your operating system.*
 
 - At least 4GB of RAM, but recommend at least 8GB
 - Java 8 or above
@@ -70,54 +70,56 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
   - Ifuse
   - OSXFuse
   - Libimobiledevice & ideviceinstaller
-  - For iOS developers, use latest version of Xcode and OS X
+  - For iOS developers, use latest version of XCode and OS X
   - VLC media player 3.x.x or higher
   - Wireshark
 - Linux requirements
+  - Linux version is not being release for 4.0 and will be available with the subsequent 4.0.1 release.
   - For Ubuntu 18.04.x LTS (and newer) users, use VLC media player version 3.x.x
   - For Ubuntu 16.04.x LTS (and older) users, use VLC media player version 3.x.x up to 3.0.8
   - Wireshark
 
 
 
-**Video Optimizer 3.2 Features**
+**Video Optimizer 4.0 Features**
 
-- New “Delay” feature is added to Request Response panel under Diagnostics tab. It displays the HTTP Level Delay for every HTTP Request and Response
-  - This new Delay tab will display Request Time Stamp, First Packet Arrival Time, First Packet Delay, Last Packet Arrival Time, Last Packet Delay and Content length
+- New Export capabilities includes:
+  - Export entire trace results to Excel format, allowing easy comparison of multiple traces.
+  -	Ability to export all Requests & Responses in the TCP/UDP Flow table.
+  -	Ability to export multiple tables at once from the Diagnostics tab.
 
-- Export feature in the TCP/UDP table includes timestamps for SYN and SYN-ACK
+- Redesigned Video tab shows more relevant data, including a new graph showing the download bitrates of all video & audio segments.
 
-- In the Diagnostics tab, Session Count graph is updated to reflect the session closure flags
+- Support for Brotli text compression including:
+  - Text Compression Best Practice now calculates potential data savings for using Brotli compression.
+  - Ability to view uncompressed Brotli text in the Content View tab.
+- Ability to Interpret DASH .mp4/.mpd video stream segments.
 
-- In the Diagnostics tab, User Input graph includes additional user events such as screen touch, volume, power and screen orientation
+- Detection of 5G network connections and type (Sub 6 v mmWave) using the Android Telephony API.
 
-- Dynamic Network Attenuator is enhanced to simulate network latency
+- Color coding of the Set Startup Delay button to indicate when it has been set.
 
-- Startup delay dialog is enhanced to identify/select the video playback requested time based on user touch
+- Detection of Android screen touch events and allowing for setting the Playback initiation time based on touch events
 
-- Video stream table is redesigned to accommodate more information
+-	Informative popup windows to assist Android 11 users to configure certificates needed for secure trace collection.
 
-- Video stream table includes Export feature
+-	Simplified VPN permissions can be granted via ADB instead of prompting from device.
 
-- Best Practice test “Network Comparison” results table includes “Declared Manifest Bandwidth” & “Calculated Network Bitrate data”
+-	Updated calculations of KB and MB to reflect standard 1000 notation (and not 1024).
 
-- Best Practice test “Multiple Simultaneous Connections to One Endpoint” is modified to fail the test if it detects more than 7 connections to the same server
-
-- Best Practice test “Analyzing the Adaptive Bitrate Ladder” results table displays Resolution, Playback %, Segment Count, Total Duration, Segment Position, Declared Bitrate, and
-
-- Average Bitrate information for each Track
-
-- Best Practice test “HTTPS Usage” includes Total HTTPS Data, percentage of Total HTTPS Data, and Total Unanalyzed HTTPS Data
-
-- macOS users will be able to configure the Wireshark path under Video Optimizer->File->Preferences
-
-- Export options are enhanced with default file name based on the trace and saves the file under the trace folder
+-	General bug fixes for video analysis and best practice analysis.
 
 
-**Known issues in Release 3.2**
+**Known issues in Release 4.0**
 
-- Playtime propagation and therefore stall detection issues appear intermittently in some traces
-- Time stamp shows 0.00 in the Request/Response view for some of the iOS traces
+- The 5g network is not displayed in the Network type graph, unless there is a toggle between WIFI and Data. This is a limitation in the Android Telephony API.
+-	Trace collection cannot be started when the device is on the lock screen, otherwise the VPN collector app will freeze.
+-	For occasional traces, HLS video streams show the segment number as "0" for all segments.
+-	Intermittently, when there is an issue with video analysis of a trace, some images from the previous trace will still be visible in the following graphs:
+  -	Throughput (Video tab)
+  -	Video chunks (Diagnostics tab)
+  -	Buffer seconds (Diagnostics tab)
+  -	Buffer Mbytes (Diagnostics tab)
 
 **Compilation instructions**
 + Please follow the order to compile projects

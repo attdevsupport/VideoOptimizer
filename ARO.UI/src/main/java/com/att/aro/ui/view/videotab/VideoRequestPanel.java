@@ -27,16 +27,16 @@ import java.util.List;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 import javax.swing.JTable;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableModel;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.TabPanelJScrollPane;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
+import com.att.aro.ui.model.video.VideoRequestTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.menu.tools.RegexWizard;
 
 public class VideoRequestPanel extends TabPanelJScrollPane {
@@ -45,15 +45,16 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 
 	private JPanel requestListPanel;
 
-	private List<HttpRequestResponseInfo> requestURL = new ArrayList<>();
-
+	private List<HttpRequestResponseInfo> requestURL = new ArrayList<>();	
 	private JPanel requestPanel;
-
+	private MainFrame aroView;
 	private DataTable<HttpRequestResponseInfo> requestListTable; 
-	
-	public VideoRequestPanel() {
+	private VideoRequestTableModel videoRequestTableModel = new VideoRequestTableModel();
+
+	public VideoRequestPanel(MainFrame aroView) {
 
 		requestPanel = new JPanel();
+		this.aroView = aroView;
 		requestPanel.setLayout(new BoxLayout(requestPanel, BoxLayout.PAGE_AXIS));
 
 		requestPanel.setBackground(new Color(238, 238, 238));
@@ -65,47 +66,20 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 	}
 
 	private JPanel getRequestListPanel() {
+
 		if (requestListPanel == null) {
 			requestListPanel = new JPanel();
 			requestListPanel.setLayout(new BorderLayout());
 			getDummyData();
-			TableModel model = new AbstractTableModel() {
-				private static final long serialVersionUID = 1L;
-				String[] columnNames = { "Time", "Request URL" };
-
-				@Override
-				public Object getValueAt(int rowIndex, int columnIndex) {
-					if (columnIndex == 0) {
-						return requestURL.get(rowIndex) != null ? String.format("%6.3f", requestURL.get(rowIndex).getTimeStamp()) : "";
-					} else if (columnIndex == 1) {
-						return requestURL.get(rowIndex) != null ? requestURL.get(rowIndex).getObjUri().toString() : "";
-					}
-					return "";
-				}
-
-				@Override
-				public int getRowCount() {
-					return requestURL.size();
-				}
-
-				@Override
-				public int getColumnCount() {
-					return columnNames.length;
-				}
-
-				@Override
-				public String getColumnName(int columnIndex) {
-					return columnNames[columnIndex];
-				}
-			};
-
 			requestListTable = new DataTable<HttpRequestResponseInfo>();
 
 			DataTablePopupMenu popupMenu = (DataTablePopupMenu) requestListTable.getPopup();
-            popupMenu.initialize();
+			popupMenu.initialize();
 
-			requestListTable.setName("VideoRequestTable");
-			requestListTable.setModel(model);
+			requestListTable.setName(ResourceBundleHelper.getMessageString("videotab.videorequest.table.name"));	
+			videoRequestTableModel.setData(requestURL);
+			requestListTable.setModel(videoRequestTableModel);
+			
 			JTableHeader header = requestListTable.getTableHeader();
 			requestListTable.setGridColor(Color.LIGHT_GRAY);
 			int width = requestListTable.getParent() != null ? requestListTable.getParent().getWidth() : 1000;
@@ -120,11 +94,11 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 				public void mouseClicked(MouseEvent event) {
 					if (event.getClickCount() == 2) {
 						int row = requestListTable.getSelectedRow();
-						int column = requestListTable.getSelectedColumn();
 						HttpRequestResponseInfo request = requestURL.get(row);
 						requestListTable.getColumnModel().getColumn(0).setCellRenderer(new WordWrapRenderer(row));
-						if (column != 0) {
-							RegexWizard regexWizard = RegexWizard.getInstance();
+						if (ResourceBundleHelper.getMessageString("videotab.videorequest.table.url")
+								.equals(requestListTable.getColumnName(requestListTable.getSelectedColumn()))) {
+							RegexWizard regexWizard = RegexWizard.getInstance(aroView.getJFrame());
 							regexWizard.setRequest(request);
 							regexWizard.setVisible(true);
 						}
@@ -132,7 +106,7 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 				}
 			});
 
-		} 
+		}
 		return requestListPanel;
 	}
 
@@ -166,6 +140,7 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 				requestURL.add(req);
 			}
 		}
+		videoRequestTableModel.setData(requestURL);
 		requestPanel.remove(requestListPanel);
 		requestListPanel = getRequestListPanel();
 		requestPanel.add(getRequestListPanel(),

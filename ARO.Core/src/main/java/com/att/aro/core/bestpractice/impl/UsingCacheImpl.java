@@ -52,6 +52,9 @@ public class UsingCacheImpl implements IBestPractice {
 	
 	@Value("${caching.usingCache.results}")
 	private String textResults;
+
+	@Value("${caching.usingCache.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${exportall.csvCacheConPct}")
 	private String exportAllCacheConPct;
@@ -88,12 +91,16 @@ public class UsingCacheImpl implements IBestPractice {
 		if(usingCache){
 			result.setResultType(BPResultType.PASS);
 			result.setResultText(textResultPass);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		}else{
 			result.setResultType(BPResultType.WARNING);// ref. old analyzer give warning in this best practice
 			String text = MessageFormat.format(textResults, 
 												ApplicationConfig.getInstance().getAppShortName(), 
 												NumberFormat.getIntegerInstance().format(cacheHeaderRatio));
 			result.setResultText(text);
+
+			result.setResultExcelText(MessageFormat.format(textExcelResults,
+			        BPResultType.WARNING.getDescription(), NumberFormat.getIntegerInstance().format(cacheHeaderRatio)));
 		}
 		result.setCacheHeaderRatio(cacheHeaderRatio);
 		result.setNoCacheHeaderFirstPacket(noCacheHeaderFirstPacket);

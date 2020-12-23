@@ -35,22 +35,35 @@ import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
  */
 public class DuplicateContentImpl implements IBestPractice {
 	private static final int DUPLICATE_CONTENT_DENOMINATOR = 1000000;
+
 	@Value("${caching.duplicateContent.title}")
 	private String overviewTitle;
+
 	@Value("${caching.duplicateContent.detailedTitle}")
 	private String detailTitle;
+
 	@Value("${caching.duplicateContent.desc}")
 	private String aboutText;
+
 	@Value("${caching.duplicateContent.url}")
 	private String learnMoreUrl;
+
 	@Value("${caching.duplicateContent.pass}")
 	private String textResultPass;
+
 	@Value("${caching.duplicateContent.results}")
 	private String textResults;
+
+	
+	@Value("${caching.duplicateContent.excel.results}")
+    private String textExcelResults;
+
 	@Value("${exportall.csvPct}")
 	private String exportAllPct;
+
 	@Value("${exportall.csvFiles}")
 	private String exportAllFiles;
+
 	@Value("${statics.csvUnits.mbytes}")
 	private String staticsUnitsMbytes;
 
@@ -74,6 +87,7 @@ public class DuplicateContentImpl implements IBestPractice {
 		if (duplicateContentsize <= 3) {
 			result.setResultType(BPResultType.PASS);
 			result.setResultText(textResultPass);
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		} else {
 			result.setResultType(BPResultType.FAIL);
 			DecimalFormat numf = new DecimalFormat("#.##");
@@ -85,6 +99,13 @@ public class DuplicateContentImpl implements IBestPractice {
 					numf2.format(((double) result.getDuplicateContentBytes()) / DUPLICATE_CONTENT_DENOMINATOR),
 					numf2.format(((double) result.getTotalContentBytes()) / DUPLICATE_CONTENT_DENOMINATOR));
 			result.setResultText(text);
+
+			result.setResultExcelText(
+		        MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), result.getDuplicateContentSizeOfUniqueItems(),
+			        numf2.format(((double) result.getDuplicateContentBytes()) / DUPLICATE_CONTENT_DENOMINATOR),
+                    numf2.format(((double) result.getTotalContentBytes()) / DUPLICATE_CONTENT_DENOMINATOR),
+			        numf.format(result.getDuplicateContentBytes() * 100.0 / result.getTotalContentBytes()))
+	        );
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);

@@ -51,6 +51,7 @@ import com.att.aro.core.util.Util;
 import com.github.jaiimageio.jpeg2000.J2KImageWriteParam;
 import com.luciad.imageio.webp.WebPWriteParam;
 
+
 //FIXME ADD UNIT TESTS
 public class ImageFormatImpl implements IBestPractice {
 
@@ -73,6 +74,9 @@ public class ImageFormatImpl implements IBestPractice {
 
 	@Value("${imageFormat.results}")
 	private String textResults;
+
+	@Value("${imageFormat.excel.results}")
+    private String textExcelResults;
 
 	@Value("${bestPractices.noData}")
 	private String noData;
@@ -122,6 +126,7 @@ public class ImageFormatImpl implements IBestPractice {
 				result.setResultType(BPResultType.PASS);
 				text = MessageFormat.format(textResultPass, entrylist.size());
 				result.setResultText(text);
+				result.setResultExcelText(BPResultType.PASS.getDescription());
 			} else {
 				result.setResultType(BPResultType.FAIL);
 				long savings = orginalImagesSize - convImgsSize;
@@ -135,9 +140,14 @@ public class ImageFormatImpl implements IBestPractice {
 				String percentageSaving = String.valueOf(Math.round(((double) savings / orginalImagesSize) * 100));
 				text = MessageFormat.format(textResults, entrylist.size(), totalSavings, percentageSaving);
 				result.setResultText(text);
+				
+				result.setResultExcelText(
+			        MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), entrylist.size(), totalSavings, percentageSaving)
+		        );
 			}
 		} else {
 			result.setResultText(noData);
+			result.setResultExcelText(BPResultType.NO_DATA.getDescription());
 			result.setResultType(BPResultType.NO_DATA);
 		}
 		result.setAboutText(aboutText);
@@ -281,7 +291,6 @@ public class ImageFormatImpl implements IBestPractice {
 			if (renderedImage != null) {
 				if (convExtn.equalsIgnoreCase("webp")) {
 					ImageWriter writer = ImageIO.getImageWritersByMIMEType("image/webp").next();
-
 					try {
 						WebPWriteParam writeParam = new WebPWriteParam(writer.getLocale());
 						writeParam.setCompressionMode(WebPWriteParam.MODE_EXPLICIT);

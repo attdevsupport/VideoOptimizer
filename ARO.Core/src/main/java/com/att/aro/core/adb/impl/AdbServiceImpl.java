@@ -384,6 +384,7 @@ public class AdbServiceImpl implements IAdbService {
 		if (success) {
 			success = android.pushFile(device, payloadTempPath, remotepath);
 			fileManager.deleteFile(payloadTempPath);
+			LOGGER.info(String.format("Installed file %s on the device", payloadTempPath));
 		}
 
 		return success;

@@ -89,8 +89,8 @@ public class SegmentTableModel extends AbstractTableModel {
             PLAYBACK_TIME.equals(columnNames[columnIndex])    ? (videoSegment.isSelected() && videoSegment.isNormalSegment() ? Double.valueOf(String.format("%.6f", videoSegment.getPlayTime())) : " -   ") :
             SEGMENT_POSITION.equals(columnNames[columnIndex]) ? Double.valueOf(String.format("%.6f", videoSegment.getSegmentStartTime())) :
             TRACK.equals(columnNames[columnIndex])            ? videoSegment.getQuality() :
-            RESOLUTION.equals(columnNames[columnIndex])       ? (videoSegment.getResolutionHeight() != 0 ? (int)videoSegment.getResolutionHeight() : "NA ") :
-            BIT_RATE.equals(columnNames[columnIndex])         ? Integer.valueOf(String.format("%.0f", videoSegment.getBitrate())) :
+            RESOLUTION.equals(columnNames[columnIndex])       ? (videoSegment.getResolutionHeight() != 0 ? videoSegment.getResolutionHeight() : "NA ") :
+            BIT_RATE.equals(columnNames[columnIndex])         ? Integer.valueOf(String.format("%.0f", calculateBitRate(videoSegment))) :
             TOTAL_BYTES.equals(columnNames[columnIndex])      ? Integer.valueOf(String.format("%.0f", videoSegment.getTotalBytes())) :
             DURATION.equals(columnNames[columnIndex])         ? Double.valueOf(String.format("%.6f", videoSegment.getDuration())) :
             TCP_SESSION.equals(columnNames[columnIndex])      ? Double.valueOf(String.format("%06.3f", videoSegment.getSession().getSessionStartTime())) :
@@ -101,6 +101,13 @@ public class SegmentTableModel extends AbstractTableModel {
         );
 	}
 
+
+	private Object calculateBitRate(VideoEvent videoSegment) {
+		if (videoSegment.getBitrate() == 0 && videoSegment.getDuration() > 0) {
+			return (videoSegment.getTotalBytes() * 8 / videoSegment.getDuration())/1000;
+		}
+		return videoSegment.getBitrate();
+	}
 
 	SegmentTableModel(Collection<VideoEvent> videoEventList) {
 		this.videoEventList = new ArrayList<>();
@@ -123,8 +130,8 @@ public class SegmentTableModel extends AbstractTableModel {
 		Termination termination;
 		if ((termination = videoSegment.getSession().getSessionTermination()) != null) {
 			switch (termination.getPacket().getTcpFlagString()) {
-			case "AF": value = "fin";break;
-			case "AR": value = "RST"; break;
+			case "AF": case "F": value = "FIN";break;
+			case "AR": case "R": value = "RST"; break;
 			default: break;
 			}
 		}

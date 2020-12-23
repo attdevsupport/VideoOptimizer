@@ -61,7 +61,10 @@ public class AsyncCheckInScriptImpl implements IBestPractice {
 	private String textResultPass;
 
 	@Value("${html.asyncload.results}")
-	private String textResults;
+    private String textResults;
+
+	@Value("${html.asyncload.excel.results}")
+    private String textExcelResults;
 
 	@Value("${exportall.csvSyncPacketCount}")
 	private String exportAllSyncPacketCount;
@@ -114,6 +117,10 @@ public class AsyncCheckInScriptImpl implements IBestPractice {
 										entrylist.size());// result.getSyncPacketCount());
 			result.setResultText(text);
 		}
+
+		result.setResultExcelText(
+	        MessageFormat.format(textExcelResults, result.getResultType().getDescription(), entrylist.size())
+        );
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
 		result.setLearnMoreUrl(learnMoreUrl);

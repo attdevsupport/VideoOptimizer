@@ -166,7 +166,7 @@ public class VideoResultSummary {
 			if (allMovie) {
 				for ( VideoStream manifest : manifests) {
 					if (manifest != null) {
-						Collection<VideoEvent> videoEvents = manifest.getVideoEventList() != null ? manifest.getVideoEventList().values() : new ArrayList<>();
+						Collection<VideoEvent> videoEvents = manifest.getVideoEventMap() != null ? manifest.getVideoEventMap().values() : new ArrayList<>();
 						for (VideoEvent videoEvent : videoEvents) {
 							sumtotalBytes += videoEvent.getTotalBytes();
 						}
@@ -174,8 +174,8 @@ public class VideoResultSummary {
 				}
 			} else {
 				for ( VideoStream manifest : manifests) {
-					if (manifest != null && manifest.isSelected() && (manifest.getVideoEventList() != null)) {
-						for (VideoEvent videoEvent : manifest.getVideoEventList().values()) {
+					if (manifest != null && manifest.isSelected() && (manifest.getVideoEventMap() != null)) {
+						for (VideoEvent videoEvent : manifest.getVideoEventMap().values()) {
 							sumtotalBytes += videoEvent.getTotalBytes();
 						}
 					}

@@ -34,6 +34,7 @@ import com.att.aro.core.videoanalysis.pojo.Manifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ManifestType;
 import com.att.aro.core.videoanalysis.pojo.UrlMatchDef;
+import com.att.aro.core.videoanalysis.pojo.UrlMatchDef.UrlMatchType;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 
@@ -126,7 +127,6 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					LOG.debug("******* Parsing new Master Manifest (Video Stream)");
 					switchManifestCollection(newManifest, key, manifest.getRequestTime());
 				} else if (strData.contains("#EXTINF:")) { // child manifest
-					
 					LOG.debug(" ****** Parsing new Child Manifest");
 					if (manifestCollection == null) {
 						// special handling of childManifest when there is no parent manifest
@@ -146,7 +146,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 						childManifest.setManifest(newManifest);
 					}
 					// set name on (child)manifest
-					childManifest.getManifest().setVideoName(StringUtils.substringBefore(buildUriNameKey(manifest.getMasterManifest(), childManifest.getManifest().getRequest()), ";"));
+					childManifest.getManifest().setVideoName(StringUtils.substringBefore(buildUriNameKey(childManifest.getManifest().getRequest()), ";"));
 					
 					if (childManifest.isVideo()) {
 						if (childManifest.getCodecs().contains(",")) {
@@ -175,6 +175,10 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				
 				if (StringUtils.isNotEmpty(childUriName)) {
 					LOG.debug("MEDIA childUriName :" + childUriName);
+					UrlMatchDef urlMatchDef = defineUrlMatching(childUriName);
+	                manifest.getSegUrlMatchDef().add(urlMatchDef);
+	                LOG.debug("EXT-X-MEDIA defineUrlMatching(childUriName): " + urlMatchDef);
+
 					childManifest = createChildManifest(null, "", childUriName);
 					childManifest.setVideo(false);
 					switch (StringParse.findLabeledDataFromString("TYPE=", ",", sData[itr])) {
@@ -187,6 +191,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 						}
 						break;
 					case "CLOSED-CAPTIONS":
+					case "SUBTITLES":
 						contentType = ContentType.SUBTITLES;
 						break;
 					default:
@@ -201,9 +206,10 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 			case "#EXT-X-STREAM-INF": // ChildManifest Map itr:metadata-Info, ++itr:childManifestName
 				String childParameters = sData[itr];
 				childUriName = decodeUrlEncoding(sData[++itr]);
-				
-				manifest.setUrlMatchDef(defineUrlMatching(newManifest, childUriName));
-				LOG.debug("defineUrlMatching(newManifest, childUriName) :" + manifest.getUrlMatchDef());
+
+				UrlMatchDef urlMatchDef = defineUrlMatching(childUriName);
+				manifest.getSegUrlMatchDef().add(urlMatchDef);
+				LOG.debug("EXT-X-STREAM-INF defineUrlMatching(childUriName): " + urlMatchDef);
 				
 				childManifest = manifestCollection.getChildManifest(childUriName);
 				
@@ -239,12 +245,18 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 						segmentUriName = sData[++itr];
 					}
 					segmentUriName = cleanUriName(segmentUriName);
-					
-					if (newManifest.getSegUrlMatchDef() == null) {
-						UrlMatchDef temp = defineUrlMatching(newManifest, segmentUriName);
-						masterManifest.setSegUrlMatchDef(temp);
-						newManifest.setSegUrlMatchDef(temp);
-					}
+
+    				urlMatchDef = defineUrlMatching(segmentUriName);
+    				// Build reference URL and URL match definition for the segment using corresponding child manifest
+    				if (UrlMatchType.COUNT.equals(urlMatchDef.getUrlMatchType())) {
+    				    UrlMatchDef segmentManifestUrlMatchDef = defineUrlMatching(childManifest.getUriName());
+				        urlMatchDef.setUrlMatchLen(urlMatchDef.getUrlMatchLen() + segmentManifestUrlMatchDef.getUrlMatchLen());
+				        segmentUriName = StringUtils.substringBeforeLast(childManifest.getUriName(), "/") + "/" + segmentUriName;
+    				}
+
+    				masterManifest.getSegUrlMatchDef().add(urlMatchDef);
+    				newManifest.getSegUrlMatchDef().add(urlMatchDef);
+    				LOG.debug("EXTINF defineUrlMatching(childUriName): " + urlMatchDef);
 					
 					segmentInfo = createSegmentInfo(childManifest, parameters, segmentUriName);
 
@@ -253,6 +265,9 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 						newManifest.getTimeScale();
 						segmentInfo.setStartTime(0);
 					}
+
+					segmentUriName = decodeUrlEncoding(segmentUriName);
+			        segmentUriName = StringUtils.substringBefore(segmentUriName, "?");
 					if (childManifest.addSegment(segmentUriName, segmentInfo).equals(segmentInfo)) {
 						manifestCollection.addToSegmentTrie(segmentUriName, segmentInfo);
 						manifestCollection.addToTimestampChildManifestMap(manifest.getRequest().getTimeStamp(), childManifest);
@@ -400,7 +415,8 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				childManifest.setContentType(ContentType.UNKNOWN);
 			}
 		}
-		childUriName = childUriName.replaceAll("%2f", "/");
+
+		childUriName = StringUtils.substringBefore(childUriName, "?");
 		manifestCollection.addToUriNameChildMap(childUriName, childManifest);
 		return childManifest;
 	}

@@ -18,6 +18,7 @@ package com.att.aro.core.bestpractice.impl;
 import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.att.aro.core.ApplicationConfig;
 
@@ -52,6 +53,23 @@ public final class Http3xx4xxHelper {
 									ApplicationConfig.getInstance().getAppShortName(), 
 									errorlist.toString());
 	}
+
+	public static String formatErrorCodesToText(Map<Integer, Integer> errorCodes) {
+        StringBuilder sb = new StringBuilder();
+        Iterator<Entry<Integer, Integer>> iterator = errorCodes.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Entry<Integer, Integer> entry = iterator.next();
+            sb.append(entry.getValue());
+            sb.append("-" + entry.getKey() + " error(s)");
+
+            if (iterator.hasNext()) {
+                sb.append(", ");
+            }
+        }
+
+        return sb.toString();
+    }
+
 	public static String formatError(Map.Entry<Integer, Integer> entry, String errorPlural, String errorSingular) {
 		int count = entry.getValue();
 		if(count > 1){

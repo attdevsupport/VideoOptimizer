@@ -45,19 +45,29 @@ public class HttpsUsageImpl implements IBestPractice {
 	private static final Logger LOGGER = LogManager.getLogger(HttpsUsageImpl.class.getName());
 	@Value("${security.httpsUsage.title}")
 	private String overviewTitle;
+
 	@Value("${security.httpsUsage.detailedTitle}")
 	private String detailedTitle;
+
 	@Value("${security.httpsUsage.desc}")
 	private String aboutText;
+
 	@Value("${security.httpsUsage.url}")
 	private String learnMoreUrl;
+
 	@Value("${security.httpsUsage.pass}")
 	private String testResultPassText;
+
 	@Value("${security.httpsUsage.results}")
 	private String testResultAnyText;
+	
+	@Value("${security.httpsUsage.excel.results}")
+    private String textExcelResults;
+
 	// exportAll is used for testing
 	@Value("$exportall.csvHttpsUsageHTTPDetected}")
 	private String exportAll;
+
 	/*
 	 * Total number of connections/TCP sessions in current trace.
 	 */
@@ -87,21 +97,28 @@ public class HttpsUsageImpl implements IBestPractice {
 		if (passTest()) {
 			result.setResultType(BPResultType.PASS);
 			testResultText = MessageFormat.format(testResultPassText, ApplicationConfig.getInstance().getAppShortName(),
-					totalNumHttpConnectionsCurrentTrace, formatDoubleToString(stat.getTotalHTTPSByte()/1024.0, 2),
+					totalNumHttpConnectionsCurrentTrace, formatDoubleToString(stat.getTotalHTTPSByte()/1000.0, 2),
 					formatDoubleToString(stat.getTotalHTTPSByte()*100.0/stat.getTotalByte(), 2),
-					formatDoubleToString(stat.getTotalHTTPSBytesNotAnalyzed()/1024.0, 2));
+					formatDoubleToString(stat.getTotalHTTPSBytesNotAnalyzed()/1000.0, 2));
+			result.setResultExcelText(BPResultType.PASS.getDescription());
 		} else if (failTest(httpsUsageEntries, httpConnectionsPercentageCurrentTrace)) {
 			result.setResultType(BPResultType.FAIL);
 			testResultText = MessageFormat.format(testResultAnyText, ApplicationConfig.getInstance().getAppShortName(),
 					totalNumHttpConnectionsCurrentTrace, httpConnectionsPercentageCurrentTrace,
-					formatDoubleToString(stat.getTotalHTTPSByte()/1024.0, 2), formatDoubleToString(stat.getTotalHTTPSByte()*100.0/stat.getTotalByte(), 2),
-                    formatDoubleToString(stat.getTotalHTTPSBytesNotAnalyzed()/1024.0, 2));
+					formatDoubleToString(stat.getTotalHTTPSByte()/1000.0, 2), formatDoubleToString(stat.getTotalHTTPSByte()*100.0/stat.getTotalByte(), 2),
+                    formatDoubleToString(stat.getTotalHTTPSBytesNotAnalyzed()/1000.0, 2));
+			result.setResultExcelText(
+		        MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), totalNumHttpConnectionsCurrentTrace, httpConnectionsPercentageCurrentTrace)
+	        );
 		} else {
 			result.setResultType(BPResultType.WARNING);
 			testResultText = MessageFormat.format(testResultAnyText, ApplicationConfig.getInstance().getAppShortName(),
 					totalNumHttpConnectionsCurrentTrace, httpConnectionsPercentageCurrentTrace,
-					formatDoubleToString(stat.getTotalHTTPSByte()/1024.0, 2), formatDoubleToString(stat.getTotalHTTPSByte()*100.0/stat.getTotalByte(), 2),
-					formatDoubleToString(stat.getTotalHTTPSBytesNotAnalyzed()/1024.0, 2));
+					formatDoubleToString(stat.getTotalHTTPSByte()/1000.0, 2), formatDoubleToString(stat.getTotalHTTPSByte()*100.0/stat.getTotalByte(), 2),
+					formatDoubleToString(stat.getTotalHTTPSBytesNotAnalyzed()/1000.0, 2));
+			result.setResultExcelText(
+                MessageFormat.format(textExcelResults, BPResultType.WARNING.getDescription(), totalNumHttpConnectionsCurrentTrace, httpConnectionsPercentageCurrentTrace)
+            );
 		}
 
 		result.setOverviewTitle(overviewTitle);

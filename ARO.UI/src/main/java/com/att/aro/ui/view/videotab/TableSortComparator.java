@@ -21,7 +21,7 @@ import java.util.Comparator;
 
 import org.apache.commons.lang.StringUtils;
 
-public class TableSortComparator implements Comparator<String> {
+public class TableSortComparator implements Comparator<Object> {
 
 	private int columnIndex = -1;
 	private int res;
@@ -37,33 +37,47 @@ public class TableSortComparator implements Comparator<String> {
 	}
 
 	@Override
-	public int compare(String objectA, String objectB) {
-		switch (columnIndex) {
-		case -1:
-		case 15: // column 15   SessionLink     - don't sort
-			res =  0; break;
-		case  0:// column  0 = Segment No.      - n
-		case  1:// column  1   Track Quality    - n
-			res = compareInteger(objectA, objectB);     break;
-		case  4:// column  4   Resolution       - n
-		case  5:// column  5   Bitrate          - n
-		case  6:// column  6   Total Bytes      - n
-		case  7:// column  7 = StartTime        - n
-		case  8:// column  8   Duration         - n
-		case  9:// column  9 = DL Start Time    - n
-		case 10:// column 10 = DL End Time      - n
-		case 11:// column 11 = PlayTime         - n
-		case 12:// column 12 = StallTime        - n
-		case 13:// column 13   TCP Session      - n
-			res = compareDouble(objectA, objectB);     break;
-		case  2:// column  2 = Content          - a
-		case  3:// column  3 = CHANNELS,		- a
-		case 14:// column 14   TCP State        - a
-			res = objectA.compareTo(objectB);          break;
-
-		default:
-			res = objectA.compareTo(objectB); 
-			break;
+	public int compare(Object objectA, Object objectB) {
+		if (objectA instanceof String && objectB instanceof String) {
+			String stringA = (String)objectA;
+			String stringB = (String)objectB;
+			switch (columnIndex) {
+			case -1:
+			case 15: // column 15   SessionLink     - don't sort
+				res =  0; break;
+			case  0:// column  0 = Segment No.      - n
+			case  1:// column  1   Track Quality    - n
+				res = compareInteger(stringA, stringB);     break;
+			case  4:// column  4   Resolution       - n
+			case  5:// column  5   Bitrate          - n
+			case  6:// column  6   Total Bytes      - n
+			case  7:// column  7 = StartTime        - n
+			case  8:// column  8   Duration         - n
+			case  9:// column  9 = DL Start Time    - n
+			case 10:// column 10 = DL End Time      - n
+			case 11:// column 11 = PlayTime         - n
+			case 12:// column 12 = StallTime        - n
+			case 13:// column 13   TCP Session      - n
+				res = compareDouble(stringA, stringB);     break;
+			case  2:// column  2 = Content          - a
+			case  3:// column  3 = CHANNELS,		- a
+			case 14:// column 14   TCP State        - a
+				res = stringA.compareTo(stringB);          break;
+	
+			default:
+				res = stringA.compareTo(stringB); 
+				break;
+			}
+		} else if (objectA instanceof Integer && objectB instanceof Integer){
+			Integer intA = (Integer)objectA;
+			Integer intB = (Integer)objectB;
+			res = intA.compareTo(intB);
+		} else if (objectA instanceof Double && objectB instanceof Double) {
+			Double doubleA = (Double)objectA;
+			Double doubleB = (Double)objectB;
+			res = doubleA.compareTo(doubleB);
+		} else {
+			return 0;
 		}
 		return res;
 	}

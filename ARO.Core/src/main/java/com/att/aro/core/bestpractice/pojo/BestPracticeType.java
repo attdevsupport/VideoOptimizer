@@ -65,7 +65,6 @@ public enum BestPracticeType {
 	HTTPS_USAGE(SECURITY, "HTTPS Usage")
 	, TRANSMISSION_PRIVATE_DATA(SECURITY, "Transmission of Private Data")
 	, UNSECURE_SSL_VERSION(SECURITY, "Unsecure SSL Version")
-	, WEAK_CIPHER(SECURITY, "Weak Cipher")
 	, FORWARD_SECRECY(SECURITY, "Forward Secrecy"),
 
 	VIDEO_STALL(VIDEO, "Stalls")
@@ -78,7 +77,7 @@ public enum BestPracticeType {
 	, VIDEO_REDUNDANCY(VIDEO, "Redundancy")
 	, VIDEO_CONCURRENT_SESSION(VIDEO, "Concurrent Session")
 	, VIDEO_VARIABLE_BITRATE(VIDEO, "Variable Bitrate") 
-	, VIDEO_RESOLUTION_QUALITY(VIDEO, "Resolution and Perception") 
+	, VIDEO_RESOLUTION_QUALITY(VIDEO, "Resolution and Perception")
 	, VIDEO_ABR_LADDER(VIDEO, "Analyzing the Adaptive Bitrate Ladder")
 	, AUDIO_STREAM(VIDEO, "Streaming Separate Audio and Video"),
 

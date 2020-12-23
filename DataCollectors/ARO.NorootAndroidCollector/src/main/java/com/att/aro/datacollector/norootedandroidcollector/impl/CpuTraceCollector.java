@@ -103,6 +103,7 @@ public class CpuTraceCollector implements Runnable {
 	 * @return
 	 */
 	public boolean stopCpuTraceCapture(IDevice device) {
+	    LOGGER.info("Stopping cpu trace collection...");
 
 		setCurrentState(State.Stopping);
 		String command = "sh " + remoteCpuFilesPath + killCpuMonPayload;
@@ -120,6 +121,8 @@ public class CpuTraceCollector implements Runnable {
 			}
 		}
 		setCurrentState(State.Done);
+
+		LOGGER.info("CPU trace collection state: " + getCurrentState().name());
 		return true;
 	}
 	
@@ -130,34 +133,41 @@ public class CpuTraceCollector implements Runnable {
 	 * @return state
 	 */
 	public State init(IAndroid android, IAroDevice aroDevice, String localTraceFolder){
-		
+	    LOGGER.info("Initializing cpu trace collection...");
+
 		this.android = android;
 		this.aroDevice = aroDevice;
 		this.device = (IDevice) aroDevice.getDevice();
 		this.localTraceFolder = localTraceFolder;
-		
+
+		LOGGER.debug("Remove existing cpu trace files:");
 		String[] res = android.getShellReturn(device, "rm " + remoteCpuFilesPath + "*");
 		for (String line : res) {
 			if (line.length() > 0) {
 				LOGGER.debug(">>" + line + "<<");
 			}
 		}
+
+		LOGGER.debug("Create cpu trace directories:");
 		this.filemanager.mkDir(localTraceFolder);
 		String[] response;
 		response = android.getShellReturn(device, "mkdir " + "/sdcard/ARO");
 		for (String line : response) {
-			LOGGER.info("stop cpu trace response:" + line);
+		    LOGGER.debug(">>" + line + "<<");
 		}
+	
 		response = null;
 		response = android.getShellReturn(device, "mkdir " + "/sdcard/ARO/cpufiles");
 		for (String line : response) {
-			LOGGER.info("stop cpu trace response:" + line);
+		    LOGGER.debug(">>" + line + "<<");
 		}
+
 		traceActive = this.adbservice.installPayloadFile(aroDevice, localTraceFolder, payloadFileName, remoteExecutable);
 		if (traceActive) {
 			setCurrentState(State.Initialized);
 		}
-		
+
+		LOGGER.info("CPU trace collection state: " + getCurrentState().name());
 		return getCurrentState();
 	}
 }

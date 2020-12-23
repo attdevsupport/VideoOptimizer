@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.att.aro.core.util.ForwardSecrecyUtil;
-import com.att.aro.core.util.WeakCipherUtil;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -30,7 +29,7 @@ import lombok.Setter;
  * A bean class that provides access to TCP packet data.
  */
 public class TCPPacket extends IPPacket implements Serializable {
-	
+
 	private static final long serialVersionUID = 1L;
 
 	private static final byte TLS_CHANGE_CIPHER_SPEC = 20;
@@ -87,6 +86,7 @@ public class TCPPacket extends IPPacket implements Serializable {
 		int hlen = ((bytes.get(headerOffset + 12) & 0xF0) >> 2);
 		dataOffset = headerOffset + hlen;
 		payloadLen = super.getPayloadLen() - hlen;
+
 		short ivalue = bytes.getShort(headerOffset + 12);
 		urg = (ivalue & 0x0020) != 0;
 		ack = (ivalue & 0x0010) != 0;
@@ -289,7 +289,6 @@ public class TCPPacket extends IPPacket implements Serializable {
 	private int parseSecureSocketsLayer(ByteBuffer bytes, int offset) {
 
 		if (bytes.array().length >= offset + 5) {
-			
 			// Check for TLS/SSL
 			bytes.position(offset);
 			byte contentType = bytes.get();
@@ -297,7 +296,7 @@ public class TCPPacket extends IPPacket implements Serializable {
 			byte minorVersion = bytes.get();
 			short tlsLen = bytes.getShort();
 			int result = offset + 5 + tlsLen;
-			
+
 			// sniff client hello and server hello for ciphers
 			if (isHandshake(contentType, majorVersion, minorVersion)) {
 				// check unsecure SSL version
@@ -307,7 +306,7 @@ public class TCPPacket extends IPPacket implements Serializable {
 				getCipherSuitesFromClientHello(bytes, tlsLen);
 				getCipherSuiteFromServerHello(bytes, tlsLen);
 			}
-			
+
 			if (isSecureSSLVersion(majorVersion, minorVersion) 
 					&& (contentType == TLS_CHANGE_CIPHER_SPEC
 							|| contentType == TLS_ALERT
@@ -395,8 +394,6 @@ public class TCPPacket extends IPPacket implements Serializable {
 			skip(bytes, 32);	// skip random
 			int lengthOfSessionID = getSessionIDLength(bytes);	// skip length of session ID
 			skip(bytes, lengthOfSessionID);	// skip session ID if session ID is NOT empty
-			int lengthOfCipherSuites = getCipherSuiteLength(bytes);	// skip length of cipher suites
-			setCipherSuites(bytes, lengthOfCipherSuites);
 		} catch (Exception e) {
 			
 		} finally {
@@ -458,18 +455,6 @@ public class TCPPacket extends IPPacket implements Serializable {
 	}
 	
 	/**
-	 * get length of cipher suites
-	 * @param bytes
-	 * @return
-	 */
-	private int getCipherSuiteLength(ByteBuffer bytes) {
-		byte[] bytesForLength = new byte[2];
-		bytesForLength[0] = bytes.get();
-		bytesForLength[1] = bytes.get();
-		return getLength(bytesForLength);
-	}
-	
-	/**
 	 * get length from byte array
 	 * @param length
 	 * @return
@@ -481,24 +466,6 @@ public class TCPPacket extends IPPacket implements Serializable {
 			length += bytes[i] << shift;
 		}
 		return length;
-	}
-	
-	/**
-	 * get cipher suites from client hello
-	 * @param bytes
-	 * @param length
-	 * @return
-	 */
-	private void setCipherSuites(ByteBuffer bytes, int length) {
-		for(int i = 0; i < length; i+=2) {
-			byte[] cipherSuite = new byte[2];
-			cipherSuite[0] = bytes.get();
-			cipherSuite[1] = bytes.get();
-			String cipherHex = getHexCipherSuite(cipherSuite);
-			if (WeakCipherUtil.containsKey(cipherHex)) {
-				weakCipherSuites.add(cipherHex);
-			}
-		}
 	}
 	
 	/**

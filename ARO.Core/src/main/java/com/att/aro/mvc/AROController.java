@@ -411,26 +411,27 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			extraParams 			  = ((AROCollectorActionEvent) event).getExtraParams();
 			
 			result = startCollector(device, traceName, extraParams);
-				
-				LOG.info("---------- result: " + result.toString());
-				if (!result.isSuccess()) { // report failure
+			LOG.info("---------- result: " + result.toString());
 
-					if (result.getError().getCode() == 206) {
-						try {
-							(new File(traceFolderPath)).delete();
-						} catch (Exception e) {
-							LOG.warn("failed to delete trace folder :" + traceFolderPath);
-						}
-						this.theView.updateCollectorStatus(CollectorStatus.CANCELLED, result);
-					}else{
-						this.theView.updateCollectorStatus(null, result);
+			if (!result.isSuccess()) { // report failure
+				if (result.getError().getCode() == 206) {
+					try {
+						(new File(traceFolderPath)).delete();
+					} catch (Exception e) {
+						LOG.warn("failed to delete trace folder :" + traceFolderPath);
 					}
-				} else { // apk has launched and been activated
-					if (!getVideoOption().equals(VideoOption.NONE) && "startCollector".equals(actionCommand)) {
-						this.theView.liveVideoDisplay(collector);
-					}
-					this.theView.updateCollectorStatus(CollectorStatus.STARTED, result);
+
+					this.theView.updateCollectorStatus(CollectorStatus.CANCELLED, result);
+				} else {
+					this.theView.updateCollectorStatus(null, result);
 				}
+			} else { // apk has launched and been activated
+				if (!getVideoOption().equals(VideoOption.NONE) && "startCollector".equals(actionCommand)) {
+					this.theView.liveVideoDisplay(collector);
+				}
+
+				this.theView.updateCollectorStatus(CollectorStatus.STARTED, result);
+			}
 
 		}
 	}

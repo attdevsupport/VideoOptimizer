@@ -174,7 +174,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	 * Segment Quality AKA Track
 	 */
 	private String quality;
-	private double resolutionHeight = 0;
+	private int resolutionHeight = 0;
 	/**
 	 * Download starting timestamp
 	 */
@@ -216,6 +216,8 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	
 	private SortedMap<String, VideoEvent> audioMap = new TreeMap<>();
 
+	private String option = "";
+
 	public boolean isMpeg() {
 		return getManifest().getVideoFormat().equals(VideoFormat.MPEG4);
 	}
@@ -251,14 +253,15 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	 * class.
 	 */
 	public enum VideoType {
-		DASH
-		, DASH_DYNAMIC
-		, DASH_ENCODEDSEGMENTLIST
-		, DASH_SEGMENTTIMELINE
-		, HLS
-		, HLS_CHILD
-		, SSM
-		, UNKNOWN
+		DASH,
+		DASH_IF,
+		DASH_DYNAMIC,
+		DASH_ENCODEDSEGMENTLIST,
+		DASH_SEGMENTTIMELINE,
+		HLS,
+		HLS_CHILD,
+		SSM,
+		UNKNOWN
 	}
 
 	@Override
@@ -351,7 +354,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		this.videoType = manifest.getVideoType();
 		setBitrate(segmentInfo.getBitrate());
 		setChildManifest(childManifest);
-		setResolutionHeight(childManifest.getPixelHeight());
+		setResolutionHeight(segmentInfo.getResolutionHeight());
 		setChannels(childManifest.getChannels());
 		setQuality(segmentInfo.getQuality());
 		setSegmentID(segmentInfo.getSegmentID());
@@ -548,4 +551,6 @@ public class VideoEvent implements Comparable<VideoEvent>{
 			this.playTime = playTime;
 		}
 	}
+
+
 }

@@ -99,15 +99,15 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 		stop = false;
 		hasQuit = false;
 		LOG.info("Init Screencapture...");
-		LOG.info("workingfolder :" + this.workingFolder);
+		LOG.info("Working folder: " + this.workingFolder);
 
 		smanage = new ScreenshotManager(this.workingFolder, this.udid);
 		smanage.start();
-		LOG.info("started ScreenshotManager.");
+		LOG.info("Started ScreenshotManager...");
 		int timeoutcounter = 0;
 		while (!smanage.isReady()) {
 			try {
-				LOG.info("waiting for ScreenshotManager to be ready");
+				LOG.info("Waiting for ScreenshotManager to be ready");
 				Thread.sleep(200);
 				timeoutcounter++;
 			} catch (InterruptedException e) {
@@ -191,7 +191,7 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 						break;
 					}
 				} catch (InterruptedException e) {
-					LOG.debug("InterruptedException:", e);
+					LOG.warn("InterruptedException:", e);
 					break;
 				}
 			}
@@ -202,6 +202,7 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 			try {
 				capt.stopCapture();
 			} catch (UnsatisfiedLinkError er) {
+			    LOG.warn("Soemthing went wrong while trying to stop screen recording", er);
 			}
 			capt = null;
 			LOG.info("disposed screencapture");
@@ -210,7 +211,7 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 			try {
 				smanage.signalShutdown();
 			} catch (IOException e) {
-				LOG.debug("IOException:", e);
+				LOG.warn("IOException:", e);
 			}
 			smanage = null;
 		}

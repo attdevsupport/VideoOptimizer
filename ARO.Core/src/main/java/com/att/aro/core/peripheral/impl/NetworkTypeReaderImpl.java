@@ -60,28 +60,36 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 			networkTypeInfos.clear();
 
 			NetworkType networkType;
+			NetworkType overrideNetworkType = NetworkType.OVERRIDE_NETWORK_TYPE_NONE;
 			double beginTime;
 			double endTime;
 			String[] fields = line.split(" ");
-			if (fields.length == 2) {
+			if (fields.length >= 2) {
 				beginTime = Util.normalizeTime(Double.parseDouble(fields[0]), startTime);
 				try {
 					networkType = getNetworkTypeFromCode(Integer.parseInt(fields[1]));
+					if (fields.length > 2) {
+						overrideNetworkType = getOverriderNetworkTypeFromCode(Integer.parseInt(fields[2]));
+					}
 				} catch (NumberFormatException e) {
-					networkType = NetworkType.none;
+					networkType = NetworkType.UNKNOWN;
 					LOGGER.warn("Invalid network type [" + fields[1] + "]");
 				}
 				networkTypesList.add(networkType);
 				for (int i = 1; i < lines.length; i++) {
 					line = lines[i];
 					fields = line.split(" ");
-					if (fields.length == 2) {
+					if (fields.length >= 2) {
 						endTime = Util.normalizeTime(Double.parseDouble(fields[0]), startTime);
-						networkTypeInfos.add(new NetworkBearerTypeInfo(beginTime, endTime, networkType));
+						networkTypeInfos
+								.add(new NetworkBearerTypeInfo(beginTime, endTime, networkType, overrideNetworkType));
 						try {
 							networkType = getNetworkTypeFromCode(Integer.parseInt(fields[1]));
+							if (fields.length > 2) {
+								overrideNetworkType = getOverriderNetworkTypeFromCode(Integer.parseInt(fields[2]));
+							}
 						} catch (NumberFormatException e) {
-							networkType = NetworkType.none;
+							networkType = NetworkType.UNKNOWN;
 							LOGGER.warn("Invalid network type [" + fields[1] + "]");
 						}
 						beginTime = endTime;
@@ -90,7 +98,7 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 						}
 					}
 				}
-				networkTypeInfos.add(new NetworkBearerTypeInfo(beginTime, traceDuration, networkType));
+				networkTypeInfos.add(new NetworkBearerTypeInfo(beginTime, traceDuration, networkType, overrideNetworkType));
 			}
 		}
 		obj = new NetworkTypeObject();
@@ -109,7 +117,7 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 			return NetworkType.GPRS;
 		case TraceDataConst.TraceNetworkType.UMTS:
 			return NetworkType.UMTS;
-		case TraceDataConst.TraceNetworkType.ETHERNET:
+		case TraceDataConst.TraceNetworkType.EVDO0:
 			return NetworkType.ETHERNET;
 		case TraceDataConst.TraceNetworkType.HSDPA:
 			return NetworkType.HSDPA;
@@ -121,11 +129,37 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 			return NetworkType.HSPAP;
 		case TraceDataConst.TraceNetworkType.LTE:
 			return NetworkType.LTE;
-		case TraceDataConst.TraceNetworkType.NONE:
-			return NetworkType.none;
+		case TraceDataConst.TraceNetworkType.UNKNOWN:
+			return NetworkType.UNKNOWN;
 		default:
-			return NetworkType.none;
+			return NetworkType.UNKNOWN;
 		}
 
 	}
+	
+	/**
+	 * This information is provided in accordance with carrier policy and branding preferences.
+	 * The number is based on Android document from TelephonyDisplayInfo.java
+	 * Only device with Android 11 (API 30) will return the number
+	 * @param overrideNetworkTypeCode
+	 * @return
+	 */	
+	private NetworkType getOverriderNetworkTypeFromCode(int overrideNetworkTypeCode) {
+		switch (overrideNetworkTypeCode) {
+		case 0:
+			return NetworkType.OVERRIDE_NETWORK_TYPE_NONE;
+		case 1:
+			return NetworkType.OVERRIDE_NETWORK_TYPE_LTE_CA;
+		case 2:
+			return NetworkType.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO;
+		case 3:
+			return NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA;
+		case 4:
+			return NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE;
+		default:
+			return NetworkType.OVERRIDE_NETWORK_TYPE_NONE;
+		}		
+	}
+
+	
 }//end class

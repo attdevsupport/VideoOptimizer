@@ -32,8 +32,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.adb.IAdbService;
@@ -46,6 +46,7 @@ import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.AROMenuAdder;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
+import com.att.aro.ui.model.listener.BestPracticeResultsListener;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
@@ -64,44 +65,33 @@ import com.att.aro.ui.view.menu.tools.TimeRangeAnalysisDialog;
  */
 public class AROToolMenu implements ActionListener {
 	private static final String FILE_NAME = "Logcat_%s_%d.log";
-	private static final Logger LOG = LogManager.getLogger(AROToolMenu.class);	
+	private static final Logger LOG = LogManager.getLogger(AROToolMenu.class);
 	private IAdbService adbservice = ContextAware.getAROConfigContext().getBean(IAdbService.class);
 	private AWSDialog uploadDialog;
 
 	private final AROMenuAdder menuAdder = new AROMenuAdder(this);
 	private JMenu toolMenu;
 	SharedAttributesProcesses parent;
-	
+
 	private enum MenuItem {
-		menu_tools,
-		menu_tools_wireshark,
-		menu_tools_timerangeanalysis,
-		menu_tools_dataDump,
-		menu_tools_htmlExport,
-		menu_tools_jsonExport,
-		menu_tools_privateData,
-		menu_tools_videoAnalysis,
-		menu_tools_getErrorMsg,
-		menu_tools_clearErrorMsg,
-		menu_tools_videoParserWizard,
-		menu_tools_uploadTraceDialog,
-		menu_tools_downloadTraceDialog,
-		menu_tools_editMetadata,
-		menu_tools_ms_uploadTraceDialog,
-		menu_tools_ms_downloadTraceDialog
+		menu_tools, menu_tools_wireshark, menu_tools_timerangeanalysis, menu_tools_dataDump, menu_tools_htmlExport,
+		menu_tools_jsonExport, menu_tools_sessionsExport, menu_tools_excelExport, menu_tools_privateData,
+		menu_tools_videoAnalysis, menu_tools_getErrorMsg, menu_tools_clearErrorMsg, menu_tools_videoParserWizard,
+		menu_tools_uploadTraceDialog, menu_tools_downloadTraceDialog, menu_tools_editMetadata,
+		menu_tools_ms_uploadTraceDialog, menu_tools_ms_downloadTraceDialog
 	}
 
-	public AROToolMenu(SharedAttributesProcesses parent){
+	public AROToolMenu(SharedAttributesProcesses parent) {
 		super();
 		this.parent = parent;
 	}
-	
+
 	/**
 	 * @return the toolMenu
 	 */
 	public JMenu getMenu() {
-		
-		if(toolMenu == null){
+
+		if (toolMenu == null) {
 			toolMenu = new JMenu(ResourceBundleHelper.getMessageString(MenuItem.menu_tools));
 			toolMenu.setMnemonic(KeyEvent.VK_UNDEFINED);
 			boolean isTracePathEmpty = true;
@@ -111,22 +101,34 @@ public class AROToolMenu implements ActionListener {
 			}
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_timerangeanalysis));
 			toolMenu.addSeparator();
-			toolMenu.add(getMenuItem(MenuItem.menu_tools_htmlExport,isTracePathEmpty));
-			toolMenu.add(getMenuItem(MenuItem.menu_tools_jsonExport,isTracePathEmpty));
+			toolMenu.add(getMenuItem(MenuItem.menu_tools_htmlExport, isTracePathEmpty));
+			toolMenu.add(getMenuItem(MenuItem.menu_tools_jsonExport, isTracePathEmpty));
+			JMenuItem exportExportMenuItem = getMenuItem(MenuItem.menu_tools_sessionsExport, isTracePathEmpty);
+			exportExportMenuItem.addActionListener(
+					new ExportSessionData(((MainFrame) parent)));
+			toolMenu.add(exportExportMenuItem);
+			
+			// Excel export menu item
+			JMenuItem excelExportMenuItem = getMenuItem(MenuItem.menu_tools_excelExport, isTracePathEmpty);
+			excelExportMenuItem.addActionListener(
+					new BestPracticeResultsListener(((MainFrame) parent).getController().getTheModel()));
+			toolMenu.add(excelExportMenuItem);
+
 			toolMenu.addSeparator();
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_privateData));
-			if(ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
+			if (ResourceBundleHelper.getMessageString("preferences.test.env")
+					.equals(SettingsImpl.getInstance().getAttribute("env"))) {
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_getErrorMsg));
 				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_clearErrorMsg));
 			}
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_videoParserWizard));
-			if("dev".equals(SettingsImpl.getInstance().getAttribute("env"))) {
+			if ("dev".equals(SettingsImpl.getInstance().getAttribute("env"))) {
 				toolMenu.addSeparator();
-				toolMenu.add(getMenuItem(MenuItem.menu_tools_editMetadata,isTracePathEmpty));
+				toolMenu.add(getMenuItem(MenuItem.menu_tools_editMetadata, isTracePathEmpty));
 				if (SettingsImpl.getInstance().getAttribute("traceHandlerURL") != null
-					&& SettingsImpl.getInstance().checkAttributeValue("env", "dev")) {
+						&& SettingsImpl.getInstance().checkAttributeValue("env", "dev")) {
 					toolMenu.addSeparator();
-					toolMenu.add(getMenuItem(MenuItem.menu_tools_ms_uploadTraceDialog,isTracePathEmpty));
+					toolMenu.add(getMenuItem(MenuItem.menu_tools_ms_uploadTraceDialog, isTracePathEmpty));
 				}
 			}
 		}
@@ -141,44 +143,47 @@ public class AROToolMenu implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent aEvent) {
-		if(menuAdder.isMenuSelected(MenuItem.menu_tools_wireshark, aEvent)){
+		if (menuAdder.isMenuSelected(MenuItem.menu_tools_wireshark, aEvent)) {
 			openPcapAnalysis();
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_timerangeanalysis, aEvent)){
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_timerangeanalysis, aEvent)) {
 			openTimeRangeAnalysis();
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_htmlExport, aEvent)){
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_htmlExport, aEvent)) {
 			exportHtml();
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_jsonExport, aEvent)){
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_jsonExport, aEvent)) {
 			exportJson();
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_privateData, aEvent)) {
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_privateData, aEvent)) {
 			openPrivateDataDialog();
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_getErrorMsg, aEvent)) {
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_getErrorMsg, aEvent)) {
 			collectErrorMessage();
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_clearErrorMsg, aEvent)) {
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_clearErrorMsg, aEvent)) {
 			clearErrorMessage();
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_videoParserWizard, aEvent)){
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_videoParserWizard, aEvent)) {
 			openRegexWizard();
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_uploadTraceDialog, aEvent)){
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_uploadTraceDialog, aEvent)) {
 			openAWSUploadDialog(AWS.UPLOAD);
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_downloadTraceDialog, aEvent)){
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_downloadTraceDialog, aEvent)) {
 			openAWSUploadDialog(AWS.DOWNLOAD);
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_ms_uploadTraceDialog, aEvent) 
-					|| (menuAdder.isMenuSelected(MenuItem.menu_tools_ms_downloadTraceDialog, aEvent))){
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_ms_uploadTraceDialog, aEvent)
+				|| (menuAdder.isMenuSelected(MenuItem.menu_tools_ms_downloadTraceDialog, aEvent))) {
 			openATTmsUploadDialog();
-		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_editMetadata, aEvent)){
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_editMetadata, aEvent)) {
 			openMetadataDialog(aEvent);
 		}
 	}
 
-	private void exportHtml(){
-		ExportReport exportHtml = new ExportReport(parent, false, ResourceBundleHelper.getMessageString("menu.tools.export.error"));
+	private void exportHtml() {
+		ExportReport exportHtml = new ExportReport(parent, false,
+				ResourceBundleHelper.getMessageString("menu.tools.export.error"));
 		exportHtml.execute();
 	}
-	
-	private void exportJson(){
-		ExportReport exportJson = new ExportReport(parent, true, ResourceBundleHelper.getMessageString("menu.tools.export.error"));
+
+	private void exportJson() {
+		ExportReport exportJson = new ExportReport(parent, true,
+				ResourceBundleHelper.getMessageString("menu.tools.export.error"));
 		exportJson.execute();
 	}
-	
+
+
 	private void openPcapAnalysis() {
 
 		// Open PCAP analysis tool
@@ -218,10 +223,10 @@ public class AROToolMenu implements ActionListener {
 				ResourceBundleHelper.getMessageString("menu.error.noTraceLoadedMessage"),
 				ResourceBundleHelper.getMessageString("menu.error.title"), JOptionPane.ERROR_MESSAGE);
 	}
-	
+
 	/**
-	 * Checks and returns tracePath availability 
-	 * Trace data is present only if trace path available
+	 * Checks and returns tracePath availability Trace data is present only if trace
+	 * path available
 	 * 
 	 * @param traceData
 	 * 
@@ -243,35 +248,35 @@ public class AROToolMenu implements ActionListener {
 
 	/**
 	 * Returns a list of cap or pcap files in the specified folder
-	 * @param dir
-	 * 			the specified folder where to look for pcap/cap files
-	 * @return
-	 * 			a list of the pcap files found in the specified folder
+	 * 
+	 * @param dir the specified folder where to look for pcap/cap files
+	 * @return a list of the pcap files found in the specified folder
 	 */
 	private File[] getTrafficTextFiles(File dir) {
-	    return dir.listFiles(new FilenameFilter() {
-			
+		return dir.listFiles(new FilenameFilter() {
+
 			@Override
 			public boolean accept(File dir, String name) {
-				if (name.indexOf("traffic")>-1)
+				if (name.indexOf("traffic") > -1)
 					return true;
 				else
 					return false;
-		    }
-	    });
+			}
+		});
 	}
-	
+
 	private void openTimeRangeAnalysis() {
-		MainFrame mainFrame = ((MainFrame)parent);
-		if (mainFrame.getController().getTheModel()!=null && mainFrame.getController().getTheModel().getAnalyzerResult()!=null){
+		MainFrame mainFrame = ((MainFrame) parent);
+		if (mainFrame.getController().getTheModel() != null
+				&& mainFrame.getController().getTheModel().getAnalyzerResult() != null) {
 			PacketAnalyzerResult analysisData = mainFrame.getController().getTheModel().getAnalyzerResult();
 			TimeRangeAnalysisDialog timeRangeDialog = new TimeRangeAnalysisDialog(mainFrame.getJFrame(), analysisData);
 			timeRangeDialog.setVisible(true);
 		} else {
 			showNoTraceLoadedError();
-			}
+		}
 	}
-	
+
 	private void openPrivateDataDialog() {
 		PrivateDataDialog privateDataDialog = ((MainFrame) parent).getPrivateDataDialog();
 		if (privateDataDialog == null) {
@@ -282,7 +287,7 @@ public class AROToolMenu implements ActionListener {
 			privateDataDialog.setAlwaysOnTop(true);
 		}
 	}
-	
+
 	private void openAWSUploadDialog(AWS awsMode) {
 		uploadDialog = new AWSDialog(awsMode);
 		uploadDialog.setAWSMode(awsMode);
@@ -291,7 +296,7 @@ public class AROToolMenu implements ActionListener {
 	}
 
 	private void openMetadataDialog(ActionEvent aEvent) {
-			new MetadataDialog(parent, (JMenuItem) aEvent.getSource());
+		new MetadataDialog(parent, (JMenuItem) aEvent.getSource());
 	}
 
 	private void openATTmsUploadDialog() {
@@ -302,8 +307,8 @@ public class AROToolMenu implements ActionListener {
 		}
 	}
 
-	private void openRegexWizard(){
-		RegexWizard regexWizard = RegexWizard.getInstance();
+	private void openRegexWizard() {
+		RegexWizard regexWizard = RegexWizard.getInstance(((MainFrame) parent).getJFrame());
 		if (regexWizard != null) {
 			regexWizard.setVisible(true);
 		}
@@ -313,7 +318,7 @@ public class AROToolMenu implements ActionListener {
 		try {
 			LOG.debug("clearing logcat");
 			getDevice();
-			String adbPath = adbservice.getAdbPath();
+			String adbPath = adbservice.getAdbPath(true);
 			String[] command = new String[] { adbPath, "logcat", "-c" };
 			new ProcessBuilder(command).start();
 			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(), "Logcat clear Successful");
@@ -331,7 +336,7 @@ public class AROToolMenu implements ActionListener {
 					LocalTime.now().toSecondOfDay());
 			File outFile = new File(Util.getAROTraceDirAndroid(), fileName);
 			IDevice device = getDevice();
-			String adbPath = adbservice.getAdbPath();
+			String adbPath = adbservice.getAdbPath(true);
 			String[] command = new String[] { adbPath, "logcat", "-d", "2", "-t", "5000", "com.att.arocollector:I" };
 			ProcessBuilder procBuilder = new ProcessBuilder(command);
 			Process process = procBuilder.redirectOutput(outFile).start();
@@ -356,7 +361,7 @@ public class AROToolMenu implements ActionListener {
 		IDevice device = devices[0];
 		return device;
 	}
-	
+
 	private String getMsg(String token) {
 		return ResourceBundleHelper.getMessageString(token);
 	}

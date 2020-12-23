@@ -1,10 +1,13 @@
 package com.att.aro.core.export;
 
+import com.att.aro.core.export.style.ExcelCellStyle;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -17,7 +20,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-
 
 
 public class ExcelWriter {
@@ -41,51 +43,54 @@ public class ExcelWriter {
         }
 
         Workbook workbook = getWorkbook();
+        Map<ExcelCellStyle, CellStyle> styleMap = new HashMap<>();
+
         for (ExcelSheet sheet : sheets) {
             Sheet excelSheet = workbook.createSheet(sheet.getName());
+            int rowNumber = 0;
 
-            Font headerFont = workbook.createFont();
-            headerFont.setBold(true);
-            headerFont.setFontHeightInPoints((short) 14);
-            headerFont.setColor(IndexedColors.BLACK.getIndex());
+            // Create a header row
+            if (sheet.getColumnNames() != null && sheet.getColumnNames().size() > 0) {
+                Row headerRow = excelSheet.createRow(rowNumber++);
+                Font headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerFont.setFontHeightInPoints((short) 14);
+                headerFont.setColor(IndexedColors.BLACK.getIndex());
 
-            CellStyle headerCellStyle = workbook.createCellStyle();
-            headerCellStyle.setFont(headerFont);
+                CellStyle headerCellStyle = workbook.createCellStyle();
+                headerCellStyle.setFont(headerFont);
 
-            if (sheet.getColumnNames() != null) {
-                int rowNumber = 0;
-
-                // Create a header row
-                if (sheet.getColumnNames().size() > 0) {
-                    Row headerRow = excelSheet.createRow(rowNumber++);
-                    for (int i = 0; i < sheet.getColumnNames().size(); i++) {
-                        Cell cell = headerRow.createCell(i);
-                        setCellValue(cell, sheet.getColumnNames().get(i));
-                        cell.setCellStyle(headerCellStyle);
-                    }
-                }
-    
-                // Creating data rows
-                for (List<Object> dataRow : sheet.getDataRows()) {
-                    Row row = excelSheet.createRow(rowNumber++);
-                    for (int cellIndex = 0; cellIndex < dataRow.size(); ++cellIndex) {
-                        Cell cell = row.createCell(cellIndex);
-                        setCellValue(cell, dataRow.get(cellIndex));
-                    }
-                }
-
-                // Resize all columns to fit the content size
                 for (int i = 0; i < sheet.getColumnNames().size(); i++) {
-                    excelSheet.autoSizeColumn(i);
+                    Cell cell = headerRow.createCell(i);
+                    setCellValue(workbook, cell, sheet.getColumnNames().get(i), styleMap);
+                    cell.setCellStyle(headerCellStyle);
                 }
-    
-                // Write the output to a file
-                FileOutputStream fileOut = new FileOutputStream(filePath);
-                workbook.write(fileOut);
-                fileOut.close();
             }
+
+            int numberOfColumns = 0;
+            // Creating data rows
+            for (List<Object> dataRow : sheet.getDataRows()) {
+                Row row = excelSheet.createRow(rowNumber++);
+                numberOfColumns = Math.max(numberOfColumns, dataRow.size());
+
+                for (int cellIndex = 0; cellIndex < dataRow.size(); ++cellIndex) {
+                    Cell cell = row.createCell(cellIndex);
+                    setCellValue(workbook, cell, dataRow.get(cellIndex), styleMap);
+                }
+            }
+
+            // Resize all columns to fit the content size
+            for (int i = 0; i < numberOfColumns; i++) {
+                excelSheet.autoSizeColumn(i);
+            }
+
+            // Write the output to a file
+            FileOutputStream fileOut = new FileOutputStream(filePath);
+            workbook.write(fileOut);
+            fileOut.close();
         }
 
+        styleMap.clear();
         workbook.close();
     }
 
@@ -99,7 +104,7 @@ public class ExcelWriter {
      * @param cell
      * @param content
      */
-    private void setCellValue(Cell cell, Object content) {
+    private void setCellValue(Workbook workbook, Cell cell, Object content, Map<ExcelCellStyle, CellStyle> styleMap) {
         if (content instanceof String) {
             String str = (String) content;
             if (str.startsWith("=")) {
@@ -117,8 +122,22 @@ public class ExcelWriter {
             cell.setCellValue((Calendar) content);
         } else if (content instanceof RichTextString) {
             cell.setCellValue((RichTextString) content);
+        } else if (content instanceof ExcelCell) {
+            ExcelCell excelCell = (ExcelCell) content;
+
+            if (excelCell.getStyle() != null && workbook instanceof XSSFWorkbook) {
+                if (styleMap.get(excelCell.getStyle()) != null) {
+                    cell.setCellStyle(styleMap.get(excelCell.getStyle()));
+                } else {
+                    CellStyle style = excelCell.getStyle().getCellStyle((XSSFWorkbook) workbook);
+                    cell.setCellStyle(style);
+                    styleMap.put(excelCell.getStyle(), style);
+                }
+            }
+
+            setCellValue(workbook, cell, excelCell.getValue(), styleMap);
         } else {
-            cell.setCellValue(content.toString());
+            cell.setCellValue((content!=null?content.toString():""));
         }
     }
 }

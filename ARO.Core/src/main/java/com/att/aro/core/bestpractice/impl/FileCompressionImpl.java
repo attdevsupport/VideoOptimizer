@@ -41,6 +41,8 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
+import com.nixxcode.jvmbrotli.common.BrotliLoader;
+import com.nixxcode.jvmbrotli.enc.BrotliOutputStream;
 
 /**
  * best practice for text file compression
@@ -72,6 +74,9 @@ public class FileCompressionImpl implements IBestPractice {
 	
 	@Value("${textFileCompression.results}")
 	private String textResults;
+
+	@Value("${textFileCompression.excel.results}")
+    private String textExcelResults;
 	
 	@Value("${exportall.csvTextFileCompression}")
 	private String exportAll;
@@ -111,7 +116,9 @@ public class FileCompressionImpl implements IBestPractice {
 							totalUncompressBytes += req.getContentLength();
 							TextFileCompressionEntry tfcEntry = new TextFileCompressionEntry(req, lastRequestObj,
 									session.getDomainName());
-							tfcEntry.setSavingsTextPercentage(calculateSavingForTextBasedOnGzip(req, session));
+							int gzipSavings = calculateSavingForTextBasedOnGzip(req, session);
+							int brotliSavings = calculateSavingForTextBasedOnBrotli(req, session);
+							tfcEntry.setSavingsTextPercentage(brotliSavings > gzipSavings ? brotliSavings : gzipSavings);
 							resultlist.add(tfcEntry);
 						}else{
 							compressedCounter++;
@@ -139,6 +146,7 @@ public class FileCompressionImpl implements IBestPractice {
 									ApplicationConfig.getInstance().getAppShortName(),
 									FILE_SIZE_THRESHOLD_BYTES,
 									FILE_SIZE_THRESHOLD_BYTES);
+			result.setResultExcelText(result.getResultType().getDescription());
 		}else{
 			String percentageSaving = String
 					.valueOf(Math.round(((double) totalUncompressBytes / totalDownloadedBytes) * 100));
@@ -146,7 +154,10 @@ public class FileCompressionImpl implements IBestPractice {
 									ApplicationConfig.getInstance().getAppShortName(),
 									totalUncompressBytes / 1024,
 					FILE_SIZE_THRESHOLD_BYTES, percentageSaving, (totalDownloadedBytes / 1024));
+			result.setResultExcelText(MessageFormat.format(textExcelResults, result.getResultType().getDescription(),
+			        percentageSaving, totalUncompressBytes / 1024, totalDownloadedBytes / 1024));
 		}
+
 		result.setResultText(text);
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);
@@ -234,5 +245,54 @@ public class FileCompressionImpl implements IBestPractice {
 		}
 	}
 	
+	/**
+	 * Calculating the percentage of savings when we use Brotli.
+	 * @param req
+	 * @param session
+	 * @return
+	 */
+	public int calculateSavingForTextBasedOnBrotli(HttpRequestResponseInfo req, Session session){
+		
+		byte[] content = null;
+		byte[] compressedBytes = null;
+		try {
+			content = reqhelper.getContent(req, session);
+		} catch (Exception exp) {
+			LOGGER.error("Failed to get text content from response: "+ exp.getMessage());
+		}
+		if(content == null){
+			return 0;
+		}
+
+		BrotliOutputStream brotli = null;
+		BrotliLoader.isBrotliAvailable();
+		try(ByteArrayOutputStream out = new ByteArrayOutputStream(content.length)) {
+			brotli = new BrotliOutputStream(out);
+			brotli.write(content);
+			brotli.close();
+	
+			compressedBytes = out.toByteArray();
+			int originalSize = req.getContentLength();
+			int savingBytes = originalSize - compressedBytes.length;
+			
+			if(savingBytes < 0){
+				return 0;
+			}
+			
+			float savingPercentage = ((float)savingBytes * 100/originalSize);
+			return Math.round(savingPercentage);
+		} catch (IOException IOexp) {
+			LOGGER.error("Failed to get text content on Gzip savings calculation : ", IOexp);
+			return 0;
+		} finally {
+			if (brotli!=null) {
+				try {
+					brotli.close();
+				} catch (IOException e) {
+					LOGGER.error("Failed to close Brotli Output Stream", e);
+				}
+			}
+		}
+	}
 	
 }//end class

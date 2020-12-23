@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>3.2.0</version>
+        <version>4.0.0</version>
         <relativePath>../ARO.Parent</relativePath>
     </parent>
 
@@ -16,7 +16,7 @@
 
 	<properties>
 		<maven.deploy.skip>true</maven.deploy.skip>
-		<vo.version>3.2.0</vo.version>
+		<vo.version>4.0.0</vo.version>
 	</properties>
 	
 	<repositories>
@@ -57,7 +57,7 @@
 			<name>Sonatype Flex</name>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</repository>
-				<repository>
+<!-- 		<repository>
 			<id>atlassian-public</id>
 			<name>atlassian</name>
 			<url>https://packages.atlassian.com/maven/repository/public</url>
@@ -70,7 +70,7 @@
 				<enabled>true</enabled>
 				<checksumPolicy>warn</checksumPolicy>
 			</releases>
-		</repository>
+		</repository> -->
 		
 
 	</repositories>
@@ -115,9 +115,9 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-		    <groupId>com.github.markusbernhardt</groupId>
-		    <artifactId>proxy-vole</artifactId>
-		    <version>1.0.5</version>
+			<groupId>com.proxy</groupId>
+			<artifactId>proxy-vole</artifactId>
+			<version>1.0</version>			
 		</dependency>		
 		<dependency>
 		    <groupId>org.codehaus.mojo</groupId>

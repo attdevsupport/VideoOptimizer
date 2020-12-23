@@ -40,26 +40,40 @@ import com.att.aro.core.videoanalysis.pojo.VideoStream;
 public class VideoConcurrentSessionImpl implements IBestPractice {
 	@Value("${videoConcurrentSession.title}")
 	private String overviewTitle;
+
 	@Value("${videoConcurrentSession.detailedTitle}")
 	private String detailTitle;
+
 	@Value("${videoConcurrentSession.desc}")
 	private String aboutText;
+
 	@Value("${videoConcurrentSession.url}")
 	private String learnMoreUrl;
+
 	@Value("${videoConcurrentSession.results}")
 	private String textResults;
+
+	@Value("${videoConcurrentSession.excel.results}")
+    private String textExcelResults;
+
 	@Value("${videoConcurrentSession.results0}")
 	private String nonConcurrent;
+
 	@Value("${video.noData}")
 	private String noData;
+
 	@Value("${videoSegment.empty}")
 	private String novalidManifestsFound;	
+
 	@Value("${videoManifest.multipleManifestsSelected}")
 	private String multipleManifestsSelected;	
+
 	@Value("${videoManifest.noManifestsSelected}")
 	private String noManifestsSelected;	
+
 	@Value("${videoManifest.noManifestsSelectedMixed}")
 	private String noManifestsSelectedMixed;	
+
 	@Value("${videoManifest.invalid}")
 	private String invalidManifestsFound;
 
@@ -85,6 +99,7 @@ public class VideoConcurrentSessionImpl implements IBestPractice {
 				&& MapUtils.isNotEmpty(videoStreamCollection)) {
 
 			bpResultType = BPResultType.CONFIG_REQUIRED;
+			result.setResultExcelText(bpResultType.getDescription());
 			
 			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
@@ -117,12 +132,17 @@ public class VideoConcurrentSessionImpl implements IBestPractice {
 				} else {
 					result.setResultText(nonConcurrent);
 				}
+
+				result.setResultExcelText(
+			        MessageFormat.format(textExcelResults, bpResultType.getDescription(), maxManifestConcurrentSessions)
+		        );
 				result.setSelfTest(true);
 			}
 		} else {
 			result.setSelfTest(false);
 			result.setResultText(noData);
 			bpResultType = BPResultType.NO_DATA;
+			result.setResultExcelText(bpResultType.getDescription());
 		}
 
 		result.setResultType(bpResultType);
@@ -149,7 +169,7 @@ public class VideoConcurrentSessionImpl implements IBestPractice {
 					ArrayList<Double> sessionStartTimes = new ArrayList<>();
 					ArrayList<Double> sessionEndTimes = new ArrayList<>();
 					ArrayList<Session> sessionList = new ArrayList<>();
-					SortedMap<String, VideoEvent> videoEventList = videoStream.getVideoEventList();
+					SortedMap<String, VideoEvent> videoEventList = videoStream.getVideoEventMap();
 					for (VideoEvent veEntry : videoEventList.values()) {
 						Session session = veEntry.getSession();
 						if (!sessionList.contains(session)) {

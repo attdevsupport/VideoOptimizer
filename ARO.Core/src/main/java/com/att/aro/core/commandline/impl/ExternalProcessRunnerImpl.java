@@ -68,7 +68,11 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 	public String executeCmd(String cmd) {
 		return executeCmd(cmd, true);
 	}
-	
+
+	@Override
+	public String executeCmdRunner(String cmd, boolean earlyExit, String msg) {
+		return executeCmdRunner(cmd, earlyExit, msg, false);
+	}
 	/**
 	 * execute command in bash/CMD shell
 	 * 
@@ -80,16 +84,13 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		String result = executeCmdRunner(cmd, false, "", redirectErrorStream);
 		return result;
 	}
-	
-	@Override
-	public String executeCmdRunner(String cmd, boolean earlyExit, String msg) {
-		return executeCmdRunner(cmd, earlyExit, msg, false);
-	}
 
 	@Override
 	public String executeCmdRunner(String cmd, boolean earlyExit, String msg, boolean redirectErrorStream) {
-		ProcessBuilder pbldr = new ProcessBuilder().redirectErrorStream(true);
-
+		ProcessBuilder pbldr = new ProcessBuilder();
+		if (redirectErrorStream) {
+			pbldr.redirectErrorStream(true);
+		}
 		String binPath = Util.getBinPath();
 		if (!StringUtils.isEmpty(binPath)) {
 			Map<String, String> envs = pbldr.environment();
@@ -123,7 +124,7 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 				builder.append(System.getProperty("line.separator"));
 			}
 		} catch (IOException e) {
-			LOG.error("Error executing <" + cmd + "> IOException:" + e.getMessage());
+			LOG.error("Error executing <" + cmd + "> IOException:", e);
 		}
 		return builder.toString();
 	}
@@ -220,6 +221,5 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		}
 		return out;
 	}
-
 
 }
