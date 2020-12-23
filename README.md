@@ -110,7 +110,7 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 -	General bug fixes for video analysis and best practice analysis.
 
 
-**Known issues in Release 3.2**
+**Known issues in Release 4.0**
 
 - The 5g network is not displayed in the Network type graph, unless there is a toggle between WIFI and Data. This is a limitation in the Android Telephony API.
 -	Trace collection cannot be started when the device is on the lock screen, otherwise the VPN collector app will freeze.
