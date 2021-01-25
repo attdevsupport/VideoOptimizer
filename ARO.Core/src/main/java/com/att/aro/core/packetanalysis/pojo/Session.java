@@ -121,12 +121,12 @@ public class Session implements Serializable, Comparable<Session> {
 	/**
 	 * List of Upload Packets ordered by Sequence Numbers for TCP Session.
 	 */
-	private TreeMap<Long, PacketInfo> uplinkPackets = new TreeMap<>();
+	private TreeMap<Long, PacketInfo> uplinkPacketsSortedBySequenceNumbers = new TreeMap<>();
 	
 	/**
 	 * List of Download Packets ordered by Sequence Numbers for TCP Session.
 	 */
-	private TreeMap<Long, PacketInfo> downlinkPackets = new TreeMap<>();
+	private TreeMap<Long, PacketInfo> downlinkPacketsSortedBySequenceNumbers = new TreeMap<>();
 
 	/**
 	 * A Set of strings containing the application names.
@@ -410,26 +410,26 @@ public class Session implements Serializable, Comparable<Session> {
 				sequnceNumber += 0xFFFFFFFF;
 				sequnceNumber++;
 			}
-			if (uplinkPackets.containsKey(sequnceNumber)) {
-				PacketInfo tempPacket = uplinkPackets.get(sequnceNumber);
+			PacketInfo tempPacket;
+			if ((tempPacket = uplinkPacketsSortedBySequenceNumbers.get(sequnceNumber)) != null) {
 				if (packetInfo.getPayloadLen() == 0 || packetInfo.getPayloadLen() == tempPacket.getPayloadLen()) {
 					return false;
 				}
 			}
-			uplinkPackets.put(sequnceNumber, packetInfo);
+			uplinkPacketsSortedBySequenceNumbers.put(sequnceNumber, packetInfo);
 		} else if (packetInfo.getDir().equals(PacketDirection.DOWNLINK)) {
 			// Done to handle TCP Sequence Number Wrap Around
 			if (sequnceNumber < getBaseDownlinkSequenceNumber()) {
 				sequnceNumber += 0xFFFFFFFF;
 				sequnceNumber++;
 			}
-			if (downlinkPackets.containsKey(sequnceNumber)) {
-				PacketInfo tempPacket = downlinkPackets.get(sequnceNumber);
+			PacketInfo tempPacket;
+			if ((tempPacket = downlinkPacketsSortedBySequenceNumbers.get(sequnceNumber)) != null) {
 				if (packetInfo.getPayloadLen() == 0 || packetInfo.getPayloadLen() == tempPacket.getPayloadLen()) {
 					return false;
 				}
 			}
-			downlinkPackets.put(sequnceNumber, packetInfo);
+			downlinkPacketsSortedBySequenceNumbers.put(sequnceNumber, packetInfo);
 		}
 		return true;
 	}

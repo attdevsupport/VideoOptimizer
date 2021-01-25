@@ -248,11 +248,18 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 
     				urlMatchDef = defineUrlMatching(segmentUriName);
     				// Build reference URL and URL match definition for the segment using corresponding child manifest
-    				if (UrlMatchType.COUNT.equals(urlMatchDef.getUrlMatchType())) {
-    				    UrlMatchDef segmentManifestUrlMatchDef = defineUrlMatching(childManifest.getUriName());
-				        urlMatchDef.setUrlMatchLen(urlMatchDef.getUrlMatchLen() + segmentManifestUrlMatchDef.getUrlMatchLen());
-				        segmentUriName = StringUtils.substringBeforeLast(childManifest.getUriName(), "/") + "/" + segmentUriName;
-    				}
+					if (segmentUriName.length() > 0 && segmentUriName.charAt(0) != '/') {
+						if (UrlMatchType.COUNT.equals(urlMatchDef.getUrlMatchType())) {
+							UrlMatchDef segmentManifestUrlMatchDef = defineUrlMatching(childManifest.getUriName());
+
+							if (segmentManifestUrlMatchDef.getUrlMatchLen() != 0) {
+								urlMatchDef.setUrlMatchLen(
+										urlMatchDef.getUrlMatchLen() + segmentManifestUrlMatchDef.getUrlMatchLen());
+								segmentUriName = StringUtils.substringBeforeLast(childManifest.getUriName(), "/") + "/"
+										+ segmentUriName;
+							}
+						}
+					}
 
     				masterManifest.getSegUrlMatchDef().add(urlMatchDef);
     				newManifest.getSegUrlMatchDef().add(urlMatchDef);

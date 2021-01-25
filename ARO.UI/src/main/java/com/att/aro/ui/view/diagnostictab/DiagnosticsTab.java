@@ -72,9 +72,9 @@ import com.att.aro.ui.view.overviewtab.DeviceNetworkProfilePanel;
 import com.att.aro.ui.view.video.IVideoPlayer;
 import com.att.aro.view.images.Images;
 
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+
 public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListener {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LogManager.getLogger(DiagnosticsTab.class);	
@@ -93,7 +93,10 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	private DataTable<PacketInfo> jPacketViewTable;
 	private RequestResponseDetailsPanel jHttpReqResPanel;
 	private HttpDelayPanel jHttpDelayPanel;
+
+	@Getter
 	private TCPFlowsDataTable<Session> tcpflowsTable;
+
 	// Model
 	private TCPUDPFlowsTableModel jTcpUdpFlowsModel = new TCPUDPFlowsTableModel();
 	private PacketViewTableModel jPacketViewTableModel = new PacketViewTableModel();

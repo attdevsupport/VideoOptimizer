@@ -441,8 +441,17 @@ public abstract class ManifestBuilder {
 		return manifestCollection.isSegmentOrder();
 	}
 
+	/**
+	 * 
+	 * @param request
+	 * @return ManifestCollection, null if not found
+	 */
 	public ManifestCollection findManifest(HttpRequestResponseInfo request) {
 		LOG.debug(String.format("locating manifest for|<%s>|", request.getObjUri().toString()));
+		if (CollectionUtils.isEmpty(manifestCollectionMap)) {
+			return null;
+		}
+		
 		manifestCollectionToBeReturned = null;//initial
 		identifiedManifestRequestTime = 0;
 		byteRangeKey = "";

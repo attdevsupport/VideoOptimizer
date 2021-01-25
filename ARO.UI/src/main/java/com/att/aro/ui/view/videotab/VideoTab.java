@@ -61,7 +61,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 	
 	private String trace = "";
 	private long lastOpenedTrace;
-	private VideoGraphPanel graphPanel;
+	private SegmentThroughputGraphPanel graphPanel;
 	
 	/**
 	 * Create the panel.
@@ -151,9 +151,9 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		return pane;
 	}
 	
-	public VideoGraphPanel getGraphPanel() {
+	public SegmentThroughputGraphPanel getGraphPanel() {
 		if (graphPanel == null) {
-			graphPanel = new VideoGraphPanel(aroView);
+			graphPanel = new SegmentThroughputGraphPanel(aroView);
 			graphPanel.setZoomFactor(2);
 			graphPanel.setMaxZoom(4);			
 		}

@@ -274,15 +274,14 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			data.clearBPResults();
 			try {
 				List<BestPracticeType> videoBPList = BestPracticeType.getByCategory(BestPracticeType.Category.VIDEO);
+				data.setStreamingVideoData(videoTrafficCollector.clearData());
 				if (CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), videoBPList)) {
-					videoTrafficCollector.clearData();
 					data.setStreamingVideoData(videoTrafficCollector.collect(result, sessionList, requestMap));
-				} else {
-					data.setStreamingVideoData(videoTrafficCollector.clearData());
 				}
 			} catch (Exception ex) {
-				ex.printStackTrace();
-				LOGGER.error("Error in Video usage analysis :" + ex.getMessage(), ex);
+				LOGGER.error("Error in Video usage analysis :", ex);
+				// Guarantee that StreamingVideoData is empty
+				data.setStreamingVideoData(videoTrafficCollector.clearData());
 			}
 
 			try {

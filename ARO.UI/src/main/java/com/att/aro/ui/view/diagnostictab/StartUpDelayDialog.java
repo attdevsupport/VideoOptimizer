@@ -73,7 +73,6 @@ import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.impl.VideoSegmentAnalyzer;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
-import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
@@ -82,7 +81,7 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.diagnostictab.plot.VideoChunksPlot;
 import com.att.aro.ui.view.video.IVideoPlayer;
-import com.att.aro.ui.view.videotab.SegmentPanel;
+import com.att.aro.ui.view.videotab.SegmentTablePanel;
 import com.att.aro.ui.view.videotab.VideoManifestPanel;
 
 public class StartUpDelayDialog extends JDialog {
@@ -137,10 +136,10 @@ public class StartUpDelayDialog extends JDialog {
 	private VideoSegmentAnalyzer videoSegmentAnalyzer = ContextAware.getAROConfigContext()
 			.getBean("videoSegmentAnalyzer", VideoSegmentAnalyzer.class);
 	private JPanel imgLabelPanel;
-	private SegmentPanel segmentTablePanel;
+	private SegmentTablePanel segmentTablePanel;
 
 	public StartUpDelayDialog(GraphPanel parentPanel, double maxVideoTime, VideoStream videoStream,
-			List<UserEvent> userEventList, SegmentPanel segmentTablePanel) {
+			List<UserEvent> userEventList, SegmentTablePanel segmentTablePanel) {
 		this.parentPanel = parentPanel;
 		this.segmentTablePanel = segmentTablePanel;
 		DiagnosticsTab parent = parentPanel.getGraphPanelParent();

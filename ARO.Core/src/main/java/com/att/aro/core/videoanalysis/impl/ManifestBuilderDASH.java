@@ -246,6 +246,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
     								segmentInfo = genSegmentInfo(contentType, timescale, qualityID, segmentID, timePos - initialStartTime, duration);
     								segmentUriName = media.replaceAll("\\$(RepresentationID)\\$", rid).replaceAll("\\$(Time)\\$", String.format("%.0f", timePos));
 								    masterManifest.getSegUrlMatchDef().add(defineUrlMatching(segmentUriName));
+								    addToSegmentManifestCollectionMap(segmentUriName);
     								LOG.debug(String.format("moof >> %d :%s", segmentID, segmentUriName));
     								
     								segmentInfo = childManifest.addSegment(segmentUriName, segmentInfo);

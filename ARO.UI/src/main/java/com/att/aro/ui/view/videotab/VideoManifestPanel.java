@@ -34,7 +34,7 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 
 	private static final long serialVersionUID = 1L;
 	private JPanel videoManifestPanel;
-	private List<SegmentPanel> segmentTableList = new ArrayList<>();
+	private List<SegmentTablePanel> segmentTableList = new ArrayList<>();
 	private IARODiagnosticsOverviewRoute overviewRoute;
 	private JPanel manifestPanel;
 	private MainFrame aroView;
@@ -56,7 +56,7 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 		panel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-		for (SegmentPanel segmentTable : segmentTableList) {
+		for (SegmentTablePanel segmentTable : segmentTableList) {
 			panel.add(segmentTable);
 		}
 		return panel;
@@ -72,7 +72,7 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 			for (VideoStream videoStream : videoStreamMap) {
 				if (videoStream != null && videoStream.getVideoEventMap() != null
 						&& !videoStream.getVideoEventMap().isEmpty()) {
-					SegmentPanel segmentPanel = new SegmentPanel(videoStream, this.overviewRoute, analyzerResult, aroView,
+					SegmentTablePanel segmentPanel = new SegmentTablePanel(videoStream, this.overviewRoute, analyzerResult, aroView,
 							this);
 					segmentPanel.setVisible(false);
 					segmentTableList.add(segmentPanel);
@@ -88,7 +88,7 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 
 	public void updateGraphPanel(AROTraceData analyzerResult, Collection<VideoStream> videoStreamMap) {
 		VideoTab videoTab = aroView.getVideoTab();
-		VideoGraphPanel graphPanel = videoTab.getGraphPanel();
+		SegmentThroughputGraphPanel graphPanel = videoTab.getGraphPanel();
 		if (videoStreamMap != null && videoStreamMap.size() > 0) {
 			VideoStream videoStream = videoStreamMap.iterator().next();
 			if (videoStream.getVideoSegmentEventList().size() > 0
@@ -102,7 +102,7 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 	}
 	
 	public void refreshLocal(AROTraceData analyzerResult) {
-		for (SegmentPanel segmentTable : segmentTableList) {
+		for (SegmentTablePanel segmentTable : segmentTableList) {
 			segmentTable.updateTitleButton(analyzerResult);
 		}
 	}
@@ -116,7 +116,7 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 	public void setScrollLocationMap() {
 	}
 	
-	 public List<SegmentPanel> getSegmentTableList() {
+	 public List<SegmentTablePanel> getSegmentTableList() {
 	        return segmentTableList;
 	    }
 }

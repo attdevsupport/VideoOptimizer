@@ -15,7 +15,6 @@
 */
 package com.att.aro.core.securedpacketreader;
 
-import com.att.aro.core.securedpacketreader.IReceiveSSLKey;
 import com.att.aro.core.util.Util;
 
 public class CryptoAdapter {

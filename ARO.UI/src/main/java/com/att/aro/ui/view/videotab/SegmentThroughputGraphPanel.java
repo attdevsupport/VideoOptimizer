@@ -59,7 +59,7 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = false)
 @Data
-public class VideoGraphPanel extends JPanel implements ActionListener, ChartMouseListener {
+public class SegmentThroughputGraphPanel extends JPanel implements ActionListener, ChartMouseListener {
 	private static final long serialVersionUID = 1L;
 	private static final int DEFAULT_TIMELINE = 100;
 
@@ -111,7 +111,7 @@ public class VideoGraphPanel extends JPanel implements ActionListener, ChartMous
 	 * 
 	 * @param videoStream
 	 */
-	public VideoGraphPanel(MainFrame aroView) {
+	public SegmentThroughputGraphPanel(MainFrame aroView) {
 		if (StringUtils.isNotBlank(aroView.getTracePath())) {
 			this.aroView = aroView;
 		}
