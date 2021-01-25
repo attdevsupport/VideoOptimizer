@@ -20,7 +20,7 @@ import com.att.aro.core.export.ExcelSheet;
 import com.att.aro.core.export.ExcelWriter;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
-import com.att.aro.ui.view.videotab.SegmentPanel;
+import com.att.aro.ui.view.videotab.SegmentTablePanel;
 import com.att.aro.ui.view.videotab.SegmentTableModel;
 
 public class VideoStreamMenuItemListener extends AbstractMenuItemListener {
@@ -30,9 +30,9 @@ public class VideoStreamMenuItemListener extends AbstractMenuItemListener {
 			SegmentTableModel.SESSION_LINK, SegmentTableModel.CHANNELS);;
 	private static final List<String> audioColumnsToSkip = Arrays.asList(SegmentTableModel.CONTENT,
 			SegmentTableModel.SESSION_LINK, SegmentTableModel.RESOLUTION);
-	private final List<SegmentPanel> segmentTables;
+	private final List<SegmentTablePanel> segmentTables;
 
-	public VideoStreamMenuItemListener(DataTable<?> table, List<SegmentPanel> segmentTables) {
+	public VideoStreamMenuItemListener(DataTable<?> table, List<SegmentTablePanel> segmentTables) {
 		super(table);
 		this.segmentTables = segmentTables;
 	}
@@ -47,7 +47,7 @@ public class VideoStreamMenuItemListener extends AbstractMenuItemListener {
 		return columnViewIndices;
 	}
 
-	private String getSheetName(SegmentPanel table, Map<String, Integer> streamSheetNames) {		
+	private String getSheetName(SegmentTablePanel table, Map<String, Integer> streamSheetNames) {		
 		String sheetName = table.getVideoStream().getManifest().getVideoName();
 		if(StringUtils.isBlank(sheetName)) sheetName = "Sheet";
 		if(streamSheetNames.get(sheetName) != -1) {
@@ -65,14 +65,14 @@ public class VideoStreamMenuItemListener extends AbstractMenuItemListener {
 		Map<String, Integer> sheetNames = organizedSheetName(segmentTables);		
 		List<ExcelSheet> sheets = new ArrayList<>();
 		
-		for (SegmentPanel segmentTable : segmentTables) {
+		for (SegmentTablePanel segmentTable : segmentTables) {
 			if (segmentTable.getEnableCheckBox().isSelected()) {
 				String sheetName = getSheetName(segmentTable, sheetNames);
 				List<List<Object>> dataRows = new ArrayList<>();
 				List<Integer> columnIndicesToSkip;
 
 				// Video table data
-				JTable videoTable = segmentTable.getStreamTables().get(SegmentPanel.VIDEO_TABLE_NAME);
+				JTable videoTable = segmentTable.getStreamTables().get(SegmentTablePanel.VIDEO_TABLE_NAME);
 				if (videoTable != null) {
 					// Find column's UI view indices to skip in the report
 					// Columns for Video table: CONTENT, SESSION_LINK, CHANNELS
@@ -88,7 +88,7 @@ public class VideoStreamMenuItemListener extends AbstractMenuItemListener {
 				}
 
 				// Audio table data
-				JTable audioTable = segmentTable.getStreamTables().get(SegmentPanel.AUDIO_TABLE_NAME);
+				JTable audioTable = segmentTable.getStreamTables().get(SegmentTablePanel.AUDIO_TABLE_NAME);
 				if (audioTable != null) {
 					// Find column's UI view indices to skip in the report
 					// Columns for Audio table: CONTENT, SESSION_LINK, RESOLUTION
@@ -120,7 +120,7 @@ public class VideoStreamMenuItemListener extends AbstractMenuItemListener {
 		FileWriter writer = new FileWriter(file);
 		
 		try {
-			for (SegmentPanel segmentTable : segmentTables) {
+			for (SegmentTablePanel segmentTable : segmentTables) {
 				if (segmentTable.getEnableCheckBox().isSelected()) {					
 					String sheetName = getSheetName(segmentTable, sheetNames);
 					writer.append(createCSVEntry(sheetName, true)).append(Util.LINE_SEPARATOR);
@@ -128,7 +128,7 @@ public class VideoStreamMenuItemListener extends AbstractMenuItemListener {
 					String headerData;
 
 					// Video Table data
-					JTable videoTable = segmentTable.getStreamTables().get(SegmentPanel.VIDEO_TABLE_NAME);
+					JTable videoTable = segmentTable.getStreamTables().get(SegmentTablePanel.VIDEO_TABLE_NAME);
 					if (videoTable != null) {
 						writer.append(createCSVEntry("Video Table", true)).append(Util.LINE_SEPARATOR);
 						// Find column's UI view indices to skip in the report
@@ -144,7 +144,7 @@ public class VideoStreamMenuItemListener extends AbstractMenuItemListener {
 					}
 
 					// Audio table data
-					JTable audioTable = segmentTable.getStreamTables().get(SegmentPanel.AUDIO_TABLE_NAME);
+					JTable audioTable = segmentTable.getStreamTables().get(SegmentTablePanel.AUDIO_TABLE_NAME);
 					if (audioTable != null) {
 						writer.append(createCSVEntry("Audio Table", true)).append(Util.LINE_SEPARATOR);
 						// Find column's UI view indices to skip in the report
@@ -231,9 +231,9 @@ public class VideoStreamMenuItemListener extends AbstractMenuItemListener {
 	 * @param segmentTables
 	 * @return
 	 */
-	private Map<String, Integer> organizedSheetName(List<SegmentPanel> segmentTables) {
+	private Map<String, Integer> organizedSheetName(List<SegmentTablePanel> segmentTables) {
 		Map<String, Integer> sheetNames = new HashMap<String, Integer>();
-		for (SegmentPanel segmentTable : segmentTables) {
+		for (SegmentTablePanel segmentTable : segmentTables) {
 			if (segmentTable.getEnableCheckBox().isSelected()) {
 				String sheetName = segmentTable.getVideoStream().getManifest().getVideoName();
 				if (StringUtils.isBlank(sheetName))

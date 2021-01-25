@@ -22,7 +22,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
@@ -39,7 +38,6 @@ import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.report.IReport;
-import com.att.aro.core.util.Util;
 
 public class HtmlReportImpl implements IReport {
 

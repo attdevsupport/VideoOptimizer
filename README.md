@@ -52,11 +52,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 4.0
+#### Video Optimizer 4.0.1
 
-**System Requirements for Video Optimizer 4.0:**
+**System Requirements for Video Optimizer 4.0.1:**
 
-*Before you download Video Optimizer 4.0, make sure you meet the following system requirements for your operating system.*
+*Before you download Video Optimizer 4.0.1, make sure you meet the following system requirements for your operating system.*
 
 - At least 4GB of RAM, but recommend at least 8GB
 - Java 8 or above
@@ -74,14 +74,15 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
   - VLC media player 3.x.x or higher
   - Wireshark
 - Linux requirements
-  - Linux version is not being release for 4.0 and will be available with the subsequent 4.0.1 release.
+  - Linux version is not being release for 4.0.1 and will be available with the subsequent 4.0.1 release.
   - For Ubuntu 18.04.x LTS (and newer) users, use VLC media player version 3.x.x
   - For Ubuntu 16.04.x LTS (and older) users, use VLC media player version 3.x.x up to 3.0.8
   - Wireshark
 
 
 
-**Video Optimizer 4.0 Features**
+**Video Optimizer 4.0.1 Features**
+- This release brings to the Linux version all the following features and enhancements that were brought to the Mac and PC version in release 4.0:
 
 - New Export capabilities includes:
   - Export entire trace results to Excel format, allowing easy comparison of multiple traces.
@@ -110,7 +111,7 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 -	General bug fixes for video analysis and best practice analysis.
 
 
-**Known issues in Release 4.0**
+**Known issues in Release 4.0.1**
 
 - The 5g network is not displayed in the Network type graph, unless there is a toggle between WIFI and Data. This is a limitation in the Android Telephony API.
 -	Trace collection cannot be started when the device is on the lock screen, otherwise the VPN collector app will freeze.

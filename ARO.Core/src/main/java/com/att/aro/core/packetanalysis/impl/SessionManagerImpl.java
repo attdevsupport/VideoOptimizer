@@ -34,12 +34,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.poi.ss.formula.functions.Count;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.packetanalysis.IByteArrayLineReader;
@@ -295,7 +297,7 @@ public class SessionManagerImpl implements ISessionManager {
 
 			if (tcpPacket.isSYN() && packetInfo.getDir().equals(PacketDirection.UPLINK)) {
 
-				if (!session.getUplinkPackets().containsKey(tcpPacket.getSequenceNumber())) {
+				if (!session.getUplinkPacketsSortedBySequenceNumbers().containsKey(tcpPacket.getSequenceNumber())) {
 					session = new Session(localIP, remoteIP, remotePort, localPort, sessionKey);
 					sessions.add(session);
 					tcpSessions.get(sessionKey).add(session);
@@ -437,8 +439,8 @@ public class SessionManagerImpl implements ISessionManager {
 				try {
 
 					long expectedUploadSeqNo = 0;
-					for (long uploadSequenceNumber : session.getUplinkPackets().keySet()) {
-						packetInfo = session.getUplinkPackets().get(uploadSequenceNumber);
+					for (long uploadSequenceNumber : session.getUplinkPacketsSortedBySequenceNumbers().keySet()) {
+						packetInfo = session.getUplinkPacketsSortedBySequenceNumbers().get(uploadSequenceNumber);
 						tcpPacket = (TCPPacket) packetInfo.getPacket();
 						if (packetInfo.getPayloadLen() > 0) {
 							if (!session.isDataInaccessible()) {
@@ -511,8 +513,8 @@ public class SessionManagerImpl implements ISessionManager {
 					if (!session.isIOSSecureSession()) {
 
 						long expectedDownloadSeqNo = 0;
-						for (long downloadSequenceNumber : session.getDownlinkPackets().keySet()) {
-							packetInfo = session.getDownlinkPackets().get(downloadSequenceNumber);
+						for (long downloadSequenceNumber : session.getDownlinkPacketsSortedBySequenceNumbers().keySet()) {
+							packetInfo = session.getDownlinkPacketsSortedBySequenceNumbers().get(downloadSequenceNumber);
 							tcpPacket = (TCPPacket) packetInfo.getPacket();
 							if (packetInfo.getPayloadLen() > 0) {
 								if (!session.isDataInaccessible()) {
@@ -609,7 +611,15 @@ public class SessionManagerImpl implements ISessionManager {
 		long timeStamp = 0;
 		HttpRequestResponseInfo rrInfo = null;
 		int requestCount = 0;
+		TreeMap<Double, PacketInfo> packetMap;
 		BufferedReader bufferedReader = new BufferedReader(new FileReader(filePath));
+		Map <Double, PacketInfo> usedPackets = new HashMap<>();
+		
+		if (packetDirection == PacketDirection.UPLINK) {
+			packetMap = new TreeMap<>(session.getAllPackets().stream().filter(packetInfo -> packetInfo.getDir().equals(PacketDirection.UPLINK)).collect(Collectors.toMap(PacketInfo::getTimeStamp, Function.identity())));
+		} else {
+			packetMap = new TreeMap<>(session.getAllPackets().stream().filter(packetInfo -> packetInfo.getDir().equals(PacketDirection.DOWNLINK)).collect(Collectors.toMap(PacketInfo::getTimeStamp, Function.identity())));
+		}
 
 		try {
     		while ((dataRead = bufferedReader.readLine()) != null) {
@@ -631,6 +641,21 @@ public class SessionManagerImpl implements ISessionManager {
                         // The math below allows the request time to have a start time relative to trace capture.
                         rrInfo.setTime(time - pcapTimeOffset);
 
+                        // TODO: Will Review this after ARO22945-1645
+                        if (packetMap.containsKey(rrInfo.getTime()) && !usedPackets.containsKey(rrInfo.getTime())) {
+                        	rrInfo.setFirstDataPacket(packetMap.get(rrInfo.getTime()));
+                        	usedPackets.put(rrInfo.getTime(), packetMap.get(rrInfo.getTime()));
+                        } else {
+                        	Map.Entry<Double, PacketInfo> lowKey = packetMap.floorEntry(rrInfo.getTime());
+                        	Map.Entry<Double, PacketInfo> highKey = packetMap.ceilingEntry(rrInfo.getTime());
+							
+                        	if (lowKey != null) {
+                        		setFirstAndLastDataPacket(results, usedPackets, rrInfo, packetMap, lowKey);
+                        	} else if (highKey != null) {
+                        		setFirstAndLastDataPacket(results, usedPackets, rrInfo, packetMap, highKey);
+                        	}
+                        }
+                        
                         rrInfo.writeHeader(dataRead);
                         while ((dataRead = bufferedReader.readLine()) != null && dataRead.length() != 0) {
                             rrInfo.writeHeader(System.lineSeparator());
@@ -657,6 +682,54 @@ public class SessionManagerImpl implements ISessionManager {
 
         return results;
     }
+
+	/**
+	 * Used to set the first and last data packet for secure sessions in iOS.
+	 * The data isn't available from the request and response file, so this method helps with it
+	 * Identified the packet with the time stamp closest to the request time in iOS secure file.
+	 * 
+	 * @param results
+	 * @param usedPackets
+	 * @param rrInfo
+	 * @param packetMap
+	 * @param matchKey
+	 * 
+	 */
+	private void setFirstAndLastDataPacket(ArrayList<HttpRequestResponseInfo> results,
+			Map<Double, PacketInfo> usedPackets, HttpRequestResponseInfo rrInfo,
+			TreeMap<Double, PacketInfo> packetMap, Map.Entry<Double, PacketInfo> matchKey) {
+		/**
+		 * Identify the packet closest to the request time stamp in the iOS file
+		 * Assign that as the first and last data packet
+		 */
+		if (matchKey != null) {
+			do {
+				if (!usedPackets.containsKey(matchKey.getKey()) && ((TCPPacket) matchKey.getValue().getPacket()).getLen() > 0) {
+					rrInfo.setFirstDataPacket(matchKey.getValue());
+					rrInfo.setLastDataPacket(matchKey.getValue());
+					usedPackets.put(matchKey.getKey(), matchKey.getValue());
+					break;
+				}
+				
+			} while ((matchKey = packetMap.higherEntry(matchKey.getKey())) != null);
+		}
+		/**
+		 * If a request has a first data packet, then
+		 * the the previous packet with data, if it hasn't been used before, 
+		 * is the last data packet for the previous request.
+		 */
+		if (results.size() > 0) {
+			HttpRequestResponseInfo previousRequest = results.get(results.size()-1);
+			while (((matchKey = packetMap.lowerEntry(matchKey.getKey())) != null) && ((TCPPacket) matchKey.getValue().getPacket()).getLen() > 0) {
+				if (matchKey.getValue().getTimeStamp() < previousRequest.getTimeStamp()) {
+					break;
+				} else if (!usedPackets.containsKey(matchKey.getKey())) {
+					previousRequest.setLastDataPacket(matchKey.getValue());
+					break;
+				}
+			}
+		}
+	}
 
 	private HttpRequestResponseInfo initializeRequestResponseObject(String line, Session session, PacketDirection packetDirection) {
 	    HttpRequestResponseInfo rrInfo = null;

@@ -89,11 +89,11 @@ import lombok.Data;
 import lombok.Getter;
 
 @Data
-public class SegmentPanel extends JPanel implements ActionListener {
+public class SegmentTablePanel extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final Logger LOG = LogManager.getLogger(SegmentPanel.class);
+	private static final Logger LOG = LogManager.getLogger(SegmentTablePanel.class);
 	private static IFileManager fileManager = (IFileManager) ContextAware.getAROConfigContext().getBean("fileManager");
 
 	private JPanel hiddenPanel;
@@ -148,7 +148,7 @@ public class SegmentPanel extends JPanel implements ActionListener {
 	/**
 	 * @wbp.parser.constructor
 	 */
-	public SegmentPanel(VideoStream videoStream, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute,
+	public SegmentTablePanel(VideoStream videoStream, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute,
 			AROTraceData analyzerResult, SharedAttributesProcesses aroView, VideoManifestPanel videoManifestPanel) {
 		this(true, aroView, videoStream, analyzerResult, videoManifestPanel);
 
@@ -157,7 +157,7 @@ public class SegmentPanel extends JPanel implements ActionListener {
 		updateHiddenPanelContent(true);
 	}
 
-	public SegmentPanel(boolean manifestFlag, SharedAttributesProcesses aroView, VideoStream videoStream,
+	public SegmentTablePanel(boolean manifestFlag, SharedAttributesProcesses aroView, VideoStream videoStream,
 			AROTraceData analyzerResult, VideoManifestPanel videoManifestPanel) {
 		streamingVideoData = analyzerResult.getAnalyzerResult().getStreamingVideoData();
 		this.aroView = aroView;
@@ -716,7 +716,7 @@ public class SegmentPanel extends JPanel implements ActionListener {
 
 	public void refreshGraphPanel(JCheckBox checkBoxVideo, JCheckBox checkBoxAudio) {
 		VideoTab videoTab = ((MainFrame) aroView).getVideoTab();
-		VideoGraphPanel graphPanel = videoTab.getGraphPanel();
+		SegmentThroughputGraphPanel graphPanel = videoTab.getGraphPanel();
 		if (videoStreamMap.size() > 1) {
 			for (VideoStream stream : videoStreamMap) {
 				if (stream.equals(videoStream)) {
@@ -733,7 +733,7 @@ public class SegmentPanel extends JPanel implements ActionListener {
 		}
 	}
 
-	private void refreshGraphPanel(JCheckBox checkBoxVideo, JCheckBox checkBoxAudio, VideoGraphPanel graphPanel) {
+	private void refreshGraphPanel(JCheckBox checkBoxVideo, JCheckBox checkBoxAudio, SegmentThroughputGraphPanel graphPanel) {
 		if (videoStream != null
 				&& (videoStream.getVideoEventMap().size() > 0 || videoStream.getAudioEventMap().size() > 0)) {
 			graphPanel.refresh(analyzerResult, videoStream, checkBoxVideo, checkBoxAudio);
@@ -769,7 +769,7 @@ public class SegmentPanel extends JPanel implements ActionListener {
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		SegmentPanel segmentTable = (SegmentPanel) SwingUtilities.getAncestorOfClass(SegmentPanel.class,
+		SegmentTablePanel segmentTable = (SegmentTablePanel) SwingUtilities.getAncestorOfClass(SegmentTablePanel.class,
 				(BasicArrowButton) e.getSource());
 		JPanel nestedPanel = segmentTable.getHiddenPanel();
 

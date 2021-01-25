@@ -18,7 +18,6 @@ package com.att.aro.ui.model.diagnostic;
 import static java.text.MessageFormat.format;
 
 import java.awt.Color;
-import java.io.IOException;
 import java.util.Iterator;
 
 import javax.swing.JOptionPane;

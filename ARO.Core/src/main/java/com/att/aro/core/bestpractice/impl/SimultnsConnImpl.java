@@ -87,7 +87,7 @@ public class SimultnsConnImpl implements IBestPractice {
 			result.setResultType(BPResultType.FAIL);
 			result.setResultText(textResults);
 			// TODO: Validate the conditional statement
-			result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), simultnsConnectionEntryList.get(0).getConcurrentSessions(), (simultnsConnectionEntryList.size()>1?"s":"")));
+			result.setResultExcelText(MessageFormat.format(textExcelResults, BPResultType.FAIL.getDescription(), simultnsConnectionEntryList.parallelStream().mapToInt(x -> x.getConcurrentSessions()).sum(), (simultnsConnectionEntryList.size()>1?"s":"")));
 		}
 		result.setAboutText(aboutText);
 		result.setDetailTitle(detailTitle);

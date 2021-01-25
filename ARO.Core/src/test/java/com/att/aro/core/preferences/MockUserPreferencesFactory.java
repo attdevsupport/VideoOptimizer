@@ -1,6 +1,5 @@
 package com.att.aro.core.preferences;
 
-import com.att.aro.core.preferences.UserPreferences;
 import com.att.aro.core.preferences.impl.MockPreferenceHandlerImpl;
 
 public class MockUserPreferencesFactory {
