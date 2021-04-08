@@ -25,6 +25,9 @@ import java.util.Date;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.packetreader.pojo.UDPPacket;
@@ -39,6 +42,9 @@ import lombok.Setter;
  * Date: April 24, 2014
  */
 public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseInfo> {
+	
+	private static final Logger LOGGER = LogManager.getLogger(HttpRequestResponseInfo.class.getName());
+
 	/**
 	 * Returns HTTP version 1.0.
 	 */
@@ -144,8 +150,6 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	private HttpRequestResponseInfo assocReqResp;
 	private RequestResponseTimeline waterfallInfos;
 	private String allHeaders;
-	@Getter @Setter
-	private int headerOffset;
 	private Session session;
 	
 	@Getter @Setter
@@ -168,6 +172,15 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	private ByteArrayOutputStream headerData = new ByteArrayOutputStream();
 	@Getter @Setter
 	private BufferedOutputStream dataStream;
+	
+	@Getter @Setter
+	private double key;
+	@Getter @Setter
+	private int requestCounterCSI;
+	@Getter @Setter
+	private boolean isVideoPossibility = false;
+	@Getter @Setter
+	private boolean isAudioPossibility = false;
 	
 
 	@Override
@@ -1000,27 +1013,55 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	}
 	
 	public void writeHeader(PacketInfo packetInfo, int headerDelta) throws IOException {
+		try {
+			TCPPacket tcpPacket = (TCPPacket) packetInfo.getPacket();
+			dataStream = new BufferedOutputStream(headerData);
+			dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset(), headerDelta);
+			dataStream.flush();
+		} catch (Exception exception) {
+			LOGGER.error("Error Writing Header to Request Response Info Object", exception);
+		}
+	}
+	
+	public void writeHeader(PacketInfo packetInfo, int addToOffset, int headerDelta) throws IOException {
 		TCPPacket tcpPacket = (TCPPacket) packetInfo.getPacket();
 		dataStream = new BufferedOutputStream(headerData);
-		dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset(), headerDelta);
+		dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset() + addToOffset, headerDelta);
 		dataStream.flush();
 	}
 	
 	public void writePayload(PacketInfo packetInfo, boolean containsHeader, int headerDelta) throws IOException {
-		if (packetInfo.getPacket() instanceof TCPPacket) {
-			TCPPacket tcpPacket = (TCPPacket) packetInfo.getPacket();
-			dataStream = new BufferedOutputStream(payloadData);
-			if (containsHeader) {
-				dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset() + headerDelta , tcpPacket.getData().length - (tcpPacket.getDataOffset() + headerDelta));
+		try {
+			if (packetInfo.getPacket() instanceof TCPPacket) {
+				TCPPacket tcpPacket = (TCPPacket) packetInfo.getPacket();
+				dataStream = new BufferedOutputStream(payloadData);
+				if (containsHeader) {
+					dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset() + headerDelta , tcpPacket.getData().length - (tcpPacket.getDataOffset() + headerDelta));
+				} else {
+					dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset(), tcpPacket.getData().length - tcpPacket.getDataOffset());
+				}
+				dataStream.flush();
 			} else {
-				dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset(), tcpPacket.getData().length - tcpPacket.getDataOffset());
+				UDPPacket udpPacket = (UDPPacket) packetInfo.getPacket();
+				dataStream = new BufferedOutputStream(payloadData);
+				dataStream.write(udpPacket.getData(), udpPacket.getDataOffset(), udpPacket.getData().length - udpPacket.getDataOffset());
+				dataStream.flush();
 			}
-			dataStream.flush();
-		} else {
-			UDPPacket udpPacket = (UDPPacket) packetInfo.getPacket();
-			dataStream = new BufferedOutputStream(payloadData);
-			dataStream.write(udpPacket.getData(), udpPacket.getDataOffset(), udpPacket.getData().length - udpPacket.getDataOffset());
-			dataStream.flush();
+		} catch (Exception exception) {
+			LOGGER.error("Error Writing Payload to Request Response Info Object", exception);
+		}
+	}
+	
+	public void writePayload(PacketInfo packetInfo, int limit) throws IOException {
+		try {
+			if (packetInfo.getPacket() instanceof TCPPacket) {
+				TCPPacket tcpPacket = (TCPPacket) packetInfo.getPacket();
+				dataStream = new BufferedOutputStream(payloadData);
+				dataStream.write(tcpPacket.getData(), tcpPacket.getDataOffset(), limit);
+				dataStream.flush();
+			}
+		} catch (Exception exception) {
+			LOGGER.error("Error Writing Payload to Request Response Info Object", exception);
 		}
 	}
 

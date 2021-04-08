@@ -119,6 +119,12 @@ public class Session implements Serializable, Comparable<Session> {
 	
 	
 	/**
+	 * A Combined List of PacketInfo objects for the session.
+	 */
+	private ArrayList<PacketInfo> allPackets = new ArrayList<>();
+	
+	
+	/**
 	 * List of Upload Packets ordered by Sequence Numbers for TCP Session.
 	 */
 	private TreeMap<Long, PacketInfo> uplinkPacketsSortedBySequenceNumbers = new TreeMap<>();
@@ -260,13 +266,6 @@ public class Session implements Serializable, Comparable<Session> {
 	 * @return A List of PacketInfo objects containing the packet data.
 	 */
 	public List<PacketInfo> getAllPackets() {
-		ArrayList<PacketInfo> allPackets = new ArrayList<>();
-		if(packets != null && !packets.isEmpty()) {
-			allPackets.addAll(packets);
-		}
-		if(udpPackets != null && !udpPackets.isEmpty()) {
-			allPackets.addAll(udpPackets);
-		}
 		return allPackets;
 	}
 
@@ -340,20 +339,13 @@ public class Session implements Serializable, Comparable<Session> {
 		BufferedOutputStream outputStream = new BufferedOutputStream(contentData);
 		
 		try {
-			int totalBytesWritten = 0;
 			for (HttpRequestResponseInfo rrInfo : getRequestResponseInfo()) {
-				if (totalBytesWritten < 20000) {
-					totalBytesWritten+=rrInfo.getContentLength();
 					if (rrInfo.getDirection().equals(HttpDirection.REQUEST)) {
 						outputStream.write("\n--UPLINK--\n".getBytes());
 					} else {
 						outputStream.write("\n--DOWNLINK--\n".getBytes());
 					}
 					outputStream.write(rrInfo.getHeaderData().toByteArray());
-					outputStream.write(rrInfo.getPayloadData().toByteArray());
-				} else {
-					break;
-				}
 			}
 			outputStream.flush();
 		} catch (IOException exception) {
@@ -404,6 +396,7 @@ public class Session implements Serializable, Comparable<Session> {
 	
 	public boolean addTcpPacket(PacketInfo packetInfo, long sequnceNumber) {
 		packets.add(packetInfo);
+		allPackets.add(packetInfo);
 		if (packetInfo.getDir().equals(PacketDirection.UPLINK)) {
 			// Done to handle TCP Sequence Number Wrap Around
 			if (sequnceNumber < getBaseUplinkSequenceNumber()) {

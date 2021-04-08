@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
-	public static final String TAG = "CaptureVpnService";
+	public static final String TAG = "SocketNIODataService";
 	public static Object syncSelectorForSelection = new Object();
 	public static Object syncSelectorForUse = new Object();
 
@@ -119,8 +119,7 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 				try {
 					sessionHandler.handlePacket(packetData);
 				} catch (PacketHeaderException e) {
-					Log.e(TAG, "Packet Header Exception Thrown: " + e.getMessage());
-					e.printStackTrace();
+					Log.e(TAG, "Packet Header Exception Thrown: ", e);
 				}
 			}
 
@@ -188,7 +187,7 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 		}
 
 		if (!session.isConnected() && key.isConnectable()) {
-			String ips = PacketUtil.intToIPAddress(session.getDestAddress());
+			String ips = session.getDestAddress();
 			int port = session.getDestPort();
 			SocketAddress addr = new InetSocketAddress(ips, port);
 			try {
@@ -220,7 +219,7 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 
 		if (!session.isConnected() && key.isConnectable()) {
 
-			String ips = PacketUtil.intToIPAddress(session.getDestAddress());
+			String ips = session.getDestAddress();
 			int port = session.getDestPort();
 			SocketAddress addr = new InetSocketAddress(ips, port);
 			Log.d(TAG, "connecting to remote tcp server: " + ips + ":" + port);

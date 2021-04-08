@@ -53,7 +53,8 @@ public class TCPPacket extends IPPacket implements Serializable {
 	private short urgentPointer;
 	private int dataOffset;
 	private int payloadLen;
-	
+	private int packetLength;
+
 	private boolean ssl;
 	private boolean decrypted;
 	private boolean sslHandshake;
@@ -72,9 +73,8 @@ public class TCPPacket extends IPPacket implements Serializable {
 	 * @param datalinkHdrLen The length of the header portion of the TCP packet (in bytes).
 	 * @param data An array of bytes that is the data portion of the TCP packet.
 	 */
-	public TCPPacket(long seconds, long microSeconds, int len, int datalinkHdrLen,
-			byte[] data) {
-		super(seconds, microSeconds, len, datalinkHdrLen, data);
+	public TCPPacket(long seconds, long microSeconds, int len, int datalinkHdrLen, Byte protocol, Integer extensionHeadersLength, byte[] data) {
+		super(seconds, microSeconds, len, datalinkHdrLen, protocol, extensionHeadersLength, data);
 
 		int headerOffset = super.getDataOffset();
 
@@ -86,6 +86,7 @@ public class TCPPacket extends IPPacket implements Serializable {
 		int hlen = ((bytes.get(headerOffset + 12) & 0xF0) >> 2);
 		dataOffset = headerOffset + hlen;
 		payloadLen = super.getPayloadLen() - hlen;
+		packetLength = hlen + payloadLen;
 
 		short ivalue = bytes.getShort(headerOffset + 12);
 		urg = (ivalue & 0x0020) != 0;
@@ -137,6 +138,11 @@ public class TCPPacket extends IPPacket implements Serializable {
 	public int getPayloadLen() {
 		return payloadLen;
 	}
+
+	@Override
+	public int getPacketLength() {
+        return packetLength;
+    }
 
 	/**
 	 * Gets the source port number.

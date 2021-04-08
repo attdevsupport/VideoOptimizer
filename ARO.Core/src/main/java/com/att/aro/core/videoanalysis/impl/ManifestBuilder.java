@@ -393,7 +393,7 @@ public abstract class ManifestBuilder {
 		segmentID = childManifest.getNextSegmentID();
 		SegmentInfo segmentInfo = new SegmentInfo();
 		segmentInfo.setVideo(childManifest.isVideo());
-		segmentInfo.setDuration(StringParse.findLabeledDoubleFromString(":", ",", parameters));
+		segmentInfo.setDuration(StringParse.findLabeledDoubleFromString(":", "\\,", parameters));
 		segmentInfo.setSegmentID(segmentID);
 		segmentInfo.setQuality(String.format("%.0f", (double) childManifest.getQuality()));
 		if (segmentInfo.isVideo() && (segmentInfo.getSegmentID() == 0 && manifest.isVideoTypeFamily(VideoType.DASH))) {

@@ -17,7 +17,7 @@ package com.att.arocollector.packetRebuild;
 
 public class StubbedEthernetHeader {
 
-	public static byte[] getEthernetHeader(){
+	public static byte[] getEthernetHeader(byte ipVersion){
 		byte[] ethHeader = new byte[14];
 		
 		//set destination mac to be all 0s
@@ -25,9 +25,12 @@ public class StubbedEthernetHeader {
 		
 		//set src mac, random to be 1
 		ByteUtils.setBigIndianInBytesArray(ethHeader, 6, 1, 6);
-		
-		//set eth type: 0x0800 = 2048
-		ByteUtils.setBigIndianInBytesArray(ethHeader, 12, 2048, 2);
+
+		//set eth type:
+		// 0x0800 = 2048 for IPv4
+		// 0x86DD for IPv6
+		short ethType = ipVersion == 4 ? 0x0800 : (short) 0x86DD;
+		ByteUtils.setBigIndianInBytesArray(ethHeader, 12, ethType, 2);
 		
 		return ethHeader;
 	}

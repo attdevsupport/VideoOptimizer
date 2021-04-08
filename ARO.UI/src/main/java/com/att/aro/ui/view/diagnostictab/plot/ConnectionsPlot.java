@@ -100,6 +100,8 @@ public class ConnectionsPlot implements IPlot {
 		if (!endTimeList.isEmpty()) {
 			Double[] endListTime = endTimeList.toArray(new Double[endTimeList.size()]);
 			end = ArrayUtils.toPrimitive(endListTime);
+		} else {
+			return;
 		}
 
 		Arrays.sort(start);

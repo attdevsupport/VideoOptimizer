@@ -15,6 +15,7 @@
 */
 package com.att.aro.core.videoanalysis.impl;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.SortedMap;
@@ -49,6 +50,7 @@ import com.att.aro.core.videoanalysis.parsers.segmenttimeline.PeriodST;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.RepresentationST;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.SegmentST;
 import com.att.aro.core.videoanalysis.parsers.segmenttimeline.SegmentTemplateST;
+import com.att.aro.core.videoanalysis.parsers.segmenttimeline.SegmentTimeLineST;
 import com.att.aro.core.videoanalysis.pojo.ChildManifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
@@ -158,8 +160,13 @@ public class ManifestBuilderDASH extends ManifestBuilder {
     					continue;
     				}
     				SegmentTemplateST segmentTemplate = adaptationSet.getSegmentTemplate();
-    				List<SegmentST> segmentList = segmentTemplate.getSegmentTimeline().getSegmentList();
-    				
+					SegmentTimeLineST segmentTimelineST = segmentTemplate.getSegmentTimeline();
+					List<SegmentST> segmentList;
+					if (segmentTimelineST != null && segmentTimelineST.getSegmentList() != null) {
+						segmentList = segmentTimelineST.getSegmentList();
+					} else {
+						segmentList = new ArrayList<>();
+					}
     				String initialization = segmentTemplate.getInitialization(); // segment 0 'moov'
     				String media = segmentTemplate.getMedia(); // segment x 'moof'
     				Double presentationTimeOffset = StringParse.stringToDouble(segmentTemplate.getPresentationTimeOffset(), 0);
@@ -235,6 +242,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
     						LOG.debug(String.format("moov >> %d :%s", segmentID, segmentUriName));
 
 							masterManifest.getSegUrlMatchDef().add(defineUrlMatching(segmentUriName));
+							segmentInfo = childManifest.addSegment(segmentUriName, segmentInfo);
     						addToSegmentManifestCollectionMap(segmentUriName);
     
     						// segments moof
@@ -300,6 +308,11 @@ public class ManifestBuilderDASH extends ManifestBuilder {
     
     						LOG.debug(String.format("representation.getBandwidth() %d:%s", qualityID, representation.getBandwidth()));
     						generateChildManifestFromEncodedSegmentList(newManifest, contentType, qualityID, representation, encodedSegmentDurationList, segmentTimeScale);
+
+							if (representation.getRepresentationACC() != null) { // audio
+								childManifest.setChannels(representation.getRepresentationACC().getValue());
+							}
+        					
     						addToSegmentManifestCollectionMap(childManifest.getUriName());
     					}
     				}
@@ -319,8 +332,6 @@ public class ManifestBuilderDASH extends ManifestBuilder {
                     for (AdaptationSet adaptation : adaptationList) {
                         ContentType contentType = manifest.matchContentType(adaptation.getContentType());
 
-                        // TODO: Add audio channel configuration information
-
                         // Sort the representations by bandwidth to assign incremental quality id
                         List<Representation> sortedRepresentations = adaptation.getRepresentations().stream().sorted(new Comparator<Representation>() {
                                                                          @Override
@@ -334,7 +345,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
                         for (Representation representation : sortedRepresentations) {
                             if (representation.getSegmentBase() != null) {
                                 if (representation.getSegmentBase().getTimescale() != null) {
-                                    // TODO: Setting timescale value for manifest is overwritten every time a child manifest is created for individual representation.
+                                    // TODO: Setting timescale value for manifest is overwritten every time a child manifest is created for individual representation. \
                                     // Timescale should be set on the Child Manifest level. Revisit this some time later.
                                     manifest.setTimeScale(representation.getSegmentBase().getTimescale().doubleValue());
                                 }
@@ -343,11 +354,18 @@ public class ManifestBuilderDASH extends ManifestBuilder {
                                 childManifest = createChildManifest(newManifest, "", representation.getBaseURL());
                                 if (ContentType.AUDIO.equals(contentType)) {
                                     childManifest.setQuality(++audioQualityId);
+									if (adaptation.getContentType().equals("audio")) {
+										if (representation.getAudioChannelConfiguration() != null) {
+											childManifest.setChannels(representation.getAudioChannelConfiguration().getValue());
+										} else if (adaptation.getAudioChannelConfiguration() != null) {
+											childManifest.setChannels(adaptation.getAudioChannelConfiguration().getValue());
+										}
+									}
                                 } else if (ContentType.VIDEO.equals(contentType)) {
                                     childManifest.setQuality(++videoQualityId);
                                 }
                                 childManifest.setBandwidth(representation.getBandwidth());
-                                childManifest.setCodecs(representation.getCodecs());
+                                childManifest.setCodecs(representation.getCodecs() != null ? representation.getCodecs() : adaptation.getCodecs());
                                 childManifest.setVideo(ContentType.VIDEO.equals(contentType));
                                 childManifest.setContentType(contentType);
                                 if (representation.getHeight() != null) {

@@ -17,6 +17,7 @@ package com.att.aro.core.commandline.impl;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -66,27 +67,32 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 	 */
 	@Override
 	public String executeCmd(String cmd) {
-		return executeCmd(cmd, true);
+		return executeCmd(cmd, true, true);
 	}
 
 	@Override
-	public String executeCmdRunner(String cmd, boolean earlyExit, String msg) {
-		return executeCmdRunner(cmd, earlyExit, msg, false);
+	public String executeCmdRunner(String cmd, boolean earlyExit, String msg,  boolean readCommandResponse) {
+		return executeCmdRunner(cmd, earlyExit, msg, false, readCommandResponse);
 	}
-	/**
-	 * execute command in bash/CMD shell
-	 * 
-	 * @param cmd
-	 * @return stdout and stderr
-	 */
+
 	@Override
-	public String executeCmd(String cmd, boolean redirectErrorStream) {
-		String result = executeCmdRunner(cmd, false, "", redirectErrorStream);
+	public String executeCmd(File workingPath, String cmd, boolean redirectErrorStream, boolean readCommandResponse) {
+		String result = executeCmdRunner(workingPath, cmd, false, "", redirectErrorStream, readCommandResponse);
 		return result;
 	}
 
 	@Override
-	public String executeCmdRunner(String cmd, boolean earlyExit, String msg, boolean redirectErrorStream) {
+	public String executeCmd(String cmd, boolean redirectErrorStream, boolean readCommandResponse) {
+		return executeCmd(null, cmd, redirectErrorStream, readCommandResponse);
+	}
+
+	@Override
+	public String executeCmdRunner(String cmd, boolean earlyExit, String msg, boolean redirectErrorStream, boolean readCommandResponse) {
+		return executeCmdRunner(null, cmd, earlyExit, msg, redirectErrorStream, readCommandResponse);
+	}
+
+	@Override
+	public String executeCmdRunner(File workingPath, String cmd, boolean earlyExit, String msg, boolean redirectErrorStream, boolean readCommandResponse) {
 		ProcessBuilder pbldr = new ProcessBuilder();
 		if (redirectErrorStream) {
 			pbldr.redirectErrorStream(true);
@@ -98,14 +104,22 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		}
 
 		if (!Util.isWindowsOS()) {
+			if (workingPath != null) {
+				pbldr.directory(workingPath);
+			}
 			pbldr.command(new String[] { "bash", "-c", cmd });
 		} else {
+			if (workingPath != null) {
+				pbldr.directory(workingPath);
+			}
 			pbldr.command(new String[] { "CMD", "/C", cmd });
 		}
 
 		StringBuilder builder = new StringBuilder();
 		try {
 			Process proc = pbldr.start();
+			
+			if (readCommandResponse) {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 
 			String line = null;
@@ -119,9 +133,9 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 					builder.append(line);
 					break;
 				}
-				LOG.debug("read a line:" + line);
-				builder.append(line);
+ 				builder.append(line);
 				builder.append(System.getProperty("line.separator"));
+				}
 			}
 		} catch (IOException e) {
 			LOG.error("Error executing <" + cmd + "> IOException:", e);

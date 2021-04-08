@@ -49,8 +49,7 @@ public class IPPacket extends Packet implements Serializable {
 	/**
 	 * Creates a new instance of the IPPacket class.
 	 */
-	public IPPacket(long seconds, long microSeconds, int len, int datalinkHdrLen,
-			byte[] data) {
+	public IPPacket(long seconds, long microSeconds, int len, int datalinkHdrLen, Byte protocol, Integer extensionHeadersLength, byte[] data) {
 		super(seconds, microSeconds, len, datalinkHdrLen, data);
 
 		// Parse data
@@ -62,16 +61,23 @@ public class IPPacket extends Packet implements Serializable {
 		int hlen = -1;
 		if (ipVersion == 6) {
 			hlen = 40;
-			payloadLen = bytes.getShort(headerOffset + 4);
-			packetLength = len;
+			if (extensionHeadersLength == null || protocol == null) {
+				this.protocol = protocol == null ? bytes.get(headerOffset + 6) : protocol;
+				extensionHeadersLength = calculateLengthOfExtensionHeaders(data, headerOffset + hlen);
+			}
+
+			packetLength = len - headerOffset;
+			dataOffset = headerOffset + hlen + extensionHeadersLength;
+			payloadLen = packetLength - extensionHeadersLength - hlen;
 		} else {
 			hlen = ((bytes.get(headerOffset) & 0x0f) << 2);
-/*		   
- * 			the packet length read could be negative, if the packet length is a large number (more
- *		   than 15 bits in storage size (but less than 16 bits).
- *		   So chop off the first two bytes (and hence the signed bits) before 
- *		   setting the field.
- */
+			dataOffset = headerOffset + hlen;
+
+		/*		   
+		 * the packet length read could be negative, if the packet length is a large number (more
+		 *than 15 bits in storage size (but less than 16 bits).
+		 * So chop off the first two bytes (and hence the signed bits) before setting the field.
+		 */
 			packetLength = bytes.getShort(headerOffset + 2)& 0x0000ffff;
 			
 			if (packetLength == 0) {
@@ -80,27 +86,18 @@ public class IPPacket extends Packet implements Serializable {
 			}
 			
 			payloadLen = packetLength - hlen;
-/*	for test		
-			if(payloadLen<0){				
- 				int temp = (int)packetLength & 0x0000ffff;
-				Log.d("test", "test"+ temp);
-			}
-*/			
+		
 			short ivalue = bytes.getShort(headerOffset + 6);
 			rsvFrag = (ivalue & 0x8000) != 0;
 			dontFrag = (ivalue & 0x4000) != 0;
 			moreFrag = (ivalue & 0x2000) != 0;
 			fragmentOffset = (short) (ivalue & 0x1fff);
-		}
+		
 
-		dataOffset = headerOffset + hlen;
-
-		short ivalue = bytes.getShort(headerOffset + 8);
-		if (ipVersion == 4) {
-			timeToLive = (short) ((ivalue & 0xff00) >> 8);
+		timeToLive = bytes.get(headerOffset + 7);
+		this.protocol = protocol == null ? bytes.get(headerOffset + 8) : protocol;
 		}
 		
-		protocol = (short) (ivalue & 0xff);
 
 		byte[] buffer = null;
 		int addrLgth = -1;
@@ -127,6 +124,40 @@ public class IPPacket extends Packet implements Serializable {
 		} catch (UnknownHostException e) {
 			LOGGER.warn("Unable to determine destination IP - " + e.getMessage());
 		}
+	}
+
+
+	/**
+     * Calculate total length of extension headers until an Upper Layer Protocol i.e. TCP(6) or UDP(17) is encountered
+     * OR No Next Header (59) is found
+     *
+     * Currently Hop By Hop (0), Routing (43) and Destination Options (60) headers are supported.
+     * TODO: Implement support for Fragment (44) and Encapsulating Security Payload (50) headers
+     * @param data
+     * @param start
+     * @return Total length of extension headers present
+     */
+	private int calculateLengthOfExtensionHeaders(byte[] data, int start) {
+		int headerLength = 0;
+
+		if (start < data.length - 1) {
+	        switch (protocol) {
+	            case 0: // Hop by Hop Options Header
+	            case 43: // Routing Header
+	            case 51: // Authentication Header
+	            case 60: // Destination Options Header
+	                headerLength += (protocol == 51 ? (data[start + 1] + 2) * 4 : (data[start + 1] * 8) + 8);
+	                protocol = data[start];
+	                headerLength += calculateLengthOfExtensionHeaders(data, start + headerLength);
+	                break;
+	            case 59: // No Next header. This signifies that there exists nothing after the corresponding header
+	            case 6: // TCP
+	            case 17: // UDP
+	                break;
+	        }
+		}
+
+        return headerLength;
 	}
 
 	/**

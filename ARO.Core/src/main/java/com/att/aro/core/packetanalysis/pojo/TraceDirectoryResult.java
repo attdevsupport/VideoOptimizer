@@ -33,7 +33,7 @@ import com.att.aro.core.peripheral.pojo.NetworkType;
 import com.att.aro.core.peripheral.pojo.RadioInfo;
 import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent;
 import com.att.aro.core.peripheral.pojo.TemperatureEvent;
-import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
+import com.att.aro.core.peripheral.pojo.VideoStreamStartupData;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
@@ -273,7 +273,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	private MetaDataModel metaData;
 	
 	@JsonIgnore
-	private VideoStreamStartup videoStreamStartup;
+	private VideoStreamStartupData videoStreamStartupData;
 	
 	public CollectOptions getCollectOptions() {
 		return collectOptions;
@@ -806,12 +806,12 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 		return traceResultType;
 	}
 
-	public VideoStreamStartup getVideoStartup() {
-		return videoStreamStartup;
+	public VideoStreamStartupData getVideoStartupData() {
+		return videoStreamStartupData;
 	}
 
-	public void setVideoStartup(VideoStreamStartup videoStreamStartup) {
-		this.videoStreamStartup = videoStreamStartup;
+	public void setVideoStartupData(VideoStreamStartupData videoStreamStartupData) {
+		this.videoStreamStartupData = videoStreamStartupData;
 	}
 
 	public MetaDataModel getMetaData() {

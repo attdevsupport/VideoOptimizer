@@ -76,8 +76,8 @@ public class StartupLatencyPanel extends JPanel {
 
 	private Collection<VideoEvent> validateVideoEvents(Collection<VideoEvent> videoEventList) {
 		Collection<VideoEvent> normalisedVideoEventList = new ArrayList<VideoEvent>();
-		for (Iterator iterator = videoEventList.iterator(); iterator.hasNext();) {
-			VideoEvent videoEvent = (VideoEvent) iterator.next();
+		for (Iterator<VideoEvent> iterator = videoEventList.iterator(); iterator.hasNext();) {
+			VideoEvent videoEvent = iterator.next();
 			if( videoEvent.isSelected() && videoEvent.isNormalSegment() ) {
 				normalisedVideoEventList.add(videoEvent);
 			}

@@ -70,6 +70,7 @@ public class AttenuatorManager {
 
     }
     public int getThrottleUL() {
+        Log.i(TAG, "Upload throttle get: "+throttleULAtomic.get()+ " kbps");
         return throttleULAtomic.get();
     }
 

@@ -15,7 +15,6 @@ import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
@@ -25,7 +24,6 @@ import com.att.aro.core.configuration.pojo.ProfileLTE;
 import com.att.aro.core.configuration.pojo.ProfileType;
 import com.att.aro.core.configuration.pojo.ProfileWiFi;
 import com.att.aro.core.packetanalysis.IBurstCollectionAnalysis;
-import com.att.aro.core.packetanalysis.IRequestResponseBuilder;
 import com.att.aro.core.packetanalysis.pojo.BurstCollectionAnalysisData;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.RRCState;
@@ -47,9 +45,6 @@ import com.att.aro.core.peripheral.pojo.UserEvent.UserEventType;
 public class BurstCollectionAnalysisImplTest extends BaseTest {
 
 	BurstCollectionAnalysisImpl aBurstCollectionAnalysis;
-
-	@Mock
-	IRequestResponseBuilder requestResponseBuilder;
 
 	@Before
 	public void setUp() {

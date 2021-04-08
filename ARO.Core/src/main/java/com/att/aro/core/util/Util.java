@@ -77,7 +77,7 @@ public final class Util {
 	private static final IExternalProcessRunner extrunner = SpringContextUtil.getInstance().getContext()
 			.getBean(IExternalProcessRunner.class);
 	
-	public static String APK_FILE_NAME = "VPNCollector-4.0.%s.apk";
+	public static String APK_FILE_NAME = "VPNCollector-4.1.%s.apk";
 	
 	public static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 	
@@ -328,6 +328,19 @@ public final class Util {
 			}
 			return parseForUTC(creationTime, "yyyyMMdd HHmmssSSS") + rounding;
 		}
+	}
+	
+	/**
+	 * convert a double into HH:MM:SS.sss
+	 * 
+	 * @param seconds
+	 * @return HH:MM:SS.sss
+	 */
+	public static String formatHHMMSSs(Double seconds) {
+		int intSeconds = seconds.intValue();
+		String result = formatHHMMSS(intSeconds);
+		result += String.format("%.06f", seconds - intSeconds).substring(1);
+		return result;
 	}
 	
 	public static String formatYMD(long timestamp) {
@@ -905,12 +918,16 @@ public final class Util {
 		return logLevel;
 	}
 	
+	public static boolean checkMode(String key, String matchVal) {
+		return SettingsImpl.getInstance().checkAttributeValue(key, matchVal);
+	}
+	
 	public static boolean checkDevMode() {
-		return SettingsImpl.getInstance().checkAttributeValue("env", "dev");
+		return checkMode("env", "dev");
 	}
 	
 	public static boolean isTestMode() {
-		return SettingsImpl.getInstance().checkAttributeValue("test_only", "true");
+		return checkMode("test_only", "true");
 	}
 
 	public static Comparator<String> getFloatSorter() {

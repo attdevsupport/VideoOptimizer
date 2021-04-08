@@ -449,7 +449,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 	 */
 	private long getBytesInCache(HttpRequestResponseInfo response, SortedSet<Range> ranges) {
 		long xferFirst = response.isRangeResponse() ? response.getRangeFirst() : 0;
-		long xferLast = xferFirst + response.getRawSize();
+		long xferLast = xferFirst + response.getContentLength();
 		long cachedBytes = 0L;
 		for (Range range : ranges) {
 			cachedBytes += Math.max(0,

@@ -78,7 +78,7 @@ public final class DeviceVideoHandler {
 	}
 
 	public boolean verifyIFuse() {
-		String result = extProcRunner.executeCmdRunner(IFUSE_VERIFY, true, "success", true);
+		String result = extProcRunner.executeCmdRunner(IFUSE_VERIFY, true, "success", true, true);
 		return result.contains(defaultBundle.getString("Message.ifuse.verify"));
 	}
 

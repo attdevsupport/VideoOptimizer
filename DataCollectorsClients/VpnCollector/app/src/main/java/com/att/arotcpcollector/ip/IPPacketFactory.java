@@ -15,8 +15,11 @@
  */
 package com.att.arotcpcollector.ip;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 import android.util.Log;
 
@@ -32,24 +35,59 @@ public class IPPacketFactory {
 
 	public static final String TAG = "IPPacketFactory";
 
-	public static IPv4Header copyIPv4Header(IPv4Header ipheader) {
-
-		IPv4Header ip = new IPv4Header(ipheader.getIpVersion(), ipheader.getInternetHeaderLength(), 
-				ipheader.getDscpOrTypeOfService(), ipheader.getEcn(),ipheader.getTotalLength(), ipheader.getIdenfication(), 
-				ipheader.isMayFragment(), ipheader.isLastFragment(), ipheader.getFragmentOffset(), ipheader.getTimeToLive(),
-				ipheader.getProtocol(), ipheader.getHeaderChecksum(), ipheader.getSourceIP(), ipheader.getDestinationIP(), 
-				ipheader.getOptionBytes());
-		return ip;
+	/**
+	 * Provides a copy of original IP header object
+	 * @param ipheader
+	 * @return
+	 */
+	public static IPHeader copyIPHeader(IPHeader ipheader) {
+		if (ipheader.getIpVersion() == 6) {
+			return new IPV6Header((IPV6Header) ipheader);
+		} else {
+			return new IPv4Header((IPv4Header) ipheader);
+		}
 	}
 
 	/**
-	 * create IPv4 Header array of byte from a given IPv4Header object
+	 * Create appropriate IP header for the provided data
+	 * @param buffer
+	 * @param start
+	 * @return
+	 * @throws PacketHeaderException
+	 */
+	public static IPHeader createIPHeader(byte[] buffer, int start) throws PacketHeaderException {
+		byte version = (byte) (buffer[start] >> 4);
+
+		if (version == 4) {
+			return createIPv4Header(version, buffer, start);
+		} else if (version == 6) {
+			return createIPv6Header(buffer, start);
+		}
+		throw new PacketHeaderException("Unsupported IP version " + version);
+	}
+
+	/**
+	 * Create IP Header byte data from the corresponding object
+	 * @param header
+	 * @return
+	 */
+	public static byte[] createIPHeaderData(IPHeader header) {
+		if (header.getIpVersion() == 4) {
+			return createIPv4HeaderData((IPv4Header) header);
+		} else {
+			return createIPv6HeaderData((IPV6Header) header);
+		}
+	}
+
+
+	/**
+	 * Create IPv4 Header array of byte from a given IPv4Header object
 	 * 
 	 * @param header
 	 *            instance of IPv4Header
 	 * @return array of byte
 	 */
-	public static byte[] createIPv4HeaderData(IPv4Header header) {
+	private static byte[] createIPv4HeaderData(IPv4Header header) {
 
 		byte[] buffer = new byte[header.getIPHeaderLength()];
 		byte first = (byte) (header.getInternetHeaderLength() & 0xF);
@@ -65,8 +103,8 @@ public class IPPacketFactory {
 		buffer[2] = totallength1;
 		buffer[3] = totallength2;
 
-		byte id1 = (byte) (header.getIdenfication() >> 8);
-		byte id2 = (byte) header.getIdenfication();
+		byte id1 = (byte) (header.getIdentification() >> 8);
+		byte id2 = (byte) header.getIdentification();
 		buffer[4] = id1;
 		buffer[5] = id2;
 
@@ -90,8 +128,8 @@ public class IPPacketFactory {
 
 		ByteBuffer buf = ByteBuffer.allocate(8);
 		buf.order(ByteOrder.BIG_ENDIAN);
-		buf.putInt(0, header.getSourceIP());
-		buf.putInt(4, header.getDestinationIP());
+		buf.put(header.getSourceIP().getAddress());
+		buf.put(header.getDestinationIP().getAddress());
 
 		//souce ip
 		System.arraycopy(buf.array(), 0, buffer, 12, 4);
@@ -104,6 +142,42 @@ public class IPPacketFactory {
 
 		return buffer;
 	}
+	/**
+	 * Create IPv6 byte data from the object
+	 * @param header
+	 * @return
+	 */
+	private static byte[] createIPv6HeaderData(IPV6Header header) {
+		byte[] data = new byte[header.getIPHeaderLength()];
+
+		data[0] = (byte) ((header.getIpVersion() << 4) | (header.getTrafficClass() >> 4));
+		data[1] = (byte) ((header.getTrafficClass() << 4) | (header.getFlowLabel() >> 16));
+		data[2] = (byte) (header.getFlowLabel() >> 8);
+		data[3] = (byte) header.getFlowLabel();
+		data[4] = (byte) (header.getPayloadLength() >> 8);
+		data[5] = (byte) header.getPayloadLength();
+		data[6] = header.getNextHeader();
+		data[7] = header.getHopLimit();
+
+		ByteBuffer buf = ByteBuffer.allocate(32);
+		buf.order(ByteOrder.BIG_ENDIAN);
+		buf.put(header.getSourceIP().getAddress());
+		buf.put(header.getDestinationIP().getAddress());
+		if (header.getExtensionHeadersData().length > 0) {
+			buf.put(header.getExtensionHeadersData());
+		}
+		// Copy Source IP to data
+		System.arraycopy(buf.array(), 0, data, 8, 16);
+		// Copy Destination IP to data
+		System.arraycopy(buf.array(), 16, data, 24, 16);
+		// Copy extension headers' data
+		if (header.getExtensionHeadersData().length > 0) {
+			System.arraycopy(buf.array(), 32, data, 40, header.getExtensionHeadersData().length);
+		}
+
+		return data;
+	}
+
 
 	/**
 	 * create IPv4 Header from a given array of byte
@@ -115,17 +189,16 @@ public class IPPacketFactory {
 	 * @return a new instance of IPv4Header
 	 * @throws PacketHeaderException
 	 */
-	public static IPv4Header createIPv4Header(byte[] buffer, int start) throws PacketHeaderException {
+	private static IPHeader createIPv4Header(byte version, byte[] buffer, int start) throws PacketHeaderException {
 
 		IPv4Header head = null;
 
 		//avoid Index out of range
 		if ((buffer.length - start) < 20) {
-			throw new PacketHeaderException("Mininum IPv4 header is 20 bytes. There are less than 20 bytes" 
+			throw new PacketHeaderException("Minimum IPv4 header is 20 bytes. There are less than 20 bytes"
 					+ " from start position to the end of array.");
 		}
-		byte ipVersion = (byte) (buffer[start] >> 4);
-		if (ipVersion != 0x04) {
+		if (version != 0x04) {
 			throw new PacketHeaderException("Invalid IPv4 header. IP version should be 4.");
 		}
 		byte internetHeaderLength = (byte) (buffer[start] & 0x0F);
@@ -145,8 +218,15 @@ public class IPPacketFactory {
 		byte timeToLive = buffer[start + 8];
 		byte protocol = buffer[start + 9];
 		int checksum = PacketUtil.getNetworkInt(buffer, start + 10, 2);
-		int sourceIp = PacketUtil.getNetworkInt(buffer, start + 12, 4);
-		int desIp = PacketUtil.getNetworkInt(buffer, start + 16, 4);
+		InetAddress sourceIP = null;
+		InetAddress destinationIP = null;
+		try {
+			sourceIP = InetAddress.getByAddress(Arrays.copyOfRange(buffer, start + 12, start + 16));
+			destinationIP = InetAddress.getByAddress(Arrays.copyOfRange(buffer, start + 16, start + 20));
+		} catch (UnknownHostException e) {
+			Log.e(TAG, "Unable to extract source or destination IP", e);
+		}
+
 		byte[] options = null;
 		if (internetHeaderLength == 5) {
 			options = new byte[0];
@@ -155,9 +235,20 @@ public class IPPacketFactory {
 			options = new byte[optionLength];
 			System.arraycopy(buffer, start + 20, options, 0, optionLength);
 		}
-		head = new IPv4Header(ipVersion, internetHeaderLength, dscp, ecn, totalLength, identification, 
+		head = new IPv4Header(version, internetHeaderLength, dscp, ecn, totalLength, identification,
 				mayFragment, lastFragment, fragmentOffset, timeToLive, protocol, checksum,
-				sourceIp, desIp, options);
+				sourceIP, destinationIP, options);
 		return head;
+	}
+
+	/**
+	 *
+	 * @param buffer
+	 * @param start
+	 * @return
+	 * @throws PacketHeaderException
+	 */
+	private static IPHeader createIPv6Header(byte[] buffer, int start) throws PacketHeaderException {
+		return new IPV6Header(buffer, start);
 	}
 }

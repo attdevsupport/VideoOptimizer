@@ -373,7 +373,7 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
             if (synEntry != null) {
                 synTime = synEntry.getKey();
             } else {
-                LOGGER.debug("Packet info error : No SYN's found before the SYNACK - " + syncAckTime);
+//                LOGGER.debug("Packet info error : No SYN's found before the SYNACK - " + syncAckTime);
             }
         }
     }

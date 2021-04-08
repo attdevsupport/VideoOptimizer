@@ -44,6 +44,8 @@ public class SegmentTableModel extends AbstractTableModel {
 	public static final String TCP_STATE = ResourceBundleHelper.getMessageString("video.tab.segment.TCPState");
 	public static final String TRACK = ResourceBundleHelper.getMessageString("video.tab.segment.Track");
 	public static final String CHANNELS = ResourceBundleHelper.getMessageString("video.tab.segment.Channels");
+	public static final String STARTUP_DELAY = ResourceBundleHelper.getMessageString("video.userevent.dlStartDelay");
+	public static final String PLAYBACK_DELAY= ResourceBundleHelper.getMessageString("video.userevent.playBackDelay");
 	
 	List<VideoEvent> videoEventList;
 	
@@ -63,8 +65,11 @@ public class SegmentTableModel extends AbstractTableModel {
 		STALL_TIME,
 		TCP_SESSION,
 		TCP_STATE,
+		STARTUP_DELAY, 
+		PLAYBACK_DELAY,
 		SESSION_LINK
 	};
+	private double playRequestedTime = 0.0;
 
 	public VideoEvent 	EventAt(int rowIndex) {
 		return this.videoEventList.get(rowIndex);
@@ -97,23 +102,23 @@ public class SegmentTableModel extends AbstractTableModel {
             TCP_STATE.equals(columnNames[columnIndex])        ? findTermination(videoSegment) :
             SESSION_LINK.equals(columnNames[columnIndex])     ? videoSegment.getSession() :
             CHANNELS.equals(columnNames[columnIndex])         ? videoSegment.getChannels() == null ? "NA " : videoSegment.getChannels() :
-            ""
+            STARTUP_DELAY.equals(columnNames[columnIndex])    ? (playRequestedTime != 0.0 ? (String.format("%.3f",(videoSegment.getDLTimeStamp() - playRequestedTime))) : "-") :
+            PLAYBACK_DELAY.equals(columnNames[columnIndex])   ? (playRequestedTime != 0.0 ? (String.format("%.3f", (videoSegment.getPlayTime() - playRequestedTime))): "-") :
+           ""
         );
 	}
 
 
 	private Object calculateBitRate(VideoEvent videoSegment) {
-		if (videoSegment.getBitrate() == 0 && videoSegment.getDuration() > 0) {
-			return (videoSegment.getTotalBytes() * 8 / videoSegment.getDuration())/1000;
-		}
 		return videoSegment.getBitrate();
 	}
 
-	SegmentTableModel(Collection<VideoEvent> videoEventList) {
+	SegmentTableModel(Collection<VideoEvent> videoEventList, double playRequestedTime) {
 		this.videoEventList = new ArrayList<>();
 		for (VideoEvent event : videoEventList) {
 			this.videoEventList.add(event);
 		}
+		this.playRequestedTime = playRequestedTime;
 	}
 
 	public List<VideoEvent> getVideoEventCollection() {

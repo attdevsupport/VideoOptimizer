@@ -79,10 +79,11 @@ import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
+import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
-import com.att.aro.ui.view.diagnostictab.StartUpDelayDialog;
+import com.att.aro.ui.view.diagnostictab.StartupDelayDialog;
 import com.att.aro.ui.view.video.IVideoPlayer;
 
 import lombok.Data;
@@ -170,8 +171,6 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 
 		add(getTitleButton(), BorderLayout.NORTH);
 		if (videoStream != null && (videoStream.getPlayRequestedTime() != null || videoStream.getVideoPlayBackTime() != null)) {
-			startupLatencyPanel = new StartupLatencyPanel(videoStream);
-			add(startupLatencyPanel, BorderLayout.CENTER);
 			startupButton.setForeground(Color.GREEN);
 			enableCheckBox.setSelected(videoStream.isCurrentStream());
 			this.videoStream.setSelected(videoStream.isCurrentStream());
@@ -181,7 +180,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 				enableCheckBox.setSelected(false);
 			}
 		}
-		refreshGraphPanel(checkBoxVideo, checkBoxAudio);
+		refresh(checkBoxVideo, checkBoxAudio);
 		hiddenPanel = getHiddenPanel();
 		add(hiddenPanel, BorderLayout.SOUTH);
 		hiddenPanel.setVisible(false);
@@ -294,12 +293,18 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		List<UserEvent> userEventList = analyzerResult.getAnalyzerResult().getTraceresult().getUserEvents();
 		if (maxDuration >= 0) {
 			selectVideoStreamWithRefresh(videoStream);
-			dialog = new StartUpDelayDialog(aroView.getGraphPanel(), maxDuration, videoStream, userEventList, this);
-			dialog.pack();
-			dialog.setSize(dialog.getPreferredSize());
-			dialog.validate();
-			dialog.setModalityType(ModalityType.APPLICATION_MODAL);
-			dialog.setVisible(true);
+			try {
+				dialog = new StartupDelayDialog(aroView.getGraphPanel(), maxDuration, videoStream, userEventList, this);
+				dialog.pack();
+				dialog.setSize(dialog.getPreferredSize());
+				dialog.validate();
+				dialog.setModalityType(ModalityType.APPLICATION_MODAL);
+				dialog.setVisible(true);
+			} catch (Exception e) {
+				LOG.error("Exception in StartupDelayDialog:", e);
+				new MessageDialogFactory().showErrorDialog(null, ResourceBundleHelper.getMessageString("startupdelay.error.message"));
+			}
+
 		}
 	}
 
@@ -320,7 +325,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 				if (!checkBoxVideo.isSelected() && !checkBoxAudio.isSelected()) {
 					checkBoxAudio.setSelected(true);
 				}
-				refreshGraphPanel(checkBoxVideo, checkBoxAudio);
+				refresh(checkBoxVideo, checkBoxAudio);
 				refreshSegmentPanel();
 
 			}
@@ -340,7 +345,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 				if (!checkBoxVideo.isSelected() && !checkBoxAudio.isSelected()) {
 					checkBoxVideo.setSelected(true);
 				}
-				refreshGraphPanel(checkBoxVideo, checkBoxAudio);
+				refresh(checkBoxVideo, checkBoxAudio);
 				refreshSegmentPanel();
 			}
 		});
@@ -420,13 +425,17 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		videoStream.setSelected(true);
 		for (VideoStream stream : videoStreamMap) {
 			if (!stream.equals(videoStream)) {
-				stream.setSelected(false);
-				enableCheckBox.setSelected(false);
+				toggleStream(stream, false);
 			} else {
-				stream.setSelected(true);
-				enableCheckBox.setSelected(true);
+				toggleStream(stream, true);
 			}
 		}
+	}
+
+	private void toggleStream(VideoStream stream, boolean isCurrentStream) {
+		stream.setSelected(isCurrentStream);
+		enableCheckBox.setSelected(isCurrentStream);
+		stream.setCurrentStream(isCurrentStream);
 	}
 
 	public void updateTitleButton(AROTraceData analyzerResult) {
@@ -471,19 +480,20 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		if (streamingVideoData != null) {
 			streamingVideoData.scanVideoStreams();
 		}
-		if (!videoStream.getVideoEventMap().isEmpty()) {
-			if (checkBoxVideo != null && checkBoxAudio != null
-					&& (checkBoxVideo.isVisible() || checkBoxAudio.isVisible())) {
-				refreshGraphPanel(checkBoxVideo, checkBoxAudio);
-			} else {
-				refreshGraphPanel(null, null);
-			}
-		}
 		((MainFrame) aroView).getDiagnosticTab().getGraphPanel().refresh(analyzerResult);
 		analyzerResult = videoBestPractices.analyze(analyzerResult);
 		((MainFrame) aroView).getDiagnosticTab().getGraphPanel().setTraceData(analyzerResult);
-		((MainFrame) aroView).getVideoTab().refreshLocal(analyzerResult);
+		((MainFrame) aroView).getVideoTab().refreshLocal(analyzerResult, false);
 		((MainFrame)((MainFrame) aroView).getDiagnosticTab().getGraphPanel().getGraphPanelParent().getAroView()).refreshBestPracticesTab();
+		
+		if (!videoStream.getVideoEventMap().isEmpty()) {
+			if (checkBoxVideo != null && checkBoxAudio != null
+					&& (checkBoxVideo.isVisible() || checkBoxAudio.isVisible())) {
+				refresh(checkBoxVideo, checkBoxAudio);
+			} else {
+				refresh(null, null);
+			}
+		}
 	}
 
 	protected void refreshParent() {
@@ -491,7 +501,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		if (streamingVideoData != null) {
 			streamingVideoData.scanVideoStreams();
 		}
-		((MainFrame) aroView).getVideoTab().refreshLocal(analyzerResult);
+		((MainFrame) aroView).getVideoTab().refreshLocal(analyzerResult, false);
 	}
 
 	private void updateHiddenPanelContent(boolean manifestFlag) {
@@ -581,7 +591,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 
 		Collection<VideoEvent> videoEventList = eventList.values();
 		rowCount = videoEventList.size();
-		TableModel tableModel = new SegmentTableModel(videoEventList);
+		TableModel tableModel = new SegmentTableModel(videoEventList, videoStream.getPlayRequestedTime()!=null ? videoStream.getPlayRequestedTime() : 0.0);
 
 		JTable jTable;
 		jTable = new JTable(tableModel);
@@ -599,6 +609,10 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 				.setCellRenderer(centerRenderer);
 		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.CHANNELS))
 				.setCellRenderer(centerRenderer);
+		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.PLAYBACK_DELAY))
+		.setCellRenderer(centerRenderer);
+		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.STARTUP_DELAY))
+		.setCellRenderer(centerRenderer);
 
 		JTableHeader header = jTable.getTableHeader();
 		header.setDefaultRenderer(new MultiLineTableHeaderRenderer());
@@ -668,6 +682,8 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 				setColumnMinMaxWidth(jTable, SegmentTableModel.CHANNELS, true, 36, 36);
 				setColumnMinMaxWidth(jTable, SegmentTableModel.CONTENT, true, 50, 50);
 			}
+			setColumnMinMaxWidth(jTable, SegmentTableModel.STARTUP_DELAY, true, 55, COL_MAX_WIDTH);
+			setColumnMinMaxWidth(jTable, SegmentTableModel.PLAYBACK_DELAY, true, 55, COL_MAX_WIDTH);
 		} else if (AUDIO_TABLE_NAME.equals(jTable.getName())) {
 			setColumnMinMaxWidth(jTable, SegmentTableModel.CHANNELS, true, 36, 36);
 			setColumnMinMaxWidth(jTable, SegmentTableModel.RESOLUTION, false, 0, 0);
@@ -699,6 +715,8 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		setColumnMinMaxWidth(jTable, SegmentTableModel.TCP_SESSION, false, 0, 0);
 		setColumnMinMaxWidth(jTable, SegmentTableModel.CHANNELS, false, 0, 0);
 		setColumnMinMaxWidth(jTable, SegmentTableModel.CONTENT, false, 0, 0);
+		setColumnMinMaxWidth(jTable, SegmentTableModel.STARTUP_DELAY, false, 0, 0);
+		setColumnMinMaxWidth(jTable, SegmentTableModel.PLAYBACK_DELAY, false, 0, 0);
 
 		if (VIDEO_TABLE_NAME.equals(jTable.getName())) {
 			setColumnMinMaxWidth(jTable, SegmentTableModel.BIT_RATE, false, 0, 0);
@@ -714,29 +732,51 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		column.setMaxWidth(maxWidth);
 	}
 
-	public void refreshGraphPanel(JCheckBox checkBoxVideo, JCheckBox checkBoxAudio) {
+	public void refresh(JCheckBox checkBoxVideo, JCheckBox checkBoxAudio) {
 		VideoTab videoTab = ((MainFrame) aroView).getVideoTab();
-		SegmentThroughputGraphPanel graphPanel = videoTab.getGraphPanel();
 		if (videoStreamMap.size() > 1) {
 			for (VideoStream stream : videoStreamMap) {
 				if (stream.equals(videoStream)) {
-					if (stream.isSelected()) {
-						graphPanel.setVisible(true);
-						refreshGraphPanel(checkBoxVideo, checkBoxAudio, graphPanel);
-						break;
+					if (stream.isSelected() && stream.isCurrentStream()) {
+						rebuildVideoTabGraphPanels(checkBoxVideo, checkBoxAudio, videoTab, true);
 					}
 				}
 			}
 		} else {
-			graphPanel.setVisible(true);
-			refreshGraphPanel(checkBoxVideo, checkBoxAudio, graphPanel);
+			rebuildVideoTabGraphPanels(checkBoxVideo, checkBoxAudio, videoTab, true);
 		}
 	}
 
-	private void refreshGraphPanel(JCheckBox checkBoxVideo, JCheckBox checkBoxAudio, SegmentThroughputGraphPanel graphPanel) {
+	private void rebuildVideoTabGraphPanels(JCheckBox checkBoxVideo, JCheckBox checkBoxAudio, VideoTab videoTab,
+			boolean isVisible) {
+		SegmentThroughputGraphPanel throughputGraphPanel = videoTab.getThroughputGraphPanel();
+		SegmentProgressGraphPanel progressGraphPanel = videoTab.getProgressGraphPanel();
+		SegmentBufferGraphPanel bufferGraphPanel = videoTab.getBufferGraphPanel();
+		
+		boolean isStartupDelaySet = videoStream.isCurrentStream() && (videoStream.getPlayRequestedTime() != null || videoStream.getVideoPlayBackTime() != null);
+		if (isVisible) {
+			refreshVideoTabGraphPanels(checkBoxVideo, checkBoxAudio, throughputGraphPanel, progressGraphPanel, bufferGraphPanel, isStartupDelaySet);
+		}
+		
+		videoTab.getThroughputPanel().setVisible(isVisible);
+		throughputGraphPanel.setVisible(isVisible);
+		videoTab.getProgressPanel().setVisible(isVisible);
+		progressGraphPanel.setVisible(isVisible);
+		videoTab.getBufferPanel().setVisible(isVisible && isStartupDelaySet);
+		bufferGraphPanel.setVisible(isVisible && isStartupDelaySet);
+		
+	}
+
+	private void refreshVideoTabGraphPanels(JCheckBox checkBoxVideo, JCheckBox checkBoxAudio, SegmentThroughputGraphPanel throughputGraphPanel, SegmentProgressGraphPanel progressGraphPanel, SegmentBufferGraphPanel bufferGraphPanel, boolean isStartupDelaySet) {
 		if (videoStream != null
 				&& (videoStream.getVideoEventMap().size() > 0 || videoStream.getAudioEventMap().size() > 0)) {
-			graphPanel.refresh(analyzerResult, videoStream, checkBoxVideo, checkBoxAudio);
+			throughputGraphPanel.refresh(analyzerResult, videoStream, checkBoxVideo, checkBoxAudio);
+			progressGraphPanel.refresh(analyzerResult, videoStream, checkBoxVideo, checkBoxAudio);
+			if (isStartupDelaySet && videoStream.isCurrentStream()) {
+				bufferGraphPanel.refresh(analyzerResult, videoStream, checkBoxVideo, checkBoxAudio,
+						videoManifestPanel.getSeriesDataSets(), videoManifestPanel.getChunkPlayTimeList());
+
+			}
 		}
 	}
 

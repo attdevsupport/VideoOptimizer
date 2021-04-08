@@ -31,6 +31,7 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetreader.pojo.Packet;
 import com.att.aro.core.util.ImageHelper;
+import com.att.aro.core.video.pojo.Segment;
 import com.att.aro.core.videoanalysis.impl.SegmentInfo;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
 
@@ -44,7 +45,7 @@ import lombok.Data;
 public class VideoEvent implements Comparable<VideoEvent>{
 	
 	// 'broken' thumbnail portrait
-	private byte[] defaultImage = new byte[] { (byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47, (byte) 0x0D, (byte) 0x0A, (byte) 0x1A, (byte) 0x0A, (byte) 0x00, (byte) 0x00,
+	private static final byte[] DEFAULTIMAGE = new byte[] { (byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47, (byte) 0x0D, (byte) 0x0A, (byte) 0x1A, (byte) 0x0A, (byte) 0x00, (byte) 0x00,
 			(byte) 0x00, (byte) 0x0D, (byte) 0x49, (byte) 0x48, (byte) 0x44, (byte) 0x52, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x0E, (byte) 0x00, (byte) 0x00, (byte) 0x00,
 			(byte) 0x11, (byte) 0x08, (byte) 0x06, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0xED, (byte) 0xC8, (byte) 0x9D, (byte) 0x9F, (byte) 0x00, (byte) 0x00, (byte) 0x00,
 			(byte) 0x01, (byte) 0x73, (byte) 0x52, (byte) 0x47, (byte) 0x42, (byte) 0x00, (byte) 0xAE, (byte) 0xCE, (byte) 0x1C, (byte) 0xE9, (byte) 0x00, (byte) 0x00, (byte) 0x00,
@@ -218,6 +219,8 @@ public class VideoEvent implements Comparable<VideoEvent>{
 
 	private String option = "";
 
+	private boolean defaultThumbnail = false;
+
 	public boolean isMpeg() {
 		return getManifest().getVideoFormat().equals(VideoFormat.MPEG4);
 	}
@@ -307,7 +310,13 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	}
 	
 	public void setThumbnail(byte[] imgArray) {
-		byte[] imageArray = imgArray == null ? defaultImage : imgArray;
+		byte[] imageArray;
+		if (imgArray == null) {
+			imageArray = DEFAULTIMAGE;
+			defaultThumbnail  = true;
+		} else {
+			imageArray = imgArray;
+		}
 
 		BufferedImage image = null;
 		image = ImageHelper.getImageFromByte(imageArray);
@@ -329,16 +338,13 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	 * press time, and release time.
 	 * 
 	 * @param imageArray a thumbnail image from first "frame" of chunk
-	 * @param videoType The event type. One of the values of the VideoEventType enumeration.
-	 * @param segment
-	 * @param quality
-	 * @param rangeList
-	 * @param bitrate
-	 * @param duration
-	 * @param segmentStartTime
-	 * @param mdatSize
+	 * @param manifest
+	 * @param segmentInfo
+	 * @param childManifest
+	 * @param contentSize
 	 * @param response
 	 * @param l 
+	 * @param crc32Value
 	 */
 	public VideoEvent(
 			 byte[] imageArray
@@ -351,9 +357,12 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		
 		this.segmentInfo = segmentInfo;
 		this.manifest = manifest2 != null ? manifest2 : new Manifest();
-		this.videoType = manifest.getVideoType();
+		this.videoType = this.manifest.getVideoType();
 		setBitrate(segmentInfo.getBitrate());
 		setChildManifest(childManifest);
+		if (segmentInfo.getResolutionHeight() == 0) {
+			segmentInfo.setResolutionHeight(childManifest.getPixelHeight());
+		}
 		setResolutionHeight(segmentInfo.getResolutionHeight());
 		setChannels(childManifest.getChannels());
 		setQuality(segmentInfo.getQuality());
@@ -400,12 +409,72 @@ public class VideoEvent implements Comparable<VideoEvent>{
 
 	}
 
+	public VideoEvent(byte[] image, Manifest manifest, Segment segment, HttpRequestResponseInfo response) {
+		
+		this.segmentInfo = createSegmentInfo(manifest, segment);
+		
+		this.manifest = manifest != null ? manifest : new Manifest();
+		this.videoType = manifest.getVideoType();
+		this.bitrate = segmentInfo.getBitrate();
+		this.segmentID = segment.getSegmentIndex();
+		this.startTS = response.getTimeStamp();
+		double delta = 0;
+		Packet packet = response.getLastDataPacket().getPacket().getNextPacketInSession();
+		if (packet != null) {
+			delta = packet.getTimeStamp() - response.getLastDataPacket().getPacket().getTimeStamp();
+		}
+		if (delta == 0.0) {
+			delta = .004;
+		}
+		this.endTS = response.getLastDataPacket().getTimeStamp() + delta;
+		
+		this.playTime = segment.getStartPlayTime();
+		this.segmentStartTime = segment.getStartPlayTime();
+		this.quality = segment.getTrack().getTrackNumber() + "";
+		this.duration = segment.getEndPlayTime() - segment.getStartPlayTime();
+		this.segmentSize = segment.getSize();
+		this.response = response;
+		if (response.getContentOffsetLength() == null) {
+			this.setPacketCount(0);
+		} else {
+			this.setPacketCount(response.getContentOffsetLength().values().size());
+		}
+
+		if (image != null) {
+			setThumbnail(image);
+		} else {
+			setThumbnail(DEFAULTIMAGE);
+		}
+	}
+
+	private SegmentInfo createSegmentInfo(Manifest manifest, Segment segment) {
+		SegmentInfo segmentInfo = new SegmentInfo();
+		
+		segmentInfo.setSize(segment.getSize());
+		segmentInfo.setDuration(segment.getEndPlayTime() - segment.getStartPlayTime());
+		segmentInfo.setSegmentID(segment.getSegmentIndex());
+		segmentInfo.setBitrate(segmentInfo.getDuration()!=0?(segment.getSize() * 8 / segmentInfo.getDuration()):0);
+		segmentInfo.setStartTime(segment.getStartPlayTime());
+		segmentInfo.setContentType(manifest.getContentType());
+		
+		if (manifest.getContentType() == ContentType.VIDEO) {
+			segmentInfo.setVideo(true);
+		} else {
+			segmentInfo.setVideo(false);
+		}
+		return segmentInfo;
+	}
+
 	public Session getSession() {
 		return response.getDirection() == HttpDirection.REQUEST ? response.getSession() : response.getAssocReqResp().getSession();
 	}
 	
 	public ContentType getContentType() {
-		return segmentInfo.getContentType();
+		if (segmentInfo!=null) {
+			return segmentInfo.getContentType();
+		} else {
+			return manifest.getContentType();
+		}
 	}
 	
 	/**

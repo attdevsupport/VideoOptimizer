@@ -23,19 +23,14 @@ import javax.swing.JScrollPane;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
-import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.diagnostic.HttpDelayTableModel;
-
-import lombok.Data;
 
 /**
  * Initializes a new instance of the HttpDelayPanel class under TCP/UDP table.
  */
-@Data
 public class HttpDelayPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
@@ -46,9 +41,6 @@ public class HttpDelayPanel extends JPanel {
 	public HttpDelayTableModel getHttpDelayTableModel() {
 		return httpDelayTableModel;
 	}
-
-	private IHttpRequestResponseHelper httpHelper = ContextAware.getAROConfigContext()
-			.getBean(IHttpRequestResponseHelper.class);
 
 
 	/**

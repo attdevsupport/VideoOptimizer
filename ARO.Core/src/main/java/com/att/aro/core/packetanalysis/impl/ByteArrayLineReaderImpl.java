@@ -16,6 +16,7 @@
 package com.att.aro.core.packetanalysis.impl;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.io.ByteArrayOutputStream;
 
 import com.att.aro.core.util.Util;
@@ -102,7 +103,7 @@ public class ByteArrayLineReaderImpl implements IByteArrayLineReader {
 					if (num == '\n') {
 
 						// Return found line of text
-						return new String(output.toByteArray(), "UTF-8");
+						return new String(output.toByteArray(), StandardCharsets.UTF_8);
 					} else {
 						output.write('\r');
 						output.write(num);
@@ -113,7 +114,7 @@ public class ByteArrayLineReaderImpl implements IByteArrayLineReader {
 			}
 
 			// End of stream
-			return output.size() > 0 ? new String(output.toByteArray(), "UTF-8") : null;
+			return output.size() > 0 ? new String(output.toByteArray() , StandardCharsets.UTF_8) : null;
 		}
 	}
 

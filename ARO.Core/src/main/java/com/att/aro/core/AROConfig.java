@@ -57,7 +57,6 @@ import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.IPacketAnalyzer;
 import com.att.aro.core.packetanalysis.IParseHeaderLine;
 import com.att.aro.core.packetanalysis.IPktAnazlyzerTimeRangeUtil;
-import com.att.aro.core.packetanalysis.IRequestResponseBuilder;
 import com.att.aro.core.packetanalysis.IRrcStateMachineFactory;
 import com.att.aro.core.packetanalysis.IRrcStateRangeFactory;
 import com.att.aro.core.packetanalysis.ISessionManager;
@@ -74,7 +73,6 @@ import com.att.aro.core.packetanalysis.impl.ImageExtractor;
 import com.att.aro.core.packetanalysis.impl.PacketAnalyzerImpl;
 import com.att.aro.core.packetanalysis.impl.ParseHeaderLineImpl;
 import com.att.aro.core.packetanalysis.impl.PktAnazlyzerTimeRangeImpl;
-import com.att.aro.core.packetanalysis.impl.RequestResponseBuilderImpl;
 import com.att.aro.core.packetanalysis.impl.RrcStateMachineFactoryImpl;
 import com.att.aro.core.packetanalysis.impl.RrcStateRangeFactoryImpl;
 import com.att.aro.core.packetanalysis.impl.SessionManagerImpl;
@@ -171,6 +169,7 @@ import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
 import com.att.aro.core.util.FFmpegConfirmationImpl;
+import com.att.aro.core.util.FFprobeConfirmationImpl;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.PcapConfirmationImpl;
 import com.att.aro.core.util.StringParse;
@@ -197,6 +196,7 @@ import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 import com.att.aro.core.videouploadanalysis.ImageBoundsGrabber;
+import com.att.aro.core.videoanalysis.videoframe.VideoFrameExtractor;
 
 
 /**
@@ -279,11 +279,6 @@ public class AROConfig {
 	@Bean
 	public ICpuActivityReader getCpuActivityReader() {
 		return new CpuActivityReaderImpl();
-	}
-
-	@Bean
-	public IRequestResponseBuilder getRequestResponseBuilder() {
-		return new RequestResponseBuilderImpl();
 	}
 
 	@Bean
@@ -641,6 +636,11 @@ public class AROConfig {
 		return new FFmpegConfirmationImpl();
 	}
 	
+	@Bean(name = "ffprobeConfirmationImpl")
+	public FFprobeConfirmationImpl getFFprobeConfirmationImpl() {
+		return new FFprobeConfirmationImpl();
+	}
+	
 	@Bean(name = "pcapConfirmationImpl")
 	public PcapConfirmationImpl getPcapConfirmationImpl() {
 		return new PcapConfirmationImpl();
@@ -671,6 +671,11 @@ public class AROConfig {
 		return new ExternalProcessRunnerImpl();
 	}
 	
+	@Bean(name = "videoFrameExtractor")
+	public VideoFrameExtractor getVideoFrameExtractor(){
+		return new VideoFrameExtractor();
+	}
+
 	@Bean(name = "videoStartupReadWrite")
 	public IVideoStartupReadWrite getVideoStartupReadWriteImpl(){
 		return new VideoStartupReadWriterImpl();

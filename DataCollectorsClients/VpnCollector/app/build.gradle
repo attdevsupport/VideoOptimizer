@@ -38,7 +38,7 @@ android {
         applicationId "com.att.arocollector"
         def jenkinsBuildNumber = System.getenv("BUILD_NUMBER") as Integer ?: 1
         def releaseBuildId = jenkinsBuildNumber - 1
-        versionName "4.0." + releaseBuildId
+        versionName "4.1." + releaseBuildId
         minSdkVersion 23
         targetSdkVersion 29
         compileOptions {

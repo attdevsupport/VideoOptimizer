@@ -21,7 +21,6 @@ import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
-import com.att.arotcpcollector.util.PacketUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -105,7 +104,7 @@ public class SocketDataWriterWorker implements Runnable {
 			return;
 		}
 		DatagramChannel channel = session.getUdpChannel();
-		String sessionKey = PacketUtil.intToIPAddress(session.getDestAddress()) + ":" + session.getDestPort() + "-" + PacketUtil.intToIPAddress(session.getSourceIp()) + ":"
+		String sessionKey = session.getDestAddress() + ":" + session.getDestPort() + "-" + session.getSourceIp() + ":"
 						+ session.getSourcePort();
 		byte[] data = session.getSendingData();
 		ByteBuffer buffer = ByteBuffer.allocate(data.length);
@@ -118,14 +117,13 @@ public class SocketDataWriterWorker implements Runnable {
 			//			Log.d(TAG, "***** end writing to server *******");
 			//			Log.d(TAG, "writing data to remote UDP: " + session.getSessionName());
 			channel.write(buffer);
-			
-		} catch (NotYetConnectedException ex2) {
+
+		} catch (NotYetConnectedException e) {
 			session.setAbortingConnection(true);
-			Log.e(TAG, "Error writing to unconnected-UDP server, will abort current connection: " + ex2.getMessage());
-		} catch (IOException e) {
+			Log.e(TAG, "Error writing to unconnected-UDP server, will abort current connection: ", e);
+		} catch (Exception e) {
 			session.setAbortingConnection(true);
-			e.printStackTrace();
-			Log.e(TAG, "Error writing to UDP server, will abort connection: " + e.getMessage());
+			Log.e(TAG, "Error writing to UDP server, will abort connection: ", e);
 		}
 	}
 

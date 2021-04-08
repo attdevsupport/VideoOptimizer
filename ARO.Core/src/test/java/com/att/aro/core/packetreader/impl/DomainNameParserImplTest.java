@@ -16,7 +16,7 @@ public class DomainNameParserImplTest extends BaseTest {
 	@Test
 	public void parseDomain(){
 		parser = (DomainNameParserImpl) context.getBean(IDomainNameParser.class);
-		UDPPacket packet = new UDPPacket(1393515429, 547730, 288, 16, dnsresponsedata);
+		UDPPacket packet = new UDPPacket(1393515429, 547730, 288, 16, null, null, dnsresponsedata);
 		DomainNameSystem dns = parser.parseDomainName(packet);
 		assertNotNull(dns);
 		

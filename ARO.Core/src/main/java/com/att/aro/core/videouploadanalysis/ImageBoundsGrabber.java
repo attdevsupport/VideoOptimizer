@@ -169,19 +169,19 @@ public class ImageBoundsGrabber implements Runnable {
 
 		if (Util.isMacOS()) {
 			// no special handling required
-			sikJar = "sikulixlibsmac-1.1.0.jar";
+			sikJar = "sikulixlibsmac-1.1.1.jar";
 			sPattern = "([a-zA-Z0-9\\/]*VideoOptimizer)[\\.:][a-zA-Z\\/]*:";
 			suffix = ".dylib";
 			pathExten = ".app/Contents/java/app/";
 		} else if (Util.isWindows64OS() || Util.isWindows32OS() || Util.isWindowsOS()) {
-			sikJar = "sikulixlibswin-1.1.0.jar";
+			sikJar = "sikulixlibswin-1.1.1.jar";
 			suffix = ".dll";
 			sPattern = ";([a-zA-Z0-9\\\\: ]*VideoOptimizer);";
 			pathExten = Util.FILE_SEPARATOR;
 			sep = ";";
 
 		} else if (Util.isLinuxOS()) {
-			sikJar = "sikulixlibslux-1.1.0.jar";
+			sikJar = "sikulixlibslux-1.1.1.jar";
 			sPattern = ":([a-zA-Z0-9\\/]*VideoOptimizer):";
 			suffix = ".so";
 			pathExten = Util.FILE_SEPARATOR;

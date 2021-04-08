@@ -107,6 +107,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 			LOG.debug(String.format("Unrecognized Manifest:%s \ndata:%s",newManifest.getRequest().getObjNameWithoutParams(), strData));
 			return;
 		}
+		int[] byteRangeOffest = new int[] { 0 }; // for #EXT-X-BYTERANGE usage only
 		adjustDurationNeeded = false;
 		String[] flag;
 		
@@ -238,9 +239,10 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					String parameters = sData[itr];
 					String segmentUriName;
 
+					String brSegmentKey = "";
 					if (sData[itr + 1].startsWith("#EXT-X-BYTERANGE:")) {
-						itr = itr + 2;
-						segmentUriName = sData[itr];
+						brSegmentKey = sData[++itr];
+						segmentUriName = sData[++itr];
 					} else {
 						segmentUriName = sData[++itr];
 					}
@@ -248,7 +250,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 
     				urlMatchDef = defineUrlMatching(segmentUriName);
     				// Build reference URL and URL match definition for the segment using corresponding child manifest
-					if (segmentUriName.length() > 0 && segmentUriName.charAt(0) != '/') {
+    				if (segmentUriName.length() > 0 && segmentUriName.charAt(0) != '/') {
 						if (UrlMatchType.COUNT.equals(urlMatchDef.getUrlMatchType())) {
 							UrlMatchDef segmentManifestUrlMatchDef = defineUrlMatching(childManifest.getUriName());
 
@@ -275,7 +277,8 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 
 					segmentUriName = decodeUrlEncoding(segmentUriName);
 			        segmentUriName = StringUtils.substringBefore(segmentUriName, "?");
-					if (childManifest.addSegment(segmentUriName, segmentInfo).equals(segmentInfo)) {
+			        brSegmentKey = brKeyBuilder(brSegmentKey, segmentUriName, byteRangeOffest);
+					if (childManifest.addSegment(!brSegmentKey.isEmpty() ? brSegmentKey : segmentUriName, segmentInfo).equals(segmentInfo)) {
 						manifestCollection.addToSegmentTrie(segmentUriName, segmentInfo);
 						manifestCollection.addToTimestampChildManifestMap(manifest.getRequest().getTimeStamp(), childManifest);
 						if (!manifestCollection.getSegmentChildManifestTrie().containsKey(segmentUriName)) {
@@ -352,6 +355,38 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 		}
 	}
 
+	/*
+	 *  
+		#EXT-X-BYTERANGE:41517@0			byteRangeSegmentLength @ byteRangeOffest
+		#EXT-X-BYTERANGE:40932@41517
+		#EXT-X-BYTERANGE:41000@82449
+
+	 */
+	private String brKeyBuilder(String brSegmentKey, String segmentUriName, int[] byteRangeOffest) {
+		if (StringUtils.isEmpty(brSegmentKey)) {
+			return segmentUriName;
+		}
+		String key = brSegmentKey;
+		if (brSegmentKey.startsWith("#EXT-X-BYTERANGE:")) {
+			int byteRangeSegmentLength = -1;
+			String[] ranges;
+			if ((ranges = stringParse.parse(brSegmentKey, "EXT-X-BYTERANGE:(\\d+)@(\\d+)")) != null) {
+				byteRangeSegmentLength = StringParse.stringToInteger(ranges[0], -1);
+				byteRangeOffest[0] = StringParse.stringToInteger(ranges[1], -1);
+			} else if ((ranges = stringParse.parse(brSegmentKey, "EXT-X-BYTERANGE:(\\d+)")) != null) {
+				byteRangeSegmentLength = StringParse.stringToInteger(ranges[0], -1);
+			}
+			if (byteRangeSegmentLength < 0 || byteRangeOffest[0] < 0) {
+				LOG.error(String.format("Cannot parse decimals :%s", brSegmentKey));
+				return key;
+			} else {
+				key = String.format("%d-%d", byteRangeOffest[0], byteRangeOffest[0] + byteRangeSegmentLength - 1);
+				byteRangeOffest[0] += byteRangeSegmentLength;
+			}
+		}
+		return key;
+	}
+	
 	/**
 	 * Adjust duration values per segment
 	 * @param childManifest
@@ -417,9 +452,6 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 			} else if (codecs.contains("a")) {
 				childManifest.setVideo(false);
 				childManifest.setContentType(ContentType.AUDIO);
-			} else {
-				childManifest.setVideo(false);
-				childManifest.setContentType(ContentType.UNKNOWN);
 			}
 		}
 

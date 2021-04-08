@@ -16,6 +16,7 @@
 package com.att.aro.core.commandline;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 
 public interface IExternalProcessRunner {
@@ -50,14 +51,49 @@ public interface IExternalProcessRunner {
 	 * execute command in bash/CMD shell
 	 * 
 	 * @param cmd
-	 * @param b 
+	 * @param redirectErrorStream
+	 * @param readCommandResponse
 	 * @return stdout and stderr
 	 */
-	String executeCmd(String cmd, boolean redirectErrorStream);
+	String executeCmd(String cmd, boolean redirectErrorStream, boolean readCommandResponse);
+	/**
+	 * @param cmd
+	 * @param earlyExit
+	 * @param msg
+	 * @param readCommandResponse
+	 * @return stdout and stderr
+	 */
+	String executeCmdRunner(String cmd, boolean earlyExit, String msg,  boolean readCommandResponse);
 	
-	String executeCmdRunner(String cmd, boolean earlyExit, String msg);
+	/**
+	 * @param cmd
+	 * @param earlyExit
+	 * @param msg
+	 * @param redirectErrorStream
+	 * @param readCommandResponse
+	 * @return stdout and stderr
+	 */
+	String executeCmdRunner(String cmd, boolean earlyExit, String msg, boolean redirectErrorStream,  boolean readCommandResponse);
+	/**
+	 * @param workingDir
+	 * @param cmd
+	 * @param redirectErrorStream
+	 * @param readCommandResponse
+	 * @return stdout and stderr
+	 */
+	String executeCmd(File workingDir, String cmd, boolean redirectErrorStream, boolean readCommandResponse);
 	
-	String executeCmdRunner(String cmd, boolean earlyExit, String msg, boolean redirectErrorStream);
-
+	/**
+	 * @param workingPath
+	 * @param cmd
+	 * @param earlyExit
+	 * @param msg
+	 * @param redirectErrorStream
+	 * @param readCommandResponse
+	 * @return stdout and stderr
+	 */
+	String executeCmdRunner(File workingPath, String cmd, boolean earlyExit, String msg, boolean redirectErrorStream,  boolean readCommandResponse);
+	
+ 
 
 }

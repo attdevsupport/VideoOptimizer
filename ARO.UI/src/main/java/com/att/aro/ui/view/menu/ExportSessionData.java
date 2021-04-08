@@ -272,6 +272,8 @@ public class ExportSessionData extends AbstractMenuItemListener {
 				return TextFileCompression.COMPRESS.toString();
 			} else if ("deflate".equals(contentEncoding)) {
 				return TextFileCompression.DEFLATE.toString();
+			} else if ("br".equals(contentEncoding)) {
+				return TextFileCompression.BROTLI.toString();
 			} else {
 				return TextFileCompression.NONE.toString();
 			}

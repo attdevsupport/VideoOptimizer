@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 AT&T
+ *  Copyright 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.peripheral.IVideoStartupReadWrite;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
+import com.att.aro.core.peripheral.pojo.VideoStreamStartupData;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Method to read times from the video time trace file and store video time
- * variables.
- * Date: October 10, 2018
+ * Load and Save StartupDelay data, from jason file video_stream_startup.json
  */
 public class VideoStartupReadWriterImpl extends PeripheralBase implements IVideoStartupReadWrite {
 
@@ -44,59 +44,66 @@ public class VideoStartupReadWriterImpl extends PeripheralBase implements IVideo
 
 	private ObjectMapper mapper = new ObjectMapper();
 
-	VideoStreamStartup videoStreamStartup;
+	private VideoStreamStartupData videoStreamStartupData;
 	
-	@Override
-	public VideoStreamStartup readData(String tracePath) {
+	private String jsonDataSaved = ""; // for comparison purposes before saving, do not want to save if no changes to file
 
-		if (tracePath == null) {
-			videoStreamStartup = new VideoStreamStartup();
-		} else {
+	@Override
+	public VideoStreamStartupData readData(String tracePath) {
 
 			File jsonFile = filereader.createFile(tracePath, JSON_FILE);
-			try {
-				String temp = filereader.readAllData(jsonFile.toString());
-				videoStreamStartup = mapper.readValue(temp, VideoStreamStartup.class);
-			} catch (IOException e) {
-				LOG.debug("failed to load startup data: " + e.getMessage());
-				videoStreamStartup = new VideoStreamStartup();
+			if (jsonFile.exists()) {
+				String temp = null;
+				try {
+					temp = filereader.readAllData(jsonFile.toString());
+					videoStreamStartupData = mapper.readValue(temp, VideoStreamStartupData.class);
+					if (videoStreamStartupData.getStreams().isEmpty()) { // imports older formats
+						VideoStreamStartup videoStreamStartup = mapper.readValue(temp, VideoStreamStartup.class);
+						videoStreamStartupData.getStreams().add(videoStreamStartup);
+					}
+					jsonDataSaved = serialize(videoStreamStartupData);
+				} catch (IOException e) {
+					LOG.debug("failed to load startup data: " + e.getMessage());
+				}
+			} else {
+				videoStreamStartupData = new VideoStreamStartupData();
+		}
+
+		return videoStreamStartupData;
+	}
+	
+	@Override
+	public boolean save(String path, VideoStreamStartupData videoStreamStartupData) throws Exception {
+		if (videoStreamStartupData != null) {
+
+			String jsonData = serialize(videoStreamStartupData);
+			if (jsonData.equals(jsonDataSaved)) {
+				LOG.debug("Startup delay has no changes, so not saving");
+				return true;
+			}
+
+			this.videoStreamStartupData = videoStreamStartupData;
+			String jsonPath = null;
+			File jsonFile = filemanager.createFile(path, JSON_FILE);
+			jsonPath = jsonFile.toString();
+
+			LOG.debug("Startup delay saving");
+
+			if (!jsonData.isEmpty() && jsonPath != null && !jsonPath.isEmpty()) {
+				FileOutputStream output = new FileOutputStream(jsonPath);
+				output.write(jsonData.getBytes());
+				output.flush();
+				output.close();
+				LOG.debug("Startup delay saved");
+				jsonDataSaved = jsonData;
+				return true;
 			}
 		}
-		return videoStreamStartup;
+		return false;
 	}
-	
-	/**
-	 * @param path
-	 * Path can be a fully qualified file path or just the trace folder
-	 * The method saves data into the metadata.json file.
-	 * @throws Exception
-	 */
-	@Override
-	public void save(String path, VideoStreamStartup videoStreamStartup) throws Exception {
-		if (videoStreamStartup != null) {
-			this.videoStreamStartup = videoStreamStartup;
-		}
-		String localPath = null;
-
-		if (!path.isEmpty() && !filemanager.isFile(path)) {
-			localPath = filemanager.createFile(path, JSON_FILE).toString();
-		}
-
-		String jsonData = getJson();
-
-		if (jsonData != null && !jsonData.isEmpty() && localPath != null && !localPath.isEmpty()) {
-			FileOutputStream output = new FileOutputStream(localPath);
-			output.write(jsonData.getBytes());
-			output.flush();
-			output.close();
-		}
-	}
-	
-
-	private String getJson() throws Exception {
-		String serialized = "";
-		serialized = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(videoStreamStartup);
-		return serialized;
+ 	
+	public String serialize(VideoStreamStartupData videoStreamStartupData) throws JsonProcessingException {
+		return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(videoStreamStartupData);
 	}
 
 }

@@ -22,6 +22,7 @@ import android.util.Log;
 import com.att.arocollector.attenuator.AttenuatorManager;
 import com.att.arocollector.attenuator.AttenuatorUtil;
 import com.att.arotcpcollector.IClientPacketWriter;
+import com.att.arotcpcollector.ip.IPHeader;
 import com.att.arotcpcollector.ip.IPPacketFactory;
 import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.socket.IDataReceivedSubscriber;
@@ -83,29 +84,42 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 
 		byte[] packet;
 
-		long maxBucketSize = AttenuatorManager.getInstance().getThrottleDL() * 1024 / 8;
+		long maxBucketSize = AttenuatorManager.getInstance().getThrottleDL() * 1000 / 8;
 		long lastPacketTime = System.nanoTime();
 		double currentNumberOfTokens = maxBucketSize;
 
-		Log.i(TAG, "Download Speed Limit : " + (AttenuatorManager.getInstance().getThrottleDL() * 1024 / 8)+ " Bytes");
+		Log.i(TAG, "Download Speed Limit : " + (AttenuatorManager.getInstance().getThrottleDL() * 1000 / 8)+ " Bytes");
 		try {
 			while (!shutdown) {
 				Log.d(TAG, "I am polling data");
 				packet = dataReceived.take();
 
 				if (null != packet && packet.length > 0) {
+					// Sleep until we have some value for throttling other than zero
+					while (AttenuatorManager.getInstance().getThrottleDL() == 0)  {
+						// Sleep for a short duration as no packet can be processed for a zero throttle value
+						try {
+							Thread.sleep(500);
+						} catch (InterruptedException e) {
+							Log.d(TAG, "Failed to sleep when Download throttle was 0: " + e.getMessage());
+						}
+					}
+
 					try {
 						clientPacketWriter.write(packet);
 					} catch (IOException e) {
 						Log.e(TAG, "Failed to write packet: " + e.getMessage(),e);
 					}
-					if (!(AttenuatorManager.getInstance().getThrottleDL() < 0)) {
+
+					int throttleDL = AttenuatorManager.getInstance().getThrottleDL();
+					if (throttleDL > 0) {
+						maxBucketSize = throttleDL * 1000 / 8;
 						int headerLength = 0;
 						TCPHeader tcpHeader = null;
 						TCPPacketFactory tcpFactory = new TCPPacketFactory();
 						try {
 							if (isTCP(packet)) {
-								IPv4Header ipHeader = IPPacketFactory.createIPv4Header(packet, 0);
+								IPHeader ipHeader = IPPacketFactory.createIPHeader(packet, 0);
 								headerLength += ipHeader.getIPHeaderLength();
 								tcpHeader = tcpFactory.createTCPHeader(packet, ipHeader.getIPHeaderLength());
 								headerLength += tcpHeader.getTCPHeaderLength();
@@ -117,7 +131,7 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 						}
 						int consumedTokens = packet.length - headerLength;
 						long currentTime = System.nanoTime();
-						double generatedToken = (currentTime-lastPacketTime)*AttenuatorManager.getInstance().getThrottleDL() * 1024/ 8 /1000000/1000;
+						double generatedToken = (currentTime - lastPacketTime) * throttleDL / 8 / 1000000;
 						currentNumberOfTokens += generatedToken;
 						if (currentNumberOfTokens > maxBucketSize) {
 							currentNumberOfTokens = maxBucketSize;
@@ -126,7 +140,7 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 						currentNumberOfTokens -= consumedTokens;
 						if (currentNumberOfTokens < 0){
 							try{
-								int sleepTime = (int)(-1 * currentNumberOfTokens  * 8  * 1000 / AttenuatorManager.getInstance().getThrottleDL() / 1024);
+								int sleepTime = (int) (-1 * currentNumberOfTokens * 8 / throttleDL);
 								if (sleepTime > 0) {
 									Thread.sleep(sleepTime);
 								}

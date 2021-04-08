@@ -17,9 +17,14 @@ package com.att.aro.core.peripheral.pojo;
 
 import java.io.Serializable;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
  * Encapsulates the data from a user generated event. 
  */
+@Data
+@NoArgsConstructor
 public class UserEvent implements Serializable {
 	private static final long serialVersionUID = 1L;
 

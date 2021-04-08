@@ -234,7 +234,7 @@ public class FileTypesChartPanel extends TabPanelJPanel{
 						for (HttpRequestResponseInfo info : tcp.getRequestResponseInfo()) {
 							if (HttpDirection.RESPONSE
 									.equals(info.getDirection())) {
-								long contentLength = info.getRawSize();//info.getContentLength();
+								long contentLength = info.getContentLength();
 								if (contentLength > 0) {
 									String contentType = info.getContentType();
 									if (contentType == null || contentType.isEmpty()) {

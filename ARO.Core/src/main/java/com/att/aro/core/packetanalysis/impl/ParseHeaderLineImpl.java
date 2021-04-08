@@ -20,6 +20,7 @@ import java.net.URISyntaxException;
 import java.util.regex.Matcher;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 
 import com.att.aro.core.packetanalysis.IParseHeaderLine;
@@ -218,7 +219,11 @@ public class ParseHeaderLineImpl implements IParseHeaderLine{
 			// Age
 			matcher = HttpPattern.strReResponseAge.matcher(headerLine);
 			if (matcher.lookingAt()) {
-				rrInfo.setAge(Long.valueOf(matcher.group(1)));
+				String age = matcher.group(1);
+				if (StringUtils.isNotBlank(age) && StringUtils.isNumeric(age)) {
+					rrInfo.setAge(Long.valueOf(matcher.group(1)));
+				}
+
 				return;
 			}
 

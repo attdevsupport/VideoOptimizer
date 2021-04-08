@@ -15,6 +15,7 @@ public class SegmentInfo {
 	private int size;
 	private double bitrate;
 	private int resolutionHeight = 0;
+	private boolean thumbnailExtracted;
 
 	@Override
 	public String toString() {

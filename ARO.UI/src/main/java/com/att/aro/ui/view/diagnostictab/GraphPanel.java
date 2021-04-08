@@ -50,7 +50,6 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
 import org.jfree.chart.ChartPanel;
@@ -124,9 +123,15 @@ import com.att.aro.view.images.Images;
  */
 public class GraphPanel extends JPanel implements ActionListener, ChartMouseListener {
 	private static final long serialVersionUID = 1L;
-	private IRrcStateMachineFactory statemachinefactory;
-	private IBurstCollectionAnalysis burstcollectionanalyzer;
-	private IPacketAnalyzer packetanalyzer;
+	
+	private IRrcStateMachineFactory statemachinefactory = ContextAware.getAROConfigContext()
+			.getBean(IRrcStateMachineFactory.class);
+
+	private IBurstCollectionAnalysis burstcollectionanalyzer = ContextAware.getAROConfigContext()
+			.getBean(IBurstCollectionAnalysis.class);
+
+	private IPacketAnalyzer packetanalyzer = ContextAware.getAROConfigContext().getBean(IPacketAnalyzer.class);
+	
 	private static final String ZOOM_IN_ACTION = "zoomIn";
 	private static final String ZOOM_OUT_ACTION = "zoomOut";
 	private static final String SAVE_AS_ACTION = "saveGraph";
@@ -283,17 +288,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	 * Initializes a new instance of the GraphPanel class.
 	 */
 	public GraphPanel(IAROView aroview, DiagnosticsTab parent) {
-		if (StringUtils.isNotBlank(aroview.getTracePath())) {
-			if (statemachinefactory == null) {
-				statemachinefactory = ContextAware.getAROConfigContext().getBean(IRrcStateMachineFactory.class);
-			}
-			if (burstcollectionanalyzer == null) {
-				burstcollectionanalyzer = ContextAware.getAROConfigContext().getBean(IBurstCollectionAnalysis.class);
-			}
-			if (packetanalyzer == null) {
-				packetanalyzer = ContextAware.getAROConfigContext().getBean(IPacketAnalyzer.class);
-			}
-		}
+ 
 		if (graphHelper == null) {
 			graphHelper = new GraphPanelHelper();
 		}

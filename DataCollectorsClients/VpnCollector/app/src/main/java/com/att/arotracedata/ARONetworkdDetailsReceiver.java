@@ -49,7 +49,9 @@ public class ARONetworkdDetailsReceiver extends AROBroadcastReceiver {
 
 	private ConnectivityManager connectivityManager;
 
-	/**indicates whether WIFI, MOBILE, or UNKNOWN **/
+	/**
+	 * indicates whether WIFI, MOBILE, or UNKNOWN
+	 **/
 	private String prevNetwork = AroTraceFileConstants.NOT_ASSIGNED_NETWORK;
 
 	private int prevNetworkType;
@@ -64,6 +66,8 @@ public class ARONetworkdDetailsReceiver extends AROBroadcastReceiver {
 
 	private int displayInfo;
 
+	private int prevDisplayInfo;
+
 	public ARONetworkdDetailsReceiver(Context context, File traceDir, String outFileName, AROCollectorUtils mAroUtils) throws FileNotFoundException {
 		super(context, traceDir, outFileName, mAroUtils);
 
@@ -74,7 +78,6 @@ public class ARONetworkdDetailsReceiver extends AROBroadcastReceiver {
 		final ConnectivityManager mAROConnectivityMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		final NetworkInfo mAROActiveNetworkInfo = mAROConnectivityMgr.getActiveNetworkInfo();
 		currentNetworkType = getDeviceNetworkType(mAROActiveNetworkInfo);
-		recordBearerAndNetworkChange(mAROActiveNetworkInfo, true);
 	}
 
 	public int getDeviceNetworkType() {
@@ -86,17 +89,18 @@ public class ARONetworkdDetailsReceiver extends AROBroadcastReceiver {
 		final String action = intent.getAction();
 		Log.i(TAG, "onReceive(...) action=" + action);
 		this.context = context;
-		if (ActivityCompat.checkSelfPermission(this.context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
-				&& Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+		ConnectivityManager mAROConnectivityMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo mAROActiveNetworkInfo = mAROConnectivityMgr.getActiveNetworkInfo();
+		if (ActivityCompat.checkSelfPermission(this.context, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
 			TelephonyManager telephonyManager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-			telephonyManager.listen(new ARONetworkdDetailsReceiver.MyPhoneListenerState(context), LISTEN_DISPLAY_INFO_CHANGED);
+			telephonyManager.listen(new MyPhoneListenerState(context, mAROConnectivityMgr), LISTEN_DISPLAY_INFO_CHANGED |
+					PhoneStateListener.LISTEN_SIGNAL_STRENGTHS
+					| PhoneStateListener.LISTEN_CALL_STATE
+					| PhoneStateListener.LISTEN_DATA_CONNECTION_STATE);
 		}
 		if (action.equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
-			final boolean noConnectivity = intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false);
-			final boolean isNetworkConnected = !noConnectivity;
+			boolean isNetworkConnected = !(intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false));
 
-			final ConnectivityManager mAROConnectivityMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-			final NetworkInfo mAROActiveNetworkInfo = mAROConnectivityMgr.getActiveNetworkInfo();
 			if (!isFirstBearerChange) {
 				recordBearerAndNetworkChange(mAROActiveNetworkInfo, isNetworkConnected);
 			}
@@ -144,6 +148,9 @@ public class ARONetworkdDetailsReceiver extends AROBroadcastReceiver {
 				}
 				//log the 4G-3G-2G network switch
 				prevNetworkType = currentNetworkType;
+			} else if (prevDisplayInfo != getDisplayInfo()) {
+				writeTraceLineToAROTraceFile(currentNetworkType + " " + getDisplayInfo(), true);
+				prevDisplayInfo = getDisplayInfo();
 			}
 			// device_details trace file
 			if (isFirstBearerChange) {
@@ -219,10 +226,21 @@ public class ARONetworkdDetailsReceiver extends AROBroadcastReceiver {
 
 	public class MyPhoneListenerState extends PhoneStateListener {
 		Context myContext;
+		ConnectivityManager cm;
 
-		public MyPhoneListenerState(Context context){
+		public MyPhoneListenerState(Context context, ConnectivityManager mAROConnectivityMgr) {
 			super();
 			myContext = context;
+			cm = mAROConnectivityMgr;
+		}
+
+		@Override
+		public void onDataConnectionStateChanged(int state, int networkType) {
+			super.onDataConnectionStateChanged(state, networkType);
+			AROLogger.d(TAG, "networkType the result: " + networkType);
+			if (!isFirstBearerChange) {
+				recordBearerAndNetworkChange(cm.getActiveNetworkInfo(), true);
+			}
 		}
 
 		/**
@@ -240,6 +258,7 @@ public class ARONetworkdDetailsReceiver extends AROBroadcastReceiver {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 				setDisplayInfo(telephonyDisplayInfo.getOverrideNetworkType());
 				AROLogger.d(TAG,"display the result: "+ getDisplayInfo());
+				recordBearerAndNetworkChange(cm.getActiveNetworkInfo(), true);
 			}
 		}
 

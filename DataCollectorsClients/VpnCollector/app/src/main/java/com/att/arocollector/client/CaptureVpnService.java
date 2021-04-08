@@ -17,7 +17,6 @@
 package com.att.arocollector.client;
 
 import android.annotation.TargetApi;
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -57,6 +56,7 @@ import com.att.arocollector.utils.BundleKeyUtil;
 import com.att.arotcpcollector.ClientPacketWriterImpl;
 import com.att.arotcpcollector.IClientPacketWriter;
 import com.att.arotcpcollector.SessionHandler;
+import com.att.arotcpcollector.ip.IPHeader;
 import com.att.arotcpcollector.ip.IPPacketFactory;
 import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.socket.IProtectSocket;
@@ -85,6 +85,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -752,8 +753,10 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		Log.i(TAG, "startVpnServide=> create builder");
 		// Configure a builder while parsing the parameters.
 		Builder builder = new Builder()
+				.addAddress("fd12:3456:789a:1::1", 128)
 				.addAddress("10.120.0.1", 32)
 				.addRoute("0.0.0.0", 0)
+				.addRoute("0:0:0:0:0:0:0:0", 0)
 				.setSession(getString(R.string.app_name))
 				.setConfigureIntent(mConfigureIntent)
 				.addDnsServer("8.8.8.8")
@@ -841,11 +844,11 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 		serviceValid = true;
 
-		long maxBucketSize = AttenuatorManager.getInstance().getThrottleUL() * 1024 / 8;
+		long maxBucketSize = AttenuatorManager.getInstance().getThrottleUL() * 1000 / 8;
 		long lastPacketTime = System.nanoTime();
 		double currentNumberOfTokens = maxBucketSize;
 
-		Log.d(TAG, "Upload Speed Limit : " + (AttenuatorManager.getInstance().getThrottleUL() * 1024 / 8) + " Bytes");
+		Log.d(TAG, "Upload Speed Limit : " + (AttenuatorManager.getInstance().getThrottleUL() * 1000 / 8) + " Bytes");
 
 
 		//FIXME ADDING UDP TESTING HERE ClientEcho.runUDPClient(this.getApplicationContext())
@@ -857,52 +860,65 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 			packetData.position(length);
 
 			if (length > 0) {
-
 				Log.d(TAG, "Received packet from vpn client: " + length);
 
 				byte[] clientPacketData = Arrays.copyOf(packetData.array(), length);
+
+				// Sleep until we have some value for throttling other than zero
+				while (AttenuatorManager.getInstance().getThrottleUL() == 0)  {
+					// Sleep for a short duration as no packet can be processed for a zero throttle value
+					try {
+						Thread.sleep(500);
+					} catch (InterruptedException e) {
+						Log.d(TAG, "Failed to sleep when Upload throttle was 0 : " + e.getMessage());
+					}
+				}
+
 				dataTransmitter.sendDataToBeTransmitted(clientPacketData);
 
-				int headerLength = 0;
-				UDPHeader udpHeader = null;
-				TCPHeader tcpHeader = null;
-				TCPPacketFactory tcpFactory = new TCPPacketFactory();
-				UDPPacketFactory udpFactory = new UDPPacketFactory();
+				int throttleUL = AttenuatorManager.getInstance().getThrottleUL();
+				if (throttleUL > 0) {
+					maxBucketSize = throttleUL * 1000 / 8;
+					int headerLength = 0;
+					UDPHeader udpHeader = null;
+					TCPHeader tcpHeader = null;
+					TCPPacketFactory tcpFactory = new TCPPacketFactory();
+					UDPPacketFactory udpFactory = new UDPPacketFactory();
 
-				try {
-					IPv4Header ipHeader = IPPacketFactory.createIPv4Header(packetData.array(), 0);
-					headerLength += ipHeader.getIPHeaderLength();
-					if (ipHeader.getProtocol() == 6) {
-						tcpHeader = tcpFactory.createTCPHeader(packetData.array(), ipHeader.getIPHeaderLength());
-						headerLength += tcpHeader.getTCPHeaderLength();
-					} else {
-						udpHeader = udpFactory.createUDPHeader(packetData.array(), ipHeader.getIPHeaderLength());
-						headerLength += udpHeader.getLength();
-					}
-				} catch (PacketHeaderException ex) {
-					Log.e(TAG, ex.getMessage(), ex);
-				}
-
-				int consumedTokens = clientPacketData.length - headerLength;
-				long currentTime = System.nanoTime();
-				double generatedToken = (currentTime - lastPacketTime) * AttenuatorManager.getInstance().getThrottleUL() * 1024 / 8 / 1000000 / 1000;
-				currentNumberOfTokens += generatedToken;
-				if (currentNumberOfTokens > maxBucketSize) {
-					currentNumberOfTokens = maxBucketSize;
-				}
-				lastPacketTime = currentTime;
-				currentNumberOfTokens -= consumedTokens;
-				if (currentNumberOfTokens < 0) {
 					try {
-						int sleepTime = (int) (-1 * currentNumberOfTokens * 8 * 1000 / AttenuatorManager.getInstance().getThrottleUL() / 1024);
-						if (sleepTime > 0) {
-							Thread.sleep(sleepTime);
+						IPHeader ipHeader = IPPacketFactory.createIPHeader(packetData.array(), 0);
+						headerLength += ipHeader.getIPHeaderLength();
+						if (ipHeader.getProtocol() == 6) {
+							tcpHeader = tcpFactory.createTCPHeader(packetData.array(), ipHeader.getIPHeaderLength());
+							headerLength += tcpHeader.getTCPHeaderLength();
+						} else {
+							udpHeader = udpFactory.createUDPHeader(packetData.array(), ipHeader.getIPHeaderLength());
+							headerLength += udpHeader.getLength();
 						}
-					} catch (InterruptedException e) {
-						Log.d(TAG, "Failed to sleep: " + e.getMessage(), e);
+					} catch (PacketHeaderException ex) {
+						Log.e(TAG, ex.getMessage(), ex);
+					}
+
+					int consumedTokens = clientPacketData.length - headerLength;
+					long currentTime = System.nanoTime();
+					double generatedToken = (currentTime - lastPacketTime) * throttleUL / 8 / 1000000;
+					currentNumberOfTokens += generatedToken;
+					if (currentNumberOfTokens > maxBucketSize) {
+						currentNumberOfTokens = maxBucketSize;
+					}
+					lastPacketTime = currentTime;
+					currentNumberOfTokens -= consumedTokens;
+					if (currentNumberOfTokens < 0) {
+						try {
+							int sleepTime = (int) (-1 * currentNumberOfTokens * 8 / throttleUL);
+							if (sleepTime > 0) {
+								Thread.sleep(sleepTime);
+							}
+						} catch (InterruptedException e) {
+							Log.d(TAG, "Failed to sleep: " + e.getMessage(), e);
+						}
 					}
 				}
-
 			} else {
 				try {
 					// If we are idle or waiting for the network

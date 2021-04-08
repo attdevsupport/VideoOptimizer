@@ -41,6 +41,10 @@ public class AnalysisFilter implements Serializable {
 	private boolean udpSel = true; 
 	@Getter @Setter
 	private boolean dnsSelection = true;
+	@Getter @Setter
+	private boolean isCSI = false;
+	@Getter @Setter
+	private String manifestFilePath;
 
 	public AnalysisFilter(Map<String, ApplicationSelection> appSelections, TimeRange timeRange, Map<InetAddress, String> domainNames){
 		this.appSelections = appSelections;
