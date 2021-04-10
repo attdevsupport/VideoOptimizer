@@ -117,7 +117,7 @@ public class Session implements Serializable, Comparable<Session> {
 	 */
 	private List<PacketInfo> udpPackets = new ArrayList<PacketInfo>();
 	
-	
+
 	/**
 	 * A Combined List of PacketInfo objects for the session.
 	 */
@@ -133,7 +133,7 @@ public class Session implements Serializable, Comparable<Session> {
 	 * List of Download Packets ordered by Sequence Numbers for TCP Session.
 	 */
 	private TreeMap<Long, PacketInfo> downlinkPacketsSortedBySequenceNumbers = new TreeMap<>();
-
+	
 	/**
 	 * A Set of strings containing the application names.
 	 */
@@ -340,12 +340,12 @@ public class Session implements Serializable, Comparable<Session> {
 		
 		try {
 			for (HttpRequestResponseInfo rrInfo : getRequestResponseInfo()) {
-					if (rrInfo.getDirection().equals(HttpDirection.REQUEST)) {
-						outputStream.write("\n--UPLINK--\n".getBytes());
-					} else {
-						outputStream.write("\n--DOWNLINK--\n".getBytes());
-					}
-					outputStream.write(rrInfo.getHeaderData().toByteArray());
+				if (rrInfo.getDirection().equals(HttpDirection.REQUEST)) {
+					outputStream.write("\n--UPLINK--\n".getBytes());
+				} else {
+					outputStream.write("\n--DOWNLINK--\n".getBytes());
+				}
+				outputStream.write(rrInfo.getHeaderData().toByteArray());
 			}
 			outputStream.flush();
 		} catch (IOException exception) {
@@ -429,6 +429,7 @@ public class Session implements Serializable, Comparable<Session> {
 	
 	public void addUdpPacket(PacketInfo packetInfo) {
 		udpPackets.add(packetInfo);
+		allPackets.add(packetInfo);
 	}
 	/*
 	 * Function to add Packets with SYN flag to the Map

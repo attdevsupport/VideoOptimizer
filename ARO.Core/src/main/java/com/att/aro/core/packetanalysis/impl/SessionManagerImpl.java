@@ -548,12 +548,12 @@ public class SessionManagerImpl implements ISessionManager {
 										if (tempRRInfo.getContentLength() == 0 || ((tempRRInfo.getPayloadData().size() + packetInfo.getPayloadLen()) <= tempRRInfo.getContentLength())) {
 											tempRRInfo.writePayload(packetInfo, flag, headerDelta);
 											tempRRInfo.setRawSize(tempRRInfo.getRawSize() + packetInfo.getLen() - headerDelta);
-									} else if (tempRRInfo.getContentLength() > 0 && (tempRRInfo.getPayloadData().size() + packetInfo.getPayloadLen()) > tempRRInfo.getContentLength()) {
-										limit = tempRRInfo.getContentLength() - tempRRInfo.getPayloadData().size();
-										tempRRInfo.writePayload(packetInfo, limit);
-										previousPacket = packetInfo;
-									}
-									
+										} else if (tempRRInfo.getContentLength() > 0 && (tempRRInfo.getPayloadData().size() + packetInfo.getPayloadLen()) > tempRRInfo.getContentLength()) {
+											limit = tempRRInfo.getContentLength() - tempRRInfo.getPayloadData().size();
+											tempRRInfo.writePayload(packetInfo, limit);
+											previousPacket = packetInfo;
+										}
+										
 									} else if (tcpPacket.getSequenceNumber() < expectedDownloadSeqNo) {
 										tcpPacket.setRetransmission(true);
 									} else {
@@ -586,7 +586,7 @@ public class SessionManagerImpl implements ISessionManager {
 				if (session.isIOSSecureSession()) {
 					results = analyzeRequestResponsesForIOSSecureSessions(session);
 				} else if (session.isSsl() && !session.isDecrypted()) {
-					results = analyzeRequestResponsesForSecureSessions(session);
+					results =  analyzeRequestResponsesForSecureSessions(session);
 				}
 
 			}
@@ -600,7 +600,7 @@ public class SessionManagerImpl implements ISessionManager {
 			}
 		}
 	}
-
+	
 	/**
 	 * Estimate RequestResponseObjects for Secure Sessions
 	 * @param session
@@ -651,7 +651,7 @@ public class SessionManagerImpl implements ISessionManager {
 	 * @return
 	 */
 	private ArrayList<HttpRequestResponseInfo> analyzeRequestResponsesForSecureSessions(Session session) {
-
+		
 		session.setDataInaccessible(true);
 		
 		boolean flag = false;
@@ -784,7 +784,7 @@ public class SessionManagerImpl implements ISessionManager {
 		} else {
 			packetMap = new TreeMap<>(session.getAllPackets().stream().filter(packetInfo -> packetInfo.getDir().equals(PacketDirection.DOWNLINK)).collect(Collectors.toMap(PacketInfo::getTimeStamp, Function.identity())));
 		}
-
+		
 		try {
     		while ((dataRead = bufferedReader.readLine()) != null) {
     			if (dataRead.length() > 0) {
@@ -800,10 +800,12 @@ public class SessionManagerImpl implements ISessionManager {
                         rrInfo.setTCP(true);
                         rrInfo.setRawSize(-1);
 
+                        // Converting the System Time in Millis to Seconds and Microsecond format.
                         double time = ((double) timeStamp/1000) + (((double) timeStamp%1000) / 1000000.0);
                         // The math below allows the request time to have a start time relative to trace capture.
                         rrInfo.setTime(time - pcapTimeOffset);
-
+                        
+                        // TODO: Will Review this after ARO22945-1645
                         if (packetMap.containsKey(rrInfo.getTime()) && !usedPackets.containsKey(rrInfo.getTime())) {
                         	rrInfo.setFirstDataPacket(packetMap.get(rrInfo.getTime()));
                         	usedPackets.put(rrInfo.getTime(), packetMap.get(rrInfo.getTime()));
@@ -843,8 +845,8 @@ public class SessionManagerImpl implements ISessionManager {
         }
 
         return results;
-    }
-
+	}
+	
 	/**
 	 * Used to set the first and last data packet for secure sessions in iOS.
 	 * The data isn't available from the request and response file, so this method helps with it
@@ -882,7 +884,7 @@ public class SessionManagerImpl implements ISessionManager {
 		 */
 		if (results.size() > 0) {
 			HttpRequestResponseInfo previousRequest = results.get(results.size()-1);
-			while (((matchKey = packetMap.lowerEntry(matchKey.getKey())) != null) && ((TCPPacket) matchKey.getValue().getPacket()).getLen() > 0) {
+			while (matchKey != null && ((matchKey = packetMap.lowerEntry(matchKey.getKey())) != null) && ((TCPPacket) matchKey.getValue().getPacket()).getLen() > 0) {
 				if (matchKey.getValue().getTimeStamp() < previousRequest.getTimeStamp()) {
 					break;
 				} else if (!usedPackets.containsKey(matchKey.getKey())) {
@@ -1094,13 +1096,13 @@ public class SessionManagerImpl implements ISessionManager {
 	}
 
 	private HttpRequestResponseInfo extractHttpRequestResponseInfo(Session session, PacketInfo packetInfo, PacketDirection packetDirection, PacketInfo previousPacketInfo, int addToOffset) {
-
+		
 		TCPPacket tcpPacket = null;
 		UDPPacket udpPacket = null;
 		HttpRequestResponseInfo rrInfo = null;
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		BufferedOutputStream bufferedStream = new BufferedOutputStream(stream);
-
+		
 		if (packetInfo.getPacket() instanceof TCPPacket) {
 			tcpPacket = (TCPPacket) packetInfo.getPacket();
 			try {
@@ -1121,7 +1123,7 @@ public class SessionManagerImpl implements ISessionManager {
 				}
 				bufferedStream.write(udpPacket.getData(), udpPacket.getDataOffset(), udpPacket.getData().length - udpPacket.getDataOffset());
 			} catch (Exception exception) {
-				LOGGER.error("Error Reading Data from UDP Packet: " + exception.getMessage());
+				LOGGER.error("Error Reading Data from UDP Packet: ", exception);
 			}
 		}
 
