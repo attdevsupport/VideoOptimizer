@@ -12,11 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 package com.att.arotcpcollector;
 
-import com.att.arotcpcollector.ip.IPv4Header;
+import com.att.arotcpcollector.ip.IPHeader;
 import com.att.arotcpcollector.tcp.TCPHeader;
 
 /**
@@ -26,14 +26,14 @@ import com.att.arotcpcollector.tcp.TCPHeader;
  */
 public class Packet {
 
-	private IPv4Header ipHeader;
+	private IPHeader ipHeader;
 	private TCPHeader tcpHeader;
 	private byte[] buffer;
-	
-	public IPv4Header getIPHeader() {
+
+	public IPHeader getIPHeader() {
 		return ipHeader;
 	}
-	public void setIPHeader(IPv4Header ipheader) {
+	public void setIPHeader(IPHeader ipheader) {
 		this.ipHeader = ipheader;
 	}
 	public TCPHeader getTCPHeader() {
@@ -76,6 +76,6 @@ public class Packet {
 		}
 		return new byte[0];
 	}
-	
-	
+
+
 }

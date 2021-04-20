@@ -20,7 +20,7 @@ import android.util.Log;
 import com.att.arocollector.attenuator.AttenuatorManager;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
-import com.att.arotcpcollector.ip.IPv4Header;
+import com.att.arotcpcollector.ip.IPHeader;
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
@@ -211,7 +211,7 @@ public class SocketDataReaderWorker implements Runnable {
 			return false;
 		}
 
-		IPv4Header ipheader = session.getLastIPheader();
+		IPHeader ipheader = session.getLastIPheader();
 		TCPHeader tcpheader = session.getLastTCPheader();
 		int max = session.getMaxSegmentSize() - 60;
 
@@ -268,7 +268,7 @@ public class SocketDataReaderWorker implements Runnable {
 	 * @param session
 	 */
 	private void sendFin(Session session) {
-		IPv4Header ipheader = session.getLastIPheader();
+		IPHeader ipheader = session.getLastIPheader();
 		TCPHeader tcpheader = session.getLastTCPheader();
 		byte[] data = tcpFactory.createFinData(ipheader, tcpheader, session.getRecSequence(), session.getSendNext(), session.getTimestampSender(), session.getTimestampReplyto());
 		pcapData.sendDataRecieved(data); // send packet back to client

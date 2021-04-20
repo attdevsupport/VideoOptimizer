@@ -138,6 +138,8 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		LOG.debug("\n**** FIN **** " + tracePath + "\n\n");
 		
 		videoSegmentAnalyzer.process(result, streamingVideoData);
+
+		LOG.debug(String.format("\nVideo Analysis Elapsed time: %.6f", (double) (System.currentTimeMillis() - analysisStartTime) / 1000));
 		
 		return streamingVideoData;
 	}
@@ -171,6 +173,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			
 			if (req.getAssocReqResp() == null) {
 				LOG.debug("NO Associated rrInfo (skipped):" + req.getTimeStamp() + ": " + req.getObjUri());
+				streamingVideoData.addFailedRequestMap(req);
 				continue;
 			}
 			
@@ -208,6 +211,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			case ".m4a": // audio
 			case ".mp4a": // audio
 			case ".aac":
+			case ".ac3":
 			case "audio":
 			case ".dash":
 			case ".mp2t": // MPEG
@@ -215,6 +219,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 			case ".mp4v":
 			case ".m4v":
 			case ".m4i":
+			case ".m4s":	
 			case ".ts": // TransportStream
 				segmentRequests.put(req.getFirstDataPacket().getPacketId(), req);
 				LOG.debug("\tsegment: " + trackManifestTimeStamp+": "+req.getObjNameWithoutParams());

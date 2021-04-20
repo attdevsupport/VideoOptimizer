@@ -71,6 +71,7 @@ import com.att.aro.core.pojo.VersionInfo;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.util.CrashHandler;
 import com.att.aro.core.util.FFmpegConfirmationImpl;
+import com.att.aro.core.util.FFprobeConfirmationImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.PcapConfirmationImpl;
 import com.att.aro.core.util.Util;
@@ -135,11 +136,10 @@ public class MainFrame implements SharedAttributesProcesses {
 	private VersionInfo versionInfo = ContextAware.getAROConfigContext().getBean(VersionInfo.class);
 	private TabPanels tabPanel = TabPanels.tab_panel_best_practices;
 	
-	private FFmpegConfirmationImpl ffmpegConfirmationImpl = ContextAware.getAROConfigContext()
-			.getBean("ffmpegConfirmationImpl", FFmpegConfirmationImpl.class);
+	private FFmpegConfirmationImpl ffmpegConfirmationImpl = ContextAware.getAROConfigContext().getBean("ffmpegConfirmationImpl", FFmpegConfirmationImpl.class);
+	private FFprobeConfirmationImpl ffprobeConfirmationImpl = ContextAware.getAROConfigContext().getBean("ffprobeConfirmationImpl", FFprobeConfirmationImpl.class);
 
-	private PcapConfirmationImpl pcapConfirmationImpl = ContextAware.getAROConfigContext()
-			.getBean("pcapConfirmationImpl", PcapConfirmationImpl.class);
+	private PcapConfirmationImpl pcapConfirmationImpl = ContextAware.getAROConfigContext().getBean("pcapConfirmationImpl", PcapConfirmationImpl.class);
 
 	/**
 	 * private data dialog reference
@@ -244,13 +244,19 @@ public class MainFrame implements SharedAttributesProcesses {
 					if (window.ffmpegConfirmationImpl.checkFFmpegExistance() == false) {
 						SwingUtilities.invokeLater(() -> window.launchDialog(new FFmpegConfirmationDialog()));
 					}
-				}).start();
+				},"ffmpeg check").start();
+				
+				new Thread(() -> {
+					if (window.ffprobeConfirmationImpl.checkFFprobeExistance() == false) {
+						SwingUtilities.invokeLater(() -> window.launchDialog(new FFprobeConfirmationDialog()));
+					}
+				},"ffprobe check").start();
 				
 				new Thread(() -> {
 					if (Util.isMacOS() && !window.pcapConfirmationImpl.checkPcapVersion()) {
 						SwingUtilities.invokeLater(() -> window.launchDialog(new PcapConfirmationDialog()));
 					}
-				}).start();
+				},"pcapConfirmation").start();
 			}
 		});
 	}

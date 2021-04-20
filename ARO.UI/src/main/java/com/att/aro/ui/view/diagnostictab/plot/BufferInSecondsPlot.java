@@ -48,20 +48,24 @@ import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
+import lombok.Getter;
+
 public class BufferInSecondsPlot implements IPlot {
 
 	private static final String BUFFER_TIME_OCCUPANCY_TOOLTIP = ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip");
 
 	XYSeriesCollection bufferFillDataCollection = new XYSeriesCollection();
 	XYSeries seriesBufferFill;
-	Map<Integer, String> seriesDataSets;
+	@Getter
+	private Map<Integer, String> seriesDataSets;
 	private Shape shape = new Rectangle2D.Double(0, 0, 50, 50);//new Ellipse2D.Double(0, 0, 50, 50);
 	private List<Double> bufferTimeList = new ArrayList<>();
 
 	BufferInSecondsCalculatorImpl bufferInSecondsCalculatorImpl = (BufferInSecondsCalculatorImpl) ContextAware.getAROConfigContext()
 			.getBean("bufferInSecondsCalculatorImpl", PlotHelperAbstract.class);
 
-	TreeMap<VideoEvent, Double> chunkPlayTimeList;
+	@Getter
+	private TreeMap<VideoEvent, Double> chunkPlayTimeList;
 	private static final Logger LOG = LogManager.getLogger(BufferInSecondsPlot.class.getName());
 
 	public void setChunkPlayTimeList(Map<VideoEvent, Double> chunkPlayTime) {

@@ -52,16 +52,16 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 4.0.1
+#### Video Optimizer 4.1
 
-**System Requirements for Video Optimizer 4.0.1:**
+**System Requirements for Video Optimizer 4.1:**
 
-*Before you download Video Optimizer 4.0.1, make sure you meet the following system requirements for your operating system.*
+*Before you download Video Optimizer 4.1, make sure you meet the following system requirements for your operating system.*
 
 - At least 4GB of RAM, but recommend at least 8GB
 - Java 8 or above
 - For Android developers, Android SDK Level 23 or above
-- FFmpeg
+- FFmpeg & FFprobe
 - Windows requirements
   - Wireshark (Install Npcap addon with Winpcap API-compatible mode)
   - VLC media player 3.x.x or higher
@@ -74,53 +74,46 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
   - VLC media player 3.x.x or higher
   - Wireshark
 - Linux requirements
-  - Linux version is not being release for 4.0.1 and will be available with the subsequent 4.0.1 release.
   - For Ubuntu 18.04.x LTS (and newer) users, use VLC media player version 3.x.x
   - For Ubuntu 16.04.x LTS (and older) users, use VLC media player version 3.x.x up to 3.0.8
   - Wireshark
 
 
 
-**Video Optimizer 4.0.1 Features**
-- This release brings to the Linux version all the following features and enhancements that were brought to the Mac and PC version in release 4.0:
+**Video Optimizer 4.1 Features**
+- This release brings to the Linux version all the following features and enhancements that were brought to the Mac and PC version in release 4.1:
 
-- New Export capabilities includes:
-  - Export entire trace results to Excel format, allowing easy comparison of multiple traces.
-  -	Ability to export all Requests & Responses in the TCP/UDP Flow table.
-  -	Ability to export multiple tables at once from the Diagnostics tab.
+- Analysis of IPV6 data is now supported, increasing the number of apps that allow full video stream analysis.
 
-- Redesigned Video tab shows more relevant data, including a new graph showing the download bitrates of all video & audio segments.
+- Capture of IPV6 data by the VPN collector is now supported, allowing analysis of IPV6 data from Android devices.
 
-- Support for Brotli text compression including:
-  - Text Compression Best Practice now calculates potential data savings for using Brotli compression.
-  - Ability to view uncompressed Brotli text in the Content View tab.
-- Ability to Interpret DASH .mp4/.mpd video stream segments.
+- New Segment Progress graph in the Video tab displays the download time progress and the play time progress of the segments.
+  - Video segments, Audio segments, Video PlayTime, and Audio PlayTime are displayed for demuxed video.
+  -	Download_Progress and PlayTime_Progress are displayed for muxed video.
+  - Hovering over the points displays the following information - Segment #, Track #, Download Start Time, Download End Time, Play Start Time, Play End Time, Duration, Progress, and the Content (Video/Audio).
+  -	Graph refreshes when each stream is selected.
 
-- Detection of 5G network connections and type (Sub 6 v mmWave) using the Android Telephony API.
+- New Segment Buffer graph displays information about the playback buffer.          
+  - Hovering over the points in the graph displays the following information – Segment #, PlayBack Buffer in seconds, and the TimeStamp.
+  - The graph refreshes when each selected stream has its startup delay set.
+- Redesigned Startup Delay window
+  -	In the User Touch Event section, navigate through the touch events viewing the simultaneously changing frame images on the right-hand side of the dialog to choose the time stamp of the precise video playback requested time.
+  -	In the Video Startup Time section, navigate through the startup times viewing the simultaneously changing frame images on the right-hand side of the dialog to set the video startup time to any value greater than the Play requested time
+  -	Video Startup Time is now saved:  Once the startup delay has been set for a stream/streams, the values for the play requested time and the startup delay are saved in a json file in the trace folder.  When the trace is opened again, these previously set values are displayed when the Startup Delay window opens for the stream.
 
-- Color coding of the Set Startup Delay button to indicate when it has been set.
+- CSI (Chunk Sequence Inferencer) - the CSI feature can be used for analysis if the default video analysis does not provide any results and a manifest is available.
 
-- Detection of Android screen touch events and allowing for setting the Playback initiation time based on touch events
-
--	Informative popup windows to assist Android 11 users to configure certificates needed for secure trace collection.
-
--	Simplified VPN permissions can be granted via ADB instead of prompting from device.
-
--	Updated calculations of KB and MB to reflect standard 1000 notation (and not 1024).
-
--	General bug fixes for video analysis and best practice analysis.
+- User Interface Enhancements:
+  -	A clearer message ‘Video segments could not be assigned to a Video Stream’, when there are video requests, but no Streams showing in video tab.
+  -	Enhanced ffmpeg and ffprobe detection.
+  -	Enhanced Content View tab which displays all the requests and responses in the same order as in Request/Response View.
+  - Enhanced handling of 0 value for throttling and stopping data flow during trace collection.
 
 
-**Known issues in Release 4.0.1**
+**Known issues in Release 4.1**
 
-- The 5g network is not displayed in the Network type graph, unless there is a toggle between WIFI and Data. This is a limitation in the Android Telephony API.
+- Startup Delay window does not display the Set/Cancel button if the vertical resolution of the display is below 1080.  Work around is to capture landscape orientation traces for video.
 -	Trace collection cannot be started when the device is on the lock screen, otherwise the VPN collector app will freeze.
--	For occasional traces, HLS video streams show the segment number as "0" for all segments.
--	Intermittently, when there is an issue with video analysis of a trace, some images from the previous trace will still be visible in the following graphs:
-  -	Throughput (Video tab)
-  -	Video chunks (Diagnostics tab)
-  -	Buffer seconds (Diagnostics tab)
-  -	Buffer Mbytes (Diagnostics tab)
 
 **Compilation instructions**
 + Please follow the order to compile projects

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 AT&T
+ *  Copyright 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,29 @@
  */
 package com.att.aro.core.peripheral.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * 
- * Date: October 10, 2018
+ * Store Startup Delay
+ * Date: October 10, 2018, Feb 19, 2021 (expanded to support multiple manifests)
  */
 @Data
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true) 
 public class VideoStreamStartup {
 	private String manifestName;
 	private double manifestReqTime;
 	private double firstSegID;
-	private double firstSegPlayTime;
+	private double playRequestedTime;
 	private double startupDelay;
-	private double offset;
+	private UserEvent userEvent;
+
+	public VideoStreamStartup(String videoName) {
+		setManifestName(videoName);
+	}
 
 	@Override
 	public String toString() {
@@ -36,10 +45,11 @@ public class VideoStreamStartup {
 		strblr.append("\t" + (manifestName != null ? manifestName : ""))
 		.append("\n\t\tRequest Time:    \t").append(String.format("%.3f", manifestReqTime))
 		.append("\n\t\tSegment:         \t").append(firstSegID)
-		.append("\n\t\tOffset:          \t").append(String.format("%.3f", offset))
 		.append("\n\t\tStartupDelay:    \t").append(String.format("%.3f", startupDelay))
-		.append("\n\t\tfirstSegPlayTime:\t").append(String.format("%.3f", firstSegPlayTime))
-		.append("\n\t\tdelta            \t").append(String.format("%14.3f", firstSegPlayTime - manifestReqTime));
+		.append("\n\t\tplayRequestedTime:\t").append(String.format("%.3f", playRequestedTime))
+		.append("\n\t\tuserEvent         \t")
+		.append(userEvent == null ? "" : String.format("%s: press: %.3f,  release %.3f", userEvent.getEventType(), userEvent.getPressTime(), userEvent.getReleaseTime()))
+		;
 		return strblr.toString();
 	}
 }

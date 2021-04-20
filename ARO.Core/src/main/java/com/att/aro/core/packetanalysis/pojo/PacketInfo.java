@@ -209,9 +209,8 @@ public class PacketInfo implements Comparable<PacketInfo>, Serializable {
 	}
 
 	/**
-	 * Returns the length (in bytes) of the packet, including both the header and the data. 
-	 * 
-	 * @return The length (in bytes) of the packet.
+ 	 * 
+	 * @return The total length (in bytes) of the packet excluding the Ethernet header
 	 */
 	public int getLen() {
 

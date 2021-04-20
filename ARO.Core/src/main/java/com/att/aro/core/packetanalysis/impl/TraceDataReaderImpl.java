@@ -97,7 +97,7 @@ import com.att.aro.core.peripheral.pojo.ScreenStateInfo;
 import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent;
 import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.peripheral.pojo.UserEvent;
-import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
+import com.att.aro.core.peripheral.pojo.VideoStreamStartupData;
 import com.att.aro.core.peripheral.pojo.VideoTime;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
@@ -1056,8 +1056,8 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		List<RadioInfo> radioInfos = radioinforeader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setRadioInfos(radioInfos);
 
-		VideoStreamStartup videoStreamStartup = videoStartupReader.readData(result.getTraceDirectory());
-		result.setVideoStartup(videoStreamStartup);
+		VideoStreamStartupData videoStreamStartupData = videoStartupReader.readData(result.getTraceDirectory());
+		result.setVideoStartupData(videoStreamStartupData);
 	}
 
 }// end class

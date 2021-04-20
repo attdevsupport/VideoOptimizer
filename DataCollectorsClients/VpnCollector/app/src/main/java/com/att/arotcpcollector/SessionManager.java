@@ -16,9 +16,12 @@
 
 package com.att.arotcpcollector;
 
+import android.os.Build;
 import android.util.Log;
 
-import com.att.arotcpcollector.ip.IPv4Header;
+import androidx.annotation.RequiresApi;
+
+import com.att.arotcpcollector.ip.IPHeader;
 import com.att.arotcpcollector.socket.SocketNIODataService;
 import com.att.arotcpcollector.socket.SocketProtector;
 import com.att.arotcpcollector.tcp.TCPHeader;
@@ -99,7 +102,7 @@ public class SessionManager {
 		return table.values().iterator();
 	}
 
-	public int addClientUDPData(IPv4Header ip, UDPHeader udp, byte[] buffer, Session session) {
+	public int addClientUDPData(IPHeader ip, UDPHeader udp, byte[] buffer, Session session) {
 		int start = ip.getIPHeaderLength() + 8;
 		int len = udp.getLength() - 8;//exclude header size
 		if (len < 1) {
@@ -122,8 +125,8 @@ public class SessionManager {
 	 * @param tcp
 	 * @param buffer
 	 */
-	public int addClientData(IPv4Header ip, TCPHeader tcp, byte[] buffer) {
-		Session session = getSession(ip.getDestinationIP(), tcp.getDestinationPort(), ip.getSourceIP(), tcp.getSourcePort());
+	public int addClientData(IPHeader ip, TCPHeader tcp, byte[] buffer) {
+		Session session = getSession(ip.getDestinationIP().getHostAddress(), tcp.getDestinationPort(), ip.getSourceIP().getHostAddress(), tcp.getSourcePort());
 		if (session == null) {
 			return 0;
 		}
@@ -157,7 +160,7 @@ public class SessionManager {
 	 * @param srcPort
 	 * @return session, null if no session found
 	 */
-	public Session getSession(int ipAddress, int destPort, int srcIpAddress, int srcPort) {
+	public Session getSession(String ipAddress, int destPort, String srcIpAddress, int srcPort) {
 
 		String sessionKey = createKey(ipAddress, destPort, srcIpAddress, srcPort);
 		Session session = null;
@@ -223,8 +226,8 @@ public class SessionManager {
 		}
 		if (session != null) {
 			Log.d(TAG,
-					"closed session -> " + PacketUtil.intToIPAddress(session.getDestAddress()) + ":" + session.getDestPort() + "-"
-							+ PacketUtil.intToIPAddress(session.getSourceIp()) + ":" + session.getSourcePort());
+					"closed session -> " + session.getDestAddress() + ":" + session.getDestPort() + "-"
+							+ session.getSourceIp() + ":" + session.getSourcePort());
 			session = null;
 		}
 	}
@@ -237,7 +240,7 @@ public class SessionManager {
 	 * @param srcIp
 	 * @param srcPort
 	 */
-	public void closeSession(int ip, int port, int srcIp, int srcPort) {
+	public void closeSession(String ip, int port, String srcIp, int srcPort) {
 		String keys = createKey(ip, port, srcIp, srcPort);
 		Session session = null; //getSession(ip, port, srcIp, srcPort);
 		synchronized (syncTable) {
@@ -253,8 +256,8 @@ public class SessionManager {
 				e.printStackTrace();
 			}
 			Log.d(TAG,
-					"closed session -> " + PacketUtil.intToIPAddress(session.getDestAddress()) + ":" + session.getDestPort() + "-"
-							+ PacketUtil.intToIPAddress(session.getSourceIp()) + ":" + session.getSourcePort());
+					"closed session -> " + session.getDestAddress() + ":" + session.getDestPort() + "-"
+							+ session.getSourceIp() + ":" + session.getSourcePort());
 			session = null;
 		}
 	}
@@ -287,8 +290,8 @@ public class SessionManager {
 				e.printStackTrace();
 			}
 			Log.d(TAG,
-					"closed session -> " + PacketUtil.intToIPAddress(session.getDestAddress()) + ":" + session.getDestPort() + "-"
-							+ PacketUtil.intToIPAddress(session.getSourceIp()) + ":" + session.getSourcePort());
+					"closed session -> " + session.getDestAddress() + ":" + session.getDestPort() + "-"
+							+ session.getSourceIp() + ":" + session.getSourcePort());
 			session = null;
 		}
 	}
@@ -302,7 +305,7 @@ public class SessionManager {
 	 * @param srcPort
 	 * @return
 	 */
-	public Session createNewUDPSession(int ip, int port, int srcIp, int srcPort) {
+	public Session createNewUDPSession(String ip, int port, String srcIp, int srcPort) {
 		String sessionKey = createKey(ip, port, srcIp, srcPort);
 		boolean found = false;
 		synchronized (syncTable) {
@@ -327,28 +330,22 @@ public class SessionManager {
 			channel.configureBlocking(false);
 
 		} catch (SocketException ex) {
+			Log.e(TAG, ">>>>---> failed open SocketException:" + ex.getMessage());
 			return null;
 		} catch (IOException e) {
-			e.printStackTrace();
+			Log.e(TAG, ">>>>---> Failed to create SocketChannel: " + e.getMessage());
 			return null;
 		}
 		protector.protect(channel.socket());
 
-		//initiate connection to redude latency
-		String ips = PacketUtil.intToIPAddress(ip);
-		String srcips = PacketUtil.intToIPAddress(srcIp);
-		SocketAddress addr = new InetSocketAddress(ips, port);
-		Log.d(TAG, "initialized connection to remote UDP server: " + ips + ":" + port + " from " + srcips + ":" + srcPort);
+		//initiate connection to reduce latency
+		SocketAddress addr = new InetSocketAddress(ip, port);
+		Log.d(TAG, "initialized connection to remote UDP server: " + ip + ":" + port + " from " + srcIp + ":" + srcPort);
 
 		try {
 			channel.connect(addr);
-			ses.setConnected(channel.isConnected());
-		} catch (UnresolvedAddressException | UnsupportedAddressTypeException | SecurityException | IOException e) {
-			Log.e(TAG, "Channel cannot be connected for session " + sessionKey, e);
-		}
 
 		Object isudp = new Object();
-		try {
 
 			synchronized (SocketNIODataService.syncSelectorForUse) {
 				selector.wakeup();
@@ -363,11 +360,11 @@ public class SessionManager {
 					Log.d(TAG, "Registered udp selector successfully");
 				}
 			}
-		} catch (ClosedChannelException e1) {
-			e1.printStackTrace();
-			Log.e(TAG, "failed to register udp channel with selector: " + e1.getMessage());
-			return null;
+		} catch (UnresolvedAddressException | UnsupportedAddressTypeException | SecurityException | IOException e) {
+			Log.e(TAG, "Channel cannot be connected for session " + sessionKey, e);
 		}
+
+		ses.setConnected(channel.isConnected());
 
 		ses.setUdpChannel(channel);
 
@@ -396,6 +393,17 @@ public class SessionManager {
 	}
 
 	/**
+	 * Retrieves the existing session if present. Returns null if no existing session is found.
+	 * @param sessionKey
+	 * @return
+	 */
+	public Session getSession(String sessionKey) {
+		synchronized (syncTable) {
+			return table.get(sessionKey);
+		}
+	}
+
+	/**
 	 * Create new TCP Session
 	 * 
 	 * @param ip
@@ -405,18 +413,11 @@ public class SessionManager {
 	 * @return
 	 * @throws SessionCreateException 
 	 */
-	public Session createNewSession(int ip, int port, int srcIp, int srcPort, boolean printLog) throws SessionCreateException {
+	@RequiresApi(api = Build.VERSION_CODES.N)
+	public Session createNewSession(String ip, int port, String srcIp, int srcPort, long sequenceNumber, long ackNumber, boolean printLog) {
 		String sessionKey = createKey(ip, port, srcIp, srcPort);
 		boolean found = false;
-		synchronized (syncTable) {
-			found = table.containsKey(sessionKey);
-		}
-		if (found) {
-			Session session = table.get(sessionKey);
-			session.setAbortingConnection(true);
-			throw new SessionCreateException("Session already exist");
-		}
-		
+
 		Session session = new Session();
 		session.setDestAddress(ip);
 		session.setDestPort(port);
@@ -425,34 +426,54 @@ public class SessionManager {
 		session.setConnected(false);
 		session.setSessionKey(sessionKey);
 		session.setPrintLog(printLog);
+		session.setIntialSequenceNumber(sequenceNumber);
+		session.setIntialAckNumber(ackNumber);
 
 		SocketChannel channel = null;
-		try {
-			channel = SocketChannel.open();
-			channel.socket().setTcpNoDelay(false);
-			channel.socket().setKeepAlive(true);
-			channel.socket().setSoTimeout(0);
-			channel.configureBlocking(false);
-		} catch (SocketException ex) {
-			Log.e(TAG, ">>>>---> failed open SocketException:" + ex.getMessage());
-			return null;
-		} catch (IOException e) {
-			Log.e(TAG, ">>>>---> Failed to create SocketChannel: " + e.getMessage());
-			return null;
-		}
-		String ips = PacketUtil.intToIPAddress(ip);
-		Log.d(TAG, "created new socketchannel for " + ips + ":" + port + "-" + PacketUtil.intToIPAddress(srcIp) + ":" + srcPort);
+		boolean connected = false;
+		// We will do 3 tries to open the channel
+		for (int i = 1; i <= 3; ++i) {
+			Log.d(TAG, "Channel connection attempt " + i + " for session " + sessionKey);
+			if (channel == null || !channel.isOpen()) {
+				try {
+					channel = SocketChannel.open();
+					channel.socket().setTcpNoDelay(false);
+					channel.socket().setKeepAlive(true);
+					channel.socket().setSoTimeout(0);
+					channel.configureBlocking(false);
+				} catch (SocketException ex) {
+					Log.e(TAG, ">>>>---> failed open SocketException:" + ex.getMessage());
+					return null;
+				} catch (IOException e) {
+					Log.e(TAG, ">>>>---> Failed to create SocketChannel: " + e.getMessage());
+					return null;
+				}
+			}
+			Log.d(TAG, "created new socketchannel for " + ip + ":" + port + "-" + srcIp + ":" + srcPort + " for session " + sessionKey);
 
-		protector.protect(channel.socket());
+			protector.protect(channel.socket());
+			// Initiate connection to reduce latency
+			SocketAddress addr = new InetSocketAddress(ip, port);
+			Log.d(TAG, "Initiate connecting to remote tcp server: " + ip + ":" + port);
 
 		Log.d(TAG, "Protected new socketchannel");
 
-		// initiate connection to reduce latency
-		SocketAddress addr = new InetSocketAddress(ips, port);
-		Log.d(TAG, "initiate connecting to remote tcp server: " + ips + ":" + port);
-		boolean connected = false;
 		try {
 			connected = channel.connect(addr);
+			Log.d(TAG, "Local: " + channel.getLocalAddress().toString() + ", Remote: " + channel.getRemoteAddress().toString());
+			// Register for non-blocking operation
+			synchronized (SocketNIODataService.syncSelectorForUse) {
+				selector.wakeup();
+				synchronized (SocketNIODataService.syncSelectorForSelection) {
+					SelectionKey selectkey = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+					session.setSelectionkey(selectkey);
+					Log.d(TAG, "Registered tcp selector successfully");
+				}
+			}
+
+			if (channel.isConnected() || channel.isConnectionPending()) {
+				break;
+			}
 
 		} catch (ClosedChannelException ex) {
 			Log.e(TAG, ">>>>---> failed connect ClosedChannelException:" + ex.getMessage());
@@ -463,26 +484,11 @@ public class SessionManager {
 		} catch (SecurityException ex4) {
 			Log.e(TAG, ">>>>---> failed connect SecurityException:" + ex4.getMessage());
 		} catch (IOException ex5) {
-			Log.e(TAG, ">>>>---> failed connect IOException:" + ex5.getMessage());
+			Log.e(TAG, ">>>>---> failed connect IOException:", ex5);
+		}
 		}
 
 		session.setConnected(connected);
-
-		//register for non-blocking operation
-		try {
-			synchronized (SocketNIODataService.syncSelectorForUse) {
-				selector.wakeup();
-				synchronized (SocketNIODataService.syncSelectorForSelection) {
-					SelectionKey selectkey = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-					session.setSelectionkey(selectkey);
-					Log.d(TAG, "Registered tcp selector successfully");
-				}
-			}
-		} catch (ClosedChannelException e1) {
-			e1.printStackTrace();
-			Log.e(TAG, "failed to register tcp channel with selector: " + e1.getMessage());
-			return null;
-		}
 
 		session.setSocketchannel(channel);
 
@@ -514,7 +520,7 @@ public class SessionManager {
 	 * @param srcPort
 	 * @return
 	 */
-	public String createKey(int ip, int port, int srcIp, int srcPort) {
+	public String createKey(String ip, int port, String srcIp, int srcPort) {
 		//	return (new StringBuilder("").append(ip).append(":").append(port).append("-").append(srcIp).append(":").append(srcPort)).toString();
 		//	return String.format("%d:%d-%d:%d", ip, port, srcIp, srcPort);
 		//	return String.format("%X:%X-%X:%X", ip, port, srcIp, srcPort);

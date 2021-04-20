@@ -20,24 +20,16 @@ import java.text.DecimalFormat;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
-import com.att.aro.core.bestpractice.impl.FileCompressionImpl;
 import com.att.aro.core.packetanalysis.pojo.HttpDelayInfo;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-import lombok.Data;
-
-@Data
 public class HttpDelayTableModel extends DataTableModel<HttpRequestResponseInfo> {
 
 	private static final long serialVersionUID = 1L;
-
-	private FileCompressionImpl fileCompression = (FileCompressionImpl) ContextAware.getAROConfigContext()
-			.getBean("textFileCompression");
 
 	private static final String[] COLUMNS = { ResourceBundleHelper.getMessageString("httpDelay.requestTime"),
 			ResourceBundleHelper.getMessageString("httpDelay.firstPacketTime"),
@@ -52,8 +44,6 @@ public class HttpDelayTableModel extends DataTableModel<HttpRequestResponseInfo>
 	private static final int LAST_PACKET_ARRIVAL_COL = 3;
 	private static final int LAST_PACKET_DELAY = 4;
 	private static final int PAYLOAD_COL = 5;
-
-	private Session session;
 
 	public void refresh(Session session) {
 		if (session.getRequestResponseInfo() != null) {

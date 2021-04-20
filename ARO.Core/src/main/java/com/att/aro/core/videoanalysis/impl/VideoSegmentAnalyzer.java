@@ -34,6 +34,7 @@ import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
+import com.att.aro.core.peripheral.pojo.VideoStreamStartupData;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
 import com.att.aro.core.videoanalysis.XYPair;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
@@ -51,6 +52,7 @@ public class VideoSegmentAnalyzer {
 
 	@Autowired private IVideoUsagePrefsManager videoUsagePrefsManager;
 
+	private VideoStreamStartupData videoStreamStartupData;
 	private VideoStreamStartup videoStreamStartup;
 	private VideoUsagePrefs videoPrefs;
 	private VideoStall videoStall;
@@ -67,15 +69,26 @@ public class VideoSegmentAnalyzer {
 	
 	private double videoDuration = 0;
 
+	public VideoStreamStartup findStartupFromName(VideoStreamStartupData videoStreamStartupData, VideoStream videoStream) {
+		if (videoStreamStartupData != null && videoStream != null) {
+			for (VideoStreamStartup videoStreamStartup : videoStreamStartupData.getStreams()) {
+				if (videoStream.getManifest().getVideoName().equals(videoStreamStartup.getManifestName())) {
+					return this.videoStreamStartup = videoStreamStartup;
+				}
+			}
+		}
+		return null;
+	}
+
 	public void process(AbstractTraceResult result, StreamingVideoData streamingVideoData) {
 		if (result instanceof TraceDirectoryResult) {
-			videoStreamStartup = ((TraceDirectoryResult) result).getVideoStartup();
+			videoStreamStartupData = ((TraceDirectoryResult) result).getVideoStartupData();
 			this.videoPrefs = videoUsagePrefsManager.getVideoUsagePreference();
 
 			if (!CollectionUtils.isEmpty(streamingVideoData.getVideoStreamMap())) {
 				for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
 					if (videoStream.isSelected() && !CollectionUtils.isEmpty(videoStream.getVideoEventMap())) {
-						
+						videoStreamStartup = findStartupFromName(videoStreamStartupData, videoStream);
 						double startupDelay;
 						VideoEvent chosenEvent;
 						if (videoStreamStartup != null && videoStream.getManifest().getVideoName().equals(videoStreamStartup.getManifestName())) {
@@ -190,7 +203,7 @@ public class VideoSegmentAnalyzer {
 		}
 
 		generateByteBufferData(videoStream);
-		LOG.debug(videoStream.getToolTipDetailMap());
+		LOG.debug(videoStream.getToolTipDetailMap().keySet());
 	}
 
 	public ArrayList<VideoEvent> sortBySegThenStartTS(VideoStream videoStream) {

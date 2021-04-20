@@ -22,7 +22,6 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import com.att.aro.core.BaseTest;
-import com.att.aro.core.packetanalysis.IRequestResponseBuilder;
 import com.att.aro.core.packetanalysis.ISessionManager;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
@@ -41,10 +40,8 @@ public class SessionManagerImplTest extends BaseTest{
 	
 	ISessionManager sessionMgr;
 
-	@Mock
-	IRequestResponseBuilder requestResponseBuilder;
 	byte[] pData;
-
+	
 	@Before
 	public void setUp(){
 		

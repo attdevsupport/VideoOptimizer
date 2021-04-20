@@ -43,6 +43,7 @@ public class VideoUsagePrefs {
 	private double stallTriggerTime = .05D; // in seconds
 	private DUPLICATE_HANDLING duplicateHandling = DUPLICATE_HANDLING.HIGHEST;
 	private boolean ffmpegConfirmationShowAgain = false;
+	private boolean ffprobeConfirmationShowAgain = false;
 	private double stallPausePoint = 0.0D;
 	private double stallRecovery = 0.0D;
 	private double nearStall = 0.01D;

@@ -243,7 +243,8 @@ public class PCapFileWriter implements CaptureFileWriter
 		myOutStrm.write(hder.getAsByteArray());
 		
 		//added to write fake ethernet header
-		myOutStrm.write(StubbedEthernetHeader.getEthernetHeader());
+		byte ipVersion = (byte) ((thepkt[0] & 0xf0) >> 4);
+		myOutStrm.write(StubbedEthernetHeader.getEthernetHeader(ipVersion));
 		
 		myOutStrm.write(thepkt, offset, length);
 
@@ -288,7 +289,8 @@ public class PCapFileWriter implements CaptureFileWriter
 		myOutStrm.write(hder.getAsByteArray());
 
 		// added to write fake ethernet header
-		myOutStrm.write(StubbedEthernetHeader.getEthernetHeader());
+		byte ipVersion = (byte) ((thepkt[0] & 0xf0) >> 4);
+		myOutStrm.write(StubbedEthernetHeader.getEthernetHeader(ipVersion));
 
 		myOutStrm.write(thepkt, offset, length);
 

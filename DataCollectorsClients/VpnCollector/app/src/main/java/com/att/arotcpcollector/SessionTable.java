@@ -84,8 +84,10 @@ class SessionTable implements Map<String, Session>{
         if(sessionTable.size() >= limit) {
             evictEntry();
         }
+        Log.d(TAG + "-size", "Session Table size: " + sessionTable.size());
 
-	    DatagramChannel channel = value.getUdpChannel();
+
+        DatagramChannel channel = value.getUdpChannel();
         if (channel != null && channel.isConnected()){
 	        channelBasedSessionTable.put(channel,value);
         }
@@ -118,10 +120,13 @@ class SessionTable implements Map<String, Session>{
     @Override
     public Session remove(Object key) {
     	Session value = sessionTable.remove(key);
+        if (value != null) {
 	    DatagramChannel channel = value.getUdpChannel();
 	    if (channel != null){
 	    	channelBasedSessionTable.remove(channel);
 	    }
+        }
+
         return value;
     }
 

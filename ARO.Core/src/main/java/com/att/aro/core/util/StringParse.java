@@ -39,7 +39,8 @@ public final class StringParse implements IStringParse{
 		int pos = sData.indexOf(fieldSearch);
 
 		if (pos != -1) {
-			value = new Scanner(sData.substring(pos + fieldSearch.length())).useDelimiter("[^\\d]+").next();
+			Scanner scanner = new Scanner(sData.substring(pos + fieldSearch.length())).useDelimiter("[^\\d]+");
+			value = scanner.next();
 		}
 		return value;
 	}
@@ -49,7 +50,8 @@ public final class StringParse implements IStringParse{
 		int pos = sData.indexOf(fieldSearch);
 
 		if (pos != -1) {
-			value = new Scanner(sData.substring(pos + fieldSearch.length())).useDelimiter(delimeter).next();
+			Scanner scanner = new Scanner(sData.substring(pos + fieldSearch.length())).useDelimiter(delimeter);
+			value = scanner.next();
 		}
 		return value;
 	}
@@ -86,6 +88,39 @@ public final class StringParse implements IStringParse{
 		return stringToDouble(sValue);
 	}
 
+	/**
+	 * <pre>
+	 * Convert string to Integer
+	 * 
+	 * @param strValue
+	 * @param defaultValue
+	 * @return Integer or null if fails to parse
+	 */
+	public static Integer stringToInteger(String sValue) {
+		Integer value = null;
+		if (!sValue.isEmpty()) {
+			try {
+				value = Integer.valueOf(sValue);
+			} catch (NumberFormatException e) {
+				value = null;
+			}
+		}
+		return value;
+	}
+	
+
+	/**
+	 * <pre>
+	 * Convert string to Integer or defaultValue if fails to parse
+	 * 
+	 * @param strValue
+	 * @param defaultValue
+	 * @return Integer
+	 */
+	public static Integer stringToInteger(String strValue, int defaultValue) {
+		Integer value = stringToInteger(strValue);
+		return value != null ? value : defaultValue;
+	}
 	/**
 	 * <pre>
 	 * Convert string to Double

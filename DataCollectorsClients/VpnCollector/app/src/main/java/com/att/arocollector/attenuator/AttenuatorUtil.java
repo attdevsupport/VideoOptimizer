@@ -49,9 +49,9 @@ public class AttenuatorUtil {
 
     public String messageConvert(int kbps) {
         String message = "";
-        if (kbps >= 1024 * 100 || kbps < 0) {
+        if (kbps >= 1000 * 100 || kbps < 0) {
             message = " None";
-        } else if (kbps > 1024) {
+        } else if (kbps >= 1000) {
             message = " " + convertToMbps(kbps) + " Mbps";
         } else {
             message = " " + kbps + " Kbps";
@@ -61,7 +61,7 @@ public class AttenuatorUtil {
     }
 
     private String convertToMbps(int kbps) {
-        double mTemp = (double)kbps / 1024;
+        double mTemp = (double)kbps / 1000;
         DecimalFormat df = new DecimalFormat("0.##");
         return df.format(mTemp);
 

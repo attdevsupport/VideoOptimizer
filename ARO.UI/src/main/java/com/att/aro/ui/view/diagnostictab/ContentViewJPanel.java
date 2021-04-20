@@ -79,6 +79,7 @@ public class ContentViewJPanel extends JPanel {
 			jContentTextArea = new JTextArea(10, 20);
 			jContentTextArea.setLineWrap(true);
 			jContentTextArea.setCaretPosition(0);
+			jContentTextArea.setEditable(false);
 		}
 		return jContentTextArea;
 	}

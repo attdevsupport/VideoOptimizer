@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 AT&T
+ *  Copyright 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,15 +12,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
-package com.att.aro.core.packetanalysis;
+ */
+package com.att.aro.core.peripheral.pojo;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
-import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
-import com.att.aro.core.packetanalysis.pojo.Session;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public interface IRequestResponseBuilder {
-	List<HttpRequestResponseInfo> createRequestResponseInfo(Session session) throws IOException;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true) 
+public class VideoStreamStartupData {
+	public List<VideoStreamStartup> streams = new ArrayList<>();
 }

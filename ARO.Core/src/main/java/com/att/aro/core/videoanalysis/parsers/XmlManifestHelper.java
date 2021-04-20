@@ -67,7 +67,7 @@ public class XmlManifestHelper {
 		    if (sData.contains("EncodedSegmentList")) {
 		        manifestType = ManifestFormat.MPD_EncodedSegmentList;
 	            manifest = xml2EncodedSegmentList(bis);
-		    } else if (sData.contains("<SegmentTimeline>")) {
+			} else if (sData.contains("<SegmentTimeline>") || sData.contains("$RepresentationID$")) {
 		        manifestType = ManifestFormat.MPD_SegmentTimeline;
 	            manifest = xml2SegmentTimeline(new MPDSegmentTimeline(), bis);
 		    } else {

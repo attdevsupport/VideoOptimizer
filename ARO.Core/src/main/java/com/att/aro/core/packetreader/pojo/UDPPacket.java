@@ -39,9 +39,8 @@ public class UDPPacket extends IPPacket implements Serializable {
 	/**
 	 * Constructor
 	 */
-	public UDPPacket(long seconds, long microSeconds, int len, int datalinkHdrLen,
-			byte[] data) {
-		super(seconds, microSeconds, len, datalinkHdrLen, data);
+	public UDPPacket(long seconds, long microSeconds, int len, int datalinkHdrLen, Byte protocol, Integer extensionHeadersLength, byte[] data) {
+		super(seconds, microSeconds, len, datalinkHdrLen, protocol, extensionHeadersLength, data);
 
 		int headerOffset = super.getDataOffset();
 		dataOffset = headerOffset + 8;
@@ -94,6 +93,7 @@ public class UDPPacket extends IPPacket implements Serializable {
 	 * 
 	 * @return An int value that is the length of the packet (in bytes).
 	 */
+	@Override
 	public int getPacketLength() {
 		return packetLength;
 	}

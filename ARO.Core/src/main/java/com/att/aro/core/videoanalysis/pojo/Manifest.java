@@ -16,6 +16,7 @@
 package com.att.aro.core.videoanalysis.pojo;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -25,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.videoanalysis.pojo.UrlMatchDef.UrlMatchType;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
 
 import lombok.Data;
@@ -49,14 +51,27 @@ public class Manifest {
 
 	Manifest masterManifest = null;
 
-	// A descending order by length sorted unique list of UrlMatchDef for a better URL resolution
-	// to match a specific request to corresponding master and child manifest
+	/* A descending order by length sorted unique list of UrlMatchDef for a better URL resolution
+	 * to match a specific request to corresponding master and child manifest
+	 * FULL will be at the end after any urlMatchLen
+	 * example: 4,2,FULL
+	 */
 	private SortedSet<UrlMatchDef> segUrlMatchDef = new TreeSet<>(new Comparator<UrlMatchDef>() {
         @Override
         public int compare(UrlMatchDef o1, UrlMatchDef o2) {
             if (o1 == null || o2 == null) {
                 return 0;
             }
+			// UrlMatchType.FULL is less than any urlMatchLen
+			if (o1.getUrlMatchType() != o2.getUrlMatchType()) {
+				if (o1.getUrlMatchType().equals(UrlMatchType.FULL)) {
+					return 1;
+				} else if (o2.getUrlMatchType().equals(UrlMatchType.FULL)) {
+					return -1;
+				}
+				return 0;
+			}
+			// larger length over shorter
             return Integer.compare(o2.getUrlMatchLen(), o1.getUrlMatchLen());
         }
 	});
@@ -232,7 +247,7 @@ public class Manifest {
 		int result = 1;
 		result = prime * result + (int) (requestTime * 1000);
 		result = prime * result + videoName.hashCode();
-		result = prime * result + getContent().length;
+		result += (Arrays.hashCode(getContent()));
 		result = prime * result + getUrlName().hashCode();
 		result = prime * result + getVideoFormat().hashCode();
 		return result;

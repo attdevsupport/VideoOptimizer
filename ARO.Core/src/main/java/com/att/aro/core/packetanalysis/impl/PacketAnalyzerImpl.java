@@ -70,6 +70,7 @@ import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
+import com.att.aro.core.videoanalysis.csi.VideoTrafficInferencer;
 
 /**
  * analyze trace file or trace directory and return data that can be used by practice engines.
@@ -102,6 +103,9 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 
 	@Autowired
 	private HtmlExtractor htmlExtractor;
+
+	@Autowired
+	private VideoTrafficInferencer videoTrafficInferencer;
 
 	@Value("${ga.request.timing.pktAnalysisTimings.title}")
 	private String pktAnalysisTitle;
@@ -203,12 +207,16 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 
 		TimeRange timeRange = null;
 
+		boolean isCSI = false;
 		filteredPackets = new ArrayList<PacketInfo>();
 		if (filter == null) {
 			if (result != null) {
 				filteredPackets = result.getAllpackets();
 			}
 		} else {// do the filter
+			if (filter.isCSI() && filter.getManifestFilePath() != null) {
+				isCSI = true;
+			}
 			timeRange = filter.getTimeRange();
 			if (result != null) {
 				filteredPackets = filterPackets(filter, result.getAllpackets());
@@ -241,15 +249,15 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			stat.setAppName(new HashSet<String>(result.getAppInfos()));
 		}
 
-		int totBytes = 0;
+		int totalBytes = 0;
 		int totPayloadBytes = 0;
 		if (!CollectionUtils.isEmpty(filteredPackets)) {
 			for (PacketInfo pkt : filteredPackets) {
-				totBytes += pkt.getLen();
-				totPayloadBytes += pkt.getPayloadLen();
+			    totalBytes += pkt.getLen();
+				totPayloadBytes += pkt.getPacket().getPayloadLen();
 			}
 		}
-		stat.setTotalByte(totBytes);
+		stat.setTotalByte(totalBytes);
 		stat.setTotalPayloadBytes(totPayloadBytes);
 
 		// get Unanalyzed HTTPS bytes
@@ -276,7 +284,11 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				List<BestPracticeType> videoBPList = BestPracticeType.getByCategory(BestPracticeType.Category.VIDEO);
 				data.setStreamingVideoData(videoTrafficCollector.clearData());
 				if (CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), videoBPList)) {
+					if (isCSI) {
+						data.setStreamingVideoData(videoTrafficInferencer.inferVideoData(result, sessionList, filter.getManifestFilePath()));
+					} else {				
 					data.setStreamingVideoData(videoTrafficCollector.collect(result, sessionList, requestMap));
+					}
 				}
 			} catch (Exception ex) {
 				LOGGER.error("Error in Video usage analysis :", ex);
@@ -405,7 +417,6 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			int totalHTTPSBytes = 0;
 			int totalTCPBytes = 0;
 		    int totalTCPPayloadBytes = 0;
-			int totalBytes = 0;
 			int totalPackets = 0;
 			double avgKbps = 0;
 			double packetsDuration = 0;
@@ -422,33 +433,34 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			    if (packets != null) {
 			        totalPackets += packets.size();
 
-			        for (PacketInfo packet : packets) {
-			            minTimestamp = Math.min(minTimestamp, packet.getTimeStamp());
-			            maxTimestamp = Math.max(maxTimestamp, packet.getTimeStamp());
+			        for (PacketInfo packetInfo : packets) {
+			            minTimestamp = Math.min(minTimestamp, packetInfo.getTimeStamp());
+			            maxTimestamp = Math.max(maxTimestamp, packetInfo.getTimeStamp());
 
-    	                if (packet.getPacket() instanceof TCPPacket) {
-    	                    TCPPacket tcp = (TCPPacket) packet.getPacket();
+			            PacketCounter pCounter;
+    	                if (packetInfo.getPacket() instanceof TCPPacket) {
+    	                    TCPPacket tcp = (TCPPacket) packetInfo.getPacket();
 
-            				totalBytes += packet.getLen();
-            				totalTCPBytes += packet.getLen();
-                            totalTCPPayloadBytes += packet.getPayloadLen();
+            				totalTCPBytes += tcp.getPacketLength();
+                            totalTCPPayloadBytes += tcp.getPayloadLen();
         					if (session.isSsl() || tcp.getDestinationPort() == 443 || tcp.getSourcePort() == 443) {
-        						totalHTTPSBytes += packet.getPayloadLen();
+        						totalHTTPSBytes += tcp.getPayloadLen();
         					}
         					
 
-            				String appName = packet.getAppName();
+            				String appName = packetInfo.getAppName();
             				appNames.add(appName);
-            				PacketCounter pCounter = appPackets.get(appName);
+            				pCounter = appPackets.get(appName);
             				if (pCounter == null) {
             					pCounter = new PacketCounter();
             					appPackets.put(appName, pCounter);
             				}
-            				pCounter.add(packet);
+            				pCounter.add(packetInfo);
+    	                }
 
-            				if (packet.getPacket() instanceof IPPacket) {
+    	                if (packetInfo.getPacket() instanceof IPPacket) {
             					// Count packets by packet size
-            					Integer packetSize = packet.getPayloadLen();
+                            Integer packetSize = packetInfo.getPacket().getPayloadLen();
 
             					Integer iValue = packetSizeToCountMap.get(packetSize);
             					if (iValue == null) {
@@ -459,14 +471,13 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
             					packetSizeToCountMap.put(packetSize, iValue);
 
             					// Get IP address summary
-            					InetAddress ipAddress = packet.getRemoteIPAddress();
+                                InetAddress ipAddress = packetInfo.getRemoteIPAddress();
             					pCounter = ipPackets.get(ipAddress);
             					if (pCounter == null) {
             						pCounter = new PacketCounter();
             						ipPackets.put(ipAddress, pCounter);
             					}
-            					pCounter.add(packet);
-            				}
+                                pCounter.add(packetInfo);
     	                }
 			        }
                 }
@@ -491,7 +502,6 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			stat.setIpPacketSummary(ipPacketSummary);
 			stat.setPacketDuration(packetsDuration);
 			stat.setTcpPacketDuration(packetsDuration);
-			stat.setTotalByte(totalBytes);
 			stat.setTotalTCPBytes(totalTCPBytes);
 			stat.setTotalTCPPayloadBytes(totalTCPPayloadBytes);
 			stat.setTotalHTTPSByte(totalHTTPSBytes);

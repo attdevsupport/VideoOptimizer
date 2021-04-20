@@ -16,12 +16,14 @@
 
 package com.att.arotcpcollector.ip;
 
+import java.net.InetAddress;
+
 /**
  * Data structure for IPv4 header as defined in RFC 791.
  * 
  * @author Borey Sao Date: May 8, 2014
  */
-public class IPv4Header {
+public class IPv4Header implements IPHeader {
 	//IP packet is the four-bit version field. For IPv4, this has a value of 4 (hence the name IPv4).
 	private byte ipVersion;
 
@@ -38,7 +40,7 @@ public class IPv4Header {
 	private int totalLength = 0;
 
 	//primarily used for uniquely identifying the group of fragments of a single IP datagram. 
-	private int idenfication = 0;
+	private int identification = 0;
 
 	//3 bits field used to control or identify fragments.
 	//bit 0: Reserved; must be zero
@@ -61,9 +63,9 @@ public class IPv4Header {
 	//for error-checking of the header
 	private int headerChecksum = 0;
 
-	private int sourceIP;
+	private InetAddress sourceIP;
 
-	private int destinationIP;
+	private InetAddress destinationIP;
 
 	private byte[] optionBytes;
 
@@ -88,15 +90,15 @@ public class IPv4Header {
 	 * @param optionBytes optional field.
 	 */
 	public IPv4Header(byte ipVersion, byte internetHeaderLength, byte dscpOrTypeOfService, byte ecn, 
-			int totalLength, int idenfication, boolean mayFragment, boolean lastFragment,short fragmentOffset, 
-			byte timeToLive, byte protocol, int headerChecksum, int sourceIP, int destinationIP, byte[] optionBytes) {
+			int totalLength, int idenfication, boolean mayFragment, boolean lastFragment,short fragmentOffset,
+					  byte timeToLive, byte protocol, int headerChecksum, InetAddress sourceIP, InetAddress destinationIP, byte[] optionBytes) {
 		
 		this.ipVersion = ipVersion;
 		this.internetHeaderLength = internetHeaderLength;
 		this.dscpOrTypeOfService = dscpOrTypeOfService;
 		this.ecn = ecn;
 		this.totalLength = totalLength;
-		this.idenfication = idenfication;
+		this.identification = idenfication;
 		this.mayFragment = mayFragment;
 		if (mayFragment) {
 			this.flag |= 0x40;
@@ -114,6 +116,16 @@ public class IPv4Header {
 		this.optionBytes = optionBytes;
 	}
 
+	public IPv4Header(IPv4Header header) {
+		this(
+				header.getIpVersion(), header.getInternetHeaderLength(), header.getDscpOrTypeOfService(), header.getEcn(),
+				header.getTotalLength(), header.getIdentification(), header.isMayFragment(), header.isLastFragment(),
+				header.getFragmentOffset(), header.getTimeToLive(), header.getProtocol(), header.getHeaderChecksum(),
+				header.getSourceIP(), header.getDestinationIP(), header.getOptionBytes()
+		);
+	}
+
+	@Override
 	public byte getIpVersion() {
 		return ipVersion;
 	}
@@ -149,8 +161,8 @@ public class IPv4Header {
 		return (this.internetHeaderLength * 4);
 	}
 
-	public int getIdenfication() {
-		return idenfication;
+	public int getIdentification() {
+		return identification;
 	}
 
 	public byte getFlag() {
@@ -173,6 +185,7 @@ public class IPv4Header {
 		return timeToLive;
 	}
 
+	@Override
 	public byte getProtocol() {
 		return protocol;
 	}
@@ -181,11 +194,13 @@ public class IPv4Header {
 		return headerChecksum;
 	}
 
-	public int getSourceIP() {
+	@Override
+	public InetAddress getSourceIP() {
 		return sourceIP;
 	}
 
-	public int getDestinationIP() {
+	@Override
+	public InetAddress getDestinationIP() {
 		return destinationIP;
 	}
 
@@ -205,12 +220,13 @@ public class IPv4Header {
 		this.ecn = ecn;
 	}
 
+	@Override
 	public void setTotalLength(int totalLength) {
 		this.totalLength = totalLength;
 	}
 
-	public void setIdenfication(int idenfication) {
-		this.idenfication = idenfication;
+	public void setIdentification(int identification) {
+		this.identification = identification;
 	}
 
 	public void setFlag(byte flag) {
@@ -251,11 +267,13 @@ public class IPv4Header {
 		this.headerChecksum = headerChecksum;
 	}
 
-	public void setSourceIP(int sourceIP) {
+	@Override
+	public void setSourceIP(InetAddress sourceIP) {
 		this.sourceIP = sourceIP;
 	}
 
-	public void setDestinationIP(int destinationIP) {
+	@Override
+	public void setDestinationIP(InetAddress destinationIP) {
 		this.destinationIP = destinationIP;
 	}
 

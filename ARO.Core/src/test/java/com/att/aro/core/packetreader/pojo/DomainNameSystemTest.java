@@ -89,7 +89,7 @@ public class DomainNameSystemTest {
 			long seconds = 1394754475L;
 			long microSeconds = 514072L;
 			int len = 66;
-			IPPacket packet = new IPPacket (seconds, microSeconds, len, hdrLen, toBytes(data));
+			IPPacket packet = new IPPacket (seconds, microSeconds, len, hdrLen, null, null, toBytes(data));
 			return packet;
 		}
 		

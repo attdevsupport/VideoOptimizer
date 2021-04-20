@@ -80,7 +80,8 @@ public class PacketServiceImpl implements IPacketService {
 		try {
 			switch (datalink) {
 			case DLT_RAW: // Raw IP
-				network = IPV4;
+			    int version = (bytes.get(0) & 0xf0) >> 4;
+				network = version == 6 ? IPV6 : IPV4;
 				break;
 			case DLT_EN10MB: // Ethernet (WiFi)
 				network = bytes.getShort(12);
@@ -184,6 +185,53 @@ public class PacketServiceImpl implements IPacketService {
 		return createPacket(network, seconds, microSeconds, len, hdrLen, data);
 	}
 
+
+	/**
+     * Calculate total length of extension headers until an Upper Layer Protocol i.e. TCP(6) or UDP(17) is encountered
+     * OR No Next Header (59) is found
+     *
+     * Currently Hop By Hop (0), Routing (43) and Destination Options (60) headers are supported.
+     * TODO: Implement support for Fragment (44) and Encapsulating Security Payload (50) headers
+     * @param data
+     * @param start
+     * @param pair Custom tuple object to store and update Total extension headers length and upper layer protocol
+     * @return
+     */
+	private void calculateLengthOfExtensionHeaders(byte[] data, int start, Pair pair) {
+		if (start < data.length - 1) {
+	        switch (pair.protocol) {
+	            case 0: // Hop by Hop Options Header
+	            case 43: // Routing Header
+	            case 51: // Authentication Header
+	            case 60: // Destination Options Header
+	                int extensionHeaderLength = (pair.protocol == 51 ? (data[start + 1] + 2) * 4 : (data[start + 1] * 8) + 8);
+	                pair.extensionHeadersLength += extensionHeaderLength;
+	                pair.protocol = data[start];
+	                calculateLengthOfExtensionHeaders(data, start + extensionHeaderLength, pair);
+	                break;
+	            case 59: // No Next header. This signifies that there exists nothing after the corresponding header
+	            case 6: // TCP
+	            case 17: // UDP
+	                break;
+	        }
+		}
+	}
+
+
+	/**
+	 * Tuple class to hold protocol and extension headers length for IPv6 packets
+	 * @author arpitbansal
+	 */
+	private class Pair {
+		Byte protocol;
+		Integer extensionHeadersLength;
+
+		public Pair(Byte protocol, Integer extensionHeadersLength) {
+			this.protocol = protocol;
+			this.extensionHeadersLength = extensionHeadersLength;
+		}
+	}
+
 	/**
 	 * Returns a new instance of the Packet class, using the specified
 	 * parameters to initialize the class members.
@@ -210,16 +258,19 @@ public class PacketServiceImpl implements IPacketService {
 		ByteBuffer bytes = ByteBuffer.wrap(data);
 		if (network == IPV6 && data.length >= datalinkHdrLen + 40) {
 			// Determine IPV6 protocol
-			byte protocol = bytes.get(datalinkHdrLen + 6);
-			switch (protocol) {
+			Pair pair = new Pair(data[datalinkHdrLen + 6], 0);
+			calculateLengthOfExtensionHeaders(data, datalinkHdrLen + 40, pair);
+
+			// Create IPPacket
+			switch (pair.protocol) {
 			case 6: // TCP
-				packet = new TCPPacket(seconds, microSeconds, len, datalinkHdrLen, data);
+				packet = new TCPPacket(seconds, microSeconds, len, datalinkHdrLen, pair.protocol, pair.extensionHeadersLength, data);
 				break;
 			case 17: // UDP
-				packet = createUDPPacket(seconds, microSeconds, len, datalinkHdrLen, data);
+				packet = createUDPPacket(seconds, microSeconds, len, datalinkHdrLen, pair.protocol, pair.extensionHeadersLength, data);
 				break;
 			default:
-				packet = new IPPacket(seconds, microSeconds, len, datalinkHdrLen, data);
+				packet = new IPPacket(seconds, microSeconds, len, datalinkHdrLen, pair.protocol, pair.extensionHeadersLength, data);
 				break;
 			}
 		} else if (network == IPV4 && data.length >= datalinkHdrLen + 20) {
@@ -234,20 +285,20 @@ public class PacketServiceImpl implements IPacketService {
 				switch (protocol) {
 				case 6: // TCP
 					if (data.length >= datalinkHdrLen + iphlen + 20) {
-						packet = new TCPPacket(seconds, microSeconds, len, datalinkHdrLen, data);
+						packet = new TCPPacket(seconds, microSeconds, len, datalinkHdrLen, null, null, data);
 					} else {
 						packet = new Packet(seconds, microSeconds, len, datalinkHdrLen, data);
 					}
 					break;
 				case 17: // UDP
 					if (data.length >= datalinkHdrLen + iphlen + 6) {
-						packet = createUDPPacket(seconds, microSeconds, len, datalinkHdrLen, data);
+						packet = createUDPPacket(seconds, microSeconds, len, datalinkHdrLen, null, null, data);
 					} else {
 						packet = new Packet(seconds, microSeconds, len, datalinkHdrLen, data);
 					}
 					break;
 				default:
-					packet = new IPPacket(seconds, microSeconds, len, datalinkHdrLen, data);
+					packet = new IPPacket(seconds, microSeconds, len, datalinkHdrLen, null, null, data);
 				}
 			}
 		} else {
@@ -256,8 +307,8 @@ public class PacketServiceImpl implements IPacketService {
 		return packet;
 	}
 
-	private Packet createUDPPacket(long seconds, long microSeconds, int len, int datalinkHdrLen, byte[] data) {
-		UDPPacket packet = new UDPPacket(seconds, microSeconds, len, datalinkHdrLen, data);
+	private Packet createUDPPacket(long seconds, long microSeconds, int len, int datalinkHdrLen, Byte protocol, Integer extensionHeadersLength, byte[] data) {
+		UDPPacket packet = new UDPPacket(seconds, microSeconds, len, datalinkHdrLen, protocol, extensionHeadersLength, data);
 		if (packet.isDNSPacket()) {
 			DomainNameSystem dns = domainparser.parseDomainName(packet);
 			packet.setDns(dns);

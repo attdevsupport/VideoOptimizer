@@ -152,7 +152,7 @@ public class GAUrlBuilder {
 				}
 
 				// Even Category
-				if (checkNotForNull(entry.getCategory()) && entry.getCategory().trim().length() > 0) {
+				if (entry!=null && checkNotForNull(entry.getCategory()) && entry.getCategory().trim().length() > 0) {
 
 					paramsUrls.append(appendString(GARequiredParameter.hittype.param(), HitType.EVENT.getValue()));
 					paramsUrls.append(appendString(GACommonParameter.eventcategory.param(), entry.getCategory()));

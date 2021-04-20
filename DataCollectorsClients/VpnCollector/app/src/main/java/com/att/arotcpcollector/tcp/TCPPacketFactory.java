@@ -19,10 +19,12 @@ package com.att.arotcpcollector.tcp;
 import android.util.Log;
 
 import com.att.arotcpcollector.Packet;
+import com.att.arotcpcollector.ip.IPHeader;
 import com.att.arotcpcollector.ip.IPPacketFactory;
-import com.att.arotcpcollector.ip.IPv4Header;
+import com.att.arotcpcollector.ip.IPV6Header;
 import com.att.arotcpcollector.util.PacketUtil;
 
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Date;
@@ -73,16 +75,16 @@ public class TCPPacketFactory {
 	 * @param seqToClient
 	 * @return
 	 */
-	public byte[] createFinAckData(IPv4Header ipheader, TCPHeader tcpheader, long ackToClient, long seqToClient, boolean isfin, boolean isack) {
+	public byte[] createFinAckData(IPHeader ipheader, TCPHeader tcpheader, long ackToClient, long seqToClient, boolean isfin, boolean isack) {
 
 
 		byte[] buffer = null;
-		IPv4Header ip = IPPacketFactory.copyIPv4Header(ipheader);
+		IPHeader ip = IPPacketFactory.copyIPHeader(ipheader);
 		TCPHeader tcp = copyTCPHeader(tcpheader);
 
-		//flip IP from source to dest and vice-versa
-		int sourceIp = ip.getDestinationIP();
-		int destIp = ip.getSourceIP();
+		// Flip IP from source to dest and vice-versa
+		InetAddress sourceIp = ipheader.getDestinationIP();
+		InetAddress destIp = ipheader.getSourceIP();
 		int sourcePort = tcp.getDestinationPort();
 		int destPort = tcp.getSourcePort();
 
@@ -97,7 +99,7 @@ public class TCPPacketFactory {
 		tcp.setAckNumber(ackNumber);
 		tcp.setSequenceNumber(seqNumber);
 
-		ip.setIdenfication(PacketUtil.getPacketId());
+		ip.setIdentification(PacketUtil.getPacketId());
 
 		//ACK
 		tcp.setIsACK(isack);
@@ -121,13 +123,14 @@ public class TCPPacketFactory {
 		return buffer;
 	}
 
-	public byte[] createFinData(IPv4Header ip, TCPHeader tcp, long ackNumber, long seqNumber, int timeSender, int timeReplyto) {
+	public byte[] createFinData(IPHeader ip, TCPHeader tcp, long ackNumber, long seqNumber, int timeSender, int timeReplyto) {
 
 		byte[] buffer = null;
 
-		//flip IP from source to dest and vice-versa
-		int sourceIp = ip.getDestinationIP();
-		int destIp = ip.getSourceIP();
+		// Flip IP from source to dest and vice-versa
+		InetAddress sourceIp = ip.getDestinationIP();
+		InetAddress destIp = ip.getSourceIP();
+
 		int sourcePort = tcp.getDestinationPort();
 		int destPort = tcp.getSourcePort();
 
@@ -142,7 +145,7 @@ public class TCPPacketFactory {
 		tcp.setDestinationPort(destPort);
 		tcp.setSourcePort(sourcePort);
 
-		ip.setIdenfication(PacketUtil.getPacketId());
+		ip.setIdentification(PacketUtil.getPacketId());
 
 		tcp.setIsRST(false);
 		tcp.setIsACK(false);
@@ -179,15 +182,15 @@ public class TCPPacketFactory {
 	 * @param datalength
 	 * @return
 	 */
-	public byte[] createRstData(IPv4Header ipheader, TCPHeader tcpheader, int datalength) {
+	public byte[] createRstData(IPHeader ipheader, TCPHeader tcpheader, int datalength) {
 
 		byte[] buffer = null;
-		IPv4Header ip = IPPacketFactory.copyIPv4Header(ipheader);
+		IPHeader ip = IPPacketFactory.copyIPHeader(ipheader);
 		TCPHeader tcp = copyTCPHeader(tcpheader);
 
-		//flip IP from source to dest and vice-versa
-		int sourceIp = ip.getDestinationIP();
-		int destIp = ip.getSourceIP();
+		// Flip IP from source to dest and vice-versa
+		InetAddress sourceIp = ipheader.getDestinationIP();
+		InetAddress destIp = ipheader.getSourceIP();
 		int sourcePort = tcp.getDestinationPort();
 		int destPort = tcp.getSourcePort();
 
@@ -207,7 +210,7 @@ public class TCPPacketFactory {
 		tcp.setDestinationPort(destPort);
 		tcp.setSourcePort(sourcePort);
 
-		ip.setIdenfication(0);
+		ip.setIdentification(0);
 
 		tcp.setIsRST(true);
 		tcp.setIsACK(false);
@@ -244,14 +247,14 @@ public class TCPPacketFactory {
 	 * @param ackToClient
 	 * @return
 	 */
-	public byte[] createResponseAckData(IPv4Header ipheader, TCPHeader tcpheader, long ackToClient) {
+	public byte[] createResponseAckData(IPHeader ipheader, TCPHeader tcpheader, long ackToClient) {
 		byte[] buffer = null;
-		IPv4Header ip = IPPacketFactory.copyIPv4Header(ipheader);
+		IPHeader ip = IPPacketFactory.copyIPHeader(ipheader);
 		TCPHeader tcp = copyTCPHeader(tcpheader);
 
 		//flip IP from source to dest and vice-versa
-		int sourceIp = ip.getDestinationIP();
-		int destIp = ip.getSourceIP();
+		InetAddress sourceIp = ipheader.getDestinationIP();
+		InetAddress destIp = ipheader.getSourceIP();
 		int sourcePort = tcp.getDestinationPort();
 		int destPort = tcp.getSourcePort();
 
@@ -266,7 +269,7 @@ public class TCPPacketFactory {
 		tcp.setAckNumber(ackNumber);
 		tcp.setSequenceNumber(seqNumber);
 
-		ip.setIdenfication(PacketUtil.getPacketId());
+		ip.setIdentification(PacketUtil.getPacketId());
 
 		//ACK
 		tcp.setIsACK(true);
@@ -292,15 +295,15 @@ public class TCPPacketFactory {
 	/**
 	 * create packet data for sending back to client
  	 */
-	public byte[] createResponsePacketData(IPv4Header ip, TCPHeader tcp, byte[] packetdata, boolean ispsh, long ackNumber, long seqNumber, int timeSender, int timeReplyto) {
+	public byte[] createResponsePacketData(IPHeader ip, TCPHeader tcp, byte[] packetdata, boolean ispsh, long ackNumber, long seqNumber, int timeSender, int timeReplyto) {
 
 		byte[] buffer = null;
-		IPv4Header ipheader = IPPacketFactory.copyIPv4Header(ip);
+		IPHeader ipheader = IPPacketFactory.copyIPHeader(ip);
 		TCPHeader tcpheader = copyTCPHeader(tcp);
 
 		//flip IP from source to dest and vice-versa
-		int sourceIp = ipheader.getDestinationIP();
-		int destIp = ipheader.getSourceIP();
+		InetAddress sourceIp = ip.getDestinationIP();
+		InetAddress destIp = ip.getSourceIP();
 		int sourcePort = tcpheader.getDestinationPort();
 		int destPort = tcpheader.getSourcePort();
 
@@ -312,7 +315,7 @@ public class TCPPacketFactory {
 		tcpheader.setAckNumber(ackNumber);
 		tcpheader.setSequenceNumber(seqNumber);
 
-		ipheader.setIdenfication(PacketUtil.getPacketId());
+		ipheader.setIdentification(PacketUtil.getPacketId());
 
 		//ACK is always sent
 		tcpheader.setIsACK(true);
@@ -340,17 +343,14 @@ public class TCPPacketFactory {
 	 * @param tcp
 	 * @return
 	 */
-	public Packet createSynAckPacketData(IPv4Header ip, TCPHeader tcp) {
+	public Packet createSynAckPacketData(IPHeader ip, TCPHeader tcp) {
 
 		byte[] buffer = null;
 		Packet packet = new Packet();
 
-		IPv4Header ipheader = IPPacketFactory.copyIPv4Header(ip);
+		IPHeader ipheader = IPPacketFactory.copyIPHeader(ip);
 		TCPHeader tcpheader = copyTCPHeader(tcp);
 
-		//flip IP from source to dest and vice-versa
-		int sourceIp = ipheader.getDestinationIP();
-		int destIp = ipheader.getSourceIP();
 		int sourcePort = tcpheader.getDestinationPort();
 		int destPort = tcpheader.getSourcePort();
 		long ackNumber = tcpheader.getSequenceNumber() + 1;
@@ -360,8 +360,11 @@ public class TCPPacketFactory {
 		if (seqNumber < 0) {
 			seqNumber = seqNumber * -1;
 		}
-		ipheader.setDestinationIP(destIp);
-		ipheader.setSourceIP(sourceIp);
+
+		// Flip IP from source to dest and vice-versa
+		ipheader.setDestinationIP(ip.getSourceIP());
+		ipheader.setSourceIP(ip.getDestinationIP());
+
 		tcpheader.setDestinationPort(destPort);
 		tcpheader.setSourcePort(sourcePort);
 
@@ -402,15 +405,23 @@ public class TCPPacketFactory {
 	 *            array of byte (packet body)
 	 * @return array of byte
 	 */
-	public byte[] createPacketData(IPv4Header ipheader, TCPHeader tcpheader, byte[] data) {
-		Log.d(TAG, "createPacketData d:" + PacketUtil.intToIPAddress(ipheader.getDestinationIP()) + " s:" + PacketUtil.intToIPAddress(ipheader.getSourceIP()));
+	public byte[] createPacketData(IPHeader ipheader, TCPHeader tcpheader, byte[] data) {
+		Log.d(TAG, "createPacketData d:" + ipheader.getDestinationIP().getHostAddress() + " s:" + ipheader.getSourceIP().getHostAddress());
 
 		int datalength = 0;
 		if (data != null) {
 			datalength = data.length;
 		}
+
+		// Reset payload length for IPv6
+		if (ipheader.getIpVersion() == 6) {
+			((IPV6Header)ipheader).setPayloadLength((short) (ipheader.getIPHeaderLength() + tcpheader.getTCPHeaderLength() +
+					datalength - IPV6Header.INITIAL_FIXED_HEADER_LENGTH));
+		}
+
 		byte[] buffer = new byte[ipheader.getIPHeaderLength() + tcpheader.getTCPHeaderLength() + datalength];
-		byte[] ipbuffer = IPPacketFactory.createIPv4HeaderData(ipheader);
+		// TODO: Store Payload byte data for IPv6 and develop method in Factory to convert to byte array
+		byte[] ipbuffer = IPPacketFactory.createIPHeaderData(ipheader);
 		byte[] tcpbuffer = createTCPHeaderData(tcpheader);
 
 		System.arraycopy(ipbuffer, 0, buffer, 0, ipbuffer.length);
@@ -419,24 +430,29 @@ public class TCPPacketFactory {
 			int offset = ipbuffer.length + tcpbuffer.length;
 			System.arraycopy(data, 0, buffer, offset, datalength);
 		}
-		//calculate checksum for both IP and TCP header
-		byte[] zero = { 0, 0 };
-		//zero out checksum first before calculation
-		System.arraycopy(zero, 0, buffer, 10, 2);
-		byte[] ipchecksum = PacketUtil.calculateChecksum(buffer, 0, ipbuffer.length);
-		//write result of checksum back to buffer
-		System.arraycopy(ipchecksum, 0, buffer, 10, 2);
 
-		//zero out TCP header checksum first
+		// Calculate checksum for both IPv4 and TCP header.
+		// There's no need to calculate checksum for IPv6 header.
+		byte[] zero = {0, 0};
+		if (ipheader.getIpVersion() == 4) {
+			//zero out checksum first before calculation
+			System.arraycopy(zero, 0, buffer, 10, 2);
+			byte[] ipchecksum = PacketUtil.calculateChecksum(buffer, 0, ipbuffer.length);
+			//write result of checksum back to buffer
+			System.arraycopy(ipchecksum, 0, buffer, 10, 2);
+		}
+
+		// Zero out TCP header checksum first
 		int tcpstart = ipbuffer.length;
 		System.arraycopy(zero, 0, buffer, tcpstart + 16, 2);
-		byte[] tcpchecksum = PacketUtil.calculateTCPHeaderChecksum(buffer, tcpstart, tcpbuffer.length + datalength, 
-				ipheader.getDestinationIP(), ipheader.getSourceIP());
+		byte[] tcpchecksum = PacketUtil.calculateChecksum(buffer, tcpstart, tcpbuffer.length + datalength,
+				ipheader.getDestinationIP(), ipheader.getSourceIP(), ipheader.getIpVersion(), ipheader.getProtocol());
 
-		//write new checksum back to array
+		// Write new checksum back to array
 		System.arraycopy(tcpchecksum, 0, buffer, tcpstart + 16, 2);
 
 		return buffer;
+
 	}
 
 	/**

@@ -135,18 +135,13 @@ public class SegmentThroughputGraphPanel extends JPanel implements ActionListene
 	public void refresh(AROTraceData aroTraceData, VideoStream videoStream, JCheckBox checkBoxVideo,
 			JCheckBox checkBoxAudio) {
 		traceData = aroTraceData;
-		if (aroTraceData != null && aroTraceData.getAnalyzerResult().getSessionlist().size() > 0) {
+		if (aroTraceData != null && aroTraceData.getAnalyzerResult() != null && aroTraceData.getAnalyzerResult().getSessionlist().size() > 0) {
 
 			videoThroughputPlot = new VideoThroughputPlot(videoStream, getOptionSelected(checkBoxVideo, checkBoxAudio));
 
 			videoThroughputPlot.calculateThroughPut(getOptionSelected(checkBoxVideo, checkBoxAudio));
-		}
-
-		if (aroTraceData != null && aroTraceData.getAnalyzerResult() != null) {
-
-			if (aroTraceData.getAnalyzerResult().getSessionlist().size() > 0
-					&& aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime() < aroTraceData
-							.getAnalyzerResult().getFilter().getTimeRange().getEndTime()) {
+			if (aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime() < aroTraceData
+					.getAnalyzerResult().getFilter().getTimeRange().getEndTime()) {
 
 				getXAxis().setRange(
 						new Range(videoThroughputPlot.getMinXValue() - 5, videoThroughputPlot.getMaxXValue() + 10));

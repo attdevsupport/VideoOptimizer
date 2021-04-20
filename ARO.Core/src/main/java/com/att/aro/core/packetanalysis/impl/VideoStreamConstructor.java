@@ -29,6 +29,7 @@ import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
+import org.apache.commons.collections4.trie.PatriciaTrie;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
@@ -55,6 +56,7 @@ import com.att.aro.core.videoanalysis.impl.ManifestBuilderHLS;
 import com.att.aro.core.videoanalysis.impl.SegmentInfo;
 import com.att.aro.core.videoanalysis.pojo.ChildManifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest;
+import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ManifestType;
 import com.att.aro.core.videoanalysis.pojo.ManifestCollection;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
@@ -170,7 +172,6 @@ public class VideoStreamConstructor {
 		this.streamingVideoData = streamingVideoData;
 
 		if (manifestBuilder == null || (manifestCollection = manifestBuilder.findManifest(request)) == null) {
-		    System.out.println("manifestCollection is null for " + request.getFileName());
 			LOG.debug("manifestCollection is null :" + request.getObjUri());
 			extractedSaveUnhandledContent(streamingVideoData, request, content);	
 			return;
@@ -222,11 +223,7 @@ public class VideoStreamConstructor {
 				}
 			}
 			if (segmentInfo.isVideo()) {
-				thumbnail = extractThumbnail(childManifest, content, tempClippingFullPath);
-			}
-			if (thumbnail != null || (!segmentInfo.isVideo() && childManifest.getMoovContent() != null)) {
-				videoStream.getManifest().setVideoMetaDataExtracted(true);
-				collectFromFFMPEG(tempClippingFullPath, childManifest, manifestCollection.getManifest());
+				thumbnail = extractThumbnail(segmentInfo, childManifest, content, tempClippingFullPath);
 			}
 			if (!childManifest.getManifest().isVideoTypeFamily(VideoType.DASH)) {
 				filemanager.deleteFile(tempClippingFullPath);
@@ -235,9 +232,12 @@ public class VideoStreamConstructor {
 
 		if (thumbnail == null) {
 			thumbnail = getDefaultThumbnail();
+			segmentInfo.setThumbnailExtracted(false);
+		} else {
+			segmentInfo.setThumbnailExtracted(true);
 		}
 		
-		if (segmentInfo.getBitrate() == 0 && segmentInfo.getDuration() > 0) {
+		if (segmentInfo.getDuration() > 0) {
 			double bitRate = content.length * 8 / segmentInfo.getDuration();
 			segmentInfo.setBitrate(bitRate / 1000);
 		}
@@ -325,36 +325,16 @@ public class VideoStreamConstructor {
 			}
 			// cannot have slashes (from URL) in file name
 			name = name.replaceAll("://", "_").replaceAll("/", "_");
-			return String.format("%s%s_%08d_%s_%s", streamingVideoData.getVideoPath(), getTimeString(request), segmentID, segmentQuality, name);
+			return String.format("%s%s_%08.0f_%s_%s_%s"
+					, streamingVideoData.getVideoPath()
+					, getTimeString(request)
+					, request.getSession().getSessionStartTime() * 1000
+					, segmentID < 0 ? "________" : String.format("%08d", segmentID)
+					, segmentQuality
+					, name);
 		} catch (Exception e) {
 			LOG.error("Failed to build path for fileName" + fileName, e);
 			return "";
-		}
-	}
-
-	public void collectFromFFMPEG(String fullPath, ChildManifest childManifest, Manifest manifest) {
-		if (childManifest.getPixelHeight() > 0) {
-			return;
-		}
-		Double val = 0D;
-		HashMap<String, Double> metaData = null;
-		metaData = extractMetadata(fullPath);
-		if (metaData != null) {
-			manifest.setVideoMetaDataExtracted(true);
-			if (segmentInfo.getStartTime() < 0) {
-				val = metaData.get("SegmentStart");
-				if (val != null && val > 0) {
-					segmentInfo.setStartTime(val);
-				}
-			}
-
-			val = metaData.get("Resolution");
-			if (val != null && val > 0) {
-				if (childManifest.getPixelHeight() == 0) {
-					childManifest.setPixelHeight(metaData.get("Resolution").intValue());
-				}
-				segmentInfo.setResolutionHeight(metaData.get("Resolution").intValue());
-			}
 		}
 	}
 
@@ -395,7 +375,7 @@ public class VideoStreamConstructor {
     
     		Double timeKey =  timeStamp;
     		if ((childManifest = manifestCollection.getTimestampChildManifestMap().get(timeKey)) != null) {
-    			LOG.debug("childManifest :" + childManifest);
+    			LOG.debug("childManifest :" + childManifest.dumpManifest(600));
     			if ((segmentInfo = childManifest.getSegmentList().get(key)) != null) {
     				return childManifest;
     			}
@@ -409,7 +389,9 @@ public class VideoStreamConstructor {
     		} while (timeKey != null && (segmentInfo = childManifest.getSegmentList().get(key)) == null);
     		
     		if ((childManifest = manifestCollection.getSegmentChildManifestTrie().get(key0)) != null || (childManifest = manifestCollection.getChildManifest(key0)) != null) {
-    		    boolean encoded = childManifest.getSegmentList().size() != 0 && !VideoType.DASH_IF.equals(childManifest.getManifest().getVideoType()) ? true : false;
+    		    boolean encoded = childManifest.getSegmentList().size() != 0 
+    		    		&& VideoType.DASH_ENCODEDSEGMENTLIST.equals(childManifest.getManifest().getVideoType())
+    		    		? true : false;
     			String brKey = buildByteRangeKey(request, encoded);
     
     			if (brKey != null) {
@@ -422,25 +404,22 @@ public class VideoStreamConstructor {
     				}
     			}
     			
-    			if (segmentInfo == null && (segmentInfo = childManifest.getSegmentList().get(brKey)) == null) {
-    			    if (!encoded) {
+				if (segmentInfo == null && (segmentInfo = childManifest.getSegmentList().get(key)) == null) {
+					if (!encoded && brKey != null) {
         			    Map.Entry<String, SegmentInfo> entry = childManifest.getSegmentList().select(brKey);
         			    if (entry.getKey().split("-")[1].equals(brKey.split("-")[1])) {
         			        segmentInfo = entry.getValue();
         			    }
     			    } else {
-    			        if (segmentInfo == null && (segmentInfo = childManifest.getSegmentList().get(manifestBuilder.buildUriNameKey(urlMatchDef, request))) == null) {
-        					if ((segmentInfo = childManifest.getSegmentList().get(manifestBuilder.buildKey(request))) == null) {
-        						LOG.debug("Failed to find SegmentInfo for url match: " + urlMatchDef);
+						segmentInfo = childManifest.getSegmentList().get(key);
         					}
         				}
-    			    }
-
-    			}
+ 
     			
     			LOG.debug("childManifest: " + childManifest.getUriName() + ", URL match def: " + urlMatchDef);
-    			break;
-    		} else if (timeStamp != null) {
+				if (segmentInfo != null) {
+					break;
+				}    		} else if (timeStamp != null) {
     			childManifest = manifestCollection.getTimestampChildManifestMap().get(timeStamp);
     			if (childManifest == null || !childManifest.getSegmentList().keySet().parallelStream().filter(segmentUriName -> {
     				return request.getObjUri().toString().contains(segmentUriName);
@@ -468,10 +447,11 @@ public class VideoStreamConstructor {
     				.map(segmentInfoEntry -> segmentInfo = segmentInfoEntry.getValue())
     				.orElseGet(() -> nullSegmentInfo());
     			}
-    			break;
-    		}
+				if (segmentInfo != null) {
+						break;
+					}
+				}
 		}
-
 		return childManifest;
 	}
 
@@ -621,6 +601,7 @@ public class VideoStreamConstructor {
 		} else {
 			fileName = manifest.getVideoName();
 		}
+		request.getSession().getSessionStartTime();
 		fileName = StringUtils.substringBefore(fileName, ";");
 		savePayload(content, buildPath(streamingVideoData, request, -1, "m", fileName));
  		
@@ -630,19 +611,14 @@ public class VideoStreamConstructor {
 	/**
 	 * Extract a Thumbnail image from the first frame of a video
 	 *
-	 * @param manifest
-	 * @param content
-	 * @param request
-	 *
-	 * @param srcpath
-	 * @param segmentName
-	 * @param quality
-	 * @param videoData
+	 * @param segmentInfo
+	 * @param childManifest
+	 * @param segmentContent
+	 * @param segName
 	 * @return
 	 */
-	private byte[] extractThumbnail(ChildManifest childManifest, byte[] content, String segName) {
+	private byte[] extractThumbnail(SegmentInfo segmentInfo, ChildManifest childManifest, byte[] segmentContent, String segName) {
 
-		byte[] data = null;
 		filemanager.deleteFile(segName);
 		byte[] movie = null;
 		if (childManifest.getManifest().isVideoTypeFamily(VideoType.DASH)) {
@@ -650,54 +626,18 @@ public class VideoStreamConstructor {
 			if (mbox0 == null) {
 				return null;
 			}
-			movie = new byte[mbox0.length + content.length];
+			movie = new byte[mbox0.length + segmentContent.length];
 			System.arraycopy(mbox0, 0, movie, 0, mbox0.length);
-			System.arraycopy(content, 0, movie, mbox0.length, content.length);
+			System.arraycopy(segmentContent, 0, movie, mbox0.length, segmentContent.length);
 		} else {
-			movie = content;
+			movie = segmentContent;
 		}
 		try {
 			filemanager.saveFile(new ByteArrayInputStream(movie), segName);
 		} catch (IOException e) {
 			LOG.debug("IOException:" + e.getMessage());
 		}
-		data = extractVideoFrameShell(segName);
-		return data;
-	}
-
-	/**
-	 * <PRE>
-	 * DASH-MP4 
-	 * Creates a HashMap with keys: 
-	 *   bitrate
-	 *   Duration
-	 *   SegmentStart
-	 *
-	 * @param srcpath
-	 * @return
-	 */
-	private HashMap<String, Double> extractMetadata(String srcpath) {
-		HashMap<String, Double> results = new HashMap<>();
-		String cmd = Util.getFFPROBE() 
-				+ " -i " + "\"" + srcpath + "\""
-				+ " -v quiet"
-				+ " -show_format"
-				+ " -of flat=s=_ -show_entries stream=height,width,nb_frames,duration,codec_name"
-				;
-
-		String lines = extrunner.executeCmd(cmd);
-		if (lines.indexOf("No such file") == -1) {
-			Double start = StringParse.findLabeledDoubleFromString("format_start_time=", "\"", lines);
-			Double bitrate = StringParse.findLabeledDoubleFromString("format_bit_rate=", "\"", lines);
-			Double duration = StringParse.findLabeledDoubleFromString("streams_stream_0_duration=", "\"", lines);
-			Double resolution = StringParse.findLabeledDoubleFromString("streams_stream_0_height=", lines);
-			
-			results.put("bitrate", bitrate);
-			results.put("SegmentStart", start);
-			results.put("Duration", duration);
-			results.put("Resolution", resolution);
-		}
-		return results;
+		return extractDataFromSegment(segmentInfo, childManifest, segName);
 	}
 
 	/**
@@ -791,13 +731,22 @@ public class VideoStreamConstructor {
 		return results;
 	}
 
-	private byte[] extractVideoFrameShell(String segmentName) {
+	/**
+	 * Extract IFrame, Frame height, detect audio is present.
+	 * if height is extracted it will be placed in segmentInfo.resolutionHeight and childManifest.pixelWidth
+	 * if Audio is detected in a Video segment then segmentInfo.contentType will be set to ContentType.MUXED
+	 * 
+	 * @param segmentInfo
+	 * @param childManifest
+	 * @param segmentName
+	 * @return byte[] first IFrame "thumbnail" in video segment
+	 */
+	private byte[] extractDataFromSegment(SegmentInfo segmentInfo, ChildManifest childManifest, String segmentName) {
 		byte[] data = null;
 		String thumbnail = streamingVideoData.getVideoPath() + "thumbnail.png";
 		filemanager.deleteFile(thumbnail);
 		String cmd = Util.getFFMPEG() + " -y -i " + "\"" + segmentName + "\"" + " -ss 00:00:00   -vframes 1 " + "\"" + thumbnail + "\"";
-		String ff_lines = extrunner.executeCmd(cmd, true);
-		LOG.debug("ff_lines :" + ff_lines);
+		String lines = extrunner.executeCmd(cmd, true, true);
 		if (filemanager.fileExist(thumbnail)) {
 			Path path = Paths.get(thumbnail);
 			try {
@@ -805,6 +754,29 @@ public class VideoStreamConstructor {
 				filemanager.deleteFile(thumbnail);
 			} catch (IOException e) {
 				LOG.debug("getThumbnail IOException:" + e.getMessage());
+			}
+		}
+		
+		if (!StringUtils.isEmpty(lines)) {
+			String[] height = stringParse.parse(lines, "\\d{2,4}x(\\d+)");
+			if (segmentInfo.getResolutionHeight() == 0 && height != null) {
+				segmentInfo.setResolutionHeight(StringParse.stringToInteger(height[0], 0));
+				childManifest.setPixelHeight(segmentInfo.getResolutionHeight());
+			}
+
+			if ((stringParse.parse(lines, "Stream #0.*Audio: ([A-Za-z0-9]*) ")) != null) {
+				if (segmentInfo.isVideo() && segmentInfo.getContentType().equals(ContentType.VIDEO)) {
+					segmentInfo.setContentType(ContentType.MUXED);
+				}
+				if (childManifest.getChannels() == null) {
+					String chnls = "";
+					if (lines.contains(" stereo,")) {
+						chnls = "2";
+					} else if (lines.contains(" mono,")) {
+						chnls = "1";
+					}
+					childManifest.setChannels(chnls);
+				}
 			}
 		}
 		return data;
@@ -893,7 +865,7 @@ public class VideoStreamConstructor {
 				content = null;
 			}
 		} catch (Exception e) {
-			LOG.error("Download FAILED :" + request.getObjUri(), e);
+			LOG.error(String.format("Download FAILED :%s :%s", request.getObjUri(), e.getMessage()));
 			content = null;
 		}
 

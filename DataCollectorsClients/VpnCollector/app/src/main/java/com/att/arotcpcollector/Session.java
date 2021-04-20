@@ -18,6 +18,7 @@ package com.att.arotcpcollector;
 
 import android.util.Log;
 
+import com.att.arotcpcollector.ip.IPHeader;
 import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.udp.UDPHeader;
@@ -54,9 +55,9 @@ public class Session {
 	private SocketChannel socketchannel = null;
 	private DatagramChannel udpChannel = null;
 
-	private int destAddress = 0;
+	private String destAddress;
 	private int destPort = 0;
-	private int sourceIp = 0;
+	private String sourceIp;
 	private int sourcePort = 0;
 
 	//sequence received from client
@@ -65,6 +66,10 @@ public class Session {
 	//track ack we sent to client and waiting for ack back from client
 	private long sendUnack = 0;
 	private boolean isacked = false;//last packet was acknowledged yet?
+
+	//
+	private long intialSequenceNumber;
+	private long intialAckNumber;
 
 	//the next ack to send to client
 	private long sendNext = 0;
@@ -96,7 +101,7 @@ public class Session {
 	private boolean hasReceivedLastSegment = false;
 
 	//last packet received from client
-	private IPv4Header lastIpHeader = null;
+	private IPHeader lastIpHeader = null;
 	private TCPHeader lastTcpHeader = null;
 	private UDPHeader lastUdpHeader = null;
 
@@ -302,11 +307,11 @@ public class Session {
 		return sendingStream.size() > 0;
 	}
 
-	public int getDestAddress() {
+	public String getDestAddress() {
 		return destAddress;
 	}
 
-	public void setDestAddress(int destAddress) {
+	public void setDestAddress(String destAddress) {
 		this.destAddress = destAddress;
 	}
 
@@ -363,11 +368,11 @@ public class Session {
 		return sendingStream;
 	}
 
-	public int getSourceIp() {
+	public String getSourceIp() {
 		return sourceIp;
 	}
 
-	public void setSourceIp(int sourceIp) {
+	public void setSourceIp(String sourceIp) {
 		this.sourceIp = sourceIp;
 	}
 
@@ -435,15 +440,15 @@ public class Session {
 		this.hasReceivedLastSegment = hasReceivedLastSegment;
 	}
 
-	public IPv4Header getLastIPheader() {
-		IPv4Header header;
+	public IPHeader getLastIPheader() {
+		IPHeader header;
 		synchronized (syncLastHeader) {
             header = lastIpHeader;
 		}
 		return header;
 	}
 
-	public void setLastIPheader(IPv4Header lastIPheader) {
+	public void setLastIPheader(IPHeader lastIPheader) {
 		synchronized (syncLastHeader) {
 			this.lastIpHeader = lastIPheader;
 		}
@@ -583,7 +588,7 @@ public class Session {
 	}
 	
 	public String getSessionName() {
-		return PacketUtil.intToIPAddress(getDestAddress()) + ":" + getDestPort() + " - " + PacketUtil.intToIPAddress(getSourceIp()) + ":" + getSourcePort();
+		return getDestAddress() + ":" + getDestPort() + " - " + getSourceIp() + ":" + getSourcePort();
 	}
 
 	public String getSessionKey() {
@@ -689,4 +694,22 @@ public class Session {
 	public void setSecureSession(boolean secureSession) {
 		this.secureSession = secureSession;
 	}
+
+
+	public long getIntialSequenceNumber() {
+		return intialSequenceNumber;
+	}
+
+	public void setIntialSequenceNumber(long intialSequenceNumber) {
+		this.intialSequenceNumber = intialSequenceNumber;
+	}
+
+	public long getIntialAckNumber() {
+		return intialAckNumber;
+	}
+
+	public void setIntialAckNumber(long intialAckNumber) {
+		this.intialAckNumber = intialAckNumber;
+	}
+
 }

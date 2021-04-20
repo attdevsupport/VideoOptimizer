@@ -15,7 +15,9 @@
 */
 package com.att.aro.core.videoanalysis.pojo;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
@@ -64,6 +66,10 @@ public class ManifestCollection {
 	@NonNull
 	@Setter
 	private PatriciaTrie<ChildManifest> segmentChildManifestTrie = new PatriciaTrie<>();
+
+	@Getter
+	@NonNull
+	private List<ChildManifest> segmentChildManifestListInOrder = new ArrayList<>();
 
 	/**<pre>
 	 * TreeMap of ChildManifest
@@ -123,6 +129,8 @@ public class ManifestCollection {
 		if (!segmentChildManifestTrie.containsKey(segmentUriName)) {
 			segmentChildManifestTrie.put(segmentUriName, childManifest);
 		}
+		segmentChildManifestListInOrder.add(childManifest);
+
 	}
 
 	// debugging - logging info
