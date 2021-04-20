@@ -805,7 +805,6 @@ public class SessionManagerImpl implements ISessionManager {
                         // The math below allows the request time to have a start time relative to trace capture.
                         rrInfo.setTime(time - pcapTimeOffset);
                         
-                        // TODO: Will Review this after ARO22945-1645
                         if (packetMap.containsKey(rrInfo.getTime()) && !usedPackets.containsKey(rrInfo.getTime())) {
                         	rrInfo.setFirstDataPacket(packetMap.get(rrInfo.getTime()));
                         	usedPackets.put(rrInfo.getTime(), packetMap.get(rrInfo.getTime()));
