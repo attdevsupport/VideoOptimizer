@@ -50,7 +50,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		bestPractices_devicemodel,
 		bestPractices_os_version,
 		bestPractices_networktype,
-		bestPractices_profile
+		bestPractices_profile,
 	}
 
 	private static final long serialVersionUID = 1L;

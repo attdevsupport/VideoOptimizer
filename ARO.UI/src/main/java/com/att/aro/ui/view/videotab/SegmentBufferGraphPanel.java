@@ -23,9 +23,7 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -45,14 +43,12 @@ import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.Range;
 
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.ui.commonui.RoundedBorder;
 import com.att.aro.ui.model.diagnostic.GraphPanelHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.diagnostictab.GraphPanelCrossHairHandle;
 import com.att.aro.ui.view.diagnostictab.GraphPanelListener;
-import com.att.aro.ui.view.videotab.plot.SegmentOptions;
 import com.att.aro.ui.view.videotab.plot.VideoBufferPlot;
 
 import lombok.Data;
@@ -121,43 +117,28 @@ public class SegmentBufferGraphPanel extends JPanel implements ActionListener, C
 		setBorder(new RoundedBorder(new Insets(20, 20, 20, 20), Color.WHITE));
 	}
 
-	public void refresh(AROTraceData aroTraceData, VideoStream videoStream, JCheckBox checkBoxVideo,
-			JCheckBox checkBoxAudio, Map<Integer, String> seriesDataSets,
-			TreeMap<VideoEvent, Double> chunkPlayTimeList) {
+	public void refresh(AROTraceData aroTraceData
+						, VideoStream videoStream
+						, JCheckBox checkBoxVideo
+						, JCheckBox checkBoxAudio
+			) {
 		
 		traceData = aroTraceData;
-		
-		if (aroTraceData != null && aroTraceData.getAnalyzerResult() != null
-				&& aroTraceData.getAnalyzerResult().getSessionlist().size() > 0) {
 
-			videoBufferPlot = new VideoBufferPlot(videoStream, getOptionSelected(checkBoxVideo, checkBoxAudio),
-					seriesDataSets, chunkPlayTimeList);
-			videoBufferPlot.calculateBufferProgress(aroTraceData);
+		if (aroTraceData != null 
+			&& aroTraceData.getAnalyzerResult() != null 
+			&& aroTraceData.getAnalyzerResult().getSessionlist().size() > 0) {
 
-			if (aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime() < aroTraceData
-					.getAnalyzerResult().getFilter().getTimeRange().getEndTime()) {
+			videoBufferPlot = new VideoBufferPlot(aroTraceData, videoStream);
 
+			if (aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime() < aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getEndTime()) {
 				getXAxis().setRange(new Range(videoBufferPlot.getMinXValue() - 5, videoBufferPlot.getMaxXValue() + 10));
-
-				getYAxis().setRange(Math.round(videoBufferPlot.getMinYValue() - 0.5),
-						Math.round(videoBufferPlot.getMaxYValue() + 0.5));
+				getYAxis().setRange(Math.round(videoBufferPlot.getMinYValue() - 0.5), Math.round(videoBufferPlot.getMaxYValue() + 0.5));
 			} else {
 				getXAxis().setRange(new Range(-0.01, 0));
 			}
 		}
 		videoBufferPlot.populate(getPlot(), aroTraceData);
-	}
-
-	private SegmentOptions getOptionSelected(JCheckBox checkBoxVideo, JCheckBox checkBoxAudio) {
-		SegmentOptions option = SegmentOptions.DEFAULT;
-		if (checkBoxAudio != null && checkBoxVideo != null) {
-			if (checkBoxAudio.isSelected() && !checkBoxVideo.isSelected()) {
-				return SegmentOptions.AUDIO;
-			} else if (!checkBoxAudio.isSelected() && checkBoxVideo.isSelected()) {
-				return SegmentOptions.VIDEO;
-			}
-		}
-		return option;
 	}
 
 	private JScrollPane getPane() {

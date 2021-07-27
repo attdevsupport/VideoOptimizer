@@ -83,7 +83,7 @@ public class VideoSummaryPanel extends TabPanelJPanel{
 		VideoResultSummaryLabel.setFont(new Font("HeaderFont", Font.BOLD, 18));
 		return VideoResultSummaryLabel;
 	}
-	
+
 	public JTable getBufferTable() {
 		if (bufferTable == null) {
 			bufferData = new String[2][4];

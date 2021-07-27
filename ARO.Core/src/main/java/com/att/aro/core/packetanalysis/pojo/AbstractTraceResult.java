@@ -31,6 +31,7 @@ import com.att.aro.core.peripheral.pojo.GpsInfo;
 import com.att.aro.core.peripheral.pojo.LocationEvent;
 import com.att.aro.core.peripheral.pojo.ScreenStateInfo;
 import com.att.aro.core.peripheral.pojo.TemperatureEvent;
+import com.att.aro.core.peripheral.pojo.ThermalStatusInfo;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
@@ -140,6 +141,12 @@ public abstract class AbstractTraceResult {
 	 */
 	@JsonIgnore
 	private List<ScreenStateInfo> screenStateInfos = null;
+
+	/**
+	 * List of Thermal Status Info
+	 */
+	@JsonIgnore
+	private List<ThermalStatusInfo> thermalstatusInfos = null;
 
 	/**
 	 * List of User Event Info
@@ -602,6 +609,16 @@ public abstract class AbstractTraceResult {
 	public List<VideoEvent> getVideoEvents() {
 		return videoEvents;
 	}
+
+
+	public List<ThermalStatusInfo> getThermalstatusInfos() {
+		return thermalstatusInfos;
+	}
+
+	public void setThermalstatusInfos(List<ThermalStatusInfo> thermalstatusInfos) {
+		this.thermalstatusInfos = thermalstatusInfos;
+	}
+
 
 	/**
 	 * Set List of user events

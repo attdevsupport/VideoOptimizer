@@ -136,13 +136,11 @@ public class TraceDataReaderImplTest extends BaseTest {
 		TraceFileResult result = traceDataReaderImpl.readTraceFile(Util.getCurrentRunningDir()+Util.FILE_SEPARATOR+"traffic.cap");
 		assertSame(0,result.getAllpackets().size());
 	}
-	
+
 	@Test
 	public void readTraceDir_()throws IOException{
-		String[] time = {"Synchronized timestamps",
-				"1410212153.578",
-				"272927100",
-				"1410213352.550"};
+		String[] time = {"1410212153 1410213352","272927100","1410213352.550"};
+
 		String[] appId = {"5","5","13","-127"};
 		traceDataReaderImpl.setFileReader(filereader);
 		when(filereader.directoryExist(any(String.class))).thenReturn(true);

@@ -104,30 +104,8 @@ public class HttpRequestResponseHelperImplTest extends BaseTest {
 		}
 	}
 
+
 	@Ignore
-	@Test
-	public void isSameContent_resultIsTrue() {
-		HttpRequestResponseInfo reqLeft = new HttpRequestResponseInfo();
-		HttpRequestResponseInfo reqRight = new HttpRequestResponseInfo();
-		SortedMap<Integer, Integer> testMap = new TreeMap<Integer, Integer>();
-		testMap.put(1, 1);
-		testMap.put(2, 2);
-		reqLeft.setContentLength(1);
-		reqLeft.setContentOffsetLength(testMap);
-		reqLeft.setPacketDirection(PacketDirection.DOWNLINK);
-		reqRight.setContentLength(1);
-		reqRight.setContentOffsetLength(testMap);
-		reqRight.setPacketDirection(PacketDirection.DOWNLINK);
-
-		Session sessionRight = new Session(null, null, 0, 0, "");
-		sessionRight.setStorageDl(storage);
-		Session sessionLeft = new Session(null, null, 0, 0, "");
-		sessionLeft.setStorageDl(storage);
-
-		boolean testResult = httpRequestResponseHelper.isSameContent(reqLeft, reqRight, sessionLeft, sessionRight);
-		assertTrue(testResult);
-	}
-
 	@Test
 	public void isSameContent_resultIsFalse() {
 		HttpRequestResponseInfo reqLeft = new HttpRequestResponseInfo();
@@ -146,8 +124,6 @@ public class HttpRequestResponseHelperImplTest extends BaseTest {
 		sessionRight.setStorageDl(storage);
 		Session sessionLeft = new Session(null, null, 0, 0, "");
 		sessionLeft.setStorageDl(storage);
-
-		httpRequestResponseHelper.isSameContent(reqLeft, reqRight, sessionLeft, sessionRight);
 		boolean testResult = httpRequestResponseHelper.isSameContent(reqLeft, reqRight, sessionLeft, sessionRight);
 		assertFalse(testResult);
 

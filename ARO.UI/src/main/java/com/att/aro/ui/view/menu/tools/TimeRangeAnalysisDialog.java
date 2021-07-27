@@ -22,20 +22,29 @@ import java.awt.Dimension;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
+import javax.swing.text.DefaultEditorKit;
+
+import org.apache.commons.lang3.math.NumberUtils;
 
 import com.att.aro.core.configuration.pojo.ProfileType;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -64,6 +73,8 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	private Double traceEndTime;
 	private double timeRangeStartTime;
 	private double timeRangeEndTime;
+	
+	private JPopupMenu timeRangeContextMenu;
 
 	private PacketAnalyzerResult analysisData;
 
@@ -146,24 +157,30 @@ public class TimeRangeAnalysisDialog extends JDialog {
 		if (timeRangeResultsPanel == null) {
 			timeRangeResultsPanel = new JPanel();
 			timeRangeResultsPanel.setLayout(new BorderLayout());
-			JLabel resultsLabel = new JLabel(
-					resourceBundle.getString("timerangeanalysis.results"));
+			JLabel resultsLabel = new JLabel(resourceBundle.getString("timerangeanalysis.results"));
 			if (timeRangeAnalysisResultsTextArea == null) {
-				String strTextArea = resourceBundle
-						.getString("timerangeanalysis.actionInfo");
-				timeRangeAnalysisResultsTextArea = new JTextArea("\n"
-						+ strTextArea);
+				String strTextArea = resourceBundle.getString("timerangeanalysis.actionInfo");
+				timeRangeAnalysisResultsTextArea = new JTextArea("\n" + strTextArea);
+				
+				timeRangeContextMenu = new JPopupMenu();
+				timeRangeAnalysisResultsTextArea.setComponentPopupMenu(timeRangeContextMenu);
+				
+				JMenuItem menuItem = new JMenuItem(new DefaultEditorKit.CopyAction());
+				menuItem.setText("Copy");
+				timeRangeContextMenu.add(menuItem);
+				
+				menuItem = new JMenuItem(new DefaultEditorKit.PasteAction());
+				menuItem.setText("Paste");
+				timeRangeContextMenu.add(menuItem);		
 			}
 			timeRangeAnalysisResultsTextArea.setEditable(false);
-			timeRangeAnalysisResultsTextArea.setFocusable(false);
+			timeRangeAnalysisResultsTextArea.setFocusable(true);
 			timeRangeAnalysisResultsTextArea.setLineWrap(true);
 			timeRangeAnalysisResultsTextArea.setWrapStyleWord(true);
-			Border padding = BorderFactory
-					.createBevelBorder(BevelBorder.RAISED);
+			Border padding = BorderFactory.createBevelBorder(BevelBorder.RAISED);
 			timeRangeResultsPanel.setBorder(padding);
 			timeRangeResultsPanel.add(resultsLabel, BorderLayout.NORTH);
-			timeRangeResultsPanel.add(timeRangeAnalysisResultsTextArea,
-					BorderLayout.CENTER);
+			timeRangeResultsPanel.add(timeRangeAnalysisResultsTextArea, BorderLayout.CENTER);
 		}
 		return timeRangeResultsPanel;
 	}
@@ -221,9 +238,13 @@ public class TimeRangeAnalysisDialog extends JDialog {
 										DECIMAL_FORMAT.format(endTime),
 										timeRangeAnalysis.getPayloadLen(),
 										timeRangeAnalysis.getTotalBytes(),
+										timeRangeAnalysis.getUplinkBytes(),
+										timeRangeAnalysis.getDownlinkBytes(),
 										DECIMAL_FORMAT.format(timeRangeAnalysis.getEnergy()), 
 										DECIMAL_FORMAT.format(timeRangeAnalysis.getActiveTime()),
-										DECIMAL_FORMAT.format(timeRangeAnalysis.getKbps())
+										DECIMAL_FORMAT.format(timeRangeAnalysis.getAverageThroughput()),
+										DECIMAL_FORMAT.format(timeRangeAnalysis.getAverageUplinkThroughput()),
+										DECIMAL_FORMAT.format(timeRangeAnalysis.getAverageDownlinkThroughput())
 								));
 
 								timeRangeStartTime = startTime;
@@ -282,6 +303,39 @@ public class TimeRangeAnalysisDialog extends JDialog {
 			startTimeTextField = new JTextField(8);
 			String strStartTime = DECIMAL_FORMAT.format(timeRangeStartTime);
 			startTimeTextField.setText(strStartTime);
+			
+			startTimeTextField.addFocusListener(new FocusListener() {
+				
+				@Override
+				public void focusLost(FocusEvent e) {
+					Pattern pattern = Pattern.compile("^(?:(?:([01]?\\d|2[0-3]):)?([0-5]?\\d):)?([0-9]*\\d)(\\.(\\d{1,9}))?$");
+					Matcher matcher = pattern.matcher(startTimeTextField.getText());
+					
+					if (!matcher.find()) {
+						MessageDialogFactory.showMessageDialog(TimeRangeAnalysisDialog.this, resourceBundle.getString("timerangeanalysis.numberError"));
+						return;
+					} else {
+						if (!NumberUtils.isNumber(startTimeTextField.getText())) {
+							
+							String[] timeTokens = startTimeTextField.getText().split(":");
+							if (timeTokens.length <= 3) {
+								double totalSeconds = 0d;
+								for (int i = 0; i < timeTokens.length; i++) {
+									totalSeconds += (Integer.parseInt(timeTokens[timeTokens.length - i - 1]) * Math.pow(60, i));
+								}
+								startTimeTextField.setText("" + totalSeconds);
+							} else {
+								MessageDialogFactory.showMessageDialog(TimeRangeAnalysisDialog.this, resourceBundle.getString("timerangeanalysis.numberError"));
+							}
+						}
+					}
+				}
+				
+				@Override
+				public void focusGained(FocusEvent e) {
+					
+				}
+			});
 		}
 		return startTimeTextField;
 	}
@@ -301,6 +355,38 @@ public class TimeRangeAnalysisDialog extends JDialog {
 			endTimeTextField = new JTextField(8);
 			String strEndTime = DECIMAL_FORMAT.format(timeRangeEndTime);
 			endTimeTextField.setText(strEndTime);
+			
+			endTimeTextField.addFocusListener(new FocusListener() {
+				
+				@Override
+				public void focusLost(FocusEvent e) {
+					Pattern pattern = Pattern.compile("^(?:(?:([01]?\\d|2[0-3]):)?([0-5]?\\d):)?([0-9]*\\d)(\\.(\\d{1,9}))?$");
+					Matcher matcher = pattern.matcher(endTimeTextField.getText());
+					
+					if (!matcher.find()) {
+						MessageDialogFactory.showMessageDialog(TimeRangeAnalysisDialog.this, resourceBundle.getString("timerangeanalysis.numberError"));
+						return;
+					} else {
+						if (!NumberUtils.isNumber(endTimeTextField.getText())) {
+							String[] timeTokens = endTimeTextField.getText().split(":");
+							if (timeTokens.length <= 3) {
+								double totalSeconds = 0d;
+								for (int i = 0; i < timeTokens.length; i++) {	
+									totalSeconds += (Integer.parseInt(timeTokens[timeTokens.length - i - 1]) * Math.pow(60, i));
+								}
+								endTimeTextField.setText("" + totalSeconds);
+							} else {
+								MessageDialogFactory.showMessageDialog(TimeRangeAnalysisDialog.this, resourceBundle.getString("timerangeanalysis.numberError"));
+							}
+						}
+					}
+				}
+				
+				@Override
+				public void focusGained(FocusEvent e) {
+					
+				}
+			});
 		}
 		return endTimeTextField;
 	}
@@ -319,8 +405,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	public void setVisible(boolean visible) {
 		if (!isVisible() || !visible) {
 			DecimalFormat decimalFormat = new DecimalFormat("0.00");
-			startTimeTextField
-					.setText(decimalFormat.format(timeRangeStartTime));
+			startTimeTextField.setText(decimalFormat.format(timeRangeStartTime));
 			endTimeTextField.setText(decimalFormat.format(timeRangeEndTime));
 		}
 		super.setVisible(visible);

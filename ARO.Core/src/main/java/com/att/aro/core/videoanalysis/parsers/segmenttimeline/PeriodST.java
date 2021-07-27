@@ -34,7 +34,7 @@ public class PeriodST {
 	@XmlAttribute private String start = "";
 	@XmlAttribute private String id = "";
 	@XmlAttribute private String duration = "";
-
+	
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);

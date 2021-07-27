@@ -30,6 +30,8 @@ public class BPNetworkComparisonTablePanel extends AbstractBpDetailTablePanel {
 		autoSetZoomBtn();
 	}
 
+	
+	@SuppressWarnings("unchecked")
 	@Override
 	public DataTable<SegmentComparison> getContentTable() {
 		if (contentTable == null) {

@@ -367,7 +367,7 @@ public class SelectProfileDialog extends JDialog {
 								getFilenameTextField().setText(null);
 							}
 						});
-				
+
 				DataTablePopupMenu popupMenu = (DataTablePopupMenu) jProfilesTable.getPopup();
 	            popupMenu.initialize();
 

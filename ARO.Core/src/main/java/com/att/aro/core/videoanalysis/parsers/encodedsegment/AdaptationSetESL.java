@@ -30,7 +30,14 @@ import lombok.Data;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class AdaptationSetESL {
 
+	// audio only
+	@XmlAttribute(name = "audioTrackId") private String audioTrackId;
+	@XmlAttribute(name = "lang") private String lang;
+	
+	// all
+	@XmlAttribute(name = "minBandwidth") private String minBandwidth;
 	@XmlAttribute(name = "contentType")  private String contentType;
+	
 	@XmlElement(name = "Representation") private List<RepresentationESL> representation;
 	@XmlElement(name = "EncodedSegmentDurations") private EncodedSegmentDurations encodedSegmentDurations;
 	

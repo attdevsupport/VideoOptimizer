@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 AT&T
+ *  Copyright 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
+
 package com.att.aro.core.videoanalysis.parsers.dashif;
 
 import java.util.List;
@@ -38,10 +39,12 @@ import lombok.Data;
 @XmlRootElement(name="MPD", namespace="urn:mpeg:dash:schema:mpd:2011")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class MPD implements MpdBase {
-    @XmlAttribute(name="id") private String id;
-    @XmlAttribute(name="profiles") private  String profiles;
-    @XmlAttribute(name="type") private String type;
-    @XmlAttribute(name="minBufferTime") private Duration minBufferTime;
+    @XmlAttribute(name = "id") 			                private String id;             
+    @XmlAttribute(name = "profiles") 		            private String profiles;      
+    @XmlAttribute(name = "type") 			            private String type;            
+    @XmlAttribute(name = "minBufferTime")               private Duration minBufferTime;
+	@XmlAttribute(name = "mediaPresentationDuration")	private String mediaPresentationDuration;
+	@XmlAttribute(name = "minimumUpdatePeriod")			private String minimumUpdatePeriod;
 
     @XmlElement(name="Period") private List<Period> periods;
 

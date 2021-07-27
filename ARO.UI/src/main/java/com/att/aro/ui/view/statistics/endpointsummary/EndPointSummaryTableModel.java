@@ -41,6 +41,8 @@ public class EndPointSummaryTableModel extends DataTableModel<ApplicationPacketS
 	private enum ColumnKeys {
 		endpointsummary_appname,
 		endpointsummary_packets,
+		endpointsummary_payload_bytes,
+		endpointsummary_percent_bytes,
 		endpointsummary_bytes,
 	}
 	private static final ColumnKeys[] columnKeysCollection = ColumnKeys.values();
@@ -102,6 +104,9 @@ public class EndPointSummaryTableModel extends DataTableModel<ApplicationPacketS
 		col = cols.getColumn(ColumnKeys.endpointsummary_bytes.ordinal());
 		col.setCellRenderer(bytesRenderer);
 
+		col = cols.getColumn(ColumnKeys.endpointsummary_payload_bytes.ordinal());
+		col.setCellRenderer(bytesRenderer);
+
 		return cols;
 	}
 
@@ -117,6 +122,10 @@ public class EndPointSummaryTableModel extends DataTableModel<ApplicationPacketS
 				return Util.getDefaultAppName(item.getAppName());
 			case endpointsummary_packets:
 				return item.getPacketCount();
+			case endpointsummary_payload_bytes:
+				return item.getTotalPayloadBytes();
+			case endpointsummary_percent_bytes:
+				return Util.formatDouble(item.getTotalPayloadBytes() * 100.0 / item.getTotalBytes());
 			case endpointsummary_bytes:
 				return item.getTotalBytes();
 			default:

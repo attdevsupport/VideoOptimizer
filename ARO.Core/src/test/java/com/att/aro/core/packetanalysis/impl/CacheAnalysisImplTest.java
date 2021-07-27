@@ -164,14 +164,14 @@ public class CacheAnalysisImplTest extends BaseTest {
 		}
 		packets.add(pktInfo01);
 		packets.add(pktInfo02);
-		session01.setPackets(packets);
-		session02.setPackets(packets);
+		session01.setTcpPackets(packets);
+		session02.setTcpPackets(packets);
 		when(session01.getRequestResponseInfo()).thenReturn(value);
 		when(session01.isUdpOnly()).thenReturn(false);
-		when(session01.getPackets()).thenReturn(packets);
+		when(session01.getTcpPackets()).thenReturn(packets);
 		when(session02.isUdpOnly()).thenReturn(false);
 		when(session02.getRequestResponseInfo()).thenReturn(value);
-		when(session02.getPackets()).thenReturn(packets);
+		when(session02.getTcpPackets()).thenReturn(packets);
 		List<Session> sessionList = new ArrayList<Session>();
 		sessionList.add(session01);
 		sessionList.add(session02);
@@ -306,10 +306,10 @@ public class CacheAnalysisImplTest extends BaseTest {
 		packets.add(pktInfo02);
 		when(session01.getRequestResponseInfo()).thenReturn(value);
 		when(session01.isUdpOnly()).thenReturn(false);
-		when(session01.getPackets()).thenReturn(packets);
+		when(session01.getTcpPackets()).thenReturn(packets);
 		when(session02.isUdpOnly()).thenReturn(false);
 		when(session02.getRequestResponseInfo()).thenReturn(value);
-		when(session02.getPackets()).thenReturn(packets);
+		when(session02.getTcpPackets()).thenReturn(packets);
 		List<Session> sessionList = new ArrayList<Session>();
 		sessionList.add(session01);
 		sessionList.add(session02);
@@ -317,7 +317,7 @@ public class CacheAnalysisImplTest extends BaseTest {
 		assertEquals(4, testResult.getCacheExpirationResponses().size());
 		assertEquals(60, testResult.getDiagnosisResults().size());
 		assertEquals(95, testResult.getDuplicateContentBytes());
-		assertEquals(0, testResult.getDuplicateContentBytesRatio(), 0.475);
+		assertEquals(0.475, testResult.getDuplicateContentBytesRatio(), 0.225);
 		assertEquals(38, testResult.getDuplicateContentWithOriginals().size());
 	}
 }

@@ -22,17 +22,23 @@ import org.apache.commons.collections4.trie.PatriciaTrie;
 import com.att.aro.core.videoanalysis.impl.SegmentInfo;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class ChildManifest {
+	
+	private ManifestCollection manifestCollectionParent;
+	
 	private String uriName = "";
 	private double bandwidth;
 	private String codecs = "";
 	private int quality;
 	private int pixelWidth;
 	private int pixelHeight;
-	private int segmentCount = 0;
+	private int nextSegmentID = 0;
+	private int sequenceStart = -1;
 	private double initialStartTime = -1D;
 	private boolean video;
 	private Manifest manifest;
@@ -46,15 +52,15 @@ public class ChildManifest {
 	 * PatriciaTrie of SegmentInfo
 	 * Key: segmentUriName
 	 */
-	private PatriciaTrie<SegmentInfo> segmentList = new PatriciaTrie<>();
-
+	private PatriciaTrie<SegmentInfo> segmentInfoTrie = new PatriciaTrie<>();
+	
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("\n\tChildManifest :");
 		strblr.append("\n\t\t\tVideoName        :").append(manifest == null ? "-" : manifest.getVideoName());
 		strblr.append("\n\t\t\tReqTimestamp     :").append(manifest == null ? "-" : String.format("%.4f:", manifest.getRequestTime()));
 		strblr.append("\n\t\t\tProgramDateTime  :").append(manifest == null ? "-" : String.format("%.3f:", manifest.getProgramDateTime()));
-		strblr.append("\n\t\t\tSegmentCount     :").append(segmentCount);
+		strblr.append("\n\t\t\tNextSegmentID    :").append(nextSegmentID);
 		strblr.append("\n\t\t\tSegmentStartTime :").append(String.format("%.3f:", segmentStartTime));
 		strblr.append("\n\t\t\tUriName          :").append(uriName);
 		strblr.append("\n\t\t\tVideo            :").append(video);
@@ -75,10 +81,6 @@ public class ChildManifest {
 		manifest.updateStreamProgramDateTime(programDateTime);
 	}
 	
-	public int getNextSegmentID() {	
-		return segmentCount++;
-	}
-
 	private void incrementSegmentStartTime(double duration) {
 		segmentStartTime += duration;
 	}
@@ -91,18 +93,21 @@ public class ChildManifest {
 	 * @return true if can add to segmentList, false is already there
 	 */
 	public SegmentInfo addSegment(String segmentUriName, SegmentInfo segmentInfo) {
-		if (!segmentList.containsKey(segmentUriName)) {
+		if (!segmentInfoTrie.containsKey(segmentUriName)) {
 			if (segmentInfo.getStartTime() == 0) {
 				segmentInfo.setStartTime(getSegmentStartTime());
 				incrementSegmentStartTime(segmentInfo.getDuration());
 			}
-			segmentList.put(segmentUriName, segmentInfo);
+			segmentInfoTrie.put(segmentUriName, segmentInfo);
 			if (segmentInfo.getContentType().equals(ContentType.UNKNOWN)) {
 				segmentInfo.setContentType(getContentType());
 			}
+
+			// increment for next segment ID
+			nextSegmentID++;
 			return segmentInfo;
 		}
-		return segmentList.get(segmentUriName);
+		return segmentInfoTrie.get(segmentUriName);
 	}
 
 	public String dumpManifest(int cutoff) {
@@ -122,10 +127,10 @@ public class ChildManifest {
 
 	public String dumpSegmentList() {
 		StringBuilder strblr = new StringBuilder("SegmentList:");
-		Iterator<String> keys = segmentList.keySet().iterator();
+		Iterator<String> keys = segmentInfoTrie.keySet().iterator();
 		while (keys.hasNext()) {// && limit-- > 0) {
 			String key = keys.next();
-			strblr.append("\n\t\t\t\t<").append(key + ">: " + segmentList.get(key));
+			strblr.append("\n\t\t\t\t<").append(key + ">: " + segmentInfoTrie.get(key));
 		}
 		strblr.append("\n");
 		return strblr.toString();

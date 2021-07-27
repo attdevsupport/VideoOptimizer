@@ -20,146 +20,145 @@ import org.apache.commons.lang3.StringUtils;
 import com.beust.jcommander.Parameter;
 
 public class Commands {
-	@Parameter(names = {"--help","-h","-?"}, description="show help menu", help=true)
-	private boolean help = false;
-	
-	@Parameter(names= "--startcollector", description="start collector on device or emulator")
-	private String startcollector = null;
-	
-	@Parameter(names= "--ask", description="start collector on device or emulator")
-	private String ask = null;
-	
-	@Parameter(names = "--analyze", description="analyze trace file or folder")
-	private String analyze = null;
-	
-	@Parameter(names="--output", description="provide output location of report")
-	private String output = null;	
-	
-	@Parameter(names="--overwrite", description="overwrite output")
-	private String overwrite = "no";
-	
-	@Parameter(names="--format", description="format of report: json or html")
-	private String format = "json";
-	
-	@Parameter(names="--deviceid", description="device id or serial number for device to run collector on")
-	private String deviceid = null;
-	
-	@Parameter(names="--video", description="yes or no - record video while capturing trace")
-	private String video = "no";
-	
+    @Parameter(names = { "--help", "-h", "-?" }, description = "show help menu", help = true)
+    private boolean help = false;
+
+    @Parameter(names = "--startcollector", description = "start collector on device or emulator")
+    private String startcollector = null;
+
+    @Parameter(names = "--ask", description = "start collector on device or emulator")
+    private String ask = null;
+
+    @Parameter(names = "--analyze", description = "analyze trace file or folder")
+    private String analyze = null;
+
+    @Parameter(names = "--output", description = "provide output location of report")
+    private String output = null;
+
+    @Parameter(names = "--overwrite", description = "overwrite output")
+    private String overwrite = "no";
+
+    @Parameter(names = "--format", description = "format of report: json or html")
+    private String format = "json";
+
+    @Parameter(names = "--deviceid", description = "device id or serial number for device to run collector on")
+    private String deviceid = null;
+
+    @Parameter(names = "--video", description = "yes or no - record video while capturing trace")
+    private String video = "no";
+
     @Parameter(names = "--videoOrientation", description = "portrait or landscape")
     private String videoOrientation = "portrait";
 
-	@Parameter(names="--sudo", description="admin password, OSX only")
-	private String sudo = "";
-	
-	@Parameter(names="--listcollectors", description="list available data collector")
-	private boolean listcollectors = false;
+    @Parameter(names = "--sudo", description = "admin password, OSX only")
+    private String sudo = "";
 
-	@Parameter(names="--listdevices", description="list available devices")
-	private boolean listdevices = false;
+    @Parameter(names = "--listcollectors", description = "list available data collector")
+    private boolean listcollectors = false;
 
-	@Parameter(names="--verbose", description="verbose output - more than just the important messages")
-	private boolean verbose = false;
-	
-	@Parameter(names="--throttleUL", description="enable throttle upload throughtput (64k - 100m (102400k))")
-	private String throttleUL = "-1";	
-	
-	@Parameter(names="--throttleDL", description="enable throttle download throughtput (64k - 100m (102400k))")
-	private String throttleDL = "-1";
-	
-	@Parameter(names="--profile", description="provide profile location")
-	private String attenuationprofile = null;	
- 	
-	
-	public boolean isListcollector() {
-		return listcollectors;
-	}
+    @Parameter(names = "--listdevices", description = "list available devices")
+    private boolean listdevices = false;
 
-	public void setListcollector(boolean listcollectors) {
-		this.listcollectors = listcollectors;
-	}
+    @Parameter(names = "--verbose", description = "verbose output - more than just the important messages")
+    private boolean verbose = false;
 
-	public boolean isHelp() {
-		return help;
-	}
+    @Parameter(names = "--throttleUL", description = "enable throttle upload throughtput (64k - 100m (102400k))")
+    private String throttleUL = "-1";
 
-	public void setHelp(boolean help) {
-		this.help = help;
-	}
+    @Parameter(names = "--throttleDL", description = "enable throttle download throughtput (64k - 100m (102400k))")
+    private String throttleDL = "-1";
 
-	public String getStartcollector() {
-		return startcollector;
-	}
+    @Parameter(names = "--profile", description = "provide profile location")
+    private String attenuationprofile = null;
 
-	public void setStartcollector(String startcollector) {
-		this.startcollector = startcollector;
-	}
-	
-	public String getSudo() {
-		return sudo;
-	}
+    public boolean isListcollector() {
+        return listcollectors;
+    }
 
-	public void setSudo(String sudo) {
-		this.sudo = sudo;
-	}
+    public void setListcollector(boolean listcollectors) {
+        this.listcollectors = listcollectors;
+    }
 
-	public String getAsk() {
-		return ask;
-	}
+    public boolean isHelp() {
+        return help;
+    }
 
-	public void setAsk(String ask) {
-		this.ask = ask;
-	}
+    public void setHelp(boolean help) {
+        this.help = help;
+    }
 
-	public String getAnalyze() {
-		return analyze;
-	}
+    public String getStartcollector() {
+        return startcollector;
+    }
 
-	public void setAnalyze(String analyze) {
-		this.analyze = analyze;
-	}
+    public void setStartcollector(String startcollector) {
+        this.startcollector = startcollector;
+    }
 
-	public String getOverwrite() {
-		return this.overwrite;
-	}
+    public String getSudo() {
+        return sudo;
+    }
 
-	public String getOutput() {
-		return output;
-	}
-	
-	public void setOverwrite(String overwrite) {
-		this.overwrite = overwrite;
-	}
+    public void setSudo(String sudo) {
+        this.sudo = sudo;
+    }
 
-	public void setOutput(String output) {
-		this.output = output;
-	}
+    public String getAsk() {
+        return ask;
+    }
 
-	public String getFormat() {
-		return format;
-	}
+    public void setAsk(String ask) {
+        this.ask = ask;
+    }
 
-	public void setFormat(String format) {
-		this.format = format;
-	}
+    public String getAnalyze() {
+        return analyze;
+    }
 
-	public String getDeviceid() {
-		return deviceid;
-	}
+    public void setAnalyze(String analyze) {
+        this.analyze = analyze;
+    }
 
-	public void setDeviceid(String deviceid) {
-		this.deviceid = deviceid;
-	}
+    public String getOverwrite() {
+        return this.overwrite;
+    }
 
-	public String getVideo() {
-		return video;
-	}
+    public String getOutput() {
+        return output;
+    }
 
-	public void setVideo(String video) {
-		this.video = video;
-	}
-	
+    public void setOverwrite(String overwrite) {
+        this.overwrite = overwrite;
+    }
+
+    public void setOutput(String output) {
+        this.output = output;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
+
+    public String getDeviceid() {
+        return deviceid;
+    }
+
+    public void setDeviceid(String deviceid) {
+        this.deviceid = deviceid;
+    }
+
+    public String getVideo() {
+        return video;
+    }
+
+    public void setVideo(String video) {
+        this.video = video;
+    }
+
     public String getVideoOrientation() {
         return videoOrientation;
     }
@@ -168,99 +167,95 @@ public class Commands {
         this.videoOrientation = videoOrientation;
     }
 
+    public boolean isVerbose() {
+        return verbose;
+    }
 
-	public boolean isVerbose() {
-		return verbose;
-	}
+    public boolean isListDevices() {
+        return listdevices;
+    }
 
-	public boolean isListDevices() {
-		return listdevices;
-	}
-	
-	public String getThrottleUL() {
-		return throttleUL;
-	}
+    public String getThrottleUL() {
+        return throttleUL;
+    }
 
-	public void setThrottleUL(String throttleUL) {
-		this.throttleUL = throttleUL;
-	}
+    public void setThrottleUL(String throttleUL) {
+        this.throttleUL = throttleUL;
+    }
 
-	public String getThrottleDL() {
-		return throttleDL;
-	}
+    public String getThrottleDL() {
+        return throttleDL;
+    }
 
-	public void setDownlink(String throttleDL) {
-		this.throttleDL = throttleDL;
-	}
-	
-	public String getAttenuationprofile() {
-		return attenuationprofile;
-	}
+    public void setDownlink(String throttleDL) {
+        this.throttleDL = throttleDL;
+    }
 
-	public void setAttenuationprofile(String attenuationprofile) {
-		this.attenuationprofile = attenuationprofile;
-	}
+    public String getAttenuationprofile() {
+        return attenuationprofile;
+    }
 
+    public void setAttenuationprofile(String attenuationprofile) {
+        this.attenuationprofile = attenuationprofile;
+    }
 
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer("Commands: ");
 
-	@Override
-	public String toString() {
-		StringBuffer sb = new StringBuffer("Commands: ");
-
-		if (analyze != null) {
-			sb.append(", analyze:" + getAnalyze());
-		}
-		if (deviceid != null) {
-			sb.append(", deviceid:" + getDeviceid());
-		}
-		if (format != null) {
-			sb.append(", format:" + getFormat());
-		}
-		if (overwrite != null) {
-			sb.append(", overwrite:" + getOverwrite());
-		}
-		if (output != null) {
-			sb.append(", output:" + getOutput());
-		}		
-		if (ask != null) {
-			sb.append(", ask:" + getAsk());
-		}
-		if (startcollector != null) {
-			sb.append(", collector:" + getStartcollector());
-		}
-		if (!sudo.isEmpty()) {
-			sb.append(", sudo:" + getSudo());
-		}
-		if (help) {
-			sb.append(", help");
-		}
-		if (listcollectors) {
-			sb.append(", listcollectors");
-		}
-		if (listdevices) {
-			sb.append(", listdevices");
-		}
-		if (verbose) {
-			sb.append(", verbose");
-		}
-		if (attenuationprofile != null) {
-			sb.append(", attenuationprofile:" + getAttenuationprofile());
-		}
-		if(!throttleDL.isEmpty()) {
-			sb.append(", throttleUL: " + getThrottleUL());
-		}
-		if(!throttleUL.isEmpty()) {
-			sb.append(", throttleDL: " + getThrottleDL());
-		}
-		if (video != null) {
-			sb.append(", " + getVideo());
-		}
-		
+        if (analyze != null) {
+            sb.append(", analyze:" + getAnalyze());
+        }
+        if (deviceid != null) {
+            sb.append(", deviceid:" + getDeviceid());
+        }
+        if (format != null) {
+            sb.append(", format:" + getFormat());
+        }
+        if (overwrite != null) {
+            sb.append(", overwrite:" + getOverwrite());
+        }
+        if (output != null) {
+            sb.append(", output:" + getOutput());
+        }
+        if (ask != null) {
+            sb.append(", ask:" + getAsk());
+        }
+        if (startcollector != null) {
+            sb.append(", collector:" + getStartcollector());
+        }
+        if (!sudo.isEmpty()) {
+            sb.append(", sudo:" + getSudo());
+        }
+        if (help) {
+            sb.append(", help");
+        }
+        if (listcollectors) {
+            sb.append(", listcollectors");
+        }
+        if (listdevices) {
+            sb.append(", listdevices");
+        }
+        if (verbose) {
+            sb.append(", verbose");
+        }
+        if (attenuationprofile != null) {
+            sb.append(", attenuationprofile:" + getAttenuationprofile());
+        }
+        if (!throttleDL.isEmpty()) {
+            sb.append(", throttleUL: " + getThrottleUL());
+        }
+        if (!throttleUL.isEmpty()) {
+            sb.append(", throttleDL: " + getThrottleDL());
+        }
+        if (video != null) {
+            sb.append(", " + getVideo());
+        }
         if (StringUtils.isNotBlank(videoOrientation)) {
             sb.append(", " + getVideoOrientation());
         }
 
-		return sb.toString();
-	}
+        return sb.toString();
+    }
 
 }

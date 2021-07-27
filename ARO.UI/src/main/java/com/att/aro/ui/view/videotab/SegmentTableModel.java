@@ -83,7 +83,6 @@ public class SegmentTableModel extends AbstractTableModel {
 	@Override
 	public Object getValueAt(int rowIndex, int columnIndex) {
 		VideoEvent videoSegment = this.videoEventList.get(rowIndex);
-
 		return
         (
             SEGMENT_NO.equals(columnNames[columnIndex])       ? Integer.valueOf(String.format("%.0f", videoSegment.getSegmentID())) :
@@ -104,7 +103,7 @@ public class SegmentTableModel extends AbstractTableModel {
             CHANNELS.equals(columnNames[columnIndex])         ? videoSegment.getChannels() == null ? "NA " : videoSegment.getChannels() :
             STARTUP_DELAY.equals(columnNames[columnIndex])    ? (playRequestedTime != 0.0 ? (String.format("%.3f",(videoSegment.getDLTimeStamp() - playRequestedTime))) : "-") :
             PLAYBACK_DELAY.equals(columnNames[columnIndex])   ? (playRequestedTime != 0.0 ? (String.format("%.3f", (videoSegment.getPlayTime() - playRequestedTime))): "-") :
-           ""
+            ""
         );
 	}
 

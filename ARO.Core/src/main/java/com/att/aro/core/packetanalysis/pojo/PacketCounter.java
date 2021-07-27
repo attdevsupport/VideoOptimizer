@@ -15,29 +15,17 @@
 */
 package com.att.aro.core.packetanalysis.pojo;
 
+import lombok.Data;
+
+@Data
 public class PacketCounter {
-	private int packetCount=0;
-	private long totalBytes=0;
+	private int packetCount;
+	private long totalBytes;
+	private long totalPayloadBytes;
 
 	public void add(PacketInfo pInfo) {
 		totalBytes += pInfo.getLen();
+		totalPayloadBytes += pInfo.getPayloadLen();
 		++packetCount;
 	}
-
-	public int getPacketCount() {
-		return packetCount;
-	}
-
-	public void setPacketCount(int packetCount) {
-		this.packetCount = packetCount;
-	}
-
-	public long getTotalBytes() {
-		return totalBytes;
-	}
-
-	public void setTotalBytes(long totalBytes) {
-		this.totalBytes = totalBytes;
-	}
-	
 }

@@ -425,7 +425,13 @@ public class VlcjPlayer implements IVideoPlayer {
 			player = null;
 		}
 
-		frame.dispose();
+		SwingUtilities.invokeLater(new Runnable() {
+	        @Override
+	        public void run() {
+	        	frame.dispose();
+	        }
+	    });
+
 		videoOffset = 0.0;
 	}
 

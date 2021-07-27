@@ -67,6 +67,7 @@ public class VideoStreamConstructorTest {
 		String incrementedName = videoStreamConstructor.findPathNameTiebreaker(pathName);
 		assertThat(incrementedName).isEqualTo(tempFolder + "/file.xyz(duplicated)");
 	}
+
 	@Test
 	public void testShortenNameByParts() throws Exception {
 		String fullString = "one:two:three:four:five";
@@ -94,7 +95,6 @@ public class VideoStreamConstructorTest {
 		String shortString = videoStreamConstructor.shortenNameByParts(fullString, ":", 0);
 		assertThat(shortString).isEqualTo("one:two:three:four:five");
 	}
-
 
 
 }

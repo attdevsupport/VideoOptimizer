@@ -42,11 +42,9 @@ import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.bestpracticestab.BpHeaderPanel;
 import com.att.aro.view.images.Images;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
-@EqualsAndHashCode(callSuper=false)
-@Data
+@Getter
 public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 	
 	private static final long serialVersionUID = 1L;
@@ -69,7 +67,8 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 	private SegmentBufferGraphPanel bufferGraphPanel;
 	private JPanel progressPanel;
 	private JPanel throughputPanel;
-	private JPanel bufferPanel;	
+	private JPanel bufferPanel;
+	
 	/**
 	 * Create the panel.
 	 */
@@ -103,8 +102,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 			mainPanel = new JPanel(new GridBagLayout());
 			mainPanel.setOpaque(false);
 
-			int section = 1;			
-			
+			int section = 1;		
 
 			mainPanel.add(getProfilePanel().layoutDataPanel(), new GridBagConstraints(
 					0, section++
@@ -114,7 +112,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 					, GridBagConstraints.HORIZONTAL
 					, new Insets(0, 0, 0, 0)
 					, 0, 0));
-			
+
 			mainPanel.add(getThroughputPanel(), new GridBagConstraints(
 					0, section++
 					, 1, 1
@@ -133,13 +131,14 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 					, new Insets(10, 0, 0, 0)
 					, 0, 0));
 			
-			mainPanel.add(getBufferPanel(), new GridBagConstraints(						0, section++
-						, 1, 1
-						, 1.0, 0.0
-						, GridBagConstraints.EAST
-						, GridBagConstraints.HORIZONTAL
-						, new Insets(10, 0, 0, 0)
-						, 0, 0));
+			mainPanel.add(getBufferPanel(), new GridBagConstraints(
+					0, section++
+					, 1, 1
+					, 1.0, 0.0
+					, GridBagConstraints.EAST
+					, GridBagConstraints.HORIZONTAL
+					, new Insets(10, 0, 0, 0)
+					, 0, 0));
 			
 			mainPanel.add(buildManifestsGroup(), new GridBagConstraints(
 					0, section++
@@ -161,7 +160,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		}
 		return mainPanel;
 	}
-
+	
 	public JPanel getThroughputPanel() {
 		if (throughputPanel == null) {
 			JPanel segmentThroughputGraphPanel = new JPanel(new GridBagLayout());
@@ -180,38 +179,41 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		}
 		return throughputPanel;
 	}
-	
+
 	private MouseListener mouseListener(JPanel panel) {
-			return new MouseListener() {		@Override
-		public void mouseReleased(MouseEvent e) {
-			// TODO Auto-generated method stub
+		return new MouseListener() {
 			
-		}
-		
-		@Override
-		public void mousePressed(MouseEvent e) {
-			// TODO Auto-generated method stub
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
 			
-		}
-		
-		@Override
-		public void mouseExited(MouseEvent e) {
-			// TODO Auto-generated method stub
+			@Override
+			public void mousePressed(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
 			
-		}
-		
-		@Override
-		public void mouseEntered(MouseEvent e) {
-			// TODO Auto-generated method stub
+			@Override
+			public void mouseExited(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
 			
-		}
-		
-		@Override
-		public void mouseClicked(MouseEvent e) {
-			  if(e.getClickCount()==2){
-				  panel.setVisible(!panel.isVisible());
-		        }
-				}
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				  if(e.getClickCount()==2){
+					  panel.setVisible(!panel.isVisible());
+			        }
+				
+			}
 		};
 	}
 	
@@ -229,7 +231,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 			progressPanel.add(segmentProgressGraphPanel, new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
 					GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
 			progressPanel.setVisible(false);
-			progressPanel.addMouseListener(mouseListener(segmentProgressGraphPanel));	
+			progressPanel.addMouseListener(mouseListener(segmentProgressGraphPanel));
 		}
 		return progressPanel;
 	}
@@ -250,7 +252,8 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 			bufferPanel.setVisible(false);
 			bufferPanel.addMouseListener(mouseListener(segmentProgressGraphPanel));
 		}
-		return bufferPanel;	}
+		return bufferPanel;
+	}
 
 	/**
 	 * MidPanel contains Video Manifests
@@ -292,7 +295,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		wrapper.add(pane, new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
 		return wrapper;
 	}
-
+	
 	private JPanel getTitledWrapper(String title, JComponent... components) {
 
 		JPanel pane = new JPanel(new GridBagLayout());
@@ -302,32 +305,30 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 
 		JPanel fullPanel = new JPanel(new BorderLayout());
 
-
 		fullPanel.setOpaque(false);
 
 		// Create the header bar
 		BpHeaderPanel header = new BpHeaderPanel(ResourceBundleHelper.getMessageString(title));
 		header.setImageTitle(Images.BLUE_HEADER.getImage(), null);
-
 		// Add buttons to title bar
 		JPanel buttonPanel = null;
-	    if (components.length > 0) {
-	        buttonPanel = new JPanel();
-	        buttonPanel.setLayout(new BorderLayout());
-	        for (JComponent component : components) {
-	            if (ExportManifestDialog.class.getName().equals(component.getName())) {
-	                buttonPanel.add(components[0], BorderLayout.WEST);
-	            }
+		if (components.length > 0) {
+			buttonPanel = new JPanel();
+			buttonPanel.setLayout(new BorderLayout());
+			for (JComponent component : components) {
+				if (ExportManifestDialog.class.getName().equals(component.getName())) {
+					buttonPanel.add(components[0], BorderLayout.WEST);
+				}
 
-	            if (LoadManifestDialog.class.getName().equals(component.getName())) {
-	                buttonPanel.add(components[1], BorderLayout.EAST);
-	            }
-	        }
+				if (LoadManifestDialog.class.getName().equals(component.getName())) {
+					buttonPanel.add(components[1], BorderLayout.EAST);
+				}
+			}
 
-	        if (buttonPanel != null && buttonPanel.getComponentCount() != 0) {
-	            header.add(buttonPanel, BorderLayout.EAST);
-	        }
-	    }
+			if (buttonPanel != null && buttonPanel.getComponentCount() != 0) {
+				header.add(buttonPanel, BorderLayout.EAST);
+			}
+		}
 		fullPanel.add(header, BorderLayout.NORTH);
 		pane.add(fullPanel, new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, headInsets, 0, 0));
 		return pane;
@@ -352,7 +353,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		} else {
 			trace = result.getTraceDirectory() != null ? result.getTraceDirectory() : result.getTraceFile();
 			lastOpenedTrace = newTraceTime;
-			bpObservable.refreshModel(traceData);		
+			bpObservable.refreshModel(traceData);
 			updateUI();
 		}
 	}
@@ -379,7 +380,6 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		}
 		this.updateUI();
 	}
-
 
 	/**
 	 * Triggers and expansion of any tableViews that need expanding before returning the container.

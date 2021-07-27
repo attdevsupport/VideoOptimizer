@@ -57,11 +57,11 @@ public class Manifest {
 	 * example: 4,2,FULL
 	 */
 	private SortedSet<UrlMatchDef> segUrlMatchDef = new TreeSet<>(new Comparator<UrlMatchDef>() {
-        @Override
-        public int compare(UrlMatchDef o1, UrlMatchDef o2) {
-            if (o1 == null || o2 == null) {
-                return 0;
-            }
+		@Override
+		public int compare(UrlMatchDef o1, UrlMatchDef o2) {
+			if (o1 == null || o2 == null) {
+				return 0;
+			}
 			// UrlMatchType.FULL is less than any urlMatchLen
 			if (o1.getUrlMatchType() != o2.getUrlMatchType()) {
 				if (o1.getUrlMatchType().equals(UrlMatchType.FULL)) {
@@ -72,8 +72,8 @@ public class Manifest {
 				return 0;
 			}
 			// larger length over shorter
-            return Integer.compare(o2.getUrlMatchLen(), o1.getUrlMatchLen());
-        }
+			return Integer.compare(o2.getUrlMatchLen(), o1.getUrlMatchLen());
+		}
 	});
 
 	Session session;                					// session that manifest arrived on
@@ -186,6 +186,7 @@ public class Manifest {
 									? "\n\t, Stream-ProgramDateTime: %.3f" 
 									: "\n\t, ProgramDateTime: %.3f"
 					, programDateTime));
+		strblr.append("\n\t, segUrlMatchDef :").append(segUrlMatchDef);
 		strblr.append("\n\t, Name :").append(getVideoName());
 		strblr.append(String.format("\n\t  CRC-32: %8.0f", checksumCRC32));
 		strblr.append("\n\t, ContentType :").append(getContentType());

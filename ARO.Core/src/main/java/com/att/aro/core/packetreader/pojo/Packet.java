@@ -31,6 +31,14 @@ public class Packet implements Serializable {
 	private int dataOffset;
 	private Packet nextPacketInSession;
 
+	public Packet(long seconds, long microSeconds, org.pcap4j.packet.Packet pcap4jPacket) {
+		this.seconds = seconds;
+		this.microSeconds = microSeconds;
+		data = pcap4jPacket.getRawData();
+		len = pcap4jPacket.length();
+		dataOffset = pcap4jPacket.getHeader().length();
+	}
+
 	/**
 	 *  Initializes  a new instance of the Packet class, using the specified parameters.
 	 *  @param datalinkHdrLen The datalink for the packet.

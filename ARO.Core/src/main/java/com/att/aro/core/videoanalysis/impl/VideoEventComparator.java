@@ -52,7 +52,7 @@ public class VideoEventComparator implements Comparator<VideoEvent> {
 				return -1;
 			} else if (playTime1 > playTime2) {
 				return 1;
-			}	
+			}
 		} else if (choice == SortSelection.START_TS) {
 			double startTime1 = ve1.getStartTS();
 			double startTime2 = ve2.getStartTS();

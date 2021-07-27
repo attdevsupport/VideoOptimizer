@@ -59,9 +59,6 @@ public abstract class AROMonitorService extends Service{
 		if (mAroUtils == null) {
 			mAroUtils = new AROCollectorUtils();
 			initFiles(intent);
-			
-	//		startTraceMonitor();
-
 		}
 		return super.onStartCommand(intent, flags, startId);
 		

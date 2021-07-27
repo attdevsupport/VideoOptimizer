@@ -362,6 +362,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		        saveCollectorOptions.recordCollectOptions(datadir, 0, 0, -1, -1, false, "", "PORTRAIT");
 		    }
 		}
+
 		return status;
 	}
 
@@ -426,7 +427,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			mitmAttenuator = new MitmAttenuatorImpl();
 		}
 		LOG.info("ios attenuation setting: " + " trafficFilePath: " + trafficFilePath + " throttleDL: " + throttleDL
-				+ "throttleUL: " + throttleUL );
+				+ "throttleUL: " + throttleUL);
 		mitmAttenuator.startCollect(trafficFilePath, throttleDL, throttleUL, saveCollectorOptions);
 
 	}
@@ -565,6 +566,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			if (version != null && version.length() > 0) {
 				int versionNumber = 0;
 				int dotIndex = 0;
+
 				try {
 					dotIndex = version.indexOf(".");
 					versionNumber = Integer.parseInt(version.substring(0, dotIndex));
@@ -574,6 +576,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 					status.setSuccess(false);
 					status.setError(ErrorCodeRegistry.getDeviceVersionIssue());
 				}
+
 				if (versionNumber < 5) {
 					String msg = MessageFormat.format(defaultBundle.getString("Error.iosunsupportedversion"), ApplicationConfig.getInstance().getAppShortName());
 					LOG.error(msg);
@@ -582,6 +585,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				}
 			}
 		}
+
 		return status;
 	}
 

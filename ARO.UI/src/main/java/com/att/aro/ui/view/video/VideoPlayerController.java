@@ -21,7 +21,7 @@ import java.util.Observable;
 import java.util.Observer;
 
 import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;	
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
@@ -67,16 +67,8 @@ public class VideoPlayerController implements Observer {
 			if (player.getPlayerType() == playerType) {
 				return player;
 			}
-		}		
-		return null;
-	}
-	
-	private IVideoPlayer getMovPlayer() {		
-		for (IVideoPlayer player: players) {
-			if (player.getPlayerType() == VideoPlayerType.MOV) {
-				return player;
-			}
-		}		
+		}
+
 		return null;
 	}
 
@@ -97,19 +89,18 @@ public class VideoPlayerController implements Observer {
 			currentPlayer.notifyLauncher(false);
 			return;
 		}
-		
+
 		IVideoPlayer player = getPlayer(VideoPlayerType.MP4_VLCJ);;
 		if (player == null) {
 			LOGGER.error("Error launching video player - no appropriate Mp4 or Mov player found");
 			return;
 		}
-		
+
 		player.loadVideo(traceResult);	
-			diagnosticsTab.setVideoPlayer(player);
-			setCurrentVideoPlayer(player);
-			player.notifyLauncher(true);
+		diagnosticsTab.setVideoPlayer(player);
+		setCurrentVideoPlayer(player);
+		player.notifyLauncher(true);
 	}
-	
 
 	public void launchPlayer(int xPosition, int yPosition, int frameWidth, int frameHeight) {	
 
@@ -117,7 +108,7 @@ public class VideoPlayerController implements Observer {
 			LOGGER.error("No player available to launch");
 			return;
 		}
-				
+		
 		IVideoPlayer player = (IVideoPlayer) getDefaultPlayer();
 		
 		if (player == null) {

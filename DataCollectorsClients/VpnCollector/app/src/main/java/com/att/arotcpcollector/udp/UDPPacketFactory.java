@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
 
 public class UDPPacketFactory {
 	public UDPPacketFactory(){}
-
+	
 	public UDPHeader createUDPHeader(byte[] buffer, int start) throws PacketHeaderException{
 		UDPHeader header = null;
 		if((buffer.length - start) < 8){
@@ -87,7 +87,7 @@ public class UDPPacketFactory {
 		ipheader.setSourceIP(srcIp);
 		ipheader.setDestinationIP(destIp);
 		ipheader.setIdentification(PacketUtil.getPacketId());
-
+		
 		//ip's length is the length of the entire packet => IP header length + UDP header length (8) + UDP body length
 		ipheader.setTotalLength(totallength);
 		if (ipheader.getIpVersion() == 6) {
@@ -154,5 +154,5 @@ public class UDPPacketFactory {
 
 		return wrappedBuffer.array();
 	}
-
+	
 }//end

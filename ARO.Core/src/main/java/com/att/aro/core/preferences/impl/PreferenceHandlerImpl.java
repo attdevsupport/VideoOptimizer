@@ -54,10 +54,9 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 	
 	@Override
 	public void setPref(String prefKey, String prefValue) {
-		
+
 		if (prefKey == null || prefValue == null || prefValue.equals("null")) {
-			LOGGER.error("Preference key and preference value cannot be null! "
-					+ "key:" + prefKey + " value:" + prefValue);
+			LOGGER.error("Preference key and preference value cannot be null! " + "key:" + prefKey + " value:" + prefValue);
 		} else {
 			LOGGER.debug("Storing key:" + prefKey + ";value:" + prefValue);
 			setting.setAndSaveAttribute(prefKey, prefValue);

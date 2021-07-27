@@ -42,7 +42,6 @@ public class HttpDelayPanel extends JPanel {
 		return httpDelayTableModel;
 	}
 
-
 	/**
 	 * The default constructor that initializes a new instance of the
 	 * HttpDelayPanel class.

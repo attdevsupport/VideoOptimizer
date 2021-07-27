@@ -933,14 +933,14 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 
 	/**
 	 * Validates if two HttpRequestResponseInfo are same True if
-	 * hostnames/start_time/content_size are same
+	 * hostnames/start_time/content_size/status code are same
 	 */
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof HttpRequestResponseInfo) {
 			HttpRequestResponseInfo oHttp = (HttpRequestResponseInfo) obj;
 			if (getTimeStamp() == oHttp.getTimeStamp() && isEqualHostName(oHttp)
-					&& oHttp.getContentLength() == contentLength) {
+					&& oHttp.getContentLength() == contentLength && getStatusCode() == oHttp.getStatusCode()) {
 				return true;
 			}
 		}
@@ -1064,7 +1064,7 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 			LOGGER.error("Error Writing Payload to Request Response Info Object", exception);
 		}
 	}
-
+	
 	public void writeHeader(String dataRead) throws IOException {
 		writeDataToStream(dataRead, headerData);
 	}

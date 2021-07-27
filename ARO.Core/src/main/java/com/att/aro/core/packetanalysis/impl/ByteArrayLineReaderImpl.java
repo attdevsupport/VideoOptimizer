@@ -98,10 +98,10 @@ public class ByteArrayLineReaderImpl implements IByteArrayLineReader {
 
 			// Look for CRLF
 			while ((num = readInput()) != -1) {
+				
 				if (num == '\r') {
 					num = readInput();
 					if (num == '\n') {
-
 						// Return found line of text
 						return new String(output.toByteArray(), StandardCharsets.UTF_8);
 					} else {

@@ -26,6 +26,7 @@ import android.util.Log;
 import com.att.arotcpcollector.tcp.PacketHeaderException;
 import com.att.arotcpcollector.util.PacketUtil;
 
+
 /**
  * class for creating packet data, header etc related to IP
  * 
@@ -63,6 +64,7 @@ public class IPPacketFactory {
 		} else if (version == 6) {
 			return createIPv6Header(buffer, start);
 		}
+
 		throw new PacketHeaderException("Unsupported IP version " + version);
 	}
 
@@ -142,6 +144,7 @@ public class IPPacketFactory {
 
 		return buffer;
 	}
+
 	/**
 	 * Create IPv6 byte data from the object
 	 * @param header
@@ -178,7 +181,6 @@ public class IPPacketFactory {
 		return data;
 	}
 
-
 	/**
 	 * create IPv4 Header from a given array of byte
 	 * 
@@ -201,6 +203,7 @@ public class IPPacketFactory {
 		if (version != 0x04) {
 			throw new PacketHeaderException("Invalid IPv4 header. IP version should be 4.");
 		}
+
 		byte internetHeaderLength = (byte) (buffer[start] & 0x0F);
 		if (buffer.length < (start + internetHeaderLength * 4)) {
 			throw new PacketHeaderException("Not enough space in array for IP header");

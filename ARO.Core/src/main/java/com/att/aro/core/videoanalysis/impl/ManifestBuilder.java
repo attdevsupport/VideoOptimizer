@@ -15,8 +15,6 @@
 */
 package com.att.aro.core.videoanalysis.impl;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -39,6 +37,7 @@ import com.att.aro.core.AROConfig;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.StringParse;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.ChildManifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
@@ -46,7 +45,7 @@ import com.att.aro.core.videoanalysis.pojo.Manifest.ManifestType;
 import com.att.aro.core.videoanalysis.pojo.ManifestCollection;
 import com.att.aro.core.videoanalysis.pojo.UrlMatchDef;
 import com.att.aro.core.videoanalysis.pojo.UrlMatchDef.UrlMatchType;
-import com.att.aro.core.videoanalysis.pojo.VideoEvent.VideoType;
+import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 
 import lombok.Data;
 import lombok.NonNull;
@@ -196,21 +195,6 @@ public abstract class ManifestBuilder {
 		return childManifest;
 	}
 
-	/**
-	 * Locate and return a segment number.
-	 * 
-	 * @param request
-	 * @return segment number or -1 if not found
-	 */
-	public int getSegmentNumber(HttpRequestResponseInfo request) {
-		SegmentInfo segmentInfo = getSegmentInfo(request);
-		int segmentNumber = -1;
-		if (segmentInfo != null) {
-			segmentNumber = segmentInfo.getSegmentID();
-		}
-		return segmentNumber;
-	}
-
 	public String buildKey(HttpRequestResponseInfo request) {
 		if (StringUtils.isEmpty(byteRangeKey)) {
 			return StringUtils.substringAfterLast(request.getObjNameWithoutParams(), "/");
@@ -247,36 +231,13 @@ public abstract class ManifestBuilder {
 		}
 	}
 	
-	/**
-	 * Decode any potential encoding so that manifest declared URLs can be compared against real URLs
-	 * 
-	 * @param url
-	 * @return
-	 */
-	protected String decodeUrlEncoding(String url) {
-		if (StringUtils.isEmpty(url)) {
-			return "";
-		}
-		String result;
-		try {
-			result = URLDecoder.decode( url, "UTF-8" );
-		} catch (UnsupportedEncodingException e) {
-			LOG.error(String.format("Failed to decode %s :%s", e.getMessage(), url));
-			result = url;
-		}
-		return result;
-	}
-	
 	protected ChildManifest locateChildManifest(Manifest manifest) {
 		childManifest = null;
 
 		for (UrlMatchDef urlMatchDef : manifest.getMasterManifest().getSegUrlMatchDef()) {
-		    String uriNameKey = buildUriNameKey(urlMatchDef, manifest.getRequest());
-	        String decodedUriNameKey = decodeUrlEncoding(uriNameKey);
-	        referenceKey = decodedUriNameKey;
+	        referenceKey =  Util.decodeUrlEncoding(buildUriNameKey(urlMatchDef, manifest.getRequest()));
 
     		if ((childManifest = manifestCollection.getUriNameChildMap().get(referenceKey)) == null) {
-                // VID-TODO may remove this (if section) after UrlMatchType conversion is complete
                 if (!CollectionUtils.isEmpty(manifestCollection.getUriNameChildMap())) {
                     childManifest = manifestCollection.getUriNameChildMap().entrySet().stream()
                             .filter(x -> x.getKey().contains(referenceKey))
@@ -345,7 +306,7 @@ public abstract class ManifestBuilder {
 		switch (targetUrlMatchDef.getUrlMatchType()) {
     		case FULL:
     			if (request.getObjUri() != null) {
-    				key = StringUtils.substringBefore(request.getObjUri().toString(), "%3F");
+    				key = StringUtils.substringBefore(request.getObjUri().toString(), "?");
     			}
     			break;
     		case UNKNOWN:
@@ -389,14 +350,14 @@ public abstract class ManifestBuilder {
 	}
 
 	protected SegmentInfo createSegmentInfo(ChildManifest childManifest, String parameters, String segmentUriName) {
-		int segmentID = childManifest.getSegmentCount();
-		segmentID = childManifest.getNextSegmentID();
+		int segmentID = childManifest.getNextSegmentID();
 		SegmentInfo segmentInfo = new SegmentInfo();
+		segmentInfo.setChildManifest(childManifest);
 		segmentInfo.setVideo(childManifest.isVideo());
 		segmentInfo.setDuration(StringParse.findLabeledDoubleFromString(":", "\\,", parameters));
 		segmentInfo.setSegmentID(segmentID);
 		segmentInfo.setQuality(String.format("%.0f", (double) childManifest.getQuality()));
-		if (segmentInfo.isVideo() && (segmentInfo.getSegmentID() == 0 && manifest.isVideoTypeFamily(VideoType.DASH))) {
+		if (segmentInfo.isVideo() && (segmentInfo.getSegmentID() == 0 && manifest.isVideoFormat(VideoFormat.MPEG4))) {
 			segmentInfo.setVideo(false);
 		}
 		return segmentInfo;
@@ -427,11 +388,11 @@ public abstract class ManifestBuilder {
 	}
 
 	protected ChildManifest createChildManifest(Manifest manifest, String parameters, String childUriName) {
+		childUriName = Util.decodeUrlEncoding(childUriName);
 		ChildManifest childManifest = new ChildManifest();
 		childManifest.setManifest(manifest);
 		childManifest.setUriName(childUriName);
-		childUriName = decodeUrlEncoding(childUriName);
-
+		childManifest.setManifestCollectionParent(manifestCollection);
 		manifest.getSegUrlMatchDef().add(defineUrlMatching(childUriName));
 		manifestCollection.addToUriNameChildMap(childUriName, childManifest);
 		return childManifest;
@@ -462,88 +423,89 @@ public abstract class ManifestBuilder {
 				if (manifestCollection.getManifest().getRequestTime() < request.getTimeStamp()) {
 					manifestReqTime = manifestCollection.getManifest().getRequestTime();
 					if (lastManifestReqTime == 0 || lastManifestReqTime < manifestReqTime) {
-					    for (UrlMatchDef urlMatchDef : manifestCollection.getManifest().getMasterManifest().getSegUrlMatchDef()) {
-    						key = buildUriNameKey(urlMatchDef, request);
-    						key += "|" + formatTimeKey(manifestCollection.getManifest().getRequestTime());
-    						if (!StringUtils.isEmpty(key)) {
-    							if (locatePatKey(segmentManifestCollectionMap, key, request, urlMatchDef) != null) {
-    								manifestCollectionToBeReturned = manifestCollection;
-    								lastManifestReqTime = manifestReqTime;
-    								return manifestCollectionToBeReturned;
-    							}
-    						}
-					    }
+						for (UrlMatchDef urlMatchDef : manifestCollection.getManifest().getMasterManifest().getSegUrlMatchDef()) {
+							key = buildUriNameKey(urlMatchDef, request);
+							// VID-TODO find #EXT-X-MAP:URI="5b3733a4-e7db-4700-975b-4e842c158274/3cec-BUMPER/02/1200K/map.mp4"
+							key += "|" + formatTimeKey(manifestCollection.getManifest().getRequestTime());
+							if (!StringUtils.isEmpty(key)) {
+								if (locatePatKey(segmentManifestCollectionMap, key, request, urlMatchDef) != null) {
+									manifestCollectionToBeReturned = manifestCollection;
+									lastManifestReqTime = manifestReqTime;
+									return manifestCollectionToBeReturned;
+								}
+							}
+						}
 					}
 				}
 			}
 		}
 
 		for (UrlMatchDef urlMatchDef : masterManifest.getSegUrlMatchDef()) {
-    		key = buildUriNameKey(urlMatchDef, request);
-    		
-    		if (StringUtils.isEmpty(key) && segmentManifestCollectionMap.selectKey("#EXT-X-BYTERANGE:") != null) {
-    			String[] range = stringParse.parse(request.getAllHeaders(), "Range: bytes=(\\d+)-(\\d+)");
-    			if (range != null) {
-    				String segName = String.format("#EXT-X-BYTERANGE:%.0f@%s", StringParse.stringToDouble(range[1], 0D) + 1, range[0]); // #EXT-X-BYTERANGE:207928@0 //
-    				key = segmentManifestCollectionMap.selectKey(segName);
-    				if (key.startsWith(segName)) {
-    					key = keyMatch(request, segName, urlMatchDef);
-    					byteRangeKey = segName;
-    				} else {
-    					LOG.error(String.format("Bad key match <%s> %s<>", segName, key));
-    					key = "";
-    				}
-    			}
-    		}
-    		String key1 = StringUtils.substringBefore(key, "|");
-    		try {
-    			List<Entry<String, String>> tempList = segmentManifestCollectionMap.entrySet().parallelStream()
-    					.filter(segmentManifestCollectionMapEntry -> segmentManifestCollectionMapEntry.getKey().contains(key))
-    					.collect(Collectors.toList());
-    
-    			if (tempList.size() > 1) {
-    				tempList.stream().forEach(x -> {
-    					manifestCollectionMap.entrySet().stream()
-    					.filter(y -> y.getKey().contains(x.getValue()))
-    					.forEach(y -> {
-    						y.getValue().entrySet().stream()
-    						.forEach( z -> {
-    							if (request.getTimeStamp() > z.getKey() && z.getKey() > identifiedManifestRequestTime) {
-    								identifiedManifestRequestTime = z.getKey();
-    								manifestCollectionToBeReturned = z.getValue();
-    							}
-    						});
-    					});
-    				});
-    			} else if (tempList.size() == 1 && !manifestCollectionMap.isEmpty()) {
-    				String key = tempList.get(0).getValue();
-    				
-    				manifestCollectionMap.entrySet().stream().filter(f -> f.getKey().endsWith(key)).forEach(outerMap -> {
-    					outerMap.getValue().entrySet().stream()
-    					.filter(f -> f.getKey() <= request.getTimeStamp() 
-    							&& f.getValue().getSegmentChildManifestTrie().containsKey(key1)
-    							)
-    					.forEach(innerMap -> {
-    						manifestCollectionToBeReturned = innerMap.getValue();
-    					});
-    				});
-    				if (manifestCollectionToBeReturned == null) {
-    					manifestCollectionMap.entrySet().stream().filter(f -> f.getKey().endsWith(key)).forEach(outerMap -> {
-    					outerMap.getValue().entrySet().stream()
-    					.filter(f -> f.getKey() <= request.getTimeStamp() 
-    							)
-    					.forEach(innerMap -> { 
-    						manifestCollectionToBeReturned = innerMap.getValue();
-    					});
-    				});}
-    			}
-    		} catch (Exception e) {
-    			LOG.error("Failed to locate manifestCollection: ", e);
-    		}
+			key = buildUriNameKey(urlMatchDef, request);
 
-    		if (manifestCollectionToBeReturned != null) {
-    		    break;
-    		}
+			if (StringUtils.isEmpty(key) && segmentManifestCollectionMap.selectKey("#EXT-X-BYTERANGE:") != null) {
+				String[] range = stringParse.parse(request.getAllHeaders(), "Range: bytes=(\\d+)-(\\d+)");
+				if (range != null) {
+					String segName = String.format("#EXT-X-BYTERANGE:%.0f@%s", StringParse.stringToDouble(range[1], 0D) + 1, range[0]); // #EXT-X-BYTERANGE:207928@0 //
+					key = segmentManifestCollectionMap.selectKey(segName);
+					if (key.startsWith(segName)) {
+						key = keyMatch(request, segName, urlMatchDef);
+						byteRangeKey = segName;
+					} else {
+						LOG.error(String.format("Bad key match <%s> %s<>", segName, key));
+						key = "";
+					}
+				}
+			}
+			String key1 = StringUtils.substringBefore(key, "|");
+			try {
+				List<Entry<String, String>> tempList = segmentManifestCollectionMap.entrySet().parallelStream()
+						.filter(segmentManifestCollectionMapEntry -> segmentManifestCollectionMapEntry.getKey().contains(key))
+						.collect(Collectors.toList());	
+
+				if (tempList.size() > 1) {
+					tempList.stream().forEach(x -> {
+						manifestCollectionMap.entrySet().stream()
+						.filter(y -> y.getKey().contains(x.getValue()))
+						.forEach(y -> {
+							y.getValue().entrySet().stream()
+							.forEach( z -> {
+								if (request.getTimeStamp() > z.getKey() && z.getKey() > identifiedManifestRequestTime) {
+									identifiedManifestRequestTime = z.getKey();
+									manifestCollectionToBeReturned = z.getValue();
+								}
+							});
+						});
+					});
+				} else if (tempList.size() == 1 && !manifestCollectionMap.isEmpty()) {
+					String key = tempList.get(0).getValue();
+
+					manifestCollectionMap.entrySet().stream().filter(f -> f.getKey().endsWith(key)).forEach(outerMap -> {
+						outerMap.getValue().entrySet().stream()
+						.filter(f -> f.getKey() <= request.getTimeStamp() 
+						&& f.getValue().getSegmentChildManifestTrie().containsKey(key1)
+								)
+						.forEach(innerMap -> {
+							manifestCollectionToBeReturned = innerMap.getValue();
+						});
+					});
+					if (manifestCollectionToBeReturned == null) {
+						manifestCollectionMap.entrySet().stream().filter(f -> f.getKey().endsWith(key)).forEach(outerMap -> {
+							outerMap.getValue().entrySet().stream()
+							.filter(f -> f.getKey() <= request.getTimeStamp() 
+									)
+							.forEach(innerMap -> { 
+								manifestCollectionToBeReturned = innerMap.getValue();
+							});
+						});}
+				}
+			} catch (Exception e) {
+				LOG.error("Failed to locate manifestCollection: ", e);
+			}
+
+			if (manifestCollectionToBeReturned != null) {
+				break;
+			}
 		}
 
 		return manifestCollectionToBeReturned;
@@ -704,21 +666,22 @@ public abstract class ManifestBuilder {
 	}
 	
 	protected void addToSegmentManifestCollectionMap(String segmentUriName) {
-	    if (segmentUriName != null) {
-	        // Sanity check before we create a key. Extract URI without query parameters.
-	        segmentUriName = decodeUrlEncoding(segmentUriName);
-	        segmentUriName = StringUtils.substringBefore(segmentUriName, "?");
+		if (segmentUriName != null) {
+			// Sanity check before we create a key. Extract URI without query parameters.
+			segmentUriName = Util.decodeUrlEncoding(segmentUriName);
+			segmentUriName = StringUtils.substringBefore(segmentUriName, "?");
+			
+			String key = segmentUriName
+					+ "|" + formatTimeKey(manifestCollection.getManifest().getRequestTime())
+					+ "|" + manifestCollection.getManifest().getVideoName();
 
-    		String key = segmentUriName
-    				+ "|" + formatTimeKey(manifestCollection.getManifest().getRequestTime())
-    				+ "|" + manifestCollection.getManifest().getVideoName();
-    		if (!segmentManifestCollectionMap.containsKey(key)) {
-    			if (key.startsWith("|")) {
-    				LOG.error("problem: no segmenUriName");
-    			}
-    			segmentManifestCollectionMap.put(key, manifestCollection.getManifest().getVideoName());
-    		}
-	    }
+			if (!segmentManifestCollectionMap.containsKey(key)) {
+				if (key.startsWith("|")) {
+					LOG.error("problem: no segmenUriName");
+				}
+				segmentManifestCollectionMap.put(key, manifestCollection.getManifest().getVideoName());
+			}
+		}
 	}
 	
 	public String dumpSegmentManifestCollectionTrie() {

@@ -39,6 +39,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
@@ -81,6 +82,15 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 	@Setter(AccessLevel.PROTECTED) 
 	private String videoPath;
 	
+	public void clear() {
+		videoStreamMap.clear();
+		requestMap.clear();
+		failedRequestMap.clear();
+		durationManifestMap.clear();
+		timescaleManifestMap.clear();
+		streamingVideoCompiled.clear();
+	}
+
 	@NonNull
 	private Boolean validatedCount = false;
 	@Setter(AccessLevel.PROTECTED)
@@ -92,8 +102,12 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 	@Setter(AccessLevel.PROTECTED)
 	private int nonValidSegmentCount = 0;
 	@Setter(AccessLevel.PROTECTED)
-	private int invalidManifestCount = 0;	
+	private int invalidManifestCount = 0;
 
+	@Getter
+	@Setter
+	private boolean finished = true;
+	
 	/**
 	 * handy debugging info
 	 */
@@ -143,6 +157,7 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 		validatedCount = true;
 	}
 
+	// VID-TODO This needs rethinking, Video segments can be MUXED, and at the same time audio can be requested
 	private void scanFixMUX(VideoStream videoStream) {
 		if (!CollectionUtils.isEmpty(videoStream.getAudioSegmentEventList())) {
 			for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
@@ -226,5 +241,4 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 	public VideoStream getVideoStream (double videoManifestTime) {	
 		return videoStreamMap.get(videoManifestTime);
 	}
-
 }

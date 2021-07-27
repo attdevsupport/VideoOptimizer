@@ -27,7 +27,6 @@ import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -89,33 +88,31 @@ public class VideoCaptureImplTest extends BaseTest{
 		
 	}
 	 
-	@Ignore
-	@Test
-	public void run_test() throws TimeoutException, AdbCommandRejectedException, IOException  {
-		videoCapture.setDevice(device);
-		when(device.getScreenshot()).thenThrow(new IOException());
-		videoCapture.run();		
-		assertEquals(31,videoCapture.getiExceptionCount());
-	}
+//	@Test
+//	public void run_test() throws TimeoutException, AdbCommandRejectedException, IOException  {
+//		videoCapture.setDevice(device);
+//		when(device.getScreenshot()).thenThrow(new IOException());
+//		videoCapture.run();		
+//		assertEquals(31,videoCapture.getiExceptionCount());
+//	}
 	
-	@Ignore
-	@Test
-	public void run_test_exception() throws TimeoutException, AdbCommandRejectedException, IOException {
-		videoCapture.setDevice(device);
-		when(device.getScreenshot()).thenThrow(new TimeoutException());
-		videoCapture.run();
-		assertEquals(31,videoCapture.getiExceptionCount());
-	}
+//	@Test
+//	public void run_test_exception() throws TimeoutException, AdbCommandRejectedException, IOException {
+//		videoCapture.setDevice(device);
+//		when(device.getScreenshot()).thenThrow(new TimeoutException());
+//		videoCapture.run();
+//		assertEquals(31,videoCapture.getiExceptionCount());
+//	}
 	
-	@Test(expected=IOException.class)
-	public void init_test_resIsIOException() throws IOException{
-		videoCapture.setDevice(device);
-		Exception e = new IOException();
-		doThrow(e).when(videoWriter)
-		.init(any(String.class), any(VideoFormat.class), any(float.class), any(int.class));
-		videoCapture.init(device, "");
-
-	}
+//	@Test(expected=IOException.class)
+//	public void init_test_resIsIOException() throws IOException{
+//		videoCapture.setDevice(device);
+//		Exception e = new IOException();
+//		doThrow(e).when(videoWriter)
+//		.init(any(String.class), any(VideoFormat.class), any(float.class), any(int.class));
+//		videoCapture.init(device, "");
+//
+//	}
 	
 	@Test
 	public void init_test_resIsNoError() throws IOException{

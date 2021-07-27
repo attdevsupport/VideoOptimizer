@@ -88,6 +88,7 @@ import com.att.aro.ui.view.menu.datacollector.HelpDialog;
 public class PreferencesDialog extends JDialog {
 	private static final int BORDER_HEIGHT = 80;
 	private static final int BORDER_WIDTH = 15;
+	
 	private static final Logger LOGGER = LogManager.getLogger(PreferencesDialog.class);
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane;
@@ -121,8 +122,7 @@ public class PreferencesDialog extends JDialog {
 	enum Config {
 		MEM("Xmx", "Max heap in MB", TEXT, JvmSettings.getInstance(), isHeapEnabled()),
 		ADB("adb", "Adb Path", FILE, SettingsImpl.getInstance(), true),
-		DUMP_CAP("dumpCap", "Wireshark Path", FILE, SettingsImpl.getInstance(), Util.isMacOS(), null, () -> Util
-				.getWireshark()),
+		WIRESHARK("WIRESHARK_PATH", "Wireshark Path", FILE, SettingsImpl.getInstance(), Util.isMacOS(), null, () -> Util.getWireshark()),
 		IDEVICE_SCREENSHOT("iDeviceScreenshot", "iDeviceScreenshot Path", FILE, SettingsImpl.getInstance(),
 				Util.isMacOS(), null, () -> Util.getIdeviceScreenshot()),
 		FFMPEG("ffmpeg", "FFMpeg Path", FILE, SettingsImpl.getInstance(), true, null, () -> Util.getFFMPEG()),
@@ -142,8 +142,7 @@ public class PreferencesDialog extends JDialog {
 		private Supplier<String> defValue;
 		private String comboValues;
 
-		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled, String hint,
-				Supplier<String> defValue) {
+		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled, String hint, Supplier<String> defValue) {
 			this(name, desc, type, settings, enabled);
 			this.hint = hint;
 			this.defValue = defValue;
@@ -194,11 +193,11 @@ public class PreferencesDialog extends JDialog {
 		public String getComboValues() {
 			return comboValues;
 		}
-
+		
 		private static boolean isHeapEnabled() {
-			boolean isLinuxOrWin32 = Util.isWindows32OS() || Util.isLinuxOS();
-			boolean isMoreThan4GB = ((JvmSettings) JvmSettings.getInstance()).getSystemMemory() > 4096;
-			return !isLinuxOrWin32 && isMoreThan4GB;
+			boolean isWin32 = Util.isWindows32OS();
+			boolean isMoreThan4GB = ((JvmSettings) JvmSettings.getInstance()).getSystemMemory() > 4096L;
+			return Util.isLinuxOS() || (!isWin32 && isMoreThan4GB);
 		}
 	}
 
@@ -227,7 +226,7 @@ public class PreferencesDialog extends JDialog {
 		setLocationRelativeTo(parent.getFrame());
 		getRootPane().setDefaultButton(okButton);
 	}
-
+	
 	private JComponent getJContentPane() {
 		if (jContentPane == null) {
 			jContentPane = new JPanel();
@@ -240,7 +239,7 @@ public class PreferencesDialog extends JDialog {
 					BPSelectionPanel.getBPPanel());
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.video.tabtitle"),
 					videoPreferencesPanel);
-
+			
 			this.addComponentListener(new ComponentListener() {
 				@Override
 				public void componentResized(ComponentEvent e) {
@@ -292,7 +291,8 @@ public class PreferencesDialog extends JDialog {
 			jButtonGrid = new JPanel();
 			jButtonGrid.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 			jButtonGrid.setLayout(gridLayout);
-			jButtonGrid.add(okButton = getButton("Save & Close", (ActionEvent arg) -> saveAndClose()));
+			jButtonGrid.add(okButton = getButton("Save Only", (ActionEvent arg) -> saveOnly()));
+			jButtonGrid.add(okButton = getButton("Save & Reload", (ActionEvent arg) -> saveAndReload()));
 			jButtonGrid.add(getButton("Cancel", (ActionEvent arg) -> dispose()));
 		}
 		return jButtonGrid;
@@ -327,18 +327,19 @@ public class PreferencesDialog extends JDialog {
 		configCombo.add(getValuePanel(config));
 		return configCombo;
 	}
-
+	
 	private Component getValuePanel(final Config config) {
+		int fieldHeight = Util.isLinuxOS() ? 28 : 20;
 		JPanel panel = new JPanel();
-		Dimension size = new Dimension(300, 20);
+		Dimension size = new Dimension(300, fieldHeight);
 		panel.setLayout(new BoxLayout(panel, LINE_AXIS));
 		setSize(panel, size);
 		if (config.getConfigType() == ConfigType.TEXT || config.getConfigType() == ConfigType.NUMBER) {
 			panel.add(getValueTextField(config, size));
 		} else if (config.getConfigType() == ConfigType.FILE) {
-			Dimension txtSize = new Dimension(220, 20);
+			Dimension txtSize = new Dimension(220, fieldHeight);
 			final JTextField textField = getValueTextField(config, txtSize);
-			Dimension btnSize = new Dimension(75, 20);
+			Dimension btnSize = new Dimension(75, fieldHeight);
 			JButton btnBrowse = new JButton("Browse");
 			setSize(btnBrowse, btnSize);
 			btnBrowse.addActionListener((ActionEvent e) -> setPathTextField(textField));
@@ -390,7 +391,7 @@ public class PreferencesDialog extends JDialog {
 		setSize(value, size);
 		setToolTip(config, value);
 		if (config.getDefValue() != null) {
-			value.setText(config.getDefValue());
+			value.setText(config.getDefValue().replaceAll("\"", ""));
 		}
 		value.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
@@ -427,27 +428,36 @@ public class PreferencesDialog extends JDialog {
 		}
 	}
 
-	private void saveAndClose() {
+	private void saveOnly() {
+		saveOptions(false);
+	}
+
+	private void saveAndReload() {
+		saveOptions(true);
+	}
+
+	private void saveOptions(boolean reload) {
 		try {
 			saveGenTabValues();
-			saveBPSelection();
+			saveBPSelection(reload);
 			SettingsImpl.getInstance().setAndSaveAttribute("LOG_LEVEL", logginglevel);
 			Util.setLoggingLevel(logginglevel);
-			if(videoPreferencesPanel.saveVideoPreferences()) {
+			if (videoPreferencesPanel.saveVideoPreferences()) {
 				dispose();
 			} else {
 				this.revalidate();
 				this.repaint();
 			}
-			
+
 		} catch (IllegalArgumentException iae) {
 			LOGGER.error("Failed to save preferences due to failure on video bp panel");
 			this.repaint();
 		} catch (Exception e) {
 			LOGGER.error("Failed to save preferences", e);
-			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
-					"Error occurred while trying to save Preferences", "Error saving preferences",
-					JOptionPane.ERROR_MESSAGE);
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame()
+													, "Error occurred while trying to save Preferences"
+													, "Error saving preferences"
+													, JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -471,9 +481,11 @@ public class PreferencesDialog extends JDialog {
 	}
 	
 	
-	private void saveBPSelection() {
+	private void saveBPSelection(boolean reload) {
 		SettingsUtil.saveBestPractices(BPSelectionPanel.getInstance().getCheckedBP());
-		reloadTrace();
+		if (reload) {
+			reloadTrace();
+		}
 	}
 
 	public void reloadTrace() {
@@ -536,5 +548,4 @@ public class PreferencesDialog extends JDialog {
 	public Popup getPopup() {
 		return popup;	
 	}
-
 }

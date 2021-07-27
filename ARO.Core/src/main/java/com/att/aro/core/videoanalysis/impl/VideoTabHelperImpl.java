@@ -44,7 +44,7 @@ public class VideoTabHelperImpl implements IVideoTabHelper {
 	@Override
 	public void resetRequestMapList() {
 		if (videoTrafficCollectorImpl.getStreamingVideoData() != null) {
-			videoTrafficCollectorImpl.getStreamingVideoData().getRequestMap().clear();
+			videoTrafficCollectorImpl.getStreamingVideoData().clear();
 		}
 	}
 

@@ -32,8 +32,8 @@ public class IPPacketSummary extends PacketSummary {
 	 * @param packetCount The number of packets.
 	 * @param totalBytes The total number of bytes for the IPAddress.
 	 */
-	public IPPacketSummary(InetAddress ipAddress, int packetCount, long totalBytes) {
-		super(packetCount, totalBytes);
+	public IPPacketSummary(InetAddress ipAddress, int packetCount, long totalBytes, long totalPayloadBytes) {
+		super(packetCount, totalBytes, totalPayloadBytes);
 		this.ipAddress = ipAddress;
 	}
 

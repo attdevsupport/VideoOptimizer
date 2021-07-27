@@ -174,14 +174,18 @@ public interface IAROView {
 	void liveVideoDisplay(IDataCollector collector);
 	
 	/**
-	 * Hide the Charts Panel on the Diagnostic tab
+	 * Hide Charts from the Charts Panel on the Diagnostic tab
+	 * If an argument list is passed, it will hide the sub-series of charts.
+	 * If no arguments are passed, it will hide all charts.
 	 */
-	void hideAllCharts();
+	void hideChartItems(String... chartPlotOptionEnumNames);
 	
 	/**
-	 * Show the Charts Panel on the Diagnostic tab
+	 * Show Charts from the Charts Panel on the Diagnostic tab
+	 * If an argument list is passed, it will un-hide the sub-series of charts.
+	 * If no arguments are passed, it will un-hide all hidden charts unless the sub-series is hidden.
 	 */
-	void showAllCharts();
+	void showChartItems(String... chartPlotOptionEnumNames);
 
 	/**
 	 * Updates the status if ios device (video data) has been successfully

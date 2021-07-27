@@ -40,6 +40,9 @@ public class ManifestCollection {
 	private static final Logger LOG = LogManager.getLogger(ManifestCollection.class.getName());
 	private Manifest manifest;
 	
+	@Setter(AccessLevel.NONE)
+	private int minimumSequenceStart = 0;
+	
 	private int commonBaseLength = -1;
 	private int segmentFileNameLength;
 	private boolean segmentOrder;
@@ -197,5 +200,11 @@ public class ManifestCollection {
 
 	public int getNextSegment() {
 		return segmentCounter++;
+	}
+	
+	public void setMinimumSequenceStart(int mediaSequence) {
+		if (minimumSequenceStart == 0 || mediaSequence < minimumSequenceStart) {
+			minimumSequenceStart = mediaSequence;
+		}
 	}
 }

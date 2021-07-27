@@ -167,6 +167,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	private double segmentSize;
 	private ArrayList<ByteRange> rangeList = new ArrayList<>();
 	private double segmentID;
+	private String segmentPathName;
 	/**
 	 * a selected segment is considered available and is used in playtime and stall calculations
 	 */
@@ -314,6 +315,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		if (imgArray == null) {
 			imageArray = DEFAULTIMAGE;
 			defaultThumbnail  = true;
+			segmentInfo.setThumbnailExtracted(false);
 		} else {
 			imageArray = imgArray;
 		}
@@ -321,16 +323,20 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		BufferedImage image = null;
 		image = ImageHelper.getImageFromByte(imageArray);
 		thumbnail = image;
-		 if (image != null) {
-		 int height = image.getHeight();
-		 int width = image.getWidth();
-		 imageOriginal = image;
+		if (image != null) {
+			int height = image.getHeight();
+			int width = image.getWidth();
+			imageOriginal = image;
 
-		 int targetHeight = maxW;
-		 int targetWidth = maxW * width / height;
-		 
-		 thumbnail = ImageHelper.resize(image, targetWidth, targetHeight);
-		 }
+			int targetHeight = maxW;
+			int targetWidth = maxW * width / height;
+
+			thumbnail = ImageHelper.resize(image, targetWidth, targetHeight);
+
+			defaultThumbnail  = false;
+			segmentInfo.setThumbnailExtracted(true);
+			getManifest().setVideoMetaDataExtracted(true);
+		}
 	}
 	
 	/**
@@ -343,7 +349,6 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	 * @param childManifest
 	 * @param contentSize
 	 * @param response
-	 * @param l 
 	 * @param crc32Value
 	 */
 	public VideoEvent(
@@ -408,7 +413,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		setThumbnail(imageArray);
 
 	}
-
+	
 	public VideoEvent(byte[] image, Manifest manifest, Segment segment, HttpRequestResponseInfo response) {
 		
 		this.segmentInfo = createSegmentInfo(manifest, segment);
@@ -467,6 +472,10 @@ public class VideoEvent implements Comparable<VideoEvent>{
 
 	public Session getSession() {
 		return response.getDirection() == HttpDirection.REQUEST ? response.getSession() : response.getAssocReqResp().getSession();
+	}
+	
+	public HttpRequestResponseInfo getRequest() {
+		return response.getAssocReqResp();
 	}
 	
 	public ContentType getContentType() {

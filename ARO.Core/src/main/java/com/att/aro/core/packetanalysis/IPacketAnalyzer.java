@@ -22,7 +22,7 @@ import java.util.List;
 import com.att.aro.core.configuration.pojo.Profile;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
-import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 
 public interface IPacketAnalyzer {
@@ -30,5 +30,5 @@ public interface IPacketAnalyzer {
 			AnalysisFilter filter) throws IOException;
 	PacketAnalyzerResult analyzeTraceDirectory(String traceDirectory, Profile profile, 
 			AnalysisFilter filter) throws FileNotFoundException;
-    Statistic getStatistic(List<Session> sessions);
+    Statistic getStatistic(List<PacketInfo> packetInfos);
 }

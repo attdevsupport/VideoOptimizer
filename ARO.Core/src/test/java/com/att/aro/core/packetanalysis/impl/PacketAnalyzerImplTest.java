@@ -40,7 +40,6 @@ import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.RrcStateMachineLTE;
 import com.att.aro.core.packetanalysis.pojo.RrcStateRange;
-import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TcpInfo;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
@@ -55,7 +54,6 @@ import com.att.aro.core.peripheral.pojo.CpuActivity;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
 import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
-import com.google.common.collect.Lists;
 
 @SuppressWarnings("unchecked")
 public class PacketAnalyzerImplTest extends BaseTest {
@@ -243,10 +241,6 @@ public class PacketAnalyzerImplTest extends BaseTest {
 
 	}
 
-	private String getSessionKey(InetAddress localIP, InetAddress remoteIP, int remotePort, int localPort) {
-	    return localIP.getHostAddress() + " " + localPort + " " + remotePort + " " + remoteIP.getHostAddress();
-	}
-
 	@Test
 	public void test_getStatisticResult() throws UnknownHostException{
 		
@@ -277,8 +271,7 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		Mockito.when(packetInfo1.getAppName()).thenReturn("Test1");
 		Mockito.when(packetInfo1.getTcpFlagString()).thenReturn("TestString");
 		Mockito.when(packetInfo1.getTimeStamp()).thenReturn(500d);
-		Session session1 = new Session(iAdr1, iAdr, 83, 84, getSessionKey(iAdr1, iAdr, 83, 84));
-		session1.setPackets(Lists.newArrayList(packetInfo1));
+
 		InetAddress iAdr2 = Mockito.mock(InetAddress.class);
 		Mockito.when(iAdr2.getAddress()).thenReturn(new byte[]{95,10,1,1});
 		
@@ -299,8 +292,6 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		Mockito.when(packetInfo2.getAppName()).thenReturn("Test2");
 		Mockito.when(packetInfo2.getTcpFlagString()).thenReturn("Test2String");
 		Mockito.when(packetInfo2.getTimeStamp()).thenReturn(10d);
-		Session session2 = new Session(iAdr1, iAdr2, 81, 82, getSessionKey(iAdr1, iAdr2, 81, 82));
-        session2.setPackets(Lists.newArrayList(packetInfo2));
 		
 		TCPPacket tcpPacket2 = Mockito.mock(TCPPacket.class);
 		Mockito.when(tcpPacket2.getSourcePort()).thenReturn(95);
@@ -321,11 +312,14 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		Mockito.when(packetInfo3.getTcpFlagString()).thenReturn("Test2String");
 		Mockito.when(packetInfo3.getTimeStamp()).thenReturn(10d);
 		Mockito.when(packetInfo3.getRemoteIPAddress()).thenReturn(address);
-		Session session3 = new Session(iAdr1, address, 95, 99, getSessionKey(iAdr1, address, 95, 99));
-        session3.setPackets(Lists.newArrayList(packetInfo3));
 
 
-		Statistic testResult = iPacketAnalyzer.getStatistic(Lists.newArrayList(session1, session2, session3));
+        List<PacketInfo> packetsList = new ArrayList<PacketInfo>();
+		packetsList.add(packetInfo1); //Adding UDP Packet to the list
+		packetsList.add(packetInfo2);
+		packetsList.add(packetInfo3);
+
+		Statistic testResult = iPacketAnalyzer.getStatistic(packetsList);
 		assertEquals(3,testResult.getTotalPackets());
 	}
 

@@ -32,8 +32,8 @@ import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.stream.MemoryCacheImageOutputStream;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 /**
  * Represents a QuickTime video output stream. This class supports the writing
@@ -741,6 +741,7 @@ public class QuickTimeOutputStream {
 		ftypAtom.finish();
 	}
 
+	@SuppressWarnings("checkstyle:missingswitchdefault")
 	private void writeEpilog() throws IOException {
 		Date modificationTime = new Date();
 		int duration = 0;

@@ -18,6 +18,8 @@ package com.att.arotcpcollector.socket;
 import android.util.Log;
 
 import com.att.arocollector.packetRebuild.PCapFileWriter;
+import com.att.arotcpcollector.Packet;
+import com.att.arotcpcollector.PacketData;
 import com.att.arotcpcollector.SessionManager;
 
 import java.io.IOException;
@@ -46,8 +48,8 @@ public class SocketDataPublisher implements Runnable, IPcapSubscriber {
 	}
 
 	private PCapFileWriter securePCAPWriter;
-	private BlockingQueue<byte[]> dataToBeWrittenToPcap;
-	private ConcurrentLinkedQueue<byte[]> dataToBeWrittenToSecurePcap;
+	private BlockingQueue<PacketData> dataToBeWrittenToPcap;
+	private ConcurrentLinkedQueue<PacketData> dataToBeWrittenToSecurePcap;
 
 	private static Object syncPcapData = new Object();
 	
@@ -76,9 +78,9 @@ public class SocketDataPublisher implements Runnable, IPcapSubscriber {
 	public void run() {
 		Log.d(TAG, "BackgroundWriter starting...");
 
-		byte[] packetdata = null;
+		PacketData packetdata = null;
 
-		byte[] securePacketdata = null;
+		PacketData securePacketdata = null;
 
 		while (!isShuttingDown) {
 			try {
@@ -91,7 +93,7 @@ public class SocketDataPublisher implements Runnable, IPcapSubscriber {
 			if(securePacketdata != null) {
 				if (securePCAPWriter != null) {
 					try {
-						securePCAPWriter.addPacket(securePacketdata, 0, securePacketdata.length, System.currentTimeMillis() * 1000000);
+						securePCAPWriter.addPacket(securePacketdata.getPacketData(), 0, securePacketdata.getPacketData().length, securePacketdata.getTimeStamp() * 1000000);
 					} catch (IOException e) {
 						Log.e(TAG, "securePCAPWriter.addPacket IOException :" + e.getMessage());
 						e.printStackTrace();
@@ -104,7 +106,7 @@ public class SocketDataPublisher implements Runnable, IPcapSubscriber {
 			if (packetdata != null) {
 				if (pcapWriter != null) {
 					try {
-						pcapWriter.addPacket(packetdata, 0, packetdata.length, System.currentTimeMillis() * 1000000);
+						pcapWriter.addPacket(packetdata.getPacketData(), 0, packetdata.getPacketData().length, packetdata.getTimeStamp() * 1000000);
 					} catch (IOException e) {
 						Log.e(TAG, "pcapOutput.addPacket IOException :" + e.getMessage());
 						e.printStackTrace();
@@ -136,12 +138,12 @@ public class SocketDataPublisher implements Runnable, IPcapSubscriber {
 	}
 
 	@Override
-	public void writePcap(byte[] packet, boolean secure) {
+	public void writePcap(PacketData packetData, boolean secure) {
 
 		if(secure) {
-			dataToBeWrittenToSecurePcap.offer(packet);
+			dataToBeWrittenToSecurePcap.offer(packetData);
 		} else {
-			dataToBeWrittenToPcap.offer(packet);
+			dataToBeWrittenToPcap.offer(packetData);
 		}
 	}
 

@@ -102,7 +102,7 @@ public class CacheAnalysisImpl implements ICacheAnalysis {
 		for (HttpRequestResponseInfoWithSession httpreqres : rrInfo) {
 			HttpRequestResponseInfo response = httpreqres.getInfo();
 			Session session = httpreqres.getSession();
-			PacketInfo firstPacket = session.getPackets().get(0);
+			PacketInfo firstPacket = session.getTcpPackets().get(0);
 			if (response.getDirection() == HttpDirection.REQUEST) {
 				// We only want to process responses
 				continue;

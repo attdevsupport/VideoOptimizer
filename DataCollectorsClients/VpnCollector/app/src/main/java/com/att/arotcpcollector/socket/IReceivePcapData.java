@@ -15,6 +15,8 @@
  */
 package com.att.arotcpcollector.socket;
 
+import com.att.arotcpcollector.PacketData;
+
 /**
  * Receivers implement this to receive packets
  *
@@ -22,5 +24,5 @@ package com.att.arotcpcollector.socket;
 public interface IReceivePcapData {
 	public void registerPcapSubscriber(IPcapSubscriber subscriber);
 	public void unregisterPcapSubscriber(IPcapSubscriber subscriber);
-	public void notifyPcapSubscriber(byte[] packet, boolean secure);
+	public void notifyPcapSubscriber(PacketData packetData, boolean secure);
 }

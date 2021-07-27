@@ -26,7 +26,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -56,7 +60,10 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.settings.impl.SettingsImpl;
 
 public final class Util {
-	public static final String DUMPCAP = "dumpCap";
+
+	public final static Logger LOG = Logger.getLogger(Util.class.getName());
+	
+	public static final String WIRESHARK_PATH = "WIRESHARK_PATH";
 	public static final String FFMPEG = "ffmpeg";
 	public static final String RECENT_TRACES = "RECENT_TRACES";
 	private static final int RECENT_TRACES_MAXSIZE = 15;
@@ -77,7 +84,9 @@ public final class Util {
 	private static final IExternalProcessRunner extrunner = SpringContextUtil.getInstance().getContext()
 			.getBean(IExternalProcessRunner.class);
 	
-	public static String APK_FILE_NAME = "VPNCollector-4.1.%s.apk";
+	private static final Pattern htmlEncodePattern = Pattern.compile("%[a-fA-F0-9]");
+	
+	public static String APK_FILE_NAME = "VPNCollector-4.2.%s.apk";
 	
 	public static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 	
@@ -330,6 +339,12 @@ public final class Util {
 		}
 	}
 	
+	public static String formatYMD(long timestamp) {
+		String pattern = "yyyy-MM-dd HH:mm:ss";
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+		return simpleDateFormat.format(new Date(timestamp));
+	}
+
 	/**
 	 * convert a double into HH:MM:SS.sss
 	 * 
@@ -343,12 +358,6 @@ public final class Util {
 		return result;
 	}
 	
-	public static String formatYMD(long timestamp) {
-		String pattern = "yyyy-MM-dd HH:mm:ss";
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
-		return simpleDateFormat.format(new Date(timestamp));
-	}
-
 	public static String formatHHMMSS(int seconds) {
 		String theTime = "";
 		int sec = seconds % 60;
@@ -698,26 +707,47 @@ public final class Util {
 	}
 
 	public static String getWireshark() {
-		String config = SettingsImpl.getInstance().getAttribute(DUMPCAP);
-		if (StringUtils.isBlank(config)) {
-			return "/Applications/Wireshark.app";
+		String config = SettingsImpl.getInstance().getAttribute(WIRESHARK_PATH);
+		if (StringUtils.isNotBlank(config)) {
+			return config;
 		}
-		if (config.equalsIgnoreCase(getBinPath() + "dumpcap")) {
-			return validateInputLink(config);// old setting
+
+		if (Util.isWindowsOS()) {
+			return "Wireshark.exe";
+		} else {
+			if (Util.isMacOS()) {
+				return "/Applications/Wireshark.app";
+			} else {
+				return getBinPath() + "wireshark";
+			}
 		}
-		return validateInputLink(config);
 	}
 
 	public static String getDumpCap() {
-		String config = SettingsImpl.getInstance().getAttribute(DUMPCAP);
-		if (StringUtils.isBlank(config)) {
-			return getWireshark() + "/Contents/MacOS/dumpcap";
-		}
-		if (config.equalsIgnoreCase(getBinPath() + "dumpcap")) {
-			return validateInputLink(config);// old setting
-		}
-		return validateInputLink(config) + "/Contents/MacOS/dumpcap";
+		return getWiresharkLibraryPath("dumpcap");
+	}
 
+	public static String getTshark() {
+		return getWiresharkLibraryPath("tshark");
+	}
+
+	public static String getCapinfos() {
+		return getWiresharkLibraryPath("capinfos");
+	}
+
+	private static String getWiresharkLibraryPath(String libraryName) {
+		String path;
+		if (isWindowsOS()) {
+			path = libraryName + ".exe";
+		} else {
+			if (isMacOS()) {
+				path = getWireshark() + "/Contents/MacOS/" + libraryName;
+			} else {
+				path = getBinPath() + libraryName;
+			}
+		}
+
+		return validateInputLink(path);
 	}
 
 	public static String getFFMPEG() {
@@ -1222,5 +1252,48 @@ public final class Util {
 		DecimalFormat decimalFormatter = new DecimalFormat("#.######");
 		return decimalFormatter.format(toFormat);	
 	}
-
+	
+	/**
+	 * <p>Decode html<\p>
+	 * Will not decode if there are no HTML codes starting with '%'<br>
+	 * The Pattern "%[a-fA-F0-9]" is used to find the existence of HTML encoding.<br>
+	 * No check is done for the existence of HTTP at the start the oString.
+	 * 
+	 * @param oString
+	 * @return
+	 */
+	public static String decodeUrlEncoding(String oString) {
+		String diff = oString;
+		try {
+			if (htmlEncodePattern.matcher(oString).find()) { // don't decode if not encoded
+				diff = StringUtils.isEmpty(oString) ? "" : URLDecoder.decode(oString, "UTF-8");
+			}
+		} catch (UnsupportedEncodingException e) {
+			LOG.error(String.format("Failed to decode %s :%s", e.getMessage(), oString));
+		}
+		return diff;
+	}
+	
+	public static String encodeUrlEncoding(String oString) {
+		String diff = oString;
+		try {
+			diff = StringUtils.isEmpty(oString) ? "" : URLEncoder.encode(diff, StandardCharsets.UTF_8.toString());
+		} catch (UnsupportedEncodingException e) {
+			LOG.error(String.format("Failed to encode %s :%s", e.getMessage(), oString));
+		}
+		return diff;
+	}
+	
+	/**
+	 * A handy sleep method for when you do not care about interrupted sleep
+	 * 
+	 * @param seconds
+	 */
+	public static void sleep(int seconds) {
+		try {
+			Thread.sleep(seconds);
+		} catch (Exception e) {
+			// do not care about this
+		}
+	}
 }

@@ -240,7 +240,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	/**
 	 * initialize device change listener
 	 */
-	private void initDeviceChangeListener() {
+	private void initDeviceChangeListener() {  
 		final NorootedAndroidCollectorImpl collectorHelper = this;
 		try {
 			deviceChangeListener = new AndroidDebugBridge.IDeviceChangeListener() {
@@ -512,10 +512,11 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 //					+ " --ei delayDL " + delayTimeDL + " --ei delayUL " + delayTimeUL
 					+ " --ei throttleDL " + throttleDL + " --ei throttleUL " + throttleUL
 					+ (atnrProfile ? (" --ez profile " + atnrProfile + " --es profilename '" + location + "'") : "")
-					+ " --es video "+ videoOption.toString()
+					+ " --es video "+ videoOption.toString() 
 					+ " --ei bitRate " + bitRate + " --es screenSize " + screenSize 
 					+ " --es videoOrientation " + videoOrientation.toString() 
-					+ " --es selectedAppName " + (StringUtils.isEmpty(selectedAppName)?"EMPTY":selectedAppName) ;
+					+ " --es selectedAppName " + (StringUtils.isEmpty(selectedAppName)?"EMPTY":selectedAppName)
+					+ " --activity-single-top --activity-clear-top";
 			LOG.info(cmd);
 			if (!android.runApkInDevice(this.device, cmd)) {
 				result.setError(ErrorCodeRegistry.getFaildedToRunVpnApk());
@@ -760,6 +761,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			} catch (IOException e) {
 				LOG.error("Exception while writing stream to file", e);
 			}
+
 			videoCapture.stopRecording();
 			if (usingScreenRecorder && screenRecorder != null 
 					&& screenRecorder.isVideoCaptureActive()) {

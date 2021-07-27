@@ -31,5 +31,6 @@ public class PacketSummary implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private int packetCount;
 	private long totalBytes;
+	private long totalPayloadBytes;
 	
 }

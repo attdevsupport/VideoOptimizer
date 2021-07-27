@@ -96,6 +96,7 @@ import com.att.aro.ui.view.diagnostictab.plot.ConnectionsPlot;
 import com.att.aro.ui.view.diagnostictab.plot.CpuPlot;
 import com.att.aro.ui.view.diagnostictab.plot.DLPacketPlot;
 import com.att.aro.ui.view.diagnostictab.plot.GpsPlot;
+import com.att.aro.ui.view.diagnostictab.plot.LatencyPlot;
 import com.att.aro.ui.view.diagnostictab.plot.NetworkTypePlot;
 import com.att.aro.ui.view.diagnostictab.plot.RadioPlot;
 import com.att.aro.ui.view.diagnostictab.plot.RrcPlot;
@@ -121,16 +122,9 @@ import com.att.aro.view.images.Images;
  * 
  * 
  */
+
 public class GraphPanel extends JPanel implements ActionListener, ChartMouseListener {
 	private static final long serialVersionUID = 1L;
-	
-	private IRrcStateMachineFactory statemachinefactory = ContextAware.getAROConfigContext()
-			.getBean(IRrcStateMachineFactory.class);
-
-	private IBurstCollectionAnalysis burstcollectionanalyzer = ContextAware.getAROConfigContext()
-			.getBean(IBurstCollectionAnalysis.class);
-
-	private IPacketAnalyzer packetanalyzer = ContextAware.getAROConfigContext().getBean(IPacketAnalyzer.class);
 	
 	private static final String ZOOM_IN_ACTION = "zoomIn";
 	private static final String ZOOM_OUT_ACTION = "zoomOut";
@@ -193,6 +187,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private SpeedThrottlePlot stPlot;
 	private CombinedDomainXYPlot combinedPlot;
 	private ConnectionsPlot connectionsPlot;
+	private LatencyPlot latencyplot;
 
 	private double endTime = 0.0;
 
@@ -267,7 +262,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		this.zoomFactor = zoomFactor;
 	}
 
-	private AROTraceData traceData;// greg story
+	private AROTraceData traceData;
 
 	public AROTraceData getTraceData() {
 		return traceData;
@@ -277,18 +272,17 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		this.traceData = traceData;
 	}
 
-	private List<PacketInfo> allPackets;// GregStrory
-	private double allTcpSessions; // GregStorys
-	private double traceDuration; // GregStorys added to go back to original
-									// trace duration
+	private List<PacketInfo> allPackets;
+	private double allTcpSessions;
+	private double traceDuration;
 	private DiagnosticsTab parent;
 	private Border border;
-
+	
 	/**
 	 * Initializes a new instance of the GraphPanel class.
 	 */
 	public GraphPanel(IAROView aroview, DiagnosticsTab parent) {
- 
+
 		if (graphHelper == null) {
 			graphHelper = new GraphPanelHelper();
 		}
@@ -300,77 +294,63 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		}
 
 		this.parent = parent;
-		subplotMap.put(ChartPlotOptions.THROUGHPUT, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.throughput"), getBarPlot().drawXYItemPlot(), 2));
-		subplotMap.put(ChartPlotOptions.BURSTS,
-				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.bursts"),
-						getBarPlot().drawXYBarPlot(Color.gray, false), 1));
-		subplotMap.put(ChartPlotOptions.USER_INPUT,
-				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.userInput"),
-						getBarPlot().drawXYBarPlot(Color.gray, false), 1));
-		subplotMap.put(ChartPlotOptions.RRC, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.rrc"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
-		subplotMap.put(ChartPlotOptions.ALARM, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.alarm"), getBarPlot().drawXYBarPlot(Color.gray, true), 1));
-		subplotMap.put(ChartPlotOptions.GPS, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.gps"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
-		subplotMap.put(ChartPlotOptions.BUFFER_OCCUPANCY, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.buffer.occupancy"), getBarPlot().drawXYItemPlot(), 1));
-		subplotMap.put(ChartPlotOptions.VIDEO_CHUNKS, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.video.chunks"), getBarPlot().drawYIntervalPlot(), 1));
-		subplotMap.put(ChartPlotOptions.RADIO,
-				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.radio"),
-						getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.red, MIN_SIGNAL, MAX_SIGNAL), 2));
-		subplotMap.put(ChartPlotOptions.BLUETOOTH,
-				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.bluetooth"),
-						getBarPlot().drawXYBarPlot(Color.gray, false), 1));
-		subplotMap.put(ChartPlotOptions.CAMERA,
-				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.camera"),
-						getBarPlot().drawXYBarPlot(Color.gray, false), 1));
-		subplotMap.put(ChartPlotOptions.SCREEN,
-				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.screen"),
-						getBarPlot().drawXYBarPlot(new Color(34, 177, 76), false), 1));
-		subplotMap.put(ChartPlotOptions.BATTERY,
-				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.battery"),
-						getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.red, MIN_BATTERY, MAX_BATTERY), 1));
-		subplotMap.put(ChartPlotOptions.TEMPERATURE, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.temperature"),
-				getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.green, MIN_TEMPERATURE, MAX_TEMPERATURE),
-				1));
-		subplotMap.put(ChartPlotOptions.WAKELOCK,
-				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.wakelock"),
-						getBarPlot().drawXYBarPlot(Color.yellow, false), 1));
-		subplotMap.put(ChartPlotOptions.WIFI, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.wifi"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
-		subplotMap.put(ChartPlotOptions.NETWORK_TYPE,
-				new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.networkType"),
-						getBarPlot().drawXYBarPlot(Color.gray, false), 1));
-		subplotMap
-				.put(ChartPlotOptions.CPU,
-						new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.cpu"), getBarPlot()
-								.drawStandardXYPlot(CPU_PLOT_POINT_SHAPE, Color.black, MIN_CPU_USAGE, MAX_CPU_USAGE),
-								1));
-		subplotMap.put(ChartPlotOptions.UL_PACKETS, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.ul"), getBarPlot().drawYIntervalPlot(), 1));
-		subplotMap.put(ChartPlotOptions.DL_PACKETS, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.dl"), getBarPlot().drawYIntervalPlot(), 1));
-		subplotMap.put(ChartPlotOptions.BUFFER_TIME_OCCUPANCY, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.bufferTime.occupancy"), getBarPlot().drawXYItemPlot(), 1));
-
-		subplotMap.put(ChartPlotOptions.ATTENUATION, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.attenuation"), getBarPlot().drawStepChartPlot(), 2));
-
-		subplotMap.put(ChartPlotOptions.SPEED_THROTTLE, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.attenuation"), getBarPlot().drawStepChartPlot(), 2));
-		
-		subplotMap.put(ChartPlotOptions.CONNECTIONS, new GraphPanelPlotLabels(
-				ResourceBundleHelper.getMessageString("chart.options.dialog.connections"), getBarPlot().drawStepChartPlot(), 2));
+		subplotMap.put(ChartPlotOptions.THROUGHPUT
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.throughput"), getBarPlot().drawXYItemPlot(true), 2));
+		subplotMap.put(ChartPlotOptions.LATENCY
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.latency"), getBarPlot().drawXYItemPlot(true), 2));
+		subplotMap.put(ChartPlotOptions.BURSTS
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.bursts"    ), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
+		subplotMap.put(ChartPlotOptions.USER_INPUT
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.userInput"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
+		subplotMap.put(ChartPlotOptions.RRC
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.rrc"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
+		subplotMap.put(ChartPlotOptions.ALARM
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.alarm"), getBarPlot().drawXYBarPlot(Color.gray, true), 1));
+		subplotMap.put(ChartPlotOptions.GPS
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.gps"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
+		subplotMap.put(ChartPlotOptions.RADIO
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.radio"), getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.red, MIN_SIGNAL, MAX_SIGNAL), 2));
+		subplotMap.put(ChartPlotOptions.BLUETOOTH
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.bluetooth"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
+		subplotMap.put(ChartPlotOptions.CAMERA
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.camera"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
+		subplotMap.put(ChartPlotOptions.SCREEN
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.screen"), getBarPlot().drawXYBarPlot(new Color(34, 177, 76), false), 1));
+		subplotMap.put(ChartPlotOptions.BATTERY
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.battery"), getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.red, MIN_BATTERY, MAX_BATTERY), 1));
+		subplotMap.put(ChartPlotOptions.TEMPERATURE
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.temperature"), getBarPlot().drawStandardXYPlot(DEFAULT_POINT_SHAPE, Color.BLACK, MIN_TEMPERATURE, MAX_TEMPERATURE), 1));
+		subplotMap.put(ChartPlotOptions.WAKELOCK
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.wakelock"), getBarPlot().drawXYBarPlot(Color.yellow, false), 1));
+		subplotMap.put(ChartPlotOptions.WIFI
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.wifi"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
+		subplotMap.put(ChartPlotOptions.NETWORK_TYPE
+				,new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.networkType"), getBarPlot().drawXYBarPlot(Color.gray, false), 1));
+		subplotMap.put(ChartPlotOptions.CPU
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.cpu"), getBarPlot().drawStandardXYPlot(CPU_PLOT_POINT_SHAPE, Color.black, MIN_CPU_USAGE, MAX_CPU_USAGE), 1));
+		subplotMap.put(ChartPlotOptions.UL_PACKETS
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.ul"), getBarPlot().drawYIntervalPlot(), 1));
+		subplotMap.put(ChartPlotOptions.DL_PACKETS
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.dl"), getBarPlot().drawYIntervalPlot(), 1));
+		subplotMap.put(ChartPlotOptions.ATTENUATION
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.attenuation"), getBarPlot().drawStepChartPlot(), 2));
+		subplotMap.put(ChartPlotOptions.SPEED_THROTTLE
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.attenuation"), getBarPlot().drawStepChartPlot(), 2));
+		subplotMap.put(ChartPlotOptions.CONNECTIONS
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.options.dialog.connections"), getBarPlot().drawStepChartPlot(), 2));
+		// video
+		subplotMap.put(ChartPlotOptions.BUFFER_TIME_OCCUPANCY
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.bufferTime.occupancy"), getBarPlot().drawXYItemPlot(false), 1));
+		subplotMap.put(ChartPlotOptions.BUFFER_OCCUPANCY
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.buffer.occupancy"), getBarPlot().drawXYItemPlot(false), 1));
+		subplotMap.put(ChartPlotOptions.VIDEO_CHUNKS
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.video.chunks"), getBarPlot().drawYIntervalPlot(), 1));
 
 		Dimension screenDimension = Toolkit.getDefaultToolkit().getScreenSize();
 		double screenHeight = screenDimension.getHeight();
 
 		setLayout(new BorderLayout());
-		//setMinimumSize(new Dimension(300, 280));
+		// setMinimumSize(new Dimension(300, 280));
 		setPreferredSize(new Dimension(300, (int) screenHeight / 3));
 		add(getZoomSavePanel(), BorderLayout.EAST);
 		add(getPane(), BorderLayout.CENTER);
@@ -389,7 +369,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 	// In 4.1.1, the method called refreshGraph()
 	public void filterFlowTable() {
-		// Greg Story
+		
 		AROTraceData filteredSessionTraceData = getTraceData();
 		double filteredStartTime = 0.0;
 		double filteredEndTime = 0.0;
@@ -398,7 +378,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		List<Session> tcpsessionsList = new ArrayList<Session>();
 		if (getTraceData() == null) {
 			return;
-		} else {
+		} else {			
 			TCPUDPFlowsTableModel model = (TCPUDPFlowsTableModel) parent.getJTCPFlowsTable().getModel();
 			Map<String, Session> subSessionMap = model.getSessionMap();
 			Map<String, Boolean> subcheckboxMap = model.getCheckboxMap();
@@ -408,15 +388,13 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 				}
 			}
 
-			// tcpsessionsList =
-			// parent.getJTCPFlowsTable().getSelectedCheckboxRows(1);
 			filteredSessionTraceData.getAnalyzerResult().setSessionlist(tcpsessionsList);
 		}
 
 		List<PacketInfo> packetsForSelectedSession = new ArrayList<PacketInfo>();
 		for (Session tcpSession : tcpsessionsList) {
-			if (tcpSession.getPackets() != null) {
-				packetsForSelectedSession.addAll(tcpSession.getPackets());
+			if (tcpSession.getTcpPackets() != null) {
+				packetsForSelectedSession.addAll(tcpSession.getTcpPackets());
 			}
 		}
 
@@ -438,7 +416,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 				selectedAllPackets = true;
 			} else {
 				// Collections.sort(packetsForSelectedSession);//?
-
 				filteredSessionTraceData.getAnalyzerResult().getTraceresult().setAllpackets(packetsForSelectedSession);
 			}
 		}
@@ -449,18 +426,18 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		} else {
 			int index = 0;
 			for (Session tcpSession : tcpsessionsList) {
-				if (tcpSession.getPackets().size() != 0) {
+				if (tcpSession.getTcpPackets().size() != 0) {
 					if (index == 0) {
-						filteredStartTime = tcpSession.getPackets().get(0).getTimeStamp();
-						filteredEndTime = tcpSession.getPackets().get(0).getTimeStamp();
+						filteredStartTime = tcpSession.getTcpPackets().get(0).getTimeStamp();
+						filteredEndTime = tcpSession.getTcpPackets().get(0).getTimeStamp();
 					}
 
-					if (filteredStartTime > tcpSession.getPackets().get(0).getTimeStamp()) {
-						filteredStartTime = tcpSession.getPackets().get(0).getTimeStamp();
+					if (filteredStartTime > tcpSession.getTcpPackets().get(0).getTimeStamp()) {
+						filteredStartTime = tcpSession.getTcpPackets().get(0).getTimeStamp();
 					}
 
-					if (filteredEndTime < tcpSession.getPackets().get(0).getTimeStamp()) {
-						filteredEndTime = tcpSession.getPackets().get(0).getTimeStamp();
+					if (filteredEndTime < tcpSession.getTcpPackets().get(0).getTimeStamp()) {
+						filteredEndTime = tcpSession.getTcpPackets().get(0).getTimeStamp();
 					}
 					index++;
 				}
@@ -470,11 +447,9 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 				filteredEndTime = 0.0;
 			}
 		}
-		// for Analysis data perticalar time of the graph, some number is not
-		// clear..
+		// for Analysis data particular time of the graph, some number is not clear..
 		if (filteredStartTime > 0) {
-			filteredStartTime = filteredStartTime - 2;// adjust the time line
-														// axis number
+			filteredStartTime = filteredStartTime - 2;// adjust the time line axis number
 			if (filteredStartTime < 0) {
 				filteredStartTime = -0.01;
 			}
@@ -484,8 +459,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		}
 		if (!selectedAllPackets) {
 			if (filteredEndTime > 0) {
-				filteredEndTime = filteredEndTime + 15;// adjust the time line
-														// axis number
+				filteredEndTime = filteredEndTime + 15;// adjust the time line axis number
 			}
 			if (filteredEndTime > filteredDuration) {
 				filteredEndTime = filteredDuration;
@@ -500,21 +474,21 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			AnalysisFilter filter = filteredSessionTraceData.getAnalyzerResult().getFilter();
 			filter.setTimeRange(timeRange);
 			filteredSessionTraceData.getAnalyzerResult().setFilter(filter);
-			Statistic stat = packetanalyzer.getStatistic(tcpsessionsList);
-			int totaltemp = 0;
+			Statistic stat = ContextAware.getAROConfigContext().getBean(IPacketAnalyzer.class).getStatistic(packetsForSelectedSession);
+			long totaltemp = 0;
 			for (Session byteCountSession : tcpsessionsList) {
 				totaltemp += byteCountSession.getBytesTransferred();
 			}
 			stat.setTotalByte(totaltemp);
-			AbstractRrcStateMachine statemachine = statemachinefactory.create(packetsForSelectedSession,
-					filteredSessionTraceData.getAnalyzerResult().getProfile(), stat.getPacketDuration(),
-					filteredDuration, stat.getTotalByte(), timeRange);
+			AbstractRrcStateMachine statemachine = ContextAware.getAROConfigContext().getBean(IRrcStateMachineFactory.class).create(
+					packetsForSelectedSession, filteredSessionTraceData.getAnalyzerResult().getProfile(),
+					stat.getPacketDuration(), filteredDuration, stat.getTotalByte(), timeRange);
 
 			BurstCollectionAnalysisData burstcollectiondata = new BurstCollectionAnalysisData();
 			if (stat.getTotalByte() > 0) {
-				burstcollectiondata = burstcollectionanalyzer.analyze(packetsForSelectedSession,
-						filteredSessionTraceData.getAnalyzerResult().getProfile(), stat.getPacketSizeToCountMap(),
-						statemachine.getStaterangelist(),
+				burstcollectiondata = ContextAware.getAROConfigContext().getBean(IBurstCollectionAnalysis.class).analyze(
+						packetsForSelectedSession, filteredSessionTraceData.getAnalyzerResult().getProfile(),
+						stat.getPacketSizeToCountMap(), statemachine.getStaterangelist(),
 						filteredSessionTraceData.getAnalyzerResult().getTraceresult().getUserEvents(),
 						filteredSessionTraceData.getAnalyzerResult().getTraceresult().getCpuActivityList()
 								.getCpuActivities(),
@@ -524,9 +498,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			filteredSessionTraceData.getAnalyzerResult().setStatemachine(statemachine);
 			filteredSessionTraceData.getAnalyzerResult().setBurstCollectionAnalysisData(burstcollectiondata);
 			refresh(filteredSessionTraceData);
-
 		}
-
 	}
 
 	// In 4.1.1, the method name is resetChart(TraceData.Analysis analysis)
@@ -563,16 +535,17 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 				getAxis().setRange(new Range(-0.01, 0));
 			}
 		} else {
-			if (getEndTime() > 0) { // greg story selected rows from UI
+			if (getEndTime() > 0) {
 				if (aroTraceData != null) {
 					getAxis().setRange(new Range(getStartTime(), getEndTime()));
 				}
 				setStartTime(0.0); // Reset times
 				setEndTime(0.0);
 			} else {
-				getAxis().setRange(new Range(-0.01,
-						aroTraceData != null ? aroTraceData.getAnalyzerResult().getTraceresult().getTraceDuration()
-								: DEFAULT_TIMELINE));
+				getAxis().setRange(new Range(-0.01
+											, aroTraceData != null 
+												? aroTraceData.getAnalyzerResult().getTraceresult().getTraceDuration() 
+												: DEFAULT_TIMELINE));
 			}
 		}
 		if (aroTraceData != null && aroTraceData.getAnalyzerResult().getSessionlist().size() > 0) {
@@ -721,8 +694,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 							}
 						}
 						if (count == 1 && selectedStream != null && selectedStream.getManifest().getDelay() != 0) {
-							VideoEvent firstSegment = (VideoEvent) selectedStream.getVideoEventsBySegment()
-									.toArray()[0];
+							VideoEvent firstSegment = (VideoEvent) selectedStream.getVideoEventsBySegment().toArray()[0];
 							if (selectedStream.getManifest().getVideoFormat() == VideoFormat.MPEG4) {
 								for (VideoEvent video : selectedStream.getVideoEventsBySegment()) {
 									if (video.getSegmentID() != 0) {
@@ -731,9 +703,10 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 									}
 								}
 							}
-							vcPlot.refreshPlot(getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot(),
-									aroTraceData, selectedStream.getManifest().getDelay() + firstSegment.getEndTS(),
-									firstSegment);
+							vcPlot.refreshPlot(getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot()
+												, aroTraceData
+												, selectedStream.getManifest().getDelay() + firstSegment.getEndTS()
+												, firstSegment);
 						} else {
 							vcPlot.populate(entry.getValue().getPlot(), aroTraceData);
 						}
@@ -744,6 +717,14 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					connectionsPlot = new ConnectionsPlot();
 					connectionsPlot.populate(entry.getValue().getPlot(), aroTraceData);
 					break;
+				
+				case LATENCY:
+					if (latencyplot == null) {
+						latencyplot = new LatencyPlot();
+					}			
+					latencyplot.populate(entry.getValue().getPlot(), aroTraceData);
+					break;
+					
 				default:
 					break;
 				}
@@ -753,19 +734,33 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		getZoomOutButton().setEnabled(aroTraceData != null);
 		getSaveGraphButton().setEnabled(aroTraceData != null);
 		if (aroTraceData != null) {
-			parent.getDeviceNetworkProfilePanel().refresh(aroTraceData); // Greg
-																			// Story
+			parent.getDeviceNetworkProfilePanel().refresh(aroTraceData);
 		}
 	}
 
-	// need add more
-	public void hideChartOptions() {
+	public void hideChartOptions(String... chartPlotOptionEnumNames) {
 		resetGraphZoom();
-		advancedGraphPanel.setVisible(false);
+		if (chartPlotOptionEnumNames.length > 0) {
+			for (String chartOption : chartPlotOptionEnumNames) {
+				setSeriesVisibility(ChartPlotOptions.valueOf(chartOption), false);
+			}
+		} else {
+			advancedGraphPanel.setVisible(false);
+		}
 	}
 
-	public void showChartOptions() {
+	public void showChartOptions(String... chartPlotOptionEnumNames) {
+		for (String chartOption : chartPlotOptionEnumNames) {
+			setSeriesVisibility(ChartPlotOptions.valueOf(chartOption), true);
+		}
 		advancedGraphPanel.setVisible(true);
+	}
+	
+	private void setSeriesVisibility(ChartPlotOptions plotItem, boolean visibility) {
+		XYPlot xyPlot = getSubplotMap().get(plotItem).getPlot();
+		for (int idx = 0; idx < xyPlot.getRendererCount(); idx++) {
+			xyPlot.getRenderer(idx).setBaseSeriesVisible(visibility);
+		}
 	}
 
 	public void setChartOptions(List<ChartPlotOptions> optionsSelected) {
@@ -844,7 +839,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			zoomSavePanel = new JPanel();
 			zoomSavePanel.setLayout(new GridBagLayout());
 			GridBagConstraints gbc = new GridBagConstraints();
-			gbc.gridx = 0; // Greg Story
+			gbc.gridx = 0;
 			gbc.gridy = 0;
 			zoomSavePanel.add(getZoomInButton(), gbc);
 			GridBagConstraints gbc1 = new GridBagConstraints();

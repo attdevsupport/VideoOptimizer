@@ -34,7 +34,7 @@ public class StatisticTest {
 		Set<String> set = new HashSet<>();
 		set.add("VO");
 		List<ApplicationPacketSummary> list = new ArrayList<>();
-		list.add(new ApplicationPacketSummary("VO", 5, 100));
+		list.add(new ApplicationPacketSummary("VO", 5, 100, 150));
 		Statistic other = new Statistic();
 		other.setAppName(set);
 		other.setAverageKbps(10.0);
@@ -59,7 +59,7 @@ public class StatisticTest {
 		obj.setAppName(set);
 		obj.setAverageKbps(10.0);
 		List<ApplicationPacketSummary> list = new ArrayList<>();
-		list.add(new ApplicationPacketSummary("VO", 5, 100));
+		list.add(new ApplicationPacketSummary("VO", 5, 100, 150));
 		obj.setApplicationPacketSummary(list);
 		obj.setAverageTCPKbps(10.0);
 		obj.setPacketDuration(10.0);
@@ -78,7 +78,7 @@ public class StatisticTest {
 		assertFalse(obj.equals(null));
 		
 		List<ApplicationPacketSummary> list2 = new ArrayList<>();
-		list2.add(new ApplicationPacketSummary("VO", 10, 100));
+		list2.add(new ApplicationPacketSummary("VO", 10, 100, 150));
 		other = getOther();
 		other.setApplicationPacketSummary(list2);
 		assertFalse(obj.equals(other));

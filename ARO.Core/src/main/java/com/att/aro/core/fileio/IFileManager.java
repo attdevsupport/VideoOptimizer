@@ -48,6 +48,7 @@ public interface IFileManager {
 
 	boolean directoryExistAndNotEmpty(String directoryPath);
 
+	void deleteFolderAndContents(String folderPath);
 	boolean directoryDeleteInnerFiles(String directoryPath);
 	boolean deleteFolderContents(String folderPath);
 	boolean fileDirExist(String filepath);
@@ -76,6 +77,8 @@ public interface IFileManager {
 	 */
 	void mkDir(String path);
 
+	void mkDir(File path);
+
 	/**
 	 * flush and close the OutputStream
 	 * 
@@ -98,6 +101,14 @@ public interface IFileManager {
 	 * @throws IOException
 	 */
 	void saveFile(InputStream iStream, String location) throws IOException;
+	
+	/*
+	 * Writes a byte array to a file in location and closes the stream
+	 * @param location
+	 * @param data
+	 * @throws IOException
+	 */
+	void saveFile (String fileLocation, byte[] data) throws IOException;
 
 	/**
 	 * Delete a file
@@ -135,7 +146,9 @@ public interface IFileManager {
 	 * @return validated real path
 	 */
 	File deAlias(File tracePath);
-	
+
 	String[] findFiles(String localVidsFolder, String fileName);
+
+
 
 }

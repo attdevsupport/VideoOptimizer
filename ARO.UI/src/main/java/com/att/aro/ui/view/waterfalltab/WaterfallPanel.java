@@ -613,7 +613,7 @@ public class WaterfallPanel extends TabPanelJPanel {
 					&& CollectionUtils.isNotEmpty(data.getAnalyzerResult().getSessionlist());
 			if (categoryList != null && hasSessions) {
 				for (Session session : data.getAnalyzerResult().getSessionlist()) {
-					if (session != null && session.getPackets().size() > 0) {
+					if (session != null && session.getTcpPackets().size() > 0) {
 						if (time >= session.getSessionStartTime() && time <= session.getSessionEndTime()) {
 							maxSimultConnectionCount++;
 						}

@@ -115,7 +115,7 @@ public class CreateBarPlot{
 	}
 	
 	//createThroughputPlot()
-	public XYPlot drawXYItemPlot(){
+	public XYPlot drawXYItemPlot(boolean isYAxisVisible){
 
 		// Set up renderer
 		XYItemRenderer throughputRenderer = new StandardXYItemRenderer();
@@ -128,7 +128,7 @@ public class CreateBarPlot{
 		// Create plot
 		XYPlot throughputPlot = new XYPlot(null, null, axis, throughputRenderer);
 		throughputPlot.setRangeAxisLocation(AxisLocation.BOTTOM_OR_LEFT);
-		throughputPlot.getRangeAxis().setVisible(false);
+		throughputPlot.getRangeAxis().setVisible(isYAxisVisible);
 
 		return throughputPlot;
 	}

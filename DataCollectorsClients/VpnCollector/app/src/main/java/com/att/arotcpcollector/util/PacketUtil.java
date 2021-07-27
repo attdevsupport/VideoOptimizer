@@ -35,7 +35,7 @@ import java.util.Enumeration;
 
 /**
  * Helper class to perform various useful task
- *
+ * 
  * @author Borey Sao Date: May 8, 2014
  */
 public class PacketUtil {
@@ -67,7 +67,7 @@ public class PacketUtil {
 
 	/**
 	 * convert int to byte array
-	 *
+	 * 
 	 * @param value
 	 *            int value 32 bits
 	 * @param buffer
@@ -87,7 +87,7 @@ public class PacketUtil {
 
 	/**
 	 * convert short to byte array
-	 *
+	 * 
 	 * @param value
 	 *            short value to convert
 	 * @param buffer
@@ -105,7 +105,7 @@ public class PacketUtil {
 
 	/**
 	 * extract short value from a byte array using Big Endian byte order
-	 *
+	 * 
 	 * @param buffer
 	 *            array of byte
 	 * @param start
@@ -122,7 +122,7 @@ public class PacketUtil {
 
 	/**
 	 * convert array of byte to int
-	 *
+	 * 
 	 * @param buffer
 	 * @param start
 	 * @param length
@@ -169,7 +169,7 @@ public class PacketUtil {
 	}
 	/**
 	 * validate TCP header checksum
-	 *
+	 * 
 	 * @param sourceIP
 	 * @param destinationIP
 	 * @param data
@@ -199,7 +199,7 @@ public class PacketUtil {
 
 	/**
 	 * validate IP Header checksum
-	 *
+	 * 
 	 * @param data
 	 * @param length
 	 * @return
@@ -306,7 +306,7 @@ public class PacketUtil {
 
 	public static String intToIPAddress(int addressInt) {
 		StringBuffer buffer = new StringBuffer(16);
-		buffer.append((addressInt >>> 24) & 0x000000FF).append(".").
+		 buffer.append((addressInt >>> 24) & 0x000000FF).append(".").
 				append((addressInt >>> 16) & 0x000000FF).append(".").
 				append((addressInt >>> 8) & 0x000000FF).append(".").
 				append(addressInt & 0x000000FF);
@@ -464,7 +464,7 @@ public class PacketUtil {
 
 	/**
 	 * detect packet corruption flag in tcp options sent from client ACK
-	 *
+	 * 
 	 * @param tcpheader
 	 * @return
 	 */

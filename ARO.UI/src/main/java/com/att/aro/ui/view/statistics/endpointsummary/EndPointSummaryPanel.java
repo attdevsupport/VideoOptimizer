@@ -162,7 +162,7 @@ public class EndPointSummaryPanel extends JSplitPane {
 			sorter.setComparator(0, Util.getDomainSorter());
 			ipTable.setRowSorter(sorter);
 
-			DataTablePopupMenu popupMenu = (DataTablePopupMenu) table.getPopup();
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) ipTable.getPopup();
             popupMenu.initialize();
 		}
 		return ipTable;

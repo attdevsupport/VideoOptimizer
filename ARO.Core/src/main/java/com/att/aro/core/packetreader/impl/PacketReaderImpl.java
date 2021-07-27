@@ -33,6 +33,13 @@ import com.att.aro.core.packetreader.pojo.Packet;
 import com.att.aro.core.util.Util;
 import com.att.aro.pcap.PCapAdapter;
 
+/**
+ * 
+ * @deprecated This class's functionality has been replaced by the class
+ * com.att.aro.core.packetreader.impl.PacketReaderLibraryImpl
+ *
+ */
+@Deprecated
 public class PacketReaderImpl implements IPacketReader, INativePacketSubscriber {
 
 	private static final Logger LOGGER = LogManager.getLogger(PacketReaderImpl.class.getName());

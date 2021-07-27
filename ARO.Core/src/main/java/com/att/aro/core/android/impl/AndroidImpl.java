@@ -120,14 +120,11 @@ public class AndroidImpl implements IAndroid {
 		if (service != null) {
 			try {
 				service.pushFile(local, remote, SyncService.getNullProgressMonitor());
+				LOGGER.info(String.format("Pushed file %s on the device", remote));
 				success = true;
 				return success;
-			} catch (SyncException e) {
-				LOGGER.error(e.getMessage());
-			} catch (IOException e) {
-				LOGGER.error(e.getMessage());
-			} catch (TimeoutException e) {
-				LOGGER.error(e.getMessage());
+			} catch (SyncException | IOException | TimeoutException e) {
+				LOGGER.error(e);
 			}
 		}
 		return success;
@@ -539,21 +536,13 @@ public class AndroidImpl implements IAndroid {
 		}
 		boolean success = true;
 		try {
-			LOGGER.debug(">>---> executeShellCommand :"+arocmd);
+			LOGGER.debug(">>---> executeShellCommand: " + arocmd);
 			device.executeShellCommand(arocmd, shelloutPut, 0, null);
-		} catch (TimeoutException e) {
-			success = false;
-			LOGGER.error(e.getMessage());
-		} catch (AdbCommandRejectedException e) {
-			success = false;
-			LOGGER.error(e.getMessage());
-		} catch (ShellCommandUnresponsiveException e) {
-			success = false;
-			LOGGER.error(e.getMessage());
-		} catch (IOException e) {
-			success = false;
-			LOGGER.error(e.getMessage());
-		}
+		} catch (TimeoutException | AdbCommandRejectedException | ShellCommandUnresponsiveException | IOException e) {
+		    success = false;
+		    LOGGER.error("Something went wrong while executing android shell command '" + arocmd + "'", e);
+        }
+
 		if (success && shelloutPut.isShellError()) {
 			success = false;
 		}
@@ -572,17 +561,12 @@ public class AndroidImpl implements IAndroid {
 	public String[] getShellReturn(IDevice device, String arocmd) {
 		ShellCommandCheckSDCardOutputReceiver shellout = getOutputReturn();
 		try {
-			LOGGER.debug("excute :" + arocmd);
+			LOGGER.debug("execute: " + arocmd);
 			device.executeShellCommand(arocmd, shellout);
-		} catch (TimeoutException e) {
-			LOGGER.error("TimeoutException :" + e.getMessage());
-		} catch (AdbCommandRejectedException e) {
-			LOGGER.error("AdbCommandRejectedException :" + e.getMessage());
-		} catch (ShellCommandUnresponsiveException e) {
-			LOGGER.error("ShellCommandUnresponsiveException :" + e.getMessage());
-		} catch (IOException e) {
-			LOGGER.error("IOException :" + e.getMessage());
+		} catch (TimeoutException | AdbCommandRejectedException | ShellCommandUnresponsiveException | IOException e) {
+			LOGGER.error("Something went wrong while executing android shell command '" + arocmd + "'", e);
 		}
+
 		return shellout.getResultOutput();
 	}
 

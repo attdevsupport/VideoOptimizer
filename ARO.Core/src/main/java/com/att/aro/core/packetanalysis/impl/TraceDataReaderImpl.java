@@ -76,6 +76,7 @@ import com.att.aro.core.peripheral.IVideoTimeReader;
 import com.att.aro.core.peripheral.IWakelockInfoReader;
 import com.att.aro.core.peripheral.IWifiInfoReader;
 import com.att.aro.core.peripheral.LocationReader;
+import com.att.aro.core.peripheral.impl.ThermalStatusReaderImpl;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisInfo;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisResult;
 import com.att.aro.core.peripheral.pojo.AlarmDumpsysTimestamp;
@@ -96,6 +97,7 @@ import com.att.aro.core.peripheral.pojo.RadioInfo;
 import com.att.aro.core.peripheral.pojo.ScreenStateInfo;
 import com.att.aro.core.peripheral.pojo.SpeedThrottleEvent;
 import com.att.aro.core.peripheral.pojo.TemperatureEvent;
+import com.att.aro.core.peripheral.pojo.ThermalStatusInfo;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartupData;
 import com.att.aro.core.peripheral.pojo.VideoTime;
@@ -188,7 +190,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	
 	@Autowired
 	private IVideoStartupReadWrite videoStartupReader;
-	
+		
 	private Set<String> localIPAddresses = null;
 	private Set<String> remoteIPAddresses = null;
 	private Set<Integer> remotePortNumbers = null;
@@ -468,6 +470,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 			if (filereader.fileExist(secureFilePath)) {
 				try {
 					isSecurePcap = true;
+					result.setSecureTrace(isSecurePcap);
 					this.readSecurePcapTraceFile(secureFilePath, result);
 				} finally {
 					isSecurePcap = false;
@@ -1041,6 +1044,10 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		result.setCameraInfos(cameraInfos);
 		result.setCameraActiveDuration(camerareader.getActiveDuration());
 
+		List<ThermalStatusInfo> thermalStatusInfos = new ThermalStatusReaderImpl(filereader)
+				.readData(result.getTraceDirectory(), result.getPcapTime0(), result.getTraceDuration());
+		result.setThermalstatusInfos(thermalStatusInfos);
+
 		List<ScreenStateInfo> screenStateInfos = screenstatereader.readData(result.getTraceDirectory(),
 				result.getPcapTime0(), result.getTraceDuration());
 		result.setScreenStateInfos(screenStateInfos);
@@ -1055,7 +1062,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 		List<RadioInfo> radioInfos = radioinforeader.readData(result.getTraceDirectory(), result.getPcapTime0());
 		result.setRadioInfos(radioInfos);
-
+		
 		VideoStreamStartupData videoStreamStartupData = videoStartupReader.readData(result.getTraceDirectory());
 		result.setVideoStartupData(videoStreamStartupData);
 	}

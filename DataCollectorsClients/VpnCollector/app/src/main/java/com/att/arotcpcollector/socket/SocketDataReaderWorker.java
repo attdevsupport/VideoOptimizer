@@ -18,9 +18,11 @@ package com.att.arotcpcollector.socket;
 import android.util.Log;
 
 import com.att.arocollector.attenuator.AttenuatorManager;
+import com.att.arotcpcollector.PacketData;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
 import com.att.arotcpcollector.ip.IPHeader;
+import com.att.arotcpcollector.ip.IPPacketFactory;
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
@@ -46,6 +48,7 @@ public class SocketDataReaderWorker implements Runnable {
 	private SessionManager sessionManager;
 	private String sessionKey = "";
 	private SocketData pcapData; // for traffic.cap
+ 	private boolean secureEnable = false;
 	private boolean printLog = false;
 
 	public SocketDataReaderWorker() {
@@ -129,7 +132,18 @@ public class SocketDataReaderWorker implements Runnable {
 					if (len > 0) { // -1 indicates end of stream
 						// send packet to client app
 						session.setLastAccessed(System.currentTimeMillis());
+						if (isSecureEnable()) {
+							byte[] packet = new byte[buffer.position()];
+							buffer.flip();
+							buffer.get(packet);
 
+							buffer.clear();
+							if (packet.length>DataConst.MAX_RECEIVE_BUFFER_SIZE){
+								buffer = ByteBuffer.allocate(packet.length);
+							}
+							buffer.put(packet);
+						}
+						//***************
 						sendToRequester(buffer, channel, len, session);
 						buffer.clear();
 
@@ -183,6 +197,11 @@ public class SocketDataReaderWorker implements Runnable {
 			sess.setHasReceivedLastSegment(true);
 		} else {
 			sess.setHasReceivedLastSegment(false);
+		}
+		
+		//Fix: For Data Size that may exceed fixed buffer size during a Secure Transmission
+		if(isSecureEnable() && datasize < buffer.capacity()){
+			sess.setHasReceivedLastSegment(true);
 		}
 
 		buffer.limit(datasize);
@@ -246,6 +265,7 @@ public class SocketDataReaderWorker implements Runnable {
 
 			byte[] clearData = session.getClearReceivedData();
 
+
 			while(session.isClientWindowFull()) {
 				try {
 					Thread.sleep(500);
@@ -254,7 +274,7 @@ public class SocketDataReaderWorker implements Runnable {
 				}
 			}
 			pcapData.sendDataRecieved(data); // send packet back to client
-			pcapData.sendDataToPcap(data, false); // send packet off to be recorded in traffic.cap
+			pcapData.sendDataToPcap(new PacketData(data), false); // send packet off to be recorded in traffic.cap
 
 			return true;
 		}
@@ -272,7 +292,7 @@ public class SocketDataReaderWorker implements Runnable {
 		TCPHeader tcpheader = session.getLastTCPheader();
 		byte[] data = tcpFactory.createFinData(ipheader, tcpheader, session.getRecSequence(), session.getSendNext(), session.getTimestampSender(), session.getTimestampReplyto());
 		pcapData.sendDataRecieved(data); // send packet back to client
-		pcapData.sendDataToPcap(data, false); // send packet off to be recorded in traffic.cap
+		pcapData.sendDataToPcap(new PacketData(data), false); // send packet off to be recorded in traffic.cap
 
 	}
 
@@ -307,7 +327,7 @@ public class SocketDataReaderWorker implements Runnable {
 						}
 					}
 					pcapData.sendDataRecieved(packetdata); // send packet back to client
-					pcapData.sendDataToPcap(packetdata, false); // send packet off to be recorded in traffic.cap
+					pcapData.sendDataToPcap(new PacketData(packetdata), false); // send packet off to be recorded in traffic.cap
 					Log.d(TAG, "SDR: sent " + len + " bytes to UDP client, packetdata.length: " + packetdata.length + " Data: "+ new String(data));
 					buffer.clear();
 				}
@@ -328,6 +348,14 @@ public class SocketDataReaderWorker implements Runnable {
 
 	public void setSessionKey(String sessionKey) {
 		this.sessionKey = sessionKey;
+	}
+
+	public void setSecureEnable(boolean Secure){
+		this.secureEnable = Secure;
+	}
+
+	public boolean isSecureEnable() {
+		return secureEnable;
 	}
 
 	public boolean isPrintLog() {

@@ -91,45 +91,39 @@ public class AROToolMenu implements ActionListener {
 	 */
 	public JMenu getMenu() {
 
-		if (toolMenu == null) {
-			toolMenu = new JMenu(ResourceBundleHelper.getMessageString(MenuItem.menu_tools));
-			toolMenu.setMnemonic(KeyEvent.VK_UNDEFINED);
-			boolean isTracePathEmpty = true;
-			isTracePathEmpty = isTracePathEmpty();
-			if (Desktop.isDesktopSupported()) {
-				toolMenu.add(getMenuItem(MenuItem.menu_tools_wireshark, isTracePathEmpty));
-			}
-			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_timerangeanalysis));
-			toolMenu.addSeparator();
-			toolMenu.add(getMenuItem(MenuItem.menu_tools_htmlExport, isTracePathEmpty));
-			toolMenu.add(getMenuItem(MenuItem.menu_tools_jsonExport, isTracePathEmpty));
-			JMenuItem exportExportMenuItem = getMenuItem(MenuItem.menu_tools_sessionsExport, isTracePathEmpty);
-			exportExportMenuItem.addActionListener(
-					new ExportSessionData(((MainFrame) parent)));
-			toolMenu.add(exportExportMenuItem);
-			
-			// Excel export menu item
-			JMenuItem excelExportMenuItem = getMenuItem(MenuItem.menu_tools_excelExport, isTracePathEmpty);
-			excelExportMenuItem.addActionListener(
-					new BestPracticeResultsListener(((MainFrame) parent).getController().getTheModel()));
-			toolMenu.add(excelExportMenuItem);
+		toolMenu = new JMenu(ResourceBundleHelper.getMessageString(MenuItem.menu_tools));
+		toolMenu.setMnemonic(KeyEvent.VK_UNDEFINED);
+		boolean isTracePathEmpty = true;
+		isTracePathEmpty = isTracePathEmpty();
+		if (Desktop.isDesktopSupported()) {
+			toolMenu.add(getMenuItem(MenuItem.menu_tools_wireshark, isTracePathEmpty));
+		}
+		toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_timerangeanalysis));
+		toolMenu.addSeparator();
+		toolMenu.add(getMenuItem(MenuItem.menu_tools_htmlExport, isTracePathEmpty));
+		toolMenu.add(getMenuItem(MenuItem.menu_tools_jsonExport, isTracePathEmpty));
+		JMenuItem exportExportMenuItem = getMenuItem(MenuItem.menu_tools_sessionsExport, isTracePathEmpty);
+		exportExportMenuItem.addActionListener(new ExportSessionData(((MainFrame) parent)));
+		toolMenu.add(exportExportMenuItem);
 
+		// Excel export menu item
+		JMenuItem excelExportMenuItem = getMenuItem(MenuItem.menu_tools_excelExport, isTracePathEmpty);
+		excelExportMenuItem.addActionListener(new BestPracticeResultsListener(((MainFrame) parent).getController().getTheModel()));
+		toolMenu.add(excelExportMenuItem);
+
+		toolMenu.addSeparator();
+		toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_privateData));
+		if (ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
+			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_getErrorMsg));
+			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_clearErrorMsg));
+		}
+		toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_videoParserWizard));
+		if ("dev".equals(SettingsImpl.getInstance().getAttribute("env"))) {
 			toolMenu.addSeparator();
-			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_privateData));
-			if (ResourceBundleHelper.getMessageString("preferences.test.env")
-					.equals(SettingsImpl.getInstance().getAttribute("env"))) {
-				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_getErrorMsg));
-				toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_clearErrorMsg));
-			}
-			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_videoParserWizard));
-			if ("dev".equals(SettingsImpl.getInstance().getAttribute("env"))) {
+			toolMenu.add(getMenuItem(MenuItem.menu_tools_editMetadata, isTracePathEmpty));
+			if (SettingsImpl.getInstance().getAttribute("traceHandlerURL") != null && SettingsImpl.getInstance().checkAttributeValue("env", "dev")) {
 				toolMenu.addSeparator();
-				toolMenu.add(getMenuItem(MenuItem.menu_tools_editMetadata, isTracePathEmpty));
-				if (SettingsImpl.getInstance().getAttribute("traceHandlerURL") != null
-						&& SettingsImpl.getInstance().checkAttributeValue("env", "dev")) {
-					toolMenu.addSeparator();
-					toolMenu.add(getMenuItem(MenuItem.menu_tools_ms_uploadTraceDialog, isTracePathEmpty));
-				}
+				toolMenu.add(getMenuItem(MenuItem.menu_tools_ms_uploadTraceDialog, isTracePathEmpty));
 			}
 		}
 		return toolMenu;

@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.amazonaws.services.s3.transfer.Transfer.TransferState;
 
+@SuppressWarnings("PMD")
 public abstract class Repository {
 	protected String uri;
 	protected String id;

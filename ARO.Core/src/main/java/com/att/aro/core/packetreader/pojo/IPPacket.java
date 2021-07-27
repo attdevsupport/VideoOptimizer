@@ -22,6 +22,11 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
+import org.pcap4j.packet.IpPacket;
+import org.pcap4j.packet.IpV4Packet;
+import org.pcap4j.packet.IpV4Packet.IpV4Header;
+import org.pcap4j.packet.IpV6Packet;
+import org.pcap4j.packet.IpV6Packet.IpV6Header;
 import org.apache.log4j.LogManager;
 
 /**
@@ -43,8 +48,47 @@ public class IPPacket extends Packet implements Serializable {
 	private short protocol;
 	private InetAddress sourceIPAddress;
 	private InetAddress destinationIPAddress;
+
+	// For IPv6, dataOffset and payloadLen are initially set to the values just after IPv6 raw header (40 bytes) in the packet which is true by the definition of an IPv6 packet. 
+	// For TCP/UDP packets in this tool, the values are reset to represent the data corresponding to actual upper level packet protocol i.e. TCP/UDP, ignoring the extension headers if present.
 	private int dataOffset;
 	private int payloadLen;
+
+
+
+	public IPPacket(long seconds, long microSeconds, org.pcap4j.packet.Packet pcap4jPacket) {
+		super(seconds, microSeconds, pcap4jPacket);
+
+		IpPacket pcap4jIPPacket = pcap4jPacket.get(IpPacket.class);
+		if (pcap4jIPPacket instanceof IpV4Packet) {
+			IpV4Packet ipv4Packet = (IpV4Packet) pcap4jIPPacket;
+			IpV4Header ipv4Header = ipv4Packet.getHeader();
+
+			ipVersion = 0x04;
+			rsvFrag = ipv4Header.getReservedFlag();
+			dontFrag = ipv4Header.getDontFragmentFlag();
+			moreFrag = ipv4Header.getMoreFragmentFlag();
+			fragmentOffset = ipv4Header.getFragmentOffset();
+			timeToLive = ipv4Header.getTtl();
+			protocol = ipv4Header.getProtocol().value();
+			sourceIPAddress = ipv4Header.getSrcAddr();
+			destinationIPAddress = ipv4Header.getDstAddr();
+
+			packetLength = ipv4Packet.length();
+			payloadLen = ipv4Packet.getPayload() != null ? ipv4Packet.getPayload().length() : 0;
+			dataOffset = super.getDataOffset() + ipv4Header.length();
+		} else if (pcap4jIPPacket instanceof IpV6Packet) {
+			IpV6Packet ipv6Packet = (IpV6Packet) pcap4jIPPacket;
+			IpV6Header ipv6Header = ipv6Packet.getHeader();
+
+			ipVersion = 0x06;
+			sourceIPAddress = ipv6Header.getSrcAddr();
+			destinationIPAddress = ipv6Header.getDstAddr();
+			packetLength = ipv6Packet.length(); 
+			payloadLen = ipv6Header.getPayloadLengthAsInt();
+			dataOffset = super.getDataOffset() + ipv6Header.length();
+		}
+	}
 
 	/**
 	 * Creates a new instance of the IPPacket class.
@@ -59,6 +103,7 @@ public class IPPacket extends Packet implements Serializable {
 		// check for IPv4 or IPv6
 		ipVersion = (byte) ((bytes.get(headerOffset) & 0xf0) >> 4);
 		int hlen = -1;
+
 		if (ipVersion == 6) {
 			hlen = 40;
 			if (extensionHeadersLength == null || protocol == null) {
@@ -73,31 +118,29 @@ public class IPPacket extends Packet implements Serializable {
 			hlen = ((bytes.get(headerOffset) & 0x0f) << 2);
 			dataOffset = headerOffset + hlen;
 
-		/*		   
-		 * the packet length read could be negative, if the packet length is a large number (more
-		 *than 15 bits in storage size (but less than 16 bits).
-		 * So chop off the first two bytes (and hence the signed bits) before setting the field.
-		 */
+			/*
+			 * the packet length read could be negative, if the packet length is a large number (more
+			 * than 15 bits in storage size (but less than 16 bits).
+			 * So chop off the first two bytes (and hence the signed bits) before setting the field.
+			 */
 			packetLength = bytes.getShort(headerOffset + 2)& 0x0000ffff;
-			
 			if (packetLength == 0) {
 				// Assume TCP segmentation offload (TSO) so calculate our own packet length 
 				packetLength = len - headerOffset;
 			}
 			
 			payloadLen = packetLength - hlen;
-		
+
 			short ivalue = bytes.getShort(headerOffset + 6);
 			rsvFrag = (ivalue & 0x8000) != 0;
 			dontFrag = (ivalue & 0x4000) != 0;
 			moreFrag = (ivalue & 0x2000) != 0;
 			fragmentOffset = (short) (ivalue & 0x1fff);
-		
 
-		timeToLive = bytes.get(headerOffset + 7);
-		this.protocol = protocol == null ? bytes.get(headerOffset + 8) : protocol;
+			timeToLive = bytes.get(headerOffset + 7);
+			this.protocol = protocol == null ? bytes.get(headerOffset + 8) : protocol;
 		}
-		
+
 
 		byte[] buffer = null;
 		int addrLgth = -1;
@@ -169,12 +212,20 @@ public class IPPacket extends Packet implements Serializable {
 		return dataOffset;
 	}
 
+	public void setDataOffset(int dataOffset) {
+		this.dataOffset = dataOffset;
+	}
+
 	/**
 	 * @see com.att.aro.pcap.Packet#getPayloadLen()
 	 */
 	@Override
 	public int getPayloadLen() {
 		return payloadLen;
+	}
+
+	public void setPayloadLen(int payloadLen) {
+		this.payloadLen = payloadLen;
 	}
 
 	/**

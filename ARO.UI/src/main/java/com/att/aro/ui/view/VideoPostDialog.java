@@ -349,7 +349,8 @@ public class VideoPostDialog extends ConfirmationDialog implements IResultSubscr
 			configButton(startButton, "Continue", true);
 		}
 	}
-	
+
+
 	private String getPlayer() {
 		String results = "unknown";
 		String path = filemanager.createFile(traceFolder, "videoApp").toString();

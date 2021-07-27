@@ -284,7 +284,6 @@ public class TCPPacketFactory {
 
 		//recalculate IP length
 		int totalLength = ip.getIPHeaderLength() + tcp.getTCPHeaderLength();
-
 		ip.setTotalLength(totalLength);
 
 		buffer = this.createPacketData(ip, tcp, null);
@@ -452,7 +451,6 @@ public class TCPPacketFactory {
 		System.arraycopy(tcpchecksum, 0, buffer, tcpstart + 16, 2);
 
 		return buffer;
-
 	}
 
 	/**

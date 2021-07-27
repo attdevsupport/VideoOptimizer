@@ -82,7 +82,7 @@ public class PeriodicTransferImplTest extends BaseTest {
 		burstCollection.add(burst01);
 		Session session01 = new Session(localIP, remoteIP, remotePort, localPort, "");
 		session01.setUdpOnly(false);
-		session01.setPackets(packetlist);
+		session01.setTcpPackets(packetlist);
 		HttpRequestResponseInfo httpRequestResponseInfo01 = new HttpRequestResponseInfo();
 		httpRequestResponseInfo01.setFirstDataPacket(packetInfo01);
 		httpRequestResponseInfo01.setDirection(HttpDirection.REQUEST);
@@ -217,10 +217,10 @@ public class PeriodicTransferImplTest extends BaseTest {
 		packetlist02.add(packetInfo09);
 
 		session01.setUdpOnly(false);
-		session01.setPackets(packetlist01);
+		session01.setTcpPackets(packetlist01);
 
 		session02.setUdpOnly(false);
-		session02.setPackets(packetlist02);
+		session02.setTcpPackets(packetlist02);
 
 		HttpRequestResponseInfo httpRequestResponseInfo01 = new HttpRequestResponseInfo();
 		httpRequestResponseInfo01.setFirstDataPacket(packetInfo01);

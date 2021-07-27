@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +32,9 @@ import com.att.aro.core.video.pojo.Segment;
 import com.att.aro.core.video.pojo.Track;
 import com.att.aro.core.video.pojo.VideoManifest;
 import com.att.aro.core.videoanalysis.csi.parsers.HLSManifestParserForCSI;
+import com.att.aro.core.videoanalysis.csi.pojo.CSIManifestAndState;
 import com.att.aro.core.videoanalysis.impl.ManifestBuilderDASH;
+import com.att.aro.core.videoanalysis.impl.VideoSegmentAnalyzer;
 import com.att.aro.core.videoanalysis.pojo.ChildManifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
@@ -62,7 +65,13 @@ public class VideoTrafficInferencer {
 	private IFileManager filemanager;
 	
 	@Autowired
+	private ICSIDataHelper csiDataHelper;
+	
+	@Autowired
 	private HLSManifestParserForCSI hlsManifestParseImpl;
+	
+	@Autowired 
+	private VideoSegmentAnalyzer videoSegmentAnalyzer;
 
 	public VideoTrafficInferencer() {
 		super();
@@ -73,7 +82,18 @@ public class VideoTrafficInferencer {
 		videoRequestMap = new HashSet<>();
 		nonSegmentRequestMap = new HashMap<>();
 		possibleAudioRequestMap = new TreeMap<>();
+		streamingVideoData = new StreamingVideoData(result.getTraceDirectory());
+		boolean flag = false;
 		
+		if (result.getTraceDirectory().equals(manifestFilePath)) {
+			CSIManifestAndState csiState = csiDataHelper.readData(manifestFilePath + System.getProperty("file.separator") + "CSI");
+			if (csiState.getAnalysisState().equals("Fail")) {
+				return streamingVideoData;
+			}
+			manifestFilePath = csiState.getManifestFileLocation();
+		} else {
+			flag = true;
+		}
 		
 		File manifestFile = new File(manifestFilePath);
 		byte[] fileContent;
@@ -81,7 +101,7 @@ public class VideoTrafficInferencer {
 		List<Track> tracks = new ArrayList<>();
 		String fileExtName = FilenameUtils.getExtension(manifestFile.getPath());
 		
-		streamingVideoData = new StreamingVideoData(result.getTraceDirectory());
+		
 		requestMap = generateRequestMap(sessionlist);
 		
 		if (manifestFile.exists() && fileExtName != null) {
@@ -106,8 +126,8 @@ public class VideoTrafficInferencer {
 						List<Double> segmentDurations = new ArrayList<Double>();
 						sTrack.setMediaType(cManifest.isVideo() ? MediaType.VIDEO : MediaType.AUDIO);
 						sTrack.setMediaBandwidth((float) cManifest.getBandwidth());
-						cManifest.getSegmentList().values().forEach((segment) -> segmentSizes.add(segment.getSize()));
-						cManifest.getSegmentList().values()
+						cManifest.getSegmentInfoTrie().values().forEach((segment) -> segmentSizes.add(segment.getSize()));
+						cManifest.getSegmentInfoTrie().values()
 								.forEach((segment) -> segmentDurations.add(segment.getDuration()));
 						sTrack.setSegmentSizes(segmentSizes);
 						sTrack.setSegmentDurations(segmentDurations);
@@ -153,29 +173,47 @@ public class VideoTrafficInferencer {
 				}
 
 				int segmentIndex = 0;
-				for (HttpRequestResponseInfo rrInfo : possibleAudioRequestMap.values()) {
-					if (!videoRequestMap.contains(rrInfo)) {
-						Segment audioSegment = new Segment(videoManifest, videoManifest.getAudioTrack(), ++segmentIndex, rrInfo.getContentLength(), rrInfo.getKey(), rrInfo.getRequestCounterCSI(), -1);
-						manifest = createManifest(FilenameUtils.getBaseName(manifestFile.getPath()), ManifestType.CHILD, ContentType.AUDIO);
-						ChildManifest childManifest = new ChildManifest();
-						childManifest.setManifest(manifest);
-						VideoEvent videoEvent = new VideoEvent(getDefaultThumbnail(), manifest, audioSegment, rrInfo);
-						videoEvent.setChildManifest(childManifest);
-						videoStream.addVideoEvent(videoEvent);
+				Track audioTrack;
+				if ((audioTrack = videoManifest.getTracks().stream().filter(track -> (track.getMediaType()).equals(MediaType.AUDIO)).findFirst().get()) != null) {
+					for (HttpRequestResponseInfo rrInfo : possibleAudioRequestMap.values()) {
+						if (!videoRequestMap.contains(rrInfo)) {
+							Segment audioSegment = new Segment(videoManifest, videoManifest.getAudioTrack(), ++segmentIndex, audioTrack.getSegmentSizes().get(segmentIndex - 1), rrInfo.getKey(), rrInfo.getRequestCounterCSI(), -1);
+							manifest = createManifest(FilenameUtils.getBaseName(manifestFile.getPath()), ManifestType.CHILD, ContentType.AUDIO);
+							ChildManifest childManifest = new ChildManifest();
+							childManifest.setManifest(manifest);
+							VideoEvent videoEvent = new VideoEvent(getDefaultThumbnail(), manifest, audioSegment, rrInfo);
+							videoEvent.setChildManifest(childManifest);
+							videoStream.addVideoEvent(videoEvent);
+						}
 					}
 				}
 			}
 		}
 		
+		if (flag) {
+			saveCSIManifestAndState(manifestFilePath);
+		}
+		
+		videoSegmentAnalyzer.process(result, streamingVideoData);
+		
 		return streamingVideoData;
 	}
-
-	/* private boolean checkJSONExist(AbstractTraceResult result) {
-		File[] checkJsonFiles = new File(result.getTraceDirectory())
-				.listFiles((dir, name) -> name.toLowerCase().endsWith(".json"));
-		return checkJsonFiles != null && checkJsonFiles.length > 0;
-	}*/
 	
+	private void saveCSIManifestAndState(String manifestFilePath) {
+		if (StringUtils.isNotBlank(manifestFilePath)) {
+			Path manifestPath = Paths.get(manifestFilePath);
+			if (manifestPath != null) {
+				CSIManifestAndState csiState = new CSIManifestAndState();
+				csiState.setAnalysisState(streamingVideoData.getVideoStreams().size() > 0 ? "Success" : "Fail");
+				csiState.setManifestFileLocation(manifestFilePath);
+				Path fileName = manifestPath.getFileName();
+				csiState.setManifestFileName(fileName != null ? fileName.toString() : "");
+				fileName = manifestPath.getParent();
+				csiDataHelper.saveData(fileName != null ? fileName.toString() : "", csiState);
+			}
+		}
+	}
+
 	private Manifest createManifest(String manifestName, ManifestType manifestType, ContentType contentType) {
 		Manifest manifestMaster = new Manifest();
 		manifestMaster.setVideoName(manifestName);

@@ -89,9 +89,9 @@ public class IPv4Header implements IPHeader {
 	 * @param destinationIP IPv4 address of receiver.
 	 * @param optionBytes optional field.
 	 */
-	public IPv4Header(byte ipVersion, byte internetHeaderLength, byte dscpOrTypeOfService, byte ecn, 
+	public IPv4Header(byte ipVersion, byte internetHeaderLength, byte dscpOrTypeOfService, byte ecn,
 			int totalLength, int idenfication, boolean mayFragment, boolean lastFragment,short fragmentOffset,
-					  byte timeToLive, byte protocol, int headerChecksum, InetAddress sourceIP, InetAddress destinationIP, byte[] optionBytes) {
+			byte timeToLive, byte protocol, int headerChecksum, InetAddress sourceIP, InetAddress destinationIP, byte[] optionBytes) {
 		
 		this.ipVersion = ipVersion;
 		this.internetHeaderLength = internetHeaderLength;
@@ -118,10 +118,10 @@ public class IPv4Header implements IPHeader {
 
 	public IPv4Header(IPv4Header header) {
 		this(
-				header.getIpVersion(), header.getInternetHeaderLength(), header.getDscpOrTypeOfService(), header.getEcn(),
-				header.getTotalLength(), header.getIdentification(), header.isMayFragment(), header.isLastFragment(),
-				header.getFragmentOffset(), header.getTimeToLive(), header.getProtocol(), header.getHeaderChecksum(),
-				header.getSourceIP(), header.getDestinationIP(), header.getOptionBytes()
+			header.getIpVersion(), header.getInternetHeaderLength(), header.getDscpOrTypeOfService(), header.getEcn(),
+			header.getTotalLength(), header.getIdentification(), header.isMayFragment(), header.isLastFragment(),
+			header.getFragmentOffset(), header.getTimeToLive(), header.getProtocol(), header.getHeaderChecksum(),
+			header.getSourceIP(), header.getDestinationIP(), header.getOptionBytes()
 		);
 	}
 
@@ -157,6 +157,7 @@ public class IPv4Header implements IPHeader {
 	 * 
 	 * @return
 	 */
+	@Override
 	public int getIPHeaderLength() {
 		return (this.internetHeaderLength * 4);
 	}

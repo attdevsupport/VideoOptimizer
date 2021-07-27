@@ -214,7 +214,7 @@ public class VideoNetworkComparisonImpl extends PlotHelperAbstract implements IB
 			double startTime = 0;
 			int tempLength = 0;
 
-			for (PacketInfo packetInfo : session.getPackets()) {
+			for (PacketInfo packetInfo : session.getTcpPackets()) {
 				if (startTime == 0) {// give the initial value
 					startTime = packetInfo.getTimeStamp();
 				}

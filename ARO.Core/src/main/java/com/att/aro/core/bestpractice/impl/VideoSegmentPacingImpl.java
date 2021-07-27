@@ -104,8 +104,8 @@ public class VideoSegmentPacingImpl implements IBestPractice{
 		
 		BPResultType bpResultType = BPResultType.SELF_TEST;
 		VideoChunkPacingResult result = new VideoChunkPacingResult();
-		double lastDl = 0;
-		double averageDelay = 0;
+		Double dlFirst = Double.MAX_VALUE;
+		Double dlLast = 0D;
 		int count = 0;
 		
 		init(result);
@@ -137,22 +137,23 @@ public class VideoSegmentPacingImpl implements IBestPractice{
 				for (VideoStream videoStream : videoStreamCollection.values()) {
 					if (videoStream != null && videoStream.isSelected() && !videoStream.getVideoEventsBySegment().isEmpty()) {
 						for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
-							if (!videoEvent.isNormalSegment()) {
-								continue;
+							if (videoEvent.isNormalSegment()) {
+								count++;
+								double dlTime = videoEvent.getDLLastTimestamp();
+								if (dlTime < dlFirst) {  // look for earliest download of valid segment in a stream
+									dlFirst = dlTime;
+								}
+								if (dlTime > dlLast) {  // look for last download of valid segment in a stream
+									dlLast = dlTime;
+								}
 							}
-							count++;
-							double dlTime = videoEvent.getDLTimeStamp();
-							if (lastDl > 0) {
-								averageDelay += dlTime - lastDl;
-							}
-							lastDl = dlTime;
 						}
 						break;
 					}
 				}
 				double segmentPacing = 0;
-				if (count != 0) {
-					segmentPacing = averageDelay / count;
+				if (count > 1) {
+					segmentPacing = (dlLast - dlFirst) / (count - 1);
 				}
 				bpResultType = BPResultType.SELF_TEST;
 				result.setResultText(MessageFormat.format(

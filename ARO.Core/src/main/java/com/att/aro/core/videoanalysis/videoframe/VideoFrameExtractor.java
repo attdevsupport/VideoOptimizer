@@ -26,6 +26,7 @@ import java.util.TreeMap;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -138,12 +139,22 @@ public class VideoFrameExtractor implements Runnable{
 						}
 					}
 				}
-				queue.clear();
-				dropMap.clear();
-				queue = null;
+				destroy();
 				LOG.debug("Video frame extractor HALTED");
 			};
 			new Thread(processQueue, "Video frame extractor").start();
+		}
+	}
+
+	/**
+	 * Close out and delete videoFrameFolder, if not flagged (preserveFrames=yes) to preserve.
+	 */
+	public void destroy() {
+		queue.clear();
+		dropMap.clear();
+		queue = null;
+		if (!Util.checkMode("preserveFrames", "yes") && fileManager.directoryExist(videoFrameFolder)) {
+			fileManager.deleteFolderAndContents(videoFrameFolder);
 		}
 	}
 

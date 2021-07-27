@@ -44,6 +44,7 @@ import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.RRCState;
 import com.att.aro.core.packetanalysis.pojo.RrcStateRange;
+import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.ui.commonui.ContextAware;
 
 /**
@@ -55,6 +56,8 @@ public class TimeRangeAnalysis implements Serializable {
 	private double startTime;
 	private double endTime;
 	private long totalBytes;
+	private long uplinkBytes;
+	private long downlinkBytes;
 	private long payloadLen; // bytes
 	private double activeTime;
 	private double energy;
@@ -70,11 +73,13 @@ public class TimeRangeAnalysis implements Serializable {
 	 * @param activeTime The total amount of high energy radio time. 
 	 * @param energy The amount of energy used to deliver the payload.
 	 */
-	public TimeRangeAnalysis(double startTime, double endTime, long totalBytes,
+	public TimeRangeAnalysis(double startTime, double endTime, long totalBytes, long uplinkBytes, long downlinkBytes,
 			long payloadLen, double activeTime, double energy) {
 		this.startTime = startTime;
 		this.endTime = endTime;
 		this.totalBytes = totalBytes;
+		this.uplinkBytes = uplinkBytes;
+		this.downlinkBytes = downlinkBytes;
 		this.payloadLen = payloadLen;
 		this.activeTime = activeTime;
 		this.energy = energy;
@@ -95,6 +100,22 @@ public class TimeRangeAnalysis implements Serializable {
 	 */
 	public long getPayloadLen() {
 		return payloadLen;
+	}
+	
+	/**
+	 * Returns the total uplink number of bytes transferred, including packet headers.
+	 * @return The uplink bytes transferred.
+	 */
+	public long getUplinkBytes() {
+		return uplinkBytes;
+	}
+	
+	/**
+	 * Returns the total downlink number of bytes transferred, including packet headers.
+	 * @return The downlink bytes transferred.
+	 */
+	public long getDownlinkBytes() {
+		return downlinkBytes;
 	}
 
 	/**
@@ -119,9 +140,26 @@ public class TimeRangeAnalysis implements Serializable {
 	 * Returns the average throughput for the time range
 	 * @return The throughput value, in kilobits per second.
 	 */
-	public double getKbps() {
+	public double getAverageThroughput() {
 		return (totalBytes * 8 / 1000) / (endTime - startTime);
 	}
+	
+	/**
+	 * Returns the average uplink throughput for the time range
+	 * @return The uplink throughput value, in kilobits per second.
+	 */
+	public double getAverageUplinkThroughput() {
+		return (uplinkBytes * 8 / 1000) / (endTime - startTime);
+	}
+	
+	/**
+	 * Returns the average downlink throughput for the time range
+	 * @return The downlink throughput value, in kilobits per second.
+	 */
+	public double getAverageDownlinkThroughput() {
+		return (downlinkBytes * 8 / 1000) / (endTime - startTime);
+	}
+	
 	/**
 	 * Performs a TimeRangeAnalysis on the trace data.
 	 * TODO:  The calculation should not be in the UI - move elsewhere (Core)
@@ -135,6 +173,8 @@ public class TimeRangeAnalysis implements Serializable {
 		Profile profile = analysisData.getProfile();
 		long payloadLength = 0;
 		long totalBytes = 0;
+		long uplinkBytes = 0;
+		long downlinkBytes = 0;
 		int packetNum = packets.size();
 
 		for (int i = 0; i < packetNum; i++) {
@@ -142,6 +182,11 @@ public class TimeRangeAnalysis implements Serializable {
 			if (packetInfo.getTimeStamp() >= analyzeBeginTime && packetInfo.getTimeStamp() <= analyzeEndTime) {
 				payloadLength += packetInfo.getPayloadLen();
 				totalBytes += packetInfo.getLen();
+				if (packetInfo.getDir().equals(PacketDirection.UPLINK)) {
+					uplinkBytes += packetInfo.getLen();
+				} else if (packetInfo.getDir().equals(PacketDirection.DOWNLINK)) {
+					downlinkBytes += packetInfo.getLen();
+				}
 			}
 		}
 
@@ -182,7 +227,7 @@ public class TimeRangeAnalysis implements Serializable {
 			activeTime += updateActiveTime(profile, beginTime, endTime, rrcState);
 		}
 
-		return new TimeRangeAnalysis(analyzeBeginTime, analyzeEndTime, totalBytes, payloadLength, activeTime, energy);
+		return new TimeRangeAnalysis(analyzeBeginTime, analyzeEndTime, totalBytes, uplinkBytes, downlinkBytes, payloadLength, activeTime, energy);
 	}
 
 	// TODO:  The calculation in this method should not be in the UI - move elsewhere

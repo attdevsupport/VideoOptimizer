@@ -129,7 +129,8 @@ public class FileManagerImpl implements IFileManager {
 	public void mkDir(String path) {
 		mkDir(new File(path));
 	}
-
+	
+	@Override
 	public void mkDir(File dirinfo) {
 		if (!dirinfo.exists()) {
 			dirinfo.mkdirs();
@@ -153,6 +154,18 @@ public class FileManagerImpl implements IFileManager {
 			return list != null && list.length > 0;
 		}
 		return false;
+	}
+	
+	/**
+	 * Completely delete a folder and all contents
+	 */
+	@Override
+	public void deleteFolderAndContents(String folderPath) {
+		try {
+			FileUtils.deleteDirectory(new File(folderPath));
+		} catch (IOException e) {
+			LOGGER.error("Failed to delete " + folderPath, e);
+		}
 	}
 	
 	@Override
@@ -217,7 +230,7 @@ public class FileManagerImpl implements IFileManager {
 		Arrays.sort(files);
 		return files;
 	}
-	
+
 	@Override
 	public String[] findFilesByExtention(String localVidsFolder, final String extention) {
 		String[] files = list(localVidsFolder, new FilenameFilter() {
@@ -395,6 +408,16 @@ public class FileManagerImpl implements IFileManager {
 
 		}  else {
 			return tracePath;
+		}
+	}
+
+	@Override
+	public void saveFile(String fileLocation, byte[] data) throws IOException {
+		if (data != null && data.length > 0 && fileLocation != null && !fileLocation.isEmpty()) {
+			FileOutputStream output = new FileOutputStream(fileLocation);
+			output.write(data);
+			output.flush();
+			output.close();
 		}
 	}
 }

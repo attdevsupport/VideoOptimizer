@@ -31,13 +31,17 @@ import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.hyperic.sigar.Sigar;
 import org.hyperic.sigar.SigarException;
 
+import com.att.aro.core.SpringContextUtil;
+import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
 import com.att.aro.core.exception.ARORuntimeException;
 import com.att.aro.core.settings.Settings;
+import com.att.aro.core.util.StringParse;
 import com.att.aro.core.util.Util;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -52,9 +56,13 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 public final class JvmSettings implements Settings {
 	private static final String DEFAULT_MEM = Util.isWindows32OS() ? "1433" : "2048";
 	private static final Logger LOGGER = LogManager.getLogger(JvmSettings.class.getName());
-	public static final String CONFIG_FILE_PATH = System.getProperty("user.home") + System.getProperty("file.separator")
-			+ "VideoOptimizerLibrary" + System.getProperty("file.separator") + ".jvm.options";
+	public static final String CONFIG_FILE_PATH = System.getProperty("user.home") 
+												+ System.getProperty("file.separator") + "VideoOptimizerLibrary"
+												+ System.getProperty("file.separator") + ".jvm.options";
 	private static final JvmSettings INSTANCE = new JvmSettings();
+
+	// cannot be @Autowired, as this class is accessed from a UI dialog
+	private static final IExternalProcessRunner externalProcessRunner = SpringContextUtil.getInstance().getContext().getBean(ExternalProcessRunnerImpl.class);
 
 	public static Settings getInstance() {
 		return INSTANCE;
@@ -140,7 +148,7 @@ public final class JvmSettings implements Settings {
 
 	private void validateSize(Long value) {
 		long ram = getSystemMemory();
-		if(ram <= 0) {
+		if (ram <= 0) {
 			throw new ARORuntimeException("Failed to get system info");
 		}
 		if (value < Integer.valueOf(DEFAULT_MEM)) {
@@ -152,12 +160,19 @@ public final class JvmSettings implements Settings {
 					+ DEFAULT_MEM + " and " + ram / 2);
 		}
 	}
-
+	
 	public long getSystemMemory() {
 		long ram = 0;
 		try {
-			Sigar sigar = new Sigar();
-			ram = sigar.getMem().getRam();
+			if (Util.isMacOS()) {
+				Sigar sigar = new Sigar();
+				ram = sigar.getMem().getRam();
+			} else if (Util.isWindowsOS()) {
+				String cmd = "wmic memorychip get capacity";
+				String results = externalProcessRunner.executeCmd(cmd);
+				String[] lines = results.split("\\s");
+				ram = StringParse.stringToDouble(lines[lines.length - 1], 0).longValue() / 1048576; // divide by 1MB = 1048576 = 1024 * 1024
+			}
 		} catch (UnsatisfiedLinkError | SigarException e) {
 			LOGGER.error("Failed to get system info", e);
 		}

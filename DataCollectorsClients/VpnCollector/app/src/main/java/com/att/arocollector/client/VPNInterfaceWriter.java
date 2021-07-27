@@ -126,8 +126,8 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 							} else {
 								headerLength = 28;
 							}
-						} catch (PacketHeaderException ex){
-							Log.e(TAG , "Packet Header Exception"+ ex.getMessage(),ex);
+						} catch (PacketHeaderException ex) {
+							Log.e(TAG, "Packet Header Exception" + ex.getMessage(), ex);
 						}
 						int consumedTokens = packet.length - headerLength;
 						long currentTime = System.nanoTime();
@@ -138,14 +138,14 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 						}
 						lastPacketTime = currentTime;
 						currentNumberOfTokens -= consumedTokens;
-						if (currentNumberOfTokens < 0){
-							try{
+						if (currentNumberOfTokens < 0) {
+							try {
 								int sleepTime = (int) (-1 * currentNumberOfTokens * 8 / throttleDL);
 								if (sleepTime > 0) {
 									Thread.sleep(sleepTime);
 								}
 							} catch (InterruptedException e) {
-								Log.d(TAG, "Failed to sleep: " + e.getMessage(),e);
+								Log.d(TAG, "Failed to sleep: " + e.getMessage(), e);
 							}
 						}
 					}
