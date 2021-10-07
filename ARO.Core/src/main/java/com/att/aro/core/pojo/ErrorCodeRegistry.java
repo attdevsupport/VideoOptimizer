@@ -116,8 +116,8 @@ public final class ErrorCodeRegistry {
 	
 	public static ErrorCode getPacketsNotFound() {
 		ErrorCode err = new ErrorCode();
-		err.setCode(107);
 		err.setCode(ErrorCodeEnum.PACKETS_NOT_FOUND.getCode());
+		err.setName("Traffic file has no packet information");
 		err.setDescription("There was no activity in the traffic file.");
 		sendGAErrorCode(err);
 		return err;
@@ -125,8 +125,8 @@ public final class ErrorCodeRegistry {
 
 	public static ErrorCode getTrafficFileNotFound() {
 		ErrorCode err = new ErrorCode();
-		err.setCode(108);
 		err.setCode(ErrorCodeEnum.TRAFFIC_FILE_NOT_FOUND.getCode());
+		err.setName("Traffic file not found");
 		err.setDescription("This trace doesn't seem to have a traffic file.");
 		sendGAErrorCode(err);
 		return err;
@@ -165,6 +165,15 @@ public final class ErrorCodeRegistry {
 		err.setCode(ErrorCodeEnum.POST_ERROR.getCode());
 		err.setName("REST:POST failure");
 		err.setDescription(message);
+		sendGAErrorCode(err);
+		return err;
+	}
+	
+	public static ErrorCode getWiresharkError(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(ErrorCodeEnum.WIRESHARK_NOT_FOUND.getCode());
+		err.setName("Missing Wireshark");
+		err.setDescription("Wireshark is either not installed on your machine or its not in your path. \nGo to https://www.wireshark.org to download.");
 		sendGAErrorCode(err);
 		return err;
 	}

@@ -25,32 +25,42 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
 public class AROMainFrameMenu {
 
 	SharedAttributesProcesses parent;
+	private JMenuBar menuBar;
+	private AROFileMenu aFileMenu;
+	private AROProfileMenu aProfileMenu;
+	private AROToolMenu aToolMenu;
+	private AROViewMenu aViewMenu;
+	private ARODataCollectorMenu aDataCollectorMenu;
+	private AROHelpMenu aHelpMenu;
+	
 	public AROMainFrameMenu(SharedAttributesProcesses parent){
 		super();
 		this.parent = parent;
+		this.aFileMenu = new AROFileMenu(parent);
+		this.aProfileMenu = new AROProfileMenu(parent);
+		this.aToolMenu = new AROToolMenu(parent);
+		this.aViewMenu = new AROViewMenu(parent);
+		this.aDataCollectorMenu = new ARODataCollectorMenu(parent);
+		this.aHelpMenu = AROHelpMenu.getInstance();
+		this.menuBar = new JMenuBar();
 	}
 	
 	public JMenuBar getAROMainFileMenu(){
-
-		JMenuBar aroJMenuBar = new JMenuBar();
-		AROFileMenu aFileMenu = new AROFileMenu(parent);
-		aroJMenuBar.add(aFileMenu.getMenu());
 		
-		AROProfileMenu aProfileMenu = new AROProfileMenu(parent);
-		aroJMenuBar.add(aProfileMenu.getMenu());
+		if (menuBar.getMenuCount() == 0) {
+			menuBar.add(aFileMenu.getMenu());
+			menuBar.add(aProfileMenu.getMenu());
+			menuBar.add(aToolMenu.getMenu());
+			menuBar.add(aViewMenu.getMenu());
+			menuBar.add(aDataCollectorMenu.getMenu());
+			menuBar.add(aHelpMenu.getMenu());
+		} else {
+			menuBar.remove(3);
+			menuBar.add(aViewMenu.getMenu(), 3);
+			menuBar.remove(2);
+			menuBar.add(aToolMenu.getMenu(), 2);
+		}
 		
-		AROToolMenu aToolMenu = new AROToolMenu(parent);
-		aroJMenuBar.add(aToolMenu.getMenu());
-	
-		AROViewMenu aViewMenu = new AROViewMenu(parent);
-		aroJMenuBar.add(aViewMenu.getMenu());
-		
-		ARODataCollectorMenu aDataCollectorMenu = new ARODataCollectorMenu(parent);
-		aroJMenuBar.add(aDataCollectorMenu.getMenu());
-		
-		AROHelpMenu aHelpMenu = AROHelpMenu.getInstance();
-		aroJMenuBar.add(aHelpMenu.getMenu());
-
-		return aroJMenuBar;
+		return menuBar;
 	}
 }

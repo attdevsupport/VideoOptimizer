@@ -1,6 +1,5 @@
 /*
-
- *  Copyright 2017 AT&T
+ *  Copyright 2017, 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,70 +20,45 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.IVideoTrafficCollector;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
-import com.att.aro.core.settings.Settings;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
-import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.Util;
-import com.att.aro.core.videoanalysis.IVideoAnalysisConfigHelper;
-import com.att.aro.core.videoanalysis.IVideoEventDataHelper;
 import com.att.aro.core.videoanalysis.IVideoTabHelper;
 import com.att.aro.core.videoanalysis.impl.VideoSegmentAnalyzer;
 import com.att.aro.core.videoanalysis.pojo.Manifest;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ContentType;
 import com.att.aro.core.videoanalysis.pojo.Manifest.ManifestType;
-import com.att.aro.core.videoanalysis.pojo.ManifestCollection;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
-import com.att.aro.core.videoanalysis.pojo.VideoStream;
-import com.att.aro.core.videoanalysis.pojo.config.VideoAnalysisConfig;
-
-import lombok.Data;
 
 /**
  * Video Streaming Analysis
  */
-@Data
 public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 	private static final Logger LOG = LogManager.getLogger(VideoTrafficCollectorImpl.class.getName());
 
 	@Autowired private IFileManager filemanager;
-	@Autowired private Settings settings;
-	@Autowired private IExternalProcessRunner extrunner;
-	@Autowired private IVideoAnalysisConfigHelper voConfigHelper;
-	@Autowired private IVideoEventDataHelper voEventDataHelper;
 	@Autowired private IVideoTabHelper videoTabHelper;
-	@Autowired private IHttpRequestResponseHelper reqhelper;
-	@Autowired private IStringParse stringParse;
 	@Autowired private VideoStreamConstructor videoStreamConstructor;
 	@Autowired private VideoSegmentAnalyzer videoSegmentAnalyzer;
 	
-	Pattern extensionPattern = Pattern.compile("(\\b[a-zA-Z0-9\\-_\\.]*\\b)(\\.[a-zA-Z0-9]*\\b)");
 	private String tracePath;
 	private String videoPath;
-	private boolean absTimeFlag = false;
 	private final String fileVideoSegments = "video_segments";
-	private VideoAnalysisConfig vConfig;
 	
 	@Value("${ga.request.timing.videoAnalysisTimings.title}")
 	private String videoAnalysisTitle;
 	@Value("${ga.request.timing.analysisCategory.title}")
 	private String analysisCategory;
-
-	private VideoStream videoStream;
-	private ManifestCollection manifestCollection = null;
 
 	private StreamingVideoData streamingVideoData;
 
@@ -98,10 +72,6 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 	 * DATA: timestamp of last child manifest
 	 */
 	private Map<String, Double> manifestReqMap = new HashMap<>();
-
-	private Manifest trackManifest;
-
-	private boolean audioEnabled = true;
 	
 	@Override
 	public StreamingVideoData collect(AbstractTraceResult result, List<Session> sessionlist, SortedMap<Double, HttpRequestResponseInfo> requestMap) {
@@ -129,6 +99,9 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		LOG.debug("\n**** processSegments() ****");
 		processSegments();
 
+		videoStreamConstructor.clear();
+		manifestReqMap.clear();
+	
 		streamingVideoData.scanVideoStreams();
 		
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(videoAnalysisTitle, System.currentTimeMillis() - analysisStartTime, analysisCategory);
@@ -140,7 +113,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		videoSegmentAnalyzer.process(result, streamingVideoData);
 
 		LOG.debug(String.format("\nVideo Analysis Elapsed time: %.6f", (double) (System.currentTimeMillis() - analysisStartTime) / 1000));
-		
+
 		return streamingVideoData;
 	}
 
@@ -163,7 +136,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 	public void init() {
 		LOG.info("\n**** INITIALIZED **** " + tracePath);
 		videoStreamConstructor.init();
-		manifestReqMap = new HashMap<>();
+		manifestReqMap.clear();
 		clearData();
 	}
 
@@ -244,7 +217,6 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		if ((manifest = videoStreamConstructor.extractManifestDash(streamingVideoData, req)) != null) {
 			if (manifest.getManifestType().equals(ManifestType.CHILD) && manifest.getContentType().equals(ContentType.VIDEO)) {
 				trackManifestTimeStamp = req.getTimeStamp();
-				trackManifest = manifest;
 			}
 			LOG.debug("extracted :" + manifest.getVideoName());
 		} else {
@@ -259,7 +231,6 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 					&& (manifest.getContentType().equals(ContentType.VIDEO) || manifest.getContentType().equals(ContentType.MUXED))) {
 				LOG.debug("childManifest videoName:" + manifest.getVideoName() + ", timestamp: " + manifest.getRequestTime());
 				trackManifestTimeStamp = req.getTimeStamp();
-				trackManifest = manifest;
 			} else if (manifest.getManifestType().equals(ManifestType.MASTER)) {
 				LOG.debug("Manifest videoName:" + manifest.getVideoName() + ", timestamp: " + manifest.getRequestTime());
 			}
@@ -286,6 +257,11 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		}
 		videoTabHelper.resetRequestMapList();
 		streamingVideoData = new StreamingVideoData("");
+		return streamingVideoData;
+	}
+
+	@Override
+	public StreamingVideoData getStreamingVideoData() {
 		return streamingVideoData;
 	}
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 AT&T
+ *  Copyright 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
 */
 package com.att.aro.ui.view.menu;
 
-import java.awt.Desktop;
-import java.awt.Frame;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.swing.JFileChooser;
-import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.commons.lang.StringUtils;
@@ -44,7 +41,6 @@ import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.ContextAware;
-import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.model.diagnostic.PacketViewTableModel;
@@ -84,7 +80,7 @@ public class ExportSessionData extends AbstractMenuItemListener {
 		sessionDataList = traceData.getAnalyzerResult().getSessionlist();
 		for (Session session : sessionDataList) {
 			reqRespMap.put(session.getSessionKey(), session.getRequestResponseInfo());
-			packetsMap.put(session.getSessionKey(), session.getPackets());
+			packetsMap.put(session.getSessionKey(), session.getAllPackets());
 		}
 	}
 
@@ -97,34 +93,17 @@ public class ExportSessionData extends AbstractMenuItemListener {
 		List<Object> packetDataColumnNames = createHeader(sessionColumnNames, packetViewTableModel);
 
 		LOG.info("Start export data to {}", file.getAbsolutePath());
-		createSessionData();
-		Runnable exportData = () -> {
-			ExcelSheet requestResponseSheet = new ExcelSheet("Request_Response", requestResponseColumnNames,
-					getRequestResponseData());
-			ExcelSheet packetsheet = new ExcelSheet("Packet", packetDataColumnNames, getPacketData());
-			LOG.info("Finish export data to {}", file.getAbsolutePath());
+		
+		createSessionData();	
+		ExcelSheet requestResponseSheet = new ExcelSheet("Request_Response", requestResponseColumnNames,
+				getRequestResponseData());
+		ExcelSheet packetsheet = new ExcelSheet("Packet", packetDataColumnNames, getPacketData());
+		LOG.info("Finish export data to {}", file.getAbsolutePath());
 
-			ExcelWriter excelWriter = new ExcelWriter(file.getAbsolutePath());
-			try {
-				excelWriter.export(Lists.newArrayList(requestResponseSheet, packetsheet));
-			} catch (IOException exception) {
-				LOG.error("Error exporting data", exception.getMessage());
-			}
-			Frame frame = Frame.getFrames()[0];
-			if (MessageDialogFactory.getInstance().showExportConfirmDialog(frame) == JOptionPane.YES_OPTION) {
-				try {
-					Desktop desktop = Desktop.getDesktop();
-					desktop.open(file);
-				} catch (IOException ioxception) {
-					MessageDialogFactory.showMessageDialog(frame,
-							ResourceBundleHelper.getMessageString("Error.unableToOpen"));
-				}
-			}
+		ExcelWriter excelWriter = new ExcelWriter(file.getAbsolutePath());
 
-		};
+		excelWriter.export(Lists.newArrayList(requestResponseSheet, packetsheet));
 
-		// start the thread
-		new Thread(exportData).start();
 	}
 
 	private List<List<Object>> getPacketData() {
@@ -272,8 +251,6 @@ public class ExportSessionData extends AbstractMenuItemListener {
 				return TextFileCompression.COMPRESS.toString();
 			} else if ("deflate".equals(contentEncoding)) {
 				return TextFileCompression.DEFLATE.toString();
-			} else if ("br".equals(contentEncoding)) {
-				return TextFileCompression.BROTLI.toString();
 			} else {
 				return TextFileCompression.NONE.toString();
 			}

@@ -63,7 +63,10 @@ public class BufferOccupancyPlot implements IPlot {
 	public void clearPlot(XYPlot plot){
 		plot.setDataset(null);	
 	}
-	
+	/*
+	 * called by:
+	 *  -> VideoChunksPlot.refreshPlot(XYPlot, AROTraceData, double, VideoEvent)
+	 */
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
 		
@@ -129,9 +132,13 @@ public class BufferOccupancyPlot implements IPlot {
 				ContentType type = event.getContentType();
 				double play = event.getPlayTime();
 
-				return (MessageFormat.format(BUFFEROCCUPANCY_TOOLTIP, String.format("%s", type.toString()),
-						String.format("%.0f", segmentID), String.format("%.2f", (double) bufferSize / (1000 * 1000)),
-						String.format("%.3f", timestamp), String.format("%.3f", play)));
+				return (MessageFormat.format(BUFFEROCCUPANCY_TOOLTIP
+						, String.format("%s",   type.toString())
+						, String.format("%.0f", segmentID)
+						, String.format("%.2f", (double) bufferSize / (1000 * 1000))
+						, String.format("%.3f", timestamp)
+						, String.format("%.3f", play))
+						);
 
 			}
 		};

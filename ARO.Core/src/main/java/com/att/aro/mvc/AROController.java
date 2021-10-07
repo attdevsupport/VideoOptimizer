@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.SwingUtilities;
+
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,11 +64,14 @@ import com.att.aro.core.pojo.ErrorCodeRegistry;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.VideoOption;
+import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 
 import lombok.Getter;
 
 public class AROController implements PropertyChangeListener, ActionListener {
 
+	private static final String[] HIDE_SHOW_CHARTPLOTOPTIONS = {"VIDEO_CHUNKS", "BUFFER_OCCUPANCY", "BUFFER_TIME_OCCUPANCY"};
+	
 	private IAROView theView;
 	private AROTraceData theModel;
 	private ApplicationContext context = SpringContextUtil.getInstance().getContext();
@@ -74,22 +79,21 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	@Autowired
 	private IAROService serv;
 
-	private static final Logger LOG = LogManager.getLogger(AROController.class.getName());	
+	private static final Logger LOG = LogManager.getLogger(AROController.class.getName());
 	private IDataCollector collector;
 	private String traceFolderPath;
-//	private VideoOption videoOption;
 	private Date traceStartTime;
 	private long traceDuration;
 	private Hashtable<String, Object> extraParams;
 	private PacketAnalyzerResult currentTraceInitialAnalyzerResult;
-	
+
 	@Getter
 	private boolean isRooted = false;
-	
+
 	/**
 	 * Constructor to instantiate an ARO API instance.
 	 * 
-	 * @param theView The view used by this controller
+	 * @param theView - The view used by this controller
 	 */
 	public AROController(IAROView theView) {
 		this.theView = theView;
@@ -106,7 +110,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	public AROTraceData getTheModel() {
 		return theModel;
 	}
-	
+
 	/**
 	 * Returns the service used by the controller.
 	 * 
@@ -130,14 +134,13 @@ public class AROController implements PropertyChangeListener, ActionListener {
 
 		serv = context.getBean(IAROService.class);
 		AROTraceData results = new AROTraceData();
-
+		long analysisStartTime = System.currentTimeMillis();
+		
 		try {
 			System.gc(); // Request garbage collection before loading a trace
 			LOG.debug("Analyze trace :" + trace);
-			long totalMem = Runtime.getRuntime().totalMemory();
-			long freeMem = Runtime.getRuntime().freeMemory();
-			LOG.debug("runAnalyzer total :"+totalMem+", free:"+freeMem);
-			
+			LOG.debug(String.format("\nTrace initial memory:%d free:%d", Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory()));
+
 			// analyze trace file or directory?
 			try {
 				if (serv.isFile(trace)) {
@@ -145,7 +148,31 @@ public class AROController implements PropertyChangeListener, ActionListener {
 				} else {
 					results = serv.analyzeDirectory(retrieveBestPractices(), trace, profile, filter);
 				}
-			} catch(OutOfMemoryError err) {
+				if (results.getAnalyzerResult() != null 
+						&& results.getAnalyzerResult().getStreamingVideoData() != null
+						&& !results.getAnalyzerResult().getStreamingVideoData().isFinished()) {
+					StreamingVideoData streamingVideoData = results.getAnalyzerResult().getStreamingVideoData();
+					if (!streamingVideoData.getVideoStreamMap().isEmpty()) {
+						Runnable waitingForUpdate = () -> {
+							int count = 1;
+							while (!streamingVideoData.isFinished()) {
+								LOG.debug(String.format("(%d) Waiting for FFmpegRunner to complete", count++));
+								Util.sleep(1000);
+							}
+							Util.sleep(1000);
+
+							SwingUtilities.invokeLater(new Runnable() {
+								@Override
+								public void run() {
+									theView.showChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
+									theView.refresh();
+								}
+							});
+						};
+						new Thread(waitingForUpdate, "waitingForUpdate").start();
+					}
+				}
+			} catch (OutOfMemoryError err) {
 				LOG.error(err.getMessage(), err);
 				results = new AROTraceData();
 				results.setSuccess(false);
@@ -156,12 +183,15 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			results.setSuccess(false);
 			results.setError(ErrorCodeRegistry.getUnknownFileFormat());
 		}
-
+		
+		LOG.debug(String.format("\n%s\nTrace Analysis Elapsed time: %.6f sec.", trace, (double) (System.currentTimeMillis() - analysisStartTime) / 1000));
+		LOG.debug(String.format("\nTrace analysis completed memory:%d free:%d", Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory()));
+		
 		return results;
 	}
 
 	/**
-	 * Not to be directly called.  Triggers a re-analysis if a property change is detected.
+	 * Not to be directly called. Triggers a re-analysis if a property change is detected.
 	 */
 	@Override
 	public void propertyChange(PropertyChangeEvent event) {
@@ -172,28 +202,33 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			filter = theModel.getAnalyzerResult().getFilter();
 		}
 		try {
-			theView.hideAllCharts();
+			theView.hideChartItems();
 			if (event.getPropertyName().equals("tracePath")) {
 				updateModel((String) event.getNewValue(), profile, null);
 			} else if (event.getPropertyName().equals("profile")) {
 				if (theModel.isSuccess()) {
-					updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceDirectory(),
-							(Profile) event.getNewValue(), filter);
+					updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceDirectory(), (Profile) event.getNewValue(), filter);
 				}
 			} else if (event.getPropertyName().equals("filter")) {
-				if(theModel.getAnalyzerResult().getTraceresult().getTraceFile() != null && !theModel.getAnalyzerResult().getTraceresult().getTraceFile().equals("")){
+				if (theModel.getAnalyzerResult().getTraceresult().getTraceFile() != null && !theModel.getAnalyzerResult().getTraceresult().getTraceFile().equals("")) {
 					updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceFile(), profile, (AnalysisFilter) event.getNewValue());
 				} else {
 					updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceDirectory(), profile, (AnalysisFilter) event.getNewValue());
 				}
 			}
 		} finally {
-			theView.showAllCharts();
+			if (theModel.getAnalyzerResult().getStreamingVideoData() == null || theModel.getAnalyzerResult().getStreamingVideoData().isFinished()) {
+				theView.showChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
+			} else {
+				// turn off chunks plot
+				theView.hideChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
+				theView.showChartItems(); // show everything that is not otherwise hidden
+			}
 		}
 	}
 
 	/**
-	 * Not to be directly called.  Handles triggering the functionality if requested by AWT UI.
+	 * Not to be directly called. Handles triggering the functionality if requested by AWT UI.
 	 */
 	@Override
 	public void actionPerformed(ActionEvent event) {
@@ -201,7 +236,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		String actionCommand = event.getActionCommand();
 
 		// match on Android and iOS collectors
-		//		if (actionCommand.equals("startCollector") || actionCommand.equals("startCollectorIos")) {
+		// if (actionCommand.equals("startCollector") || actionCommand.equals("startCollectorIos")) {
 		if ("startCollector".equals(actionCommand) || "startCollectorIos".equals(actionCommand)) {
 			startCollector(event, actionCommand);
 		} else if ("stopCollector".equals(actionCommand)) {
@@ -252,19 +287,21 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	}
 
 	/**
-	 * <p>This is the main entry point for requesting an analysis of a trace.</p><p>
+	 * <p>
+	 * This is the main entry point for requesting an analysis of a trace.
+	 * </p>
+	 * <p>
 	 * 
-	 * <em>path</em> is the file or folder containing the trace raw data if we load
-	 * tracefile , the path include the file name ex, ......\traffic.cap if we
-	 * load tracefolder, the path include the folder name ex, .....\tracefolder
+	 * <em>path</em> is the file or folder containing the trace raw data if we load tracefile , the path include the file name ex, ......\traffic.cap if we load
+	 * tracefolder, the path include the folder name ex, .....\tracefolder
 	 * 
 	 * @param path Where the trace directory or .cap file is located
 	 * @param profile The Profile to use for this analysis - LTE if null
 	 * @param filter The filters to use - can be empty for no filtering specified
 	 */
 	public void updateModel(String path, Profile profile, AnalysisFilter filter) {
-		
-		try{
+
+		try {
 			if (path != null) {
 				AROTraceData model = runAnalyzer(path, profile, filter);
 				if (!model.isSuccess()) {
@@ -280,13 +317,13 @@ public class AROController implements PropertyChangeListener, ActionListener {
 					theView.refresh();
 				}
 			}
-		} catch(Exception ex){
+		} catch (Exception ex) {
 			LOG.info("Error Log:" + ex.getMessage());
-			LOG.error("Exception : ",ex);
+			LOG.error("Exception : ", ex);
 		}
 		(new Thread(() -> GoogleAnalyticsUtil.reportMimeDataType(theModel))).start();
 	}
-	
+
 	private void initializeFilter() {
 		Collection<String> appNames = theModel.getAnalyzerResult().getTraceresult().getAllAppNames();
 		Map<String, Set<InetAddress>> map = theModel.getAnalyzerResult().getTraceresult().getAppIps();
@@ -309,7 +346,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		TimeRange timeRange = new TimeRange(0.0, theModel.getAnalyzerResult().getTraceresult().getTraceDuration());
 		AnalysisFilter initFilter = new AnalysisFilter(applications, timeRange, domainNames);
 
-		currentTraceInitialAnalyzerResult = theModel.getAnalyzerResult(); 
+		currentTraceInitialAnalyzerResult = theModel.getAnalyzerResult();
 		currentTraceInitialAnalyzerResult.setFilter(initFilter);
 	}
 
@@ -319,10 +356,10 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 * the model (and thus the analyzer result) starts getting updated. 
 	 */
 	public PacketAnalyzerResult getCurrentTraceInitialAnalyzerResult() {
-		
+
 		return currentTraceInitialAnalyzerResult;
 	}
-	
+
 	/**
 	 * Returns the currently available collectors (Android VPN, Android Rooted, IOS).
 	 * 
@@ -355,19 +392,19 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 */
 	public IAroDevices getAroDevices() {
 
-//		IDevice[] androidDevices = null;
+		// IDevice[] androidDevices = null;
 
 		IAroDevices aroDevices = new AroDevices();
 
 		List<IDataCollector> collectors = getAvailableCollectors();
-		
-		if (Util.isMacOS()){
+
+		if (Util.isMacOS()) {
 			getDevices(aroDevices, collectors, DataCollectorType.IOS);
 		}
-		if (getDevices(aroDevices, collectors, DataCollectorType.ROOTED_ANDROID)==0){
+		if (getDevices(aroDevices, collectors, DataCollectorType.ROOTED_ANDROID) == 0) {
 			getDevices(aroDevices, collectors, DataCollectorType.NON_ROOTED_ANDROID);
 		}
-		
+
 		return aroDevices;
 	}
 
@@ -398,18 +435,18 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 * 
 	 * @param event
 	 * @param actionCommand
-	 *            - "startCollector" or "startCollectorIos"
+	 *                          - "startCollector" or "startCollectorIos"
 	 */
 	private void startCollector(ActionEvent event, String actionCommand) {
 		StatusResult result;
 		this.theView.updateCollectorStatus(CollectorStatus.STARTING, null);
 		this.theView.setDeviceDataPulled(true); // reset so that a failure will be true
-		
+
 		if (event instanceof AROCollectorActionEvent) {
-			IAroDevice device         = ((AROCollectorActionEvent) event).getDevice();
-			String traceName 		  = ((AROCollectorActionEvent) event).getTrace();
-			extraParams 			  = ((AROCollectorActionEvent) event).getExtraParams();
-			
+			IAroDevice device = ((AROCollectorActionEvent) event).getDevice();
+			String traceName = ((AROCollectorActionEvent) event).getTrace();
+			extraParams = ((AROCollectorActionEvent) event).getExtraParams();
+
 			result = startCollector(device, traceName, extraParams);
 			LOG.info("---------- result: " + result.toString());
 
@@ -442,13 +479,13 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 * @param deviceId
 	 * @param traceFolderName
 	 * @param videoOption
-	 * @param secure 
+	 * @param secure
 	 */
-	public StatusResult startCollector(IAroDevice device, String traceFolderName, Hashtable<String, Object> extraParams){
+	public StatusResult startCollector(IAroDevice device, String traceFolderName, Hashtable<String, Object> extraParams) {
 
 		StatusResult result = null;
-		
-		LOG.info("starting collector:" + traceFolderName +" " + extraParams);
+
+		LOG.info("starting collector:" + traceFolderName + " " + extraParams);
 
 		getAvailableCollectors();
 
@@ -505,14 +542,14 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 * @param device an IAroDevice
 	 * @return collector associated with the device
 	 */
-	private  IDataCollector loadCollector(IAroDevice device) {
-		
+	private IDataCollector loadCollector(IAroDevice device) {
+
 		IDataCollector collector = null;
-		
+
 		if (device.isPlatform(IAroDevice.Platform.Android)) {
 			if (device.isRooted()) {
 				LOG.debug("rooted device");
-				isRooted  = true;
+				isRooted = true;
 				collector = context.getBean(IDataCollectorManager.class).getRootedDataCollector();
 			} else {
 				LOG.debug("non-rooted device");
@@ -522,7 +559,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			LOG.debug("iOS device");
 			collector = context.getBean(IDataCollectorManager.class).getIOSCollector();
 		}
-		
+
 		return collector;
 	}
 
@@ -547,7 +584,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			return;
 		}
 		LOG.debug("stopCollector() check if running");
-		if (collector.isTrafficCaptureRunning(1) && !collectorstatus.equals(CollectorStatus.CANCELLED)) { //FIXME THINKS THE CAPTURE IS RUNNING AFTER STOP
+		if (collector.isTrafficCaptureRunning(1) && !collectorstatus.equals(CollectorStatus.CANCELLED)) { // FIXME THINKS THE CAPTURE IS RUNNING AFTER STOP
 			StatusResult result = collector.stopCollector();
 			LOG.info("stopped collector, result:" + result);
 			if (collector.getType().equals(DataCollectorType.IOS) && (!collector.isDeviceDataPulled())) {
@@ -582,8 +619,8 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 * @return true = video is part of the collected data
 	 */
 	public VideoOption getVideoOption() {
-		VideoOption val = (VideoOption)extraParams.get("video_option");
-		if (val==null){
+		VideoOption val = (VideoOption) extraParams.get("video_option");
+		if (val == null) {
 			val = VideoOption.NONE;
 		}
 		return val;
@@ -606,8 +643,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	public void setTraceDuration(long traceDuration) {
 		this.traceDuration = traceDuration;
 	}
-	
-	
+
 	/**
 	 * Find the list of all applications in the selected android device.
 	 * 
@@ -618,5 +654,3 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	}
 
 }
-
-

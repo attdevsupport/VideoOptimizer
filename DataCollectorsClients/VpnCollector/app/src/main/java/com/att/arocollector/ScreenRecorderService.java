@@ -27,7 +27,6 @@ public class ScreenRecorderService extends Service {
     private static final String CHANNEL_ID = "VPN Collector VPN Notification";
     private static String TAG = ScreenRecorderService.class.getSimpleName();
     private int notifyID = 1;
-
     private NotificationCompat.Builder mBuilder;
 
     public static void setMediaProjection(MediaProjectionManager mediaProjectionManager) {

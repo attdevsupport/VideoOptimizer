@@ -46,16 +46,8 @@ public abstract class AbstractMenuItemListener implements ActionListener {
 	}
 
 	private void exportTable(File defaultFile) {
-		try {
 			JFileChooser chooser = getDefaultFileChooser(defaultFile);
 			saveFile(chooser);
-
-		} catch (Exception exp) {
-			LOG.error("Something went wrong while exporting table {}", table != null ? table.getName() : "", exp);
-			String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("exportall.errorFileOpen"),
-					ApplicationConfig.getInstance().getAppShortName());
-			MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()), errorMsg + exp.getMessage());
-		}
 	}
 
 	protected JFileChooser getDefaultFileChooser(File file) {
@@ -98,7 +90,7 @@ public abstract class AbstractMenuItemListener implements ActionListener {
 	 * 
 	 * @param chooser {@link JFileChooser} object to validate the save option.
 	 */
-	private void saveFile(JFileChooser chooser) throws Exception {
+	private void saveFile(JFileChooser chooser) {
 		Frame frame = Frame.getFrames()[0];// get parent frame
 		boolean isCSV = true;
 
@@ -129,24 +121,34 @@ public abstract class AbstractMenuItemListener implements ActionListener {
 				}
 			}
 
-			if (isCSV) {
-				writeCSV(file);
-			} else {
-				writeExcel(file);
-			}
-
-			if (!exportSessionData) {
-				if (MessageDialogFactory.getInstance().showExportConfirmDialog(frame) == JOptionPane.YES_OPTION) {
-					try {
-						Desktop desktop = Desktop.getDesktop();
-						desktop.open(file);
-					} catch (UnsupportedOperationException unsupportedException) {
-						MessageDialogFactory.showMessageDialog(frame,
-								ResourceBundleHelper.getMessageString("Error.unableToOpen"));
+			final File fileToWrite = file;
+			final boolean isWriteToCSV = isCSV;
+			
+			Runnable exportData = () -> {
+				try {
+					if (isWriteToCSV) {
+						writeCSV(fileToWrite);
+					} else {
+						writeExcel(fileToWrite);
 					}
+					if (MessageDialogFactory.getInstance()
+							.showExportConfirmDialog(frame) == JOptionPane.YES_OPTION) {
+						Desktop desktop = Desktop.getDesktop();
+						desktop.open(fileToWrite);
+					}
+				} catch (IOException exception) {
+					LOG.error("Something went wrong while exporting table {}", table != null ? table.getName() : "",
+							exception);
+					String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("exportall.error"),
+							ApplicationConfig.getInstance().getAppShortName());
+					MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()),
+							errorMsg + exception.getMessage());
 				}
+			};
 
-			}
+			// start the thread
+			new Thread(exportData).start();
+			
 		}
 	}
 

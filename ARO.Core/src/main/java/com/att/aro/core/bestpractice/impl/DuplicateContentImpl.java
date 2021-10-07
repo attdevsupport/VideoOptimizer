@@ -75,7 +75,7 @@ public class DuplicateContentImpl implements IBestPractice {
 		result.setDuplicateContentBytesRatio(cacheAnalysis.getDuplicateContentBytesRatio());
 		int duplicateContentsize = cacheAnalysis.getDuplicateContent().size();
 		result.setDuplicateContentsize(duplicateContentsize);
-		int totalTCPBytes = 0;
+		long totalTCPBytes = 0;
 		if (tracedata.getStatistic() != null) {
 			totalTCPBytes = tracedata.getStatistic().getTotalTCPPayloadBytes();
 		}

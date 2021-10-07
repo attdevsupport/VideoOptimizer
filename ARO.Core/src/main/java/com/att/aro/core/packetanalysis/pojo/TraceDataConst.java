@@ -131,6 +131,8 @@ public class TraceDataConst {
 		public static final int NR = 20; // new radio 5G
 
 	}
+	
+	
 	public class FileName{
 		/**
 		 * The name of the active_process file
@@ -311,6 +313,16 @@ public class TraceDataConst {
 		 *The name of the user speed throttle event trace file
 		 */
 		public static final String SPEED_THROTTLE_EVENT = "speedthrottle_logs";
+		
+		/**
+		 *Folder where the user can save an AMVOTS email response.
+		 */
+		public static final String AMVOTS_RESPONSE_FOLDER = "downloads";
+		
+		/**
+		 * The name of the device Temperature status
+		 */
+		public static final String THERMAL_STATUS = "thermal_status";
 	}
 	
 	/**

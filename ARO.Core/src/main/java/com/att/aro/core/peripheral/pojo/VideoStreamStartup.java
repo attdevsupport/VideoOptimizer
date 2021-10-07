@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 AT&T
+ *  Copyright 2018, 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,24 +32,37 @@ public class VideoStreamStartup {
 	private double manifestReqTime;
 	private double firstSegID;
 	private double playRequestedTime;
-	private double startupDelay;
+	private double startupTime;
 	private UserEvent userEvent;
 
 	public VideoStreamStartup(String videoName) {
 		setManifestName(videoName);
 	}
-
+	
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("\n\tVideoStartup :");
 		strblr.append("\t" + (manifestName != null ? manifestName : ""))
-		.append("\n\t\tRequest Time:    \t").append(String.format("%.3f", manifestReqTime))
-		.append("\n\t\tSegment:         \t").append(firstSegID)
-		.append("\n\t\tStartupDelay:    \t").append(String.format("%.3f", startupDelay))
+		.append("\n\t\tRequest Time:     \t").append(String.format("%.3f", manifestReqTime))
+		.append("\n\t\tSegment:          \t").append(firstSegID)
+		.append("\n\t\tStartupTime:      \t").append(String.format("%.3f", startupTime))
 		.append("\n\t\tplayRequestedTime:\t").append(String.format("%.3f", playRequestedTime))
 		.append("\n\t\tuserEvent         \t")
 		.append(userEvent == null ? "" : String.format("%s: press: %.3f,  release %.3f", userEvent.getEventType(), userEvent.getPressTime(), userEvent.getReleaseTime()))
-		;
+		.append("\n");
 		return strblr.toString();
 	}
+
+	/**
+	 * Using to support an automatic conversion
+	 * This should only be used by Mapper
+	 * No other access to this method should be used by VO
+	 * 
+	 * @param startupDelay
+	 */
+	@Deprecated
+	public void setStartupDelay(double startupDelay) {
+		this.startupTime = startupDelay;
+	}
+	
 }

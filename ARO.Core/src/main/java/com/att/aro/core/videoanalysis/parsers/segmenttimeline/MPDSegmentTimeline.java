@@ -24,14 +24,16 @@ public class MPDSegmentTimeline implements MpdBase {
 	
 	@XmlElement(name = "BaseURL")			private String baseURL = "";
 	@XmlElement(name = "Period")			private List<PeriodST> period = new ArrayList<>();
-	@XmlAttribute(name = "minBufferTime")	private String minBufferTime = "";
-
+	
+	@XmlAttribute(name = "minBufferTime")				private String minBufferTime = "";
+	@XmlAttribute(name = "mediaPresentationDuration")	private String mediaPresentationDuration;
+	@XmlAttribute(name = "minimumUpdatePeriod")			private String minimumUpdatePeriod;
+	@XmlAttribute(name = "suggestedPresentationDelay")	private String suggestedPresentationDelay;
+	
 	@XmlAttribute private String type = "";
 	@XmlAttribute private String availabilityStartTime = "";
-	@XmlAttribute private String minimumUpdatePeriod = "";
 	@XmlAttribute private String publishTime = "";
 	@XmlAttribute private String timeShiftBufferDepth = "";
-	@XmlAttribute private String suggestedPresentationDelay = "";
 
 	private String videoName;
 

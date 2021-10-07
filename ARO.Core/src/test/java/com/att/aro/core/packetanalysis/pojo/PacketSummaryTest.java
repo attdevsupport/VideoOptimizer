@@ -14,7 +14,8 @@ public class PacketSummaryTest {
 		public PacketSummary create() {
 			int packetCount = 10;
 			long totalBytes = 10L;
-			return new PacketSummary(packetCount, totalBytes);
+			long totalPayloadBytes = 15L;
+			return new PacketSummary(packetCount, totalBytes, totalPayloadBytes);
 		}
 		
 	}

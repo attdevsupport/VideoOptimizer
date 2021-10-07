@@ -51,7 +51,7 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class VideoPreferencesPanel extends JPanel {
-	
+
 	private static final Logger LOG = LogManager.getLogger(VideoPreferencesPanel.class.getName());
 
 	private static final long serialVersionUID = 1L;
@@ -186,7 +186,7 @@ public class VideoPreferencesPanel extends JPanel {
 
 		inputVerifier = getNumericInputVerifier(MAX_STALLDURATION, 0.01, 3);
 		stallDurationWarnEdit.setInputVerifier(inputVerifier);
-		stallDurationFailEdit.addKeyListener(getKeyListener(stallDurationFailEdit));
+		stallDurationWarnEdit.addKeyListener(getKeyListener(stallDurationWarnEdit));
 		
 		stallDurationFailEdit.setInputVerifier(inputVerifier);
 		stallDurationFailEdit.addKeyListener(getKeyListener(stallDurationFailEdit));
@@ -216,7 +216,7 @@ public class VideoPreferencesPanel extends JPanel {
 		return panel;
 
 	}
-	
+
 	private NumericInputVerifier getNumericInputVerifier(double max, double min, int significands) {
 		return new NumericInputVerifier(max, min, significands, true, preferencesDialog);
 	}
@@ -250,6 +250,7 @@ public class VideoPreferencesPanel extends JPanel {
 		nearStallEdit.addKeyListener(getKeyListener(nearStallEdit));
 		
 		startupDelayReminder = new JCheckBox();
+		
 		duplicateHandlingEditCombo = new JComboBox<>();
 		for (DUPLICATE_HANDLING item : DUPLICATE_HANDLING.values()) {
 			duplicateHandlingEditCombo.addItem(item);
@@ -295,7 +296,7 @@ public class VideoPreferencesPanel extends JPanel {
 				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		addLine(maxBufferLabel, maxBufferEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.mbytes")));
 		addLineComboBox(duplicateHandlingLabel, duplicateHandlingEditCombo, panel);
-
+		
 	}
 
 	private KeyListener getKeyListener(JTextField textField) {
@@ -329,6 +330,7 @@ public class VideoPreferencesPanel extends JPanel {
 		preferencesDialog.getOKButton().setEnabled(isEnabled);
 		duplicateHandlingEditCombo.setEnabled(isEnabled);	
 	}
+
 
 	private void addLine(Label label, JTextField edit, JPanel panel, Label units) {
 		edit.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -416,7 +418,7 @@ public class VideoPreferencesPanel extends JPanel {
 	
 
 	private void setPreferencesDefault() {
-
+		
 		if(preferencesDialog.getPopup() != null) {
 			preferencesDialog.getPopup().hide();
 		}	
@@ -558,7 +560,7 @@ public class VideoPreferencesPanel extends JPanel {
 
 		if (!isValid || StringUtils.isNotBlank(videoPreferenceModel.getValidationError())) {
 
-			 String errorText = videoPreferenceModel.getValidationError();
+			String errorText = videoPreferenceModel.getValidationError();
 			if (videoPreferenceModel.getErrorComponent() == 1) {
 				stallDurationFailEdit.requestFocus();
 				inputVerifier.popup(stallDurationFailEdit, errorText);

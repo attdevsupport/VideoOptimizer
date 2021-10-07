@@ -19,7 +19,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
+
+import org.apache.commons.lang.StringUtils;
+
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.pojo.VersionInfo;
 
@@ -117,63 +121,73 @@ public class GAUrlBuilder {
 
 	private String getParametersForUrl(GAEntry entry) {
 		StringBuilder paramsUrls = new StringBuilder();
-		if (checkNotForNull(entry.getExceptionDesc())) {
-			paramsUrls.append(getExceptionParams());
-		} else {
-			paramsUrls.append(getAppParams(entry));
-		}
-
-		if (entry != null) {
-			if (entry.getHitType() != null) {
-				if (entry.getHitType() == HitType.SCREEN_VIEW) {
-					paramsUrls.append(appendString(GACommonParameter.ScreenName.param(), entry.getCategory()));
-				} else if (entry.getHitType() == HitType.TIMING) {
-					paramsUrls.append(getTimingParams(entry));
-				}
-			} else if (checkNotForNull(entry.getExceptionDesc())) {
-				if (entry.getDataSource() != null && GACommonParameter.datasource.param() != null)
-					paramsUrls.append(appendString(GACommonParameter.datasource.param(),
-							entry.getDataSource().replace(" ", "%20")));
-				if (entry.getExceptionDesc() != null && GACommonParameter.exceptiondesc.param() != null)
-					paramsUrls.append(appendString(GACommonParameter.exceptiondesc.param(),
-							entry.getExceptionDesc().replace(" ", "%20")));
-				if (entry.isFatal()) {
-					paramsUrls.append(appendString(GACommonParameter.isexceptionfatal.param(), "1"));
-				} else {
-					paramsUrls.append(appendString(GACommonParameter.isexceptionfatal.param(), "0"));
-				}
+		
+		try {
+			if (checkNotForNull(entry.getExceptionDesc())) {
+				paramsUrls.append(getExceptionParams());
 			} else {
-				if (checkNotForNull(entry.getSession())) {
-					if (entry.getSession().equals(GASessionValue.start.param())) {
-						paramsUrls.append(appendString(GACommonParameter.sessionstart.param(), entry.getSession()));
+				paramsUrls.append(getAppParams(entry));
+			}
+
+			if (entry != null) {
+				if (entry.getHitType() != null) {
+					if (entry.getHitType() == HitType.SCREEN_VIEW) {
+						paramsUrls.append(appendString(GACommonParameter.ScreenName.param(), entry.getCategory()));
+					} else if (entry.getHitType() == HitType.TIMING) {
+						paramsUrls.append(getTimingParams(entry));
+					}
+				} else if (checkNotForNull(entry.getExceptionDesc())) {
+					if (entry.getDataSource() != null && GACommonParameter.datasource.param() != null)
+						try {
+							paramsUrls.append(appendString(GACommonParameter.exceptiondesc.param(), URLEncoder.encode(entry.getDataSource(), StandardCharsets.UTF_8.name())));
+						} catch (UnsupportedEncodingException e) {
+							paramsUrls.append(appendString(GACommonParameter.datasource.param(), entry.getDataSource().replace(" ", "%20")));
+						}
+					if (entry.getExceptionDesc() != null && GACommonParameter.exceptiondesc.param() != null)
+						try {
+							paramsUrls.append(appendString(GACommonParameter.exceptiondesc.param(), URLEncoder.encode(entry.getExceptionDesc(), StandardCharsets.UTF_8.name())));
+						} catch (UnsupportedEncodingException e) {
+							paramsUrls.append(appendString(GACommonParameter.exceptiondesc.param(), entry.getExceptionDesc().replace(" ", "%20")));
+						}
+					if (entry.isFatal()) {
+						paramsUrls.append(appendString(GACommonParameter.isexceptionfatal.param(), "1"));
 					} else {
-						paramsUrls.append(appendString(GACommonParameter.sessionend.param(), entry.getSession()));
+						paramsUrls.append(appendString(GACommonParameter.isexceptionfatal.param(), "0"));
 					}
-				}
-
-				// Even Category
-				if (entry!=null && checkNotForNull(entry.getCategory()) && entry.getCategory().trim().length() > 0) {
-
-					paramsUrls.append(appendString(GARequiredParameter.hittype.param(), HitType.EVENT.getValue()));
-					paramsUrls.append(appendString(GACommonParameter.eventcategory.param(), entry.getCategory()));
-
-					if (checkNotForNull(entry.getAction())) {
-						paramsUrls.append(appendString(GACommonParameter.eventaction.param(), entry.getAction()));
+				} else {
+					if (checkNotForNull(entry.getSession())) {
+						if (entry.getSession().equals(GASessionValue.start.param())) {
+							paramsUrls.append(appendString(GACommonParameter.sessionstart.param(), entry.getSession()));
+						} else {
+							paramsUrls.append(appendString(GACommonParameter.sessionend.param(), entry.getSession()));
+						}
 					}
-					if (checkNotForNull(entry.getLabel())) {
-						paramsUrls.append(appendString(GACommonParameter.eventlabel.param(), entry.getLabel()));
-					}
-					if (checkNotForNull(entry.getValue())) {
-						paramsUrls.append(appendString(GACommonParameter.eventvalue.param(), entry.getValue()));
+
+					// Even Category
+					if (entry != null && StringUtils.isNotEmpty(entry.getCategory()) && entry.getCategory().trim().length() > 0) {
+
+						paramsUrls.append(appendString(GARequiredParameter.hittype.param(), HitType.EVENT.getValue()));
+						paramsUrls.append(appendString(GACommonParameter.eventcategory.param(), entry.getCategory()));
+
+						if (checkNotForNull(entry.getAction())) {
+							paramsUrls.append(appendString(GACommonParameter.eventaction.param(), entry.getAction()));
+						}
+						if (checkNotForNull(entry.getLabel())) {
+							paramsUrls.append(appendString(GACommonParameter.eventlabel.param(), entry.getLabel()));
+						}
+						if (checkNotForNull(entry.getValue())) {
+							paramsUrls.append(appendString(GACommonParameter.eventvalue.param(), entry.getValue()));
+						}
 					}
 				}
 			}
-		}
 
-		if (entry.getExceptionDesc() == null) {
-			paramsUrls.append(appendString(GACommonParameter.anonymizeip.param(), "1"));
-
-			paramsUrls.append(appendString(GACommonParameter.cachebuster.param(), "" + random.nextInt()));
+			if (entry.getExceptionDesc() == null) {
+				paramsUrls.append(appendString(GACommonParameter.anonymizeip.param(), "1"));
+				paramsUrls.append(appendString(GACommonParameter.cachebuster.param(), "" + random.nextInt()));
+			}
+		} catch (Exception e) {
+			// If exception is thrown, do nothing.
 		}
 
 		return paramsUrls.toString();

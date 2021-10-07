@@ -23,6 +23,7 @@ import javax.swing.UIManager;
 
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.TabPanelCommon;
 import com.att.aro.ui.commonui.TabPanelCommonAttributes;
@@ -39,8 +40,12 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 		tcpstatistics_duration,
 		tcpstatistics_packets,
 		tcpstatistics_throughput,
+		tcpstatistics_minLatency,
+		tcpstatistics_maxLatency,
+		tcpstatistics_averageLatency
 		
 	}
+	
 	private static final long serialVersionUID = 1L;
 	private JPanel dataPanel;
 	private final TabPanelCommon tabPanelCommon = new TabPanelCommon();
@@ -90,16 +95,30 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 				.copyNextLine(attributes)
 				.enumKey(LabelKeys.tcpstatistics_throughput)
 			.build());
-
+		attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder()
+				.copyNextLine(attributes)
+				.enumKey(LabelKeys.tcpstatistics_minLatency)
+			.build());
+		attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder()
+				.copyNextLine(attributes)
+				.enumKey(LabelKeys.tcpstatistics_maxLatency)
+			.build());
+		attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder()
+				.copyNextLine(attributes)
+				.enumKey(LabelKeys.tcpstatistics_averageLatency)
+			.build());
+	
 		return dataPanel;
 	}
 
 	@Override
 	public void refresh(AROTraceData model) {
-		String intFormatString = "%,2d";
-		String doubleFormatString = "%,1.1f";
 		Statistic statistic = model.getAnalyzerResult().getStatistic();
 		if (statistic != null) {
+			String intFormatString = "%,2d";
+			String doubleFormatString = "%,1.1f";
+			String timeUnit = " s";
+			
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_size, String.format(intFormatString,
 					statistic.getTotalTCPBytes()));
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_duration, String.format(
@@ -107,7 +126,10 @@ public class TCPSessionStatisticsPanel extends TabPanelJPanel {
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_packets, String.format(
 					intFormatString, statistic.getTotalTCPPackets()));
 			tabPanelCommon.setText(LabelKeys.tcpstatistics_throughput, String.format(
-					doubleFormatString, statistic.getAverageTCPKbps()));
+					doubleFormatString, statistic.getAverageTCPKbps()));		
+			tabPanelCommon.setText(LabelKeys.tcpstatistics_minLatency, Util.formatDoubleToMicro(statistic.getMinLatency()) + timeUnit);
+			tabPanelCommon.setText(LabelKeys.tcpstatistics_maxLatency, Util.formatDoubleToMicro(statistic.getMaxLatency()) + timeUnit);
+			tabPanelCommon.setText(LabelKeys.tcpstatistics_averageLatency, Util.formatDoubleToMicro(statistic.getAverageLatency()) + timeUnit);		
 		}
 	}
 }

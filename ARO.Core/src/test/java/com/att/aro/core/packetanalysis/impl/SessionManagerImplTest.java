@@ -14,10 +14,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
@@ -38,10 +36,11 @@ import com.att.aro.core.packetreader.pojo.UDPPacket;
  */
 public class SessionManagerImplTest extends BaseTest{
 	
+	@InjectMocks
 	ISessionManager sessionMgr;
 
 	byte[] pData;
-	
+
 	@Before
 	public void setUp(){
 		
@@ -57,7 +56,6 @@ public class SessionManagerImplTest extends BaseTest{
 		//pData[5] = 0x01;
 	}
 	
-	@Ignore
 	@Test
 	public void assembleSessionTest(){
 		Date date = new Date();
@@ -287,7 +285,6 @@ public class SessionManagerImplTest extends BaseTest{
 		
 	}
 	
-	@Ignore
 	@Test
 	public void assembleSessionTest1(){
 		Date date = new Date();

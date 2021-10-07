@@ -20,13 +20,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
+
+import org.apache.commons.collections.MapUtils;
 
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
@@ -37,6 +38,10 @@ import com.att.aro.ui.commonui.TabPanelJScrollPane;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 
+import lombok.Getter;
+import lombok.Setter;
+
+
 public class VideoManifestPanel extends TabPanelJScrollPane{
 
 	private static final long serialVersionUID = 1L;
@@ -45,8 +50,9 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 	private IARODiagnosticsOverviewRoute overviewRoute;
 	private JPanel manifestPanel;
 	private MainFrame aroView;
-	private Map<Integer, String> seriesDataSets;
 
+	@Getter
+	@Setter
 	private TreeMap<VideoEvent, Double> chunkPlayTimeList;
 
 	public VideoManifestPanel(IARODiagnosticsOverviewRoute overviewRoute, MainFrame aroView) {
@@ -78,32 +84,29 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 				panel.add(lbl);
 			}
 		}
-
 		return panel;
 	}
 	
 	@Override
 	public void refresh(AROTraceData analyzerResult) {
 		segmentTableList.clear();
-		Collection<VideoStream> videoStreamMap = null ;
+
 		if (analyzerResult != null && analyzerResult.getAnalyzerResult() != null && analyzerResult.getAnalyzerResult().getStreamingVideoData() != null) {
-		 videoStreamMap = analyzerResult.getAnalyzerResult().getStreamingVideoData().getVideoStreamMap().values();	
-		 updateGraphPanels(analyzerResult, videoStreamMap);	
+			Collection<VideoStream> videoStreamMap = analyzerResult.getAnalyzerResult().getStreamingVideoData().getVideoStreams();
+			updateGraphPanels(analyzerResult, videoStreamMap);
 			for (VideoStream videoStream : videoStreamMap) {
-				if (videoStream != null && videoStream.getVideoEventMap() != null
-						&& !videoStream.getVideoEventMap().isEmpty()) {
-					SegmentTablePanel segmentPanel = new SegmentTablePanel(videoStream, this.overviewRoute, analyzerResult, aroView,
-							this);
+				if (MapUtils.isNotEmpty(videoStream.getVideoEventMap())) {
+					SegmentTablePanel segmentPanel = new SegmentTablePanel(videoStream, this.overviewRoute, analyzerResult, aroView, this);
 					segmentPanel.setVisible(false);
 					segmentTableList.add(segmentPanel);
 				}
 			}
 		}
-		
+
 		videoManifestPanel.remove(manifestPanel);
 		manifestPanel = getManifestPanel(analyzerResult);
 		videoManifestPanel.add(manifestPanel);
-		videoManifestPanel.updateUI();		
+		videoManifestPanel.updateUI();
 	}
 
 	public void updateGraphPanels(AROTraceData analyzerResult, Collection<VideoStream> videoStreamMap) {
@@ -111,36 +114,32 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 		if (videoStreamMap != null && videoStreamMap.size() > 0) {
 			Iterator<VideoStream> videoStreamIterator = videoStreamMap.iterator();
 			while (videoStreamIterator.hasNext()) {
-					VideoStream videoStream = videoStreamIterator.next();
-					SegmentThroughputGraphPanel throughputGraphPanel = videoTab.getThroughputGraphPanel();
-					SegmentProgressGraphPanel progressGraphPanel = videoTab.getProgressGraphPanel();
-					SegmentBufferGraphPanel bufferGraphPanel = videoTab.getBufferGraphPanel();
-	
-				if (videoStream.getVideoSegmentEventList().size() > 0
-						|| videoStream.getAudioSegmentEventList().size() > 0) {
+				VideoStream videoStream = videoStreamIterator.next();
+				SegmentThroughputGraphPanel throughputGraphPanel = videoTab.getThroughputGraphPanel();
+				SegmentProgressGraphPanel progressGraphPanel = videoTab.getProgressGraphPanel();
+				SegmentBufferGraphPanel bufferGraphPanel = videoTab.getBufferGraphPanel();
+
+				if (videoStream.getVideoSegmentEventList().size() > 0 || videoStream.getAudioSegmentEventList().size() > 0) {
 					throughputGraphPanel.refresh(analyzerResult, videoStream, null, null);
 					progressGraphPanel.refresh(analyzerResult, videoStream, null, null);
-	
-					boolean isStartupDelaySet = (videoStream.getPlayRequestedTime() != null
-							|| videoStream.getVideoPlayBackTime() != null);
-	
+
+					boolean isStartupDelaySet = (videoStream.getPlayRequestedTime() != null || videoStream.getVideoPlayBackTime() != null);
+
 					if (isStartupDelaySet && videoStream.isCurrentStream()) {
-						bufferGraphPanel.refresh(analyzerResult, videoStream, null, null, seriesDataSets,
-								chunkPlayTimeList);
+						bufferGraphPanel.refresh(analyzerResult, videoStream, null, null);
 					}
-	
+
 					boolean isGraphVisible = videoStreamMap.size() == 1;
 					toggleGraphPanels(videoTab, isGraphVisible, isStartupDelaySet);
 				} else {
 					toggleGraphPanels(videoTab, false, false);
 				}
 			}
-		}else {
+		} else {
 			toggleGraphPanels(videoTab, false, false);
 		}
-
 	}
-	
+
 	private void toggleGraphPanels(VideoTab videoTab, boolean isGraphVisible , boolean isStartupDelaySet) {
 		videoTab.getThroughputPanel().setVisible(isGraphVisible);
 		videoTab.getProgressPanel().setVisible(isGraphVisible);
@@ -163,25 +162,7 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 	}
 	
 	public List<SegmentTablePanel> getSegmentTableList() {
-	        return segmentTableList;
+		return segmentTableList;
 	}
-
-	public void setSeriesDataSets(Map<Integer, String> seriesDataSets) {
-		this.seriesDataSets=seriesDataSets;
-		
-	}
-		
-	public void setChunkPlayTimeList(Map<VideoEvent, Double> chunkPlayTime) {
-		this.chunkPlayTimeList = (TreeMap<VideoEvent, Double>) chunkPlayTime;
-	}
-
-	public Map<Integer, String> getSeriesDataSets() {	
-		return this.seriesDataSets;
-	}
-
-	public TreeMap<VideoEvent, Double> getChunkPlayTimeList() {
-		return this.chunkPlayTimeList;
-	}
-
 
 }

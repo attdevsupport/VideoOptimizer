@@ -24,6 +24,9 @@ import java.awt.event.MouseEvent;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -62,6 +65,7 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.SharedAttributesProcesses.TabPanels;
 import com.att.aro.ui.view.menu.file.ADBPathDialog;
 import com.att.aro.ui.view.menu.file.MissingTraceFiles;
+import com.att.aro.ui.view.menu.file.OpenPcapFileDialog;
 import com.att.aro.ui.view.menu.file.PreferencesDialog;
 
 /**
@@ -183,9 +187,22 @@ public class AROFileMenu implements ActionListener, MenuListener {
 			if (event instanceof JMenuItem) {
 				tracePath = chooseFileOrFolder(JFileChooser.FILES_ONLY, ResourceBundleHelper.getMessageString(MenuItem.menu_file_pcap));
 				if (tracePath != null) {
-					parent.updateTracePath(tracePath);
-					userPreferences.setLastTraceDirectory(tracePath.getParentFile().getParentFile());
-					GoogleAnalyticsUtil.getAndIncrementTraceCounter();
+					String newDirectoryName = tracePath.getName().substring(0, tracePath.getName().lastIndexOf("."));
+					String parentFolderName = tracePath.getParentFile().getName();
+
+					/*
+					 * Do not open the new dialog here if,
+					 * 1. Parent Folder name matches with file name and .readme file exists in the current folder OR,
+					 * 2. traffic.cap was chosen and time file exists in the same directorry
+					 */
+					if (("traffic.cap".equals(tracePath.getName()) && Files.exists(Paths.get(tracePath.getParent() + Util.FILE_SEPARATOR + "time"))) ||
+							(newDirectoryName.equals(parentFolderName) && Files.exists(Paths.get(tracePath.getParent() + Util.FILE_SEPARATOR + ".readme")))) {
+						parent.updateTracePath(tracePath);
+						userPreferences.setLastTraceDirectory(tracePath.getParentFile().getParentFile());
+						GoogleAnalyticsUtil.getAndIncrementTraceCounter();
+					} else {
+						new OpenPcapFileDialog(parent, (JMenuItem) aEvent.getSource(), tracePath).setVisible(true);
+					}
 				}
 			}
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_pref, aEvent)) {
@@ -284,7 +301,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 
 		if (mode == JFileChooser.FILES_ONLY) {
 			// chooser.addChoosableFileFilter(pcapfilter);
-			FileNameExtensionFilter pcapfilter = new FileNameExtensionFilter("Pcap files (*.cap, *.pcap)", "cap", "pcap");
+			FileNameExtensionFilter pcapfilter = new FileNameExtensionFilter("Pcap files (*.cap, *.pcap, *.pcapng)", "cap", "pcap", "pcapng");
 			chooser.setFileFilter(pcapfilter);
 		}
 		if (chooser.showOpenDialog(parent.getCurrentTabComponent()) == JFileChooser.APPROVE_OPTION) {

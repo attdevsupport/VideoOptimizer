@@ -42,6 +42,8 @@ public class IPEndPointSummaryTableModel extends DataTableModel<IPPacketSummary>
 	private enum ColumnKeys {
 		endpointsummary_ipAddress,
 		endpointsummary_packets,
+		endpointsummary_payload_bytes,
+		endpointsummary_percent_bytes,
 		endpointsummary_bytes,
 	}
 	private static final ColumnKeys[] columnKeysCollection = ColumnKeys.values();
@@ -103,6 +105,9 @@ public class IPEndPointSummaryTableModel extends DataTableModel<IPPacketSummary>
 		col = cols.getColumn(ColumnKeys.endpointsummary_bytes.ordinal());
 		col.setCellRenderer(bytesRenderer);
 
+		col = cols.getColumn(ColumnKeys.endpointsummary_payload_bytes.ordinal());
+		col.setCellRenderer(bytesRenderer);
+
 		return cols;
 	}
 
@@ -119,9 +124,13 @@ public class IPEndPointSummaryTableModel extends DataTableModel<IPPacketSummary>
 	protected Object getColumnValue(IPPacketSummary item, int columnIndex) {
 		switch(columnKeysCollection[columnIndex]) {
 			case endpointsummary_ipAddress:
-				return Util.getDefaultAppName(item.getIPAddress().toString().substring(1));
+				return item.getIPAddress() != null ? Util.getDefaultAppName(item.getIPAddress().toString().substring(1)) : "Unknown";
 			case endpointsummary_packets:
 				return item.getPacketCount();
+			case endpointsummary_payload_bytes:
+				return item.getTotalPayloadBytes();
+			case endpointsummary_percent_bytes:
+				return Util.formatDouble(item.getTotalPayloadBytes() * 100.0 / item.getTotalBytes());
 			case endpointsummary_bytes:
 				return item.getTotalBytes();
 			default:

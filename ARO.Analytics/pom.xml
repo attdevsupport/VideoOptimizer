@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.2.0</version>
         <relativePath>../ARO.Parent</relativePath>
     </parent>
 
@@ -16,7 +16,7 @@
 
 	<properties>
 		<maven.deploy.skip>true</maven.deploy.skip>
-		<vo.version>4.1.0</vo.version>
+		<vo.version>4.2.0</vo.version>
 	</properties>
 	
 	<repositories>

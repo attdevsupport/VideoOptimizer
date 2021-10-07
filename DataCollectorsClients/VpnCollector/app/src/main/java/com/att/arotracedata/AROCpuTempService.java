@@ -15,198 +15,196 @@
  */
 package com.att.arotracedata;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
-import android.nfc.Tag;
+import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
+import android.os.PowerManager;
 import android.util.Log;
+import android.widget.Toast;
 
-import java.io.BufferedReader;
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+
+import com.att.arocollector.R;
+
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import com.att.arocollector.utils.AROCollectorUtils;
+public class AROCpuTempService extends AROMonitorService {
 
-public class AROCpuTempService extends Service {
+    public static final String TAG = AROCpuTempService.class.getSimpleName();
+    private Handler mHandler;
+    private ThermalInfoUtil thermalInfoUtil;
+    private int notifyID = 2;
+    private NotificationCompat.Builder mBuilder;
+    public static final String CHANNEL_ID = "CPU_Temperature";
 
-    public static final String TAG = "AROCpuTempService";
+    public String getThermalStatus() {
+        return thermalStatus;
+    }
 
-    /** The root directory of the ARO Data Collector Trace. */
-    public static final String ARO_TRACE_ROOTDIR = "/sdcard/ARO/";
+    public void setThermalStatus(String thermalStatus) {
+        this.thermalStatus = thermalStatus;
+    }
 
-    private static final String killTempPayloadFileName = "killcputemperature.sh";
+    private String thermalStatus = "";
+    NotificationManager mNotificationManager;
+    PowerManager pm;
 
-    private static final String payloadFileName = "cputemperature.sh";
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    protected File traceDir;
 
-    private static final String tempLogFileName = "temperature_data";
-
-    private static final String remoteExecutable = ARO_TRACE_ROOTDIR + payloadFileName;
-
-    private Thread scriptThread;
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        thermalInfoUtil = new ThermalInfoUtil(executor);
+        mHandler = new Handler();
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (initFiles()) {
-            startAROCpuTempTrace();
-        } else {
-            Log.e(TAG, "Cannot start ARO CPU temperature capture because files could not be initialized.");
+        mNotificationManager =
+                (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        createNotificationChannel(mNotificationManager);
+        if (mBuilder == null) {
+            mBuilder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID)
+                    .setSmallIcon(R.drawable.icon)
+                    .setAutoCancel(false);
+            mBuilder.setContentTitle("CPU Temperature: " + " - " + " \u2103\n")
+                    .setContentText(thermalStatus);
+            mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            mNotificationManager.notify(notifyID, mBuilder.build());
+        }
+        mHandler.post(getCpuTempNotification);
+        pm = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            pm.addThermalStatusListener(new PowerManager.OnThermalStatusChangedListener() {
+                @Override
+                public void onThermalStatusChanged(int status) {
+                    Log.d(TAG, "Status:" + status);
+                    String thermalStatus = getStatus(status);
+                    setThermalStatus("Thermal status: " + thermalStatus);
+                    Toast toast = Toast.makeText(getApplicationContext(), "Thermal status: " + getStatus(status), Toast.LENGTH_LONG);
+                    toast.show();
+                    sendTemperatureNotification(thermalStatus);
+                    writeTraceLineToAROTraceFile(status + "", true);
+                }
+            });
+            int currentTemp = pm.getCurrentThermalStatus();
         }
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private boolean initFiles() {
-        if (!isTraceDirExist(ARO_TRACE_ROOTDIR)) {
-            createTraceRootDirectory();
+    private final Runnable getCpuTempNotification = new Runnable() {
+        @Override
+        public void run() {
+            startCpuMeasurement();
+            mHandler.postDelayed(getCpuTempNotification, 5000);
         }
-        cleanOldTempLogFile();
-        return copyScript();
-    }
+    };
 
-    private boolean isTraceDirExist(String dir) {
-        File file = new File(dir);
-        return file.exists();
-    }
-
-    private void createTraceRootDirectory() {
-        try {
-            Runtime.getRuntime().exec("mkdir " + ARO_TRACE_ROOTDIR);
-        } catch(Exception e) {
-            Log.e(TAG, "Exception occurs when creating ARO trace root directory. :: " + e.getMessage());
-        }
-    }
-
-    private void cleanOldTempLogFile() {
-        try {
-            Runtime.getRuntime().exec("rm " + ARO_TRACE_ROOTDIR + tempLogFileName);
-        } catch(Exception e) {
-            Log.e(TAG, "Exception occurs when cleaning old temperature log file. :: " + e.getMessage());
-        }
-    }
-
-    private boolean copyScript() {
-        try {
-            InputStream in = readScriptFromResource();
-            writeScript(in, remoteExecutable);
-        } catch(Exception e) {
-            Log.e(TAG, "Exception occurs when copying script. :: " + e.getMessage());
-            return false;
-        }
-        return true;
-    }
-
-    private InputStream readScriptFromResource() {
-        InputStream in = getResources().openRawResource(
-                        getResources().getIdentifier("cputemperature", "raw", getPackageName()));
-        return in;
-    }
-
-    private void writeScript(InputStream in, String fileName) throws IOException {
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(new File(fileName));
-            byte[] buffer = new byte[1024];
-            int len;
-            while((len = in.read(buffer)) != -1) {
-                out.write(buffer, 0, len);
-            }
-        } finally {
-            if (in != null) {
-                in.close();
-            }
-            if (out != null) {
-                out.close();
-            }
-        }
-    }
-
-    private void startAROCpuTempTrace() {
-        final String cmd = "sh " + remoteExecutable
-                         + " " + ARO_TRACE_ROOTDIR
-                         + " " + tempLogFileName
-                         + " " + killTempPayloadFileName;
-        scriptThread = new Thread(new Runnable() {
+    public void startCpuMeasurement() {
+        thermalInfoUtil.startCPUTemp(new ThermalInfoUtil.ThermalCallBack() {
             @Override
-            public void run() {
-                try {
-                    Process proc = Runtime.getRuntime().exec(cmd);
-                    if (proc != null) {
-                        printError(proc);
-                    }
-                } catch(Exception e) {
-                    Log.e(TAG, "Exception occurs when collecting CPU temperature. :: " + e.getMessage());
+            public void callbackResult(ThermalInfoUtil.ResultCPUThermal result) {
+                if (result != null) {
+                    sendTemperatureNotification(result.getThermalLocal());
+                } else {
+                    mHandler.removeCallbacks(getCpuTempNotification);
+                    Log.e(TAG, "no data");
                 }
             }
-        });
-        scriptThread.start();
+        }, mHandler);
     }
 
-    public void stopAROCpuTempTrace() {
-        final String cmd = "sh " + ARO_TRACE_ROOTDIR + killTempPayloadFileName;
-        try {
-            if (scriptThread != null) {
-                scriptThread.interrupt();
-            }
-            Process proc = Runtime.getRuntime().exec(cmd);
-            if (proc != null) {
-                printError(proc);
-            }
-        } catch(Exception e) {
-            Log.e(TAG, "Exception occurs when stopping CPU temperature. :: " + e.getMessage());
-        }
 
-        final String deleteScript = "rm " + ARO_TRACE_ROOTDIR + payloadFileName;
-        try {
-            if (scriptThread != null) {
-                scriptThread.interrupt();
-            }
-            Process proc = Runtime.getRuntime().exec(deleteScript);
-            if (proc != null) {
-                printError(proc);
-            }
-        } catch(Exception e) {
-            Log.e(TAG, "Exception occurs when stopping CPU temperature. :: " + e.getMessage());
-        }
+    public void sendTemperatureNotification(double temperatureValue) {
+        mBuilder.setContentTitle("CPU Temperature: " + Math.round(temperatureValue) + " \u2103\n");
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(notifyID, mBuilder.build());
     }
 
-    private void printError(Process proc) throws IOException {
-        Log.i(TAG, "printing script error if any...");
-        InputStreamReader reader = null;
-        BufferedReader error = null;
-        try {
-            reader = new InputStreamReader(proc.getErrorStream());
-            error = new BufferedReader(reader);
-            String line;
-            while((line = error.readLine()) != null) {
-                Log.i(TAG, line);
-            }
-        } finally {
-            if (error != null) {
-                error.close();
-            }
-            if (reader != null) {
-                reader.close();
-            }
+    public void sendTemperatureNotification(String thermalStatus) {
+        mBuilder.setContentText(thermalStatus);
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(notifyID, mBuilder.build());
+    }
+
+
+    public void stopCpuMeasurementTimer() {
+        Log.d(TAG, "stopCpuMeasurementTimer()");
+        if (thermalInfoUtil != null) {
+            thermalInfoUtil.closeFile();
+        }
+        mHandler.removeCallbacks(getCpuTempNotification);
+        mNotificationManager.cancelAll();
+    }
+
+    private void createNotificationChannel(NotificationManager mNotificationManager) {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel serviceChannel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "VPN Collector CPU Temperature",
+                    NotificationManager.IMPORTANCE_LOW);
+            serviceChannel.setShowBadge(false);
+            mNotificationManager.createNotificationChannel(serviceChannel);
         }
     }
 
     @Override
     public void onDestroy() {
-        Log.i(TAG, "onDestroy()");
-        stopAROCpuTempTrace();
+        Log.d(TAG, "onDestroy()");
+        stopCpuMeasurementTimer();
         super.onDestroy();
     }
+
+    @Override
+    protected void stopMonitor() {}
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
+
+    private String getStatus(int status) {
+        String statusString;
+        switch (status) {
+            case 0://none
+                statusString = "No throttling";
+                break;
+            case 1://light
+                statusString = "Light throttling. UX isn't impacted.";
+                break;
+            case 2://moderate
+                statusString = "Moderate throttling. UX isn't greatly impacted.";
+                break;
+            case 3://severe
+                statusString = "Severe throttling. UX is largely impacted.";
+                break;
+            case 4://critical
+                statusString = "Platform has done everything to reduce power.";
+                break;
+            case 5://emergency
+                statusString = "Key components in the platform are shutting down due to thermal conditions.";
+                break;
+            case 6://shutdown
+                statusString = "Shutdown immediately.";
+                break;
+            default:
+                statusString = "UNKNOWN";
+        }
+        return statusString;
+    }
+
 }

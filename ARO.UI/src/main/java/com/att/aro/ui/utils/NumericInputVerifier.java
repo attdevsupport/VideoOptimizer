@@ -55,11 +55,11 @@ public class NumericInputVerifier extends InputVerifier{
 	private static final Logger LOG = LogManager.getLogger(NumericInputVerifier.class.getSimpleName());	
 	private double min = 0;
 	private double max = 0;
-	private boolean isPreferenceTab = false;
 	private Timer timer;
+	private boolean isPreferenceTab = false;
 	private Popup popup;
-	private PreferencesDialog preferencesDialog;
 	private int significands;
+	private PreferencesDialog preferencesDialog;
 	String maxMssgFormat = null;
 	String minMssgFormat = null;
 	
@@ -83,7 +83,7 @@ public class NumericInputVerifier extends InputVerifier{
 		maxMssgFormat = (new StringBuilder()).append("Maximum value is %." + String.format("%d", significands) + "f").toString();
 		minMssgFormat = (new StringBuilder()).append("Minimum value is %." + String.format("%d", significands) + "f").toString();
 	}
-
+	
 	/**
 	 * Verify a String input for conversion to a numeric value and within range
 	 * 
@@ -127,10 +127,10 @@ public class NumericInputVerifier extends InputVerifier{
 			} else if (value.scale() > significands) {
 				popup(component, significands>0
 						? String.format("No more than %d digits beyond decimal point", significands)
-								: "Integer values only");
+						: "Integer values only");
 			} else {
 				result = true;
-			}			
+			}
 		} catch (Exception e) {
 			popup(component, String.format("Illegal value!"));
 		}
@@ -158,18 +158,18 @@ public class NumericInputVerifier extends InputVerifier{
 			popup.show();
 
 			if (!isPreferenceTab) {
-			ActionListener hider = new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
+				ActionListener hider = new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						timer.stop();
+						popup.hide();
+					}
+				};
+				// Hide popup in 3 seconds
+				if (timer != null) {
 					timer.stop();
-					popup.hide();
 				}
-			};
-			// Hide popup in 3 seconds
-			if (timer != null) {
-				timer.stop();
-			}
-			timer = new Timer(DISPLAYTIMER, hider);
-			timer.start();
+				timer = new Timer(DISPLAYTIMER, hider);
+				timer.start();
 			}
 		} catch (IllegalComponentStateException e) {
 			LOG.error("ERROR: component location cannot be retrieved. " + e.getLocalizedMessage());

@@ -15,6 +15,8 @@
  */
 package com.att.arotcpcollector.socket;
 
+import com.att.arotcpcollector.PacketData;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -70,8 +72,8 @@ public class SocketData implements IReceivePcapData, IReceiveDataToBeTransmitted
 		notifyDataReceivedSubscribers(packet);
 	}
 
-	public void sendDataToPcap(byte[] packet, boolean secure) {
-		notifyPcapSubscriber(packet, secure);
+	public void sendDataToPcap(PacketData packetData, boolean secure) {
+		notifyPcapSubscriber(packetData, secure);
 	}
 	
 	@Override
@@ -124,13 +126,15 @@ public class SocketData implements IReceivePcapData, IReceiveDataToBeTransmitted
 	
 
 	@Override
-	public void notifyPcapSubscriber(byte[] packet, boolean secure) {
+	public void notifyPcapSubscriber(PacketData packetData, boolean secure) {
 		// Cycle through the subscribers and notify them
 		for (IPcapSubscriber pcapSubscriber : pcapSubscribers) {
 			if (pcapSubscribers.size() > 1) {
-				pcapSubscriber.writePcap(Arrays.copyOf(packet, packet.length), secure);
+				byte[] packet = packetData.getPacketData();
+				PacketData securePacketData = new PacketData(Arrays.copyOf(packet, packet.length), packetData.getTimeStamp());
+				pcapSubscriber.writePcap(securePacketData, secure);
 			} else {
-				pcapSubscriber.writePcap(packet, secure);
+				pcapSubscriber.writePcap(packetData, secure);
 			}
 		}
 	}

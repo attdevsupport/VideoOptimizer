@@ -20,12 +20,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -102,6 +100,9 @@ public class SessionManagerImpl implements ISessionManager {
 	}
 
 	Map<String, Integer> wellKnownPorts = new HashMap<String, Integer>(5);
+
+	private double synTime = 0.0;
+    private double synAckTime = 0.0;
 
 	public SessionManagerImpl() {
 		wellKnownPorts.put("HTTP", 80);
@@ -172,6 +173,8 @@ public class SessionManagerImpl implements ISessionManager {
 							|| packetInfo.getTcpFlagString().contains("F"))) {
 						session.setSessionComplete(true);
 					}
+					
+					session.setLatency(calculateLatency(session));
 				}
 			}
 		}
@@ -181,6 +184,64 @@ public class SessionManagerImpl implements ISessionManager {
 
 		return sessions;
 	}
+	
+	 /*
+     * Returns calculated Latency value
+     * 
+     * Packet Sequence : SYN - SYNACK Latency = First SYNACK time - First SYN time
+     * 
+     * Packet Sequence: SYN1 -SYN2 - SYNACK Latency = SYNACK time - SYN2 time
+     * 
+     * Packet Sequence: SYN1 - SYNACK - SYN2 Latency = SYNACK time - SYN1 time
+     * 
+     */
+
+    private double calculateLatency(Session session) {
+        double latencyValue = 0.0;
+        double latency = -1.0;
+        calculateSynAckTimestamp(session.getSynAckPackets());
+        if (synAckTime > 0.0) {
+            calculateSynTimestamp(session.getSynPackets(), synAckTime);
+            if (synAckTime >= synTime) {
+                latencyValue = synAckTime - synTime;
+                latency = latencyValue > 0 ? latencyValue : 0.0;
+            } else {
+                LOGGER.debug("Negative latency value : " + session.getSessionKey());
+            }
+           session.setSynAckTime(synAckTime);
+           session.setSynTime(synTime);
+        }
+        if(latency == 0.0) {
+            LOGGER.debug("0.0e latency value : " + session.getSessionKey());
+        }
+        return latency;
+    }
+    
+    /*
+     * Returns the timestamp of the packet with last SYN before the SYNACK
+     */
+    private void calculateSynTimestamp(TreeMap<Double, PacketInfo> synPackets, double syncAckTime) {
+        if (synPackets.containsKey(syncAckTime)) {
+            synTime = syncAckTime;
+        } else {
+            Entry<Double, PacketInfo> synEntry = synPackets.lowerEntry(syncAckTime);
+            if (synEntry != null) {
+                synTime = synEntry.getKey();
+            } else {
+                LOGGER.debug("Packet info error : No SYN's found before the SYNACK - " + syncAckTime);
+            }
+        }
+    }
+
+    /*
+     * Returns the timestamp of the first packet with the SYNACK flag
+     */
+    private void calculateSynAckTimestamp(TreeMap<Double, PacketInfo> synAckPackets) {
+        for (PacketInfo packetInfo : synAckPackets.values()) {
+            synAckTime = packetInfo.getTimeStamp();
+            break;
+        }
+    }
 
 	private void populateTCPPacketInfo(PacketInfo packetInfo, TCPPacket tcpPacket) {
 		if (tcpPacket.isSYN()) {
@@ -316,8 +377,8 @@ public class SessionManagerImpl implements ISessionManager {
 			session.setBaseDownlinkSequenceNumber(tcpPacket.getSequenceNumber());
 		}
 
-		if (!session.getPackets().isEmpty() && (tcpPacket.isFIN() || tcpPacket.isRST())) {
-			PacketInfo previousPacket = session.getPackets().get(session.getPackets().size() - 1);
+		if (!session.getTcpPackets().isEmpty() && (tcpPacket.isFIN() || tcpPacket.isRST())) {
+			PacketInfo previousPacket = session.getTcpPackets().get(session.getTcpPackets().size() - 1);
 			double delay = packetInfo.getTimeStamp() - previousPacket.getTimeStamp();
 			session.setSessionTermination(new Termination(packetInfo, delay));
 		}
@@ -360,8 +421,7 @@ public class SessionManagerImpl implements ISessionManager {
 							}
 							if (rrInfo != null) {
 								results.add(rrInfo);
-								rrInfo.setFirstDataPacket(udpPacketInfo);
-								rrInfo.setLastDataPacket(udpPacketInfo);
+								populateRRInfo(rrInfo, udpPacketInfo, false, false, HttpDirection.REQUEST);
 								recentUpRRInfo = rrInfo;
 							} else {
 								if (443 == session.getLocalPort() || 443 == session.getRemotePort() || 80 == session.getLocalPort() || 80 == session.getRemotePort()) {
@@ -373,17 +433,12 @@ public class SessionManagerImpl implements ISessionManager {
 									// Creating a Request Objects when no actual requests were found.
 									session.setDataInaccessible(true);
 									rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), udpPacketInfo.getDir());
-									rrInfo.setDirection(HttpDirection.REQUEST);
+									populateRRInfo(rrInfo, udpPacketInfo, false, false, HttpDirection.REQUEST);
 									results.add(rrInfo);
-									rrInfo.setFirstDataPacket(udpPacketInfo);
-									rrInfo.setLastDataPacket(udpPacketInfo);
 									recentUpRRInfo = rrInfo;
 								}
-
 								if (udpPacketInfo.getPayloadLen() != 0) {
-									recentUpRRInfo.setLastDataPacket(udpPacketInfo);
-									recentUpRRInfo.setContentLength(recentUpRRInfo.getContentLength() + udpPacketInfo.getPayloadLen());
-									recentUpRRInfo.setRawSize(recentUpRRInfo.getRawSize() + udpPacketInfo.getLen());
+									updateRequestResponseObject(recentUpRRInfo, udpPacketInfo);
 								}
 							}
 							rrInfo = null;
@@ -397,24 +452,17 @@ public class SessionManagerImpl implements ISessionManager {
 							}
 							if (rrInfo != null) {
 								results.add(rrInfo);
-								rrInfo.setFirstDataPacket(udpPacketInfo);
-								rrInfo.setLastDataPacket(udpPacketInfo);
+								populateRRInfo(rrInfo, udpPacketInfo, false, false, HttpDirection.RESPONSE);
 								recentDnRRInfo = rrInfo;
 							} else {
-
 								if (recentDnRRInfo == null) {
 									rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), udpPacketInfo.getDir());
-									rrInfo.setDirection(HttpDirection.RESPONSE);
+									populateRRInfo(rrInfo, udpPacketInfo, false, false, HttpDirection.RESPONSE);
 									results.add(rrInfo);
-									rrInfo.setFirstDataPacket(udpPacketInfo);
-									rrInfo.setLastDataPacket(udpPacketInfo);
 									recentDnRRInfo = rrInfo;
 								}
-
 								if (udpPacketInfo.getPayloadLen() != 0) {
-									recentDnRRInfo.setLastDataPacket(udpPacketInfo);
-									recentDnRRInfo.setContentLength(recentDnRRInfo.getContentLength() + udpPacketInfo.getPayloadLen());
-									recentDnRRInfo.setRawSize(recentDnRRInfo.getRawSize() + udpPacketInfo.getLen());
+									updateRequestResponseObject(recentDnRRInfo, udpPacketInfo);
 								}
 							}
 							rrInfo = null;
@@ -467,10 +515,9 @@ public class SessionManagerImpl implements ISessionManager {
 								}
 
 								results.add(rrInfo);
-								rrInfo.setFirstDataPacket(packetInfo);
-								rrInfo.setLastDataPacket(packetInfo);
-
+								populateRRInfo(rrInfo, packetInfo, true, true, HttpDirection.REQUEST);
 								expectedUploadSeqNo = uploadSequenceNumber + tcpPacket.getPayloadLen();
+								
 							} else if (tempRRInfo != null) {
 								int headerDelta = 0;
 								boolean flag = false;
@@ -501,12 +548,9 @@ public class SessionManagerImpl implements ISessionManager {
 								session.setDataInaccessible(true);
 								rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetInfo.getDir());
 								expectedUploadSeqNo = uploadSequenceNumber + tcpPacket.getPayloadLen();
-								rrInfo.setTCP(true);
+								populateRRInfo(rrInfo, packetInfo, false, true, HttpDirection.REQUEST);
 								results.add(rrInfo);
-								rrInfo.setDirection(HttpDirection.REQUEST);
 								tempRRInfo = rrInfo;
-								rrInfo.setFirstDataPacket(packetInfo);
-								rrInfo.setLastDataPacket(packetInfo);
 							}
 							rrInfo = null;
 							tempRRInfo.addTCPPacket(uploadSequenceNumber, packetInfo);
@@ -525,23 +569,23 @@ public class SessionManagerImpl implements ISessionManager {
 							if (packetInfo.getPayloadLen() > 0) {
 								if (!session.isDataInaccessible()) {
 									rrInfo = extractHttpRequestResponseInfo(session, packetInfo, packetInfo.getDir(), previousPacket, limit);
-									previousPacket = null;
 									limit = 0;
+									if (rrInfo != null && !rrInfo.isHeaderParseComplete()) {
+										previousPacket = packetInfo;
+										continue;
+									} else {
+										previousPacket = null;
+									}
 								}
+
 								if (rrInfo != null) {
 									tempRRInfo = rrInfo;
 									results.add(rrInfo);
-									rrInfo.setFirstDataPacket(packetInfo);
-									rrInfo.setLastDataPacket(packetInfo);
+									populateRRInfo(rrInfo, packetInfo, true, true, HttpDirection.RESPONSE);
 									expectedDownloadSeqNo = downloadSequenceNumber + tcpPacket.getPayloadLen();
 								} else if (tempRRInfo != null) {
 									boolean flag = false;
 									int headerDelta = 0;
-									if (!session.isDataInaccessible() && !tempRRInfo.isHeaderParseComplete()) {
-										headerDelta = setHeaderOffset(tempRRInfo, packetInfo, tcpPacket);
-										tempRRInfo.writeHeader(packetInfo, headerDelta);
-										flag = true;
-									}
 									tempRRInfo.setLastDataPacket(packetInfo);
 									if (tcpPacket.getSequenceNumber() == expectedDownloadSeqNo) {
 										expectedDownloadSeqNo = tcpPacket.getSequenceNumber() + tcpPacket.getPayloadLen();
@@ -567,12 +611,9 @@ public class SessionManagerImpl implements ISessionManager {
 									}
 									rrInfo = new HttpRequestResponseInfo(session.getRemoteHostName(), packetInfo.getDir());
 									expectedDownloadSeqNo = downloadSequenceNumber + tcpPacket.getPayloadLen();
-									rrInfo.setTCP(true);
-									rrInfo.setDirection(HttpDirection.RESPONSE);
+									populateRRInfo(rrInfo, packetInfo, false, true, HttpDirection.RESPONSE);
 									results.add(rrInfo);
 									tempRRInfo = rrInfo;
-									rrInfo.setFirstDataPacket(packetInfo);
-									rrInfo.setLastDataPacket(packetInfo);
 								}
 								rrInfo = null;
 								tempRRInfo.addTCPPacket(downloadSequenceNumber, packetInfo);
@@ -598,6 +639,29 @@ public class SessionManagerImpl implements ISessionManager {
 			if (session.getDomainName() == null) {
 				session.setDomainName(session.getRemoteHostName() != null ? session.getRemoteHostName() : session.getRemoteIP().getHostAddress());
 			}
+		}
+	}
+
+	private void populateRRInfo(HttpRequestResponseInfo rrInfo, PacketInfo packetInfo, boolean isExtractable, boolean isTCP, HttpDirection httpDirection) {
+		rrInfo.setExtractable(isExtractable);
+		rrInfo.setFirstDataPacket(packetInfo);
+		rrInfo.setLastDataPacket(packetInfo);
+		rrInfo.setTCP(isTCP);
+		if (httpDirection != null) {
+			rrInfo.setDirection(httpDirection);
+		}
+	}
+	
+	/**
+	 * Updates the Content Length and Last Data Packet for Dummy RequestResponseObjects.
+	 * @param rrInfo
+	 * @param packetInfo
+	 */
+	private void updateRequestResponseObject(HttpRequestResponseInfo rrInfo, PacketInfo packetInfo) {
+		if (rrInfo != null) {
+			rrInfo.setContentLength(rrInfo.getContentLength() + packetInfo.getPayloadLen());
+			rrInfo.setRawSize(rrInfo.getRawSize() + packetInfo.getLen());
+			rrInfo.setLastDataPacket(packetInfo);
 		}
 	}
 	
@@ -635,10 +699,12 @@ public class SessionManagerImpl implements ISessionManager {
 		if (results.isEmpty() && !session.getUplinkPacketsSortedBySequenceNumbers().isEmpty() && !session.getDownlinkPacketsSortedBySequenceNumbers().isEmpty()) {
 			rrInfo = generateRequestResponseObjectsForSSLOrUDPSessions(session.getRemoteHostName(), PacketDirection.UPLINK, session.getUplinkPacketsSortedBySequenceNumbers().firstEntry().getValue(), false);
 			rrInfo.setLastDataPacket(session.getUplinkPacketsSortedBySequenceNumbers().lastEntry().getValue());
+			rrInfo.setExtractable(false);
 			results.add(rrInfo);
 			
 			downlinkRRInfo = generateRequestResponseObjectsForSSLOrUDPSessions(session.getRemoteHostName(), PacketDirection.DOWNLINK, session.getDownlinkPacketsSortedBySequenceNumbers().firstEntry().getValue(), false);
 			downlinkRRInfo.setLastDataPacket(session.getDownlinkPacketsSortedBySequenceNumbers().lastEntry().getValue());
+			downlinkRRInfo.setExtractable(false);
 			results.add(downlinkRRInfo);
 		}
 		
@@ -701,18 +767,7 @@ public class SessionManagerImpl implements ISessionManager {
 		return results;
 	}
 
-	/**
-	 * Updates the Content Length and Last Data Packet for Dummy RequestResponseObjects for Secure Sessions.
-	 * @param rrInfo
-	 * @param packetInfo
-	 */
-	private void updateRequestResponseObject(HttpRequestResponseInfo rrInfo, PacketInfo packetInfo) {
-		if (rrInfo != null) {
-			rrInfo.setContentLength(rrInfo.getContentLength() + packetInfo.getPayloadLen());
-			rrInfo.setRawSize(rrInfo.getRawSize() + packetInfo.getLen());
-			rrInfo.setLastDataPacket(packetInfo);
-		}
-	}
+	
 	
 	/**
 	 * Generates a Dummy RequestResponseObjects for Secure Sessions
@@ -722,20 +777,8 @@ public class SessionManagerImpl implements ISessionManager {
 	 * @return
 	 */
 	private HttpRequestResponseInfo generateRequestResponseObjectsForSSLOrUDPSessions (String remoteHostName, PacketDirection packetDirection, PacketInfo packetInfo, boolean isTCP) {
-		
 		HttpRequestResponseInfo rrInfo = new HttpRequestResponseInfo(remoteHostName, packetDirection);
-		
-		rrInfo.setTCP(isTCP);
-		rrInfo.setExtractable(false);
-		rrInfo.setFirstDataPacket(packetInfo);
-		rrInfo.setLastDataPacket(packetInfo);
-		
-		if (packetDirection == PacketDirection.UPLINK) {
-			rrInfo.setDirection(HttpDirection.REQUEST);
-		} else {
-			rrInfo.setDirection(HttpDirection.RESPONSE);
-		}
-		
+		populateRRInfo(rrInfo, packetInfo, false, isTCP, (packetDirection == PacketDirection.UPLINK ? HttpDirection.REQUEST : HttpDirection.RESPONSE));
 		return rrInfo;
 	}
 
@@ -805,6 +848,7 @@ public class SessionManagerImpl implements ISessionManager {
                         // The math below allows the request time to have a start time relative to trace capture.
                         rrInfo.setTime(time - pcapTimeOffset);
                         
+                        // TODO: Will Review this after ARO22945-1645
                         if (packetMap.containsKey(rrInfo.getTime()) && !usedPackets.containsKey(rrInfo.getTime())) {
                         	rrInfo.setFirstDataPacket(packetMap.get(rrInfo.getTime()));
                         	usedPackets.put(rrInfo.getTime(), packetMap.get(rrInfo.getTime()));
@@ -905,17 +949,22 @@ public class SessionManagerImpl implements ISessionManager {
                 rrInfo.setRequestType(matcher.group(1));
                 rrInfo.setDirection(HttpDirection.REQUEST);
                 rrInfo.setObjName(matcher.group(2));
-                try {
-                    rrInfo.setObjUri(new URI(URLEncoder.encode(rrInfo.getObjName(), StandardCharsets.UTF_8.toString())));
-                    rrInfo.setHostName(rrInfo.getObjUri().getHost());
-                } catch (URISyntaxException | UnsupportedEncodingException e) {
-                    // Ignore since value does not have to be a URI
-                    LOGGER.info("", e);
-                }
-
                 rrInfo.setVersion(matcher.group(3));
-                rrInfo.setScheme(rrInfo.getVersion().split("/")[0]);
                 rrInfo.setPort(session.getRemotePort());
+           
+                String scheme = rrInfo.getVersion().split("/")[0];
+                rrInfo.setScheme(scheme);
+
+                try {
+                	if (rrInfo.getObjName().startsWith("/") || rrInfo.getObjName().startsWith(scheme.toLowerCase())) {
+                		rrInfo.setObjUri(new URI(rrInfo.getObjName()));
+                	} else {
+                		rrInfo.setObjUri(new URI(scheme.toLowerCase() + "://" + rrInfo.getObjName()));
+                	}
+                	rrInfo.setHostName(rrInfo.getObjUri().getHost());
+                } catch (URISyntaxException e) {
+                	LOGGER.error(String.format("Problem create creating a URI for line: %s", line), e);
+                }
             }
         } else {
             Matcher matcher = HttpPattern.strReResponseResults.matcher(line);
@@ -1136,13 +1185,18 @@ public class SessionManagerImpl implements ISessionManager {
 			    if (rrInfo != null && tcpPacket != null) {
 			        rrInfo.setTCP(true);
                     rrInfo = populateRRInfo(session, tcpPacket, rrInfo);
-                    rrInfo.getHeaderData().write(streamArray, 0, storageReader.getIndex());
-                    int remainingLength = (streamArray.length - storageReader.getIndex());
-					if (rrInfo.getContentLength() > 0 && rrInfo.getContentLength() <= remainingLength) {
-						rrInfo.getPayloadData().write(streamArray, storageReader.getIndex(), rrInfo.getContentLength());
-					} else {
-						rrInfo.getPayloadData().write(streamArray, storageReader.getIndex(), remainingLength);
-					}
+
+                    if (!rrInfo.isHeaderParseComplete()) {
+                    	return rrInfo;
+                    } else {
+	                    rrInfo.getHeaderData().write(streamArray, 0, storageReader.getIndex());
+	                    int remainingLength = (streamArray.length - storageReader.getIndex());
+						if (rrInfo.getContentLength() > 0 && rrInfo.getContentLength() <= remainingLength) {
+							rrInfo.getPayloadData().write(streamArray, storageReader.getIndex(), rrInfo.getContentLength());
+						} else {
+							rrInfo.getPayloadData().write(streamArray, storageReader.getIndex(), remainingLength);
+						}
+                    }
 			    }
 			}
 		} catch (IOException e1) {
@@ -1155,13 +1209,11 @@ public class SessionManagerImpl implements ISessionManager {
 	private HttpRequestResponseInfo populateRRInfo(Session session, TCPPacket tcpPacket, HttpRequestResponseInfo rrInfo) throws IOException {
 
 		String line;
-
 		rrInfo.setSsl(session.isSsl());
 		rrInfo.setRawSize(tcpPacket.getLen());
 		while ((line = storageReader.readLine()) != null && line.length() != 0) {
 			parseHeaderLine.parseHeaderLine(line, rrInfo);
 		}
-
 		if (line != null && line.length() == 0) {
 			rrInfo.setHeaderParseComplete(true);
 		}
@@ -1196,7 +1248,7 @@ public class SessionManagerImpl implements ISessionManager {
 		Set<Long> ulAliveAck = new HashSet<Long>();
 		Set<Long> dlAliveAck = new HashSet<Long>();
 
-		for (PacketInfo pinfo : sess.getPackets()) {
+		for (PacketInfo pinfo : sess.getTcpPackets()) {
 			TCPPacket pack = (TCPPacket) pinfo.getPacket();
 
 			if (!pack.isACK()) {
@@ -1275,7 +1327,7 @@ public class SessionManagerImpl implements ISessionManager {
 	 */
 	private void analyzeZeroWindow(Session sess) {
 
-		for (PacketInfo pInfo : sess.getPackets()) {
+		for (PacketInfo pInfo : sess.getTcpPackets()) {
 			TCPPacket tPacket = (TCPPacket) pInfo.getPacket();
 			if (tPacket.getPayloadLen() == 0 && tPacket.getWindow() == 0 && !tPacket.isSYN() && !tPacket.isFIN() && !tPacket.isRST()) {
 				pInfo.setTcpInfo(TcpInfo.TCP_ZERO_WINDOW);
@@ -1297,7 +1349,7 @@ public class SessionManagerImpl implements ISessionManager {
 		Map<Long, TCPPacket> dupSeqUl = new HashMap<Long, TCPPacket>();
 		Map<Long, TCPPacket> dupSeqDl = new HashMap<Long, TCPPacket>();
 
-		for (PacketInfo pInfo : sess.getPackets()) {
+		for (PacketInfo pInfo : sess.getTcpPackets()) {
 			TCPPacket tPacket = (TCPPacket) pInfo.getPacket();
 
 			TcpInfo pType = pInfo.getTcpInfo();

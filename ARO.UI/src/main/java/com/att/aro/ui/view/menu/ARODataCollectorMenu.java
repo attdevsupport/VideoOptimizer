@@ -284,6 +284,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getAttenuatorModel());
 			extras.put("TraceFolderName", traceFolderName);
 			extras.put("assignPermission", ((MainFrame) parent).isAutoAssignPermissions());
+			
 			((MainFrame) parent).startCollector(device, traceFolderName, extras);
 			
 		} else {

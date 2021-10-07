@@ -208,7 +208,7 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 		this.traceValueLabel.setToolTipText(ResourceBundleHelper.getMessageString("trace.hyperlink"));
 		this.traceValueLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-		this.byteCountTotalLabel.setText(Integer.toString(aModel.getAnalyzerResult().getStatistic().getTotalByte()));
+		this.byteCountTotalLabel.setText(Long.toString(aModel.getAnalyzerResult().getStatistic().getTotalByte()));
 		this.profileValueLabel.setText(aModel.getAnalyzerResult().getProfile().getName());
 
 		if (TraceResultType.TRACE_DIRECTORY.equals(aModel.getAnalyzerResult().getTraceresult().getTraceResultType())) {

@@ -20,6 +20,9 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.pcap4j.packet.TcpPacket;
+import org.pcap4j.packet.TcpPacket.TcpHeader;
+
 import com.att.aro.core.util.ForwardSecrecyUtil;
 
 import lombok.Getter;
@@ -54,7 +57,7 @@ public class TCPPacket extends IPPacket implements Serializable {
 	private int dataOffset;
 	private int payloadLen;
 	private int packetLength;
-
+	
 	private boolean ssl;
 	private boolean decrypted;
 	private boolean sslHandshake;
@@ -64,6 +67,43 @@ public class TCPPacket extends IPPacket implements Serializable {
 	private Set<String> unsecureSSLVersions;
 	private Set<String> weakCipherSuites;
 	private String selectedCipherSuite;
+
+
+	public TCPPacket(long seconds, long microSeconds, org.pcap4j.packet.Packet pcap4jPacket, TcpPacket pcap4jTCPPacket) {
+		super(seconds, microSeconds, pcap4jPacket);
+		// Reset data offset and payload length corresponding to upper layer protocol
+		super.setDataOffset(pcap4jPacket.length() - pcap4jTCPPacket.length());
+		super.setPayloadLen(pcap4jTCPPacket.length());
+
+		TcpHeader pcap4jTCPHeader = pcap4jTCPPacket.getHeader();
+
+
+		sourcePort = pcap4jTCPHeader.getSrcPort().valueAsInt();
+		destinationPort = pcap4jTCPHeader.getDstPort().valueAsInt();
+		sequenceNumber = pcap4jTCPHeader.getSequenceNumberAsLong();
+		ackNumber = pcap4jTCPHeader.getAcknowledgmentNumberAsLong();
+		urg = pcap4jTCPHeader.getUrg();
+		ack = pcap4jTCPHeader.getAck();
+		psh = pcap4jTCPHeader.getPsh();
+		rst = pcap4jTCPHeader.getRst();
+		syn = pcap4jTCPHeader.getSyn();
+		fin = pcap4jTCPHeader.getFin();
+		window = pcap4jTCPHeader.getWindowAsInt();
+		urgentPointer = pcap4jTCPHeader.getUrgentPointer();
+
+		packetLength = pcap4jTCPPacket.length();
+		payloadLen = pcap4jTCPPacket.getPayload() != null ? pcap4jTCPPacket.getPayload().length() : 0;
+		dataOffset = super.getDataOffset() + pcap4jTCPHeader.length();
+
+		unsecureSSLVersions = new HashSet<>();
+		weakCipherSuites = new HashSet<>();
+		int offset = dataOffset;
+		if (!(sourcePort == 80 || destinationPort == 80)) {
+			do {
+				offset = parseSecureSocketsLayer(ByteBuffer.wrap(pcap4jPacket.getRawData()), offset);
+			} while (offset >= 0);
+		}
+	}
 
 	/**
 	 * Creates a new instance of the TCPPacket class using the specified parameters.
@@ -101,11 +141,13 @@ public class TCPPacket extends IPPacket implements Serializable {
 		weakCipherSuites = new HashSet<>();
 		
 		int offset = dataOffset;
-		do {
-			offset = parseSecureSocketsLayer(bytes, offset);
-		} while (offset >= 0);
+		if (!(sourcePort == 80 || destinationPort == 80)) {
+			do {
+				offset = parseSecureSocketsLayer(bytes, offset);
+			} while (offset >= 0);
+		}
 	}
-	
+
 	public void setDataOffset(int dataOffset) {
 		this.dataOffset = dataOffset;
 	}
@@ -303,6 +345,10 @@ public class TCPPacket extends IPPacket implements Serializable {
 			short tlsLen = bytes.getShort();
 			int result = offset + 5 + tlsLen;
 
+			if (tlsLen <= 0) {
+				return -1;
+			}
+			
 			// sniff client hello and server hello for ciphers
 			if (isHandshake(contentType, majorVersion, minorVersion)) {
 				// check unsecure SSL version

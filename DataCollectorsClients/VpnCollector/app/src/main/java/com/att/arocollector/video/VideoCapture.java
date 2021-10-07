@@ -44,7 +44,7 @@ import java.util.Date;
 public class VideoCapture {
 
 	public static String TAG = "VideoCapture";
-	private Context context ;
+	private Context context;
 
 	private WindowManager windowManager;
 	private int bitRate;

@@ -47,6 +47,7 @@ public interface IExternalProcessRunner {
 	 * @return stdout and stderr
 	 */
 	String executeCmd(String cmd);
+
 	/**
 	 * execute command in bash/CMD shell
 	 * 
@@ -56,6 +57,7 @@ public interface IExternalProcessRunner {
 	 * @return stdout and stderr
 	 */
 	String executeCmd(String cmd, boolean redirectErrorStream, boolean readCommandResponse);
+	
 	/**
 	 * @param cmd
 	 * @param earlyExit
@@ -74,6 +76,7 @@ public interface IExternalProcessRunner {
 	 * @return stdout and stderr
 	 */
 	String executeCmdRunner(String cmd, boolean earlyExit, String msg, boolean redirectErrorStream,  boolean readCommandResponse);
+	
 	/**
 	 * @param workingDir
 	 * @param cmd
@@ -93,7 +96,6 @@ public interface IExternalProcessRunner {
 	 * @return stdout and stderr
 	 */
 	String executeCmdRunner(File workingPath, String cmd, boolean earlyExit, String msg, boolean redirectErrorStream,  boolean readCommandResponse);
-	
- 
 
+	
 }

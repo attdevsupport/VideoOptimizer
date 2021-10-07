@@ -18,7 +18,8 @@ public class ApplicationPacketSummaryTest {
 			String appName = "Android";
 			int packetCount = 10;
 			long totalBytes = 10L;
-			return new ApplicationPacketSummary(appName, packetCount, totalBytes);
+			long totalPayloadBytes = 15L;
+			return new ApplicationPacketSummary(appName, packetCount, totalBytes, totalPayloadBytes);
 		}
 		
 	}

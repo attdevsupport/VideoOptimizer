@@ -32,6 +32,7 @@ import org.jfree.data.xy.XYDataItem;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import org.springframework.util.CollectionUtils;
 
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
@@ -178,10 +179,12 @@ public class VideoProgressPlot implements IPlot{
 			progressList.add(progress);
 			timestampList.add(dlTimeStamp);
 		}
-		minYValue = progressList.stream().findFirst().get();
-		maxYValue = progressList.stream().reduce((first, second) -> second).get();
-		minXValue = timestampList.stream().findFirst().get();
-		maxXValue = timestampList.stream().reduce((first, second) -> second).get();
+		if (!CollectionUtils.isEmpty(progressList) && !CollectionUtils.isEmpty(timestampList)) {
+			minYValue = progressList.stream().findFirst().get();
+			maxYValue = progressList.stream().reduce((first, second) -> second).get();
+			minXValue = timestampList.stream().findFirst().get();
+			maxXValue = timestampList.stream().reduce((first, second) -> second).get();
+		}
 		return muxedSeries;
 
 	}
@@ -191,7 +194,6 @@ public class VideoProgressPlot implements IPlot{
 		audioDownloadSeries.clear();
 		videoPlaytimeSeries.clear();
 		audioPlaytimeSeries.clear();
-		
 		if (videoStream != null) {
 			optionSelected = option;
 			double dlTimeStamp = 0.0;
@@ -210,7 +212,7 @@ public class VideoProgressPlot implements IPlot{
 					}
 				}
 			}
-			
+
 			if (option == SegmentOptions.DEFAULT || option == SegmentOptions.AUDIO) {
 				for (Entry<String, VideoEvent> audioEventEntry : videoStream.getAudioEventMap().entrySet()) {
 					VideoEvent audioEvent = audioEventEntry.getValue();
@@ -226,8 +228,8 @@ public class VideoProgressPlot implements IPlot{
 					}
 				}
 			}
-			
-			
+
+
 			if (optionSelected != SegmentOptions.AUDIO && optionSelected != SegmentOptions.VIDEO) {
 				if (!videoDownloadSeries.isEmpty() && !audioDownloadSeries.isEmpty()) {
 					isMuxed = false;
@@ -237,12 +239,15 @@ public class VideoProgressPlot implements IPlot{
 			}
 			Collections.sort(progressList);
 			Collections.sort(timestampList);
-			minYValue = progressList.stream().findFirst().get();
-			maxYValue = progressList.stream().reduce((first, second) -> second).get();
-			minXValue = timestampList.stream().findFirst().get();
-			maxXValue = timestampList.stream().reduce((first, second) -> second).get();
+			if (!CollectionUtils.isEmpty(progressList) && !CollectionUtils.isEmpty(timestampList)) {
+				minYValue = progressList.stream().findFirst().get();
+				maxYValue = progressList.stream().reduce((first, second) -> second).get();
+				minXValue = timestampList.stream().findFirst().get();
+				maxXValue = timestampList.stream().reduce((first, second) -> second).get();
+			}
 		}
 	}
+	
 
 	private double getProgress(SortedMap<String, VideoEvent> segmentMap, VideoEvent segment, boolean isVideo) {
 		double progress = 0.0;

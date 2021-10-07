@@ -1,23 +1,26 @@
 package com.att.aro.core.videoanalysis.parsers.segmenttimeline;
 
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Setter@Getter
 @XmlRootElement(name = "SegmentTemplate")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class SegmentTemplateST {
 	
-	@XmlAttribute private String timescale = "";
-	@XmlAttribute private String presentationTimeOffset = "";
+	@XmlAttribute private String duration;
+	@XmlAttribute private String timescale;
 	@XmlAttribute private String media = "";
 	@XmlAttribute private String initialization = "";
+	@XmlAttribute private int startNumber;
+	@XmlAttribute private String presentationTimeOffset = "";
+	
 	@XmlElement(name = "SegmentTimeline") private SegmentTimeLineST segmentTimeline;
 
 	@Override

@@ -185,7 +185,7 @@ public class PeriodicTransferImpl implements IBestPractice {
 			
 			// Get a list of timestamps of established sessions with each remote IP
 			if(!tcpSession.isUdpOnly()){
-				PacketInfo firstPacket = tcpSession.getPackets().get(0);
+				PacketInfo firstPacket = tcpSession.getTcpPackets().get(0);
 				if (firstPacket.getTcpInfo() == TcpInfo.TCP_ESTABLISH) {
 					List<Double> res = connectedIP2tsList.get(tcpSession.getRemoteIP());
 					if (res == null) {

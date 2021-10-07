@@ -17,10 +17,17 @@ package com.att.arotcpcollector.socket;
 
 import android.util.Log;
 
+import com.att.arotcpcollector.PacketData;
 import com.att.arotcpcollector.Session;
 import com.att.arotcpcollector.SessionManager;
+import com.att.arotcpcollector.ip.IPHeader;
+import com.att.arotcpcollector.ip.IPv4Header;
+
+import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
+import com.att.arotcpcollector.util.PacketUtil;
+
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -36,6 +43,7 @@ public class SocketDataWriterWorker implements Runnable {
 	private SessionManager sessionMngr;
 	private String sessionKey = "";
 	private SocketData pcapData; // for traffic.cap
+	private boolean secureEnable = false;
 	private boolean printLog = false;
 
 	public SocketDataWriterWorker(TCPPacketFactory tcpFactory, UDPPacketFactory udpFactory) {
@@ -117,7 +125,7 @@ public class SocketDataWriterWorker implements Runnable {
 			//			Log.d(TAG, "***** end writing to server *******");
 			//			Log.d(TAG, "writing data to remote UDP: " + session.getSessionName());
 			channel.write(buffer);
-
+			
 		} catch (NotYetConnectedException e) {
 			session.setAbortingConnection(true);
 			Log.e(TAG, "Error writing to unconnected-UDP server, will abort current connection: ", e);
@@ -138,6 +146,7 @@ public class SocketDataWriterWorker implements Runnable {
 
 		byte[] data = session.getSendingData();
 
+
 		ByteBuffer buffer = ByteBuffer.allocate(data.length);
 		buffer.put(data);
 		buffer.flip();
@@ -150,15 +159,19 @@ public class SocketDataWriterWorker implements Runnable {
 
 			byte[] clearData = session.getClearSendingData();
 
-		}  catch (IOException e) {
+		} catch (NotYetConnectedException ex) {
+			Log.e(TAG, "socket not connected");
+		} catch (IOException e) {
 			//close connection with vpn client
 			byte[] rstdata = tcpFactory.createRstData(session.getLastIPheader(), session.getLastTCPheader(), 0);
 			Log.i("TCPTRACK"+session.getDestPort(), "<RST");
 			pcapData.sendDataRecieved(rstdata);
-			pcapData.sendDataToPcap(rstdata, false);
+			pcapData.sendDataToPcap(new PacketData(rstdata), false);
 			//remove session
 			Log.e(TAG, "failed to write to remote socket, aborting connection");
 			session.setAbortingConnection(true);
+		} catch (Exception e) {
+			Log.e(TAG, "EXCEPTION: Error writing to UDP server, will abort connection: " + e.getMessage());
 		}
 
 	}

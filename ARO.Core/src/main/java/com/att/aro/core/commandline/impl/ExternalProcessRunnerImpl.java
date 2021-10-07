@@ -74,7 +74,7 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 	public String executeCmdRunner(String cmd, boolean earlyExit, String msg,  boolean readCommandResponse) {
 		return executeCmdRunner(cmd, earlyExit, msg, false, readCommandResponse);
 	}
-
+	
 	@Override
 	public String executeCmd(File workingPath, String cmd, boolean redirectErrorStream, boolean readCommandResponse) {
 		String result = executeCmdRunner(workingPath, cmd, false, "", redirectErrorStream, readCommandResponse);
@@ -120,21 +120,21 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 			Process proc = pbldr.start();
 			
 			if (readCommandResponse) {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-
-			String line = null;
-			while (true) {
-				line = reader.readLine();
-				if (line == null) {
-					break;
-				}
-				if (earlyExit && line.trim().equals(msg)) {
-					LOG.debug("read a line:" + line);
+				BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+	
+				String line = null;
+				while (true) {
+					line = reader.readLine();
+					if (line == null) {
+						break;
+					}
+					if (earlyExit && line.trim().equals(msg)) {
+						LOG.debug("read a line:" + line);
+						builder.append(line);
+						break;
+					}
 					builder.append(line);
-					break;
-				}
- 				builder.append(line);
-				builder.append(System.getProperty("line.separator"));
+					builder.append(System.getProperty("line.separator"));
 				}
 			}
 		} catch (IOException e) {

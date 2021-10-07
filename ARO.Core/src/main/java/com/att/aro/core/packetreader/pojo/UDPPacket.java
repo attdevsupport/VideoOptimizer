@@ -18,6 +18,9 @@ package com.att.aro.core.packetreader.pojo;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
+import org.pcap4j.packet.UdpPacket;
+import org.pcap4j.packet.UdpPacket.UdpHeader;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -25,8 +28,30 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  */
 public class UDPPacket extends IPPacket implements Serializable {
 	private static final long serialVersionUID = 1L;
-	
-	public static final int DNS_PORT = 53;
+
+
+	public static enum DNSPort {
+		DNS(53),
+		MDNS(5353),
+		DNS_OVER_TLS(853);
+
+
+		private final int portNumber;
+
+		private DNSPort(int portNumber) {
+			this.portNumber = portNumber;
+		}
+
+		public static boolean contains(int portNumber) {
+			for (DNSPort port : values()) {
+				if (port.portNumber == portNumber) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+	}
 
 	private int sourcePort;
 	private int destinationPort;
@@ -35,6 +60,22 @@ public class UDPPacket extends IPPacket implements Serializable {
 	private int payloadLen;
 	@JsonIgnore
 	private DomainNameSystem dns;
+
+
+	public UDPPacket(long seconds, long microSeconds, org.pcap4j.packet.Packet pcap4jPacket, UdpPacket pcap4jUDPPacket) {
+		super(seconds, microSeconds, pcap4jPacket);
+
+		UdpHeader pcap4jUDPHeader = pcap4jUDPPacket.getHeader();
+		// Reset data offset and payload length corresponding to upper layer protocol
+		super.setDataOffset(pcap4jPacket.length() - pcap4jUDPPacket.length());
+		super.setPayloadLen(pcap4jUDPPacket.length());
+
+		sourcePort = pcap4jUDPHeader.getSrcPort().valueAsInt();
+		destinationPort = pcap4jUDPHeader.getDstPort().valueAsInt();
+		packetLength = pcap4jUDPPacket.length();
+		payloadLen = pcap4jUDPPacket.getPayload() != null ? pcap4jUDPPacket.getPayload().length() : 0;
+		dataOffset = super.getDataOffset() + pcap4jUDPHeader.length();
+	}
 
 	/**
 	 * Constructor
@@ -103,7 +144,7 @@ public class UDPPacket extends IPPacket implements Serializable {
 	 * @return
 	 */
 	public boolean isDNSPacket() {
-		return destinationPort == DNS_PORT || sourcePort == DNS_PORT;
+		return DNSPort.contains(destinationPort) || DNSPort.contains(sourcePort);
 	}
 
 	/**

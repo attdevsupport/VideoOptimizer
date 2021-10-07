@@ -91,7 +91,7 @@ public class UnsecureSSLVersionImpl implements IBestPractice {
 	 */
 	private Set<String> getUnsecureSSLVersionsInSession(Session session) {
 		Set<String> unsecureSSLVersions = new HashSet<>();
-		List<PacketInfo> packetInfos = session.getPackets();
+		List<PacketInfo> packetInfos = session.getTcpPackets();
 		for(PacketInfo info : packetInfos) {
 			if (info.getPacket() instanceof TCPPacket) {
 				TCPPacket tcpPacket = (TCPPacket) info.getPacket();

@@ -19,6 +19,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -27,6 +28,7 @@ public class TransmissionPrivateDataTableModel extends DataTableModel<Transmissi
 	/**
 	 * 
 	 */
+
 	private static final long serialVersionUID = 1L;
 	
 	private static final int COL1_MIN = 90;
@@ -128,7 +130,7 @@ public class TransmissionPrivateDataTableModel extends DataTableModel<Transmissi
 		case COL_4:
 			return item.getPrivateDataType();
 		case COL_5:
-			return item.getPrivateDataTxt();
+			return Util.decodeUrlEncoding(item.getPrivateDataTxt());
 		default:
 			return null;
 		}

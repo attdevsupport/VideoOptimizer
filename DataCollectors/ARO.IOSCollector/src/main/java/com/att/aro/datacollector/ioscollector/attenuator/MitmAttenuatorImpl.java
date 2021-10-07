@@ -30,6 +30,7 @@ public class MitmAttenuatorImpl {
 	    littleProxy.setTRACE_FILE_PATH(trafficFilePath);
    		pool = Executors.newFixedThreadPool(THREAD_NUM);
  		pool.execute(littleProxy);
+
      }
     
     public void stopCollect() {
@@ -37,6 +38,7 @@ public class MitmAttenuatorImpl {
     	if(littleProxy!=null) {
     		littleProxy.stop();		
     	}
+	
 		if(pool!=null) {
 			pool.shutdown();
 			try {
@@ -69,7 +71,7 @@ public class MitmAttenuatorImpl {
 		if (throttleUL == 0) {
 			throttleUL = -1;
 		}
-		writeCollectOption.recordCollectOptions(trafficFilePath, 0, 0, throttleDL, throttleUL, atnrProfile,
+		writeCollectOption.recordCollectOptions(trafficFilePath, 0, 0, throttleDL, throttleUL, atnrProfile, 
 				atnrProfileName, "PORTRAIT");
 
 	}

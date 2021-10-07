@@ -38,7 +38,6 @@ import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.PrivateDataType;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataResult;
-import com.att.aro.core.packetanalysis.impl.SessionManagerImpl;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
@@ -57,7 +56,7 @@ import com.att.aro.core.util.Util;
 
 public class TransmissionPrivateDataImpl implements IBestPractice {
 	
-	private static final Logger LOGGER = LogManager.getLogger(SessionManagerImpl.class.getName());
+	private static final Logger LOGGER = LogManager.getLogger(TransmissionPrivateDataImpl.class.getName());
 
 	@Value("${security.transmissionPrivateData.title}")
 	private String overviewTitle;
@@ -230,15 +229,17 @@ public class TransmissionPrivateDataImpl implements IBestPractice {
 	
 	/**
 	 * get keywords from user preference
+	 * 
 	 * @param builder
 	 */
 	private void getKeywordsFromPreference(SearchingPatternBuilder builder) {
 		UserPreferences pref = UserPreferencesFactory.getInstance().create();
 		List<PrivateDataInfo> list = pref.getPrivateData();
 		if (list != null) {
-			for(PrivateDataInfo info : list) {
+			for (PrivateDataInfo info : list) {
 				if (info.isSelected()) {
-					builder.add(info.getValue(), info.getType());
+					String encodeURL = Util.encodeUrlEncoding(info.getValue());
+					builder.add(encodeURL, info.getType());
 				}
 			}
 		}

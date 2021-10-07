@@ -70,6 +70,7 @@ import com.att.aro.core.packetreader.pojo.UDPPacket;
 import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
+import com.att.aro.core.videoanalysis.csi.ICSIDataHelper;
 import com.att.aro.core.videoanalysis.csi.VideoTrafficInferencer;
 
 /**
@@ -103,7 +104,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 
 	@Autowired
 	private HtmlExtractor htmlExtractor;
-
+	
 	@Autowired
 	private VideoTrafficInferencer videoTrafficInferencer;
 
@@ -113,6 +114,9 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 	private String analysisCategory;
 	@Autowired
 	private IMetaDataHelper metaDataHelper;
+	
+	@Autowired
+	private ICSIDataHelper csiDataHelper;
 
 	private SortedMap<Double, HttpRequestResponseInfo> requestMap = new TreeMap<>();
 
@@ -206,7 +210,6 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		}
 
 		TimeRange timeRange = null;
-
 		boolean isCSI = false;
 		filteredPackets = new ArrayList<PacketInfo>();
 		if (filter == null) {
@@ -220,7 +223,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			timeRange = filter.getTimeRange();
 			if (result != null) {
 				filteredPackets = filterPackets(filter, result.getAllpackets());
-			}
+			}	
 		}
 
 		// Set the Abstract Trace Data with the filtered packets - All packets are not necessary.
@@ -242,23 +245,15 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			}
 		}
 
+		Statistic stat = this.getStatistic(filteredPackets);
+
 		List<Session> sessionList = sessionmanager.processPacketsAndAssembleSessions(filteredPackets);
-		generateRequestMap(sessionList);
-		Statistic stat = this.getStatistic(sessionList);
+		generateGetRequestMapAndPopulateLatencyStat(sessionList, stat);
+
+		
 		if (result != null && stat.getAppName() != null && stat.getAppName().size() == 1 && stat.getAppName().contains("Unknown")) {
 			stat.setAppName(new HashSet<String>(result.getAppInfos()));
 		}
-
-		int totalBytes = 0;
-		int totPayloadBytes = 0;
-		if (!CollectionUtils.isEmpty(filteredPackets)) {
-			for (PacketInfo pkt : filteredPackets) {
-			    totalBytes += pkt.getLen();
-				totPayloadBytes += pkt.getPacket().getPayloadLen();
-			}
-		}
-		stat.setTotalByte(totalBytes);
-		stat.setTotalPayloadBytes(totPayloadBytes);
 
 		// get Unanalyzed HTTPS bytes
 		boolean isSecureTrace = result instanceof TraceDirectoryResult ? ((TraceDirectoryResult) result).isSecureTrace() : false;
@@ -284,16 +279,17 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				List<BestPracticeType> videoBPList = BestPracticeType.getByCategory(BestPracticeType.Category.VIDEO);
 				data.setStreamingVideoData(videoTrafficCollector.clearData());
 				if (CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), videoBPList)) {
-					if (isCSI) {
-						data.setStreamingVideoData(videoTrafficInferencer.inferVideoData(result, sessionList, filter.getManifestFilePath()));
-					} else {				
-					data.setStreamingVideoData(videoTrafficCollector.collect(result, sessionList, requestMap));
+					if (isCSI || csiDataHelper.doesCSIFileExist(result.getTraceDirectory())) {
+						data.setStreamingVideoData(videoTrafficInferencer.inferVideoData(result, sessionList,  filter != null ? filter.getManifestFilePath() : result.getTraceDirectory()));
+					} else {
+						data.setStreamingVideoData(videoTrafficCollector.collect(result, sessionList, requestMap));
 					}
 				}
 			} catch (Exception ex) {
 				LOGGER.error("Error in Video usage analysis :", ex);
 				// Guarantee that StreamingVideoData is empty
 				data.setStreamingVideoData(videoTrafficCollector.clearData());
+				data.getStreamingVideoData().setFinished(true);
 			}
 
 			try {
@@ -328,11 +324,11 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 	 * @param sessions
 	 * @return
 	 */
-	private int getHttpsBytesNotAnalyzed(List<Session> sessions) {
+	private long getHttpsBytesNotAnalyzed(List<Session> sessions) {
 	    return
 	        sessions.stream()
             .filter(s -> !s.isUdpOnly() && s.getRemotePort() == 443)
-            .mapToInt(
+            .mapToLong(
                 session -> {
                     return
                         session.getRequestResponseInfo().stream()
@@ -343,7 +339,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
                                 rrInfo.getStatusCode() == 0
                             )
                         )
-                        .mapToInt(HttpRequestResponseInfo::getContentLength)
+                        .mapToLong(HttpRequestResponseInfo::getContentLength)
                         .sum();
                   }
             )
@@ -365,17 +361,38 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		// All of of the skip-flags are false at first.
 		boolean ipv4Skip = !filter.isIpv4Sel();
 		boolean ipv6Skip = !filter.isIpv6Sel();
+		boolean tcpSkip = !filter.isTcpSel();
 		boolean udpSkip = !filter.isUdpSel();
 		boolean dnsSkip = !filter.isDnsSelection();
 
 		for (PacketInfo packetInfo : packetsInfo) {
 
-			if (ipv4Skip && packetInfo.getRemoteIPAddress() instanceof Inet4Address) {
+			if (packetInfo.getRemoteIPAddress() != null) {
+				if (ipv4Skip && packetInfo.getRemoteIPAddress() instanceof Inet4Address) {
+					continue;
+				}
+				if (ipv6Skip && packetInfo.getRemoteIPAddress() instanceof Inet6Address) {
+					continue;
+				}
+			} else {
+				IPPacket ipPacket = (IPPacket) packetInfo.getPacket();
+				
+				if (ipPacket != null) {
+
+					if (ipv4Skip && ipPacket.getIPVersion() == 4) {
+						continue;
+					}
+					if (ipv6Skip && ipPacket.getIPVersion() == 6) {
+						continue;
+					}
+				}
+			
+			}
+			
+			if (tcpSkip && packetInfo.getPacket() instanceof TCPPacket) {
 				continue;
 			}
-			if (ipv6Skip && packetInfo.getRemoteIPAddress() instanceof Inet6Address) {
-				continue;
-			}
+			
 			if (udpSkip && packetInfo.getPacket() instanceof UDPPacket) {
 				UDPPacket udpPacket = (UDPPacket) packetInfo.getPacket();
 				if (!(DNS_PORT == udpPacket.getDestinationPort() || DNS_PORT == udpPacket.getSourcePort())) {
@@ -400,113 +417,115 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				// App unknown by filter
 				continue;
 			}
-
+			
 			packetInfo.setPacketId(++packetIdx);
 			filteredPackets.add(packetInfo);
 		}
-
+		
 		return filteredPackets;
 	}
 
 	@Override
-	public Statistic getStatistic(List<Session> sessions) {
+	public Statistic getStatistic(List<PacketInfo> packetInfos) {
 		Statistic stat = new Statistic();
 		Set<String> appNames = new HashSet<String>();
 
-		if (!sessions.isEmpty()) {
-			int totalHTTPSBytes = 0;
-			int totalTCPBytes = 0;
-		    int totalTCPPayloadBytes = 0;
-			int totalPackets = 0;
-			double avgKbps = 0;
-			double packetsDuration = 0;
-			double minTimestamp = 0.0d;
-			double maxTimestamp = 0.0d;
+		if (!packetInfos.isEmpty() && packetInfos.size() > 0) {
+			long totalHTTPSBytes = 0;
+			long totalBytes = 0;
+			long totalTCPBytes = 0;
+			long totalPayloadBytes = 0;
+			long totalTCPPayloadBytes = 0;
+			int totalTCPPackets = 0;
+			double minTCPPacketTimestamp = Double.MAX_VALUE;
+			double maxTCPPacketTimestamp = Double.MIN_VALUE;
 			List<IPPacketSummary> ipPacketSummary = new ArrayList<>();
 			List<ApplicationPacketSummary> applicationPacketSummary = new ArrayList<>();
 			Map<Integer, Integer> packetSizeToCountMap = new HashMap<>();
-			Map<String, PacketCounter> appPackets = new HashMap<String, PacketCounter>();
-			Map<InetAddress, PacketCounter> ipPackets = new HashMap<InetAddress, PacketCounter>();
+			Map<String, PacketCounter> appPackets = new HashMap<>();
+			Map<InetAddress, PacketCounter> ipPackets = new HashMap<>();
 
-			for (Session session : sessions) {
-			    List<PacketInfo> packets = session.getPackets();
-			    if (packets != null) {
-			        totalPackets += packets.size();
+			for (PacketInfo packetInfo : packetInfos) {
+			    if (packetInfo != null) {
+			    	totalBytes += packetInfo.getLen();
+			    	totalPayloadBytes += packetInfo.getPacket().getPayloadLen();
+		            PacketCounter pCounter;
 
-			        for (PacketInfo packetInfo : packets) {
-			            minTimestamp = Math.min(minTimestamp, packetInfo.getTimeStamp());
-			            maxTimestamp = Math.max(maxTimestamp, packetInfo.getTimeStamp());
+	                if (packetInfo.getPacket() instanceof TCPPacket) {
+	                	++totalTCPPackets;
+	                	minTCPPacketTimestamp = Math.min(minTCPPacketTimestamp, packetInfo.getTimeStamp());
+	                	maxTCPPacketTimestamp = Math.max(maxTCPPacketTimestamp, packetInfo.getTimeStamp());
 
-			            PacketCounter pCounter;
-    	                if (packetInfo.getPacket() instanceof TCPPacket) {
-    	                    TCPPacket tcp = (TCPPacket) packetInfo.getPacket();
+	                    TCPPacket tcp = (TCPPacket) packetInfo.getPacket();
 
-            				totalTCPBytes += tcp.getPacketLength();
-                            totalTCPPayloadBytes += tcp.getPayloadLen();
-        					if (session.isSsl() || tcp.getDestinationPort() == 443 || tcp.getSourcePort() == 443) {
-        						totalHTTPSBytes += tcp.getPayloadLen();
-        					}
-        					
+        				totalTCPBytes += tcp.getPacketLength();
+                        totalTCPPayloadBytes += tcp.getPayloadLen();
+    					if (tcp.isSsl() || tcp.getDestinationPort() == 443 || tcp.getSourcePort() == 443) {
+    						totalHTTPSBytes += tcp.getPayloadLen();
+    					}
+	                }
 
-            				String appName = packetInfo.getAppName();
-            				appNames.add(appName);
-            				pCounter = appPackets.get(appName);
-            				if (pCounter == null) {
-            					pCounter = new PacketCounter();
-            					appPackets.put(appName, pCounter);
-            				}
-            				pCounter.add(packetInfo);
-    	                }
+	                if (packetInfo.getPacket() instanceof IPPacket) {
+                        // Count packets by packet size
+                        Integer packetSize = packetInfo.getPacket().getPayloadLen();
 
-    	                if (packetInfo.getPacket() instanceof IPPacket) {
-            					// Count packets by packet size
-                            Integer packetSize = packetInfo.getPacket().getPayloadLen();
+                        Integer iValue = packetSizeToCountMap.get(packetSize);
+                        if (iValue == null) {
+                            iValue = 1;
+                        } else {
+                            iValue++;
+                        }
+                        packetSizeToCountMap.put(packetSize, iValue);
 
-            					Integer iValue = packetSizeToCountMap.get(packetSize);
-            					if (iValue == null) {
-            						iValue = 1;
-            					} else {
-            						iValue++;
-            					}
-            					packetSizeToCountMap.put(packetSize, iValue);
+                        // Get IP address summary
+                        InetAddress ipAddress = packetInfo.getRemoteIPAddress();
+                        pCounter = ipPackets.get(ipAddress);
+                        if (pCounter == null) {
+                            pCounter = new PacketCounter();
+                            ipPackets.put(ipAddress, pCounter);
+                        }
+                        pCounter.add(packetInfo);
+                    }
 
-            					// Get IP address summary
-                                InetAddress ipAddress = packetInfo.getRemoteIPAddress();
-            					pCounter = ipPackets.get(ipAddress);
-            					if (pCounter == null) {
-            						pCounter = new PacketCounter();
-            						ipPackets.put(ipAddress, pCounter);
-            					}
-                                pCounter.add(packetInfo);
-    	                }
-			        }
+
+	                String appName = packetInfo.getAppName();
+    				appNames.add(appName);
+    				pCounter = appPackets.get(appName);
+    				if (pCounter == null) {
+    					pCounter = new PacketCounter();
+    					appPackets.put(appName, pCounter);
+    				}
+    				pCounter.add(packetInfo);
                 }
 			}
 
 			for (Map.Entry<InetAddress, PacketCounter> ipPacketMap : ipPackets.entrySet()) {
-				ipPacketSummary.add(new IPPacketSummary(ipPacketMap.getKey(), ipPacketMap.getValue().getPacketCount(), ipPacketMap.getValue().getTotalBytes()));
+				ipPacketSummary.add(new IPPacketSummary(ipPacketMap.getKey(), ipPacketMap.getValue().getPacketCount(), ipPacketMap.getValue().getTotalBytes(), ipPacketMap.getValue().getTotalPayloadBytes()));
 			}
 
 			for (Map.Entry<String, PacketCounter> appPacketMap : appPackets.entrySet()) {
 				applicationPacketSummary
-						.add(new ApplicationPacketSummary(appPacketMap.getKey(), appPacketMap.getValue().getPacketCount(), appPacketMap.getValue().getTotalBytes()));
+						.add(new ApplicationPacketSummary(appPacketMap.getKey(), appPacketMap.getValue().getPacketCount(), appPacketMap.getValue().getTotalBytes(), appPacketMap.getValue().getTotalPayloadBytes()));
 			}
 
-	        packetsDuration = maxTimestamp - minTimestamp;
-			avgKbps = packetsDuration != 0 ? totalTCPBytes * 8.0 / 1000.0 / packetsDuration : 0.0;
+	        double packetsDuration = packetInfos.get(packetInfos.size() - 1).getTimeStamp() - packetInfos.get(0).getTimeStamp();
+	        double tcpPacketDuration = maxTCPPacketTimestamp - minTCPPacketTimestamp;
+			double avgKbps = packetsDuration != 0 ? totalBytes * 8.0 / 1000.0 / packetsDuration : 0.0d;
+			double avgTCPKbps = tcpPacketDuration != 0 ? totalTCPBytes * 8.0 / 1000.0 / tcpPacketDuration : 0.0d;
 
 			stat.setApplicationPacketSummary(applicationPacketSummary);
-			stat.setAppName(appNames);
 			stat.setAverageKbps(avgKbps);
-			stat.setAverageTCPKbps(avgKbps);
+			stat.setAverageTCPKbps(avgTCPKbps);
 			stat.setIpPacketSummary(ipPacketSummary);
 			stat.setPacketDuration(packetsDuration);
-			stat.setTcpPacketDuration(packetsDuration);
+			stat.setTcpPacketDuration(tcpPacketDuration);
+			stat.setTotalByte(totalBytes);
+			stat.setTotalPayloadBytes(totalPayloadBytes);
 			stat.setTotalTCPBytes(totalTCPBytes);
 			stat.setTotalTCPPayloadBytes(totalTCPPayloadBytes);
 			stat.setTotalHTTPSByte(totalHTTPSBytes);
-			stat.setTotalPackets(totalPackets);
-			stat.setTotalTCPPackets(totalPackets);
+			stat.setTotalPackets(packetInfos.size());
+			stat.setTotalTCPPackets(totalTCPPackets);
 			stat.setPacketSizeToCountMap(packetSizeToCountMap);
 		}
 
@@ -515,16 +534,30 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 	}
 
 	/*
-	 * Create a TreeMap of all pertinent Requests keyed by timestamp plus tie-breaker
+	 * Create a TreeMap of all pertinent Requests keyed by timestamp plus tie-breaker.
+	 * Populates min/max/avg latency statistics.
 	 *
 	 * @param sessionlist
 	 * 
 	 * @return Map of Requests
 	 */
-	public void generateRequestMap(List<Session> sessionList) {
+	private void generateGetRequestMapAndPopulateLatencyStat(List<Session> sessionList, Statistic stat) {
 		int counter = 0;
+		double minLatency = Double.MAX_VALUE;
+		double maxLatency = Double.MIN_VALUE;
+		double totalLatency = 0.0d;
+		int totalSessions = 0;
 		requestMap.clear();
+
 		for (Session session : sessionList) {
+			// Calculate latency data by session
+			if(session.getLatency() > 0) {
+				minLatency = Math.min(minLatency, session.getLatency());
+				maxLatency = Math.max(maxLatency, session.getLatency());
+		    	totalLatency += session.getLatency();
+		    	++totalSessions;
+		    }
+
 			List<HttpRequestResponseInfo> rri = session.getRequestResponseInfo();
 			for (HttpRequestResponseInfo rrInfo : rri) {
 				if (HttpDirection.REQUEST.equals(rrInfo.getDirection()) && HttpRequestResponseInfo.HTTP_GET.equals(rrInfo.getRequestType())
@@ -541,11 +574,15 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				}
 			}
 			// Set a forward link for all packets in session to the next packet (within the session).
-			List<PacketInfo> packets = session.getPackets();
+			List<PacketInfo> packets = session.getTcpPackets();
 			for (int i = 0; i < packets.size() - 1; i++) {
 				packets.get(i).getPacket().setNextPacketInSession(packets.get(i + 1).getPacket());
 			}
 		}
+
+		stat.setMinLatency(Double.MAX_VALUE == minLatency ? 0.0d : minLatency);
+		stat.setMaxLatency(Double.MIN_VALUE == maxLatency ? 0.0d : maxLatency);
+		stat.setAverageLatency(totalSessions != 0 ? totalLatency/totalSessions : 0.0);
 	}
 
 	/*

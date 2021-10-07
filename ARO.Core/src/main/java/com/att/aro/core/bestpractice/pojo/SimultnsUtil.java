@@ -174,7 +174,7 @@ public final class SimultnsUtil {
 					HttpRequestResponseInfo reqResp = new HttpRequestResponseInfo();
 					if (aSession.getRemoteHostName() != null) {
 						reqResp.setHostName(aSession.getRemoteHostName());
-						reqResp.setFirstDataPacket(aSession.getPackets().get(0));
+						reqResp.setFirstDataPacket(aSession.getTcpPackets().get(0));
 					}
 					sessionValues = addSessionValues(sessionValues, lastSession, aSession, reqResp);
 				}

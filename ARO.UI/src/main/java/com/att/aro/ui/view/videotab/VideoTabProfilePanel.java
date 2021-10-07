@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 AT&T
+ *  Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,7 +179,7 @@ public class VideoTabProfilePanel extends TabPanelJPanel {
 		this.traceValueLabel.setToolTipText(ResourceBundleHelper.getMessageString("trace.hyperlink"));
 		this.traceValueLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-		this.traceDurationValueLabel.setText(Integer.toString(aModel.getAnalyzerResult().getStatistic().getTotalByte()));
+		this.traceDurationValueLabel.setText(Long.toString(aModel.getAnalyzerResult().getStatistic().getTotalByte()));
 		
 
 		if (TraceResultType.TRACE_DIRECTORY.equals(aModel.getAnalyzerResult().getTraceresult().getTraceResultType())) {

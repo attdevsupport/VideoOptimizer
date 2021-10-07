@@ -36,16 +36,16 @@ import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs.DUPLICATE_HANDLING;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
 public abstract class PlotHelperAbstract {
 
 	private static final Logger LOGGER = LogManager.getLogger(PlotHelperAbstract.class.getName());
-	protected StreamingVideoData streamingVideoData;
+	@Getter@Setter protected StreamingVideoData streamingVideoData;
 
 	private List<VideoEvent> chunkDownload;
-	protected Map<VideoEvent, Double> chunkPlayTimeList = new TreeMap<>();
+	@Setter protected Map<VideoEvent, Double> chunkPlayTimeList = new TreeMap<>();
 
 	@Autowired
 	private IVideoUsagePrefsManager videoPrefManager;

@@ -23,6 +23,7 @@ public class Config {
 
 	public static class Permission {
 		public static final int VPN_PERMISSION_REQUEST_CODE = 0;
+	    public static final int CERT_INSTALL_REQUEST_CODE = 1;
 		public static final int VIDEO_PERMISSION_REQUEST_CODE = 2;
 	}
 

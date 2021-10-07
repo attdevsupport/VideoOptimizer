@@ -52,11 +52,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 4.1
+#### Video Optimizer 4.2
 
-**System Requirements for Video Optimizer 4.1:**
+**System Requirements for Video Optimizer 4.2:**
 
-*Before you download Video Optimizer 4.1, make sure you meet the following system requirements for your operating system.*
+*Before you download Video Optimizer 4.2, make sure you meet the following system requirements for your operating system.*
 
 - At least 4GB of RAM, but recommend at least 8GB
 - Java 8 or above
@@ -80,40 +80,42 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 
-**Video Optimizer 4.1 Features**
-- This release brings to the Linux version all the following features and enhancements that were brought to the Mac and PC version in release 4.1:
+**Video Optimizer 4.2 Features**
+- New graph showing device temperature and Thermal mitigation status for Android devices is added to the diagnostics tab. Values are collected every 5 seconds.
 
 - Analysis of IPV6 data is now supported, increasing the number of apps that allow full video stream analysis.
 
-- Capture of IPV6 data by the VPN collector is now supported, allowing analysis of IPV6 data from Android devices.
+- New graph displaying TCP handshake latency per session has been added to the diagnostics tab.
 
-- New Segment Progress graph in the Video tab displays the download time progress and the play time progress of the segments.
-  - Video segments, Audio segments, Video PlayTime, and Audio PlayTime are displayed for demuxed video.
-  -	Download_Progress and PlayTime_Progress are displayed for muxed video.
-  - Hovering over the points displays the following information - Segment #, Track #, Download Start Time, Download End Time, Play Start Time, Play End Time, Duration, Progress, and the Content (Video/Audio).
-  -	Graph refreshes when each stream is selected.
+- VO now calculates and displays minimum, maximum, and average TCP handshake latency of a trace on the statistics tab.
 
-- New Segment Buffer graph displays information about the playback buffer.          
-  - Hovering over the points in the graph displays the following information – Segment #, PlayBack Buffer in seconds, and the TimeStamp.
-  - The graph refreshes when each selected stream has its startup delay set.
-- Redesigned Startup Delay window
-  -	In the User Touch Event section, navigate through the touch events viewing the simultaneously changing frame images on the right-hand side of the dialog to choose the time stamp of the precise video playback requested time.
-  -	In the Video Startup Time section, navigate through the startup times viewing the simultaneously changing frame images on the right-hand side of the dialog to set the video startup time to any value greater than the Play requested time
-  -	Video Startup Time is now saved:  Once the startup delay has been set for a stream/streams, the values for the play requested time and the startup delay are saved in a json file in the trace folder.  When the trace is opened again, these previously set values are displayed when the Startup Delay window opens for the stream.
+- Full support for opening, reading and analyzing pcapng files.
 
-- CSI (Chunk Sequence Inferencer) - the CSI feature can be used for analysis if the default video analysis does not provide any results and a manifest is available.
+- VO now calculates and displays Total Payload bytes and Percentages for every Application and IP address in a trace. New columns have been added to the End point summary charts for both per Application and per IP address statistics.
+
+- CSI (Chunk Sequence Inferencer) analysis is automatically reloaded every time a trace is re-opened.
 
 - User Interface Enhancements:
-  -	A clearer message ‘Video segments could not be assigned to a Video Stream’, when there are video requests, but no Streams showing in video tab.
-  -	Enhanced ffmpeg and ffprobe detection.
-  -	Enhanced Content View tab which displays all the requests and responses in the same order as in Request/Response View.
-  - Enhanced handling of 0 value for throttling and stopping data flow during trace collection.
+  -	Time Range Analysis:
+   - Start time value can now be entered in minutes: seconds format or hours: minutes: seconds format and automatically converted to seconds format.
+   - Analysis details are now selectable and can be copied to another application for comparison and further analysis.
+  -	Option provided to reload a trace after making changes in the user preferences window.
+  -	Select IPs/application feature allows for filtering of IPV4/IPV6 data as well as TCP/UDP/DNS packets.
+  - Labels have been added to the Y-axis of the Throughput graph on the Diagnostics tab.
+  - When VO opens a raw pcap file, the user is given the option to move it into a self-contained trace folder with the same name as the original pcap file. This feature automates better organization when analyzing multiple pcap files.
+  - Overall speed improvements when opening traces.
+- Video Enhancements:
+ - Startup delay values are persistent when traces are reloaded, including for CSI analysis.
+ - When segment 0 details are available for HLS video streams, they are now displayed.
+ - Segment playtime graphs are now more accurate.
+ - Start-up delay label changed to “Startup Time” for clarity.
 
 
-**Known issues in Release 4.1**
+**Known issues in Release 4.2**
 
-- Startup Delay window does not display the Set/Cancel button if the vertical resolution of the display is below 1080.  Work around is to capture landscape orientation traces for video.
--	Trace collection cannot be started when the device is on the lock screen, otherwise the VPN collector app will freeze.
+- Total bytes count is off in a small percentage of iOS traces, typically by less than 1%.
+- CPU temperature is not displayed for certain Android devices, primarily Pixel devices and older Android versions.
+- When opening a pcap file, if the user says “No” to create a new directory, no progress bars appear to indicate that VO is opening the file.
 
 **Compilation instructions**
 + Please follow the order to compile projects

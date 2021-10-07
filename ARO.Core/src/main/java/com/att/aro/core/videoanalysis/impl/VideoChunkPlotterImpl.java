@@ -28,23 +28,21 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
-@Data
-@EqualsAndHashCode(callSuper = true)
 public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 
 	private int key = 0;
-	Map<Integer, Double> seriesDataSets = new TreeMap<Integer, Double>();
-	private List<BufferedImage> imgSeries;
-	private double firstChunkTimestamp;
+	@Getter private Map<Integer, Double> seriesDataSets = new TreeMap<Integer, Double>();
+	@Getter private List<BufferedImage> imgSeries;
+	@Getter private double firstChunkTimestamp;
 
-	private List<Double> chunkPlayStartTimesList = new ArrayList<>();
+	@Getter private List<Double> chunkPlayStartTimesList = new ArrayList<>();
 	private IBestPractice startUpDelayBPReference;
 	private IBestPractice stallBPReference;
 	private IBestPractice bufferOccupancyBPReference;
@@ -52,8 +50,8 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 	 * key : segmentID
 	 * value: segment play startTime
 	 */
-	private Map<Long,Double> segmentStartTimeMap = new TreeMap<>();
-	
+	@Getter private Map<Long, Double> segmentStartTimeMap = new TreeMap<>();
+
 	@Autowired
 	@Qualifier("startupDelay")
 	public void setVideoStartupDelayImpl(IBestPractice startupdelay) {
@@ -72,7 +70,6 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 		bufferOccupancyBPReference = bufferOccupancy;
 	}
 
-
 	public Map<Integer, Double> populateDataSet(StreamingVideoData streamingVideoData) {
 		if (streamingVideoData != null) {
 			this.streamingVideoData = streamingVideoData;
@@ -82,7 +79,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 			filterVideoSegment(streamingVideoData);
 			filterVideoSegmentUpdated(streamingVideoData);
 
-			if (!streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList().isEmpty()){
+			if (!streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList().isEmpty()) {
 				videoEventListBySegment(streamingVideoData);
 				updateChunkPlayStartTimes();
 			}
@@ -108,7 +105,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 	private void getChunkCollectionDataSet() {
 		int count = 0;
 		List<VideoEvent> allSegments2 = streamingVideoData.getStreamingVideoCompiled().getAllSegments();
-		if(allSegments2 == null ) {
+		if (allSegments2 == null) {
 			return;
 		}
 		for (VideoEvent ve : allSegments2) {
@@ -119,7 +116,15 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 				firstChunkTimestamp = ve.getDLTimeStamp();
 				count++;
 			}
-
+			int checkCount = 0;
+			
+			while (img.getHeight() > 20 && checkCount++ < 3) {
+				// background processing inserted a thumbnail, too soon for the image sizing to have completed, a very rare occurance
+				// wait 500 ms, sufficient time for processing to complete
+				// this prevents a "thumbnail" of 2k pixels wide filling up the display
+				Util.sleep(500);
+				img = ve.getThumbnail();
+			}
 			imgSeries.add(img);
 
 			seriesDataSets.put(key, ve.getDLTimeStamp());
@@ -148,9 +153,9 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 			playStartTimeBySegment.put(playtime, chunksBySegmentID.get(index));
 		}
 
-		streamingVideoData.getStreamingVideoCompiled().getFilteredSegments().forEach(x->{
-			chunkPlayStartTimesList.add((Double)x.getPlayTime());
-			segmentStartTimeMap.put(((Double)(x.getSegmentID())).longValue(), (Double)x.getPlayTime());
+		streamingVideoData.getStreamingVideoCompiled().getFilteredSegments().forEach(x -> {
+			chunkPlayStartTimesList.add((Double) x.getPlayTime());
+			segmentStartTimeMap.put(((Double) (x.getSegmentID())).longValue(), (Double) x.getPlayTime());
 		});
 
 		/*
@@ -215,7 +220,7 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 		Double temp = segmentStartTimeMap.get((new Double(currentChunk.getSegmentID())).longValue());
 		return temp != null ? temp : -1;
 	}
-	
+
 	public Map<VideoEvent, Double> getChunkPlayTimeList() {
 		return streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList();
 	}

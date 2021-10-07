@@ -122,6 +122,7 @@ public class Session {
 
 	private int timestampSender = 0;
 	private int timestampReplyto = 0;
+	private long creationTime;
 
 	//indicate that vpn client has sent FIN flag and it has been acknowledged
 	private boolean ackedToFin = false;
@@ -146,8 +147,6 @@ public class Session {
 
     private long lastAccessed = System.currentTimeMillis();
 
-	private boolean secureSession = false;
-
 	public boolean isOutContinuationMsg() {
 		return outContinuationMsg;
 	}
@@ -170,7 +169,6 @@ public class Session {
 		clearReceivingStream = new ByteArrayOutputStream();
 		clearSendingStream = new ByteArrayOutputStream();
 	}
-
 
 	/**
 	 * decrease value of sendAmountSinceLastAck so that client's window is not
@@ -490,7 +488,7 @@ public class Session {
 		this.closingConnection = closingConnection;
 	}
 
-	
+
 	public boolean isDataForSendingReady() {
 		return isDataForSendingReady;
 	}
@@ -537,6 +535,14 @@ public class Session {
 
 	public void setTimestampReplyto(int timestampReplyto) {
 		this.timestampReplyto = timestampReplyto;
+	}
+
+    public long getCreationTime() {
+		return creationTime;
+	}
+
+    public void setCreationTime(long creationTime) {
+		this.creationTime = creationTime;
 	}
 
 	public boolean isAckedToFin() {
@@ -687,15 +693,6 @@ public class Session {
 		return data;
 	}
 
-	public boolean isSecureSession() {
-		return secureSession;
-	}
-
-	public void setSecureSession(boolean secureSession) {
-		this.secureSession = secureSession;
-	}
-
-
 	public long getIntialSequenceNumber() {
 		return intialSequenceNumber;
 	}
@@ -711,5 +708,4 @@ public class Session {
 	public void setIntialAckNumber(long intialAckNumber) {
 		this.intialAckNumber = intialAckNumber;
 	}
-
 }

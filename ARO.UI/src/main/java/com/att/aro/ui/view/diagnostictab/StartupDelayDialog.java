@@ -110,8 +110,9 @@ import com.att.aro.ui.view.video.IVideoPlayer;
 import com.att.aro.ui.view.videotab.SegmentTablePanel;
 import com.att.aro.ui.view.videotab.VideoManifestPanel;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * StartupDelayDialog
@@ -206,6 +207,8 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 	private Double deviceVideoDuration;
 	private double deviceVideoRatio;
 	private int deviceVideoWidth, deviceVideoHeight;
+	@Getter
+	@Setter
 	private Dimension deviceScreenDimension;
 	private Orientation orientation;
 
@@ -320,7 +323,8 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 			if ((selectedVideoEvent = makeSegmentSelection(0)) != null) {
 				selectedUserEvent = videoStreamStartup.getUserEvent();
 				if (getUserEventTimeStamp(selectedUserEvent) > manifestRequestTime) {
-					selectedUserEvent = findPriorUserEvent(manifestRequestTime);
+					UserEvent tempUserEvent = findPriorUserEvent(manifestRequestTime);
+					selectedUserEvent = tempUserEvent != null ? tempUserEvent : selectedUserEvent;
 				}
 				if ((timestamp = videoStreamStartup.getPlayRequestedTime()) == 0) {
 					timestamp = getUserEventTimeStamp(selectedUserEvent);
@@ -394,15 +398,15 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 	 * 
 	 * @return JPanel SegmentPane
 	 */
-	private JPanel getSegmentPane() {
+	private JPanel createSegmentPane() {
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setBorder(new RoundedBorder(new Insets(5, 5, 5, 5), null));
-		panel.add(getSegmentPanel(), BorderLayout.WEST);
-		panel.add((segmentFramePanel = getFramePanel()), BorderLayout.EAST);
+		panel.add(createSegmentPanel(), BorderLayout.WEST);
+		panel.add((segmentFramePanel = createFramePanel()), BorderLayout.EAST);
 		return panel;
 	}
 
-	private FrameImagePanel getFramePanel() {
+	private FrameImagePanel createFramePanel() {
 		FrameImagePanel imagePanel = new FrameImagePanel(image, orientation);
 		imagePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		return imagePanel;
@@ -719,11 +723,6 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 	public void cleanup() {
 		if (videoFrameExtractor != null) {
 			videoFrameExtractor.shutdown();
-			frameMap.clear();
-		}
-		if (!Util.checkMode("preserveFrames", "yes") && fileManager.directoryExist(videoFrameFolder)) {
-			fileManager.deleteFolderContents(videoFrameFolder);
-			fileManager.deleteFile(videoFrameFolder);
 		}
 	}
 
@@ -769,20 +768,20 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 		// conditionally add user event panel
 		if (!allUserEventList.isEmpty()) {
-			contentPane.add(getUserEventPane(), new GridBagConstraints(0, 1, 1, 1, 2.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+			contentPane.add(createUserEventPane(), new GridBagConstraints(0, 1, 1, 1, 2.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
 			userEventFramePanel.setImage(image);
 		}
 
-		contentPane.add(getSeparator(), new GridBagConstraints(0, 2, 1, 1, 2.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
-		contentPane.add(getSegmentPane(), new GridBagConstraints(0, 3, 1, 1, 2.0, 2.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+		contentPane.add(createSeparator(), new GridBagConstraints(0, 2, 1, 1, 2.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+		contentPane.add(createSegmentPane(), new GridBagConstraints(0, 3, 1, 1, 2.0, 2.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
 		
-		contentPane.add(getButtonPane(vcPlot), new GridBagConstraints(0, 4, 1, 1, 2.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+		contentPane.add(createButtonPane(vcPlot), new GridBagConstraints(0, 4, 1, 1, 2.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
 		segmentFramePanel.setImage(image);
 		
 		return contentPane;
 	}
 
-	public JPanel getButtonPane(final VideoChunksPlot vcPlot) {
+	public JPanel createButtonPane(final VideoChunksPlot vcPlot) {
 		JPanel btnPanel = new JPanel();
 		btnPanel.setLayout(new BorderLayout());
 		btnPanel.setBorder(BorderFactory.createEmptyBorder(0, 220, 1, 220));
@@ -790,13 +789,13 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		// build the 'Set' JButton
 		setButton = new JButton("Set");
 		setButton.setPreferredSize(new Dimension(100, 40));
-		setButton.addActionListener(getUserEventsButtonListener(vcPlot));
+		setButton.addActionListener(createUserEventsButtonListener(vcPlot));
 		btnPanel.add(setButton, BorderLayout.EAST);
 
 		// build the 'Cancel' JButton
 		cancelButton = new JButton("Cancel");
 		cancelButton.setPreferredSize(new Dimension(100, 40));
-		cancelButton.addActionListener(getUserEventsButtonListener(vcPlot));
+		cancelButton.addActionListener(createUserEventsButtonListener(vcPlot));
 		btnPanel.add(cancelButton, BorderLayout.WEST);
 		return btnPanel;
 	}
@@ -813,21 +812,21 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 	 * 
 	 * @return JPanel UserEventPane
 	 */
-	private JPanel getUserEventPane() {
+	private JPanel createUserEventPane() {
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setBorder(new RoundedBorder(new Insets(5, 5, 5, 5), null));
-		panel.add(getUserEventPanel(), BorderLayout.WEST);
+		panel.add(createUserEventPanel(), BorderLayout.WEST);
 		panel.setPreferredSize(new Dimension(560, 380));
-		panel.add((userEventFramePanel = getFramePanel()), BorderLayout.EAST);
+		panel.add((userEventFramePanel = createFramePanel()), BorderLayout.EAST);
 		return panel;
 	}
 
-	private Component getSeparator() {
+	private Component createSeparator() {
 		JPanel separator = new JPanel();
 		return separator;
 	}
 
-	private JPanel getUserEventListPanel() {
+	private JPanel createUserEventListPanel() {
 		JPanel comboPanel = new JPanel(new BorderLayout(5, 0));
 		comboPanel.setBorder(BorderFactory.createEmptyBorder(1, 5, 1, 5));
 		comboPanel.setPreferredSize(new Dimension(500, 100));
@@ -853,14 +852,14 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		return comboPanel;
 	}
 	
-	private JPanel getSegmentPanel() {
+	private JPanel createSegmentPanel() {
 		Dimension imageDimensions = new Dimension(FRAMEIMAGEPANEL_PANEL_WIDTH, FRAMEIMAGEPANEL_PANEL_HEIGHT);
 		segmentPanel = new JPanel();
 		segmentPanel.setLayout(new BoxLayout(segmentPanel, BoxLayout.Y_AXIS));
 
 		// Position slider to video startup time
 		segmentPanel.add(buildLabelPanel("sliderdialog.segmentlist.label"));
-		segmentPanel.add(getSegmentListPanel());
+		segmentPanel.add(createSegmentListPanel());
 		segmentPanel.setPreferredSize(new Dimension(530, 400));
 
 		if (showThumbnail) {
@@ -873,7 +872,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		return segmentPanel;
 	}
 	
-	public JPanel getSegmentListPanel() {
+	public JPanel createSegmentListPanel() {
 		JPanel comboPanel = new JPanel(new BorderLayout(5, 0));
 		comboPanel.setBorder(BorderFactory.createEmptyBorder(1, 5, 1, 5));
 		comboPanel.setPreferredSize(new Dimension(500, 70));
@@ -925,10 +924,10 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		this.maxValue = setMaxMinValue(deviceVideoDuration + initialDeviceVideoOffset, true);
 		this.minValue = setMaxMinValue(initialDeviceVideoOffset >= 0 ? initialDeviceVideoOffset : 0, false);
 
-		segmentSlider = getSlider(JSlider.HORIZONTAL, minValue, maxValue, minValue, getSegmentSliderListener());
+		segmentSlider = createSlider(JSlider.HORIZONTAL, minValue, maxValue, minValue, createSegmentSliderListener());
 		segmentSliderPanel.add(segmentSlider, new GridBagConstraints(0, 0, 1, 1, 2.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
 
-		segmentTimeField = getSegmentStartTimeDisplay();
+		segmentTimeField = createSegmentStartTimeDisplay();
 		segmentSliderPanel.add(segmentTimeField,
 				new GridBagConstraints(1, 0, 1, 1, 0.35, 1.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 1), 0, 0));
 
@@ -949,23 +948,23 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 	}
 
 	private Dimension getButtonDimension() {
-		if (Util.isWindowsOS()) {
-			return new Dimension(20, 20);
+		if (Util.isMacOS()) {
+			return new Dimension(5, 15);
 		}
-		return new Dimension(5, 15);
+		return new Dimension(20,20);
 	}
-
-	private JPanel getUserEventPanel() {
+	
+	private JPanel createUserEventPanel() {
 		userEventPanel = new JPanel();
 		userEventPanel.setLayout(new BoxLayout(userEventPanel, BoxLayout.Y_AXIS));
 		userEventPanel.add(buildLabelPanel("sliderdialog.user.event.list.label"));
-		userEventPanel.add(getUserEventListPanel());
-		userEventPanel.add(getUserEventSliderPanel());
+		userEventPanel.add(createUserEventListPanel());
+		userEventPanel.add(createUserEventSliderPanel());
 		userEventPanel.setMinimumSize(userEventPanel.getPreferredSize());
 		return userEventPanel;
 	}
 
-	public JPanel getUserEventSliderPanel() {
+	public JPanel createUserEventSliderPanel() {
 		JPanel uePane = new JPanel(new BorderLayout());
 		uePane.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 1));
 
@@ -973,11 +972,11 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		userEventMaxValue = setMaxMinValue(deviceVideoDuration + initialDeviceVideoOffset, true);
 		userEventMinValue = setMaxMinValue(initialDeviceVideoOffset >= 0 ? initialDeviceVideoOffset : 0, false);
 
-		userEventSlider = getSlider(JSlider.HORIZONTAL, minValue, userEventMaxValue, userEventMinValue, getUserEventSliderListener());
+		userEventSlider = createSlider(JSlider.HORIZONTAL, minValue, userEventMaxValue, userEventMinValue, createUserEventSliderListener());
 		userEventSliderPanel.add(userEventSlider,
 				new GridBagConstraints(0, 0, 1, 1, 2.0, 1.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
 
-		playRequestedTime = getUserEventStartTimeDisplay();
+		playRequestedTime = createUserEventStartTimeDisplay();
 		userEventSliderPanel.add(playRequestedTime,
 				new GridBagConstraints(1, 0, 1, 1, 0.35, 1.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 1), 0, 0));
 
@@ -1008,7 +1007,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 	 * @param changeListener
 	 * @return
 	 */
-	public JSlider getSlider(int orientation, int minValue, int maxValue, int value, ChangeListener changeListener) {
+	public JSlider createSlider(int orientation, int minValue, int maxValue, int value, ChangeListener changeListener) {
 		JSlider slider = new JSlider(orientation, minValue, maxValue, value);
 		slider.setPaintLabels(true);
 		slider.setPaintTicks(true);
@@ -1016,7 +1015,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		return slider;
 	}
 
-	public JTextField getUserEventStartTimeDisplay() {
+	public JTextField createUserEventStartTimeDisplay() {
 		JTextField playRequestedTime = new JTextField("       0");
 		playRequestedTime.setText(Double.toString(getStartTime()));
 		playRequestedTime.addActionListener(startTimeTextFieldActionListener(playRequestedTime, userEventSlider));
@@ -1037,7 +1036,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		return playRequestedTime;
 	}
 	
-	public JPanel getUserEventNoteLabelPanel() {
+	public JPanel createUserEventNoteLabelPanel() {
 		JPanel userEventNoteLabelPanel = new JPanel(new BorderLayout());
 		userEventNoteLabelPanel.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
 		userEventNoteLabelPanel.add(new JLabel(resourceBundle.getString("startupdelay.hint.userevent.note.label")));
@@ -1086,7 +1085,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		return panel;
 	}
 
-	public JTextField getSegmentStartTimeDisplay() {
+	public JTextField createSegmentStartTimeDisplay() {
 		JTextField startTimeField = new JTextField("       0");
 		startTimeField.addActionListener(startTimeTextFieldActionListener(startTimeField, segmentSlider));
 		startTimeField.addKeyListener(new KeyListener() {
@@ -1157,7 +1156,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 				, JOptionPane.WARNING_MESSAGE);
 	}
 
-	public ChangeListener getSegmentSliderListener() {
+	public ChangeListener createSegmentSliderListener() {
 		return new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
@@ -1169,7 +1168,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		};
 	}
 
-	public ChangeListener getUserEventSliderListener() {
+	public ChangeListener createUserEventSliderListener() {
 		return new ChangeListener() {
 			@Override
 			public void stateChanged(ChangeEvent e) {
@@ -1373,7 +1372,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		Double tempStartupTime = ((TraceDirectoryResult) traceData.getAnalyzerResult().getTraceresult()).getVideoStartTime();
 		if ((videoStreamStartupData = ((TraceDirectoryResult) traceData.getAnalyzerResult().getTraceresult()).getVideoStartupData()) != null) {
 			if ((videoStreamStartup = videoSegmentAnalyzer.findStartupFromName(videoStreamStartupData, videoStream)) != null) {
-				tempStartupTime = videoStreamStartup.getStartupDelay();
+				tempStartupTime = videoStreamStartup.getStartupTime();
 			}
 		} else {
 			videoStreamStartupData = new VideoStreamStartupData();
@@ -1395,7 +1394,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	private void saveStartupDelay(double startupTime, VideoEvent videoEvent, VideoStream videoStream2, UserEventItem userEventItemChosen) throws Exception {
 		LOG.debug("Saving startup delay");
-		videoStreamStartup.setStartupDelay(startupTime);
+		videoStreamStartup.setStartupTime(startupTime);
 		if (userEventItemChosen != null) {
 			videoStreamStartup.setUserEvent(userEventItemChosen.getUserEvent());
 		}
@@ -1482,7 +1481,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 				segmentChosen.getVideoEvent().setPlayTime(startupTime);
 				videoStream.setVideoPlayBackTime(startupTime);
 
-				for (VideoStream stream : segmentTablePanel.getVideoStreamMap()) {
+				for (VideoStream stream : segmentTablePanel.getVideoStreamCollection()) {
 					if (!stream.equals(videoStream)) {
 						stream.setCurrentStream(false);
 					} else {
@@ -1520,14 +1519,13 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 				getGraphPanel().setTraceData(aroTraceData);
 
 				// StartupDelay calculations
-				AROTraceData traceData = vcPlot.refreshPlot(getGraphPanel().getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot(), getGraphPanel().getTraceData(),
-						startupTime, segmentChosen.getVideoEvent());
+				AROTraceData traceData = vcPlot.refreshPlot(getGraphPanel().getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot()
+															, getGraphPanel().getTraceData()
+															, startupTime, segmentChosen.getVideoEvent());
 
 				getGraphPanel().setTraceData(traceData);
 
 				VideoManifestPanel videoManifestPanel = segmentTablePanel.getVideoManifestPanel();
-				videoManifestPanel.setSeriesDataSets(vcPlot.getBufferTimePlot().getSeriesDataSets());
-				videoManifestPanel.setChunkPlayTimeList(vcPlot.getBufferTimePlot().getChunkPlayTimeList());
 				videoManifestPanel.refresh(segmentTablePanel.getAnalyzerResult());
 
 				saveStartupDelay(startupTime, segmentChosen.getVideoEvent(), videoStream, userEventChosen);
@@ -1545,7 +1543,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		return this.parentPanel;
 	}
 
-	public ActionListener getUserEventsButtonListener(final VideoChunksPlot vcPlot) {
+	public ActionListener createUserEventsButtonListener(final VideoChunksPlot vcPlot) {
 		return new ActionListener() {
 
 			@Override
@@ -1601,15 +1599,8 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		return foundKey;
 	}
 
-	public Dimension getDeviceScreenDimension() {
-		return deviceScreenDimension;
-	}
-
-	public void setDeviceScreenDimension(Dimension deviceScreenDimension) {
-		this.deviceScreenDimension = deviceScreenDimension;
-	}
-
-	@Data
+	@Getter
+	@Setter
 	private static class UserEventItem {
 		private String value;
 		private UserEvent userEvent;
@@ -1633,7 +1624,8 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	}
 
-	@Data
+	@Getter
+	@Setter
 	private static class SegmentItem {
 		private String value;
 		private VideoEvent videoEvent;
@@ -1642,12 +1634,13 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 		SegmentItem(VideoEvent videoEvent, int row) {
 			StringBuffer sb = new StringBuffer();
+			
 			sb.append("Segment: ").append(String.format("%.0f", videoEvent.getSegmentID()));
 			sb.append(", Track: ").append(videoEvent.getQuality());
 			sb.append(", DL Time Range: ").append(String.format("%.03f - %.03f", videoEvent.getStartTS(), videoEvent.getEndTS()));
 			if (videoEvent.getPlayTime() != 0) {
 				sb.append(", Play: ").append(String.format("%.03f", videoEvent.getPlayTime()));
-			} else {
+			} else {	
 				sb.append(", mSec: ").append(String.format("%.03f", videoEvent.getSegmentStartTime()));
 			}
 			this.value = sb.toString();

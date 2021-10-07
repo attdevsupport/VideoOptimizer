@@ -69,6 +69,7 @@ public class CollectOptionsReaderImpl implements ICollectOptionsReader {
 		}
 	}
 
+	@SuppressWarnings("checkstyle:fallthrough")
 	CollectOptions readOldFormat(List<String> lines) {
 		CollectOptions collectOptions = new CollectOptions();
 		try {

@@ -86,7 +86,7 @@ import com.att.aro.core.packetreader.IPacketService;
 import com.att.aro.core.packetreader.IPcapngHelper;
 import com.att.aro.core.packetreader.impl.DomainNameParserImpl;
 import com.att.aro.core.packetreader.impl.NetmonPacketReaderImpl;
-import com.att.aro.core.packetreader.impl.PacketReaderImpl;
+import com.att.aro.core.packetreader.impl.PacketReaderLibraryImpl;
 import com.att.aro.core.packetreader.impl.PacketServiceImpl;
 import com.att.aro.core.packetreader.impl.PcapngHelperImpl;
 import com.att.aro.core.peripheral.IAlarmAnalysisInfoParser;
@@ -184,6 +184,8 @@ import com.att.aro.core.videoanalysis.IVideoEventDataHelper;
 import com.att.aro.core.videoanalysis.IVideoTabHelper;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
+import com.att.aro.core.videoanalysis.csi.ICSIDataHelper;
+import com.att.aro.core.videoanalysis.csi.impl.CSIDataHelperImpl;
 import com.att.aro.core.videoanalysis.impl.BufferInSecondsCalculatorImpl;
 import com.att.aro.core.videoanalysis.impl.BufferOccupancyCalculatorImpl;
 import com.att.aro.core.videoanalysis.impl.VideoAnalysisConfigHelperImpl;
@@ -195,8 +197,8 @@ import com.att.aro.core.videoanalysis.impl.VideoSegmentAnalyzer;
 import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
-import com.att.aro.core.videouploadanalysis.ImageBoundsGrabber;
 import com.att.aro.core.videoanalysis.videoframe.VideoFrameExtractor;
+import com.att.aro.core.videouploadanalysis.ImageBoundsGrabber;
 
 
 /**
@@ -243,7 +245,7 @@ public class AROConfig {
 
 	@Bean(name = "packetReader")
 	public IPacketReader getPacketReader() {
-		return new PacketReaderImpl();
+		return new PacketReaderLibraryImpl();
 	}
 
 	@Bean(name = "netmonPacketReader")
@@ -670,7 +672,7 @@ public class AROConfig {
 	public IExternalProcessRunner getExternalProcessRunnerImpl() {
 		return new ExternalProcessRunnerImpl();
 	}
-	
+
 	@Bean(name = "videoFrameExtractor")
 	public VideoFrameExtractor getVideoFrameExtractor(){
 		return new VideoFrameExtractor();
@@ -705,4 +707,10 @@ public class AROConfig {
 	public VideoPrefsController getVideoPrefsController() {
 		return new VideoPrefsController();
 	}
+	
+	@Bean(name="csiDataHelperImpl")
+	public ICSIDataHelper getCSIDataHelperImpl(){
+		return new CSIDataHelperImpl();
+	}
+	
 }

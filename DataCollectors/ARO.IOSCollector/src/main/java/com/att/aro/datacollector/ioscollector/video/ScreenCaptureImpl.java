@@ -75,7 +75,7 @@ public class ScreenCaptureImpl implements IScreenCapture {
 				this.stopService();
 				LOG.info("stopCapture()");
 			}catch(Exception ex){
-				LOG.error("Error stopping screencapture service: "+ex.getMessage());
+				LOG.error("Error stopping screencapture service: ", ex);
 			}
 			isRunning = false;
 			isAlreadyInit = false;

@@ -20,24 +20,34 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import javax.swing.filechooser.FileNameExtensionFilter;
+import java.nio.file.Files;
+import java.text.MessageFormat;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.util.FileCopyUtils;
 
+import com.att.aro.core.ApplicationConfig;
+import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
+import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.commonui.TabPanelJPanel;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
+
 import lombok.Getter;
+
 
 public class LoadManifestDialog extends TabPanelJPanel implements ActionListener{
 	
@@ -50,18 +60,16 @@ public class LoadManifestDialog extends TabPanelJPanel implements ActionListener
 	private AnalysisFilter analysisfilter;
 
 	public LoadManifestDialog(MainFrame aroView) {
+		
 		this.aroView = aroView;
 
 		setLayout(new FlowLayout());
 		setName(LoadManifestDialog.class.getName());
-
+		loadBtn = new JButton(ResourceBundleHelper.getMessageString("videoTab.load"));
 		checkBoxCSI = new JCheckBox("CSI");
 		checkBoxCSI.setEnabled(false);
 		checkBoxCSI.addActionListener(this);
-		loadBtn = new JButton(ResourceBundleHelper.getMessageString("videoTab.load"));
-
 		loadBtn.addActionListener(new ActionListener() {
-
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				loadManifest(analysisfilter);
@@ -75,21 +83,48 @@ public class LoadManifestDialog extends TabPanelJPanel implements ActionListener
 	 * Copy a file, files or a folder of files into tracepath/downloads/ Will traverse folders within a folder
 	 */
 	protected void loadManifest(AnalysisFilter analysisfilter) {
-
+		
 		if (aroView.getTracePath() != null) {
 			// Open filechooser
 			JFileChooser fileChooser = new JFileChooser(aroView.getTracePath());
 			fileChooser.setMultiSelectionEnabled(true);
-			fileChooser.addChoosableFileFilter( new FileNameExtensionFilter("manifest file or json","mpd","m3u8","json"));
-			fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-			int result = fileChooser.showOpenDialog(this);
+			fileChooser.addChoosableFileFilter( new FileNameExtensionFilter("mpd, m3u8 or json","mpd","m3u8","json"));
+			fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			fileChooser.setAcceptAllFileFilterUsed(false);
+			int result = fileChooser.showOpenDialog(this);			
 			if (result == JFileChooser.APPROVE_OPTION) {
 				if(checkBoxCSI.isSelected() && analysisfilter!=null) {
-					analysisfilter.setCSI(true);
-					analysisfilter.setManifestFilePath(fileChooser.getSelectedFile().getPath());
-					((MainFrame)aroView).updateFilter(analysisfilter);
+					String folderNameForCSIStuff = aroView.getTracePath() + File.separator + "CSI";
+					String expectedManifestFileName =  folderNameForCSIStuff + File.separator + fileChooser.getSelectedFile().getName();
+					File expectedManifestFile = new File(expectedManifestFileName);
+					
+					try {
+						if (!fileChooser.getSelectedFile().getPath().equals(expectedManifestFileName) && !expectedManifestFile.exists()) {
+							IFileManager fileManager = new FileManagerImpl();
+							if (fileManager.directoryExistAndNotEmpty(expectedManifestFile.getParentFile().getPath())) {
+								if (folderExistsDialog() == JOptionPane.YES_OPTION) {
+									FileUtils.deleteDirectory(expectedManifestFile.getParentFile());
+								}
+							}
 
-				}else {
+							if (!Files.exists(expectedManifestFile.getParentFile().toPath())) {
+								Files.createDirectory(expectedManifestFile.getParentFile().toPath());
+							}
+
+							if (fileChooser.getSelectedFile().getParent().equals(aroView.getTracePath())) {
+								Files.move(fileChooser.getSelectedFile().toPath(), expectedManifestFile.toPath());
+							} else {
+								Files.copy(fileChooser.getSelectedFile().toPath(), expectedManifestFile.toPath());
+							}
+						}
+					} catch (IOException ioe) {
+						expectedManifestFileName = fileChooser.getSelectedFile().getPath();
+					}
+					analysisfilter.setCSI(true);
+					analysisfilter.setManifestFilePath(expectedManifestFileName);
+					((MainFrame)aroView).updateFilter(analysisfilter);
+					
+				} else {
 					// save selected file/files inside downloads folder
 					fileChooser.getSelectedFile().getPath();
 					String downloadsPath = aroView.getTracePath() + Util.FILE_SEPARATOR + "downloads";
@@ -121,6 +156,15 @@ public class LoadManifestDialog extends TabPanelJPanel implements ActionListener
 		}
 	}
 	
+	private int folderExistsDialog() {
+		MessageDialogFactory.getInstance();
+		String message = ResourceBundleHelper.getMessageString("csi.folderexists.confirmdelete");
+		String title = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"),  ApplicationConfig.getInstance().getAppShortName());
+		int dialogResults = MessageDialogFactory.showConfirmDialog(aroView.getJFrame(), message, title, JOptionPane.YES_NO_OPTION);
+		LOG.info("CSI Folder Dialog :" + dialogResults);
+		return dialogResults;
+	}
+
 	@Override
 	public JPanel layoutDataPanel() {
 		// TODO Auto-generated method stub
@@ -143,5 +187,7 @@ public class LoadManifestDialog extends TabPanelJPanel implements ActionListener
 				analysisfilter.setCSI(true);
  			}
 		}
+		
 	}
+
 }

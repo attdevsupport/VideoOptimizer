@@ -16,9 +16,13 @@
 package com.att.aro.ui.model.diagnostic;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+
+import org.apache.commons.collections.CollectionUtils;
 
 import com.att.aro.core.packetanalysis.pojo.HttpDelayInfo;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
@@ -47,7 +51,15 @@ public class HttpDelayTableModel extends DataTableModel<HttpRequestResponseInfo>
 
 	public void refresh(Session session) {
 		if (session.getRequestResponseInfo() != null) {
-			setData(session.getRequestResponseInfo());
+			List<HttpRequestResponseInfo> requestResponseInfoList = new ArrayList<HttpRequestResponseInfo>();
+			for (HttpRequestResponseInfo httpRequestResponseInfo : session.getRequestResponseInfo()) {
+				if (httpRequestResponseInfo.getDirection() == HttpDirection.REQUEST) {
+					requestResponseInfoList.add(httpRequestResponseInfo);
+				}
+			}
+			if (CollectionUtils.isNotEmpty(requestResponseInfoList)) {
+				setData(requestResponseInfoList);
+			}
 		}
 
 	}

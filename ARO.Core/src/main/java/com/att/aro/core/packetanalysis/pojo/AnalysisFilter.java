@@ -38,6 +38,8 @@ public class AnalysisFilter implements Serializable {
 	
 	private boolean ipv4Sel = true;
 	private boolean ipv6Sel = true;
+	@Getter @Setter
+	private boolean tcpSel = true;
 	private boolean udpSel = true; 
 	@Getter @Setter
 	private boolean dnsSelection = true;

@@ -15,6 +15,8 @@
 */
 package com.att.aro.core.videoanalysis.impl;
 
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.trie.PatriciaTrie;
@@ -42,7 +44,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 
 	protected static final Logger LOG = LogManager.getLogger(ManifestBuilderHLS.class.getName());
 	protected static final Pattern pattern = Pattern.compile("^(#[A-Z0-9\\-]*)");
-
+	
 	enum HlsType {
 		Parent, VodChild, LiveChild
 	}
@@ -89,16 +91,21 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 	
 	public void parseManifestData(Manifest newManifest, byte[] data) {
 
+		String segmentUriName;
 		if (data == null || data.length == 0) {
-			LOG.debug("Manifest file has no content");
+			LOG.debug("Manifest file is invalid, it has no content");
 			return;
 		}
-		String strData = new String(data);
-		String[] sData = (new String(data)).split("\r\n");
+		String strData = (new String(data)).trim();
+		String[] sData = strData.split("\r\n");
 		if (sData == null || sData.length == 1) {
-			sData = (new String(data)).split("[\n\r]");
+			sData = strData.split("[\n\r]");
 		}
-
+		if (sData.length < 2) {
+			LOG.debug("Invalid Playlist: " + strData);
+			return;
+		}
+		
 		int scanLength = strData.length() > 500 ? 20 : strData.length();
 		if (strData.substring(0, scanLength).contains("#EXTM3U")) {
 			newManifest.setVideoType(VideoType.HLS);
@@ -172,7 +179,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 
 				childUriName = StringParse.findLabeledDataFromString("URI=", "\"", sData[itr]);
 
-				childUriName = decodeUrlEncoding(childUriName);
+				childUriName = Util.decodeUrlEncoding(childUriName);
 				
 				if (StringUtils.isNotEmpty(childUriName)) {
 					LOG.debug("MEDIA childUriName :" + childUriName);
@@ -206,7 +213,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 
 			case "#EXT-X-STREAM-INF": // ChildManifest Map itr:metadata-Info, ++itr:childManifestName
 				String childParameters = sData[itr];
-				childUriName = decodeUrlEncoding(sData[++itr]);
+				childUriName = Util.decodeUrlEncoding(sData[++itr]);
 
 				UrlMatchDef urlMatchDef = defineUrlMatching(childUriName);
 				manifest.getSegUrlMatchDef().add(urlMatchDef);
@@ -232,36 +239,74 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 			case "#EXT-X-INDEPENDENT-SEGMENTS":
 				break;
 				
+			case "#EXT-X-MAP": 
+				// This is only for MPEG video, not for TS
+				// moov segment for mpeg video in HLS
+				// Example: #EXT-X-MAP:URI="93dc5421-9f58-4d34-9452-024797af63bb/35d6-MAIN/02/1200K/map.mp4"
+				segmentUriName = StringParse.findLabeledDataFromString("URI=", "\"", sData[itr]);
+				if (segmentUriName.contains("BUMPER") || segmentUriName.contains("DUB_CARD")) {
+					// Excluding DISCONTINUITY sections for BUMPER & DUB_CARD
+					// Suspect BUMPER is some sort of 1 segment preroll, skipping for now
+					// Suspect DUB_CARDs are advertisements, skipping for now
+					{
+						int skipCount = itr;
+
+						LOG.debug("Ignoring BUMPER/DUB_SUB:" + segmentUriName + "\nSkip through DISCONTINUITY");
+						for (; itr < sData.length - 1; itr++) {
+							if (sData[itr].contains("#EXT-X-DISCONTINUITY")) {
+								LOG.debug("skipped: " + (itr - skipCount + 1) + " lines");
+								break;
+							}
+
+						}
+					}
+					
+					break;
+				}
+
+				String byteRangeSegmentKey = StringParse.findLabeledDataFromString("BYTERANGE=", "\"", sData[itr]);
+
+				segmentUriName = cleanUriName(segmentUriName);
+				urlMatchDef = defineUrlMatching(segmentUriName);
+				segmentUriName = prefixParentUrlToSegmentUrl(segmentUriName, urlMatchDef, childManifest);
+
+				masterManifest.getSegUrlMatchDef().add(urlMatchDef);
+				newManifest.getSegUrlMatchDef().add(urlMatchDef);
+
+				SegmentInfo segmentInfo = new SegmentInfo();
+				segmentInfo.setVideo(false);
+				segmentInfo.setDuration(0);
+				segmentInfo.setSegmentID(0);
+				segmentInfo.setQuality(String.format("%.0f", (double) childManifest.getQuality()));
+
+				byteRangeSegmentKey = brKeyBuilder(byteRangeSegmentKey, segmentUriName, byteRangeOffest);
+				childManifest.addSegment(!byteRangeSegmentKey.isEmpty() ? byteRangeSegmentKey : segmentUriName, segmentInfo);
+				manifestCollection.addToSegmentTrie(segmentUriName, segmentInfo);
+
+				if (!manifestCollection.getSegmentChildManifestTrie().containsKey(segmentUriName)) {
+					manifestCollection.addToSegmentChildManifestTrie(segmentUriName, childManifest);
+					addToSegmentManifestCollectionMap(segmentUriName);
+				}
+				break;
+
 			case "#EXTINF": // Segment duration + media-file
 				if (childManifest == null) {
 					LOG.debug("failed to locate child manifest " + sData[++itr]);
 				} else {
 					String parameters = sData[itr];
-					String segmentUriName;
-
-					String brSegmentKey = "";
-					if (sData[itr + 1].startsWith("#EXT-X-BYTERANGE:")) {
-						brSegmentKey = sData[++itr];
+					byteRangeSegmentKey = "";
+					String byteRangeTagName = "#EXT-X-BYTERANGE";
+					int byteRangeIdx = sData[itr + 1].indexOf(byteRangeTagName);
+					if (byteRangeIdx != -1) {
+						byteRangeSegmentKey = sData[++itr].substring(byteRangeIdx + 1 + byteRangeTagName.length());
 						segmentUriName = sData[++itr];
 					} else {
 						segmentUriName = sData[++itr];
 					}
+
 					segmentUriName = cleanUriName(segmentUriName);
-
-    				urlMatchDef = defineUrlMatching(segmentUriName);
-    				// Build reference URL and URL match definition for the segment using corresponding child manifest
-    				if (segmentUriName.length() > 0 && segmentUriName.charAt(0) != '/') {
-						if (UrlMatchType.COUNT.equals(urlMatchDef.getUrlMatchType())) {
-							UrlMatchDef segmentManifestUrlMatchDef = defineUrlMatching(childManifest.getUriName());
-
-							if (segmentManifestUrlMatchDef.getUrlMatchLen() != 0) {
-								urlMatchDef.setUrlMatchLen(
-										urlMatchDef.getUrlMatchLen() + segmentManifestUrlMatchDef.getUrlMatchLen());
-								segmentUriName = StringUtils.substringBeforeLast(childManifest.getUriName(), "/") + "/"
-										+ segmentUriName;
-							}
-						}
-					}
+					urlMatchDef = defineUrlMatching(segmentUriName);
+					segmentUriName = prefixParentUrlToSegmentUrl(segmentUriName, urlMatchDef, childManifest);
 
     				masterManifest.getSegUrlMatchDef().add(urlMatchDef);
     				newManifest.getSegUrlMatchDef().add(urlMatchDef);
@@ -275,10 +320,10 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 						segmentInfo.setStartTime(0);
 					}
 
-					segmentUriName = decodeUrlEncoding(segmentUriName);
+					segmentUriName = Util.decodeUrlEncoding(segmentUriName);
 			        segmentUriName = StringUtils.substringBefore(segmentUriName, "?");
-			        brSegmentKey = brKeyBuilder(brSegmentKey, segmentUriName, byteRangeOffest);
-					if (childManifest.addSegment(!brSegmentKey.isEmpty() ? brSegmentKey : segmentUriName, segmentInfo).equals(segmentInfo)) {
+			        byteRangeSegmentKey = brKeyBuilder(byteRangeSegmentKey, segmentUriName, byteRangeOffest);
+					if (childManifest.addSegment(!byteRangeSegmentKey.isEmpty() ? byteRangeSegmentKey : segmentUriName, segmentInfo).equals(segmentInfo)) {
 						manifestCollection.addToSegmentTrie(segmentUriName, segmentInfo);
 						manifestCollection.addToTimestampChildManifestMap(manifest.getRequest().getTimeStamp(), childManifest);
 						if (!manifestCollection.getSegmentChildManifestTrie().containsKey(segmentUriName)) {
@@ -298,7 +343,16 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 			case "#EXT-X-MEDIA-SEQUENCE": // Indicates the sequence number of the first URL that appears in a playlist file
 				mediaSequence = StringParse.findLabeledDoubleFromString("#EXT-X-MEDIA-SEQUENCE", ":", sData[itr]);
 				if (mediaSequence != null) {
-					childManifest.setSegmentCount(mediaSequence.intValue());
+					if (childManifest.getSequenceStart() < 0) {
+						childManifest.setSequenceStart(mediaSequence.intValue());
+					}
+					manifestCollection.setMinimumSequenceStart(mediaSequence.intValue());
+					if (!sData[sData.length - 1].startsWith("#EXT-X-ENDLIST")) {
+						Integer pointer;
+						if ((pointer = findIndex(sData, childManifest)) != null) {
+							itr = pointer;
+						}
+					}
 				}
 				break;
 
@@ -355,35 +409,85 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 		}
 	}
 
+	/**
+	 * Scans, backwards from end of file, for the last segment reference processed.
+	 * 
+	 * @param sData
+	 * @param childManifest
+	 * @return index of last segment reference, null if not found
+	 */
+	private Integer findIndex(String[] sData, ChildManifest childManifest) {
+		Integer pointer = null;
+		int segmentCount = childManifest.getNextSegmentID() - 1; // The last segmentID used
+		if (segmentCount > 0) {
+
+			Optional<Entry<String, SegmentInfo>> first = childManifest.getSegmentInfoTrie().entrySet().stream().filter(
+					(e) -> e.getValue().getSegmentID() == segmentCount).findFirst();
+			if (first.isPresent()) {
+				String key = first.get().getKey();
+				for (int idx = sData.length - 1; idx > 0; idx--) {
+					if (key.contains(sData[idx])) {
+						pointer = idx - 1;
+						break;
+					}
+				}
+			}
+		}
+		return pointer;
+	}
+
+	/**
+	 * Try to build up absolute URI for segmentUrl using parent manifest URL address
+	 * @param segmentUrl
+	 * @param urlMatchDef
+	 * @param childManifest
+	 * @return
+	 */
+	private String prefixParentUrlToSegmentUrl(String segmentUrl, UrlMatchDef urlMatchDef, ChildManifest childManifest) {
+		// Build reference URL and URL match definition for the segment using corresponding child manifest
+		if (segmentUrl.length() > 0 && segmentUrl.charAt(0) != '/') {
+			if (UrlMatchType.COUNT.equals(urlMatchDef.getUrlMatchType())) {
+			    UrlMatchDef segmentManifestUrlMatchDef = defineUrlMatching(childManifest.getUriName());
+
+			    if (segmentManifestUrlMatchDef.getUrlMatchLen() != 0) {
+			        urlMatchDef.setUrlMatchLen(urlMatchDef.getUrlMatchLen() + segmentManifestUrlMatchDef.getUrlMatchLen());
+			        segmentUrl = StringUtils.substringBeforeLast(childManifest.getUriName(), "/") + "/" + segmentUrl;
+		        }
+			}
+		}
+
+		return segmentUrl;
+	}
+
 	/*
 	 *  
-		#EXT-X-BYTERANGE:41517@0			byteRangeSegmentLength @ byteRangeOffest
-		#EXT-X-BYTERANGE:40932@41517
-		#EXT-X-BYTERANGE:41000@82449
-
+		41517@0			byteRangeSegmentLength @ byteRangeOffest
+		40932@41517
+		40000
 	 */
 	private String brKeyBuilder(String brSegmentKey, String segmentUriName, int[] byteRangeOffest) {
 		if (StringUtils.isEmpty(brSegmentKey)) {
 			return segmentUriName;
 		}
+
 		String key = brSegmentKey;
-		if (brSegmentKey.startsWith("#EXT-X-BYTERANGE:")) {
-			int byteRangeSegmentLength = -1;
-			String[] ranges;
-			if ((ranges = stringParse.parse(brSegmentKey, "EXT-X-BYTERANGE:(\\d+)@(\\d+)")) != null) {
-				byteRangeSegmentLength = StringParse.stringToInteger(ranges[0], -1);
-				byteRangeOffest[0] = StringParse.stringToInteger(ranges[1], -1);
-			} else if ((ranges = stringParse.parse(brSegmentKey, "EXT-X-BYTERANGE:(\\d+)")) != null) {
-				byteRangeSegmentLength = StringParse.stringToInteger(ranges[0], -1);
-			}
-			if (byteRangeSegmentLength < 0 || byteRangeOffest[0] < 0) {
-				LOG.error(String.format("Cannot parse decimals :%s", brSegmentKey));
-				return key;
-			} else {
-				key = String.format("%d-%d", byteRangeOffest[0], byteRangeOffest[0] + byteRangeSegmentLength - 1);
-				byteRangeOffest[0] += byteRangeSegmentLength;
-			}
+		int byteRangeSegmentLength = -1;
+		String[] ranges = brSegmentKey.split("@");
+		if (ranges.length == 2) {
+			byteRangeSegmentLength = StringParse.stringToInteger(ranges[0], -1);
+			byteRangeOffest[0] = StringParse.stringToInteger(ranges[1], -1);
+		} else if (ranges.length == 1) {
+			byteRangeSegmentLength = StringParse.stringToInteger(ranges[0], -1);
 		}
+
+		if (byteRangeSegmentLength < 0 || byteRangeOffest[0] < 0) {
+			LOG.error(String.format("Cannot parse decimals :%s", brSegmentKey));
+			return key;
+		} else {
+			key = String.format("%d-%d", byteRangeOffest[0], byteRangeOffest[0] + byteRangeSegmentLength - 1);
+			byteRangeOffest[0] += byteRangeSegmentLength;
+		}
+
 		return key;
 	}
 	
@@ -392,8 +496,8 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 	 * @param childManifest
 	 */
 	public void adjustDurations(ChildManifest childManifest) {
-		if (!childManifest.getSegmentList().isEmpty()) {
-			PatriciaTrie<SegmentInfo> segmentList = childManifest.getSegmentList();
+		if (!childManifest.getSegmentInfoTrie().isEmpty()) {
+			PatriciaTrie<SegmentInfo> segmentList = childManifest.getSegmentInfoTrie();
 			SegmentInfo priorSegment = null;
 			SegmentInfo segment;
 			String key = segmentList.firstKey();
@@ -412,7 +516,9 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 	
 	@Override
 	protected ChildManifest createChildManifest(Manifest manifest, String parameters, String childUriName) {
+		childUriName = Util.decodeUrlEncoding(childUriName);
 		ChildManifest childManifest = new ChildManifest();
+		childManifest.setManifestCollectionParent(manifestCollection);
 		childManifest.setManifest(manifest);
 		childManifest.setUriName(childUriName);
 

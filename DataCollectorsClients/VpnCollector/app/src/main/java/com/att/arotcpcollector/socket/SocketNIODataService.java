@@ -109,67 +109,71 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 
  		while (!shutdown) {
 
-			byte[] packetData;
+ 			try {
+				byte[] packetData;
 
-			synchronized (syncTransmittedData) {
-				packetData = dataToBeTransmitted.poll();
-			}
+				synchronized (syncTransmittedData) {
+					packetData = dataToBeTransmitted.poll();
+				}
 
-			if (packetData != null) {
+				if (packetData != null) {
+					try {
+						sessionHandler.handlePacket(packetData);
+					} catch (PacketHeaderException e) {
+						Log.e(TAG, "Packet Header Exception Thrown: ", e);
+					}
+				}
+
 				try {
-					sessionHandler.handlePacket(packetData);
-				} catch (PacketHeaderException e) {
-					Log.e(TAG, "Packet Header Exception Thrown: ", e);
+					int selectedChannels;
+					synchronized (syncSelectorForSelection) {
+						selectedChannels = selector.select();
+					}
+					if (selectedChannels == 0) {
+						Thread.sleep(1000);
+					}
+				} catch (IOException e) {
+					Log.e(TAG, "Error in Selector.select(): " + e.getMessage());
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e1) {
+						Log.d(TAG, "Selector Thread Sleep " + e.getMessage());
+					}
+					continue;
+				} catch (InterruptedException e) {
+					Log.e(TAG, "Selector Thread Interrupted: " + e.getMessage());
 				}
-			}
+				if (shutdown) {
+					Log.d(TAG, "Selector is in shutdown...");
+					break;
+				}
 
-			try {
-				int selectedChannels;
-				synchronized (syncSelectorForSelection) {
-					selectedChannels = selector.select();
-				}
-				if(selectedChannels == 0){
-					Thread.sleep(1000);
-				}
-			} catch (IOException e) {
-				Log.e(TAG, "Error in Selector.select(): " + e.getMessage());
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e1) {
-					Log.d(TAG, "Selector Thread Sleep " + e.getMessage());
-				}
-				continue;
-			} catch (InterruptedException e) {
-				Log.e(TAG, "Selector Thread Interrupted: " + e.getMessage());
-			}
-			if (shutdown) {
-				Log.d(TAG, "Selector is in shutdown...");
-				break;
-			}
-
-			synchronized (syncSelectorForUse) {
-				Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
-				while (iter.hasNext()) {
-					SelectionKey key = iter.next();
-					if (key.isValid()) {// adding this check to avoid java.nio.channels.CancelledKeyException
-						if (key.attachment() == null) {
-							try {
-								processTCPSelectionKey(key);
-							} catch (IOException e) {
-								key.cancel();
+				synchronized (syncSelectorForUse) {
+					Iterator<SelectionKey> iter = selector.selectedKeys().iterator();
+					while (iter.hasNext()) {
+						SelectionKey key = iter.next();
+						if (key.isValid()) {// adding this check to avoid java.nio.channels.CancelledKeyException
+							if (key.attachment() == null) {
+								try {
+									processTCPSelectionKey(key);
+								} catch (IOException e) {
+									key.cancel();
+								}
+							} else {
+								processUDPSelectionKey(key);
+							}
+							iter.remove();
+							if (shutdown) {
+								Log.d(TAG, "syncSelectorForUse is in shutdown...");
+								break;
 							}
 						} else {
-							processUDPSelectionKey(key);
+							Log.d(TAG, "Invalid Key...");
 						}
-						iter.remove();
-						if (shutdown) {
-							Log.d(TAG, "syncSelectorForUse is in shutdown...");
-							break;
-						}
-					} else {
-						Log.d(TAG, "Invalid Key...");
- 					}
+					}
 				}
+			} catch (Exception e) {
+ 				Log.d(TAG, "Something went wrong while processing a packet", e);
 			}
 
 		}
@@ -269,27 +273,26 @@ public class SocketNIODataService implements Runnable, ISocketDataSubscriber{
 		if (sessionKey == null) {
 			sessionKey = sessionmg.createKey(session.getDestAddress(), session.getDestPort(), session.getSourceIp(), session.getSourcePort());
 		}
-						
+
 		if(key.isValid() && key.isWritable() && !session.isBusyWrite()){
 			if(session.hasDataToSend() && session.isDataForSendingReady()){
 				session.setBusyWrite(true);
 				SocketDataWriterWorker worker = new SocketDataWriterWorker(tcpFactory, udpFactory);
 				worker.setSessionKey(sessionKey);
+				worker.setSecureEnable(isSecureEnable());
 				worker.setPrintLog(printLog);
 				workerPool.execute(worker);
-			}	 
+			}
 		}
 		
 		if(key.isValid() && key.isReadable() && !session.isBusyRead()){
 			session.setBusyRead(true);
 			SocketDataReaderWorker worker = new SocketDataReaderWorker(tcpFactory, udpFactory);
 			worker.setSessionKey(sessionKey);
+			worker.setSecureEnable(isSecureEnable());
 			worker.setPrintLog(printLog);
 			workerPool.execute(worker);
-		} 
-		
-
-
+		}
 	}
 
 	public void setSecureEnable(boolean Secure){

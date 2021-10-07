@@ -62,7 +62,7 @@ public class ForwardSecrecyImplTest extends BaseTest {
 		packetInfos.add(info);
 		packetAnalyzerResult.setSessionlist(sessions);
 
-		when(session.getPackets()).thenReturn(packetInfos);
+		when(session.getTcpPackets()).thenReturn(packetInfos);
 		when(info.getPacket()).thenReturn(tcpPacket);
 		when(tcpPacket.getSelectedCipherSuite()).thenReturn(cipherSuite);
 

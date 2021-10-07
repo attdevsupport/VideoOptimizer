@@ -17,6 +17,7 @@
 package com.att.aro.ui.view.menu.view;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -35,7 +36,9 @@ import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
@@ -83,6 +86,7 @@ public class FilterApplicationsAndIpDialog extends JDialog {
  	private AnalysisFilter initialFilter; 
  	private boolean ipv4Selection;
  	private boolean ipv6Selection;
+ 	private boolean tcpSelection;
  	private boolean udpSelection;
  	private boolean dnsSelection;
  	
@@ -227,6 +231,7 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 		initialFilter = new AnalysisFilter(applications, filter.getTimeRange(), filter.getDomainNames());	
 		initialFilter.setIpv4Sel(filter.isIpv4Sel());
 		initialFilter.setIpv6Sel(filter.isIpv6Sel());
+		initialFilter.setIpv6Sel(filter.isTcpSel());
 		initialFilter.setUdpSel(filter.isUdpSel());
 	}
 
@@ -309,34 +314,45 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					if(getCurrentPktAnalyzerResult().getFilter()!=null){
-						AnalysisFilter filter = getCurrentPktAnalyzerResult().getFilter();
-						Map<InetAddress, String> domainNames= filter.getDomainNames();
-						Map<String, ApplicationSelection> appSelections = new HashMap<String, ApplicationSelection>(filter.getAppSelections().size());
-						for (ApplicationSelection sel : filter.getAppSelections().values()) {
-							if(domainNames != null){ //Greg Story Add domain names map to Application Selection
-								sel.setDomainNames(domainNames);
-							}
-							appSelections.put(sel.getAppName(), new ApplicationSelection(sel));
-						}
-						filter.setIpv4Sel(ipv4Selection);
-						filter.setIpv6Sel(ipv6Selection);
-						filter.setUdpSel(udpSelection);
-						filter.setDnsSelection(dnsSelection);
-			
-						if (!selectionReturnsData()) {
-							
-							MessageDialogFactory.getInstance().showErrorDialog(
-									FilterApplicationsAndIpDialog.this, 
-									ResourceBundleHelper.getMessageString("filter.noResultData.error"));
-						
-						} else {
 
-							((MainFrame)parent).updateFilter(filter);
-							dispose();
-						
+					if (ipv4Selection || ipv6Selection) {
+
+						if (tcpSelection || udpSelection || dnsSelection) {
+
+							if (getCurrentPktAnalyzerResult().getFilter() != null) {
+								AnalysisFilter filter = getCurrentPktAnalyzerResult().getFilter();
+								Map<InetAddress, String> domainNames = filter.getDomainNames();
+								Map<String, ApplicationSelection> appSelections = new HashMap<String, ApplicationSelection>(
+										filter.getAppSelections().size());
+								for (ApplicationSelection sel : filter.getAppSelections().values()) {
+									if (domainNames != null) { 
+										sel.setDomainNames(domainNames);
+									}
+									appSelections.put(sel.getAppName(), new ApplicationSelection(sel));
+								}
+								filter.setIpv4Sel(ipv4Selection);
+								filter.setIpv6Sel(ipv6Selection);
+								filter.setTcpSel(tcpSelection);
+								filter.setUdpSel(udpSelection);
+								filter.setDnsSelection(dnsSelection);
+
+								if (!selectionReturnsData()) {
+									noResultsError(ResourceBundleHelper.getMessageString("filter.noResultData.error"));
+								} else {
+									((MainFrame) parent).updateFilter(filter);
+									dispose();
+								}
+							}
+						} else {
+							noResultsError(ResourceBundleHelper.getMessageString("filter.noProtocolSelection.error"));
 						}
+					} else {
+						noResultsError(ResourceBundleHelper.getMessageString("filter.noIpSelection.error"));
 					}
+				}
+
+				private void noResultsError(String error) {
+					MessageDialogFactory.getInstance().showErrorDialog(FilterApplicationsAndIpDialog.this, error);
 				}
 			});
 		}
@@ -353,7 +369,7 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 		
 		AnalysisFilter filter = getCurrentPktAnalyzerResult().getFilter();
 
-		if (!filter.isIpv4Sel() && !filter.isIpv6Sel() && !filter.isUdpSel()) {
+		if (!filter.isIpv4Sel() && !filter.isIpv6Sel() && !filter.isTcpSel() && !filter.isUdpSel() && !filter.isDnsSelection()) {
 			return false;
 		}
 		
@@ -447,10 +463,11 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 
 	private JPanel getPacketSelectionPanel(){
 		JPanel checkBoxSelPanel = new JPanel();
-		final JCheckBox chkIpv4 = new JCheckBox("IPV4");
-	    final JCheckBox chkIpv6 = new JCheckBox("IPV6");
+	    final JCheckBox chkTCP = new JCheckBox("TCP");
 	    final JCheckBox chkUdp = new JCheckBox("UDP");
 	    final JCheckBox chkDns = new JCheckBox("DNS");
+	    final JCheckBox chkIpv4 = new JCheckBox("IPV4");
+	    final JCheckBox chkIpv6 = new JCheckBox("IPV6");
 
 /*	    chkIpv4.setMnemonic(KeyEvent.VK_I);
 	    chkIpv6.setMnemonic(KeyEvent.VK_P);
@@ -464,6 +481,7 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 */
 	    chkIpv4.setSelected(ipv4Selection = currentTraceResult.getFilter().isIpv4Sel());
 		chkIpv6.setSelected(ipv6Selection = currentTraceResult.getFilter().isIpv6Sel());
+		chkTCP.setSelected(tcpSelection = currentTraceResult.getFilter().isTcpSel());
 		chkUdp.setSelected(udpSelection = currentTraceResult.getFilter().isUdpSel());
 		chkDns.setSelected(dnsSelection = currentTraceResult.getFilter().isDnsSelection());
 				
@@ -482,6 +500,15 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 			public void actionPerformed(ActionEvent aEvent) {
 				JCheckBox cb = (JCheckBox) aEvent.getSource();
 				ipv6Selection = cb.isSelected();
+			}
+		});
+		
+		chkTCP.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent aEvent) {
+				JCheckBox cb = (JCheckBox) aEvent.getSource();
+				tcpSelection = cb.isSelected();
 			}
 		});
 		
@@ -505,12 +532,20 @@ public class FilterApplicationsAndIpDialog extends JDialog {
 		
 	    checkBoxSelPanel.add(chkIpv4);
 	    checkBoxSelPanel.add(chkIpv6);
+	    checkBoxSelPanel.add(getSeparator(checkBoxSelPanel.getPreferredSize()));
+	    checkBoxSelPanel.add(chkTCP);
 	    checkBoxSelPanel.add(chkUdp);
 	    checkBoxSelPanel.add(chkDns);
 	    checkBoxSelPanel.setSize(50, 20);
 		return checkBoxSelPanel;
 	}
 	
+	private JSeparator getSeparator(Dimension dimension) {
+		JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
+		separator.setMaximumSize(dimension);
+		return separator;
+	}
+
 	/**
 	 * Initializes panel that contains the the list of applications.
 	 */

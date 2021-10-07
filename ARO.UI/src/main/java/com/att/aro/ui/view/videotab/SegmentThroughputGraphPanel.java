@@ -1,5 +1,5 @@
 /*
- *  Copyright 2020 AT&T
+ *  Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,8 +140,10 @@ public class SegmentThroughputGraphPanel extends JPanel implements ActionListene
 			videoThroughputPlot = new VideoThroughputPlot(videoStream, getOptionSelected(checkBoxVideo, checkBoxAudio));
 
 			videoThroughputPlot.calculateThroughPut(getOptionSelected(checkBoxVideo, checkBoxAudio));
+		
+
 			if (aroTraceData.getAnalyzerResult().getFilter().getTimeRange().getBeginTime() < aroTraceData
-					.getAnalyzerResult().getFilter().getTimeRange().getEndTime()) {
+							.getAnalyzerResult().getFilter().getTimeRange().getEndTime()) {
 
 				getXAxis().setRange(
 						new Range(videoThroughputPlot.getMinXValue() - 5, videoThroughputPlot.getMaxXValue() + 10));

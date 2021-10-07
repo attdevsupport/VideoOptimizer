@@ -89,7 +89,7 @@ public class UserEventReaderImpl extends PeripheralBase implements IUserEventRea
 					}
 				} else {
 					// TODO: Review User Events and Add More Handling.
-					LOGGER.warn("Invalid user event type in trace: " + lineBuf);
+					LOGGER.debug("Invalid user event type in trace: " + lineBuf);
 					continue;
 				}
 

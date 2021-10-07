@@ -77,6 +77,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 	private JCheckBox jWifiStateCheckBox;
 	private JCheckBox jNetworkTypeCheckBox;
 	private JCheckBox jThroughputCheckBox;
+	private JCheckBox jLatencyCheckbox;
 	private JCheckBox jConnectionsCheckBox;
 	private JCheckBox jUplinkCheckBox;
 	private JCheckBox jDownlinkCheckBox;
@@ -110,7 +111,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 		chart_options_dialog_ulpackets, chart_options_dialog_dlpackets, chart_options_dialog_bursts, 
 		chart_options_dialog_userinput, chart_options_dialog_rrc, chart_options_dialog_radio, chart_options_dialog_bluetooth, 
 		chart_options_dialog_camera, chart_options_dialog_battery, chart_options_dialog_screen, 
-		chart_options_dialog_throughput, chart_options_dialog_connections, chart_options_dialog_bufferTime_occupancy, chart_options_dialog_video, 
+		chart_options_dialog_throughput, chart_options_dialog_latency, chart_options_dialog_connections, chart_options_dialog_bufferTime_occupancy, chart_options_dialog_video, 
 		chart_options_dialog_temperature,chart_options_dialog_attenation,chart_options_dialog_speedthrottle
 	}
 
@@ -154,6 +155,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 		jNetworkTypeCheckBox.setEnabled(enabled);
 		jConnectionsCheckBox.setEnabled(enabled);
 		jThroughputCheckBox.setEnabled(enabled);
+		jLatencyCheckbox.setEnabled(enabled);
 		jUplinkCheckBox.setEnabled(enabled);
 		jDownlinkCheckBox.setEnabled(enabled);
 		jBurstsCheckBox.setEnabled(enabled);
@@ -370,7 +372,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 			jAdvancedOptionsPanel.add(
 					jWakelockStateCheckBox = getJCheckBox(jWakelockStateCheckBox,
 							DialogItem.chart_options_dialog_wakelock, ChartPlotOptions.WAKELOCK),
-							getGridBagConstraints(counter++));
+					getGridBagConstraints(counter++));
 			addActionListener(jWakelockStateCheckBox);
 			jAdvancedOptionsPanel.add(jWifiStateCheckBox = getJCheckBox(jWifiStateCheckBox,
 					DialogItem.chart_options_dialog_wifi, ChartPlotOptions.WIFI), getGridBagConstraints(counter++));
@@ -384,12 +386,16 @@ public class ChartPlotOptionsDialog extends JDialog {
 			jAdvancedOptionsPanel.add(
 					jSpeedThrottleCheckBox = getJCheckBox(jSpeedThrottleCheckBox,
 							DialogItem.chart_options_dialog_attenation, ChartPlotOptions.SPEED_THROTTLE),
-							getGridBagConstraints(counter++));
+					getGridBagConstraints(counter++));
 			addActionListener(jSpeedThrottleCheckBox);
 			jAdvancedOptionsPanel.add(jThroughputCheckBox = getJCheckBox(jThroughputCheckBox,
 					DialogItem.chart_options_dialog_throughput, ChartPlotOptions.THROUGHPUT),
 					getGridBagConstraints(counter++));
 			addActionListener(jThroughputCheckBox);
+			jAdvancedOptionsPanel.add(jLatencyCheckbox = getJCheckBox(jLatencyCheckbox,
+					DialogItem.chart_options_dialog_latency, ChartPlotOptions.LATENCY),
+					getGridBagConstraints(counter++));
+			addActionListener(jLatencyCheckbox);
 			jAdvancedOptionsPanel.add(jConnectionsCheckBox = getJCheckBox(jConnectionsCheckBox,
 					DialogItem.chart_options_dialog_connections, ChartPlotOptions.CONNECTIONS),
 					getGridBagConstraints(counter++));
@@ -420,17 +426,17 @@ public class ChartPlotOptionsDialog extends JDialog {
 			jAdvancedOptionsPanel.add(
 					jVideoBufferOccupancyCheckBox = getJCheckBox(jVideoBufferOccupancyCheckBox,
 							DialogItem.chart_options_dialog_buffer_occupancy, ChartPlotOptions.BUFFER_OCCUPANCY),
-							getGridBagConstraints(counter++));
+					getGridBagConstraints(counter++));
 			addActionListener(jVideoBufferOccupancyCheckBox);
 			jAdvancedOptionsPanel.add(
 					jVideoVideoChunksCheckBox = getJCheckBox(jVideoVideoChunksCheckBox,
 							DialogItem.chart_options_dialog_video_chunks, ChartPlotOptions.VIDEO_CHUNKS),
-							getGridBagConstraints(counter++));
+					getGridBagConstraints(counter++));
 			addActionListener(jVideoVideoChunksCheckBox);
 			jAdvancedOptionsPanel.add(
 					jTemperatureStateCheckBox = getJCheckBox(jTemperatureStateCheckBox,
 							DialogItem.chart_options_dialog_temperature, ChartPlotOptions.TEMPERATURE),
-							getGridBagConstraints(counter++));
+					getGridBagConstraints(counter++));
 			addActionListener(jTemperatureStateCheckBox);
 		}
 		return jAdvancedOptionsPanel;

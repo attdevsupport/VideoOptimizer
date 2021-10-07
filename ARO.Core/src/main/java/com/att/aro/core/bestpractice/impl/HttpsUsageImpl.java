@@ -199,7 +199,7 @@ public class HttpsUsageImpl implements IBestPractice {
 				if (session.isUdpOnly()) {
 					continue;
 				}
-				List<PacketInfo> packetsInfo = session.getPackets();
+				List<PacketInfo> packetsInfo = session.getTcpPackets();
 				if (packetsInfo.isEmpty()) {
 					LOGGER.error("Session without packets! Session's remote IP and port: "
 							+ session.getRemoteIP().getHostAddress() + ":" + session.getRemotePort());

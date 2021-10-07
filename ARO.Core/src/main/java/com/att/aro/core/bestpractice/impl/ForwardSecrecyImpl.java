@@ -76,7 +76,7 @@ public class ForwardSecrecyImpl implements IBestPractice {
 	 * @return
 	 */
 	private String getSelectedCipherInSession(Session session) {
-		List<PacketInfo> packetInfos = session.getPackets();
+		List<PacketInfo> packetInfos = session.getTcpPackets();
 		for(PacketInfo info : packetInfos) {
 			if (info.getPacket() instanceof TCPPacket) {
 				TCPPacket tcpPacket = (TCPPacket) info.getPacket();

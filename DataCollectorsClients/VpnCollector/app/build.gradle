@@ -26,7 +26,6 @@ android {
      * This property is optional because the plugin uses a recommended version of
      * the build tools by default.
      */
-    buildToolsVersion "29.0.2"
     /**
      * The defaultConfig block encapsulates default settings and entries for all
      * build variants, and can override some attributes in main/AndroidManifest.xml
@@ -38,7 +37,7 @@ android {
         applicationId "com.att.arocollector"
         def jenkinsBuildNumber = System.getenv("BUILD_NUMBER") as Integer ?: 1
         def releaseBuildId = jenkinsBuildNumber - 1
-        versionName "4.1." + releaseBuildId
+        versionName "4.2." + releaseBuildId
         minSdkVersion 23
         targetSdkVersion 29
         compileOptions {
@@ -92,12 +91,12 @@ android {
 
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'androidx.core:core:1.3.1'
+    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation 'androidx.core:core:1.6.0'
     implementation 'com.android.support:support-annotations:+'
 
-    implementation 'org.bouncycastle:bcpkix-jdk15on:1.54'
-    implementation 'org.bouncycastle:bcprov-jdk15on:1.54'
-    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.56'
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.56'
+    implementation 'com.google.android.material:material:1.3.0'
 
 }

@@ -16,17 +16,13 @@
 
 package com.att.arotcpcollector;
 
-import android.os.Build;
 import android.util.Log;
-
-import androidx.annotation.RequiresApi;
 
 import com.att.arotcpcollector.ip.IPHeader;
 import com.att.arotcpcollector.socket.SocketNIODataService;
 import com.att.arotcpcollector.socket.SocketProtector;
 import com.att.arotcpcollector.tcp.TCPHeader;
 import com.att.arotcpcollector.udp.UDPHeader;
-import com.att.arotcpcollector.util.PacketUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -321,6 +317,7 @@ public class SessionManager {
 		ses.setSourcePort(srcPort);
 		ses.setConnected(false);
 		ses.setSessionKey(sessionKey);
+		ses.setCreationTime(System.nanoTime());
 
 		DatagramChannel channel = null;
 
@@ -345,8 +342,7 @@ public class SessionManager {
 		try {
 			channel.connect(addr);
 
-		Object isudp = new Object();
-
+			Object isudp = new Object();
 			synchronized (SocketNIODataService.syncSelectorForUse) {
 				selector.wakeup();
 				synchronized (SocketNIODataService.syncSelectorForSelection) {
@@ -413,11 +409,10 @@ public class SessionManager {
 	 * @return
 	 * @throws SessionCreateException 
 	 */
-	@RequiresApi(api = Build.VERSION_CODES.N)
 	public Session createNewSession(String ip, int port, String srcIp, int srcPort, long sequenceNumber, long ackNumber, boolean printLog) {
 		String sessionKey = createKey(ip, port, srcIp, srcPort);
 		boolean found = false;
-
+		
 		Session session = new Session();
 		session.setDestAddress(ip);
 		session.setDestPort(port);
@@ -426,6 +421,7 @@ public class SessionManager {
 		session.setConnected(false);
 		session.setSessionKey(sessionKey);
 		session.setPrintLog(printLog);
+		session.setCreationTime(System.nanoTime());
 		session.setIntialSequenceNumber(sequenceNumber);
 		session.setIntialAckNumber(ackNumber);
 
@@ -434,6 +430,7 @@ public class SessionManager {
 		// We will do 3 tries to open the channel
 		for (int i = 1; i <= 3; ++i) {
 			Log.d(TAG, "Channel connection attempt " + i + " for session " + sessionKey);
+
 			if (channel == null || !channel.isOpen()) {
 				try {
 					channel = SocketChannel.open();
@@ -449,43 +446,42 @@ public class SessionManager {
 					return null;
 				}
 			}
-			Log.d(TAG, "created new socketchannel for " + ip + ":" + port + "-" + srcIp + ":" + srcPort + " for session " + sessionKey);
 
+			Log.d(TAG, "created new socketchannel for " + ip + ":" + port + "-" + srcIp + ":" + srcPort + " for session " + sessionKey);
 			protector.protect(channel.socket());
+			Log.d(TAG, "Protected new socketchannel");
+
 			// Initiate connection to reduce latency
 			SocketAddress addr = new InetSocketAddress(ip, port);
 			Log.d(TAG, "Initiate connecting to remote tcp server: " + ip + ":" + port);
+			try {
+				connected = channel.connect(addr);
 
-		Log.d(TAG, "Protected new socketchannel");
-
-		try {
-			connected = channel.connect(addr);
-			Log.d(TAG, "Local: " + channel.getLocalAddress().toString() + ", Remote: " + channel.getRemoteAddress().toString());
-			// Register for non-blocking operation
-			synchronized (SocketNIODataService.syncSelectorForUse) {
-				selector.wakeup();
-				synchronized (SocketNIODataService.syncSelectorForSelection) {
-					SelectionKey selectkey = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-					session.setSelectionkey(selectkey);
-					Log.d(TAG, "Registered tcp selector successfully");
+				Log.d(TAG, "Local: " + channel.getLocalAddress().toString() + ", Remote: " + channel.getRemoteAddress().toString());
+				// Register for non-blocking operation
+				synchronized (SocketNIODataService.syncSelectorForUse) {
+					selector.wakeup();
+					synchronized (SocketNIODataService.syncSelectorForSelection) {
+						SelectionKey selectkey = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+						session.setSelectionkey(selectkey);
+						Log.d(TAG, "Registered tcp selector successfully");
+					}
 				}
-			}
 
-			if (channel.isConnected() || channel.isConnectionPending()) {
-				break;
+				if (channel.isConnected() || channel.isConnectionPending()) {
+					break;
+				}
+			} catch (ClosedChannelException ex) {
+				Log.e(TAG, ">>>>---> failed connect ClosedChannelException:" + ex.getMessage());
+			} catch (UnresolvedAddressException ex2) {
+				Log.e(TAG, ">>>>---> failed connect UnresolvedAddressException:" + ex2.getMessage());
+			} catch (UnsupportedAddressTypeException ex3) {
+				Log.e(TAG, ">>>>---> failed connect UnsupportedAddressTypeException:" + ex3.getMessage());
+			} catch (SecurityException ex4) {
+				Log.e(TAG, ">>>>---> failed connect SecurityException:" + ex4.getMessage());
+			} catch (IOException ex5) {
+				Log.e(TAG, ">>>>---> failed connect IOException:", ex5);
 			}
-
-		} catch (ClosedChannelException ex) {
-			Log.e(TAG, ">>>>---> failed connect ClosedChannelException:" + ex.getMessage());
-		} catch (UnresolvedAddressException ex2) {
-			Log.e(TAG, ">>>>---> failed connect UnresolvedAddressException:" + ex2.getMessage());
-		} catch (UnsupportedAddressTypeException ex3) {
-			Log.e(TAG, ">>>>---> failed connect UnsupportedAddressTypeException:" + ex3.getMessage());
-		} catch (SecurityException ex4) {
-			Log.e(TAG, ">>>>---> failed connect SecurityException:" + ex4.getMessage());
-		} catch (IOException ex5) {
-			Log.e(TAG, ">>>>---> failed connect IOException:", ex5);
-		}
 		}
 
 		session.setConnected(connected);

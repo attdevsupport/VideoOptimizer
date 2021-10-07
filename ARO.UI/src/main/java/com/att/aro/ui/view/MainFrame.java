@@ -105,9 +105,9 @@ import com.att.aro.ui.view.videotab.VideoTab;
 import com.att.aro.ui.view.waterfalltab.WaterfallTab;
 import com.att.aro.view.images.Images;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
 public class MainFrame implements SharedAttributesProcesses {
 	private static final ResourceBundle BUNDLE = ResourceBundle.getBundle("messages"); //$NON-NLS-1$
 	public static final String FILE_SEPARATOR = System.getProperty("file.separator");
@@ -163,10 +163,13 @@ public class MainFrame implements SharedAttributesProcesses {
 	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	private int rtEdge = screenSize.width - playbackWidth;
 	private long lastOpened = 0;
+	@Getter
 	private AROSwingWorker<Void, Void> aroSwingWorker;
 	
 	private Hashtable<String,Object> previousOptions;
 	
+	@Setter
+	@Getter
 	private boolean autoAssignPermissions = false;
 	
 	public static MainFrame getWindow() {
@@ -556,32 +559,29 @@ public class MainFrame implements SharedAttributesProcesses {
 			if (traceData.isSuccess()) {
 				modelObserver.refreshModel(traceData);
 				this.profile = traceData.getAnalyzerResult().getProfile();
-				if (traceData.getAnalyzerResult().getTraceresult()
-						.getTraceResultType() == TraceResultType.TRACE_DIRECTORY) {
-					TraceDirectoryResult traceResults = (TraceDirectoryResult) traceData.getAnalyzerResult()
-							.getTraceresult();
-					(new Thread(() -> sendGATraceParams(traceResults))).start();	
+				if (traceData.getAnalyzerResult().getTraceresult().getTraceResultType() == TraceResultType.TRACE_DIRECTORY) {
+					TraceDirectoryResult traceResults = (TraceDirectoryResult) traceData.getAnalyzerResult().getTraceresult();
+					(new Thread(() -> sendGATraceParams(traceResults))).start();
 					Util.updateRecentItem(traceResults.getTraceDirectory());
 					frmApplicationResourceOptimizer.setJMenuBar(mainMenu.getAROMainFileMenu());
 					frmApplicationResourceOptimizer.getJMenuBar().updateUI();
 				}
 			} else if (traceData.getError() != null) {
-				if(isUpdateRequired(traceData.getError().getCode())){
+				if (isUpdateRequired(traceData.getError().getCode())) {
 					Util.updateRecentItem(tracePath);
 				}
-				
+
 				tracePath = null;
 				if (aroSwingWorker != null) {
 					aroSwingWorker.cancel(true);
-					
+
 					try {
 						Thread.sleep(150);
 					} catch (Exception exc) {
 						LOG.info("Thread sleep exception");
 					}
 				}
-				MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(),
-						traceData.getError().getDescription());
+				MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(), traceData.getError().getDescription());
 			} else {
 				showErrorMessage("menu.error.unknownfileformat");
 			}
@@ -876,13 +876,13 @@ public class MainFrame implements SharedAttributesProcesses {
 	}
 	
 	@Override
-	public void hideAllCharts(){
-		diagnosticsTab.hideChartOptions();
+	public void hideChartItems(String... chartPlotOptionEnumNames) {
+		diagnosticsTab.hideCharts(chartPlotOptionEnumNames);
 	}
 	
 	@Override
-	public void showAllCharts(){
-		diagnosticsTab.showChartOptions();
+	public void showChartItems(String... chartPlotOptionEnumNames){
+		diagnosticsTab.showCharts(chartPlotOptionEnumNames);
 	}
 	
 	public DiagnosticsTab getDiagnosticTab(){

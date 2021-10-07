@@ -42,7 +42,7 @@ public class DiagnosticTabHelper {
 		double packetTimeStamp = 0.0;
 		PacketInfo matchedPacket = null;
 		if(!tcpSession.isUdpOnly()){
-			for (PacketInfo p : tcpSession.getPackets()) {
+			for (PacketInfo p : tcpSession.getTcpPackets()) {
 				packetTimeStamp = p.getTimeStamp();
 				if ((bExactMatch && (packetTimeStamp == timeStamp))
 						|| ((packetTimeStamp >= (timeStamp - dTimeRangeInterval)) && (packetTimeStamp <= (timeStamp + dTimeRangeInterval)))) {

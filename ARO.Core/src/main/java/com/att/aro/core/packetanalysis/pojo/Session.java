@@ -77,6 +77,10 @@ public class Session implements Serializable, Comparable<Session> {
 	private boolean dataInaccessible = false;
 	
 	private boolean sessionComplete = false;
+	
+	private double latency = 0.0;
+	private double synTime = 0.0;
+    private double synAckTime = 0.0;
 
 	/**
 	 * Domain name is the initial host name requested that initiated a TCP
@@ -108,9 +112,9 @@ public class Session implements Serializable, Comparable<Session> {
 	private boolean udpOnly = false;
 
 	/**
-	 * A List of PacketInfo objects containing all packets in the session
+	 * A List of PacketInfo objects containing all TCP packets in the session
 	 */
-	private List<PacketInfo> packets = new ArrayList<PacketInfo>();
+	private List<PacketInfo> tcpPackets = new ArrayList<PacketInfo>();
 
 	/**
 	 * A List of PacketInfo objects containing the packet data.
@@ -276,8 +280,8 @@ public class Session implements Serializable, Comparable<Session> {
 	 * @return The start time of the session.
 	 */
 	public double getSessionStartTime() {
-		if (packets != null && !packets.isEmpty()) {
-			return packets.get(0).getTimeStamp();
+		if (tcpPackets != null && !tcpPackets.isEmpty()) {
+			return tcpPackets.get(0).getTimeStamp();
 		}
 
 		if (udpPackets != null && !udpPackets.isEmpty()) {
@@ -295,8 +299,8 @@ public class Session implements Serializable, Comparable<Session> {
 	 */
 	public double getSessionEndTime() {
 		
-		if (packets != null && !packets.isEmpty()) {
-			return packets.get(packets.size() - 1).getTimeStamp();
+		if (tcpPackets != null && !tcpPackets.isEmpty()) {
+			return tcpPackets.get(tcpPackets.size() - 1).getTimeStamp();
 		}
 
 		if (udpPackets != null && !udpPackets.isEmpty()) {
@@ -340,12 +344,14 @@ public class Session implements Serializable, Comparable<Session> {
 		
 		try {
 			for (HttpRequestResponseInfo rrInfo : getRequestResponseInfo()) {
-				if (rrInfo.getDirection().equals(HttpDirection.REQUEST)) {
-					outputStream.write("\n--UPLINK--\n".getBytes());
-				} else {
-					outputStream.write("\n--DOWNLINK--\n".getBytes());
+				if (rrInfo.isExtractable()) {
+					if (rrInfo.getDirection().equals(HttpDirection.REQUEST)) {
+						outputStream.write("\n--UPLINK--\n".getBytes());
+					} else {
+						outputStream.write("\n--DOWNLINK--\n".getBytes());
+					}
+					outputStream.write(rrInfo.getHeaderData().toByteArray());
 				}
-				outputStream.write(rrInfo.getHeaderData().toByteArray());
 			}
 			outputStream.flush();
 		} catch (IOException exception) {
@@ -364,38 +370,16 @@ public class Session implements Serializable, Comparable<Session> {
 		tos.append(", abs:").append(getSessionStartTime());
 		tos.append(", lPort:").append(getLocalPort());
 		tos.append(", count:");
-		if (getPackets() != null) {
-			tos.append(getPackets().size());
+		if (getTcpPackets() != null) {
+			tos.append(getTcpPackets().size());
 		} else {
 			tos.append("null");
 		}
 		return tos.toString();
 	}
 	
-	public String getLatency(Session session) {
-		double latency = 0.0;
-		if (!session.isUdpOnly()) {
-			latency = getAcknowledgeTimestamp(session.getAllPackets(), true) - session.getSessionStartTime();
-		}
-		return latency != 0 ? Util.formatDouble(latency) : "0.00";
-	}
-
-	public double getAcknowledgeTimestamp(List<PacketInfo> packetInfoList, boolean isTCP) {
-		double timeStamp = 0.0;
-		for (PacketInfo packetInfo : packetInfoList) {
-			if (isTCP) {
-				if (packetInfo.getTcpInfo() == TcpInfo.TCP_ESTABLISH
-						&& packetInfo.getDir() == PacketDirection.DOWNLINK) {
-					timeStamp = packetInfo.getTimeStamp();
-					break;
-				}
-			}
-		}
-		return timeStamp;
-	}
-	
 	public boolean addTcpPacket(PacketInfo packetInfo, long sequnceNumber) {
-		packets.add(packetInfo);
+		tcpPackets.add(packetInfo);
 		allPackets.add(packetInfo);
 		if (packetInfo.getDir().equals(PacketDirection.UPLINK)) {
 			// Done to handle TCP Sequence Number Wrap Around

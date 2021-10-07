@@ -16,23 +16,13 @@
 
 package com.att.aro.datacollector.ioscollector.utilities;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.TreeMap;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.commandline.IExternalProcessRunner;
-import com.att.aro.core.util.Util;
 
 public final class DeviceVideoHandler {
 	private static final Logger LOGGER = LogManager.getLogger(DeviceVideoHandler.class.getName());

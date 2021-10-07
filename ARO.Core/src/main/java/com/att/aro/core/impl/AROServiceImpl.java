@@ -36,6 +36,7 @@ import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.BestPracticeType.Category;
 import com.att.aro.core.configuration.pojo.Profile;
+import com.att.aro.core.exception.TsharkException;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.ICacheAnalysis;
 import com.att.aro.core.packetanalysis.IPacketAnalyzer;
@@ -501,22 +502,28 @@ public class AROServiceImpl implements IAROService {
 	public AROTraceData analyzeFile(List<BestPracticeType> requests, String traceFile, Profile profile,
 			AnalysisFilter filter) throws IOException {
 		AROTraceData data = new AROTraceData();
-		PacketAnalyzerResult result = packetanalyzer.analyzeTraceFile(traceFile, profile, filter);
-		if (result == null) {
-			data.setError(ErrorCodeRegistry.getTraceFileNotAnalyzed());
-		} else {
-			if (result.getTraceresult().getAllpackets().size() == 0) {
-				// we set on purpose
-				data.setError(ErrorCodeRegistry.getUnRecognizedPackets());
-				data.setSuccess(false);
+
+		try {
+			PacketAnalyzerResult result = packetanalyzer.analyzeTraceFile(traceFile, profile, filter);
+			if (result == null) {
+				data.setError(ErrorCodeRegistry.getTraceFileNotAnalyzed());
 			} else {
-				List<AbstractBestPracticeResult> bestPractices = analyze(result, requests);
-				bestPractices.addAll(createEmptyResults());
-				data.setAnalyzerResult(result);
-				data.setBestPracticeResults(bestPractices);
-				data.setSuccess(true);
+				if (result.getTraceresult().getAllpackets().size() == 0) {
+					// we set on purpose
+					data.setError(ErrorCodeRegistry.getUnRecognizedPackets());
+					data.setSuccess(false);
+				} else {
+					List<AbstractBestPracticeResult> bestPractices = analyze(result, requests);
+					bestPractices.addAll(createEmptyResults());
+					data.setAnalyzerResult(result);
+					data.setBestPracticeResults(bestPractices);
+					data.setSuccess(true);
+				}
 			}
+		} catch (TsharkException ex) {
+			data.setError(ErrorCodeRegistry.getWiresharkError());
 		}
+
 		return data;
 	}
 
@@ -578,7 +585,11 @@ public class AROServiceImpl implements IAROService {
 			} catch (FileNotFoundException ex) {
 				data.setError(ErrorCodeRegistry.getTraceDirNotFound());
 				return data;
+			} catch (TsharkException ex) {
+				data.setError(ErrorCodeRegistry.getWiresharkError());
+				return data;
 			}
+
 			if (result == null) {
 				data.setError(ErrorCodeRegistry.getTraceDirectoryNotAnalyzed());
 				data.setSuccess(false);

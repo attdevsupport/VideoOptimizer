@@ -49,11 +49,11 @@ public class Statistic {
 	/**
 	 * Total bytes
 	 */
-	private int totalByte;
+	private long totalByte;
 	/**
 	 * Total TCP bytes
 	 */
-	private int totalTCPBytes;
+	private long totalTCPBytes;
 	/**
 	 * Total TCP bytes
 	 */
@@ -61,12 +61,12 @@ public class Statistic {
 	/**
 	 * total HTTPS bytes
 	 */
-	private int totalHTTPSByte;
+	private long totalHTTPSByte;
 
 	/**
      * Total HTTPS bytes not analyzed
      */
-    private int totalHTTPSBytesNotAnalyzed;
+    private long totalHTTPSBytesNotAnalyzed;
 	
 	/**
 	 * packet Duration
@@ -96,10 +96,14 @@ public class Statistic {
 	 */
 	private Set<String> appName;
 
-	private int totalPayloadBytes;
+	private long totalPayloadBytes;
 
-	private int totalTCPPayloadBytes;
+	private long totalTCPPayloadBytes;
 	
+	private double minLatency;
+	private double maxLatency;
+	private double averageLatency;
+		
 	/**
 	 * ip Packet Summary List
 	 */

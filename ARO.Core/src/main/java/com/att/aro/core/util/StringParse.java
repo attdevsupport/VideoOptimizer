@@ -98,7 +98,7 @@ public final class StringParse implements IStringParse{
 	 */
 	public static Integer stringToInteger(String sValue) {
 		Integer value = null;
-		if (!sValue.isEmpty()) {
+		if (!StringUtils.isEmpty(sValue)) {
 			try {
 				value = Integer.valueOf(sValue);
 			} catch (NumberFormatException e) {
@@ -121,6 +121,7 @@ public final class StringParse implements IStringParse{
 		Integer value = stringToInteger(strValue);
 		return value != null ? value : defaultValue;
 	}
+
 	/**
 	 * <pre>
 	 * Convert string to Double
@@ -131,7 +132,7 @@ public final class StringParse implements IStringParse{
 	 */
 	public static Double stringToDouble(String sValue) {
 		Double value = null;
-		if (!sValue.isEmpty()) {
+		if (!StringUtils.isEmpty(sValue)) {
 			try {
 				value = Double.valueOf(sValue);
 			} catch (NumberFormatException e) {
@@ -195,7 +196,7 @@ public final class StringParse implements IStringParse{
 		}
 		return temp;
 	}
-	
+
 	public static int[] getStringPositions(String inputStr, String matchStr) {
 		int count = StringUtils.countMatches(inputStr, matchStr);
 		if (count > 0) {

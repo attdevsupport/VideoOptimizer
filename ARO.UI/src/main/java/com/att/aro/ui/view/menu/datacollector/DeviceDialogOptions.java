@@ -164,7 +164,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 		return contents;
 	}
-	
+
 	private void setUpLayoutProperties() {
 		contentLayout = new GridBagLayout();
 
@@ -306,7 +306,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 			return;
 
-		} 
+		}
 	}
 
 	public String messageComposed() {
@@ -360,6 +360,11 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private void disableAttenuateSection() {
 		attnrGroupPanel.getAttnrRadioGP().reset();
 		attnrGroupPanel.setAttenuateEnable(false);
+		if (testEnvironment) {
+			parent.resizeLarge();
+		} else {
+			parent.resizeMedium();
+		}
 	}
 
 	public AttnrPanel getAttnrGroup() {
@@ -372,7 +377,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		}
 		return attnrGroupPanel;
 	}
-	
+
 	private JPanel getRadioGroupVideo() {
 		loadRadioGroupVideo();
 		JPanel btnGrp = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -524,7 +529,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				videoOption = VideoOption.LREZ;
 				showVideoOrientation(false);
 			}
-			
+						
 			if (selectedIAroDevice.isEmulator()) {
 				if (selectedIAroDevice.getAbi().contains("x86")) {
 					setRootState(true);
@@ -799,14 +804,14 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		}
 		this.videoOrient = videoOrientation;
 		switch (videoOrientation) {
-			case LANDSCAPE:
-				btn_landscape.setSelected(true);
-				break;
-			case PORTRAIT:
-				btn_portrait.setSelected(true);
-				break;
-			default:
-				break;
+		case LANDSCAPE:
+			btn_landscape.setSelected(true);
+			break;
+		case PORTRAIT:
+			btn_portrait.setSelected(true);
+			break;
+		default:
+			break;
 		}
 	}
 

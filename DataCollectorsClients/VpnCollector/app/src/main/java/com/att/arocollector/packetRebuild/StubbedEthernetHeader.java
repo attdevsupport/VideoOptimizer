@@ -25,7 +25,7 @@ public class StubbedEthernetHeader {
 		
 		//set src mac, random to be 1
 		ByteUtils.setBigIndianInBytesArray(ethHeader, 6, 1, 6);
-
+		
 		//set eth type:
 		// 0x0800 = 2048 for IPv4
 		// 0x86DD for IPv6

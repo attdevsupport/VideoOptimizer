@@ -113,22 +113,28 @@ public class AROSwingWorker<T, V> extends SwingWorker<T, V> {
 		} catch (ExecutionException e) {
 			LOG.error("Processing error: " + e.getLocalizedMessage(), e);
 			if (e.getMessage().contains("GC overhead limit exceeded")) {
-				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("Error.gc_overhead_limit_exceeded"), 
-														ApplicationConfig.getInstance().getAppShortName());
+				String errorMsg = MessageFormat.format(
+						ResourceBundleHelper.getMessageString("Error.gc_overhead_limit_exceeded"),
+						ApplicationConfig.getInstance().getAppShortName());
 				new MessageDialogFactory().showErrorDialog(parent, errorMsg, "Problem encountered");
 			} else if (e.getMessage().contains("jpcap64.dll") || e.getMessage().contains("PCapAdapter.loopPacket")) {
-				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.winpcap_error"), 
-														ApplicationConfig.getInstance().getAppShortName());
+				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.winpcap_error"),
+						ApplicationConfig.getInstance().getAppShortName());
+				new MessageDialogFactory().showErrorDialog(parent, errorMsg, "Problem encountered");
+			} else if (e.getMessage().contains("Unable to load library 'vlc'")) {
+				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("video.informative.vlcj"),
+						ApplicationConfig.getInstance().getAppShortName());
 				new MessageDialogFactory().showErrorDialog(parent, errorMsg, "Problem encountered");
 			} else if (e.getMessage().contains("ffmpeg")) {
-				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.ffmpeg_error"), 
-														ApplicationConfig.getInstance().getAppShortName());
+				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.ffmpeg_error"),
+						ApplicationConfig.getInstance().getAppShortName());
 				new MessageDialogFactory().showErrorDialog(parent, errorMsg, "Problem encountered");
 			} else if (e.getMessage().contains("mp4Player")) {
-				new MessageDialogFactory().showErrorDialog(parent, ResourceBundleHelper.getMessageString("aro.mp4Player_error"), "Problem encountered");
+				new MessageDialogFactory().showErrorDialog(parent,
+						ResourceBundleHelper.getMessageString("aro.mp4Player_error"), "Problem encountered");
 			} else {
-				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.analyse_error"), 
-														ApplicationConfig.getInstance().getAppShortName());
+				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.analyse_error"),
+						ApplicationConfig.getInstance().getAppShortName());
 				new MessageDialogFactory().showErrorDialog(parent, errorMsg, "Problem encountered");
 			}
 		}

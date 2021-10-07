@@ -58,7 +58,6 @@ import com.att.arotcpcollector.IClientPacketWriter;
 import com.att.arotcpcollector.SessionHandler;
 import com.att.arotcpcollector.ip.IPHeader;
 import com.att.arotcpcollector.ip.IPPacketFactory;
-import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.socket.IProtectSocket;
 import com.att.arotcpcollector.socket.SocketData;
 import com.att.arotcpcollector.socket.SocketDataPublisher;
@@ -85,7 +84,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -225,7 +223,6 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		//	stopAROGpsMonitorService();
 		stopAROCameraMonitorService();
 		stopARORadioMonitorService();
-		stopAROCpuTraceService();
 	}
 
 	/**
@@ -619,7 +616,9 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 
 		if (success) {
 			try {
-				startNotification();
+				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+					startNotification();
+				}
 				startCapture();
 				Log.i(TAG, "Capture completed");
 			} catch (IOException e) {

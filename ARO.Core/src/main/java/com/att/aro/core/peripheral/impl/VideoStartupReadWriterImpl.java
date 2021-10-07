@@ -1,5 +1,5 @@
 /*
- *  Copyright 2021 AT&T
+ *  Copyright 2018, 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,50 +45,48 @@ public class VideoStartupReadWriterImpl extends PeripheralBase implements IVideo
 	private ObjectMapper mapper = new ObjectMapper();
 
 	private VideoStreamStartupData videoStreamStartupData;
-	
-	private String jsonDataSaved = ""; // for comparison purposes before saving, do not want to save if no changes to file
 
+	private String jsonDataSaved = ""; // for comparison purposes before saving, do not want to save if no changes to file
+	
 	@Override
 	public VideoStreamStartupData readData(String tracePath) {
 
-			File jsonFile = filereader.createFile(tracePath, JSON_FILE);
-			if (jsonFile.exists()) {
-				String temp = null;
-				try {
-					temp = filereader.readAllData(jsonFile.toString());
-					videoStreamStartupData = mapper.readValue(temp, VideoStreamStartupData.class);
-					if (videoStreamStartupData.getStreams().isEmpty()) { // imports older formats
-						VideoStreamStartup videoStreamStartup = mapper.readValue(temp, VideoStreamStartup.class);
-						videoStreamStartupData.getStreams().add(videoStreamStartup);
-					}
-					jsonDataSaved = serialize(videoStreamStartupData);
-				} catch (IOException e) {
-					LOG.debug("failed to load startup data: " + e.getMessage());
+		File jsonFile = filereader.createFile(tracePath, JSON_FILE);
+		if (jsonFile.exists()) {
+			try {
+				String jsonDataString = filereader.readAllData(jsonFile.toString());
+				videoStreamStartupData = mapper.readValue(jsonDataString, VideoStreamStartupData.class);
+				if (videoStreamStartupData.getStreams().isEmpty()) { // imports older formats
+					VideoStreamStartup videoStreamStartup = mapper.readValue(jsonDataString, VideoStreamStartup.class);
+					videoStreamStartupData.getStreams().add(videoStreamStartup);
 				}
-			} else {
-				videoStreamStartupData = new VideoStreamStartupData();
+				jsonDataSaved = serialize(videoStreamStartupData);
+			} catch (IOException e) {
+				LOG.debug("failed to load startup data: " + e.getMessage());
+			}
+		} else {
+			videoStreamStartupData = new VideoStreamStartupData();
 		}
-
 		return videoStreamStartupData;
 	}
-	
+
 	@Override
 	public boolean save(String path, VideoStreamStartupData videoStreamStartupData) throws Exception {
 		if (videoStreamStartupData != null) {
-
-			String jsonData = serialize(videoStreamStartupData);
+			
+			String jsonData = serialize(videoStreamStartupData);		
 			if (jsonData.equals(jsonDataSaved)) {
 				LOG.debug("Startup delay has no changes, so not saving");
 				return true;
 			}
-
+			
 			this.videoStreamStartupData = videoStreamStartupData;
 			String jsonPath = null;
 			File jsonFile = filemanager.createFile(path, JSON_FILE);
 			jsonPath = jsonFile.toString();
 
 			LOG.debug("Startup delay saving");
-
+			
 			if (!jsonData.isEmpty() && jsonPath != null && !jsonPath.isEmpty()) {
 				FileOutputStream output = new FileOutputStream(jsonPath);
 				output.write(jsonData.getBytes());
@@ -101,9 +99,8 @@ public class VideoStartupReadWriterImpl extends PeripheralBase implements IVideo
 		}
 		return false;
 	}
- 	
+
 	public String serialize(VideoStreamStartupData videoStreamStartupData) throws JsonProcessingException {
 		return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(videoStreamStartupData);
 	}
-
 }

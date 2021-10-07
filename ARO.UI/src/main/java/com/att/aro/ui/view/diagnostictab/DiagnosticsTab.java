@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2017 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -98,7 +99,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	private TCPFlowsDataTable<Session> tcpflowsTable;
 
 	// Model
-	private TCPUDPFlowsTableModel jTcpUdpFlowsModel = new TCPUDPFlowsTableModel();
+	private TCPUDPFlowsTableModel jTcpUdpFlowsModel = TCPUDPFlowsTableModel.getInstance();
 	private PacketViewTableModel jPacketViewTableModel = new PacketViewTableModel();
 	private List<HttpRequestResponseInfoWithSession> requestResponseWithSession = new ArrayList<HttpRequestResponseInfoWithSession>();
 	private AROTraceData analyzerResult;
@@ -504,7 +505,6 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			tcpflowsTable.setAutoCreateRowSorter(true);
 			tcpflowsTable.setGridColor(Color.LIGHT_GRAY);
 			tcpflowsTable.getSelectionModel().addListSelectionListener(this);
-			
 			DataTablePopupMenu popupMenu = (DataTablePopupMenu) tcpflowsTable.getPopup();
             popupMenu.setMenuItems(tcpflowsTable.getMenuItems());
             popupMenu.initialize();
@@ -547,10 +547,10 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		analyzerResult = AnalyzerResult;
 		setAroTraceData(analyzerResult);
 		getDeviceNetworkProfilePanel().refresh(analyzerResult);
-		jTcpUdpFlowsModel.refresh(analyzerResult);
+		jTcpUdpFlowsModel.refresh(analyzerResult, getFont());
+		
 		sessionsSortedByTimestamp = analyzerResult.getAnalyzerResult().getSessionlist();
-		setRequestResponseWithSession(
-				buildHttpRequestResponseWithSession(analyzerResult.getAnalyzerResult().getSessionlist()));
+		setRequestResponseWithSession(buildHttpRequestResponseWithSession(analyzerResult.getAnalyzerResult().getSessionlist()));
 		getGraphPanel().refresh(analyzerResult);
 		// clear table
 		jPacketViewTableModel.removeAllRows();
@@ -564,17 +564,21 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	}
 
 	/**
-	 * Hide the Charts Panel on the Diagnostic tab
+	 * Hide Charts from the Charts Panel on the Diagnostic tab
+	 * If an argument list is passed, it will hide the sub-series of charts.
+	 * If no arguments are passed, it will hide all charts.
 	 */
-	public void hideChartOptions() {
-		getGraphPanel().hideChartOptions();
+	public void hideCharts(String... chartPlotOptionEnumNames) {
+		getGraphPanel().hideChartOptions(chartPlotOptionEnumNames);
 	}
 
 	/**
-	 * Show the Charts Panel on the Diagnostic tab
+	 * Show Charts from the Charts Panel on the Diagnostic tab
+	 * If an argument list is passed, it will un-hide the sub-series of charts.
+	 * If no arguments are passed, it will un-hide all hidden charts unless the sub-series is hidden.
 	 */
-	public void showChartOptions() {
-		getGraphPanel().showChartOptions();
+	public void showCharts(String... chartPlotOptionEnumNames) {
+		getGraphPanel().showChartOptions(chartPlotOptionEnumNames);
 	}
 
 	// get update info from tcp/udp flow table
@@ -603,9 +607,9 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 						}
 						getJContentViewPanel().getJContentTextArea().setCaretPosition(0);						
 					} else {
-						jPacketViewTableModel.setData(session.getPackets());
+						jPacketViewTableModel.setData(session.getTcpPackets());
 						getJPacketViewTable().setGridColor(Color.LIGHT_GRAY);
-						if (!session.getPackets().isEmpty()) {
+						if (!session.getTcpPackets().isEmpty()) {
 							getJPacketViewTable().getSelectionModel().setSelectionInterval(0, 0);
 						}
 						getJContentViewPanel().updateContext(session);

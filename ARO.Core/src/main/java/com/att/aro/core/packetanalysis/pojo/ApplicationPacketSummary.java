@@ -43,8 +43,8 @@ public class ApplicationPacketSummary extends PacketSummary {
 	 * @param packetCount - The number of packets for the application.
 	 * @param totalBytes - The total number of bytes contained in the packets. 
 	 */
-	public ApplicationPacketSummary(String appName, int packetCount, long totalBytes) {
-		super(packetCount, totalBytes);
+	public ApplicationPacketSummary(String appName, int packetCount, long totalBytes, long totalPayloadBytes) {
+		super(packetCount, totalBytes, totalPayloadBytes);
 		this.appName = appName;
 	}
 

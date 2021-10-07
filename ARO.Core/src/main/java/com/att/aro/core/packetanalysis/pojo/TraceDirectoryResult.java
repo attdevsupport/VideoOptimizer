@@ -37,7 +37,6 @@ import com.att.aro.core.peripheral.pojo.VideoStreamStartupData;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
