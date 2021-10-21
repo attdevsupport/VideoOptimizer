@@ -17,11 +17,13 @@ package com.att.aro.ui.view.statistics.endpointsummary;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
+import com.att.aro.core.packetanalysis.impl.TraceDataReaderImpl;
 import com.att.aro.core.packetanalysis.pojo.IPPacketSummary;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.pojo.AROTraceData;
@@ -77,6 +79,8 @@ public class IPEndPointSummaryTableModel extends DataTableModel<IPPacketSummary>
 		switch(columnKeysCollection[columnIndex]) {
 			case endpointsummary_packets:
 			case endpointsummary_bytes:
+			case endpointsummary_payload_bytes:
+			case endpointsummary_percent_bytes:
 				return Double.class;
 			default:
 				return super.getColumnClass(columnIndex);
@@ -108,6 +112,9 @@ public class IPEndPointSummaryTableModel extends DataTableModel<IPPacketSummary>
 		col = cols.getColumn(ColumnKeys.endpointsummary_payload_bytes.ordinal());
 		col.setCellRenderer(bytesRenderer);
 
+		col = cols.getColumn(ColumnKeys.endpointsummary_percent_bytes.ordinal());
+		col.setCellRenderer(new NumberFormatRenderer(new DecimalFormat("0.000")));
+
 		return cols;
 	}
 
@@ -124,13 +131,13 @@ public class IPEndPointSummaryTableModel extends DataTableModel<IPPacketSummary>
 	protected Object getColumnValue(IPPacketSummary item, int columnIndex) {
 		switch(columnKeysCollection[columnIndex]) {
 			case endpointsummary_ipAddress:
-				return item.getIPAddress() != null ? Util.getDefaultAppName(item.getIPAddress().toString().substring(1)) : "Unknown";
+				return item.getIPAddress() != null ? Util.getDefaultAppName(item.getIPAddress().toString().substring(1)) : TraceDataReaderImpl.UNKNOWN_APPNAME;
 			case endpointsummary_packets:
 				return item.getPacketCount();
 			case endpointsummary_payload_bytes:
 				return item.getTotalPayloadBytes();
 			case endpointsummary_percent_bytes:
-				return Util.formatDouble(item.getTotalPayloadBytes() * 100.0 / item.getTotalBytes());
+				return item.getTotalPayloadBytes() * 100.0 / item.getTotalBytes();
 			case endpointsummary_bytes:
 				return item.getTotalBytes();
 			default:

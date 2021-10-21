@@ -1,18 +1,3 @@
-/*
- *  Copyright 2021 AT&T
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
-*/
 package com.att.aro.ui.model.listener;
 
 import java.io.File;
@@ -23,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.apache.commons.math3.util.Precision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,14 +22,13 @@ import com.att.aro.core.export.ExcelWriter;
 import com.att.aro.core.export.style.ColorStyle;
 import com.att.aro.core.export.style.ExcelCellStyle;
 import com.att.aro.core.export.style.FontStyle;
+import com.att.aro.core.packetanalysis.impl.TimeRangeAnalysis;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
+import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.preferences.UserPreferencesFactory;
-import com.att.aro.core.util.Util;
-import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.google.common.collect.Lists;
 
 
@@ -53,8 +37,9 @@ public class BestPracticeResultsListener extends AbstractMenuItemListener {
 
     private AROTraceData traceData;
 
-    public BestPracticeResultsListener(AROTraceData traceData) {
-        super(null);
+    public BestPracticeResultsListener(AROTraceData traceData, List<FileNameExtensionFilter> fileNameExtensionFilters, int defaultExtensionFilterIndex) {
+        super(null, fileNameExtensionFilters, defaultExtensionFilterIndex);
+        super.tableName = "best_practices_results";
         this.traceData = traceData;
     }
 
@@ -69,40 +54,6 @@ public class BestPracticeResultsListener extends AbstractMenuItemListener {
         excelWriter.export(Lists.newArrayList(sheet));
 
         LOG.info("Finish export data to {}", file.getAbsolutePath());
-    }
-
-    @Override
-    protected JFileChooser getDefaultFileChooser(File file) {
-        JFileChooser chooser;
-        if (file != null) {
-            chooser = new JFileChooser(file);
-        } else {
-            String defaultFilePath = "";
-            AbstractTraceResult traceResults = traceData.getAnalyzerResult().getTraceresult();
-            if (traceResults != null && traceResults.getTraceDirectory() != null) {
-                defaultFilePath = traceResults.getTraceDirectory();
-                Path fileName = Paths.get(defaultFilePath).getFileName();
-                defaultFilePath += Util.FILE_SEPARATOR + (fileName == null ? "" : fileName.toString());
-            } else {
-                defaultFilePath = UserPreferencesFactory.getInstance().create().getTracePath() + Util.FILE_SEPARATOR + "best_practice_results";
-            }
-
-            chooser = new JFileChooser();
-            chooser.setSelectedFile(new File(defaultFilePath));
-        }
-
-        // Set allowed file extensions
-        FileNameExtensionFilter xlsxFilter = new FileNameExtensionFilter(ResourceBundleHelper.getMessageString("fileChooser.desc.excel"),
-                ResourceBundleHelper.getMessageString("fileChooser.contentType.xls"), ResourceBundleHelper.getMessageString("fileChooser.contentType.xlsx"));
-
-        chooser.setDialogTitle(ResourceBundleHelper.getMessageString("fileChooser.Title"));
-        chooser.addChoosableFileFilter(xlsxFilter);
-        chooser.setFileFilter(xlsxFilter);
-        chooser.setAcceptAllFileFilterUsed(false);
-        chooser.setApproveButtonText(ResourceBundleHelper.getMessageString("fileChooser.Save"));
-        chooser.setMultiSelectionEnabled(false);
-
-        return chooser;
     }
 
     private List<List<Object>> getTraceRows() {
@@ -138,27 +89,76 @@ public class BestPracticeResultsListener extends AbstractMenuItemListener {
             }
 
             dataRows.add(Arrays.asList(getFontStyledColumn("Secure Trace"), isSecureTrace ? "Yes" : "No"));
-
-            dataRows.add(Arrays.asList(getFontStyledColumn("Duration (min)"), formatToFixedDecimal(traceResults.getTraceDuration()/60)));
         }
 
-        Statistic statistic = traceData.getAnalyzerResult().getStatistic();
-        if(statistic != null){
-            dataRows.add(Arrays.asList(getFontStyledColumn("Total Data (KB)"), formatToFixedDecimal(statistic.getTotalByte() / 1000.0)));
-            dataRows.add(Arrays.asList(getFontStyledColumn("Total Payload Data (KB)"), formatToFixedDecimal(statistic.getTotalPayloadBytes() / 1000.0)));
-            dataRows.add(Arrays.asList(getFontStyledColumn("HTTPS Data (KB)"), formatToFixedDecimal(statistic.getTotalHTTPSByte() / 1000.0)));
-            dataRows.add(Arrays.asList(getFontStyledColumn("Unanalyzed HTTPS Data (KB)"), formatToFixedDecimal(statistic.getTotalHTTPSBytesNotAnalyzed() / 1000.0)));
-            dataRows.add(Arrays.asList(getFontStyledColumn("Energy Consumed (J)"), formatToFixedDecimal(traceData.getAnalyzerResult().getEnergyModel().getTotalEnergyConsumed())));
-        }
-
+        addTimeRangeAnalysisAndStatisticRows(dataRows);
         dataRows.addAll(getBPSummaryRows());
         dataRows.addAll(getBpRows());
 
         return dataRows;
     }
 
-    private Double formatToFixedDecimal(double num) {
-        return Double.valueOf(String.format("%.2f", num));
+    private void addTimeRangeAnalysisAndStatisticRows(List<List<Object>> dataRows) {
+    	if (traceData.getAnalyzerResult() != null) {
+    		TimeRangeAnalysis timeRangeAnalysis = traceData.getAnalyzerResult().getTimeRangeAnalysis();
+
+    		// Calculate time range
+    		if (timeRangeAnalysis == null) {
+	    		AnalysisFilter filter = traceData.getAnalyzerResult().getFilter();
+	    		double beginTime = 0.0d;
+	    		double endTime = 0.0d;
+	    		boolean readyForAnalysis = false;
+	
+	    		if (filter != null && filter.getTimeRange() != null) {
+	    			beginTime = filter.getTimeRange().getBeginTime();
+	    			endTime = filter.getTimeRange().getEndTime();
+	    			readyForAnalysis = true;
+	    		} else if (traceData.getAnalyzerResult().getTraceresult() != null){
+	    			endTime = traceData.getAnalyzerResult().getTraceresult().getTraceDuration();
+	    			readyForAnalysis = true;
+	    		}
+	    		
+	    		if (readyForAnalysis) {
+	    			timeRangeAnalysis = new TimeRangeAnalysis(beginTime, endTime, traceData.getAnalyzerResult());
+	    		}
+    		}
+
+    		if (timeRangeAnalysis != null) {
+    			double traceDuration = timeRangeAnalysis.getEndTime() - timeRangeAnalysis.getStartTime();
+    			long traceDurationLong = (long) traceDuration;
+                dataRows.add(Arrays.asList(getFontStyledColumn("Duration (second)"), formatToFixedDecimal(3, traceDuration)));
+                dataRows.add(Arrays.asList(getFontStyledColumn("Duration (hh:mm:ss.sss)"), 
+                		String.format("%02d:%02d:%02d", traceDurationLong/3600, (traceDurationLong%3600) / 60, traceDurationLong % 60) +
+                		String.format("%.3f", traceDuration - Math.floor(traceDuration)).substring(1)
+        		));
+    			dataRows.add(Arrays.asList(getFontStyledColumn("Start Time (second)"), formatToFixedDecimal(3, timeRangeAnalysis.getStartTime())));
+    			dataRows.add(Arrays.asList(getFontStyledColumn("End Time (second)"), formatToFixedDecimal(3, timeRangeAnalysis.getEndTime())));
+    		}
+    		
+    		Statistic statistic = traceData.getAnalyzerResult().getStatistic();
+    		if (statistic != null) {
+                dataRows.add(Arrays.asList(getFontStyledColumn("Total Data (KB)"), formatToFixedDecimal(2, statistic.getTotalByte() / 1000.0)));
+                dataRows.add(Arrays.asList(getFontStyledColumn("Total Payload Data (KB)"), formatToFixedDecimal(2, statistic.getTotalPayloadBytes() / 1000.0)));
+                dataRows.add(Arrays.asList(getFontStyledColumn("HTTPS Data (KB)"), formatToFixedDecimal(2, statistic.getTotalHTTPSByte() / 1000.0)));
+                dataRows.add(Arrays.asList(getFontStyledColumn("Unanalyzed HTTPS Data (KB)"), formatToFixedDecimal(2, statistic.getTotalHTTPSBytesNotAnalyzed() / 1000.0)));
+            }
+
+    		if (timeRangeAnalysis != null) {
+    			dataRows.add(Arrays.asList(getFontStyledColumn("Average Throughput (kbps)"), formatToFixedDecimal(2, timeRangeAnalysis.getAverageThroughput())));
+    			dataRows.add(Arrays.asList(getFontStyledColumn("Total Upload Data (KB)"), formatToFixedDecimal(2, timeRangeAnalysis.getUplinkBytes() / 1000.0)));
+    			dataRows.add(Arrays.asList(getFontStyledColumn("Average Upload Throughput (kbps)"), formatToFixedDecimal(2, timeRangeAnalysis.getAverageUplinkThroughput())));
+    			dataRows.add(Arrays.asList(getFontStyledColumn("Total Download Data (KB)"), formatToFixedDecimal(2, timeRangeAnalysis.getDownlinkBytes() / 1000.0)));
+    			dataRows.add(Arrays.asList(getFontStyledColumn("Average Download Throughput (kbps)"), formatToFixedDecimal(2, timeRangeAnalysis.getAverageDownlinkThroughput())));
+    		}
+
+    		if (statistic != null) {
+    			dataRows.add(Arrays.asList(getFontStyledColumn("Total Energy Consumed (J)"), formatToFixedDecimal(2, traceData.getAnalyzerResult().getEnergyModel().getTotalEnergyConsumed())));
+    		}
+    	}
+    }
+
+    private Double formatToFixedDecimal(int precision, double number) {
+		return Precision.round(number, precision);
     }
 
     private List<List<Object>> getBPSummaryRows() {

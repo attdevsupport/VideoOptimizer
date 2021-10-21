@@ -17,6 +17,7 @@
 package com.att.aro.core.settings.impl;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,7 +35,6 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.hyperic.sigar.Sigar;
-import org.hyperic.sigar.SigarException;
 
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.commandline.IExternalProcessRunner;
@@ -49,27 +49,31 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 /**
  * Implements Settings class and acts as interface to (load from/save to)
  * config.properties file.
- * 
- * @author bharath
  *
  */
 public final class JvmSettings implements Settings {
-	private static final String DEFAULT_MEM = Util.isWindows32OS() ? "1433" : "2048";
 	private static final Logger LOGGER = LogManager.getLogger(JvmSettings.class.getName());
 	public static final String CONFIG_FILE_PATH = System.getProperty("user.home") 
 												+ System.getProperty("file.separator") + "VideoOptimizerLibrary"
 												+ System.getProperty("file.separator") + ".jvm.options";
-	private static final JvmSettings INSTANCE = new JvmSettings();
 
 	// cannot be @Autowired, as this class is accessed from a UI dialog
 	private static final IExternalProcessRunner externalProcessRunner = SpringContextUtil.getInstance().getContext().getBean(ExternalProcessRunnerImpl.class);
+	private static final double MAX_PERCENT = .85;
+	public static final double MULTIPLIER = 1024;
+	private static final Double RESERVED_MEMORY = (double)(4 * MULTIPLIER);
+	
+	private static final Double DEFAULT_MEM = Util.isWindows32OS() ? 1.4 * MULTIPLIER : 2 * MULTIPLIER;
+	private double maximumMemoryGB = Math.round(getMaximumMemoryMB() / MULTIPLIER * 10) / 10.0;
+	private long installedRam;
 
+	private static final JvmSettings INSTANCE = new JvmSettings();
+	
 	public static Settings getInstance() {
 		return INSTANCE;
 	}
 
 	private JvmSettings() {
-
 	}
 
 	private void createConfig(String configFilePath, List<String> values) {
@@ -92,20 +96,35 @@ public final class JvmSettings implements Settings {
 		}
 		Path path = Paths.get(CONFIG_FILE_PATH);
 		if (!path.toFile().exists()) {
-			return DEFAULT_MEM;
+			return DEFAULT_MEM.toString();
 		}
 		try (Stream<String> lines = Files.lines(path)) {
 			List<String> values = lines.filter((line) -> StringUtils.contains(line, name)).collect(Collectors.toList());
 			if (values == null || values.isEmpty()) {
 				LOGGER.error("No xmx entries on vm options file");
-				return DEFAULT_MEM;
+				return DEFAULT_MEM.toString();
 			} else {
-				return values.get(values.size() - 1).replace("-Xmx", "").replace("m", "");
+				String value = values.get(values.size() - 1).replace("-Xmx", "").toLowerCase();
+				int mark;
+				if ((mark = value.indexOf("g")) > -1) {
+					return value.substring(0, mark);
+				}
+				return toGB(value.replace("m", ""));
 			}
 		} catch (IOException e) {
 			String message = "Counldn't read vm options file";
 			LOGGER.error(message, e);
 			throw new ARORuntimeException(message, e);
+		}
+	}
+
+	private String toGB(String value) {
+		try {
+			Double memory = Double.valueOf(value) / MULTIPLIER;
+			return String.format("%.1f", ((double)(Math.round(memory * 10)) / 10));
+		} catch (NumberFormatException e) {
+			LOGGER.error("Failed to parse :"+value);
+			return "";
 		}
 	}
 
@@ -117,14 +136,17 @@ public final class JvmSettings implements Settings {
 	@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 	@Override
 	public String setAttribute(String name, String value) {
+
 		if (!StringUtils.equals("Xmx", name)) {
 			throw new IllegalArgumentException("Not a valid property:" + name);
 		}
 		if (!NumberUtils.isNumber(value)) {
-			throw new IllegalArgumentException(
-					value + " is not a valid value for memory; Please enter an integer value.");
+			throw new IllegalArgumentException(String.format(
+					"Invalid Entry: \"%s\" is not a valid value for memory; Please enter an number from %.1f to %.1f"
+					, value, DEFAULT_MEM / MULTIPLIER, maximumMemoryGB));
 		}
-		validateSize(Long.valueOf(value));
+		validateSize(Double.valueOf(value));
+		value = String.format("%.0f", Double.valueOf(value) * MULTIPLIER);
 		Path path = Paths.get(CONFIG_FILE_PATH);
 		List<String> values = Collections.emptyList();
 		if (!path.toFile().exists()) {
@@ -146,38 +168,63 @@ public final class JvmSettings implements Settings {
 		return value;
 	}
 
-	private void validateSize(Long value) {
+	private void validateSize(double value) {
 		long ram = getSystemMemory();
 		if (ram <= 0) {
 			throw new ARORuntimeException("Failed to get system info");
 		}
-		if (value < Integer.valueOf(DEFAULT_MEM)) {
-			throw new IllegalArgumentException("This is too low for optimal performance; Please enter value between "
-					+ DEFAULT_MEM + " and " + ram / 2);
+
+		if (value > maximumMemoryGB || value < DEFAULT_MEM / MULTIPLIER) {
+			throw new IllegalArgumentException(
+					String.format("Invalid memory request. You have %.1f GB of system memory; Please enter value between %.1f and %.1f",
+							(double)(ram / MULTIPLIER), DEFAULT_MEM / MULTIPLIER, maximumMemoryGB));
 		}
-		if ((double) value / ram > 0.5) {
-			throw new IllegalArgumentException("You have " + ram + "mb of system memory; Please enter value between "
-					+ DEFAULT_MEM + " and " + ram / 2);
+	}
+
+	public double getMaximumMemoryMB() {
+		double maximumMemory;
+		double ram = getSystemMemory();
+		if (ram <= RESERVED_MEMORY * 2) {
+			maximumMemory = ram * MAX_PERCENT;
+		} else {
+			maximumMemory = ram - RESERVED_MEMORY;
 		}
+		return Math.round(maximumMemory);
+	}
+
+	public double getMaximumMemoryGB() {
+		return maximumMemoryGB;
 	}
 	
 	public long getSystemMemory() {
-		long ram = 0;
-		try {
-			if (Util.isMacOS()) {
-				Sigar sigar = new Sigar();
-				ram = sigar.getMem().getRam();
-			} else if (Util.isWindowsOS()) {
-				String cmd = "wmic memorychip get capacity";
-				String results = externalProcessRunner.executeCmd(cmd);
-				String[] lines = results.split("\\s");
-				ram = StringParse.stringToDouble(lines[lines.length - 1], 0).longValue() / 1048576; // divide by 1MB = 1048576 = 1024 * 1024
+		if (installedRam == 0) {
+			try {
+				if (Util.isMacOS()) {
+					// locate MB
+					Sigar sigar = new Sigar();
+					installedRam = sigar.getMem().getRam();
+				} else if (Util.isWindowsOS()) {
+					// locate Bytes convert to MB
+					String cmd = "wmic memorychip get capacity";
+					String results = externalProcessRunner.executeCmd(cmd);
+					String[] lines = results.split("\\s");
+					installedRam = Math.round(StringParse.stringToDouble(lines[lines.length - 1], 0).longValue() / Double.valueOf(MULTIPLIER * MULTIPLIER));
+				} else if (Util.isLinuxOS()) { 
+					// locate KB convert to MB
+					byte[] memInfoData = new byte[1024];
+					FileInputStream fis = new FileInputStream("/proc/meminfo");
+					if ((fis.read(memInfoData)) > 7) { // yes it did read the file, and maybe "MemTotal"
+						installedRam = Math.round(StringParse.findLabeledDoubleFromString("MemTotal", memInfoData).longValue() / Double.valueOf(MULTIPLIER));
+					}
+					fis.close();
+				}
+			} catch (Exception e) {
+				LOGGER.error("Failed to get system info", e);
 			}
-		} catch (UnsatisfiedLinkError | SigarException e) {
-			LOGGER.error("Failed to get system info", e);
 		}
-		return ram;
+		return installedRam;
 	}
+
 
 	@Override
 	public String setAndSaveAttribute(String name, String value) {

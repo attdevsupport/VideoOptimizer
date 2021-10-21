@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2015 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,19 +18,28 @@ package com.att.aro.ui.view.menu.file;
 
 import static com.att.aro.ui.view.menu.file.PreferencesDialog.ConfigType.COMBO;
 import static com.att.aro.ui.view.menu.file.PreferencesDialog.ConfigType.FILE;
+import static com.att.aro.ui.view.menu.file.PreferencesDialog.ConfigType.MEMORY;
 import static com.att.aro.ui.view.menu.file.PreferencesDialog.ConfigType.TEXT;
 import static javax.swing.BoxLayout.LINE_AXIS;
 import static javax.swing.JFileChooser.APPROVE_OPTION;
 import static javax.swing.JFileChooser.FILES_ONLY;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.IllegalComponentStateException;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -54,7 +64,9 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.Popup;
+import javax.swing.PopupFactory;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -72,6 +84,7 @@ import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
+import com.att.aro.ui.utils.NumericInputVerifier;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
@@ -88,14 +101,15 @@ import com.att.aro.ui.view.menu.datacollector.HelpDialog;
 public class PreferencesDialog extends JDialog {
 	private static final int BORDER_HEIGHT = 80;
 	private static final int BORDER_WIDTH = 15;
-	
+
 	private static final Logger LOGGER = LogManager.getLogger(PreferencesDialog.class);
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane;
 	private JPanel buttonPanel;
 	private JPanel jButtonGrid;
-	
-	private JButton okButton;
+
+	private JButton reloadButton;
+	private JButton saveButton;
 	private JPanel optionsPanel;
 	private EnableEscKeyCloseDialog enableEscKeyCloseDialog;
 	private final SharedAttributesProcesses parent;
@@ -107,22 +121,29 @@ public class PreferencesDialog extends JDialog {
 	VideoPreferencesPanel videoPreferencesPanel;
 	private JTabbedPane tabbedPane;
 	private Popup popup;
+	private JTextField messageJTextField;
+	private static final int DISPLAYTIMER = 3000;
+	private Timer timer;
+	private static final Color COLOR = new Color(255, 255, 204);
+	private ActionListener hider;
+
 	/**
 	 * Type of configuration This is used to provide appropriate method for
 	 * displaying configuration
 	 */
 	enum ConfigType {
-		TEXT, NUMBER, FILE, COMBO
+		TEXT, NUMBER, FILE, COMBO, MEMORY
 	}
 
 	/**
-	 * Configuration item for dialog Lists all the configurations that are meant
-	 * to be displayed on the preferences dialog
+	 * Configuration item for dialog Lists all the configurations that are meant to
+	 * be displayed on the preferences dialog
 	 */
 	enum Config {
-		MEM("Xmx", "Max heap in MB", TEXT, JvmSettings.getInstance(), isHeapEnabled()),
+		MEM("Xmx", "Max heap in GB", MEMORY, JvmSettings.getInstance(), isHeapEnabled()),
 		ADB("adb", "Adb Path", FILE, SettingsImpl.getInstance(), true),
-		WIRESHARK("WIRESHARK_PATH", "Wireshark Path", FILE, SettingsImpl.getInstance(), Util.isMacOS(), null, () -> Util.getWireshark()),
+		WIRESHARK("WIRESHARK_PATH", "Wireshark Path", FILE, SettingsImpl.getInstance(), Util.isMacOS(), null,
+				() -> Util.getWireshark()),
 		IDEVICE_SCREENSHOT("iDeviceScreenshot", "iDeviceScreenshot Path", FILE, SettingsImpl.getInstance(),
 				Util.isMacOS(), null, () -> Util.getIdeviceScreenshot()),
 		FFMPEG("ffmpeg", "FFMpeg Path", FILE, SettingsImpl.getInstance(), true, null, () -> Util.getFFMPEG()),
@@ -131,7 +152,8 @@ public class PreferencesDialog extends JDialog {
 		IOS_CERT("iosCert", "iOS Certificate", TEXT, SettingsImpl.getInstance(), Util.isMacOS(),
 				ResourceBundleHelper.getMessageString("preferences.iosCert.textField.hint"), null),
 		IOS_BUNDLE("iosBundle", "iOS Bundle Identifier", TEXT, SettingsImpl.getInstance(), Util.isMacOS()),
-		LOG_LVL("logging", "Logging Level", COMBO, SettingsImpl.getInstance(),true,ResourceBundleHelper.getMessageString("preferences.logging.dropdown.values"));
+		LOG_LVL("logging", "Logging Level", COMBO, SettingsImpl.getInstance(), true,
+				ResourceBundleHelper.getMessageString("preferences.logging.dropdown.values"));
 
 		private String name;
 		private String desc;
@@ -142,7 +164,8 @@ public class PreferencesDialog extends JDialog {
 		private Supplier<String> defValue;
 		private String comboValues;
 
-		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled, String hint, Supplier<String> defValue) {
+		private Config(String name, String desc, ConfigType type, Settings settings, Boolean enabled, String hint,
+				Supplier<String> defValue) {
 			this(name, desc, type, settings, enabled);
 			this.hint = hint;
 			this.defValue = defValue;
@@ -193,11 +216,17 @@ public class PreferencesDialog extends JDialog {
 		public String getComboValues() {
 			return comboValues;
 		}
-		
+
+		/**
+		 * Heap is enabled when: Linux or Mac/Win64 and memory > 4GB
+		 * 
+		 * Not enabled when Win32
+		 * 
+		 * @return
+		 */
 		private static boolean isHeapEnabled() {
-			boolean isWin32 = Util.isWindows32OS();
-			boolean isMoreThan4GB = ((JvmSettings) JvmSettings.getInstance()).getSystemMemory() > 4096L;
-			return Util.isLinuxOS() || (!isWin32 && isMoreThan4GB);
+			return Util.isLinuxOS()
+					|| (!Util.isWindows32OS() && ((JvmSettings) JvmSettings.getInstance()).getSystemMemory() > 4 * JvmSettings.MULTIPLIER);
 		}
 	}
 
@@ -205,7 +234,7 @@ public class PreferencesDialog extends JDialog {
 		super(parent.getFrame());
 		this.parent = parent;
 		this.callerItem = caller;
-			callerItem.setEnabled(false);
+		callerItem.setEnabled(false);
 		init();
 	}
 
@@ -224,9 +253,9 @@ public class PreferencesDialog extends JDialog {
 		});
 		pack();
 		setLocationRelativeTo(parent.getFrame());
-		getRootPane().setDefaultButton(okButton);
+		getRootPane().setDefaultButton(reloadButton);
 	}
-	
+
 	private JComponent getJContentPane() {
 		if (jContentPane == null) {
 			jContentPane = new JPanel();
@@ -239,7 +268,7 @@ public class PreferencesDialog extends JDialog {
 					BPSelectionPanel.getBPPanel());
 			tabbedPane.addTab(ResourceBundleHelper.getMessageString("preferences.video.tabtitle"),
 					videoPreferencesPanel);
-			
+
 			this.addComponentListener(new ComponentListener() {
 				@Override
 				public void componentResized(ComponentEvent e) {
@@ -265,7 +294,7 @@ public class PreferencesDialog extends JDialog {
 		}
 		return jContentPane;
 	}
-	
+
 	private JPanel getGeneralTab() {
 		JPanel general = new JPanel();
 		general.add(getEmptyPanel(), BorderLayout.WEST);
@@ -278,6 +307,8 @@ public class PreferencesDialog extends JDialog {
 		if (buttonPanel == null) {
 			buttonPanel = new JPanel();
 			buttonPanel.setLayout(new BorderLayout());
+			buttonPanel.add(getMessageJTextField(), BorderLayout.NORTH);
+			getMessageJTextField().setVisible(false);
 			buttonPanel.add(getJButtonGrid(), BorderLayout.EAST);
 		}
 		return buttonPanel;
@@ -291,11 +322,18 @@ public class PreferencesDialog extends JDialog {
 			jButtonGrid = new JPanel();
 			jButtonGrid.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 			jButtonGrid.setLayout(gridLayout);
-			jButtonGrid.add(okButton = getButton("Save Only", (ActionEvent arg) -> saveOnly()));
-			jButtonGrid.add(okButton = getButton("Save & Reload", (ActionEvent arg) -> saveAndReload()));
+			jButtonGrid.add(saveButton = getButton("Save Only", (ActionEvent arg) -> saveOnly()));
+			jButtonGrid.add(reloadButton = getButton("Save & Reload", (ActionEvent arg) -> saveAndReload()));
 			jButtonGrid.add(getButton("Cancel", (ActionEvent arg) -> dispose()));
 		}
 		return jButtonGrid;
+	}
+
+	private JTextField getMessageJTextField() {
+		if (messageJTextField == null) {
+			messageJTextField = new JTextField();
+		}
+		return messageJTextField;
 	}
 
 	private JButton getButton(String text, ActionListener al) {
@@ -327,15 +365,36 @@ public class PreferencesDialog extends JDialog {
 		configCombo.add(getValuePanel(config));
 		return configCombo;
 	}
-	
+
 	private Component getValuePanel(final Config config) {
 		int fieldHeight = Util.isLinuxOS() ? 28 : 20;
 		JPanel panel = new JPanel();
 		Dimension size = new Dimension(300, fieldHeight);
 		panel.setLayout(new BoxLayout(panel, LINE_AXIS));
 		setSize(panel, size);
-		if (config.getConfigType() == ConfigType.TEXT || config.getConfigType() == ConfigType.NUMBER) {
+		if (config.getConfigType() == ConfigType.TEXT) {
 			panel.add(getValueTextField(config, size));
+		} else if (config.getConfigType() == ConfigType.MEMORY || config.getConfigType() == ConfigType.NUMBER) {
+			double maximumValue = 1;
+			JTextField textField = getValueTextField(config, size);
+			if (config.getConfigType() == ConfigType.MEMORY) {
+				maximumValue = ((JvmSettings) JvmSettings.getInstance()).getMaximumMemoryGB();
+			}
+			textField.setInputVerifier(new NumericInputVerifier(maximumValue, 2, 1, false, this));
+			textField.addKeyListener(getKeyListener(textField));
+			textField.addFocusListener(new FocusListener() {
+				
+				@Override
+				public void focusLost(FocusEvent e) {
+					if (hider != null) {
+						closePopup();
+					}
+				}
+
+				@Override public void focusGained(FocusEvent e) {}
+			});
+			panel.add(textField);
+
 		} else if (config.getConfigType() == ConfigType.FILE) {
 			Dimension txtSize = new Dimension(220, fieldHeight);
 			final JTextField textField = getValueTextField(config, txtSize);
@@ -352,6 +411,127 @@ public class PreferencesDialog extends JDialog {
 			panel.add(comboBox);
 		}
 		return panel;
+	}
+
+	private KeyListener getKeyListener(JTextField textField) {
+		return new KeyAdapter() {
+
+			@Override
+			public void keyTyped(KeyEvent e) {
+				if (e.getID() == KeyEvent.KEY_TYPED) {
+					/*
+					 * Will allow numbers 0-9 and backspace, delete and decimal point Cannot (1)
+					 * place more than one decimal point ex 1.2.3 or 12..3 (2) have more than 1
+					 * significant digit ex:12.34 (3) cannot hav2 more than two Significand ex:123.5
+					 */
+					int inputCharCode = (int) e.getKeyChar(); // e.getExtendedKeyCode() will not work on Windows
+					if (inputCharCode == 10) { // do not process when user has pressed return, [Save] has it's own validation
+						e.consume();
+						return;
+					}
+					boolean isAlphabet = inputCharCode != 8 && (inputCharCode != 46 && inputCharCode > 31
+							&& (inputCharCode < 48 || inputCharCode > 57));
+
+					int caretPos;
+					int decimalPointPos;
+
+					String text = textField.getText();
+					String replacementStr = !isAlphabet && inputCharCode != 8 ? String.valueOf((char) inputCharCode) : "";
+
+					if (textField.getSelectedText() != null) {
+						// replace char
+						if (textField.getSelectedText().equals(textField.getText())) {
+							text = replacementStr;
+							caretPos = 0;
+						} else {
+							caretPos = textField.getCaretPosition();
+							text = text.substring(0, caretPos) + replacementStr
+									+ text.substring(caretPos + textField.getSelectedText().length());
+						}
+					} else {
+						// insert char
+						caretPos = textField.getCaretPosition();
+						text = text.substring(0, caretPos) + replacementStr + text.substring(caretPos);
+					}
+					decimalPointPos = text.indexOf(".");
+
+					String errorMessage = null;
+					if (isAlphabet) {
+						errorMessage = String.format("Invalid, only numbers, from 2 to 99.9 are allowed: %s", text);
+					} else if (text.startsWith("0") || text.startsWith(".")) {
+						errorMessage = String.format("leading zeroes or leading decimal mark are not allowed: %s", text);
+					} else if (decimalPointPos == -1 && caretPos > 1 && inputCharCode != 46) {
+						errorMessage = String.format("Too many digits before decimal point, no more than %d is allowed: %s", 2, text);
+					} else if (decimalPointPos > -1) {
+						if (StringUtils.countMatches(text, ".") > 1) {
+							errorMessage = String.format("Too many Decimal points, no more than %d is allowed: %s", 2, text);
+						} else if (decimalPointPos > 2) {
+							errorMessage = String.format("Too many digits before decimal point, no more than %d is allowed: %s", 2, text);
+						} else if ((text.length() - decimalPointPos) > 2) {
+							errorMessage = String.format("Too many significant digits, no more than %d is allowed: %s", 1, text);
+						}
+					}
+					if (errorMessage != null) {
+						popup(textField, errorMessage);
+						LOGGER.debug(errorMessage);
+						e.consume();
+					} else if (hider != null) {
+						closePopup();
+					}
+				}
+			}
+		};
+	}
+
+	/**
+	 * Popup a display offset to the right of the JComponent and slightly lower
+	 * 
+	 * @param component
+	 * @param messageText
+	 */
+	public void popup(JComponent component, String messageText) {
+		try {
+			Point position = component.getLocationOnScreen();
+			int yOffset = position.y + (int) (component.getHeight() * 0.2);
+			int xOffset = position.x + (int) (component.getWidth() * 1.1);
+
+			PopupFactory factory = PopupFactory.getSharedInstance();
+			JTextField message = new JTextField(messageText);
+			message.setBackground(COLOR);
+
+			if (hider != null) {
+				closePopup();
+			}
+			
+			popup = factory.getPopup(component.getParent(), message, xOffset, yOffset);
+			this.setPopup(popup);
+			popup.show();
+
+			hider = new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					timer.stop();
+					popup.hide();
+				}
+			};
+			// Hide popup in 3 seconds
+			if (timer != null) {
+				timer.stop();
+			}
+			timer = new Timer(DISPLAYTIMER, hider);
+			timer.start();
+
+		} catch (IllegalComponentStateException e) {
+			LOGGER.error("ERROR: component location cannot be retrieved. " + e.getLocalizedMessage());
+		}
+	}
+
+	private void closePopup() {
+		timer.stop();
+		popup.hide();
+		while (timer.isRunning()) {
+			Util.sleep(100);
+		}
+		hider = null;
 	}
 
 	private String[] getComboValue(Config config) {
@@ -450,15 +630,21 @@ public class PreferencesDialog extends JDialog {
 			}
 
 		} catch (IllegalArgumentException iae) {
-			LOGGER.error("Failed to save preferences due to failure on video bp panel");
-			this.repaint();
+			displayErrorMessage(iae.getMessage());
+			LOGGER.error(iae.getMessage());
 		} catch (Exception e) {
 			LOGGER.error("Failed to save preferences", e);
-			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame()
-													, "Error occurred while trying to save Preferences"
-													, "Error saving preferences"
-													, JOptionPane.ERROR_MESSAGE);
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
+					"Error occurred while trying to save Preferences", "Error saving preferences",
+					JOptionPane.ERROR_MESSAGE);
+			displayErrorMessage("Error saving preferences " + e.getMessage());
 		}
+	}
+
+	private void displayErrorMessage(String message) {
+		messageJTextField.setText(message);
+		messageJTextField.setVisible(true);
+		this.pack();
 	}
 
 	private void saveGenTabValues() {
@@ -472,15 +658,14 @@ public class PreferencesDialog extends JDialog {
 		String tracePath = null;
 		if (((MainFrame) parent).getController().getCurrentTraceInitialAnalyzerResult() != null && ((MainFrame) parent)
 				.getController().getCurrentTraceInitialAnalyzerResult().getTraceresult() != null) {
-			
+
 			tracePath = ((MainFrame) parent).getController().getCurrentTraceInitialAnalyzerResult().getTraceresult()
 					.getTraceFile();
 
 		}
 		return tracePath;
 	}
-	
-	
+
 	private void saveBPSelection(boolean reload) {
 		SettingsUtil.saveBestPractices(BPSelectionPanel.getInstance().getCheckedBP());
 		if (reload) {
@@ -532,20 +717,24 @@ public class PreferencesDialog extends JDialog {
 		});
 		return helpLabel;
 	}
-	
-	public JTabbedPane getTabbedPane(){
+
+	public JTabbedPane getTabbedPane() {
 		return tabbedPane;
 	}
-	
-	public JButton getOKButton(){
-		return okButton;
+
+	public JButton getReloadButton() {
+		return reloadButton;
+	}
+
+	public JButton getSaveButton() {
+		return saveButton;
 	}
 
 	public void setPopup(Popup popup) {
-		this.popup= popup;
+		this.popup = popup;
 	}
-	
+
 	public Popup getPopup() {
-		return popup;	
+		return popup;
 	}
 }

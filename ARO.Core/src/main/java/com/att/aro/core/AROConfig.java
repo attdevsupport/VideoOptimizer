@@ -110,6 +110,7 @@ import com.att.aro.core.peripheral.IRadioInfoReader;
 import com.att.aro.core.peripheral.IScreenRotationReader;
 import com.att.aro.core.peripheral.IScreenStateInfoReader;
 import com.att.aro.core.peripheral.ISpeedThrottleEventReader;
+import com.att.aro.core.peripheral.ITimeRangeReadWrite;
 import com.att.aro.core.peripheral.IUserEventReader;
 import com.att.aro.core.peripheral.IVideoStartupReadWrite;
 import com.att.aro.core.peripheral.IVideoTimeReader;
@@ -138,6 +139,7 @@ import com.att.aro.core.peripheral.impl.RadioInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.ScreenRotationReaderImpl;
 import com.att.aro.core.peripheral.impl.ScreenStateInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.SpeedThrottleEventReaderImpl;
+import com.att.aro.core.peripheral.impl.TimeRangeReadWrite;
 import com.att.aro.core.peripheral.impl.UserEventReaderImpl;
 import com.att.aro.core.peripheral.impl.VideoStartupReadWriterImpl;
 import com.att.aro.core.peripheral.impl.VideoTimeReaderImpl;
@@ -399,7 +401,7 @@ public class AROConfig {
 		return new BatteryInfoReaderImpl();
 	}
 
-	@Bean
+	@Bean(name="deviceDetailReader")
 	public IDeviceDetailReader getDeviceDetailReader() {
 		return new DeviceDetailReaderImpl();
 	}
@@ -681,6 +683,11 @@ public class AROConfig {
 	@Bean(name = "videoStartupReadWrite")
 	public IVideoStartupReadWrite getVideoStartupReadWriteImpl(){
 		return new VideoStartupReadWriterImpl();
+	}
+
+	@Bean(name = "timeRangeReadWrite")
+	public ITimeRangeReadWrite getTimeRangeReadWrite(){
+		return new TimeRangeReadWrite();
 	}
 
 	@Bean(name = "videoSegmentAnalyzer")

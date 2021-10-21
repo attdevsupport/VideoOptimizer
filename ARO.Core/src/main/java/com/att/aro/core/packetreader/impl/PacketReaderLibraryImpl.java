@@ -1,18 +1,3 @@
-/*
- *  Copyright 2021 AT&T
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
-*/
 package com.att.aro.core.packetreader.impl;
 
 
@@ -22,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -29,6 +16,7 @@ import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -47,7 +35,9 @@ import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.UdpPacket;
 import org.pcap4j.packet.UnknownPacket;
 import org.pcap4j.packet.factory.PacketFactories;
+import org.pcap4j.packet.factory.statik.StaticProtocolFamilyPacketFactory;
 import org.pcap4j.packet.namednumber.DataLinkType;
+import org.pcap4j.packet.namednumber.ProtocolFamily;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.commandline.IExternalProcessRunner;
@@ -72,6 +62,8 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 
 	private static final Random RANDOM = new Random();
 	private static DataLinkType lastDataLinkType;
+	private boolean existNativeLib = false;
+
 
 	@Autowired
 	private IExternalProcessRunner externalProcessRunner;
@@ -87,6 +79,12 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 
 	@Override
 	public void readPacket(String packetfile, IPacketListener listener) throws IOException {
+
+		// windows dependency only
+		if (Util.isWindowsOS()) {
+			checkNativeLib();
+		}
+
 		FileDetails fileDetails = parseFileDetails(packetfile);
 		if (!fileDetails.isPcap() && !fileDetails.isPcapNG()) {
 			LOGGER.error("Not a valid pcap file " + packetfile);
@@ -94,6 +92,8 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 		}
 
 		long start = System.currentTimeMillis();
+		// Update system property org.pcap4j.af.inet6 to correct value based on original OS which captured pcap/pcapng file
+		identifyOSInfo(packetfile);
 
 		if (fileDetails.isPcap) {
 			PcapHandle handle = null;
@@ -102,7 +102,11 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 			} catch (PcapNativeException e) {
 				LOGGER.error("Error while reading pcap file " + packetfile, e);
 				return;
+			} catch (Exception ee) {
+				LOGGER.error("Error unknow " + packetfile, ee);
+				return;
 			}
+			
 
 			try {
 				int currentPacketNumber = 0;
@@ -139,6 +143,32 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 		}
 
 		LOGGER.info("Time to read pcap file in ms: " + (System.currentTimeMillis() - start));
+	}
+
+	/**
+	 * Verified two native pcap libraries for Windows; WinPcap and Npcap. It
+	 * verified when VO launched in first time. Please referred the detail
+	 * https://github.com/kaitoy/pcap4j#dependencies
+	 * 
+	 * @throws UnsatisfiedLinkError
+	 */
+	private void checkNativeLib() throws UnsatisfiedLinkError {
+		if (!existNativeLib) {
+			File npcapFile1 = new File(Util.getNpcapPath1());
+			File npcapFile2 = new File(Util.getNpcapPath2());
+			if (npcapFile1.exists() && npcapFile2.exists()) {
+				existNativeLib = true;
+			} else {
+				File winpcapFile = new File(Util.getWpcapPath());
+				if (winpcapFile.exists()) {
+					existNativeLib = true;
+				} else {
+					LOGGER.error("Npcap or Winpcap is not installed yet.");
+					throw new UnsatisfiedLinkError(
+							Util.getNpcapPath1() + " " + Util.getNpcapPath2() + " " + Util.getWpcapPath());
+				}
+			}
+		}
 	}
 
 	/**
@@ -210,6 +240,75 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 	}
 
 	/**
+	 * Identify OS which captured the pcap/pcapng file and update pcap4j system property "org.pcap4j.af.inet6" as follow:
+	 * Mac OS: 30, FreeBSD: 28, Linux: 10, All other OS: 23
+	 * @param packetFile pcap/pcapng file path
+	 */
+	private void identifyOSInfo(String packetFile) {
+		String cmd = Util.getCapinfos() + " " + packetFile;
+		LOGGER.info("Getting OS Info with command: " + cmd);
+		String result = externalProcessRunner.executeCmd(cmd);
+		LOGGER.debug("capinfos command result: " + result);
+
+		String osInfo = StringParse.findLabeledDataFromString("Capture oper-sys", ":", result);
+		LOGGER.error("OS info: " + osInfo);
+
+		if (StringUtils.isNotBlank(osInfo)) {
+			int af_inet6_value = 23; // Default value for all other OS
+
+			if (osInfo.contains("Darwin") || osInfo.contains("OSX")) {
+				af_inet6_value = 30;
+			} else if (osInfo.contains("Linux")) {
+				af_inet6_value = 10;
+			} else if (osInfo.contains("BSD")) {
+				af_inet6_value = 28;
+			}
+
+			// Pcap4j is not configured with hot reload of property file/settings which is required by VO as
+			// we allow loading of different pcap files in a single launch session.
+			// Following is using reflection to update AF_INET6 value in system property and associated Pcap4j objects for the same.
+			ProtocolFamily old_af_inet6_obj = ProtocolFamily.PF_INET6;
+			if (!String.valueOf(af_inet6_value).equals(System.getProperty("org.pcap4j.af.inet6")) || af_inet6_value != old_af_inet6_obj.value()) {
+				ProtocolFamily PF_INET6 = new ProtocolFamily(0xFFFF & af_inet6_value, "PF_INET6");
+				try {
+					Field field = StaticProtocolFamilyPacketFactory.getInstance().getClass().getSuperclass().getDeclaredField("instantiaters");
+					boolean accessible = field.isAccessible();
+					field.setAccessible(true);
+					Field modifiers = field.getClass().getDeclaredField("modifiers");
+					boolean modifierAccessible = modifiers.isAccessible();
+					modifiers.setAccessible(true);
+			        modifiers.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+					Map<ProtocolFamily, Object> map = (Map<ProtocolFamily, Object>) (field.get(StaticProtocolFamilyPacketFactory.getInstance()));
+					map.put(PF_INET6, map.get(old_af_inet6_obj));
+					modifiers.setInt(field, field.getModifiers() & Modifier.FINAL);
+					modifiers.setAccessible(modifierAccessible);
+					field.setAccessible(accessible);
+
+					field = Class.forName("org.pcap4j.packet.namednumber.ProtocolFamily").getDeclaredField("PF_INET6");
+					accessible = field.isAccessible();
+					field.setAccessible(true);
+					modifiers = field.getClass().getDeclaredField("modifiers");
+					modifierAccessible = modifiers.isAccessible();
+					modifiers.setAccessible(true);
+			        modifiers.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+					field.set(null, PF_INET6);
+					modifiers.setInt(field, field.getModifiers() & Modifier.FINAL);
+					modifiers.setAccessible(modifierAccessible);
+					field.setAccessible(accessible);
+
+					ProtocolFamily.register(PF_INET6);
+
+					System.setProperty("org.pcap4j.af.inet6", String.valueOf(af_inet6_value));
+				} catch (Exception e) {
+					LOGGER.error(e);
+				}
+			}
+		}
+
+		LOGGER.info("System property value for org.pcap4j.af.inet6: " + System.getProperty("org.pcap4j.af.inet6"));
+	}
+
+	/**
 	 * Process PCAPNG file using Wireshark's tool "tshark"
 	 * @param packetfile
 	 * @param listener
@@ -217,9 +316,6 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 	private void handlePCAPNGFile(String packetfile, IPacketListener listener) {
 		File tempFile = null;
 		try {
-			// Update system property org.pcap4j.af.inet6 to correct value based on original OS which captured pcapng file
-			identifyOSInfo(packetfile);
-
 	        // Write content data (json file) to a temporary file to enable reading json entry in a streaming fashion
             tempFile = File.createTempFile("temp" + RANDOM.nextInt(), ".json");
             String cmd = Util.getTshark() + " -r \"" + packetfile + "\" -x -T json -j \"frame\" > " + tempFile.getAbsolutePath();
@@ -236,36 +332,6 @@ public class PacketReaderLibraryImpl implements IPacketReader {
                 tempFile.deleteOnExit();
             }
         }
-	}
-
-	/**
-	 * Identify OS which captured the pcap/pcapng file and update pcap4j system property "org.pcap4j.af.inet6" as follow:
-	 * Mac OS: 30, FreeBSD: 28, Linux: 10, All other OS: 23
-	 * @param packetFile pcap/pcapng file path
-	 */
-	private void identifyOSInfo(String packetFile) {
-		String cmd = Util.getCapinfos() + " " + packetFile;
-		LOGGER.info("Getting OS Info with command: " + cmd);
-		String result = externalProcessRunner.executeCmd(cmd);
-		LOGGER.debug("capinfos command result: " + result);
-
-		String osInfo = StringParse.findLabeledDataFromString("Capture oper-sys", ":", result);
-		LOGGER.info("OS info: " + osInfo);
-
-		if (StringUtils.isNotBlank(osInfo)) {
-			String af_inet6_value = "23"; // Default value for all other OS
-
-			if (osInfo.contains("Darwin") || osInfo.contains("OSX")) {
-				af_inet6_value = "30";
-			} else if (osInfo.contains("Linux")) {
-				af_inet6_value = "10";
-			} else if (osInfo.contains("BSD")) {
-				af_inet6_value = "28";
-			}
-
-			System.setProperty("org.pcap4j.af.inet6", af_inet6_value);
-			LOGGER.info("Updating org.pcap4j.af.inet6 to: " + af_inet6_value);
-		}
 	}
 
 	/**

@@ -26,6 +26,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,11 +46,20 @@ import javax.swing.border.Border;
 import javax.swing.text.DefaultEditorKit;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.configuration.pojo.ProfileType;
+import com.att.aro.core.packetanalysis.impl.PacketAnalyzerImpl;
+import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
+import com.att.aro.core.packetanalysis.impl.TimeRangeAnalysis;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
+import com.att.aro.core.packetanalysis.pojo.PacketInfo;
+import com.att.aro.core.packetanalysis.pojo.TimeRange;
+import com.att.aro.mvc.IAROView;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
 
 /**
  * Represents the Time Range Analysis Dialog that allows the user to set a time
@@ -57,26 +67,35 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
  */
 public class TimeRangeAnalysisDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LogManager.getLogger(TimeRangeAnalysisDialog.class);
 
 	private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.00");
 	private static final double ROUNDING_VALUE = 0.01;
-	private static ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
+	private static final ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 
 	private JPanel timeRangeSelectionPanel;
+	private JPanel buttonPanel;
 	private JPanel timeRangeResultsPanel;
 	private JPanel jDialogPanel;
-	private JButton startButton;
+	private JButton resetButton;
+	private JButton reanalyzeButton;
+	private JButton calculateStatisticsButton;
 	private JButton cancelButton;
 	private JTextArea timeRangeAnalysisResultsTextArea;
 	private JTextField startTimeTextField;
 	private JTextField endTimeTextField;
+
 	private Double traceEndTime;
 	private double timeRangeStartTime;
 	private double timeRangeEndTime;
+
+	private double initTimeRangeStartTime;
+	private double initTimeRangeEndTime;
+	private double endTimeResetValue;
 	
 	private JPopupMenu timeRangeContextMenu;
 
-	private PacketAnalyzerResult analysisData;
+	private IAROView parent;
 
 	/**
 	 * Initializes a new instance of the TimeRangeAnalysisDialog class using the
@@ -85,15 +104,34 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	 * @param owner
 	 *            The ApplicationResourceOptimizer instance.
 	 * 
-	 * @param analysisData
-	 *            An Analysis object containing the trace data.
+	 * @param parent
+	 *            The menu's parent instance (MainFrame).
 	 */
-	public TimeRangeAnalysisDialog(Window owner, PacketAnalyzerResult analysisData) {
+	public TimeRangeAnalysisDialog(Window owner, IAROView parent) {
 		super(owner);
-		this.traceEndTime = analysisData.getTraceresult().getTraceDuration();
-		this.timeRangeStartTime = 0.0;
-		this.timeRangeEndTime = traceEndTime + ROUNDING_VALUE;
-		this.analysisData = analysisData;
+
+		PacketAnalyzerResult traceresult = ((MainFrame)parent).getController().getTheModel().getAnalyzerResult();
+		if (traceresult==null){
+			LOGGER.error("Trace result error!");
+			MessageDialogFactory.getInstance().showErrorDialog(this, "wrong..");
+		}else{
+			endTimeResetValue = traceresult.getTraceresult().getTraceDuration();
+			traceEndTime = endTimeResetValue;	
+			TimeRange timeRange = traceresult.getFilter().getTimeRange();
+			if(timeRange != null){
+				timeRangeStartTime = timeRange.getBeginTime();
+				timeRangeEndTime = timeRange.getEndTime();
+			} else {
+				timeRangeStartTime = 0.0;
+				timeRangeEndTime = traceEndTime;
+			}
+		}
+
+		// For cancel button
+		initTimeRangeStartTime = timeRangeStartTime;
+		initTimeRangeEndTime = timeRangeEndTime;
+
+		this.parent = parent;
 		initialize();
 	}
 
@@ -103,7 +141,8 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	 * @return void
 	 */
 	private void initialize() {
-		this.setSize(400, 300);
+		this.setSize(500, 350);
+		this.setResizable(false);
 		this.setModal(true);
 		this.setTitle(resourceBundle.getString("timerangeanalysis.title"));
 		this.setLocationRelativeTo(getOwner());
@@ -119,9 +158,12 @@ public class TimeRangeAnalysisDialog extends JDialog {
 		if (jDialogPanel == null) {
 			jDialogPanel = new JPanel();
 			jDialogPanel.setLayout(new BorderLayout());
+
 			jDialogPanel.add(getTimeRangeSelectionPanel(), BorderLayout.NORTH);
-			jDialogPanel.add(getTimeRangeResultsPanel(), BorderLayout.CENTER);
+			jDialogPanel.add(getTimeRangeDialogButtons(), BorderLayout.CENTER);
+			jDialogPanel.add(getTimeRangeResultsPanel(), BorderLayout.SOUTH);
 		}
+
 		return jDialogPanel;
 	}
 
@@ -133,21 +175,28 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	private JPanel getTimeRangeSelectionPanel() {
 		if (timeRangeSelectionPanel == null) {
 			timeRangeSelectionPanel = new JPanel();
+			JLabel startTimeLabel = new JLabel(resourceBundle.getString("timerangeanalysis.start"));
+			JLabel endTimeLabel = new JLabel(resourceBundle.getString("timerangeanalysis.end"));
 
-			timeRangeSelectionPanel.setPreferredSize(new Dimension(100, 70));
-
-			JLabel startTimeLabel = new JLabel(
-					resourceBundle.getString("timerangeanalysis.start"));
-			JLabel endTimeLabel = new JLabel(
-					resourceBundle.getString("timerangeanalysis.end"));
 			timeRangeSelectionPanel.add(startTimeLabel);
 			timeRangeSelectionPanel.add(getStartTimeTextField());
 			timeRangeSelectionPanel.add(endTimeLabel);
 			timeRangeSelectionPanel.add(getEndTimeTextField());
-			timeRangeSelectionPanel.add(getStartButton());
-			timeRangeSelectionPanel.add(getCancelButton());
 		}
+
 		return timeRangeSelectionPanel;
+	}
+
+	private JPanel getTimeRangeDialogButtons() {
+		if (buttonPanel == null) {
+			buttonPanel = new JPanel();
+			buttonPanel.add(getResetButton());
+			buttonPanel.add(getReanalyzeButton());
+			buttonPanel.add(getCalculateStatisticsButton());
+			buttonPanel.add(getCancelButton());
+		}
+
+		return buttonPanel;
 	}
 
 	/**
@@ -157,10 +206,10 @@ public class TimeRangeAnalysisDialog extends JDialog {
 		if (timeRangeResultsPanel == null) {
 			timeRangeResultsPanel = new JPanel();
 			timeRangeResultsPanel.setLayout(new BorderLayout());
+			timeRangeResultsPanel.setPreferredSize(new Dimension(500, 230));
 			JLabel resultsLabel = new JLabel(resourceBundle.getString("timerangeanalysis.results"));
 			if (timeRangeAnalysisResultsTextArea == null) {
-				String strTextArea = resourceBundle.getString("timerangeanalysis.actionInfo");
-				timeRangeAnalysisResultsTextArea = new JTextArea("\n" + strTextArea);
+				timeRangeAnalysisResultsTextArea = new JTextArea();
 				
 				timeRangeContextMenu = new JPopupMenu();
 				timeRangeAnalysisResultsTextArea.setComponentPopupMenu(timeRangeContextMenu);
@@ -182,28 +231,124 @@ public class TimeRangeAnalysisDialog extends JDialog {
 			timeRangeResultsPanel.add(resultsLabel, BorderLayout.NORTH);
 			timeRangeResultsPanel.add(timeRangeAnalysisResultsTextArea, BorderLayout.CENTER);
 		}
+
 		return timeRangeResultsPanel;
 	}
 
-	/**
-	 * Initializes and returns the start button
+	
+	/*
+	 * Get Reset button
 	 */
-	private JButton getStartButton() {
-		if (startButton == null) {
-			startButton = new JButton();
-			startButton.setText(resourceBundle.getString("Button.start"));
-			startButton.addActionListener(new ActionListener() {
+	private JButton getResetButton() {
+		if (resetButton == null) {
+			resetButton = new JButton();
+			resetButton.setText(resourceBundle.getString("Button.reset"));
+
+			resetButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					traceEndTime = endTimeResetValue;
+					startTimeTextField.setText(DECIMAL_FORMAT.format(0.0));
+					endTimeTextField.setText(DECIMAL_FORMAT.format(endTimeResetValue));
+				}
+
+			});
+		}
+
+		return resetButton;
+	}
+
+	/*
+	 * Get Reanalyze button
+	 */
+	private JButton getReanalyzeButton() {
+		if (reanalyzeButton == null) {
+			reanalyzeButton = new JButton();
+			reanalyzeButton.setText(resourceBundle.getString("menu.tools.timeRangeAnalysis.reanalyze.button"));
+			reanalyzeButton.setToolTipText(resourceBundle.getString("menu.tools.timeRangeAnalysis.reanalyze.button.tooltip"));
+			reanalyzeButton.addActionListener(new ActionListener() {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					if (analysisData == null) {
+					double startTime;
+					double endTime;
+					try {
+						startTime = getTimeValue(startTimeTextField);
+						endTime = getTimeValue(endTimeTextField);
+					} catch (NumberFormatException e) {
+						MessageDialogFactory.getInstance().showErrorDialog(TimeRangeAnalysisDialog.this,
+								resourceBundle.getString("timerangeanalysis.numberError"));
+						return;
+					}
+
+					double timeRangeEndTime = Double.valueOf(DECIMAL_FORMAT.format( traceEndTime));
+					if (startTime < endTime) {
+						if ((startTime >= 0.0) && (startTime <= endTime) &&
+								endTime <= timeRangeEndTime) {
+							
+							AnalysisFilter filter = ((MainFrame) parent).getController().getTheModel().getAnalyzerResult().getFilter();
+							filter.setTimeRange(new TimeRange(startTime, endTime));
+							
+							if (!hasDataAfterFiltering(filter)) {
+								MessageDialogFactory.getInstance().showErrorDialog(TimeRangeAnalysisDialog.this,
+										resourceBundle.getString("timerangeanalysis.noResultDataError"));
+							} else {
+								((MainFrame) parent).updateFilter(filter);
+								dispose();
+							}
+							
+						} else {
+							String strErrorMessage = MessageFormat.format(resourceBundle.getString("timerangeanalysis.rangeError"), 0.00, DECIMAL_FORMAT.format(timeRangeEndTime));
+							MessageDialogFactory.showMessageDialog(
+									TimeRangeAnalysisDialog.this,
+									strErrorMessage,
+									resourceBundle.getString("menu.error.title"),
+									JOptionPane.ERROR_MESSAGE);
+						}
+					} else {
+						String strErrorMessage = resourceBundle.getString("timerangeanalysis.startTimeError");
+						MessageDialogFactory.showMessageDialog(
+								TimeRangeAnalysisDialog.this,
+								strErrorMessage,
+								resourceBundle.getString("menu.error.title"),
+								JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			});
+		}
+
+		return reanalyzeButton;
+	}
+
+	private boolean hasDataAfterFiltering(AnalysisFilter filter) {	
+		List<PacketInfo> packetsInfoBeforeFilter =  ((MainFrame) parent).getController().getTheModel()
+															.getAnalyzerResult().getTraceresult().getAllpackets();
+		PacketAnalyzerImpl packetAnalyzerImpl = (PacketAnalyzerImpl) ((MainFrame)parent).getController().getAROService().getAnalyzer();
+		List<PacketInfo> packetsInfoAfterFilter = packetAnalyzerImpl.filterPackets(filter, packetsInfoBeforeFilter);		
+		
+		return packetsInfoAfterFilter.size() > 0;
+	}
+
+	/**
+	 * Initializes and returns the Calculate Statistics button
+	 */
+	private JButton getCalculateStatisticsButton() {
+		if (calculateStatisticsButton == null) {
+			calculateStatisticsButton = new JButton();
+			calculateStatisticsButton.setText(resourceBundle.getString("menu.tools.timeRangeAnalysis.calculateStatistics.button"));
+			calculateStatisticsButton.setToolTipText(resourceBundle.getString("menu.tools.timeRangeAnalysis.calculateStatistics.button.tooltip"));
+			calculateStatisticsButton.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(ActionEvent arg0) {
+					PacketAnalyzerResult traceResult = ((MainFrame)parent).getController().getTheModel().getAnalyzerResult();
+					if (traceResult == null) {
 							MessageDialogFactory.showMessageDialog(
 									TimeRangeAnalysisDialog.this,
 									resourceBundle.getString("menu.error.noTraceLoadedMessage"),
 									resourceBundle.getString("error.title"),
 									JOptionPane.ERROR_MESSAGE);
 					} else {
-
 						double startTime;
 						double endTime;
 						try {
@@ -221,17 +366,17 @@ public class TimeRangeAnalysisDialog extends JDialog {
 						Double traceEndTimeRounded = Double.valueOf(DECIMAL_FORMAT.format(traceEndTime + ROUNDING_VALUE));
 						if (startTime < endTime) {
 							if (startTime >= 0.0 && startTime <= traceEndTimeRounded && endTime >= 0.0 && endTime <= traceEndTimeRounded) {
-
-								TimeRangeAnalysis timeRangeAnalysis = TimeRangeAnalysis.performTimeRangeAnalysis(analysisData, startTime, endTime);
+								TimeRangeAnalysis timeRangeAnalysis = new TimeRangeAnalysis(startTime, endTime, traceResult);
 								String msg = null;
-								ProfileType profileType = analysisData.getProfile().getProfileType();
-								if(profileType == ProfileType.T3G){
+								ProfileType profileType = traceResult.getProfile().getProfileType();
+								if (profileType == ProfileType.T3G) {
 									msg = resourceBundle.getString("timerangeanalysis.3g");
-								}else if(profileType == ProfileType.LTE){
+								} else if (profileType == ProfileType.LTE) {
 									msg = resourceBundle.getString("timerangeanalysis.lte");
-								}else if(profileType == ProfileType.WIFI){
+								} else if (profileType == ProfileType.WIFI) {
 									msg = resourceBundle.getString("timerangeanalysis.wifi");
 								}
+
 								timeRangeAnalysisResultsTextArea.setText(MessageFormat.format(
 										(msg == null? "" : msg), 
 										DECIMAL_FORMAT.format(startTime),
@@ -240,7 +385,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 										timeRangeAnalysis.getTotalBytes(),
 										timeRangeAnalysis.getUplinkBytes(),
 										timeRangeAnalysis.getDownlinkBytes(),
-										DECIMAL_FORMAT.format(timeRangeAnalysis.getEnergy()), 
+										DECIMAL_FORMAT.format(timeRangeAnalysis.getRrcEnergy()),
 										DECIMAL_FORMAT.format(timeRangeAnalysis.getActiveTime()),
 										DECIMAL_FORMAT.format(timeRangeAnalysis.getAverageThroughput()),
 										DECIMAL_FORMAT.format(timeRangeAnalysis.getAverageUplinkThroughput()),
@@ -250,10 +395,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 								timeRangeStartTime = startTime;
 								timeRangeEndTime = endTime;
 							} else {
-								String strErrorMessage = MessageFormat.format(
-										resourceBundle.getString("timerangeanalysis.rangeError"),
-										0.00, DECIMAL_FORMAT
-												.format(traceEndTimeRounded));
+								String strErrorMessage = MessageFormat.format(resourceBundle.getString("timerangeanalysis.rangeError"), 0.00, DECIMAL_FORMAT.format(traceEndTimeRounded));
 								MessageDialogFactory.showMessageDialog(
 										TimeRangeAnalysisDialog.this,
 										strErrorMessage,
@@ -261,8 +403,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 										JOptionPane.ERROR_MESSAGE);
 							}
 						} else {
-							String strErrorMessage = resourceBundle
-									.getString("timerangeanalysis.startTimeError");
+							String strErrorMessage = resourceBundle.getString("timerangeanalysis.startTimeError");
 							MessageDialogFactory.showMessageDialog(
 									TimeRangeAnalysisDialog.this,
 									strErrorMessage,
@@ -273,7 +414,8 @@ public class TimeRangeAnalysisDialog extends JDialog {
 				}
 			});
 		}
-		return startButton;
+
+		return calculateStatisticsButton;
 	}
 
 	/**
@@ -287,12 +429,19 @@ public class TimeRangeAnalysisDialog extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					TimeRangeAnalysisDialog.this.dispose();
+					closeWindow();
 				}
 
 			});
 		}
+
 		return cancelButton;
+	}
+
+	private void closeWindow() {
+		AnalysisFilter filter = ((MainFrame) parent).getController().getTheModel().getAnalyzerResult().getFilter();
+		filter.setTimeRange(new TimeRange(initTimeRangeStartTime, initTimeRangeEndTime));
+		dispose();
 	}
 
 	/**

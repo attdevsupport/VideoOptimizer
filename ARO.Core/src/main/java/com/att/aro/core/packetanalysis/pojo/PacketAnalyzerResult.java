@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.att.aro.core.configuration.pojo.Profile;
+import com.att.aro.core.packetanalysis.impl.TimeRangeAnalysis;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -31,6 +32,9 @@ public class PacketAnalyzerResult {
 	@JsonIgnore
 	private List<Session> sessionlist;
 	private Statistic statistic;
+
+	private TimeRangeAnalysis timeRangeAnalysis;
+
 	@JsonIgnore
 	private AbstractRrcStateMachine statemachine;
 	@JsonIgnore
@@ -314,5 +318,13 @@ public class PacketAnalyzerResult {
 
 	public void setBufferTimeResult(BufferTimeBPResult bufferTimeResult) {
 		this.bufferTimeResult = bufferTimeResult;
+	}
+
+	public TimeRangeAnalysis getTimeRangeAnalysis() {
+		return timeRangeAnalysis;
+	}
+
+	public void setTimeRangeAnalysis(TimeRangeAnalysis timeRangeAnalysis) {
+		this.timeRangeAnalysis = timeRangeAnalysis;
 	}
 }

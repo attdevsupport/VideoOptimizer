@@ -27,6 +27,7 @@ import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.ForwardSecrecyTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BpSecurityForwardSecrecyTablePanel extends AbstractBpDetailTablePanel {
 
@@ -56,6 +57,7 @@ public class BpSecurityForwardSecrecyTablePanel extends AbstractBpDetailTablePan
 	public DataTable<ForwardSecrecyEntry> getContentTable() {
 		if(contentTable == null) {
 			contentTable = new DataTable<ForwardSecrecyEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("security.forward.secrecy.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

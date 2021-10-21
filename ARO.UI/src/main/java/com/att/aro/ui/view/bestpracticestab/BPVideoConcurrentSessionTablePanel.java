@@ -24,6 +24,7 @@ import com.att.aro.core.bestpractice.pojo.VideoConcurrentSession;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.VideoConcurrentSessionTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BPVideoConcurrentSessionTablePanel extends AbstractBpDetailTablePanel {
 	private static final long serialVersionUID = 1L;
@@ -49,6 +50,7 @@ public class BPVideoConcurrentSessionTablePanel extends AbstractBpDetailTablePan
 	public DataTable<VideoConcurrentSession> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<VideoConcurrentSession>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("video.concurrent.session.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

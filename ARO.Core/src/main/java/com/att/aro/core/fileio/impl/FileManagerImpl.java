@@ -126,6 +126,11 @@ public class FileManagerImpl implements IFileManager {
 	}
 
 	@Override
+	public File createFile(File parent, String child) {
+		return new File(parent, child);
+	}
+
+	@Override
 	public void mkDir(String path) {
 		mkDir(new File(path));
 	}

@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.swing.SwingUtilities;
@@ -38,6 +39,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.util.CollectionUtils;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.IAROService;
@@ -59,6 +61,10 @@ import com.att.aro.core.packetanalysis.pojo.IPAddressSelection;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
+import com.att.aro.core.packetanalysis.pojo.TimeRange.TimeRangeType;
+import com.att.aro.core.peripheral.ITimeRangeReadWrite;
+import com.att.aro.core.peripheral.impl.TimeRangeReadWrite;
+import com.att.aro.core.peripheral.pojo.TraceTimeRange;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.ErrorCodeRegistry;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
@@ -78,7 +84,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 
 	@Autowired
 	private IAROService serv;
-
+	
 	private static final Logger LOG = LogManager.getLogger(AROController.class.getName());
 	private IDataCollector collector;
 	private String traceFolderPath;
@@ -89,6 +95,8 @@ public class AROController implements PropertyChangeListener, ActionListener {
 
 	@Getter
 	private boolean isRooted = false;
+
+	private ITimeRangeReadWrite timeRangeReadWrite;
 
 	/**
 	 * Constructor to instantiate an ARO API instance.
@@ -197,19 +205,39 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	public void propertyChange(PropertyChangeEvent event) {
 		Profile profile = null;
 		AnalysisFilter filter = null;
-		if (theModel.getAnalyzerResult() != null) {
-			profile = theModel.getAnalyzerResult().getProfile();
-			filter = theModel.getAnalyzerResult().getFilter();
-		}
 		try {
 			theView.hideChartItems();
-			if (event.getPropertyName().equals("tracePath")) {
-				updateModel((String) event.getNewValue(), profile, null);
+			if (event.getPropertyName().equals("tracePath")) { // to filter or not to filter
+
+				String path;
+				TimeRange timeRange = null;
+				if (event.getNewValue() instanceof TimeRange) {
+					timeRange = (TimeRange) event.getNewValue();
+					path = timeRange.getPath();
+					if (path != null) {
+						filter = new AnalysisFilter(null, timeRange, null);
+					} else {
+						LOG.error("Invalid use of TimeRange here, it needs to hold a valid path, to finish creating a filter");
+					}
+				} else {
+					path = (String) event.getNewValue();
+					if ((path != null) && (timeRange = checkForDefaultTimeRange((String) event.getNewValue())) != null) {
+						// timeRange contains TimeRangeType.Default, so continue with analysis with filter
+						filter = new AnalysisFilter(null, timeRange, null);
+					}
+				}
+				updateModel(path, profile, filter);
 			} else if (event.getPropertyName().equals("profile")) {
+				if (theModel.getAnalyzerResult() != null) {
+					filter = theModel.getAnalyzerResult().getFilter();
+				}
 				if (theModel.isSuccess()) {
 					updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceDirectory(), (Profile) event.getNewValue(), filter);
 				}
 			} else if (event.getPropertyName().equals("filter")) {
+				if (theModel.getAnalyzerResult() != null) {
+					profile = theModel.getAnalyzerResult().getProfile();
+				}
 				if (theModel.getAnalyzerResult().getTraceresult().getTraceFile() != null && !theModel.getAnalyzerResult().getTraceresult().getTraceFile().equals("")) {
 					updateModel(theModel.getAnalyzerResult().getTraceresult().getTraceFile(), profile, (AnalysisFilter) event.getNewValue());
 				} else {
@@ -217,14 +245,35 @@ public class AROController implements PropertyChangeListener, ActionListener {
 				}
 			}
 		} finally {
-			if (theModel.getAnalyzerResult().getStreamingVideoData() == null || theModel.getAnalyzerResult().getStreamingVideoData().isFinished()) {
-				theView.showChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
-			} else {
-				// turn off chunks plot
-				theView.hideChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
-				theView.showChartItems(); // show everything that is not otherwise hidden
+			if (theModel.getAnalyzerResult() != null) {
+				if (theModel.getAnalyzerResult().getStreamingVideoData() == null
+						|| theModel.getAnalyzerResult().getStreamingVideoData().isFinished()) {
+					theView.showChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
+				} else {
+					// turn off chunks plot
+					theView.hideChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
+					theView.showChartItems(); // show everything that is not otherwise hidden
+				}
 			}
 		}
+	}
+
+	private TimeRange checkForDefaultTimeRange(String traceFolder) {
+		File timeFile = new File(traceFolder, "time-range.json");
+		if (timeFile.exists()) {
+			if (timeRangeReadWrite == null) {
+				timeRangeReadWrite = context.getBean("timeRangeReadWrite", TimeRangeReadWrite.class);
+			}
+			TraceTimeRange traceTimeRange = timeRangeReadWrite.readData(new File(traceFolder));
+			if (traceTimeRange != null && !CollectionUtils.isEmpty(traceTimeRange.getTimeRangeList())) {
+				Optional<TimeRange> trSection = traceTimeRange.getTimeRangeList().stream()
+						.filter(p -> p.getTimeRangeType().equals(TimeRangeType.DEFAULT)).findFirst();
+				if (trSection.isPresent()) {
+					return trSection.get();
+				}
+			}
+		}
+		return null;
 	}
 
 	/**

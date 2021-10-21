@@ -25,6 +25,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.AsyncCheckTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  *
@@ -68,6 +69,7 @@ public class BpHtmlAsyncLoadTablePanel extends AbstractBpDetailTablePanel {
 	public DataTable<AsyncCheckEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<AsyncCheckEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("html.async.load.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

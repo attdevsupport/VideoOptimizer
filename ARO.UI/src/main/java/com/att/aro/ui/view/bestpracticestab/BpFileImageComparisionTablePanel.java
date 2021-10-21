@@ -24,6 +24,7 @@ import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.ImageComparatorDataTable;
 import com.att.aro.ui.model.bestpractice.ImageComparatorTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 
 
@@ -65,6 +66,7 @@ public class BpFileImageComparisionTablePanel extends AbstractBpImageComparatorT
 	public ImageComparatorDataTable<ImageMdataEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new ImageComparatorDataTable<ImageMdataEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("file.image.comparison.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

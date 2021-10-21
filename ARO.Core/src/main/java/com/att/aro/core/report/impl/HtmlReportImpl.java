@@ -18,11 +18,10 @@ package com.att.aro.core.report.impl;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.math3.util.Precision;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +29,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.packetanalysis.impl.TimeRangeAnalysis;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
+import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.EnergyModel;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
@@ -57,7 +58,7 @@ public class HtmlReportImpl implements IReport {
 		
 		List<AbstractBestPracticeResult> bpResults = results.getBestPracticeResults();
  
-		StringBuffer htmlString = new StringBuffer(200);
+		StringBuilder htmlString = new StringBuilder(200);
 		htmlString.append(getHtmlHead());
 		htmlString.append("	<body>");
 		htmlString.append(System.getProperty(lineSeperator()));
@@ -65,6 +66,7 @@ public class HtmlReportImpl implements IReport {
 		htmlString.append(System.getProperty(lineSeperator()));
 		htmlString.append(getTableHeader(analyzerResults));
 		htmlString.append(getTraceRows(analyzerResults));
+		htmlString.append(getTimeRangeAnalysisAndStatisticRows(analyzerResults));
 		htmlString.append(getBPSummaryRows(bpResults));
 		htmlString.append("<tr><th></th><td></td></tr><tr><th>Best Practices Results</th><td></td></tr>\n");
 		htmlString.append(getBpRows(bpResults));
@@ -89,7 +91,7 @@ public class HtmlReportImpl implements IReport {
 
 	// writes the HTML head tag and its components
 	private String getHtmlHead() {
-		StringBuffer htmlHead = new StringBuffer(300);
+		StringBuilder htmlHead = new StringBuilder(300);
 
 		htmlHead.append("<!DOCTYPE html>");
 		htmlHead.append(System.getProperty(lineSeperator()));
@@ -110,82 +112,58 @@ public class HtmlReportImpl implements IReport {
 
 	private String getTableHeader(PacketAnalyzerResult analyzerResults) {
 		AbstractTraceResult traceResults = analyzerResults.getTraceresult();
-		StringBuffer sbuffer = new StringBuffer(150);
+		StringBuilder sbuilder = new StringBuilder(150);
 
-		sbuffer.append(tableLIne()+"<th>File</th><th>"+traceResults.getTraceDirectory()+ "</th></tr>");	
+		sbuilder.append(tableLIne()+"<th>File</th><th>"+traceResults.getTraceDirectory()+ "</th></tr>");	
 
-		sbuffer.append(System.getProperty(lineSeperator())); 
-		return sbuffer.toString();
+		sbuilder.append(System.getProperty(lineSeperator())); 
+		return sbuilder.toString();
 	}
 	
 	private String getTraceRows(PacketAnalyzerResult analyzerResults) {
-		StringBuffer sbuffer = new StringBuffer(180);
+		StringBuilder sbuilder = new StringBuilder(180);
 		
 		AbstractTraceResult traceResults = analyzerResults.getTraceresult();
 		if(traceResults!=null){		
 
-		sbuffer.append(tableLIne()+"<th>Date</th><td>" + traceResults.getTraceDateTime() + tableChange()
-				+System.getProperty(lineSeperator())+tableLIne()+"<th>Duration (Second)</th><td>" + getRoundDouble(traceResults.getTraceDuration())
-				+tableChange()+System.getProperty(lineSeperator()));
+		sbuilder.append(tableLIne()+"<th>Date</th><td>" + traceResults.getTraceDateTime() + tableChange()
+				+System.getProperty(lineSeperator()));
 
 		//if it is from rooted collector and load from trace trace folder
 		TraceResultType traceType = traceResults.getTraceResultType();
 
 			if(TraceResultType.TRACE_DIRECTORY.equals(traceType)){
 				TraceDirectoryResult traceDirResult = (TraceDirectoryResult)traceResults;
-				sbuffer.append(tableLIne());
-				sbuffer.append("<th>Device Make/Model</th>");
+				sbuilder.append(tableLIne());
+				sbuilder.append("<th>Device Make/Model</th>");
 				if(traceDirResult.getDeviceMake()!=null&&traceDirResult.getDeviceModel()!=null){
-					sbuffer.append("<td>" + traceDirResult.getDeviceMake() + " / " + traceDirResult.getDeviceModel()+ "</td>");
+					sbuilder.append("<td>" + traceDirResult.getDeviceMake() + " / " + traceDirResult.getDeviceModel()+ "</td>");
 				}else{
-					sbuffer.append("<p>Not Available</p>");
+					sbuilder.append("<p>Not Available</p>");
 				}
-				sbuffer.append("</tr>");
-				sbuffer.append(System.getProperty(lineSeperator()));
+				sbuilder.append("</tr>");
+				sbuilder.append(System.getProperty(lineSeperator()));
 				
-				sbuffer.append(tableLIne());
-				sbuffer.append("<th>Platform Version</th>");
+				sbuilder.append(tableLIne());
+				sbuilder.append("<th>Platform Version</th>");
 				if(traceDirResult.getOsType()!=null&&traceDirResult.getOsVersion()!=null){
-					sbuffer.append("<td>" + traceDirResult.getOsType()+ " / " +traceDirResult.getOsVersion() + "</td>");
+					sbuilder.append("<td>" + traceDirResult.getOsType()+ " / " +traceDirResult.getOsVersion() + "</td>");
 				}else{
-					sbuffer.append("<p>Not Available</p>");
+					sbuilder.append("<p>Not Available</p>");
 				}
-				sbuffer.append("</tr>");
-				sbuffer.append(System.getProperty(lineSeperator()));
+				sbuilder.append("</tr>");
+				sbuilder.append(System.getProperty(lineSeperator()));
 			}
 		
 		}
 
-		Statistic statistic = analyzerResults.getStatistic();
-		if(statistic!=null){
-			EnergyModel energyModel = analyzerResults.getEnergyModel();
-			sbuffer.append(tableLIne() + "<th>Total Data (Byte)</th><td>" + statistic.getTotalByte()
-					+ tableChange()+System.getProperty(lineSeperator())
-					+ tableLIne()+"<th>Total PayLoad Data (Byte)</th><td>" + statistic.getTotalPayloadBytes() 
-					+ tableChange()+System.getProperty(lineSeperator())+
-					tableLIne()+"<th>Total HTTPS Data (Byte)</th><td>" + statistic.getTotalHTTPSByte() + " ("
-					    + String.format("%.2f", statistic.getTotalHTTPSByte()*100.0/statistic.getTotalByte()) + "%)"
-                    + tableChange()+System.getProperty(lineSeperator())
-					+ tableLIne()+"<th>Total Unanalyzed HTTPS Data (Byte)</th><td>" + statistic.getTotalHTTPSBytesNotAnalyzed() + " ("
-					    + String.format("%.2f", statistic.getTotalHTTPSBytesNotAnalyzed()*100.0/statistic.getTotalByte()) + "%)"
-					+ tableChange()+System.getProperty(lineSeperator())
-					+tableLIne()+"<th>Energy Consumed (J)</th><td>" + getRoundDouble(energyModel.getTotalEnergyConsumed()) 
-					+ tableChange()+System.getProperty(lineSeperator()));
-
-		}
-		return sbuffer.toString();
+		return sbuilder.toString();
 	}
 
-	private double getRoundDouble(double number){
-		if(Double.isNaN(number)) {
-			return number;
-		}
-		BigDecimal bdecimal = new BigDecimal(number);
-	    bdecimal = bdecimal.setScale(2, RoundingMode.HALF_UP);
-	    return bdecimal.doubleValue();
-			
+	private double getRoundDouble(double number, int precision){
+		return Precision.round(number, precision);
 	}
-	
+
 	private String getBPSummaryRows(List<AbstractBestPracticeResult> bpResults) {
 
 		int pass = 0;
@@ -205,8 +183,8 @@ public class HtmlReportImpl implements IReport {
 			}
 		}
 
-		StringBuffer sbuffer = new StringBuffer(160);
-		sbuffer.append(tableLIne()+"<th>Best Practices Passed</th><td>" + pass 
+		StringBuilder sBuilder = new StringBuilder(160);
+		sBuilder.append(tableLIne()+"<th>Best Practices Passed</th><td>" + pass 
 					+ tableChange()+System.getProperty(lineSeperator())+tableLIne()
 					+"<th>Best Practices Failed</th><td>" + fail 
 					+ tableChange()+System.getProperty(lineSeperator())
@@ -214,7 +192,76 @@ public class HtmlReportImpl implements IReport {
 					+tableLIne()+"<th>Best Practices with Self Test</th><td>" +selftest
 					+ tableChange()+System.getProperty(lineSeperator()));
 		
-		return sbuffer.toString();
+		return sBuilder.toString();
+	}
+
+	private String getTimeRangeAnalysisAndStatisticRows(PacketAnalyzerResult results) {
+		StringBuilder builder = new StringBuilder();
+    	if (results != null) {
+    		TimeRangeAnalysis timeRangeAnalysis = results.getTimeRangeAnalysis();
+    		// Calculate time range
+    		if (timeRangeAnalysis == null) {
+	    		AnalysisFilter filter = results.getFilter();
+	    		double beginTime = 0.0d;
+	    		double endTime = 0.0d;
+	    		boolean readyForAnalysis = false;
+	
+	    		if (filter != null && filter.getTimeRange() != null) {
+	    			beginTime = filter.getTimeRange().getBeginTime();
+	    			endTime = filter.getTimeRange().getEndTime();
+	    			readyForAnalysis = true;
+	    		} else if (results.getTraceresult() != null){
+	    			endTime = results.getTraceresult().getTraceDuration();
+	    			readyForAnalysis = true;
+	    		}
+	    		
+	    		if (readyForAnalysis) {
+	    			timeRangeAnalysis = new TimeRangeAnalysis(beginTime, endTime, results);
+	    		}
+    		}
+
+    		if (timeRangeAnalysis != null) {
+    			double traceDuration = timeRangeAnalysis.getEndTime() - timeRangeAnalysis.getStartTime();
+    			long traceDurationLong = (long) traceDuration;
+                builder.append("<tr><th>Duration (second)</th><td>" + String.format("%.3f", traceDuration) + "</td></tr>");
+                builder.append("<tr><th>Duration (hh:mm:ss.sss)</th><td>" + 
+                		String.format("%02d:%02d:%02d", traceDurationLong/3600, (traceDurationLong%3600) / 60, traceDurationLong % 60) +
+                		String.format("%.3f", traceDuration - Math.floor(traceDuration)).substring(1)
+        		);
+    			builder.append("<tr><th>Start Time (second)</th><td>" + getRoundDouble(timeRangeAnalysis.getStartTime(), 3) +"</td></tr>");
+    			builder.append("<tr><th>End Time (second)</th><td>" + getRoundDouble(timeRangeAnalysis.getEndTime(), 3) +"</td></tr>");
+    		}
+
+    		Statistic statistic = results.getStatistic();
+			if (statistic != null) {
+				builder.append(tableLIne() + "<th>Total Data (Byte)</th><td>" + statistic.getTotalByte() + tableChange()
+						+ System.getProperty(lineSeperator()));
+				builder.append(tableLIne() + "<th>Total PayLoad Data (Byte)</th><td>" + statistic.getTotalPayloadBytes()
+						+ tableChange() + System.getProperty(lineSeperator()));
+				builder.append(tableLIne() + "<th>Total HTTPS Data (Byte)</th><td>" + statistic.getTotalHTTPSByte()
+						+ " (" + String.format("%.2f", statistic.getTotalHTTPSByte() * 100.0 / statistic.getTotalByte())
+						+ "%)" + tableChange() + System.getProperty(lineSeperator()));
+				builder.append(tableLIne() + "<th>Total Unanalyzed HTTPS Data (Byte)</th><td>" + statistic.getTotalHTTPSBytesNotAnalyzed()
+						+ " (" + String.format("%.2f", statistic.getTotalHTTPSBytesNotAnalyzed() * 100.0 / statistic.getTotalByte())
+						+ "%)</td>" + System.getProperty(lineSeperator()));
+
+			}
+
+    		if (timeRangeAnalysis != null) {
+    			builder.append("<tr><th>Average Throughput (kbps)</th><td>" + getRoundDouble(timeRangeAnalysis.getAverageThroughput(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
+    			builder.append("<tr><th>Total Upload Data (Byte)</th><td>" + timeRangeAnalysis.getUplinkBytes() + "</td></tr>" + System.getProperty(lineSeperator()));
+    			builder.append("<tr><th>Average Upload Throughput (kbps)</th><td>" + getRoundDouble(timeRangeAnalysis.getAverageUplinkThroughput(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
+    			builder.append("<tr><th>Total Download Data (Byte)</th><td>" + timeRangeAnalysis.getDownlinkBytes() + "</td></tr>" + System.getProperty(lineSeperator()));
+    			builder.append("<tr><th>Average Download Throughput (kbps)</th><td>" + getRoundDouble(timeRangeAnalysis.getAverageDownlinkThroughput(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
+    		}
+
+    		EnergyModel energyModel = results.getEnergyModel();
+    		if (energyModel != null) {
+    			builder.append("<tr><th>Total Energy Consumed (J)</th><td>" + getRoundDouble(energyModel.getTotalEnergyConsumed(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
+    		}
+    	}
+
+    	return builder.toString();
 	}
 
 	// gets all bp rows - name, result (pass/fail/warning/selftest)

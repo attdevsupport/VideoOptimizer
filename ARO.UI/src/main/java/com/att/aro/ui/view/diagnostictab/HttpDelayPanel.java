@@ -26,7 +26,9 @@ import javax.swing.table.TableRowSorter;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.ui.model.DataTable;
+import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.diagnostic.HttpDelayTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  * Initializes a new instance of the HttpDelayPanel class under TCP/UDP table.
@@ -70,7 +72,10 @@ public class HttpDelayPanel extends JPanel {
 	public DataTable<HttpRequestResponseInfo> getHttpDelayTable() {
 		if (httpDelayTable == null) {
 			httpDelayTable = new DataTable<HttpRequestResponseInfo>(httpDelayTableModel);
-			httpDelayTable.setName("httpDelayTable");
+			httpDelayTable.setName(ResourceBundleHelper.getMessageString("diagnostics.delay.view.tableName"));
+			DataTablePopupMenu popupMenu = (DataTablePopupMenu) httpDelayTable.getPopup();
+            popupMenu.initialize();
+
 			httpDelayTable.setAutoCreateRowSorter(true);
 			httpDelayTable.setGridColor(Color.LIGHT_GRAY);
 			TableRowSorter<TableModel> sorter = new TableRowSorter<>(httpDelayTable.getModel());

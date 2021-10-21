@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -38,7 +39,6 @@ import org.apache.log4j.Logger;
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.settings.impl.SettingsImpl;
@@ -52,6 +52,7 @@ import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.menu.tools.AWSDialog;
 import com.att.aro.ui.view.menu.tools.AWSDialog.AWS;
+import com.google.common.collect.Lists;
 import com.att.aro.ui.view.menu.tools.ExportReport;
 import com.att.aro.ui.view.menu.tools.MSPostDialog;
 import com.att.aro.ui.view.menu.tools.MetadataDialog;
@@ -74,7 +75,7 @@ public class AROToolMenu implements ActionListener {
 	SharedAttributesProcesses parent;
 
 	private enum MenuItem {
-		menu_tools, menu_tools_wireshark, menu_tools_timerangeanalysis, menu_tools_dataDump, menu_tools_htmlExport,
+		menu_tools, menu_tools_wireshark, menu_tools_timeRangeAnalysis, menu_tools_dataDump, menu_tools_resultExport, menu_tools_htmlExport,
 		menu_tools_jsonExport, menu_tools_sessionsExport, menu_tools_excelExport, menu_tools_privateData,
 		menu_tools_videoAnalysis, menu_tools_getErrorMsg, menu_tools_clearErrorMsg, menu_tools_videoParserWizard,
 		menu_tools_uploadTraceDialog, menu_tools_downloadTraceDialog, menu_tools_editMetadata,
@@ -98,18 +99,28 @@ public class AROToolMenu implements ActionListener {
 		if (Desktop.isDesktopSupported()) {
 			toolMenu.add(getMenuItem(MenuItem.menu_tools_wireshark, isTracePathEmpty));
 		}
-		toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_timerangeanalysis));
+		toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_timeRangeAnalysis));
 		toolMenu.addSeparator();
-		toolMenu.add(getMenuItem(MenuItem.menu_tools_htmlExport, isTracePathEmpty));
-		toolMenu.add(getMenuItem(MenuItem.menu_tools_jsonExport, isTracePathEmpty));
+
+		// xlsx/xls file name extension filter
+        FileNameExtensionFilter xlsxFilter = new FileNameExtensionFilter(
+        											ResourceBundleHelper.getMessageString("fileChooser.desc.excel"),
+													ResourceBundleHelper.getMessageString("fileChooser.contentType.xls"),
+													ResourceBundleHelper.getMessageString("fileChooser.contentType.xlsx"));
+
+		JMenu exportMenu = menuAdder.getMenuInstance(ResourceBundleHelper.getMessageString("menu.tools.resultExport"));
+		exportMenu.add(getMenuItem(MenuItem.menu_tools_htmlExport, isTracePathEmpty));
+		exportMenu.add(getMenuItem(MenuItem.menu_tools_jsonExport, isTracePathEmpty));
+        // Excel export menu item
+ 		JMenuItem excelExportMenuItem = getMenuItem(MenuItem.menu_tools_excelExport, isTracePathEmpty);
+ 		excelExportMenuItem.addActionListener(new BestPracticeResultsListener(((MainFrame) parent).getController().getTheModel(), Lists.newArrayList(xlsxFilter), 0));
+ 		exportMenu.add(excelExportMenuItem);
+ 		toolMenu.add(exportMenu);
+
 		JMenuItem exportExportMenuItem = getMenuItem(MenuItem.menu_tools_sessionsExport, isTracePathEmpty);
-		exportExportMenuItem.addActionListener(new ExportSessionData(((MainFrame) parent)));
+		exportExportMenuItem.addActionListener(new ExportSessionData((MainFrame) parent, Lists.newArrayList(xlsxFilter), 0));
 		toolMenu.add(exportExportMenuItem);
 
-		// Excel export menu item
-		JMenuItem excelExportMenuItem = getMenuItem(MenuItem.menu_tools_excelExport, isTracePathEmpty);
-		excelExportMenuItem.addActionListener(new BestPracticeResultsListener(((MainFrame) parent).getController().getTheModel()));
-		toolMenu.add(excelExportMenuItem);
 
 		toolMenu.addSeparator();
 		toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_privateData));
@@ -139,7 +150,7 @@ public class AROToolMenu implements ActionListener {
 	public void actionPerformed(ActionEvent aEvent) {
 		if (menuAdder.isMenuSelected(MenuItem.menu_tools_wireshark, aEvent)) {
 			openPcapAnalysis();
-		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_timerangeanalysis, aEvent)) {
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_timeRangeAnalysis, aEvent)) {
 			openTimeRangeAnalysis();
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_htmlExport, aEvent)) {
 			exportHtml();
@@ -263,8 +274,7 @@ public class AROToolMenu implements ActionListener {
 		MainFrame mainFrame = ((MainFrame) parent);
 		if (mainFrame.getController().getTheModel() != null
 				&& mainFrame.getController().getTheModel().getAnalyzerResult() != null) {
-			PacketAnalyzerResult analysisData = mainFrame.getController().getTheModel().getAnalyzerResult();
-			TimeRangeAnalysisDialog timeRangeDialog = new TimeRangeAnalysisDialog(mainFrame.getJFrame(), analysisData);
+			TimeRangeAnalysisDialog timeRangeDialog = new TimeRangeAnalysisDialog(mainFrame.getJFrame(), parent);
 			timeRangeDialog.setVisible(true);
 		} else {
 			showNoTraceLoadedError();

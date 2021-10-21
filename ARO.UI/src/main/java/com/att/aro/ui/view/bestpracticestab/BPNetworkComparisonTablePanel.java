@@ -12,6 +12,7 @@ import com.att.aro.core.videoanalysis.pojo.SegmentComparison;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.NetworkComparisonTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BPNetworkComparisonTablePanel extends AbstractBpDetailTablePanel {
 
@@ -36,6 +37,7 @@ public class BPNetworkComparisonTablePanel extends AbstractBpDetailTablePanel {
 	public DataTable<SegmentComparison> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<SegmentComparison>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("video.network.comparison.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

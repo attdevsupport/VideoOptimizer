@@ -27,6 +27,7 @@ import com.att.aro.core.videoanalysis.pojo.QualityTime;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.AdaptiveBitrateTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BPAdaptiveBitrateTablePanel extends AbstractBpDetailTablePanel {
 	private static final long serialVersionUID = 1L;
@@ -51,6 +52,7 @@ public class BPAdaptiveBitrateTablePanel extends AbstractBpDetailTablePanel {
 	public DataTable<QualityTime> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<QualityTime>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("video.adaptive.bitrate.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

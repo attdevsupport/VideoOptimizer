@@ -63,6 +63,7 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
+import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
@@ -456,11 +457,17 @@ public class MainFrame implements SharedAttributesProcesses {
 		actionListeners.add(actionListener);
 	}
 
+
 	@Override
-	public void updateTracePath(File path) {
+	public void updateTracePath(File path, TimeRange... timeRange) {
 		if (path != null) {
 			lastOpened = System.currentTimeMillis();
-			notifyPropertyChangeListeners("tracePath", tracePath, path.getAbsolutePath());
+			if (timeRange != null && timeRange.length == 1 && timeRange[0] != null) {
+				timeRange[0].setPath(path.getAbsolutePath());
+				notifyPropertyChangeListeners("tracePath", tracePath, timeRange[0]);
+			} else {
+				notifyPropertyChangeListeners("tracePath", tracePath, path.getAbsolutePath());
+			}
 			if (path.getAbsolutePath().contains(".cap")) {
 				tracePath = path.getAbsolutePath().substring(0,
 						path.getAbsolutePath().lastIndexOf(Util.FILE_SEPARATOR));
@@ -667,8 +674,9 @@ public class MainFrame implements SharedAttributesProcesses {
 					newValue, null).execute();
 		} else {
 			aroSwingWorker = new AROSwingWorker<Void, Void>(frmApplicationResourceOptimizer, propertyChangeListeners,
-					property, oldValue,
-					newValue, null);
+					property, 
+					oldValue, newValue, 
+					null);
 			aroSwingWorker.execute();
 		}
 	}
@@ -913,4 +921,5 @@ public class MainFrame implements SharedAttributesProcesses {
 	public void setPreviousOptions(Hashtable<String,Object> previousOptions) {
 		this.previousOptions = previousOptions;
 	}
+
 }

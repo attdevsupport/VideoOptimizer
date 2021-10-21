@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 AT&T
+ *  Copyright 2014, 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,37 @@ package com.att.aro.core.packetanalysis.pojo;
 
 import java.io.Serializable;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
  * Encapsulates a specific time range of trace data for analysis.
+ * This can be stored in a time-range.json, when created by TimeRangeEditorDialog, in File menu
+ * 
  */
+@Data
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TimeRange implements Serializable {
 	private static final long serialVersionUID = 1L;
+	
+	public static enum TimeRangeType {
+		DEFAULT
+		,MANUAL
+		,FULL
+	}
 
-	private double beginTime;
-	private double endTime;
-
+	String title;
+	TimeRangeType timeRangeType = TimeRangeType.DEFAULT;
+	Double beginTime;
+	Double endTime;
+	
+	@JsonIgnoreProperties(value = { "path" })
+	String path;
+	 
+	
 	/**
 	 * Initializes an instance of the TimeRange class, using the specified beginning and ending times.
 	 * @param beginTime - The beginning of the time range.
@@ -34,21 +56,27 @@ public class TimeRange implements Serializable {
 	public TimeRange(double beginTime, double endTime) {
 		this.beginTime = beginTime;
 		this.endTime = endTime;
-	}
-	
-	/**
-	 * Returns the beginning time of the time range.
-	 * @return The beginning time.
-	 */
-	public double getBeginTime() {
-		return beginTime;
-	}
-	/**
-	 * Returns the ending time of the time range.
-	 * @return The ending time.
-	 */
-	public double getEndTime() {
-		return endTime;
+		timeRangeType = TimeRangeType.MANUAL;
 	}
 
+	public String getRange() {
+		String result = null;
+		if (beginTime != null && endTime != null) {
+			if (timeRangeType.equals(TimeRangeType.FULL)) {
+				result = String.format("%s [%.3f - %.3f]", "FULL", beginTime, endTime);
+			} else if (title != null){
+				result = String.format("%s [%.3f - %.3f]",  title, beginTime, endTime);
+			} else {
+				result = "";
+			}
+		}
+		return result;
+	}
+
+	public TimeRange(String title, TimeRangeType timeRangeType, double beginTime, double endTime) {
+		this.title = title;
+		this.timeRangeType = timeRangeType;
+		this.beginTime = beginTime;
+		this.endTime = endTime;
+	}
 }

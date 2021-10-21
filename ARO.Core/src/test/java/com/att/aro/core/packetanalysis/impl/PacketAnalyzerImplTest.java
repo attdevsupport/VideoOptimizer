@@ -17,6 +17,7 @@ import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -120,6 +121,7 @@ public class PacketAnalyzerImplTest extends BaseTest {
 	}
 	
 	@Test
+	@Ignore
 	public void  Test_analyzeTraceFile_returnIsPacketAnalyzerResult() throws  Exception{
 		iPacketAnalyzer.setProfileFactory(profilefactory);
 

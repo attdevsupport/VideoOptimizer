@@ -25,6 +25,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.HttpCode3xxEntryTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  *
@@ -75,6 +76,7 @@ public class BpConnectionsHttp3xxTablePanel extends AbstractBpDetailTablePanel{
 	public DataTable<HttpCode3xxEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<HttpCode3xxEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("connections.301.302.response.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

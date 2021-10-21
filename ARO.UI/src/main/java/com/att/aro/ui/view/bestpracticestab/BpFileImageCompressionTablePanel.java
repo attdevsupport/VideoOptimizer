@@ -24,6 +24,7 @@ import com.att.aro.core.bestpractice.pojo.ImageCompressionEntry;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.ImageCompressionDataTable;
 import com.att.aro.ui.model.bestpractice.ImageCompressionTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 
 public class BpFileImageCompressionTablePanel extends AbstractBpImageCompressionTablePanel {
@@ -64,6 +65,7 @@ public class BpFileImageCompressionTablePanel extends AbstractBpImageCompression
 	public ImageCompressionDataTable<ImageCompressionEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new ImageCompressionDataTable<ImageCompressionEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("file.image.compression.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

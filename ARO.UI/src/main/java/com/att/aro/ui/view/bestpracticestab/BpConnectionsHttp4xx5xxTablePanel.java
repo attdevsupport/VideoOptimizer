@@ -25,6 +25,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.Http4xx5xxStatusResponseCodesTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  *
@@ -73,6 +74,7 @@ public class BpConnectionsHttp4xx5xxTablePanel extends AbstractBpDetailTablePane
 	public DataTable<Http4xx5xxStatusResponseCodesEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<Http4xx5xxStatusResponseCodesEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("connections.400.500.response.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

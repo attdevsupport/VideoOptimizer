@@ -110,6 +110,7 @@ public enum ChartPlotOptions {
 		defaultChartPlotList.add(USER_INPUT);
 		defaultChartPlotList.add(RRC);
 		defaultChartPlotList.add(THROUGHPUT);
+		defaultChartPlotList.add(LATENCY);
 		return Collections.unmodifiableList(defaultChartPlotList);
 	}
 

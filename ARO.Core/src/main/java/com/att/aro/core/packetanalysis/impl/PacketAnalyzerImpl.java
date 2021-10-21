@@ -51,6 +51,7 @@ import com.att.aro.core.packetanalysis.pojo.AbstractRrcStateMachine;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.ApplicationPacketSummary;
+import com.att.aro.core.packetanalysis.pojo.ApplicationSelection;
 import com.att.aro.core.packetanalysis.pojo.BurstCollectionAnalysisData;
 import com.att.aro.core.packetanalysis.pojo.EnergyModel;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
@@ -196,6 +197,14 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 
 	protected PacketAnalyzerResult finalResult(AbstractTraceResult result, Profile profile, AnalysisFilter filter) {
 		PacketAnalyzerResult data = new PacketAnalyzerResult();
+		if (filter == null) {
+			double endTime = result.getAllpackets().size() > 0
+					? result.getAllpackets().get(result.getAllpackets().size() - 1).getTimeStamp()
+					: 0.0;
+			result.setTimeRange(new TimeRange("Full", TimeRange.TimeRangeType.FULL, 0.0, endTime));
+		} else {
+			result.setTimeRange(filter.getTimeRange());
+		}
 		List<PacketInfo> filteredPackets; // List of packets included in analysis (application filtered)
 		Profile aProfile = profile;
 		if (aProfile == null) {
@@ -207,6 +216,31 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		if (result != null && result.getAllpackets() != null && result.getAllpackets().size() == 0) {
 			data.setTraceresult(result);
 			return data;
+		}
+		
+		/* Purpose of this code block is to finish building out the filter, if needed, for TimeRange analysis
+		 * 
+		 * This code block is excuted when:
+		 *  1: time-range.json exists in trace folder
+		 *  	a: and the json contains an entry with RangeType.AUTO
+		 *  2: A TimeRange object was created and launched in TimeRangeEditorDialog
+		 *  
+		 *  AroController will have created an AnalysisFilter and so filter will not be null
+		 *  
+		 */
+		try {
+			if ((filter != null && filter.getTimeRange() != null && filter.getTimeRange().getPath() != null) || result.getAllAppNames().size() == 1) {
+				String app = TraceDataReaderImpl.UNKNOWN_APPNAME;
+				if (filter != null && filter.getAppSelections() != null 
+						&& filter.getAppSelections().containsKey(app)
+						&& filter.getAppSelections().get(app).getIPAddressSelections().isEmpty()) {
+					LOGGER.debug("AUTO Time Range analysis: add all found appIps to " + app + ", then store in the filter");
+					ApplicationSelection appSelection = new ApplicationSelection(app, result.getAppIps().get(app));
+					filter.getAppSelections().put(app, appSelection);
+				}
+			}
+		} catch (Exception e) {
+			LOGGER.error("Error handling TimeRange JSON data", e);
 		}
 
 		TimeRange timeRange = null;
@@ -223,7 +257,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			timeRange = filter.getTimeRange();
 			if (result != null) {
 				filteredPackets = filterPackets(filter, result.getAllpackets());
-			}	
+			}
 		}
 
 		// Set the Abstract Trace Data with the filtered packets - All packets are not necessary.
@@ -251,7 +285,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		generateGetRequestMapAndPopulateLatencyStat(sessionList, stat);
 
 		
-		if (result != null && stat.getAppName() != null && stat.getAppName().size() == 1 && stat.getAppName().contains("Unknown")) {
+		if (result != null && stat.getAppName() != null && stat.getAppName().size() == 1 && stat.getAppName().contains(TraceDataReaderImpl.UNKNOWN_APPNAME)) {
 			stat.setAppName(new HashSet<String>(result.getAppInfos()));
 		}
 
@@ -306,6 +340,17 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			}
 
 			htmlExtractor.execute(result, sessionList, requestMap);
+
+			// Calculate time range analysis
+    		double beginTime = 0.0d;
+    		double endTime = 0.0d;
+    		if (filter != null && filter.getTimeRange() != null) {
+    			beginTime = filter.getTimeRange().getBeginTime();
+    			endTime = filter.getTimeRange().getEndTime();
+    		} else {
+    			endTime = result.getTraceDuration();
+    		}
+
 			data.setBurstCollectionAnalysisData(burstcollectiondata);
 			data.setEnergyModel(energymodel);
 			data.setSessionlist(sessionList);
@@ -315,6 +360,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			data.setProfile(aProfile);
 			data.setFilter(filter);
 			data.setDeviceKeywords(result.getDeviceKeywordInfos());
+			data.setTimeRangeAnalysis(new TimeRangeAnalysis(beginTime, endTime, data));
 		}
 		return data;
 	}
@@ -509,7 +555,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			}
 
 	        double packetsDuration = packetInfos.get(packetInfos.size() - 1).getTimeStamp() - packetInfos.get(0).getTimeStamp();
-	        double tcpPacketDuration = maxTCPPacketTimestamp - minTCPPacketTimestamp;
+	        double tcpPacketDuration = (maxTCPPacketTimestamp > minTCPPacketTimestamp) ? (maxTCPPacketTimestamp - minTCPPacketTimestamp) : 0.0d; 
 			double avgKbps = packetsDuration != 0 ? totalBytes * 8.0 / 1000.0 / packetsDuration : 0.0d;
 			double avgTCPKbps = tcpPacketDuration != 0 ? totalTCPBytes * 8.0 / 1000.0 / tcpPacketDuration : 0.0d;
 

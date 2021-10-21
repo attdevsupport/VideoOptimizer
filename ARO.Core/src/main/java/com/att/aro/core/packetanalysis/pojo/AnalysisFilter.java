@@ -19,7 +19,10 @@ import java.awt.Color;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
+
+import com.att.aro.core.packetanalysis.impl.TraceDataReaderImpl;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -33,6 +36,7 @@ public class AnalysisFilter implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
 	private Map<String, ApplicationSelection> appSelections;
+	@Getter @Setter
 	private TimeRange timeRange;
 	private Map<InetAddress, String> domainNames;
 	
@@ -48,10 +52,23 @@ public class AnalysisFilter implements Serializable {
 	@Getter @Setter
 	private String manifestFilePath;
 
-	public AnalysisFilter(Map<String, ApplicationSelection> appSelections, TimeRange timeRange, Map<InetAddress, String> domainNames){
+	/**
+	 * 
+	 * Note: Supports building before having a map of addresses. Data will be filled in later, after reading traffic file
+	 * 
+	 * @param appSelections
+	 * @param timeRange
+	 * @param domainNames
+	 */
+	public AnalysisFilter(Map<String, ApplicationSelection> appSelections, TimeRange timeRange, Map<InetAddress, String> domainNames) {
+		if (appSelections == null) {
+			appSelections = new HashMap<>();
+			appSelections.put(TraceDataReaderImpl.UNKNOWN_APPNAME, new ApplicationSelection(TraceDataReaderImpl.UNKNOWN_APPNAME, null));
+		}
 		this.appSelections = appSelections;
 		this.timeRange = timeRange;
 		this.domainNames = domainNames;
+		
 	}
 	
 	public Map<String, ApplicationSelection> getAppSelections() {
@@ -59,12 +76,6 @@ public class AnalysisFilter implements Serializable {
 	}
 	public void setAppSelections(Map<String, ApplicationSelection> appSelections) {
 		this.appSelections = appSelections;
-	}
-	public TimeRange getTimeRange() {
-		return timeRange;
-	}
-	public void setTimeRange(TimeRange timeRange) {
-		this.timeRange = timeRange;
 	}
 	public Map<InetAddress, String> getDomainNames() {
 		return domainNames;

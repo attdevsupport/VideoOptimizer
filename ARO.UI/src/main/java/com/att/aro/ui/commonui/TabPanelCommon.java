@@ -502,4 +502,20 @@ public class TabPanelCommon {
 		infoLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
 	}
+
+	public void setTextAsLink(Enum<?> enumParm, String value) {
+		if (enumParm == null) {
+			throw new AROUIPanelException("enumParm must be specified");
+		}
+		String key = getKeyFromEnum(enumParm);
+		StringBuilder text = new StringBuilder();
+		text.append("<html><a href=\"#\">");
+		text.append(value);
+		text.append("</a></html>");
+		setText(key, 1, text.toString());
+		JLabel infoLabel = labelContents.get(key);
+		infoLabel.setToolTipText(ResourceBundleHelper.getMessageString("trace.hyperlink"));
+		infoLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+	}
 }

@@ -112,6 +112,7 @@ public class SessionManagerImpl implements ISessionManager {
 
 	public List<Session> processPacketsAndAssembleSessions(List<PacketInfo> packets) {
 
+		LOGGER.warn("processPacketsAndAssembleSessions -> Trace path: " + tracePath);
 		List<Session> sessions = new ArrayList<>();
 		List<PacketInfo> udpPackets = new ArrayList<>();
 		Map<InetAddress, String> hostMap = new HashMap<>();
@@ -174,7 +175,7 @@ public class SessionManagerImpl implements ISessionManager {
 						session.setSessionComplete(true);
 					}
 					
-					session.setLatency(calculateLatency(session));
+					session.setLatency((!session.getSynAckPackets().isEmpty() && !session.getSynPackets().isEmpty()) ? calculateLatency(session) :  -1 );
 				}
 			}
 		}
@@ -211,9 +212,7 @@ public class SessionManagerImpl implements ISessionManager {
            session.setSynAckTime(synAckTime);
            session.setSynTime(synTime);
         }
-        if(latency == 0.0) {
-            LOGGER.debug("0.0e latency value : " + session.getSessionKey());
-        }
+       
         return latency;
     }
     
@@ -493,7 +492,9 @@ public class SessionManagerImpl implements ISessionManager {
 
 					long expectedUploadSeqNo = 0;
 					for (long uploadSequenceNumber : session.getUplinkPacketsSortedBySequenceNumbers().keySet()) {
-						packetInfo = session.getUplinkPacketsSortedBySequenceNumbers().get(uploadSequenceNumber);
+						// Identify correct packet from the whole transmission stream
+						packetInfo = identifyCorrectTransmissionStream(session.getUplinkPacketsSortedBySequenceNumbers().get(uploadSequenceNumber),
+								session.getAckNumbers(), session, PacketDirection.UPLINK);
 						tcpPacket = (TCPPacket) packetInfo.getPacket();
 						if (packetInfo.getPayloadLen() > 0) {
 							if (!session.isDataInaccessible()) {
@@ -564,8 +565,11 @@ public class SessionManagerImpl implements ISessionManager {
 
 						long expectedDownloadSeqNo = 0;
 						for (long downloadSequenceNumber : session.getDownlinkPacketsSortedBySequenceNumbers().keySet()) {
-							packetInfo = session.getDownlinkPacketsSortedBySequenceNumbers().get(downloadSequenceNumber);
+							// Identify correct packet from the whole transmission stream
+							packetInfo = identifyCorrectTransmissionStream(session.getDownlinkPacketsSortedBySequenceNumbers().get(downloadSequenceNumber),
+									session.getAckNumbers(), session, PacketDirection.DOWNLINK);
 							tcpPacket = (TCPPacket) packetInfo.getPacket();
+
 							if (packetInfo.getPayloadLen() > 0) {
 								if (!session.isDataInaccessible()) {
 									rrInfo = extractHttpRequestResponseInfo(session, packetInfo, packetInfo.getDir(), previousPacket, limit);
@@ -642,6 +646,75 @@ public class SessionManagerImpl implements ISessionManager {
 		}
 	}
 
+	/**
+	 * Check and return which packet in the initial packet list by sequence number received the first ACK in the communication
+	 * @param packetInfoListForSequenceNumber Initial packet list by a sequence number
+	 * @param ackNumbersSet Set of all the ACK numbers
+	 * @param session Session object
+	 * @param direction Packet direction Uplink or Downlink
+	 * @return Returns a packet from the packetInfoListForSequenceNumber which has received an ACK in the whole TCP communication.
+	 * 		   Returns the last packet in the list if no ACK is received.
+	 */
+	private PacketInfo identifyCorrectTransmissionStream(List<PacketInfo> packetInfoListForSequenceNumber,
+														 Set<Long> ackNumbersSet,
+														 Session session,
+														 PacketDirection direction) {
+		if (packetInfoListForSequenceNumber.size() == 1) {
+			return packetInfoListForSequenceNumber.get(0);
+		}
+
+		PacketInfo currentPacket = null;
+		// Iterate through the parent packet list by sequence number
+		for (PacketInfo packetInfo : packetInfoListForSequenceNumber) {
+			currentPacket = packetInfo;
+
+			TCPPacket tcpPacket = (TCPPacket) packetInfo.getPacket();
+			long nextSequenceOrAckNumber = tcpPacket.getSequenceNumber() + tcpPacket.getPayloadLen();
+
+			List<PacketInfo> packetInfoListForNextSequenceNumber = PacketDirection.DOWNLINK.equals(direction) ?
+								session.getDownlinkPacketsSortedBySequenceNumbers().get(nextSequenceOrAckNumber):
+								session.getUplinkPacketsSortedBySequenceNumbers().get(nextSequenceOrAckNumber);
+			if (ackNumbersSet.contains(nextSequenceOrAckNumber) ||
+					identifyCorrectTCPTransmissionStreamHelper(packetInfoListForNextSequenceNumber, ackNumbersSet, session, direction)) {
+				return currentPacket;
+			}			
+		}
+
+		return currentPacket;
+	}
+
+	/**
+	 * Helper method to recursively iterate through all of the child packets by next sequence number (relative to parent packet) to identify if there is any ACK received
+	 * @param packetInfoListForSequenceNumber Initial packet list by a sequence number
+	 * @param ackNumbersSet Set of all the ACK numbers
+	 * @param session Session object
+	 * @param direction Packet direction Uplink or Downlink
+	 * @return True if any packet in the chain has received an ACK in session, otherwise False
+	 */
+	private boolean identifyCorrectTCPTransmissionStreamHelper(List<PacketInfo> packetInfoListForSequenceNumber,
+															   Set<Long> ackNumbersSet,
+															   Session session,
+															   PacketDirection direction) {
+		if (packetInfoListForSequenceNumber == null || packetInfoListForSequenceNumber.size() == 0) {
+			return false;
+		}
+
+		for (PacketInfo packetInfo : packetInfoListForSequenceNumber) {
+			TCPPacket tcpPacket = (TCPPacket) packetInfo.getPacket();
+			long nextSequenceOrAckNumber = tcpPacket.getSequenceNumber() + tcpPacket.getPayloadLen();
+			if (ackNumbersSet.contains(nextSequenceOrAckNumber)) {
+				return true;
+			}
+
+			List<PacketInfo> packetInfoListForNextSequenceNumber = PacketDirection.DOWNLINK.equals(direction) ?
+					session.getDownlinkPacketsSortedBySequenceNumbers().get(nextSequenceOrAckNumber):
+					session.getUplinkPacketsSortedBySequenceNumbers().get(nextSequenceOrAckNumber);
+			return identifyCorrectTCPTransmissionStreamHelper(packetInfoListForNextSequenceNumber, ackNumbersSet, session, direction);
+		}
+
+		return false;
+	}
+
 	private void populateRRInfo(HttpRequestResponseInfo rrInfo, PacketInfo packetInfo, boolean isExtractable, boolean isTCP, HttpDirection httpDirection) {
 		rrInfo.setExtractable(isExtractable);
 		rrInfo.setFirstDataPacket(packetInfo);
@@ -697,13 +770,21 @@ public class SessionManagerImpl implements ISessionManager {
 		}
 		
 		if (results.isEmpty() && !session.getUplinkPacketsSortedBySequenceNumbers().isEmpty() && !session.getDownlinkPacketsSortedBySequenceNumbers().isEmpty()) {
-			rrInfo = generateRequestResponseObjectsForSSLOrUDPSessions(session.getRemoteHostName(), PacketDirection.UPLINK, session.getUplinkPacketsSortedBySequenceNumbers().firstEntry().getValue(), false);
-			rrInfo.setLastDataPacket(session.getUplinkPacketsSortedBySequenceNumbers().lastEntry().getValue());
+			PacketInfo packetInfo = identifyCorrectTransmissionStream(session.getUplinkPacketsSortedBySequenceNumbers().firstEntry().getValue(),
+					session.getAckNumbers(), session, PacketDirection.UPLINK);
+			rrInfo = generateRequestResponseObjectsForSSLOrUDPSessions(session.getRemoteHostName(), PacketDirection.UPLINK, packetInfo, false);
+			packetInfo = identifyCorrectTransmissionStream(session.getUplinkPacketsSortedBySequenceNumbers().lastEntry().getValue(),
+					session.getAckNumbers(), session, PacketDirection.UPLINK);
+			rrInfo.setLastDataPacket(packetInfo);
 			rrInfo.setExtractable(false);
 			results.add(rrInfo);
-			
-			downlinkRRInfo = generateRequestResponseObjectsForSSLOrUDPSessions(session.getRemoteHostName(), PacketDirection.DOWNLINK, session.getDownlinkPacketsSortedBySequenceNumbers().firstEntry().getValue(), false);
-			downlinkRRInfo.setLastDataPacket(session.getDownlinkPacketsSortedBySequenceNumbers().lastEntry().getValue());
+
+			packetInfo = identifyCorrectTransmissionStream(session.getDownlinkPacketsSortedBySequenceNumbers().firstEntry().getValue(),
+					session.getAckNumbers(), session, PacketDirection.DOWNLINK);
+			downlinkRRInfo = generateRequestResponseObjectsForSSLOrUDPSessions(session.getRemoteHostName(), PacketDirection.DOWNLINK, packetInfo, false);
+			packetInfo = identifyCorrectTransmissionStream(session.getDownlinkPacketsSortedBySequenceNumbers().lastEntry().getValue(),
+					session.getAckNumbers(), session, PacketDirection.DOWNLINK);
+			downlinkRRInfo.setLastDataPacket(packetInfo);
 			downlinkRRInfo.setExtractable(false);
 			results.add(downlinkRRInfo);
 		}
@@ -753,13 +834,21 @@ public class SessionManagerImpl implements ISessionManager {
 		
 		if (results.isEmpty()) {
 			if (!session.getUplinkPacketsSortedBySequenceNumbers().isEmpty()) {
-				rrInfo = generateRequestResponseObjectsForSSLOrUDPSessions(session.getRemoteHostName(), PacketDirection.UPLINK, session.getUplinkPacketsSortedBySequenceNumbers().firstEntry().getValue(), true);
-				rrInfo.setLastDataPacket(session.getUplinkPacketsSortedBySequenceNumbers().lastEntry().getValue());
+				PacketInfo packetInfo = identifyCorrectTransmissionStream(session.getUplinkPacketsSortedBySequenceNumbers().firstEntry().getValue(),
+						session.getAckNumbers(), session, PacketDirection.UPLINK);
+				rrInfo = generateRequestResponseObjectsForSSLOrUDPSessions(session.getRemoteHostName(), PacketDirection.UPLINK, packetInfo, true);
+				packetInfo = identifyCorrectTransmissionStream(session.getUplinkPacketsSortedBySequenceNumbers().lastEntry().getValue(),
+						session.getAckNumbers(), session, PacketDirection.UPLINK);
+				rrInfo.setLastDataPacket(packetInfo);
 				results.add(rrInfo);
 			}
 			if (!session.getDownlinkPacketsSortedBySequenceNumbers().isEmpty()) {
-				downlinkRRInfo = generateRequestResponseObjectsForSSLOrUDPSessions(session.getRemoteHostName(), PacketDirection.DOWNLINK, session.getDownlinkPacketsSortedBySequenceNumbers().firstEntry().getValue(), true);
-				downlinkRRInfo.setLastDataPacket(session.getDownlinkPacketsSortedBySequenceNumbers().lastEntry().getValue());
+				PacketInfo packetInfo = identifyCorrectTransmissionStream(session.getDownlinkPacketsSortedBySequenceNumbers().firstEntry().getValue(),
+						session.getAckNumbers(), session, PacketDirection.DOWNLINK);
+				downlinkRRInfo = generateRequestResponseObjectsForSSLOrUDPSessions(session.getRemoteHostName(), PacketDirection.DOWNLINK, packetInfo, true);
+				packetInfo = identifyCorrectTransmissionStream(session.getDownlinkPacketsSortedBySequenceNumbers().lastEntry().getValue(),
+						session.getAckNumbers(), session, PacketDirection.DOWNLINK);
+				downlinkRRInfo.setLastDataPacket(packetInfo);
 				results.add(downlinkRRInfo);
 			}
 		}
@@ -1012,10 +1101,13 @@ public class SessionManagerImpl implements ISessionManager {
 	private void populateDataForRequestResponses(Session session) {
 
 		List<HttpRequestResponseInfo> requests = new ArrayList<HttpRequestResponseInfo>(session.getRequestResponseInfo().size());
+		int requestCount = 0;
+		int responseCount = 0;
 
 		for (HttpRequestResponseInfo rrInfo : session.getRequestResponseInfo()) {
 
 			if (rrInfo.getDirection() == HttpDirection.REQUEST) {
+				++requestCount;
 				requests.add(rrInfo);
 				if (session.getDomainName() == null) {
 					String host = rrInfo.getHostName();
@@ -1026,6 +1118,7 @@ public class SessionManagerImpl implements ISessionManager {
 					}
 				}
 			} else if (rrInfo.getDirection() == HttpDirection.RESPONSE) {
+				++responseCount;
 				if (rrInfo.getContentLength() > 0) {
 					session.setFileDownloadCount(session.getFileDownloadCount() + 1);
 				}
@@ -1046,6 +1139,10 @@ public class SessionManagerImpl implements ISessionManager {
 
 				}
 			}
+		}
+
+		if (requestCount != responseCount) {
+			LOGGER.warn("Session: " + session.getSessionKey() + ", Request Count: " + requestCount + ", Response Count: " + responseCount + " Don't match!");
 		}
 
 		if (!session.isUdpOnly()) {

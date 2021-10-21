@@ -57,6 +57,7 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevice.AroDeviceState;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
+import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.ErrorCode;
@@ -810,11 +811,6 @@ public final class Application implements IAROView {
     // ------------------------------------------------------------------------------------------------------------------
 
     @Override
-    public void updateTracePath(File path) {
-        LOGGER.info(path);
-    }
-
-    @Override
     public void updateProfile(Profile profile) {
         LOGGER.info("updateProfile:" + profile);
     }
@@ -826,8 +822,8 @@ public final class Application implements IAROView {
     }
 
     @Override
-    public void updateFilter(AnalysisFilter filter) {
-        LOGGER.info("updateFilter:" + filter);
+    public void updateTracePath(File path, TimeRange... timeRange) {
+    	 LOGGER.info(path);
     }
 
     @Override
@@ -917,6 +913,12 @@ public final class Application implements IAROView {
     @Override
     public void setDeviceDataPulled(boolean status) {
     }
+
+	@Override
+	public void updateFilter(AnalysisFilter filter) {
+		// TODO Auto-generated method stub
+		
+	}
 
 
 }

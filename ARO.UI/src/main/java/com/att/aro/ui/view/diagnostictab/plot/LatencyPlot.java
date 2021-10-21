@@ -62,7 +62,7 @@ private XYSeries series;
 
 				private String getToolTip(Session session) {
 					StringBuffer tooltipValue = new StringBuffer();
-					tooltipValue.append(String.format("%.2f,%s,%.3f,%.3f", session.getSessionStartTime(),
+					tooltipValue.append(String.format("%.3f,%s,%.3f,%.3f", session.getSessionStartTime(),
 							Util.formatDoubleToMicro(session.getLatency()), session.getSynTime(),
 							session.getSynAckTime()));
 					String[] value = tooltipValue.toString().split(",");

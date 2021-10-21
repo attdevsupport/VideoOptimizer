@@ -33,11 +33,10 @@ import com.att.aro.ui.view.diagnostictab.ChartPlotOptions;
 import com.att.aro.ui.view.diagnostictab.GraphPanel;
 import com.att.aro.ui.view.video.IVideoPlayer;
 
-
 /**
- * This encapsulates the mechanism for maintaining which tabbed UI panel you are on.
- * Some menu selection items are enabled or disabled based on this (example:  Print is only
- * available for Best Practices and Statistics tabs)
+ * This encapsulates the mechanism for maintaining which tabbed UI panel you are
+ * on. Some menu selection items are enabled or disabled based on this (example:
+ * Print is only available for Best Practices and Statistics tabs)
  * 
  *
  *
@@ -50,32 +49,32 @@ public interface SharedAttributesProcesses extends IAROView {
 		tab_panel_statistics
 	}
 
-	void updateTracePath(File path);
 	void updateProfile(Profile profile);
 	void updateReportPath(File path);
 	void updateFilter(AnalysisFilter filter);
 	String getTracePath();
 	void notifyPropertyChangeListeners(String property, Object oldValue, Object newValue);
 	void notifyActionListeners(int key, String command);
+	
 	// collector control
-	
+
 	void startVideoCollector(String msg);
-	
+
 	void stopCollector();
 
 	void haltCollector();
-	
+
 	IDevice[] getConnectedDevices();
 
 	IAroDevices getAroDevices();
-	
+
 	List<IDataCollector> getAvailableCollectors();
 
 	CollectorStatus getCollectorStatus();
-	
+
 	String[] getApplicationsList(String id);
 
-
+	
 	Frame getFrame();
 
 	TabPanels getCurrentTabPanel();
@@ -87,7 +86,7 @@ public interface SharedAttributesProcesses extends IAROView {
 	public GraphPanel getGraphPanel();
 	void updateVideoPlayerSelected(boolean videoSelected);
 	boolean isModelPresent();
-	void dataDump(File dir) throws IOException ;
+	void dataDump(File dir) throws IOException;
 	void updateChartSelection(List<ChartPlotOptions> optionsSelected);
 	void dispose();
 }

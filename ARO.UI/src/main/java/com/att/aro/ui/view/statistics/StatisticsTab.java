@@ -221,7 +221,7 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 				rrcStateMachineSimulationPanelLTE = null;
 				rrcStateMachineSimulationPanelWiFi = null;
 				mainPanel.add(rrcStateMachineSimulationPanel3G, new GridBagConstraints(
-					0, 8, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+					0, 9, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
 				break;
 			case LTE:
@@ -235,7 +235,7 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 				rrcStateMachineSimulationPanel3G = null;
 				rrcStateMachineSimulationPanelWiFi = null;
 				mainPanel.add(rrcStateMachineSimulationPanelLTE, new GridBagConstraints(
-						0, 8, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+						0, 9, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 							GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
 				break;
 			case WiFi:
@@ -249,7 +249,7 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 				rrcStateMachineSimulationPanel3G = null;
 				rrcStateMachineSimulationPanelLTE = null;
 				mainPanel.add(rrcStateMachineSimulationPanelWiFi, new GridBagConstraints(
-						0, 8, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+						0, 9, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 							GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
 				break;
 			default:
@@ -318,7 +318,7 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 				energyModelStatisticsLTEPanel = null;
 				energyModelStatisticsWiFiPanel = null;
 				mainPanel.add(energyModelStatistics3GPanel, new GridBagConstraints(
-					0, 14, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+					0, 15, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 						GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
 				break;
 			case LTE:
@@ -332,7 +332,7 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 				energyModelStatistics3GPanel = null;
 				energyModelStatisticsWiFiPanel = null;
 				mainPanel.add(energyModelStatisticsLTEPanel, new GridBagConstraints(
-						0, 14, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+						0, 15, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 							GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
 				break;
 			case WiFi:
@@ -346,7 +346,7 @@ public class StatisticsTab extends TabPanelJScrollPane implements IAROPrintable 
 				energyModelStatistics3GPanel = null;
 				energyModelStatisticsLTEPanel = null;
 				mainPanel.add(energyModelStatisticsWiFiPanel, new GridBagConstraints(
-						0, 14, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+						0, 15, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
 							GridBagConstraints.HORIZONTAL, new Insets(10, 10, 10, 10), 0, 0));
 				break;
 			default:

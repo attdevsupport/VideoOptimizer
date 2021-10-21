@@ -36,6 +36,7 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -166,6 +167,29 @@ public class OpenPcapFileDialog extends JDialog {
 	}
 
 	private void process(boolean retainDirectory) {
+		setVisible(false);
+
+		SwingWorker<Void, Void> worker = new SwingWorker<Void,Void>(){
+			@Override
+			protected Void doInBackground() throws Exception {
+				return processPcapFile(retainDirectory);
+			}
+
+			@Override
+			protected void done() {
+				try {
+					get();
+				} catch (Exception ex) {
+					LOG.error("Something went wrong while processing PCAP file", ex);
+				}
+
+				dispose();
+			}
+		};
+		worker.execute();
+	}
+
+	private Void processPcapFile(boolean retainDirectory) {
 		StringBuilder commands = new StringBuilder();
 
 		if (Util.isWindowsOS()) {
@@ -237,9 +261,9 @@ public class OpenPcapFileDialog extends JDialog {
 			}
 		}
 
-		dispose();
+		return null;
 	}
-	
+
 	private void deleteDirectory(String directoryPath) {
 		try {
 			FileUtils.deleteDirectory(new File(directoryPath));

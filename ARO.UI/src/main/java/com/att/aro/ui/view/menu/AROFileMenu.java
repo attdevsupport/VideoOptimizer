@@ -1,6 +1,5 @@
 /*
-
- *  Copyright 2015 AT&T
+ *  Copyright 2015, 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +15,7 @@
 */
 package com.att.aro.ui.view.menu;
 
+import java.awt.Dialog.ModalityType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -24,16 +24,18 @@ import java.awt.event.MouseEvent;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -48,7 +50,12 @@ import org.springframework.context.ApplicationContext;
 
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
+import com.att.aro.core.packetanalysis.pojo.TimeRange.TimeRangeType;
+import com.att.aro.core.peripheral.ITimeRangeReadWrite;
+import com.att.aro.core.peripheral.impl.TimeRangeReadWrite;
+import com.att.aro.core.peripheral.pojo.TraceTimeRange;
 import com.att.aro.core.preferences.UserPreferences;
 import com.att.aro.core.preferences.UserPreferencesFactory;
 import com.att.aro.core.util.CrashHandler;
@@ -67,6 +74,7 @@ import com.att.aro.ui.view.menu.file.ADBPathDialog;
 import com.att.aro.ui.view.menu.file.MissingTraceFiles;
 import com.att.aro.ui.view.menu.file.OpenPcapFileDialog;
 import com.att.aro.ui.view.menu.file.PreferencesDialog;
+import com.att.aro.ui.view.menu.file.TimeRangeEditorDialog;
 
 /**
  *
@@ -78,7 +86,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 	ApplicationContext context = SpringContextUtil.getInstance().getContext();
 
 	private IFileManager fileManager = context.getBean(IFileManager.class);
-	
+	private ITimeRangeReadWrite timeRangeReadWrite = context.getBean("timeRangeReadWrite", TimeRangeReadWrite.class);
 	private final AROMenuAdder menuAdder = new AROMenuAdder(this);
 
 	private JMenu fileMenu = null;
@@ -93,6 +101,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 	private enum MenuItem {
 		menu_file,
 		menu_file_open,
+		menu_file_open_time_range,
 		menu_file_pcap,
 		menu_file_adb,
 		menu_file_pref,
@@ -121,6 +130,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 			fileMenu.addMenuListener(this);
 
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_open));
+			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_open_time_range));
 			fileMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_file_pcap));
 			recentMenu = menuAdder.getMenuInstance(ResourceBundleHelper.getMessageString("menu.file.recent"));
 			recentMenu.addMouseListener(new MouseAdapter() {
@@ -181,6 +191,8 @@ public class AROFileMenu implements ActionListener, MenuListener {
 	public void actionPerformed(ActionEvent aEvent) {
 		if (menuAdder.isMenuSelected(MenuItem.menu_file_open, aEvent)) {
 			openTraceFolder(aEvent, false);
+		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_open_time_range, aEvent)) {
+			openTraceFolderInTimeRange(aEvent);
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_file_pcap, aEvent)) {
 			File tracePath = null;
 			Object event = aEvent.getSource();
@@ -221,44 +233,171 @@ public class AROFileMenu implements ActionListener, MenuListener {
 			}
 		}
 	}
+	
+	private File selectTraceFolder(ActionEvent aEvent, boolean isRecent) {
+		File traceFolder = null;
 
-	private void openTraceFolder(ActionEvent aEvent, boolean isRecent) {
-		try {
-			File traceFolder = null;
-			Object event = aEvent.getSource();
-			if (event instanceof JMenuItem) {
-				if (!isRecent) {
-					traceFolder = chooseFileOrFolder(JFileChooser.DIRECTORIES_ONLY, ResourceBundleHelper.getMessageString(MenuItem.menu_file_open));
-					traceFolder = new File(fileManager.deAlias(traceFolder).toString());
-				} else {
-				    JMenuItem menuItem = (JMenuItem) aEvent.getSource();
-					traceFolder = new File(menuItem.getToolTipText());
-				}
+		if (!isRecent) {
+			traceFolder = chooseFileOrFolder(JFileChooser.DIRECTORIES_ONLY,
+					ResourceBundleHelper.getMessageString(MenuItem.menu_file_open));
+			if (traceFolder != null) {
+				traceFolder = new File(fileManager.deAlias(traceFolder).toString());
+			}
+		} else {
+			JMenuItem menuItem = (JMenuItem) aEvent.getSource();
+			traceFolder = new File(menuItem.getToolTipText());
+		}
 
-				if (traceFolder.isDirectory()) {
-					if (!isTrafficFilePresent(traceFolder)) {
-						showErrorDialog(ResourceBundleHelper.getMessageString("trafficFile.notFound"));
-					} else if (isTraceFolderEmpty(traceFolder)) {
-						// has a traffic file, but no other trace files, so not a trace folder, should be opened as a pcap file directly
-						showErrorDialog(ResourceBundleHelper.getMessageString("invalid.traceFolder"));
-					} else {
-						MissingTraceFiles missingTraceFiles = new MissingTraceFiles(traceFolder);
-						Set<File> missingFiles = missingTraceFiles.retrieveMissingFiles();
-						if (missingFiles.size() > 0) {
-							LOG.debug(MessageFormat.format(ResourceBundleHelper.getMessageString(MenuItem.file_missingAlert), missingTraceFiles.formatMissingFiles(missingFiles)));
-						}
-						parent.updateTracePath(traceFolder);
-						userPreferences.setLastTraceDirectory(traceFolder.getParentFile());
-						GoogleAnalyticsUtil.getAndIncrementTraceCounter();
-					}
+		if (traceFolder != null && traceFolder.isDirectory()) {
+			if (!isTrafficFilePresent(traceFolder)) {
+				showErrorDialog(ResourceBundleHelper.getMessageString("trafficFile.notFound"));
+				traceFolder = null;
+			} else if (isTraceFolderEmpty(traceFolder)) {
+				// has a traffic file, but no other trace files, so not a trace folder, should
+				// be opened as a pcap file directly
+				showErrorDialog(ResourceBundleHelper.getMessageString("invalid.traceFolder"));
+				traceFolder = null;
+			} else {
+				MissingTraceFiles missingTraceFiles = new MissingTraceFiles(traceFolder);
+				Set<File> missingFiles = missingTraceFiles.retrieveMissingFiles();
+				if (missingFiles.size() > 0) {
+					LOG.debug(MessageFormat.format(ResourceBundleHelper.getMessageString(MenuItem.file_missingAlert),
+							missingTraceFiles.formatMissingFiles(missingFiles)));
 				}
 			}
+		}
+		return traceFolder;
+	}
+
+	private void launchTraceFolderAnalysis(File traceFolder, TimeRange... timeRange) {
+		try {
+			if (timeRange != null && timeRange.length == 1 && timeRange[0] != null) {
+				parent.updateTracePath(traceFolder, timeRange[0]);
+			} else {
+				parent.updateTracePath(traceFolder);
+			}
+			userPreferences.setLastTraceDirectory(traceFolder.getParentFile());
+			GoogleAnalyticsUtil.getAndIncrementTraceCounter();
 		} catch (OutOfMemoryError err) {
 			LOG.error(err.getMessage(), err);
 			showErrorDialog("Video Optimizer failed to load the trace: Trace is too big to load");
 		}
 		this.fileMenu.repaint();
 		this.fileMenu.updateUI();
+	}
+
+	/**
+	 * Choose a trace folder and transfer to time-range dialog
+	 * 
+	 * @param aEvent
+	 * @param isRecent
+	 */
+	private void openTraceFolderInTimeRange(ActionEvent aEvent) {
+
+		File traceFolder = null;
+		Object event = aEvent.getSource();
+		if (event instanceof JMenuItem) {
+			traceFolder = selectTraceFolder(aEvent, false);
+			if (traceFolder != null) {
+				try {
+
+					JDialog splash = new TransitionDialog(parent.getFrame(), "Preparing to open Time-Range chooser/editor dialog");
+					
+					TimeRangeEditorDialog dialog;
+					
+					dialog = displayTimeRangeEditor(traceFolder, false, splash);
+					if (dialog != null && dialog.isContinueWithAnalyze()) {
+						launchTraceFolderAnalysis(traceFolder, dialog.getTimeRange());
+					}
+				} catch (Exception e) {
+					LOG.error("Exception in TimeRangeDialog:", e);
+					new MessageDialogFactory().showErrorDialog(null, "Exception in TimeRangeDialog:" + e.getMessage());
+				}
+			} else {
+				LOG.error("failed to identify action event:" + aEvent.getClass().getName());
+			}
+		}
+	}
+
+	private TimeRangeEditorDialog displayTimeRangeEditor(File traceFolder, boolean analyzeOnExit, JDialog splash) throws Exception {
+		TimeRangeEditorDialog dialog;
+		dialog = new TimeRangeEditorDialog(traceFolder, analyzeOnExit, splash);
+		dialog.pack();
+		dialog.setSize(dialog.getPreferredSize());
+		dialog.validate();
+		dialog.setModalityType(ModalityType.APPLICATION_MODAL);
+		dialog.setVisible(true);
+		return dialog;
+	}
+	
+	/**
+	 * Choose a trace folder for direct analysis
+	 * 
+	 * @param aEvent
+	 * @param isRecent
+	 * @return 
+	 */
+	private void openTraceFolder(ActionEvent aEvent, boolean isRecent) {
+		File traceFolder = null;
+		Object event = aEvent.getSource();
+		if (event instanceof JMenuItem) {
+			if ((traceFolder = selectTraceFolder(aEvent, isRecent)) != null) {
+				File trj;
+				TimeRange timeRange = null;
+				if ((trj = new File(traceFolder, "time-range.json")).exists()) {
+					try {
+						String jsonData = fileManager.readAllData(trj.getPath());
+						if (!jsonData.contains("\"timeRangeType\" : \"DEFAULT\",")) {
+							
+							JDialog splash = new TransitionDialog(parent.getFrame(), "Time-Range file detected\n", "Preparing to open in Time-Range chooser/editor dialog");
+							
+							TimeRangeEditorDialog dialog;
+							try {
+								if ((dialog = displayTimeRangeEditor(traceFolder, true, splash)) != null && dialog.isContinueWithAnalyze()) {
+									timeRange = dialog.getTimeRange();
+								} else {
+									LOG.debug("Time-Range, Selection cancelled by user");
+									splash.dispose();
+									return;
+								}
+							} catch (Exception e) {
+								LOG.error("Exception in TimeRangeDialog:", e);
+								new MessageDialogFactory().showErrorDialog(null, "Exception in TimeRangeDialog:" + e.getMessage());
+								return;
+							}
+						} else {
+							TraceTimeRange traceTimeRange;
+							if ((traceTimeRange = timeRangeReadWrite.readData(traceFolder)) != null) {
+								if (traceTimeRange.getTimeRangeList().stream()
+										.filter(a -> a.getTimeRangeType().equals(TimeRangeType.DEFAULT)).count() > 1) {
+									LOG.error("Too many TimeRanges set to AUTO");
+									MessageDialogFactory.getInstance().showErrorDialog(parent.getFrame(), "Too many TimeRanges set to AUTO, please fix the selections");
+									return;
+								}
+
+								Optional<TimeRange> optionalTimeRange = traceTimeRange.getTimeRangeList().stream()
+										.filter(p -> p.getTimeRangeType().equals(TimeRange.TimeRangeType.DEFAULT))
+										.findFirst();
+								if (optionalTimeRange.isPresent()) {
+									timeRange = optionalTimeRange.get();
+								}
+
+							}
+						}
+					} catch (IOException e) {
+						LOG.error("Problem reading time-range.json", e);
+					}
+				}
+
+				if (timeRange != null) {
+					launchTraceFolderAnalysis(traceFolder, timeRange);
+				} else {
+					launchTraceFolderAnalysis(traceFolder);
+				}
+			}  else {
+				LOG.error("Invalid trace folder selected, no traffic file");
+			}
+		}
 	}
 	
 	private void showErrorDialog(String errorString) {

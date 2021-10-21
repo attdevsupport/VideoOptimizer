@@ -55,6 +55,8 @@ public class ExportReport extends AROUIWorker<Void, Void> {
 		
 		String tracePath = userPreferences.getTracePath();
 		String fileName = tracePath.substring(tracePath.lastIndexOf(Util.FILE_SEPARATOR));
+		fileName += "_best_practices_results";
+
 		chooser.setSelectedFile(new File(tracePath+ Util.FILE_SEPARATOR+fileName));
 		if (json) {	
 			FileNameExtensionFilter jsonFilter = new FileNameExtensionFilter(

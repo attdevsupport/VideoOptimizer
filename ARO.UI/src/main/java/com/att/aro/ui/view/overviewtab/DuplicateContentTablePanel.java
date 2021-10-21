@@ -134,6 +134,7 @@ public class DuplicateContentTablePanel extends TabPanelJPanel implements MouseL
 	public DataTable<CacheEntry> getJDuplicateContentTable() {
 		if (duplicateContentTable == null) {
 			duplicateContentTable = new DataTable<CacheEntry>(duplicateContentTableModel);
+			duplicateContentTable.setName(ResourceBundleHelper.getMessageString("overview.duplicate.content.tableName"));
 			duplicateContentTable.setAutoCreateRowSorter(true);
 			duplicateContentTable.setGridColor(Color.LIGHT_GRAY);
 			duplicateContentTable.addMouseListener(this);

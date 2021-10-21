@@ -72,11 +72,11 @@ public class VideoRequestPanel extends TabPanelJScrollPane {
 			requestListPanel.setLayout(new BorderLayout());
 			getDummyData();
 			requestListTable = new DataTable<HttpRequestResponseInfo>();
+			requestListPanel.setName(ResourceBundleHelper.getMessageString("video.tab.requests.tableName"));
 
 			DataTablePopupMenu popupMenu = (DataTablePopupMenu) requestListTable.getPopup();
 			popupMenu.initialize();
 
-			requestListTable.setName(ResourceBundleHelper.getMessageString("videotab.videorequest.table.name"));	
 			videoRequestTableModel.setData(requestURL);
 			requestListTable.setModel(videoRequestTableModel);
 			

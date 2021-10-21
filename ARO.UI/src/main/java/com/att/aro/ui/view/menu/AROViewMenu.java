@@ -22,14 +22,17 @@ import java.awt.event.KeyEvent;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
 import com.att.aro.ui.commonui.AROMenuAdder;
+import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
+import com.att.aro.ui.view.menu.tools.TimeRangeAnalysisDialog;
 import com.att.aro.ui.view.menu.view.ChartPlotOptionsDialog;
-import com.att.aro.ui.view.menu.view.ExcludeTimeRangeAnalysisDialog;
 import com.att.aro.ui.view.menu.view.FilterApplicationsAndIpDialog;
 /**
  *
@@ -95,9 +98,8 @@ public class AROViewMenu implements ActionListener, MenuListener {
 			menuViewVideo.setSelected(parent.isVideoPlayerSelected());
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_view_apps, aEvent)) {
 			new FilterApplicationsAndIpDialog(parent).setVisible(true);
-		} else if(menuAdder.isMenuSelected(
-				MenuItem.menu_tools_excludetimerangeanalysis, aEvent)) {
-			new ExcludeTimeRangeAnalysisDialog(parent).setVisible(true);
+		} else if(menuAdder.isMenuSelected(MenuItem.menu_tools_excludetimerangeanalysis, aEvent)) {
+			openTimeRangeAnalysis();
 		} else if(menuAdder.isMenuSelected(MenuItem.menu_view_options, aEvent)) {
 			synchronized(this) {
 				if(menuViewOptionsDialog == null) {
@@ -105,6 +107,19 @@ public class AROViewMenu implements ActionListener, MenuListener {
 				}
 			}
 			menuViewOptionsDialog.setVisible(true);
+		}
+	}
+
+	private void openTimeRangeAnalysis() {
+		MainFrame mainFrame = ((MainFrame) parent);
+		if (mainFrame.getController().getTheModel() != null
+				&& mainFrame.getController().getTheModel().getAnalyzerResult() != null) {
+			TimeRangeAnalysisDialog timeRangeDialog = new TimeRangeAnalysisDialog(mainFrame.getJFrame(), parent);
+			timeRangeDialog.setVisible(true);
+		} else {
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
+					ResourceBundleHelper.getMessageString("menu.error.noTraceLoadedMessage"),
+					ResourceBundleHelper.getMessageString("menu.error.title"), JOptionPane.ERROR_MESSAGE);
 		}
 	}
 

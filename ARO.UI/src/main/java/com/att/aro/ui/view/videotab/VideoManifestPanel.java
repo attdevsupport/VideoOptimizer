@@ -94,9 +94,11 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 		if (analyzerResult != null && analyzerResult.getAnalyzerResult() != null && analyzerResult.getAnalyzerResult().getStreamingVideoData() != null) {
 			Collection<VideoStream> videoStreamMap = analyzerResult.getAnalyzerResult().getStreamingVideoData().getVideoStreams();
 			updateGraphPanels(analyzerResult, videoStreamMap);
+
+			int counter = 1;
 			for (VideoStream videoStream : videoStreamMap) {
 				if (MapUtils.isNotEmpty(videoStream.getVideoEventMap())) {
-					SegmentTablePanel segmentPanel = new SegmentTablePanel(videoStream, this.overviewRoute, analyzerResult, aroView, this);
+					SegmentTablePanel segmentPanel = new SegmentTablePanel(videoStream, this.overviewRoute, analyzerResult, aroView, this, counter++);
 					segmentPanel.setVisible(false);
 					segmentTableList.add(segmentPanel);
 				}
