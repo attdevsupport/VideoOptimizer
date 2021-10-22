@@ -8,11 +8,14 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.List;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,21 +25,48 @@ import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.google.common.collect.Lists;
 
-import lombok.Data;
 
-@Data
 public abstract class AbstractMenuItemListener implements ActionListener {
 	private static final Logger LOG = LoggerFactory.getLogger(AbstractMenuItemListener.class);
 
 	protected static final String COMMA_SEPARATOR = ",";
 
 	protected DataTable<?> table;
+	protected String tableName;
+	private List<FileNameExtensionFilter> fileNameExtensionFilters;
+	private int defaultExtensionFilterIndex;
 
-	private boolean exportSessionData = false;
 
 	public AbstractMenuItemListener(DataTable<?> table) {
 		this.table = table;
+		fileNameExtensionFilters = getDefaultxtensionFilters();
+		defaultExtensionFilterIndex = 1; // Default file filter as xlsx filter
+	}
+
+	/**
+	 *
+	 * @param table
+	 * @param fileNameExtensionFilters List of file extension filters to display in the file chooser dialog
+	 * @param defaultExtensionFilterIndex Default selected filter index to display in the file chooser dialog
+	 */
+	public AbstractMenuItemListener(DataTable<?> table, List<FileNameExtensionFilter> fileNameExtensionFilters, int defaultExtensionFilterIndex) {
+		this.table = table;
+		this.fileNameExtensionFilters = CollectionUtils.isNotEmpty(fileNameExtensionFilters) ? fileNameExtensionFilters : getDefaultxtensionFilters();
+		this.defaultExtensionFilterIndex = (defaultExtensionFilterIndex >= 0 && defaultExtensionFilterIndex < fileNameExtensionFilters.size()) ? defaultExtensionFilterIndex : 0;
+	}
+
+
+	private List<FileNameExtensionFilter> getDefaultxtensionFilters() {
+		FileNameExtensionFilter csvFilter = new FileNameExtensionFilter(
+				ResourceBundleHelper.getMessageString("fileChooser.desc.csv"),
+				ResourceBundleHelper.getMessageString("fileChooser.contentType.csv"));
+		FileNameExtensionFilter xlsxFilter = new FileNameExtensionFilter(
+				ResourceBundleHelper.getMessageString("fileChooser.desc.excel"),
+				ResourceBundleHelper.getMessageString("fileChooser.contentType.xls"),
+				ResourceBundleHelper.getMessageString("fileChooser.contentType.xlsx"));
+		return Lists.newArrayList(csvFilter, xlsxFilter);
 	}
 
 	@Override
@@ -46,8 +76,15 @@ public abstract class AbstractMenuItemListener implements ActionListener {
 	}
 
 	private void exportTable(File defaultFile) {
+		try {
 			JFileChooser chooser = getDefaultFileChooser(defaultFile);
 			saveFile(chooser);
+		} catch (Exception e) {
+			LOG.error("Something went wrong while exporting table {}", table != null ? table.getName() : "null", e);
+			String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("exportall.error"),
+					ApplicationConfig.getInstance().getAppShortName());
+			MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()), errorMsg + e.getMessage());
+		}
 	}
 
 	protected JFileChooser getDefaultFileChooser(File file) {
@@ -56,11 +93,20 @@ public abstract class AbstractMenuItemListener implements ActionListener {
 			chooser = new JFileChooser(file);
 		} else {
 			String defaultFilePath = UserPreferencesFactory.getInstance().create().getTracePath();
-			if (table != null && table.getName() != null) {
-				defaultFilePath = defaultFilePath + Util.FILE_SEPARATOR + table.getName();
+			File filePathObj = new File(defaultFilePath);
+
+			String traceFolderName = "_";
+			if (filePathObj.isDirectory()) {
+				traceFolderName = StringUtils.replace(filePathObj.getName(), " ", "_") + "_";
 			} else {
-				defaultFilePath = defaultFilePath + Util.FILE_SEPARATOR + "table";
+				if (filePathObj.getParentFile() != null) {
+					traceFolderName = StringUtils.replace(filePathObj.getParentFile().getName(), " ", "_") + "_";
+				}
 			}
+
+			String tableName = StringUtils.isNotBlank(this.tableName) ? this.tableName
+										: (table != null && StringUtils.isNotBlank(table.getName())) ? table.getName() : "table";
+			defaultFilePath = defaultFilePath + Util.FILE_SEPARATOR + traceFolderName + tableName;
 
 			chooser = new JFileChooser();
 			chooser.setSelectedFile(new File(defaultFilePath));
@@ -69,16 +115,11 @@ public abstract class AbstractMenuItemListener implements ActionListener {
 		String titleDialog = ResourceBundleHelper.getMessageString("fileChooser.Title");
 		chooser.setDialogTitle(titleDialog);
 		// Set allowed file extensions
-		FileNameExtensionFilter csvFilter = new FileNameExtensionFilter(
-				ResourceBundleHelper.getMessageString("fileChooser.desc.csv"),
-				ResourceBundleHelper.getMessageString("fileChooser.contentType.csv"));
-		FileNameExtensionFilter xlsxFilter = new FileNameExtensionFilter(
-				ResourceBundleHelper.getMessageString("fileChooser.desc.excel"),
-				ResourceBundleHelper.getMessageString("fileChooser.contentType.xls"),
-				ResourceBundleHelper.getMessageString("fileChooser.contentType.xlsx"));
-		chooser.addChoosableFileFilter(csvFilter);
-		chooser.addChoosableFileFilter(xlsxFilter);
-		chooser.setFileFilter(xlsxFilter);
+		for (FileNameExtensionFilter filter : fileNameExtensionFilters) {
+			chooser.addChoosableFileFilter(filter);
+		}
+		chooser.setFileFilter(fileNameExtensionFilters.get(defaultExtensionFilterIndex));
+		chooser.setAcceptAllFileFilterUsed(false);
 		chooser.setApproveButtonText(ResourceBundleHelper.getMessageString("fileChooser.Save"));
 		chooser.setMultiSelectionEnabled(false);
 
@@ -137,8 +178,7 @@ public abstract class AbstractMenuItemListener implements ActionListener {
 						desktop.open(fileToWrite);
 					}
 				} catch (IOException exception) {
-					LOG.error("Something went wrong while exporting table {}", table != null ? table.getName() : "",
-							exception);
+					LOG.error("Something went wrong while exporting table {}", table != null ? table.getName() : "null", exception);
 					String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("exportall.error"),
 							ApplicationConfig.getInstance().getAppShortName());
 					MessageDialogFactory.getInstance().showErrorDialog(new Window(new Frame()),

@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.commons.lang.StringUtils;
@@ -39,7 +38,6 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.TextFileCompression;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTableModel;
@@ -54,7 +52,6 @@ import com.google.common.collect.Lists;
 public class ExportSessionData extends AbstractMenuItemListener {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ExportSessionData.class);
-	private static final String SESSIONS_DATA = "Sessions_Details";
 	private AROTraceData traceData = null;
 	private List<Session> sessionDataList;
 	private Map<String, List<HttpRequestResponseInfo>> reqRespMap = new HashMap<String, List<HttpRequestResponseInfo>>();
@@ -67,10 +64,9 @@ public class ExportSessionData extends AbstractMenuItemListener {
 	private PacketViewTableModel packetViewTableModel = new PacketViewTableModel();
 	private MainFrame mainFrame;
 
-	protected static final String COMMA_SEPARATOR = ",";
-
-	public ExportSessionData(MainFrame mainFrame) {
-		super(null);
+	public ExportSessionData(MainFrame mainFrame, List<FileNameExtensionFilter> fileNameExtensionFilters, int defaultExtensionFilterIndex) {
+		super(null, fileNameExtensionFilters, defaultExtensionFilterIndex);
+		super.tableName = "session_data";
 		this.mainFrame = mainFrame;
 		this.traceData = mainFrame.getController().getTheModel();
 	}
@@ -86,7 +82,6 @@ public class ExportSessionData extends AbstractMenuItemListener {
 
 	@Override
 	public void writeExcel(File file) throws IOException {
-		setExportSessionData(true);
 		getSessionData();
 		List<Object> sessionColumnNames = createHeader(null, tcpUDPFlowsTableModel);
 		List<Object> requestResponseColumnNames = createHeader(sessionColumnNames, requestResponseTableModel);
@@ -209,31 +204,6 @@ public class ExportSessionData extends AbstractMenuItemListener {
 		String text = "Writing to CSV file is not supported by " + this.getClass().getName();
 		LOG.error(text);
 		throw new UnsupportedOperationException(text);
-	}
-
-	@Override
-	protected JFileChooser getDefaultFileChooser(File file) {
-		JFileChooser chooser = new JFileChooser();
-		if (file == null) {
-			file = new File(traceData.getAnalyzerResult().getTraceresult().getTraceDirectory() + Util.FILE_SEPARATOR
-					+ SESSIONS_DATA);
-		}
-		chooser.setSelectedFile(file);
-
-		// Set allowed file extensions
-		FileNameExtensionFilter xlsxFilter = new FileNameExtensionFilter(
-				ResourceBundleHelper.getMessageString("fileChooser.desc.excel"),
-				ResourceBundleHelper.getMessageString("fileChooser.contentType.xls"),
-				ResourceBundleHelper.getMessageString("fileChooser.contentType.xlsx"));
-
-		chooser.setDialogTitle(ResourceBundleHelper.getMessageString("fileChooser.Title"));
-		chooser.addChoosableFileFilter(xlsxFilter);
-		chooser.setFileFilter(xlsxFilter);
-		chooser.setAcceptAllFileFilterUsed(false);
-		chooser.setApproveButtonText(ResourceBundleHelper.getMessageString("fileChooser.Save"));
-		chooser.setMultiSelectionEnabled(false);
-
-		return chooser;
 	}
 
 	private String getHttpCompression(HttpRequestResponseInfo httpRequestResponseInfo) {

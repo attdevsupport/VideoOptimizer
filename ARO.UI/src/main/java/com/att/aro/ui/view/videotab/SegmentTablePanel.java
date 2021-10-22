@@ -148,13 +148,15 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 	private AROTraceData analyzerResult;
 
 	private JDialog dialog;
+	private int viewIndex;
+
 
 	/**
 	 * @wbp.parser.constructor
 	 */
 	public SegmentTablePanel(VideoStream videoStream, IARODiagnosticsOverviewRoute diagnosticsOverviewRoute,
-			AROTraceData analyzerResult, SharedAttributesProcesses aroView, VideoManifestPanel videoManifestPanel) {
-		this(true, aroView, videoStream, analyzerResult, videoManifestPanel);
+			AROTraceData analyzerResult, SharedAttributesProcesses aroView, VideoManifestPanel videoManifestPanel, int viewIndex) {
+		this(true, aroView, videoStream, analyzerResult, videoManifestPanel, viewIndex);
 
 		streamingVideoData = analyzerResult.getAnalyzerResult().getStreamingVideoData();
 		this.diagnosticsOverviewRoute = diagnosticsOverviewRoute;
@@ -162,12 +164,13 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 	}
 
 	public SegmentTablePanel(boolean manifestFlag, SharedAttributesProcesses aroView, VideoStream videoStream,
-			AROTraceData analyzerResult, VideoManifestPanel videoManifestPanel) {
+			AROTraceData analyzerResult, VideoManifestPanel videoManifestPanel, int viewIndex) {
 		streamingVideoData = analyzerResult.getAnalyzerResult().getStreamingVideoData();
 		this.aroView = aroView;
 		this.videoStream = videoStream;
 		this.analyzerResult = analyzerResult;
 		this.videoManifestPanel = videoManifestPanel;
+		this.viewIndex = viewIndex;
 		setLayout(new BorderLayout());
 
 		setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -249,11 +252,6 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		if (videoStream.getMissingSegmentCount() > 0) {
 			titlePanel.add(getSessionProblems(videoStream.getMissingSegmentCount()));
 		}
-
-		// AMVOTS button
-		if (validateUpload()) {
-			titlePanel.grabFocus();
-		}
 		
 		titlePanel.add(createCheckBoxVideo());
 		titlePanel.add(createCheckBoxAudio());
@@ -296,7 +294,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		if (maxDuration >= 0) {
 			selectVideoStreamWithRefresh(videoStream);
 			try {
-				dialog = new StartupDelayDialog(aroView.getGraphPanel(), maxDuration, videoStream, userEventList, this);
+				dialog = new StartupDelayDialog(aroView.getGraphPanel(), maxDuration, videoStream, userEventList, this, viewIndex);
 				dialog.pack();
 				dialog.setSize(dialog.getPreferredSize());
 				dialog.validate();
@@ -367,25 +365,6 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		});
 		return checkBoxCC;
 	}
-
-	/**
-	 * Validate if Amvots button should be enabled
-	 * 
-	 * @return
-	 */
-	private boolean validateUpload() {
-		AbstractTraceResult traceResult = analyzerResult.getAnalyzerResult().getTraceresult();
-		if (TraceResultType.TRACE_DIRECTORY.equals(traceResult.getTraceResultType())) {
-			traceDirectoryResult = (TraceDirectoryResult) traceResult;
-			boolean mp4Exists = fileManager.createFile(traceResult.getTraceDirectory(), "video.mp4").exists();
-			boolean uploadEnabled = SettingsImpl.getInstance().checkAttributeValue("AMVOTS", "TRUE")
-					&& SettingsImpl.getInstance().checkAttributeValue("env", "dev");
-			return uploadEnabled && mp4Exists;
-		} else {
-			return false;
-		}
-	}
-
 
 	private Component getCheckBoxStreamEnable() {
 		enableCheckBox = new JCheckBox();
@@ -515,12 +494,12 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		if (manifestFlag) {
 			if (videoStream.getVideoEventsBySegment() != null) {
 				text = (!videoStream.isValid())
-						? MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"),
+						? MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"), viewIndex,
 								videoStream.getManifest().getVideoName())
-						: MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.manifest.name"),
+						: MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.manifest.name"), viewIndex,
 								videoStream.getManifest().getVideoName());
 			} else {
-				text = MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"),
+				text = MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"), viewIndex,
 						videoStream.getManifest().getVideoName());
 			}
 			lbl.setText(text + ", segment count:" + videoStream.getVideoEventMap().size());

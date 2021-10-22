@@ -75,6 +75,7 @@ public final class Util {
 	public static final String FILE_SEPARATOR = System.getProperty("file.separator");
 	public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 	public static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
+	public static final String SYSTEM_ROOT = System.getenv("SystemRoot");
 	private static final String QUOTE = "\"";
 	private static final double TIME_CORRECTION = 1.0E9;
 	private static Comparator<String> comparator;
@@ -86,7 +87,7 @@ public final class Util {
 	
 	private static final Pattern htmlEncodePattern = Pattern.compile("%[a-fA-F0-9]");
 	
-	public static String APK_FILE_NAME = "VPNCollector-4.2.%s.apk";
+	public static String APK_FILE_NAME = "VPNCollector-4.3.%s.apk";
 	
 	public static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 	
@@ -923,7 +924,9 @@ public final class Util {
 	public static Level getLoggingLvl(String loggingLvl) {
 		Level level = Level.ERROR;
 		if (loggingLvl != null) {
-			if (loggingLvl.equalsIgnoreCase("INFO")) {
+			if (loggingLvl.equalsIgnoreCase("WARN")) {
+				level = Level.WARN;
+			} else if (loggingLvl.equalsIgnoreCase("INFO")) {
 				level = Level.INFO;
 			} else if (loggingLvl.equalsIgnoreCase("DEBUG")) {
 				level = Level.DEBUG;
@@ -1284,6 +1287,24 @@ public final class Util {
 		return diff;
 	}
 	
+	public static String getNpcapPath1() {
+		return Util.isWindowsOS()
+				? SYSTEM_ROOT + FILE_SEPARATOR + "system32" + FILE_SEPARATOR + "Npcap" + FILE_SEPARATOR
+						+ "wpcap.dll"
+				: "";
+	}
+
+	public static String getNpcapPath2() {
+		return Util.isWindowsOS()
+				? SYSTEM_ROOT + FILE_SEPARATOR + "system32" + FILE_SEPARATOR + "Npcap" + FILE_SEPARATOR
+						+ "Packet.dll"
+				: "";
+	}
+
+	public static String getWpcapPath() {
+		return Util.isWindowsOS() ? SYSTEM_ROOT + FILE_SEPARATOR + "system32" + FILE_SEPARATOR + "wpcap.dll" : "";
+	}
+
 	/**
 	 * A handy sleep method for when you do not care about interrupted sleep
 	 * 
@@ -1295,5 +1316,23 @@ public final class Util {
 		} catch (Exception e) {
 			// do not care about this
 		}
+	}
+	
+	/**
+	 * Provides a height adjustment based on Platform
+	 * @param baseHeight
+	 * @return
+	 */
+	public static int getAdjustedHeight(int baseHeight) {
+		return Util.isMacOS() ? baseHeight : baseHeight + 10;
+	}
+	
+	/**
+	 * Provides a width adjustment based on Platform
+	 * @param baseWidth
+	 * @return
+	 */
+	public static int getAdjustedWidth(int baseWidth) {
+		return Util.isMacOS() ? baseWidth : baseWidth + 5;
 	}
 }

@@ -25,6 +25,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.BPDuplicateContentTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  *
@@ -64,6 +65,7 @@ public class BpFileDuplicateContentTablePanel extends AbstractBpDetailTablePanel
 	public DataTable<CacheEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<CacheEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("file.duplicate.content.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

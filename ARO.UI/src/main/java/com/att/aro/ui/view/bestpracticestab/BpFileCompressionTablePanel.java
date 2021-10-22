@@ -25,6 +25,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.FileCompressionTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  *
@@ -68,6 +69,7 @@ public class BpFileCompressionTablePanel extends AbstractBpDetailTablePanel {
 	public DataTable<TextFileCompressionEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<TextFileCompressionEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("file.text.compresssion.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

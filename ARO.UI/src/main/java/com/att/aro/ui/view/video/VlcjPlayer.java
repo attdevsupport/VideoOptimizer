@@ -406,10 +406,18 @@ public class VlcjPlayer implements IVideoPlayer {
         });
     }
 
-    private void showVlcjInformativeMsg() {
-        MessageDialogFactory.showMessageDialog(null, ResourceBundleHelper.getMessageString("video.informative.vlcj"),
-                ResourceBundleHelper.getMessageString("menu.info.title"), JOptionPane.INFORMATION_MESSAGE);
-    }
+	private void showVlcjInformativeMsg() {
+		if (Util.isWindows64OS()) {
+			MessageDialogFactory.showMessageDialog(null,
+					ResourceBundleHelper.getMessageString("video.informative.vlcj.win64"),
+					ResourceBundleHelper.getMessageString("menu.info.title"), JOptionPane.INFORMATION_MESSAGE);
+		} else {
+			MessageDialogFactory.showMessageDialog(null,
+					ResourceBundleHelper.getMessageString("video.informative.vlcj"),
+					ResourceBundleHelper.getMessageString("menu.info.title"), JOptionPane.INFORMATION_MESSAGE);
+		}
+
+	}
 
     @Override
 	public void clear() {

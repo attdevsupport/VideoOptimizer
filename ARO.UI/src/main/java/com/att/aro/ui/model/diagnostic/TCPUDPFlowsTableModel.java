@@ -326,7 +326,8 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
                 }
             case NW_LATENCY_COL:
                 if (!item.isUdpOnly() && !item.getSynAckPackets().isEmpty() && !item.getSynPackets().isEmpty()) {
-                	return item.getLatency()== -1 ? "N/A" : (item.getLatency() > 0 ? Util.formatDoubleToMicro(item.getLatency()) : "0.0");					 
+                	return item.getLatency()== -1 ? "N/A" : (item.getLatency() > 0 ? Util.formatDoubleToMicro(item.getLatency()) : "0.0");
+					 
                 } else {
                     return "N/A";
                 }

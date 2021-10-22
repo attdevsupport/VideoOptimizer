@@ -21,6 +21,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,23 +40,28 @@ import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.TabPanelCommon;
 import com.att.aro.ui.commonui.TabPanelCommonAttributes;
 import com.att.aro.ui.commonui.TabPanelJPanel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class DateTraceAppDetailPanel extends TabPanelJPanel {
 	private enum LabelKeys {
 		bestPractices_sideTitle,
 		bestPractices_date,
 		bestPractices_trace,
+		bestPractices_range,
 		bestPractices_application,
 		bestPractices_applicationversion,
 		bestPractices_devicemodel,
+		bestPractices_display_resolution,
 		bestPractices_os_version,
 		bestPractices_networktype,
 		bestPractices_profile,
+		secure_title
 	}
 
 	private static final long serialVersionUID = 1L;
 	private static final String EMPTY_SPACE = "                              ";
 	private final TabPanelCommon tabPanelCommon = new TabPanelCommon();
+	private TabPanelCommonAttributes attributes;
 	private static final Logger LOG = LogManager.getLogger(DateTraceAppDetailPanel.class.getName());
 	
 	
@@ -65,6 +71,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 	public DateTraceAppDetailPanel() {
 		tabPanelCommon.initTabPanel(this);
 		add(layoutDataPanel(), BorderLayout.WEST);
+		tabPanelCommon.setText(LabelKeys.bestPractices_trace, "", getOpenFolderAdapter());
 	}
 
 
@@ -75,39 +82,19 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 	 */
 	@Override
 	public JPanel layoutDataPanel() {
-
-		TabPanelCommonAttributes attributes = tabPanelCommon.addLabelLine(
-			new TabPanelCommonAttributes.Builder()
-				.enumKey(LabelKeys.bestPractices_date)
-			.build());
-		attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder()
-				.copyNextLine(attributes)
-				.enumKey(LabelKeys.bestPractices_trace)
-			.build());
-		attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder()
-			.copyNextLine(attributes)
-			.enumKey(LabelKeys.bestPractices_application)
-			.build());
-		attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder()
-				.copyNextLine(attributes)
-				.enumKey(LabelKeys.bestPractices_applicationversion)
-			.build());
-		attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder()
-				.copyNextLine(attributes)
-				.enumKey(LabelKeys.bestPractices_devicemodel)
-			.build());
-		attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder()
-				.copyNextLine(attributes)
-				.enumKey(LabelKeys.bestPractices_os_version)
-			.build());
-		attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder()
-				.copyNextLine(attributes)
-				.enumKey(LabelKeys.bestPractices_networktype)
-			.build());
-		attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder()
-				.copyNextLine(attributes)
-				.enumKey(LabelKeys.bestPractices_profile)
-			.build());
+		if (attributes == null) {
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().enumKey(LabelKeys.bestPractices_date).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_trace).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_range).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_application).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_applicationversion).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_devicemodel).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_display_resolution).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_os_version).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_networktype).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_profile).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.secure_title).build());
+		}
 		tabPanelCommon.setText(LabelKeys.bestPractices_date, EMPTY_SPACE);
 
 		return tabPanelCommon.getTabPanel();
@@ -131,7 +118,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 
 		String traceDirectory = traceResults.getTraceDirectory();
 		int lastIndexOf = traceDirectory.lastIndexOf(Util.FILE_SEPARATOR);
-		tabPanelCommon.setText(LabelKeys.bestPractices_trace, lastIndexOf > -1 ? traceDirectory.substring((lastIndexOf + 1)) : traceDirectory, getOpenFolderAdapter());
+		tabPanelCommon.setTextAsLink(LabelKeys.bestPractices_trace, lastIndexOf > -1 ? traceDirectory.substring((lastIndexOf + 1)) : traceDirectory);
 
 		StringBuilder appList = new StringBuilder();
 		boolean firstTimeFlag = true;
@@ -153,15 +140,20 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		MouseAdapter openFolderAction = new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-
 				Desktop desktop = null;
 				if (Desktop.isDesktopSupported()) {
 					desktop = Desktop.getDesktop();
 					try {
 						File traceFile = new File(PreferenceHandlerImpl.getInstance().getPref("TRACE_PATH"));
-						desktop.open(traceFile);
+						if (traceFile != null && traceFile.exists()) {
+							if (traceFile.isDirectory()) {
+								desktop.open(traceFile);
+							} else {
+								desktop.open(traceFile.getParentFile());
+							}
+						}
 					} catch (IOException ex) {
-						LOG.error("Error opening the Trace Folder : " +ex.getMessage());
+						LOG.error("Error opening the Trace Folder : " + ex.getMessage());
 					}
 				}
 			}
@@ -175,18 +167,29 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 				traceDirectoryResults.getCollectorVersion());
 		tabPanelCommon.setText(LabelKeys.bestPractices_devicemodel,
 				traceDirectoryResults.getDeviceMake() + " / " +
-					traceDirectoryResults.getDeviceModel());
+					traceDirectoryResults.getDeviceModel());		  		
+		tabPanelCommon.setText(LabelKeys.bestPractices_display_resolution,
+				MessageFormat.format(ResourceBundleHelper.getMessageString("bestPractices.displayResolutionValue"),
+						traceDirectoryResults.getCollectOptions().getOrientation(),
+						String.valueOf(traceDirectoryResults.getDeviceScreenSizeX()),
+						String.valueOf(traceDirectoryResults.getDeviceScreenSizeY())));
 		tabPanelCommon.setText(LabelKeys.bestPractices_os_version,
 				traceDirectoryResults.getOsVersion());
 		tabPanelCommon.setText(LabelKeys.bestPractices_networktype,
 				traceDirectoryResults.getNetworkTypesList());
+		tabPanelCommon.setText(LabelKeys.secure_title,
+				traceDirectoryResults.getCollectOptions().getSecureStatus().toString());
+		tabPanelCommon.setText(LabelKeys.bestPractices_range,
+				traceDirectoryResults.getTimeRange().getRange());
 	}
 
 	private void clearDirResults() {
 		tabPanelCommon.setText(LabelKeys.bestPractices_applicationversion, "");
 		tabPanelCommon.setText(LabelKeys.bestPractices_devicemodel, "");
+		tabPanelCommon.setText(LabelKeys.bestPractices_display_resolution, "");
 		tabPanelCommon.setText(LabelKeys.bestPractices_os_version, "");
 		tabPanelCommon.setText(LabelKeys.bestPractices_networktype, "");
+		tabPanelCommon.setText(LabelKeys.secure_title, "");
 	}
 
 	@Override

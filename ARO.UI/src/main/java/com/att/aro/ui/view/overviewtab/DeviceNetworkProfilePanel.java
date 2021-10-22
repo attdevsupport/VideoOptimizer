@@ -96,6 +96,10 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 		traceValueLabel.setFont(TEXT_FONT);
 		traceValueLabel.setHorizontalTextPosition(JLabel. TRAILING);
 
+		traceValueLabel.addMouseListener(getOpenFolderAdapter());
+		traceValueLabel.setToolTipText(ResourceBundleHelper.getMessageString("trace.hyperlink"));
+		traceValueLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		
 		byteCountTotalLabel = new JLabel();
 		byteCountTotalLabel.setFont(TEXT_FONT);
 		byteCountTotalLabel.setHorizontalTextPosition(JLabel. TRAILING);
@@ -202,11 +206,9 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 	
 	public void refresh(AROTraceData aModel){
 		this.dateValueLabel.setText(aModel.getAnalyzerResult().getTraceresult().getTraceDateTime().toString());
-		
-		this.traceValueLabel.setText(getTracePath(aModel.getAnalyzerResult().getTraceresult().getTraceDirectory()));
-		this.traceValueLabel.addMouseListener(getOpenFolderAdapter());
-		this.traceValueLabel.setToolTipText(ResourceBundleHelper.getMessageString("trace.hyperlink"));
-		this.traceValueLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+		File directory = new File(aModel.getAnalyzerResult().getTraceresult().getTraceDirectory());
+		this.traceValueLabel.setText(getTracePath(directory.getName()));
 
 		this.byteCountTotalLabel.setText(Long.toString(aModel.getAnalyzerResult().getStatistic().getTotalByte()));
 		this.profileValueLabel.setText(aModel.getAnalyzerResult().getProfile().getName());
@@ -277,13 +279,18 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 		MouseAdapter openFolderAction = new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-
 				Desktop desktop = null;
 				if (Desktop.isDesktopSupported()) {
 					desktop = Desktop.getDesktop();
 					try {
 						File traceFile = new File(PreferenceHandlerImpl.getInstance().getPref("TRACE_PATH"));
-						desktop.open(traceFile);
+						if (traceFile != null && traceFile.exists()) {
+							if (traceFile.isDirectory()) {
+								desktop.open(traceFile);
+							} else {
+								desktop.open(traceFile.getParentFile());
+							}
+						}
 					} catch (IOException ex) {
 						LOG.error("Error opening the Trace Folder : " +ex.getMessage());
 					}

@@ -516,7 +516,11 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 	
 	@Override
 	protected ChildManifest createChildManifest(Manifest manifest, String parameters, String childUriName) {
-		childUriName = Util.decodeUrlEncoding(childUriName);
+		try {
+			childUriName = Util.decodeUrlEncoding(childUriName);
+		} catch (Exception e1) {
+			LOG.error("failed to decode childUriName:", e1);
+		}
 		ChildManifest childManifest = new ChildManifest();
 		childManifest.setManifestCollectionParent(manifestCollection);
 		childManifest.setManifest(manifest);

@@ -41,6 +41,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.XYPair;
 import com.att.aro.core.videoanalysis.impl.BufferInSecondsCalculatorImpl;
+import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -184,11 +185,11 @@ public class VideoBufferPlot implements IPlot {
 				}
 
 				tooltipValue.append(String.format("%.2f", bufferTime) + "," + String.format("%.2f", timestamp));
-
+				VideoEvent event = videoStream.getToolTipDetailMap().get(item).getVideoEvent();
+				
 				String[] value = tooltipValue.toString().split(",");
-				// bufferTimeoccupancy.tooltip = <html><body>Segment: {0}<br>PlayBack Buffer: {1} s<br> TimeStamp: {2} s<br>  Plays at: {3}<br></body></html>
 				return (MessageFormat.format(ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip")
-						, value[0], value[1], value[2]));
+						, value[0], value[1], value[2],event.getPlayTime()));
 			}
 
 		};

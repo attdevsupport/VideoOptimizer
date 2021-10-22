@@ -53,7 +53,7 @@ public class HttpDelayTableModel extends DataTableModel<HttpRequestResponseInfo>
 		if (session.getRequestResponseInfo() != null) {
 			List<HttpRequestResponseInfo> requestResponseInfoList = new ArrayList<HttpRequestResponseInfo>();
 			for (HttpRequestResponseInfo httpRequestResponseInfo : session.getRequestResponseInfo()) {
-				if (httpRequestResponseInfo.getDirection() == HttpDirection.REQUEST) {
+				if (httpRequestResponseInfo.getDirection() == HttpDirection.REQUEST && httpRequestResponseInfo.getAssocReqResp() != null) {
 					requestResponseInfoList.add(httpRequestResponseInfo);
 				}
 			}

@@ -70,6 +70,8 @@ public interface IFileManager {
 
 	File createFile(String parent, String child);
 
+	File createFile(File parent, String child);
+
 	/**
 	 * Creates a directory
 	 * 

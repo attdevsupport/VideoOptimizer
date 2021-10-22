@@ -24,6 +24,7 @@ import com.att.aro.core.bestpractice.pojo.UnsecureSSLVersionEntry;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.UnsecureSSLVersionTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BpSecurityUnsecureSSLVersionTablePanel extends AbstractBpDetailTablePanel {
 
@@ -53,6 +54,7 @@ public class BpSecurityUnsecureSSLVersionTablePanel extends AbstractBpDetailTabl
 	public DataTable<UnsecureSSLVersionEntry> getContentTable() {
 		if(contentTable == null) {
 			contentTable = new DataTable<UnsecureSSLVersionEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("security.unsecure.ssl.version.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

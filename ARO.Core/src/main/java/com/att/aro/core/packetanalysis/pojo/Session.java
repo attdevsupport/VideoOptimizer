@@ -31,6 +31,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetreader.pojo.PacketDirection;
+import com.att.aro.core.packetreader.pojo.TCPPacket;
 import com.att.aro.core.util.Util;
 
 import lombok.Data;
@@ -131,12 +132,17 @@ public class Session implements Serializable, Comparable<Session> {
 	/**
 	 * List of Upload Packets ordered by Sequence Numbers for TCP Session.
 	 */
-	private TreeMap<Long, PacketInfo> uplinkPacketsSortedBySequenceNumbers = new TreeMap<>();
+	private TreeMap<Long, List<PacketInfo>> uplinkPacketsSortedBySequenceNumbers = new TreeMap<>();
 	
 	/**
 	 * List of Download Packets ordered by Sequence Numbers for TCP Session.
 	 */
-	private TreeMap<Long, PacketInfo> downlinkPacketsSortedBySequenceNumbers = new TreeMap<>();
+	private TreeMap<Long, List<PacketInfo>> downlinkPacketsSortedBySequenceNumbers = new TreeMap<>();
+
+	/**
+	 * List of Download Packets ordered by Sequence Numbers for TCP Session.
+	 */
+	private Set<Long> ackNumbers = new HashSet<>();
 	
 	/**
 	 * A Set of strings containing the application names.
@@ -378,39 +384,58 @@ public class Session implements Serializable, Comparable<Session> {
 		return tos.toString();
 	}
 	
-	public boolean addTcpPacket(PacketInfo packetInfo, long sequnceNumber) {
+	public boolean addTcpPacket(PacketInfo packetInfo, long sequenceNumber) {
 		tcpPackets.add(packetInfo);
 		allPackets.add(packetInfo);
+
+		TCPPacket tcpPacket = (TCPPacket) packetInfo.getPacket();
+		ackNumbers.add(tcpPacket.getAckNumber());
+
+		if (packetInfo.getPayloadLen() == 0) {
+			return false;
+		}
+
 		if (packetInfo.getDir().equals(PacketDirection.UPLINK)) {
 			// Done to handle TCP Sequence Number Wrap Around
-			if (sequnceNumber < getBaseUplinkSequenceNumber()) {
-				sequnceNumber += 0xFFFFFFFF;
-				sequnceNumber++;
+			if (sequenceNumber < getBaseUplinkSequenceNumber()) {
+				sequenceNumber += 0xFFFFFFFF;
+				sequenceNumber++;
 			}
-			PacketInfo tempPacket;
-			if ((tempPacket = uplinkPacketsSortedBySequenceNumbers.get(sequnceNumber)) != null) {
-				if (packetInfo.getPayloadLen() == 0 || packetInfo.getPayloadLen() == tempPacket.getPayloadLen()) {
-					return false;
-				}
+
+			List<PacketInfo> packetListForSequenceNumber = uplinkPacketsSortedBySequenceNumbers.get(sequenceNumber);
+			if (packetListForSequenceNumber == null) {
+				packetListForSequenceNumber = new ArrayList<>();
+				uplinkPacketsSortedBySequenceNumbers.put(sequenceNumber, packetListForSequenceNumber);
 			}
-			uplinkPacketsSortedBySequenceNumbers.put(sequnceNumber, packetInfo);
+
+			if (packetListForSequenceNumber.size() != 0 && packetInfo.getPayloadLen() == packetListForSequenceNumber.get(packetListForSequenceNumber.size() - 1).getPayloadLen()) {
+				return false;
+			}
+
+			packetListForSequenceNumber.add(packetInfo);
 		} else if (packetInfo.getDir().equals(PacketDirection.DOWNLINK)) {
 			// Done to handle TCP Sequence Number Wrap Around
-			if (sequnceNumber < getBaseDownlinkSequenceNumber()) {
-				sequnceNumber += 0xFFFFFFFF;
-				sequnceNumber++;
+			if (sequenceNumber < getBaseDownlinkSequenceNumber()) {
+				sequenceNumber += 0xFFFFFFFF;
+				sequenceNumber++;
 			}
-			PacketInfo tempPacket;
-			if ((tempPacket = downlinkPacketsSortedBySequenceNumbers.get(sequnceNumber)) != null) {
-				if (packetInfo.getPayloadLen() == 0 || packetInfo.getPayloadLen() == tempPacket.getPayloadLen()) {
-					return false;
-				}
+
+			List<PacketInfo> packetListForSequenceNumber = downlinkPacketsSortedBySequenceNumbers.get(sequenceNumber);
+			if (packetListForSequenceNumber == null) {
+				packetListForSequenceNumber = new ArrayList<>();
+				downlinkPacketsSortedBySequenceNumbers.put(sequenceNumber, packetListForSequenceNumber);
 			}
-			downlinkPacketsSortedBySequenceNumbers.put(sequnceNumber, packetInfo);
+
+			if (packetListForSequenceNumber.size() != 0 && packetInfo.getPayloadLen() == packetListForSequenceNumber.get(packetListForSequenceNumber.size() - 1).getPayloadLen()) {
+				return false;
+			}
+
+			packetListForSequenceNumber.add(packetInfo);
 		}
+
 		return true;
 	}
-	
+
 	public void addUdpPacket(PacketInfo packetInfo) {
 		udpPackets.add(packetInfo);
 		allPackets.add(packetInfo);

@@ -183,6 +183,7 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 	public JTable getAccessedDomainContentTable() {
 		if (accessedDataTable == null) {
 			accessedDataTable = new DataTable<DomainsTCPSessions>(accessDomainModel);
+			accessedDataTable.setName(ResourceBundleHelper.getMessageString("overview.accessed.domains.tableName"));
 			DataTablePopupMenu popupMenu = (DataTablePopupMenu) accessedDataTable.getPopup();
             popupMenu.initialize();
 
@@ -234,6 +235,7 @@ public class OverviewTabTableSplitPane extends TabPanelJPanel implements  MouseL
 	public JTable getExpandedDomainContentTable() {
 		if (expandedDataTable == null) {
 			expandedDataTable = new DataTable<Session>(expandedDomainModel);
+			expandedDataTable.setName(ResourceBundleHelper.getMessageString("overview.domain.tcp.sessions.tableName"));
 			expandedDataTable.setAutoCreateRowSorter(true);
 			expandedDataTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			expandedDataTable.setGridColor(Color.LIGHT_GRAY);

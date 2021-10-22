@@ -69,6 +69,10 @@ public abstract class AbstractTraceResult {
 	 */
 	protected String traceFile;
 	
+	/**
+	 * TimeRange used in analysis
+	 */
+	protected TimeRange timeRange;
 
 	/**
 	 * the pcap startTime timestamp 
@@ -690,6 +694,17 @@ public abstract class AbstractTraceResult {
 	 */
 	public double getPcapTimeOffset() {
 		return pcapTimeOffset;
+	}
+
+	public TimeRange getTimeRange() {
+		if (timeRange == null) {
+			timeRange = new TimeRange();
+		}
+		return timeRange;
+	}
+
+	public void setTimeRange(TimeRange timeRange) {
+		this.timeRange = timeRange;
 	}
 	
 }

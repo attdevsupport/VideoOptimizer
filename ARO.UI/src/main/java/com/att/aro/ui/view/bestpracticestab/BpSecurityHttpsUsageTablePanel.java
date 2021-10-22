@@ -27,6 +27,7 @@ import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.HttpsUsageTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BpSecurityHttpsUsageTablePanel extends AbstractBpDetailTablePanel {
 	/**
@@ -59,6 +60,7 @@ public class BpSecurityHttpsUsageTablePanel extends AbstractBpDetailTablePanel {
 	public DataTable<HttpsUsageEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<HttpsUsageEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("security.https.usage.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

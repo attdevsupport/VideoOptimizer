@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -15,7 +14,6 @@ import com.att.aro.core.videoanalysis.XYPair;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
@@ -65,7 +63,7 @@ public class VideoStream {
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
 	private SortedMap<String, VideoEvent> videoEventMap = new TreeMap<>();
-	
+
 	/** <pre>
 	 * key definition format sssssssssstttttttt, t = timestamp len = 11, s = segment len = 10
 	 *   

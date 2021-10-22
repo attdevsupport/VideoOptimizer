@@ -28,6 +28,7 @@ import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.SimultnsConnTableModel;
 import com.att.aro.ui.model.bestpractice.VideoStallTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BPVideoStallTablePanel extends AbstractBpDetailTablePanel {
 	private static final long serialVersionUID = 1L;
@@ -52,6 +53,7 @@ public class BPVideoStallTablePanel extends AbstractBpDetailTablePanel {
 	public DataTable<VideoStall> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<VideoStall>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("video.stalls.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

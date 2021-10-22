@@ -47,7 +47,7 @@ import com.att.aro.ui.view.menu.file.PreferencesDialog;
  * Significands is the number of significant digits below the decimal point.
  * Math purists "do not confuse with the mantissa".
  */
-public class NumericInputVerifier extends InputVerifier{
+public class NumericInputVerifier extends InputVerifier {
 	
 	private static final int DISPLAYTIMER = 3000;
 
@@ -94,13 +94,7 @@ public class NumericInputVerifier extends InputVerifier{
 	 * @param preferencesDialog
 	 */
 	public NumericInputVerifier(double max, double min, int significands, boolean isPreferenceTab, PreferencesDialog preferencesDialog) {
-		this.max = max;
-		this.min = min;
-		this.significands = significands;
-		maxMssgFormat = (new StringBuilder()).append("Maximum value is %." + String.format("%d", significands) + "f")
-				.toString();
-		minMssgFormat = (new StringBuilder()).append("Minimum value is %." + String.format("%d", significands) + "f")
-				.toString();
+		this(max, min, significands);
 		this.isPreferenceTab = isPreferenceTab;
 		this.preferencesDialog = preferencesDialog;
 	}
@@ -193,6 +187,5 @@ public class NumericInputVerifier extends InputVerifier{
 	public boolean getResult() {
 		return result == tested;
 	}
-	
 	
 }

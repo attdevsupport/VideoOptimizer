@@ -63,7 +63,7 @@ public class RadioPlot implements IPlot {
 					RadioInfo first = radioInfos.get(0);
 					series.add(
 							analysis.getAnalyzerResult().getFilter()
-									.getTimeRange().getBeginTime(),
+									.getTimeRange().getBeginTime().doubleValue(),
 							first.getSignalStrength() < 0 ? first
 									.getSignalStrength() : MIN_SIGNAL);
 				}
@@ -77,7 +77,7 @@ public class RadioPlot implements IPlot {
 					if (analysis.getAnalyzerResult().getFilter().getTimeRange() != null) {
 						series.add(
 								analysis.getAnalyzerResult().getFilter()
-										.getTimeRange().getEndTime(),
+										.getTimeRange().getEndTime().doubleValue(),
 								last.getSignalStrength() < 0 ? last
 										.getSignalStrength() : MIN_SIGNAL);
 					} else {

@@ -327,7 +327,8 @@ public class VideoPreferencesPanel extends JPanel {
 	private void toggleOtherFields(boolean isEnabled) {
 		preferencesDialog.getTabbedPane().setEnabledAt(0, isEnabled);
 		preferencesDialog.getTabbedPane().setEnabledAt(1, isEnabled);
-		preferencesDialog.getOKButton().setEnabled(isEnabled);
+		preferencesDialog.getSaveButton().setEnabled(isEnabled);
+		preferencesDialog.getReloadButton().setEnabled(isEnabled);
 		duplicateHandlingEditCombo.setEnabled(isEnabled);	
 	}
 

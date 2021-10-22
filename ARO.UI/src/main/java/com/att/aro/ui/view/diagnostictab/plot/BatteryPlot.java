@@ -54,7 +54,7 @@ public class BatteryPlot implements IPlot{
 
 			if (batteryInfos.size() > 0 && filter.getTimeRange() != null) {
 				BatteryInfo first = batteryInfos.get(0);
-				series.add(filter.getTimeRange().getBeginTime(),
+				series.add(filter.getTimeRange().getBeginTime().doubleValue(),
 						first.getBatteryLevel());
 			}
 			for (BatteryInfo bi : batteryInfos) {
@@ -64,7 +64,7 @@ public class BatteryPlot implements IPlot{
 
 				BatteryInfo last = batteryInfos.get(batteryInfos.size() - 1);
 				if (filter.getTimeRange() != null) {
-					series.add(filter.getTimeRange().getEndTime(),
+					series.add(filter.getTimeRange().getEndTime().doubleValue(),
 							last.getBatteryLevel());
 				} else {
 					series.add(traceresult.getTraceDuration(), last.getBatteryLevel());

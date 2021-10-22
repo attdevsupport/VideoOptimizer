@@ -193,7 +193,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	}
 
 	public void addGraphPanel() {
-		if (chartAndTablePanel != null & diagnosticsPanel != null) {
+		if (chartAndTablePanel != null && diagnosticsPanel != null) {
 			GraphPanel graphPanel = getGraphPanel();
 			graphPanel.setGraphPanelBorder(false);
 			chartAndTablePanel.add(graphPanel, BorderLayout.NORTH);
@@ -299,6 +299,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	public DataTable<PacketInfo> getJPacketViewTable() {
 		if (jPacketViewTable == null) {
 			jPacketViewTable = new DataTable<PacketInfo>(jPacketViewTableModel);
+			jPacketViewTable.setName(ResourceBundleHelper.getMessageString("diagnostics.packet.view.tableName"));
 			jPacketViewTable.setAutoCreateRowSorter(true);
 			jPacketViewTable.setGridColor(Color.LIGHT_GRAY);
 			jPacketViewTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -501,7 +502,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	public TCPFlowsDataTable<Session> getJTCPFlowsTable() {
 		if (tcpflowsTable == null) {
 			tcpflowsTable = new TCPFlowsDataTable<Session>(jTcpUdpFlowsModel, this);
-			tcpflowsTable.setName("sessionTable");
+			tcpflowsTable.setName(ResourceBundleHelper.getMessageString("diagnostics.tcp.udp.streams.tableName"));
 			tcpflowsTable.setAutoCreateRowSorter(true);
 			tcpflowsTable.setGridColor(Color.LIGHT_GRAY);
 			tcpflowsTable.getSelectionModel().addListSelectionListener(this);

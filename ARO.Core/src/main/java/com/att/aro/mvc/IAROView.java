@@ -29,6 +29,7 @@ import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
+import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.video.pojo.VideoOption;
 
 /**
@@ -40,17 +41,13 @@ import com.att.aro.core.video.pojo.VideoOption;
  * 
  */
 public interface IAROView {
-//	/**
-//	 * As part of the UI initialization, declare an instance of the AROController, and pass a 
-//	 * handle of this view to the MVC controller.
-//	 */
-//	void initialize();
 	
 	/**
 	 * Modify the path of the analyzed trace file/folder
 	 * @param path: file path of the trace file/folder
+	 * @param timeRange should be omitted, when simply opening a trace
 	 */
-	void updateTracePath(File path);
+	void updateTracePath(File path, TimeRange... timeRange);
 	
 	/**
 	 * Sets the device profile that is used for analysis.

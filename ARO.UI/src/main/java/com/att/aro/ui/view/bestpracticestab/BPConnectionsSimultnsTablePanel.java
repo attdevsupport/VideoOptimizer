@@ -28,6 +28,7 @@ import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.SimultnsConnTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BPConnectionsSimultnsTablePanel extends AbstractBpDetailTablePanel {
 	private static final long serialVersionUID = 1L;
@@ -63,6 +64,7 @@ public class BPConnectionsSimultnsTablePanel extends AbstractBpDetailTablePanel 
 	public DataTable<MultipleConnectionsEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new DataTable<MinificationEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("connections.multiple.simultaneous.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
 
 import com.att.aro.core.ApplicationConfig;
+import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.util.CrashHandler;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.bestpracticestab.BestPracticesTab;
@@ -54,7 +55,16 @@ public class AROSwingWorker<T, V> extends SwingWorker<T, V> {
 
 	public AROSwingWorker(JFrame frmApplicationResourceOptimizer, List<PropertyChangeListener> changeListeners, String property, Object oldValue, Object newValue, String msg) {
 		Thread.setDefaultUncaughtExceptionHandler(new CrashHandler());
-		this.progress = new AROProgressDialog(frmApplicationResourceOptimizer, ResourceBundleHelper.getMessageString("progress.loadingTraceResults"));
+		String message;
+		if (newValue != null && newValue instanceof TimeRange ) {
+			TimeRange timeRange = (TimeRange) newValue;
+			String format = ResourceBundleHelper.getMessageString("progress.loadingTraceResults.TR");
+			message = MessageFormat.format(format, timeRange.getRange());
+		} else {
+			message = ResourceBundleHelper.getMessageString("progress.loadingTraceResults");
+		}
+
+		this.progress = new AROProgressDialog(frmApplicationResourceOptimizer, message);
 		progress.setVisible(true);
 		this.parent = frmApplicationResourceOptimizer;
 		this.msg = msg;
@@ -117,11 +127,11 @@ public class AROSwingWorker<T, V> extends SwingWorker<T, V> {
 						ResourceBundleHelper.getMessageString("Error.gc_overhead_limit_exceeded"),
 						ApplicationConfig.getInstance().getAppShortName());
 				new MessageDialogFactory().showErrorDialog(parent, errorMsg, "Problem encountered");
-			} else if (e.getMessage().contains("jpcap64.dll") || e.getMessage().contains("PCapAdapter.loopPacket")) {
+			} else if (e.getMessage().contains("wpcap.dll") || e.getMessage().contains("Npcap")) {
 				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("aro.winpcap_error"),
 						ApplicationConfig.getInstance().getAppShortName());
 				new MessageDialogFactory().showErrorDialog(parent, errorMsg, "Problem encountered");
-			} else if (e.getMessage().contains("Unable to load library 'vlc'")) {
+			} else if (e.getMessage().contains("libvlc.dll")) {
 				String errorMsg = MessageFormat.format(ResourceBundleHelper.getMessageString("video.informative.vlcj"),
 						ApplicationConfig.getInstance().getAppShortName());
 				new MessageDialogFactory().showErrorDialog(parent, errorMsg, "Problem encountered");

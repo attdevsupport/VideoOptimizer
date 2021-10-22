@@ -79,7 +79,7 @@ public class TemperaturePlot implements IPlot {
 					}
 					TemperatureEvent last = temperatureInfos.get(temperatureInfos.size() - 1);
 					if (filter.getTimeRange() != null) {
-						series.add(filter.getTimeRange().getEndTime(), last.getcelciusTemperature());
+						series.add(filter.getTimeRange().getEndTime().doubleValue(), last.getcelciusTemperature());
 					} else {
 						series.add(traceresult.getTraceDuration(), last.getcelciusTemperature());
 					}

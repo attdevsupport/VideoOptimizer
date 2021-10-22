@@ -37,6 +37,7 @@ import com.att.aro.ui.commonui.IUITabPanelLayoutUpdate;
 import com.att.aro.ui.commonui.TabPanelCommon;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  * Represents a panel for displaying the individual burst analysis table, 
@@ -142,6 +143,7 @@ public class BurstAnalysisPanel extends JPanel implements IUITabPanelLayoutUpdat
 	public DataTable<BurstAnalysisInfo> getTable() {
 		if (table == null) {
 			table = new DataTable<BurstAnalysisInfo>(tableModel);
+			table.setName(ResourceBundleHelper.getMessageString("statistics.burst.analysis.tableName"));
 			table.setGridColor(Color.LIGHT_GRAY);
 			table.setAutoCreateRowSorter(true);
 
@@ -159,6 +161,7 @@ public class BurstAnalysisPanel extends JPanel implements IUITabPanelLayoutUpdat
 	public DataTable<Burst> getBurstTable() {
 		if (burstTable == null) {
 			burstTable = new DataTable<Burst>(burstTableModel);
+			table.setName(ResourceBundleHelper.getMessageString("statistics.individual.burst.analysis.tableName"));
 			burstTable.setGridColor(Color.LIGHT_GRAY);
 			burstTable.setAutoCreateRowSorter(true);
 

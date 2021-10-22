@@ -26,6 +26,7 @@ import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.ImageBPTable;
 import com.att.aro.ui.model.bestpractice.ImageBPTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 
 public class BpFileImageMDataTablePanel extends AbstractImageBpDetailTablePanel {
@@ -66,6 +67,7 @@ public class BpFileImageMDataTablePanel extends AbstractImageBpDetailTablePanel 
 	public ImageBPTable<ImageMdataEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new ImageBPTable<ImageMdataEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("file.image.metadata.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

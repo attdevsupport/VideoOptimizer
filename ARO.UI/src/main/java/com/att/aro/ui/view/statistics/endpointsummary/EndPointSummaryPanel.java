@@ -141,6 +141,7 @@ public class EndPointSummaryPanel extends JSplitPane {
 	public DataTable<ApplicationPacketSummary> getTable() {
 		if (table == null) {
 			table = new DataTable<ApplicationPacketSummary>(tableModel);
+			table.setName(ResourceBundleHelper.getMessageString("statistics.application.summary.tableName"));
 			table.setAutoCreateRowSorter(true);
 
 			DataTablePopupMenu popupMenu = (DataTablePopupMenu) table.getPopup();
@@ -157,6 +158,7 @@ public class EndPointSummaryPanel extends JSplitPane {
 	public DataTable<IPPacketSummary> getIPTable() {
 		if (ipTable == null) {
 			ipTable = new DataTable<IPPacketSummary>(ipTableModel);
+			ipTable.setName(ResourceBundleHelper.getMessageString("statistics.ip.summary.tableName"));
 			ipTable.setAutoCreateRowSorter(true);
 			TableRowSorter<TableModel> sorter = new TableRowSorter<>(ipTableModel);	
 			sorter.setComparator(0, Util.getDomainSorter());

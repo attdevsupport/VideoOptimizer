@@ -187,7 +187,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 	@Autowired
 	private ISpeedThrottleEventReader speedThrottleReader;
-	
+
 	@Autowired
 	private IVideoStartupReadWrite videoStartupReader;
 		
@@ -199,6 +199,8 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	private List<PacketInfo> unknownPackets = null;
 	private Map<InetAddress, Integer> ipCountMap = null;
 	private boolean isSecurePcap = false;
+
+	public static final String UNKNOWN_APPNAME = "Unknown";
 
 	@Autowired
 	public void setFileReader(IFileManager filereader) {
@@ -511,7 +513,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	 */
 	private String getAppNameForPacket(int packetIdx, List<Integer> appIds, List<String> appInfos) {
 
-		String appName = "Unknown";
+		String appName = UNKNOWN_APPNAME;
 		int numberOfAppIds = appIds.size();
 
 		if (!appIds.isEmpty() && !appInfos.isEmpty()) {

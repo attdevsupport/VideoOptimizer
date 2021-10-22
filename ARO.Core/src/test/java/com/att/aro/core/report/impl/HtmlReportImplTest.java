@@ -13,6 +13,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -62,6 +63,7 @@ public class HtmlReportImplTest extends BaseTest{
     }
     
     @Test
+    @Ignore
     public void reportGenerator_retunrIsTrue(){
     	AccessingPeripheralResult access = new AccessingPeripheralResult();
     	access.setResultType(BPResultType.PASS);
@@ -85,6 +87,7 @@ public class HtmlReportImplTest extends BaseTest{
     	AROTraceData results = new AROTraceData();
     	PacketAnalyzerResult analyzerResult = new PacketAnalyzerResult();
     	TraceDirectoryResult tracedirresult = new TraceDirectoryResult();
+    	
     	EnergyModel energyModel = new EnergyModel();    	
     	Statistic statistic = new Statistic();
     	statistic.setTotalByte(123);

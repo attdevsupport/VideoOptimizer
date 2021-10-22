@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +44,7 @@ import com.att.aro.core.videoanalysis.pojo.MediaType;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
@@ -108,6 +110,7 @@ public class VideoTrafficInferencer {
 			switch (fileExtName) {
 			case "json":
 				ObjectMapper mapper = new ObjectMapper();
+				mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 				try {
 					videoManifest = mapper.readValue(new File(manifestFilePath), VideoManifest.class);
 				} catch (IOException ioe) {
@@ -176,7 +179,7 @@ public class VideoTrafficInferencer {
 				Track audioTrack;
 				if ((audioTrack = videoManifest.getTracks().stream().filter(track -> (track.getMediaType()).equals(MediaType.AUDIO)).findFirst().get()) != null) {
 					for (HttpRequestResponseInfo rrInfo : possibleAudioRequestMap.values()) {
-						if (!videoRequestMap.contains(rrInfo)) {
+						if (!videoRequestMap.contains(rrInfo) && rrInfo.getTime() > videoStream.getFirstSegment().getDLTime()) {
 							Segment audioSegment = new Segment(videoManifest, videoManifest.getAudioTrack(), ++segmentIndex, audioTrack.getSegmentSizes().get(segmentIndex - 1), rrInfo.getKey(), rrInfo.getRequestCounterCSI(), -1);
 							manifest = createManifest(FilenameUtils.getBaseName(manifestFile.getPath()), ManifestType.CHILD, ContentType.AUDIO);
 							ChildManifest childManifest = new ChildManifest();
@@ -238,17 +241,17 @@ public class VideoTrafficInferencer {
 			List<List<Integer>> updatedPath = new ArrayList<List<Integer>>();
 			for (List<Integer> list : paths) {
 				int currentNode = list.get(list.size() - 1);
+				List<Integer> tempList = new ArrayList<>(list);
 				for (int node : lastNodes.get(currentNode)) {
 					if (node == 0) {
 						shortestPath.add(list);
 						flagToQuit = true;
 						break;
 					} else {
-						List<Integer> tempList = new ArrayList<>(list);
 						tempList.add(node);
-						updatedPath.add(tempList);
 					}
 				}
+				updatedPath.add(tempList);
 				if (flagToQuit) {
 					break;
 				}
@@ -256,7 +259,7 @@ public class VideoTrafficInferencer {
 			paths = updatedPath;
 		}
 		if (!shortestPath.isEmpty()) {
-			List<Integer> list = shortestPath.get(0);
+			List<Integer> list = shortestPath.stream().max(Comparator.comparing(List::size)).get();
 			Collections.reverse(list);
 			for (int index : list) {
 				solution.add(candidateList.get(index));

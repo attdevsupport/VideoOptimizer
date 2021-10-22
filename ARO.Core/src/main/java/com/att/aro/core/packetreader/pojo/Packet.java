@@ -18,6 +18,9 @@ package com.att.aro.core.packetreader.pojo;
 
 import java.io.Serializable;
 
+import org.pcap4j.packet.IpV4Packet;
+import org.pcap4j.packet.IpV6Packet;
+
 /**
  * generic packet data
  */
@@ -36,7 +39,7 @@ public class Packet implements Serializable {
 		this.microSeconds = microSeconds;
 		data = pcap4jPacket.getRawData();
 		len = pcap4jPacket.length();
-		dataOffset = pcap4jPacket.getHeader().length();
+		dataOffset = pcap4jPacket instanceof IpV4Packet || pcap4jPacket instanceof IpV6Packet ? 0 : pcap4jPacket.getHeader().length();
 	}
 
 	/**

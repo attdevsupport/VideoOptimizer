@@ -24,6 +24,7 @@ import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.model.ImageFormatDataTable;
 import com.att.aro.ui.model.bestpractice.ImageFormatTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 
 public class BpFileImageFormatTablePanel extends AbstractBpImageFormatTablePanel {
@@ -64,6 +65,7 @@ public class BpFileImageFormatTablePanel extends AbstractBpImageFormatTablePanel
 	public ImageFormatDataTable<ImageMdataEntry> getContentTable() {
 		if (contentTable == null) {
 			contentTable = new ImageFormatDataTable<ImageMdataEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("file.image.format.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

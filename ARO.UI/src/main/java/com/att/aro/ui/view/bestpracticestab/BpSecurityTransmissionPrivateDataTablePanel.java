@@ -27,6 +27,7 @@ import com.att.aro.core.util.Util;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTablePopupMenu;
 import com.att.aro.ui.model.bestpractice.TransmissionPrivateDataTableModel;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class BpSecurityTransmissionPrivateDataTablePanel extends AbstractBpDetailTablePanel {
 
@@ -56,6 +57,7 @@ public class BpSecurityTransmissionPrivateDataTablePanel extends AbstractBpDetai
 	public DataTable<TransmissionPrivateDataEntry> getContentTable() {
 		if(contentTable == null) {
 			contentTable = new DataTable<TransmissionPrivateDataEntry>(tableModel);
+			contentTable.setName(ResourceBundleHelper.getMessageString("security.private.data.transmission.tableName"));
 			contentTable.setAutoCreateRowSorter(true);
 			contentTable.setGridColor(Color.LIGHT_GRAY);
 			contentTable.setRowHeight(ROW_HEIGHT);

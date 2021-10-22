@@ -368,7 +368,7 @@ public class HttpsUsageImplTest extends BaseTest {
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(2, httpsUsageEntries.size());
 		if (httpsUsageEntries.get(0).getIPAddress().equals("157.56.19.80")) {
-			assertEquals("0.293", httpsUsageEntries.get(0).getTotalTrafficInKB());
+			assertEquals("0.06", httpsUsageEntries.get(0).getTotalTrafficInKB());
 			assertEquals("0.08", httpsUsageEntries.get(1).getTotalTrafficInKB());
 		} else {
 			assertEquals("0.08", httpsUsageEntries.get(0).getTotalTrafficInKB());

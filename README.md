@@ -52,11 +52,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 4.2
+#### Video Optimizer 4.3
 
-**System Requirements for Video Optimizer 4.2:**
+**System Requirements for Video Optimizer 4.3:**
 
-*Before you download Video Optimizer 4.2, make sure you meet the following system requirements for your operating system.*
+*Before you download Video Optimizer 4.3, make sure you meet the following system requirements for your operating system.*
 
 - At least 4GB of RAM, but recommend at least 8GB
 - Java 8 or above
@@ -68,7 +68,7 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 - Mac requirements
   - Brew (or any similar package manager)
   - Ifuse
-  - OSXFuse
+  - MacFuse (formerly known as OSXFuse)
   - Libimobiledevice & ideviceinstaller
   - For iOS developers, use latest version of XCode and OS X
   - VLC media player 3.x.x or higher
@@ -80,42 +80,31 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 
-**Video Optimizer 4.2 Features**
-- New graph showing device temperature and Thermal mitigation status for Android devices is added to the diagnostics tab. Values are collected every 5 seconds.
+**Video Optimizer 4.3 Features**
+- New feature of open trace with Time range is implemented in the preferences window
+  -	Time Range Editor/ Time Range Setup windows are displayed to the user
+  -	New feature to open trace with Default or Manual time range is implemented
+  -	Json file is created in the trace folder with the all the saved time range
 
-- Analysis of IPV6 data is now supported, increasing the number of apps that allow full video stream analysis.
+- New feature of Display Resolution of the device used is added to the best practice page first section of the results.
 
-- New graph displaying TCP handshake latency per session has been added to the diagnostics tab.
+- Preferences> logging level will have a new feature of “WARN”
 
-- VO now calculates and displays minimum, maximum, and average TCP handshake latency of a trace on the statistics tab.
-
-- Full support for opening, reading and analyzing pcapng files.
-
-- VO now calculates and displays Total Payload bytes and Percentages for every Application and IP address in a trace. New columns have been added to the End point summary charts for both per Application and per IP address statistics.
-
-- CSI (Chunk Sequence Inferencer) analysis is automatically reloaded every time a trace is re-opened.
-
-- User Interface Enhancements:
-  -	Time Range Analysis:
-   - Start time value can now be entered in minutes: seconds format or hours: minutes: seconds format and automatically converted to seconds format.
-   - Analysis details are now selectable and can be copied to another application for comparison and further analysis.
-  -	Option provided to reload a trace after making changes in the user preferences window.
-  -	Select IPs/application feature allows for filtering of IPV4/IPV6 data as well as TCP/UDP/DNS packets.
-  - Labels have been added to the Y-axis of the Throughput graph on the Diagnostics tab.
-  - When VO opens a raw pcap file, the user is given the option to move it into a self-contained trace folder with the same name as the original pcap file. This feature automates better organization when analyzing multiple pcap files.
-  - Overall speed improvements when opening traces.
-- Video Enhancements:
- - Startup delay values are persistent when traces are reloaded, including for CSI analysis.
- - When segment 0 details are available for HLS video streams, they are now displayed.
- - Segment playtime graphs are now more accurate.
- - Start-up delay label changed to “Startup Time” for clarity.
+- Enhancements:
+  -	User can allocate Max heap size in GB
+  - Export Results should consist of HTML, JSON and EXCEL  
+  - Export Results will include all the throughput information according to the Time range setup
+  -	A functional StartupDelayDialog without having to change the screen resolution density
+  -	Time Range Analysis options have been clarified and merged into one menu
+  - CSI fixes for QUIC and TCP.
 
 
-**Known issues in Release 4.2**
+**Known issues in Release 4.3**
 
-- Total bytes count is off in a small percentage of iOS traces, typically by less than 1%.
-- CPU temperature is not displayed for certain Android devices, primarily Pixel devices and older Android versions.
-- When opening a pcap file, if the user says “No” to create a new directory, no progress bars appear to indicate that VO is opening the file.
+- Running 32 bit VLC on a 64 bit system is not compatible with Video Optimizer and can cause the application to become unresponsive.
+- Known Issues with Mac OS Big Sur
+ - Recent versions of Mac OS Big Sur have a known issue with the rvictl that enables Video Optimizer to collect packet data from iOS devices. We are actively assisting customers with workarounds while awaiting a fix from Apple. A link to request support is available from the Video Optimizer Help menu.
+
 
 **Compilation instructions**
 + Please follow the order to compile projects

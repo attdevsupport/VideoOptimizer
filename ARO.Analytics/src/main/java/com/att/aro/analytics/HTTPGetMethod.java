@@ -65,7 +65,11 @@ public class HTTPGetMethod {
 			}
 			urlConnection.disconnect();
 		} catch (Exception exception) {
-			LOGGER.error("Connection Failure: ", exception);
+			if (!exception.getMessage().equals("connect timed out")) {
+				LOGGER.error("Connection Failure: " + exception.getMessage());
+			} else {
+				LOGGER.error("Connection Failure: ", exception);
+			}
 		}
 		return gaRequestStatus;
 	}

@@ -198,13 +198,13 @@ public class VideoProgressPlot implements IPlot{
 			optionSelected = option;
 			double dlTimeStamp = 0.0;
 			if (option == SegmentOptions.DEFAULT || option == SegmentOptions.VIDEO) {
-				for (Entry<String, VideoEvent> videoEventEntry : videoStream.getVideoEventMap().entrySet()) {
+				for (Entry<String, VideoEvent> videoEventEntry : videoStream.getVideoStartTimeMap().entrySet()) {
 					VideoEvent videoEvent = videoEventEntry.getValue();
 					if (videoEvent.isSelected() && videoEvent.isNormalSegment()) {
 						videoEvent.setOption(SegmentOptions.VIDEO.toString());
 						videoEventList.add(videoEvent);
 						eventList.add(videoEvent);
-						double videoDownloadProgress = getProgress(videoStream.getVideoEventMap(), videoEvent, true);
+						double videoDownloadProgress = getProgress(videoStream.getVideoStartTimeMap(), videoEvent, true);
 						progressList.add(videoDownloadProgress);
 						dlTimeStamp = videoEvent.getDLTimeStamp();
 						timestampList.add(dlTimeStamp);
@@ -214,13 +214,13 @@ public class VideoProgressPlot implements IPlot{
 			}
 
 			if (option == SegmentOptions.DEFAULT || option == SegmentOptions.AUDIO) {
-				for (Entry<String, VideoEvent> audioEventEntry : videoStream.getAudioEventMap().entrySet()) {
+				for (Entry<String, VideoEvent> audioEventEntry : videoStream.getAudioStartTimeMap().entrySet()) {
 					VideoEvent audioEvent = audioEventEntry.getValue();
 					if (audioEvent.isSelected() && audioEvent.isNormalSegment()) {
 						audioEvent.setOption(SegmentOptions.AUDIO.toString());
 						audioEventList.add(audioEvent);
 						eventList.add(audioEvent);
-						double audioDownloadProgress = getProgress(videoStream.getAudioEventMap(), audioEvent, false);
+						double audioDownloadProgress = getProgress(videoStream.getAudioStartTimeMap(), audioEvent, false);
 						progressList.add(audioDownloadProgress);
 						dlTimeStamp = audioEvent.getDLTimeStamp();
 						timestampList.add(dlTimeStamp);
@@ -250,23 +250,28 @@ public class VideoProgressPlot implements IPlot{
 	
 
 	private double getProgress(SortedMap<String, VideoEvent> segmentMap, VideoEvent segment, boolean isVideo) {
-		double progress = 0.0;
+		double downloadProgress = 0.0;
+		double playtimeProgress = 0.0;
 		for (VideoEvent event : segmentMap.values()) {
-			progress = progress + event.getDuration();
-			if (event == segment) {
+			double duration = event.getDuration();
+			downloadProgress = downloadProgress + duration;
+			if (event.isSelected() && event.isNormalSegment()) {
+				playtimeProgress = playtimeProgress + duration;
+			}
+			if (segment.equals(event)) {
 				break;
 			}
 		}
-		downloadProgressMap.put(segment, progress);
-		if (segment.isSelected() && segment.isNormalSegment()) {
-			if (isVideo) {
-				videoPlaytimeSeries.add(segment.getPlayTime(), progress);
-			} else {
-				audioPlaytimeSeries.add(segment.getPlayTime(), progress);
-			}
+		downloadProgressMap.put(segment, downloadProgress);
+		if (isVideo) {
+			videoPlaytimeSeries.add(segment.getPlayTime(), playtimeProgress);
+		} else {
+			audioPlaytimeSeries.add(segment.getPlayTime(), playtimeProgress);
 		}
+		
 		timestampList.add(segment.getPlayTime());
-		progressList.add(progress);
-		return progress;
+		progressList.add(downloadProgress);
+		return downloadProgress;
 	}
+	
 }

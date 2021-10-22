@@ -20,7 +20,7 @@ public class ExportManifestDialog extends JPanel {
         setName(ExportManifestDialog.class.getName());
         JButton exportBtn = new JButton(ResourceBundleHelper.getMessageString("videoTab.export"));
 
-        exportBtn.addActionListener(new VideoStreamMenuItemListener(null, videoManifestPanel.getSegmentTableList()));
+        exportBtn.addActionListener(new VideoStreamMenuItemListener(videoManifestPanel.getSegmentTableList()));
         add(exportBtn);
     }
 }

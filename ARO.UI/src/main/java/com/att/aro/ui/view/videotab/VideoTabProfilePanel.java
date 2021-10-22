@@ -89,6 +89,10 @@ public class VideoTabProfilePanel extends TabPanelJPanel {
 		deviceValueLabel = createValueLabel();
 		traceDurationValueLabel = createValueLabel();
 		
+		this.traceValueLabel.addMouseListener(getOpenFolderAdapter());
+		this.traceValueLabel.setToolTipText(ResourceBundleHelper.getMessageString("trace.hyperlink"));
+		this.traceValueLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		
 		Insets insets = new Insets(1, 1, 1, 1);
 		JLabel dateLabel = new JLabel(
 				ResourceBundleHelper.getMessageString("bestPractices.date"));
@@ -174,10 +178,9 @@ public class VideoTabProfilePanel extends TabPanelJPanel {
 	public void refresh(AROTraceData aModel){
 		this.dateValueLabel.setText(aModel.getAnalyzerResult().getTraceresult().getTraceDateTime().toString());
 		
-		this.traceValueLabel.setText(getTracePath(aModel.getAnalyzerResult().getTraceresult().getTraceDirectory()));
-		this.traceValueLabel.addMouseListener(getOpenFolderAdapter());
-		this.traceValueLabel.setToolTipText(ResourceBundleHelper.getMessageString("trace.hyperlink"));
-		this.traceValueLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+		File directory = new File(aModel.getAnalyzerResult().getTraceresult().getTraceDirectory());
+		this.traceValueLabel.setText(getTracePath(directory.getName()));
+
 
 		this.traceDurationValueLabel.setText(Long.toString(aModel.getAnalyzerResult().getStatistic().getTotalByte()));
 		
@@ -214,7 +217,13 @@ public class VideoTabProfilePanel extends TabPanelJPanel {
 					desktop = Desktop.getDesktop();
 					try {
 						File traceFile = new File(PreferenceHandlerImpl.getInstance().getPref("TRACE_PATH"));
-						desktop.open(traceFile);
+						if (traceFile != null && traceFile.exists()) {
+							if (traceFile.isDirectory()) {
+								desktop.open(traceFile);
+							} else {
+								desktop.open(traceFile.getParentFile());
+							}
+						}
 					} catch (IOException ex) {
 						LOG.error("Error opening the Trace Folder : " +ex.getMessage());
 					}

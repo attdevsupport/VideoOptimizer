@@ -109,6 +109,7 @@ public class RequestResponseDetailsPanel extends JPanel {
 	public DataTable<HttpRequestResponseInfo> getJRequestResponseTable() {
 		if (jRequestResponseTable == null) {
 			jRequestResponseTable = new DataTable<HttpRequestResponseInfo>(jRequestResponseTableModel);
+			jRequestResponseTable.setName(ResourceBundleHelper.getMessageString("diagnostics.request.response.view.tableName"));
 			jRequestResponseTable.setAutoCreateRowSorter(true);
 			jRequestResponseTable.setGridColor(Color.LIGHT_GRAY);
 
