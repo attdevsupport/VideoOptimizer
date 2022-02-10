@@ -69,6 +69,7 @@ import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.UserEvent;
+import com.att.aro.core.peripheral.pojo.VideoStreamStartup.ValidationStartup;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
@@ -177,7 +178,8 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 
 		add(getTitleButton(), BorderLayout.NORTH);
 		if (videoStream != null && (videoStream.getPlayRequestedTime() != null || videoStream.getVideoPlayBackTime() != null)) {
-			startupButton.setForeground(Color.GREEN);
+			
+			defineStartupDelayButton(videoStream);
 			enableCheckBox.setSelected(videoStream.isCurrentStream());
 			this.videoStream.setSelected(videoStream.isCurrentStream());
 
@@ -249,16 +251,18 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		titlePanel.add(lbl);
 
 		titlePanel.add(getStartupDialogButton());
+		defineStartupDelayButton(videoStream);
+		
 		if (videoStream.getMissingSegmentCount() > 0) {
 			titlePanel.add(getSessionProblems(videoStream.getMissingSegmentCount()));
 		}
-		
+
 		titlePanel.add(createCheckBoxVideo());
 		titlePanel.add(createCheckBoxAudio());
 		titlePanel.add(createCheckBoxCC());
 
 		if (videoStream.getVideoPlayBackTime() != null) {
-			titlePanel.add(new JLabel(ResourceBundleHelper.getMessageString("video.tab.startUpTime") + String.valueOf(videoStream.getVideoPlayBackTime())));
+			titlePanel.add(new JLabel(ResourceBundleHelper.getMessageString("video.tab.startUpTime") + String.format("%.3f", videoStream.getVideoPlayBackTime())));
 		}
 
 		return titlePanel;
@@ -279,15 +283,35 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		startupButton.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				startupButton.setForeground(Color.GREEN);
 				launchStartUpDelayDialog();
 			}
 		});
 		return startupButton;
 	}
 
+	/**
+	 * Change color & text if startup delay has been set.
+	 * 
+	 * @param videoStream
+	 */
+	private void defineStartupDelayButton(VideoStream videoStream) {
+		if (videoStream.getVideoStreamStartup() != null
+				&& videoStream.getVideoStreamStartup().getValidationStartup().equals(ValidationStartup.USER)) {
+
+			startupButton.setForeground(Color.BLUE);
+			startupButton.setText("Edit StartupDelay");
+		} else {
+			startupButton.setForeground(Color.RED);
+		}
+	}
+
+
+	
 	public void launchStartUpDelayDialog() {
 
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("StartupDelayDialog");
+		
 		IVideoPlayer player = aroView.getVideoPlayer();
 		double maxDuration = player.getDuration();
 		List<UserEvent> userEventList = analyzerResult.getAnalyzerResult().getTraceresult().getUserEvents();
@@ -366,11 +390,13 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		return checkBoxCC;
 	}
 
+
 	private Component getCheckBoxStreamEnable() {
 		enableCheckBox = new JCheckBox();
 		videoStreamCollection = analyzerResult.getAnalyzerResult().getStreamingVideoData().getVideoStreamMap().values();
 		boolean selected = videoStream.getVideoEventMap() != null ? true : false;
-		if (!selected || videoStream.getVideoEventMap().isEmpty()
+		if (!selected 
+				|| videoStream.getVideoEventMap().isEmpty()
 				|| ((VideoEvent) videoStream.getVideoEventMap().values().toArray()[0]).getSegmentID() < 0) {
 			enableCheckBox.setEnabled(false);
 		} else {
@@ -393,6 +419,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 
 				if (e.getSource().getClass().equals(JCheckBox.class)) {
 					if (((JCheckBox) e.getSource()).isSelected()) {
+						videoStream.setSelected(true);
 						refreshStream();
 						reAnalyze();
 					} else {
@@ -420,6 +447,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		enableCheckBox.setSelected(isCurrentStream);
 		stream.setCurrentStream(isCurrentStream);
 	}
+
 
 	public void updateTitleButton(AROTraceData analyzerResult) {
 		if (titlePanel != null) {
@@ -488,7 +516,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 			textAdjust = TEXT_FUDGE;
 		} else if (Util.isLinuxOS()) {
 			tableHeight = HEIGHT_LINUX;
-			textAdjust = TEXT_FUDGE;
+			textAdjust = TEXT_FUDGE + 3;
 		}
 
 		if (manifestFlag) {
@@ -567,7 +595,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 
 		Collection<VideoEvent> videoEventList = eventList.values();
 		rowCount = videoEventList.size();
-		TableModel tableModel = new SegmentTableModel(videoEventList, videoStream.getPlayRequestedTime()!=null ? videoStream.getPlayRequestedTime() : 0.0);
+		TableModel tableModel = new SegmentTableModel(videoEventList, videoStream.getPlayRequestedTime() != null ? videoStream.getPlayRequestedTime() : 0.0);
 
 		JTable jTable;
 		jTable = new JTable(tableModel);
@@ -579,16 +607,11 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 			jTable.getColumnModel().getColumn(idx).setCellRenderer(rightRenderer);
 		}
 
-		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.TRACK))
-				.setCellRenderer(centerRenderer);
-		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.TCP_STATE))
-				.setCellRenderer(centerRenderer);
-		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.CHANNELS))
-				.setCellRenderer(centerRenderer);
-		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.PLAYBACK_DELAY))
-		.setCellRenderer(centerRenderer);
-		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.STARTUP_DELAY))
-		.setCellRenderer(centerRenderer);
+		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.TRACK)).setCellRenderer(centerRenderer);
+		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.TCP_STATE)).setCellRenderer(centerRenderer);
+		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.CHANNELS)).setCellRenderer(centerRenderer);
+		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.DOWNLOAD_DELAY)).setCellRenderer(centerRenderer);
+		jTable.getColumnModel().getColumn(((SegmentTableModel) tableModel).findColumn(SegmentTableModel.PLAYBACK_DELAY)).setCellRenderer(centerRenderer);
 
 		JTableHeader header = jTable.getTableHeader();
 		header.setDefaultRenderer(new MultiLineTableHeaderRenderer());
@@ -658,7 +681,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 				setColumnMinMaxWidth(jTable, SegmentTableModel.CHANNELS, true, 36, 36);
 				setColumnMinMaxWidth(jTable, SegmentTableModel.CONTENT, true, 50, 50);
 			}
-			setColumnMinMaxWidth(jTable, SegmentTableModel.STARTUP_DELAY, true, 55, COL_MAX_WIDTH);
+			setColumnMinMaxWidth(jTable, SegmentTableModel.DOWNLOAD_DELAY, true, 55, COL_MAX_WIDTH);
 			setColumnMinMaxWidth(jTable, SegmentTableModel.PLAYBACK_DELAY, true, 55, COL_MAX_WIDTH);
 		} else if (AUDIO_TABLE_NAME.equals(jTable.getName())) {
 			setColumnMinMaxWidth(jTable, SegmentTableModel.CHANNELS, true, 36, 36);
@@ -691,7 +714,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		setColumnMinMaxWidth(jTable, SegmentTableModel.TCP_SESSION, false, 0, 0);
 		setColumnMinMaxWidth(jTable, SegmentTableModel.CHANNELS, false, 0, 0);
 		setColumnMinMaxWidth(jTable, SegmentTableModel.CONTENT, false, 0, 0);
-		setColumnMinMaxWidth(jTable, SegmentTableModel.STARTUP_DELAY, false, 0, 0);
+		setColumnMinMaxWidth(jTable, SegmentTableModel.DOWNLOAD_DELAY, false, 0, 0);
 		setColumnMinMaxWidth(jTable, SegmentTableModel.PLAYBACK_DELAY, false, 0, 0);
 
 		if (VIDEO_TABLE_NAME.equals(jTable.getName())) {

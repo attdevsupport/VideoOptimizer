@@ -40,7 +40,7 @@ Video Optimizer allows mobile application developers to test the network perform
 
 The Data Collector is the component of the Video Optimizer application that captures the data traffic of a mobile device and stores that information in trace files that can be analyzed using the Video Optimizer Data Analyzer.
 
-The Video Optimizer Data Analyzer is the component of the Video Optimizer application that evaluates the trace data collected from an application and generates statistical and analytical results based on recommended best practices.
+The Video Optimizer Data Analyzer is the component of the Video Optimizer application that evalu  ates the trace data collected from an application and generates statistical and analytical results based on recommended best practices.
 
 This Open Source Code Package contains all of the code needed to build both of these Video Optimizer components.
 
@@ -52,11 +52,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 4.3
+#### Video Optimizer 4.4
 
-**System Requirements for Video Optimizer 4.3:**
+**System Requirements for Video Optimizer 4.4:**
 
-*Before you download Video Optimizer 4.3, make sure you meet the following system requirements for your operating system.*
+*Before you download Video Optimizer 4.4, make sure you meet the following system requirements for your operating system.*
 
 - At least 4GB of RAM, but recommend at least 8GB
 - Java 8 or above
@@ -80,30 +80,40 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 
-**Video Optimizer 4.3 Features**
-- New feature of open trace with Time range is implemented in the preferences window
-  -	Time Range Editor/ Time Range Setup windows are displayed to the user
-  -	New feature to open trace with Default or Manual time range is implemented
-  -	Json file is created in the trace folder with the all the saved time range
+**Video Optimizer 4.4 New Features**
+- Automatic DNS lookup now assigns names to the endpoints associated with a session regardless of the session type (when available).
 
-- New feature of Display Resolution of the device used is added to the best practice page first section of the results.
+- The SNI (server name indicator) is now automatically determined for all TLS flows and can be quickly ascertained by double clicking a flow and copying it from the pop-up window.
 
-- Preferences> logging level will have a new feature of “WARN”
+- Filter options have been added to Time Range Analysis to allow for IPv4, IPv6, TCP, UDP and DNS filtering. The statistics button will display results based on selected filters. Reanalysis will be done based on selected filters.
+
+- Complete environment details are captured and stored in json format that is searchable without opening a trace. Details include:
+  - Video Optimizer version
+  - VPN Collector version
+  - Device make/model and OS
+  - Host machine OS and Java versions
+  - Xcode, Libimobiledevice and dumpcap versions (for Mac)
+
+- Optional trace details can now be added directly in the Start Collector window when launching a trace, or hidden if not needed.
 
 - Enhancements:
-  -	User can allocate Max heap size in GB
-  - Export Results should consist of HTML, JSON and EXCEL  
-  - Export Results will include all the throughput information according to the Time range setup
-  -	A functional StartupDelayDialog without having to change the screen resolution density
-  -	Time Range Analysis options have been clarified and merged into one menu
-  - CSI fixes for QUIC and TCP.
+  -	Improved accuracy of the throughput graph for throttled Android traces.
+  - When performing pcap analysis, if the user opts to not retain the sub-directory VO creates, the original path is remembered, where the file was saved.  
+  - Addition of a Trace Notes section in the trace summary where the user can add useful trace info which can later be read or searched without even opening a trace.
+  -	Enhancements to allow easier viewing and editing of trace metadata, including simple double-clicking the notes field.
+  -	Automatic restart of VO upon receiving a memory exception, followed by an informational pop-up box explaining the crash and recovery.
+
+- Video Enhancements:
+    - Segment Buffer display is populated based on VO estimated startup time even if the user does not manually set a startup time in the StartupDelay Dialog.
+    - Video Best-Practices now show Pass/Fail results based on VO estimated startup time even if the user does not manually set a startup time in the StartupDelay Dialog.
+    - VO now shows segments that failed to download in the Video Stream tables, in addition to successfully downloaded segments. “TCP state” column indicates “Failed” for these segments.
+    - Network type graph now displays user friendly names for 5G Sub-6, 5G mmWave and Advanced pro LTE network types.
+    - Clicking on the Configuration Required icon next to each of the video best practices on the Best Practices/Results tab navigates to the Video tab.
 
 
-**Known issues in Release 4.3**
+**Known issues in Release 4.4**
 
-- Running 32 bit VLC on a 64 bit system is not compatible with Video Optimizer and can cause the application to become unresponsive.
-- Known Issues with Mac OS Big Sur
- - Recent versions of Mac OS Big Sur have a known issue with the rvictl that enables Video Optimizer to collect packet data from iOS devices. We are actively assisting customers with workarounds while awaiting a fix from Apple. A link to request support is available from the Video Optimizer Help menu.
+- Video analysis can display incorrect results if the Stall Pause Point, and Stall Recovery fields in the File->Preferences->Video tab use the default value of 0. We suggest changing this to a value of 0.1 or greater to get a proper analysis. This will also resolve the issue of the Stalls, Startup Delay, and Buffer Occupancy results showing that Startup Delay has not been set even when it has.  
 
 
 **Compilation instructions**

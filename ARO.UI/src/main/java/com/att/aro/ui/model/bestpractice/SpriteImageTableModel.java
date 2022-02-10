@@ -124,7 +124,7 @@ public class SpriteImageTableModel extends DataTableModel<SpriteImageEntry> {
 	 */
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		SpriteImageTableModel.LOGGER.debug(format("getColumnClass, idx: {0}", columnIndex));
+		SpriteImageTableModel.LOGGER.trace(format("getColumnClass, idx: {0}", columnIndex));
 		switch (columnIndex) {
 		case COL_1:
 			return Double.class;

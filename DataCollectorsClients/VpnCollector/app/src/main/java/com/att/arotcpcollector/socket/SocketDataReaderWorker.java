@@ -274,7 +274,6 @@ public class SocketDataReaderWorker implements Runnable {
 				}
 			}
 			pcapData.sendDataRecieved(data); // send packet back to client
-			pcapData.sendDataToPcap(new PacketData(data), false); // send packet off to be recorded in traffic.cap
 
 			return true;
 		}
@@ -292,7 +291,6 @@ public class SocketDataReaderWorker implements Runnable {
 		TCPHeader tcpheader = session.getLastTCPheader();
 		byte[] data = tcpFactory.createFinData(ipheader, tcpheader, session.getRecSequence(), session.getSendNext(), session.getTimestampSender(), session.getTimestampReplyto());
 		pcapData.sendDataRecieved(data); // send packet back to client
-		pcapData.sendDataToPcap(new PacketData(data), false); // send packet off to be recorded in traffic.cap
 
 	}
 
@@ -327,7 +325,6 @@ public class SocketDataReaderWorker implements Runnable {
 						}
 					}
 					pcapData.sendDataRecieved(packetdata); // send packet back to client
-					pcapData.sendDataToPcap(new PacketData(packetdata), false); // send packet off to be recorded in traffic.cap
 					Log.d(TAG, "SDR: sent " + len + " bytes to UDP client, packetdata.length: " + packetdata.length + " Data: "+ new String(data));
 					buffer.clear();
 				}

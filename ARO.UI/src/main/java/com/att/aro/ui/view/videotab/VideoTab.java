@@ -236,6 +236,10 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 		return progressPanel;
 	}
 	
+	/**
+	 * Video Stream Playtime Buffer Display
+	 * @return
+	 */
 	public JPanel getBufferPanel() {
 		if (bufferPanel == null) {
 			JPanel segmentProgressGraphPanel = new JPanel(new GridBagLayout());

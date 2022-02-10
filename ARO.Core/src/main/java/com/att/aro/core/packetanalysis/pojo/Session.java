@@ -90,6 +90,11 @@ public class Session implements Serializable, Comparable<Session> {
 	 * be opened
 	 */
 	private String domainName;
+	
+	/**
+	 * SNI name in the Client Hello request for TCP or UDP SSL/QUIC sessions
+	 */
+	private String serverNameIndication;
 
 	/**
 	 * A count of the number of files downloaded during the TCP session.

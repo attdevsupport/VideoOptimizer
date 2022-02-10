@@ -38,6 +38,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
@@ -52,6 +53,7 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.settings.impl.SettingsImpl;
+import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
@@ -61,11 +63,12 @@ import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 
+import lombok.Getter;
+
 public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 	private static final long serialVersionUID = 1L;
-	public static final String INSTRUCTION_TITLE = ResourceBundleHelper.getMessageString("dlog.collector.option.ios.instruction.title");
-	public static final String ATTENUATION_TITLE = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.title");
+	private final int HEIGHT_VIDEO_ORIENTATION_SECTION = 60;
 	
 	private DataCollectorSelectNStartDialog parent;
 	private IAroDevice selectedDevice;
@@ -104,6 +107,10 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private Label labelVideoTitle;
 	private Label labelVideoOrientTitle;
 	
+	private Label labelTraceDescTitle;
+	private Label labelTargetedAppTitle;
+	private Label labelAppProducerTitle;
+	private Label labelTraceTypeTitle;
 	private Label labelAppSelectorTitle;
 	
 	private JTextField traceDescField;
@@ -125,44 +132,102 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private IDataCollector iosCollector;
 	private int api;
 	
-	private boolean testEnvironment = false;
+	/**
+	 *  preference setting: hide/show env=dev
+	 *  <br>
+	 */
+	private boolean expandedTraceSettings = false;
+	private JPanel labeledOptionFields;
 	
+	@Getter private JPanel labeledExpandedOptionFields;
+	@Getter private MetaDataModel metaDataModel;
+	private boolean videoOrientationExpanded = false;
 
-	public DeviceDialogOptions(DataCollectorSelectNStartDialog parent, List<IDataCollector> collectors) {
+	public boolean isExpandedTraceSettings() {
+		return expandedTraceSettings;
+	}
+
+	public void setExpandedTraceSettings(boolean expandedTraceSettings) {
+		this.expandedTraceSettings = expandedTraceSettings;
+	}
+
+	public DeviceDialogOptions(DataCollectorSelectNStartDialog parent, List<IDataCollector> collectors, MetaDataModel metaDataModel) {
 		
 		this.parent = parent;
-		if (ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
-			testEnvironment = true;
-		}
+		this.metaDataModel = metaDataModel;
 		
-		videoOrient = Orientation.LANDSCAPE.toString().toLowerCase().equals(
-				SettingsImpl.getInstance().getAttribute("orientation")) ? Orientation.LANDSCAPE : Orientation.PORTRAIT;
+		// default orientation
+		videoOrient = Orientation.LANDSCAPE.toString().toLowerCase().equals(SettingsImpl.getInstance().getAttribute("orientation")) 
+				? Orientation.LANDSCAPE 
+				: Orientation.PORTRAIT;
 
 		setLayout(new BorderLayout());
-		add(getContent(), BorderLayout.CENTER);
-		configure(collectors);
+		add(getContent(), BorderLayout.CENTER);configure(collectors);
 	}
 
 	private Component getContent() {
 		setUpLabels();
 		setUpLayoutProperties();
 
-		JPanel contents = new JPanel(contentLayout);
+		labeledOptionFields = new JPanel(contentLayout);
 		videoOrientRadioGrpPanel = getRadioGroupVideoOrient();
 
-		contents.add(labelCollectorTitle, labelConstraints);
-		contents.add(getRadioGroupCollector(), optionConstraints);
+		labeledOptionFields.add(labelCollectorTitle, labelConstraints);
+		labeledOptionFields.add(getRadioGroupCollector(), optionConstraints);
 
-		contents.add(labelAttenuatorTitle, labelConstraints);
-		contents.add(getAttnrGroup(), optionConstraints);
+		labeledOptionFields.add(labelAttenuatorTitle, labelConstraints);
+		labeledOptionFields.add(getAttnrGroup(), optionConstraints);
 
-		contents.add(labelVideoTitle, labelConstraints);
-		contents.add(getRadioGroupVideo(), optionConstraints);
+		labeledOptionFields.add(labelVideoTitle, labelConstraints);
+		labeledOptionFields.add(getRadioGroupVideo(), optionConstraints);
 
-		contents.add(labelVideoOrientTitle, labelConstraints);
-		contents.add(videoOrientRadioGrpPanel, optionConstraints);
+		labeledOptionFields.add(labelVideoOrientTitle, labelConstraints);
+		labeledOptionFields.add(videoOrientRadioGrpPanel, optionConstraints);
 
-		return contents;
+		return labeledOptionFields;
+	}
+
+	public JPanel getExpandedContent() {
+		if (labeledExpandedOptionFields == null) {
+			labeledExpandedOptionFields = new JPanel(contentLayout);
+			String[] applicationList = getApplicationList();
+
+			traceDescField = new JTextField(20);
+
+			targetedAppField = new JTextField(20);
+			appProducerField = new JTextField(20);
+			traceTypeField = new JTextField(20);
+			appSelector = new JComboBox<String>(applicationList);
+			appSelector.insertItemAt(StringUtils.EMPTY, 0);
+			appSelector.setSelectedIndex(0);
+			AutoCompleteDecorator.decorate(appSelector);
+			
+			labeledExpandedOptionFields.add(labelTraceDescTitle, labelConstraints);
+			labeledExpandedOptionFields.add(traceDescField, optionConstraints);
+			
+			labeledExpandedOptionFields.add(labelTargetedAppTitle, labelConstraints);
+			labeledExpandedOptionFields.add(targetedAppField, optionConstraints);
+			
+			labeledExpandedOptionFields.add(labelAppProducerTitle, labelConstraints);
+			labeledExpandedOptionFields.add(appProducerField, optionConstraints);
+			
+			labeledExpandedOptionFields.add(labelTraceTypeTitle, labelConstraints);
+			labeledExpandedOptionFields.add(traceTypeField, optionConstraints);
+			
+			labeledExpandedOptionFields.add(labelAppSelectorTitle, labelConstraints);
+			labeledExpandedOptionFields.add(appSelector, optionConstraints);
+		}
+		return labeledExpandedOptionFields;
+	}
+
+	private String[] getApplicationList() {
+		String[] response;
+		if (selectedDevice!=null && selectedDevice.getPlatform().equals(IAroDevice.Platform.Android)) {
+			response = ((MainFrame) parent.getMainframeParent()).getApplicationsList(selectedDevice.getId());
+		} else {
+			response = ((MainFrame) parent.getMainframeParent()).getApplicationsList("");
+		}
+		return response;
 	}
 
 	private void setUpLayoutProperties() {
@@ -185,12 +250,21 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		String videoTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.video.title");
 		String videoOrientTitle = ResourceBundleHelper.getMessageString("dlog.collector.option.video.orient.title");
 		
+		String traceDesc = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.trace.desc.title");
+		String targetedApp = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.targeted.app.title");
+		String appProducer = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.app.producer.title");
+		String traceType = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.trace.type.title");
 		String appSelector = ResourceBundleHelper.getMessageString("dlog.collector.option.automation.app.selection.title");
 
 		labelCollectorTitle = new Label(collectorTitle);
 		labelAttenuatorTitle = new Label(attenuatorTitle);
 		labelVideoTitle = new Label(videoTitle);
 		labelVideoOrientTitle = new Label(videoOrientTitle);
+		
+		labelTraceDescTitle = new Label(traceDesc);
+		labelTargetedAppTitle = new Label(targetedApp);
+		labelAppProducerTitle = new Label(appProducer);
+		labelTraceTypeTitle = new Label(traceType);
 		labelAppSelectorTitle = new Label(appSelector);
 	}
 
@@ -224,9 +298,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 					break;
 
 				case DEFAULT:
-
-					break;
-
 				default:
 					break;
 				}
@@ -251,6 +322,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 
 		}
 	}
+	
 	private void showHideOptions(ActionEvent e) {
 		String ac = e.getActionCommand();
 
@@ -275,38 +347,39 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				showVideoOrientation(false);
 			}
 			return;
+
 		} else if (ac.equals(txtNONE)) {
 			videoOption = VideoOption.NONE;
 			showVideoOrientation(false);
 			return;
+
 		} else if (ac.equals(txtPortrait)) {
 			videoOrient = Orientation.PORTRAIT;
 			SettingsImpl.getInstance().setAndSaveAttribute("orientation", videoOrient.toString().toLowerCase());
 			return;
+
 		} else if (ac.equals(txtLandscape)) {
 			videoOrient = Orientation.LANDSCAPE;
 			SettingsImpl.getInstance().setAndSaveAttribute("orientation", videoOrient.toString().toLowerCase());
 			return;
-		}// Collector
-		else if (ac.equals(rooted)) {
+
+		} else if (ac.equals(rooted)) { // Rooted Collector
 			collector = rootCollector;
 			if (btnRooted.isSelected()) {
 				enableFullVideo(false);
 				if (btn_hdef.isSelected() || btn_sdef.isSelected()) {
 					btn_lrez.setSelected(true);
-				}			
+				}
 			}
 			return;
 
-		} else if (ac.equals(vpn)) {
+		} else if (ac.equals(vpn)) { // VPN
 			collector = vpnCollector;
 			if (btnVpn.isSelected()) {
 				enableFullVideo(true);
 			}
-
 			return;
-
-		}
+		} 
 	}
 
 	public String messageComposed() {
@@ -360,11 +433,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	private void disableAttenuateSection() {
 		attnrGroupPanel.getAttnrRadioGP().reset();
 		attnrGroupPanel.setAttenuateEnable(false);
-		if (testEnvironment) {
-			parent.resizeLarge();
-		} else {
-			parent.resizeMedium();
-		}
 	}
 
 	public AttnrPanel getAttnrGroup() {
@@ -385,7 +453,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		btnGrp.add(btn_hdef);
 		btnGrp.add(btn_sdef);
 		btnGrp.add(btn_none);
-
 		return btnGrp;
 	}
 
@@ -405,6 +472,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		btnGrp.add(btniOS);
 		return btnGrp;
 	}
+
 
 	private void loadRadioGroupCollector() {
 		rooted = ResourceBundleHelper.getMessageString("dlog.collector.option.rooted");
@@ -518,7 +586,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			api = getApi(selectedIAroDevice);
 			
 			setVisible(true);
-			enableFullVideo(true);
+			enableFullVideo(false);
 			btniOS.setEnabled(false);
 			btnVpn.setEnabled(true);
 			btnRooted.setEnabled(true);
@@ -529,7 +597,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				videoOption = VideoOption.LREZ;
 				showVideoOrientation(false);
 			}
-						
+			
 			if (selectedIAroDevice.isEmulator()) {
 				if (selectedIAroDevice.getAbi().contains("x86")) {
 					setRootState(true);
@@ -552,6 +620,15 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				btnRooted.setEnabled(true);
 				btnVpn.setEnabled(true);
 				btnRooted.setSelected(true);
+				if (isExpandedTraceSettings()) {
+					String[] response = getApplicationList();
+					appSelector.removeAllItems();
+					appSelector.insertItemAt(StringUtils.EMPTY, 0);
+					for(String item : response) {
+						appSelector.addItem(item);
+					}
+					appSelector.setSelectedIndex(0);
+				}
 				
 			} else {
 				
@@ -561,6 +638,15 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				btnRooted.setEnabled(false);
 				btnVpn.setEnabled(true);
 				btnVpn.setSelected(true);
+				if (isExpandedTraceSettings()) {
+					String[] response = getApplicationList();
+					appSelector.removeAllItems();
+					appSelector.insertItemAt(StringUtils.EMPTY, 0);
+					for(String item : response) {
+						appSelector.addItem(item);
+					}
+					appSelector.setSelectedIndex(0);
+				}
 			}
 
 			// quick hack to allow or disallow full-motion video
@@ -660,6 +746,40 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		labelVideoOrientTitle.setVisible(boolFlag);
 		videoOrientRadioGrpPanel.setVisible(boolFlag);
 
+		if (boolFlag) {
+			if (!videoOrientationExpanded) {
+				parent.resizer(HEIGHT_VIDEO_ORIENTATION_SECTION);
+			}
+			videoOrientationExpanded = true;
+		} else if (videoOrientationExpanded) {
+			videoOrientationExpanded = false;
+			parent.resizer(-HEIGHT_VIDEO_ORIENTATION_SECTION);
+		}
+
+		// Reset selection to settings every time we disable the video orientation option
+		if (!boolFlag) {
+			(videoOrient == Orientation.LANDSCAPE ? btn_landscape : btn_portrait).setSelected(true);
+		}
+	}
+	
+	/**
+	 * Hides/Shows Video Orientation label, Portrait button & Landscape button.
+	 * 
+	 * @param boolFlag
+	 */
+	public void showVideoOrientation_bu(boolean boolFlag) {
+
+		labelVideoOrientTitle.setVisible(boolFlag);
+		videoOrientRadioGrpPanel.setVisible(boolFlag);
+
+		if (boolFlag && !videoOrientationExpanded) {
+			videoOrientationExpanded = true;
+			parent.resizer(HEIGHT_VIDEO_ORIENTATION_SECTION);
+		} else if (!boolFlag && videoOrientationExpanded) {
+			videoOrientationExpanded = false;
+			parent.resizer(-HEIGHT_VIDEO_ORIENTATION_SECTION);
+		}		
+		
 		// Reset selection to settings every time we disable the video orientation option
 		if (!boolFlag) {
 			(videoOrient == Orientation.LANDSCAPE ? btn_landscape : btn_portrait).setSelected(true);
@@ -705,9 +825,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	public void setAttenuatorModel(AttenuatorModel attenuatorModel) {
 		this.attenuatorModel = attenuatorModel;
 	}
-	
-	
-	
+
 	public String getTraceDesc() {
 		return traceDescField.getText();
 	}
@@ -726,10 +844,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 	
 	public String getAppSelected() {
 		return (String) (appSelector.getSelectedItem()!=null? appSelector.getSelectedItem() : "");
-	}
-
-	public boolean isTestEnvironment() {
-		return testEnvironment;
 	}
 
 	public JComboBox<String> getAppSelector() {
@@ -782,11 +896,21 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 						break;
 					case "TraceFolderName":
 						parent.setTraceFolderName((String) previousOptions.get(key));
+						break;
+					case "MetaDataExpanded":
+						// trigger metadata Arrow Button display
+						getLabeledExpandedOptionFields().setVisible(true);
+						parent.getExpansionArrowButton().setDirection(SwingConstants.SOUTH);
+						break;
 					default:
 						break;
 				}
 			}
 
+		}
+		// handles when Low Res on Android was last trace
+		if (labelVideoOrientTitle.isVisible() && btn_lrez.isSelected()) {
+			labelVideoOrientTitle.setVisible(false);
 		}
 	}
 
@@ -828,14 +952,17 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				}
 				this.videoOrientRadioGrpPanel.setVisible(true);
 				btn_hdef.setSelected(true);
+				videoOrientationExpanded = true;
 				break;
 			case KITCAT_HDEF:
 				this.videoOrientRadioGrpPanel.setVisible(true);
 				btn_hdef.setSelected(true);
+				videoOrientationExpanded = true;
 				break;
 			case KITCAT_SDEF:
 				this.videoOrientRadioGrpPanel.setVisible(true);
 				btn_sdef.setSelected(true);
+				videoOrientationExpanded = true;
 				break;
 			case LREZ:
 				btn_lrez.setSelected(true);
@@ -851,6 +978,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				}
 				this.videoOrientRadioGrpPanel.setVisible(true);
 				btn_sdef.setSelected(true);
+				videoOrientationExpanded = true;
 				break;
 			default:
 				break;

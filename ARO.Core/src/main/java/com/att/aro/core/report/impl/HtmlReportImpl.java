@@ -21,7 +21,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math3.util.Precision;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -153,6 +152,16 @@ public class HtmlReportImpl implements IReport {
 				}
 				sbuilder.append("</tr>");
 				sbuilder.append(System.getProperty(lineSeperator()));
+
+				// Append display resolution
+				String displayResolutionValue = String.format("%s (Width: %s, Height: %s)", traceDirResult.getCollectOptions().getOrientation(),
+																							String.valueOf(traceDirResult.getDeviceScreenSizeX()),
+																							String.valueOf(traceDirResult.getDeviceScreenSizeY()));
+				sbuilder.append(tableLIne());
+				sbuilder.append("<th>Display Resolution</th>");
+				sbuilder.append("<td>" + displayResolutionValue + "</td>");
+				sbuilder.append("</tr>");
+				sbuilder.append(System.getProperty(lineSeperator()));
 			}
 		
 		}
@@ -160,8 +169,8 @@ public class HtmlReportImpl implements IReport {
 		return sbuilder.toString();
 	}
 
-	private double getRoundDouble(double number, int precision){
-		return Precision.round(number, precision);
+	private String doubleToFixedDecimal(double number, int precision){
+		return String.format("%." + precision + "f", number);
 	}
 
 	private String getBPSummaryRows(List<AbstractBestPracticeResult> bpResults) {
@@ -228,8 +237,11 @@ public class HtmlReportImpl implements IReport {
                 		String.format("%02d:%02d:%02d", traceDurationLong/3600, (traceDurationLong%3600) / 60, traceDurationLong % 60) +
                 		String.format("%.3f", traceDuration - Math.floor(traceDuration)).substring(1)
         		);
-    			builder.append("<tr><th>Start Time (second)</th><td>" + getRoundDouble(timeRangeAnalysis.getStartTime(), 3) +"</td></tr>");
-    			builder.append("<tr><th>End Time (second)</th><td>" + getRoundDouble(timeRangeAnalysis.getEndTime(), 3) +"</td></tr>");
+
+                String timeRangeTitle = results.getTraceresult().getTimeRange().getTitle();
+            	builder.append("<tr><th>Time Range Identifier</th><td>" + (timeRangeTitle != null ? timeRangeTitle : "") +"</td></tr>");
+    			builder.append("<tr><th>Start Time (second)</th><td>" + doubleToFixedDecimal(timeRangeAnalysis.getStartTime(), 3) +"</td></tr>");
+    			builder.append("<tr><th>End Time (second)</th><td>" + doubleToFixedDecimal(timeRangeAnalysis.getEndTime(), 3) +"</td></tr>");
     		}
 
     		Statistic statistic = results.getStatistic();
@@ -248,16 +260,16 @@ public class HtmlReportImpl implements IReport {
 			}
 
     		if (timeRangeAnalysis != null) {
-    			builder.append("<tr><th>Average Throughput (kbps)</th><td>" + getRoundDouble(timeRangeAnalysis.getAverageThroughput(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
+    			builder.append("<tr><th>Average Throughput (kbps)</th><td>" + doubleToFixedDecimal(timeRangeAnalysis.getAverageThroughput(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
     			builder.append("<tr><th>Total Upload Data (Byte)</th><td>" + timeRangeAnalysis.getUplinkBytes() + "</td></tr>" + System.getProperty(lineSeperator()));
-    			builder.append("<tr><th>Average Upload Throughput (kbps)</th><td>" + getRoundDouble(timeRangeAnalysis.getAverageUplinkThroughput(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
+    			builder.append("<tr><th>Average Upload Throughput (kbps)</th><td>" + doubleToFixedDecimal(timeRangeAnalysis.getAverageUplinkThroughput(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
     			builder.append("<tr><th>Total Download Data (Byte)</th><td>" + timeRangeAnalysis.getDownlinkBytes() + "</td></tr>" + System.getProperty(lineSeperator()));
-    			builder.append("<tr><th>Average Download Throughput (kbps)</th><td>" + getRoundDouble(timeRangeAnalysis.getAverageDownlinkThroughput(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
+    			builder.append("<tr><th>Average Download Throughput (kbps)</th><td>" + doubleToFixedDecimal(timeRangeAnalysis.getAverageDownlinkThroughput(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
     		}
 
     		EnergyModel energyModel = results.getEnergyModel();
     		if (energyModel != null) {
-    			builder.append("<tr><th>Total Energy Consumed (J)</th><td>" + getRoundDouble(energyModel.getTotalEnergyConsumed(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
+    			builder.append("<tr><th>Total Energy Consumed (J)</th><td>" + doubleToFixedDecimal(energyModel.getTotalEnergyConsumed(), 2) + "</td></tr>" + System.getProperty(lineSeperator()));
     		}
     	}
 

@@ -44,9 +44,9 @@ public class AttnrPanel extends JPanel {
 				GridBagConstraints.HORIZONTAL, new Insets(2, 2, 2, 2), 0, 0));
 	}
 	
-	public AttnrRadioGroupPanel getAttnrRadioGP(){
-		if(attnrRadioGPanel == null){
-			attnrRadioGPanel = new AttnrRadioGroupPanel(this,attenuatorModel, parent, deviceInfo);
+	public AttnrRadioGroupPanel getAttnrRadioGP() {
+		if (attnrRadioGPanel == null) {
+			attnrRadioGPanel = new AttnrRadioGroupPanel(this, attenuatorModel, parent, deviceInfo);
 		}
 		return attnrRadioGPanel;
 	}

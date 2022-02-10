@@ -28,10 +28,11 @@ import lombok.Data;
 @XmlAccessorType(XmlAccessType.FIELD)
 public class RepresentationESL {
 
-	@XmlAttribute private String bandwidth = "";
+    @XmlAttribute(name="bandwidth") private Double bandwidth;
 	@XmlAttribute private String width = "";
 	@XmlAttribute private String height = "";
 	@XmlAttribute private String codecs;
+	
 	@XmlElement(name = "BaseURL")					String baseURL = "";
 	@XmlElement(name = "EncodedSegmentList")		EncodedSegmentList encodedSegment;
 	@XmlElement(name = "SegmentList")				SegmentListESL segmentList;

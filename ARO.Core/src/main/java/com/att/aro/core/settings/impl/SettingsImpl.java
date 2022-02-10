@@ -134,7 +134,7 @@ public final class SettingsImpl implements Settings {
 	@Override
 	public void saveConfigFile() {
 		try(FileWriter writer = new FileWriter(CONFIG_FILE_PATH)) {
-			LOGGER.debug("Persisting properties to: " + CONFIG_FILE_PATH);
+			LOGGER.trace("Persisting properties to: " + CONFIG_FILE_PATH);
 			configProperties.store(writer, null);
 		} catch (IOException e) {
 			throw new ARORuntimeException("Could not save config file: " + e.getLocalizedMessage(), e);

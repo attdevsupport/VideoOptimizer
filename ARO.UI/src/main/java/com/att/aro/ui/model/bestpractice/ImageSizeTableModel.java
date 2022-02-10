@@ -125,7 +125,7 @@ public class ImageSizeTableModel extends DataTableModel<ImageSizeEntry> {
 	 */
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		ImageSizeTableModel.LOGGER.debug(format("getColumnClass, idx: {0}", columnIndex));
+		ImageSizeTableModel.LOGGER.trace(format("getColumnClass, idx: {0}", columnIndex));
 		switch (columnIndex) {
 		case COL_1:
 			return Double.class;

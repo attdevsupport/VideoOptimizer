@@ -18,7 +18,6 @@ package com.att.aro.ui.commonui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -47,11 +46,6 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
  */
 public class TabPanelCommon {
 	private final List<JPanel> dataPanels = new ArrayList<JPanel>();
-	private static final Font LABEL_FONT = new Font("TEXT_FONT", Font.BOLD, 12);
-	private static final Font TEXT_FONT = new Font("TEXT_FONT", Font.PLAIN, 12);
-	private static final Font TITLE_FONT = new Font("HeaderFont", Font.BOLD, 18);
-	private static final Font HEADER_FONT = new Font("HeaderFont", Font.BOLD, 16);
-	private static final Font SUBHEADER_FONT = new Font("HeaderFont", Font.BOLD, 14);
 
 	private final Map<String, JLabel> labelContents = new HashMap<String, JLabel>();
 	private final Map<String, JLabel> labelContents2;
@@ -229,7 +223,7 @@ public class TabPanelCommon {
 			currentLabelContents.setFont(attributes.getContentsFont());
 		}
 		else {
-			currentLabelContents.setFont(TEXT_FONT);
+			currentLabelContents.setFont(AroFonts.TEXT_FONT);
 		}
 
 		JLabel currentLabelContents2 = null;
@@ -247,7 +241,7 @@ public class TabPanelCommon {
 				currentLabelContents2.setFont(attributes.getContentsFont());
 			}
 			else {
-				currentLabelContents2.setFont(TEXT_FONT);
+				currentLabelContents2.setFont(AroFonts.TEXT_FONT);
 			}
 		}
 
@@ -265,16 +259,16 @@ public class TabPanelCommon {
 				label.setFont(attributes.getLabelFont());
 			}
 			else if (attributes.isTitle()) {
-				label.setFont(TITLE_FONT);
+				label.setFont(AroFonts.TITLE_FONT);
 			}
 			else if (attributes.isHeader()) {
-				label.setFont(HEADER_FONT);
+				label.setFont(AroFonts.HEADER_FONT_16);
 			}
 			else if (attributes.isSubheader()) {
-				label.setFont(SUBHEADER_FONT);
+				label.setFont(AroFonts.SUBHEADER_FONT);
 			}
 			else {
-				label.setFont(LABEL_FONT);
+				label.setFont(AroFonts.LABEL_FONT);
 			}
 			labels.put(labelText, label);
 		}

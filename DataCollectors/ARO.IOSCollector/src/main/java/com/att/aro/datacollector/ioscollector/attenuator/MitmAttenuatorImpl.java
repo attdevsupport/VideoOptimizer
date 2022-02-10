@@ -1,5 +1,6 @@
 package com.att.aro.datacollector.ioscollector.attenuator;
 
+import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -7,38 +8,47 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.att.aro.core.datacollector.pojo.StatusResult;
+
+import lombok.Getter;
+
 public class MitmAttenuatorImpl {
 	
 	private static final Logger LOG = LogManager.getLogger(MitmAttenuatorImpl.class.getName());
+	@Getter
+	private Date startDate;
+	@Getter
+	private Date stopDate;
 	private ExecutorService pool;
 	private LittleProxyWrapper littleProxy;
  	public static final String COLLECT_OPTIONS = "collect_options";
  	private static final int THREAD_NUM = 3;
-    public void startCollect(String trafficFilePath,int throttleReadStream, int throttleWriteStream,
-    		SaveCollectorOptions saveCollectorOptions) {
+    public void startCollect(String traceFolder,int throttleReadStream, int throttleWriteStream,
+    		SaveCollectorOptions saveCollectorOptions, StatusResult status, String sudoPassword, String trafficFilePath) {
 		LOG.info("Launch mitm and pcap4j thread pool");
- 
+		startDate = new Date();
 		int throttleReadStreambps =  throttleReadStream*128;
 		int throttleWriteStreambps = throttleWriteStream*128;
 		LOG.info("Little proxy throttle: "+"throttleReadStreambps: "
 			    + throttleReadStreambps + "throttleWriteStreambps: "+ throttleWriteStreambps );
-		recordCollectOptions(trafficFilePath, 0, 0, throttleReadStream, throttleWriteStream, false, "",
+		recordCollectOptions(traceFolder, 0, 0, throttleReadStream, throttleWriteStream, false, "",
 				"PORTRAIT", saveCollectorOptions);
-		littleProxy = new LittleProxyWrapper();
+		littleProxy = new LittleProxyWrapper(status, sudoPassword, trafficFilePath);
 		littleProxy.setThrottleReadStream(throttleReadStreambps);
 	    littleProxy.setThrottleWriteStream(throttleWriteStreambps);
-	    littleProxy.setTRACE_FILE_PATH(trafficFilePath);
+	    littleProxy.setTraceFolder(traceFolder);
    		pool = Executors.newFixedThreadPool(THREAD_NUM);
  		pool.execute(littleProxy);
-
+ 		
      }
     
     public void stopCollect() {
         LOG.info("Stopping attenuator...");
     	if(littleProxy!=null) {
-    		littleProxy.stop();		
+    		littleProxy.stop();	
+    		stopDate = new Date();
     	}
-	
+		
 		if(pool!=null) {
 			pool.shutdown();
 			try {
@@ -71,7 +81,7 @@ public class MitmAttenuatorImpl {
 		if (throttleUL == 0) {
 			throttleUL = -1;
 		}
-		writeCollectOption.recordCollectOptions(trafficFilePath, 0, 0, throttleDL, throttleUL, atnrProfile, 
+		writeCollectOption.recordCollectOptions(trafficFilePath, 0, 0, throttleDL, throttleUL, atnrProfile,
 				atnrProfileName, "PORTRAIT");
 
 	}

@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.management.ManagementFactory;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -41,6 +42,7 @@ import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
@@ -69,9 +71,7 @@ public final class Util {
 	private static final int RECENT_TRACES_MAXSIZE = 15;
 	public static final String FFPROBE = "ffprobe";
 	public static final String IDEVICESCREENSHOT = "iDeviceScreenshot";
-	public static final String OS_NAME = System.getProperty("os.name");
-	public static final String OS_VERSION = System.getProperty("os.version");
-	public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
+	public static final String JDK_VERSION = System.getProperty("java.version");
 	public static final String FILE_SEPARATOR = System.getProperty("file.separator");
 	public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 	public static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
@@ -82,15 +82,117 @@ public final class Util {
 	private static Comparator<String> floatValComparator;
 	private static Comparator<Integer> intComparator;
 	private static Logger logger = LogManager.getLogger(Util.class.getName());
-	private static final IExternalProcessRunner extrunner = SpringContextUtil.getInstance().getContext()
+	private static final IExternalProcessRunner EXTERNAL_PROCESS_RUNNER = SpringContextUtil.getInstance().getContext()
 			.getBean(IExternalProcessRunner.class);
+	public static final String OS_NAME = System.getProperty("os.name");
+	public static final String OS_VERSION = extractVersion();
+	public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
 	
 	private static final Pattern htmlEncodePattern = Pattern.compile("%[a-fA-F0-9]");
 	
-	public static String APK_FILE_NAME = "VPNCollector-4.3.%s.apk";
+	public static String APK_FILE_NAME = "VPNCollector-4.4.%s.apk";
 	
 	public static final String ARO_PACKAGE_NAME = "com.att.arocollector";
+
+	public static void restart(boolean isError) {
+		LOG.info("Restarting now!");
+		try {
+			// java binary
+			String java = System.getProperty("java.home") + "/bin/java";
+
+			// vm arguments
+			List<String> vmArguments = ManagementFactory.getRuntimeMXBean().getInputArguments();
+			StringBuilder vmArgsOneLine = new StringBuilder();
+			String applicationPath = "";
+			for (String arg : vmArguments) {
+				// if it's the agent argument : we ignore it otherwise the
+				// address of the old application and the new one will be in conflict
+				if (!arg.contains("-agentlib")) {
+					vmArgsOneLine.append("\"" + arg + "\"");
+					vmArgsOneLine.append(" ");
+				}
+
+				if (arg.contains("exe4j.moduleName") && (Util.isMacOS() || Util.isWindowsOS())) {
+					String[] split = arg.split("="); // -Dexe4j.moduleName=/Applications/VideoOptimizer.app
+					if (split != null && split.length == 2) {
+						applicationPath = split[1];
+						vmArgsOneLine.append("\"-Xdock:icon=" + applicationPath + "/Contents/Resources/app.icns\" ");
+					}
+
+					if (Util.isWindowsOS()) {
+						break;
+					}
+				}
+			}
+
+			final String command;
+			if (Util.isWindowsOS()) {
+				command = "\"" + applicationPath + "\"";
+			} else {
+				// init the command to execute, add the vm args
+				final StringBuilder cmd = new StringBuilder("\"" + java + "\" " + vmArgsOneLine);
+				// program main and program arguments
+				String[] mainCommand = System.getProperty("sun.java.command").split(" ");
+				// program main is a jar
+				if (mainCommand[0].endsWith(".jar")) {
+					// if it's a jar, add -jar mainJar
+					cmd.append("-jar " + new File(mainCommand[0]).getPath());
+				} else {
+					// else it's a .class, add the classpath and mainClass
+					cmd.append("-cp \"" + System.getProperty("java.class.path") + "\" " + mainCommand[0]);
+				}
 	
+				// finally add program arguments
+				for (int i = 1; i < mainCommand.length; i++) {
+					cmd.append(" ");
+					cmd.append(mainCommand[i]);
+				}
+
+				command = cmd.toString();
+			}
+
+			// execute the command in a shutdown hook, to be sure that all the
+			// resources have been disposed before restarting the application
+			Runtime.getRuntime().addShutdownHook(new Thread() {
+				@Override
+				public void run() {
+					try {
+						LOG.trace(command + " error=" + isError);
+						EXTERNAL_PROCESS_RUNNER.executeCmd(command + " error=" + isError, false, false);
+						LOG.info("Successfully Restarted the system!");
+					} catch (Exception e) {
+						LOG.error("Error while restarting", e);
+					}
+				}
+			});
+
+			System.exit(0);
+		} catch (Exception e) {
+			LOG.error("Error while trying to restart the application", e);
+		}
+	}
+
+	private static String extractVersion() {
+		if (OS_VERSION != null) {
+			return OS_VERSION;
+		}
+		String version = "unknown";
+
+		if (isWindowsOS()) {
+			String cmd = "systeminfo|findstr Build";
+			String result = EXTERNAL_PROCESS_RUNNER.executeCmd(cmd);
+			version = StringParse.findLabeledDataFromString("OS Version:", System.lineSeparator(), result).trim();
+		} else if (isMacOS()) {
+			String cmd = "sw_vers";
+			String result = EXTERNAL_PROCESS_RUNNER.executeCmd(cmd);
+			version = StringParse.findLabeledDataFromString("ProductVersion:	", System.lineSeparator(), result);
+		} else if (isLinuxOS()) {
+			String cmd = "lsb_release -rs";
+			version = EXTERNAL_PROCESS_RUNNER.executeCmd(cmd);
+		}
+		return version;
+	}
+
 	public static boolean isMacOS() {
 		return Util.OS_NAME.contains("Mac OS");
 	}
@@ -930,6 +1032,8 @@ public final class Util {
 				level = Level.INFO;
 			} else if (loggingLvl.equalsIgnoreCase("DEBUG")) {
 				level = Level.DEBUG;
+			} else if (loggingLvl.equalsIgnoreCase("TRACE")) {
+				level = Level.TRACE;
 			}
 		}
 		return level;
@@ -949,6 +1053,11 @@ public final class Util {
 			logLevel = SettingsImpl.getInstance().getAttribute("LOG_LEVEL");
 		}
 		return logLevel;
+	}
+	
+	public static String getAttribute(String key) {
+		String value;
+		return (value = SettingsImpl.getInstance().getAttribute(key)) != null ? value : "";
 	}
 	
 	public static boolean checkMode(String key, String matchVal) {
@@ -1029,7 +1138,7 @@ public final class Util {
 	public static String extractFrameToPNG(double timestamp, String videoPath, String ximagePath) {
 		String cmd = Util.getFFMPEG() + " -y -i " + "\"" + videoPath + "\"" + " -ss " + timestamp + "   -vframes 1 "
 				+ "\"" + ximagePath + "\"";
-		extrunner.executeCmd(cmd);
+		EXTERNAL_PROCESS_RUNNER.executeCmd(cmd);
 		return ximagePath;
 	}
 

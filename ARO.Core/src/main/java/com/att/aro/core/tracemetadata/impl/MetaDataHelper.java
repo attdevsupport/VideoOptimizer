@@ -1,136 +1,111 @@
+/*
+ *  Copyright 2021 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.att.aro.core.tracemetadata.impl;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
+import java.awt.Dimension;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Locale;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 
 import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
-import com.att.aro.core.settings.Settings;
+import com.att.aro.core.peripheral.IMetaDataReadWrite;
 import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
+import com.att.aro.core.tracemetadata.pojo.MetaStream;
 import com.att.aro.core.util.Util;
+import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.Getter;
 
 @JsonIgnoreProperties(ignoreUnknown = true) // allows for changes dropping items or using older versions, but not before this ignore
 public class MetaDataHelper implements IMetaDataHelper {
 
-	private static final String TRACE_OWNER = "traceOwner";
-
 	private static final Logger LOG = LogManager.getLogger(MetaDataHelper.class);
-
+	
+	@Autowired
+	private IMetaDataReadWrite metaDataReadWrite;
+			
 	private static final String UNKNOWN = "unknown";
 
 	private static final String METADATA_FILE = "metadata.json";
-
-//	private static final String FUTURE = "";
 	
 	@Autowired
 	private IFileManager filemanager;
 
-	@Autowired
-	private Settings settings;
-	
-	private ObjectMapper mapper = new ObjectMapper();
-
 	@Getter
 	private MetaDataModel metaData;
+
+	private HashMap<Double, Integer> bitrateMap;
+
+	private HashMap<Integer, Integer> resolutionMap;
+	
+	@Override
+	public void saveJSON(String path, MetaDataModel metaData) throws Exception {
+		this.metaData = metaData;
+		saveJSON(path);
+	}
 	
 	/**
-	 * @param path
-	 * Path can be a fully qualified file path or just the trace folder
 	 * The method saves data into the metadata.json file.
+	 * 
+	 * @param path
+	 *            - the trace folder
 	 * @throws Exception
 	 */
 	@Override
 	public void saveJSON(String path) throws Exception {
-		
-		String localPath = path;
-
-		if (!path.isEmpty() && !filemanager.isFile(path)) {
-			localPath = filemanager.createFile(path, METADATA_FILE).toString();
-		}
-		
-		if (isNewTraceOwnerAvailable()) {
-			metaData.setTraceOwner(settings.getAttribute(TRACE_OWNER));
-		}
-		String jsonData = getJson(metaData);
-		
-		if (jsonData != null && !jsonData.isEmpty() && localPath != null && !localPath.isEmpty()) {
-			FileOutputStream output = new FileOutputStream(localPath);
-			output.write(jsonData.getBytes());
-			output.flush();
-			output.close();
-		}
-	}
-	
-	private boolean isNewTraceOwnerAvailable() {
-		boolean isTraceOwnerUpdated = false;
-		if (!StringUtils.isEmpty(settings.getAttribute(TRACE_OWNER))
-				&& !settings.getAttribute(TRACE_OWNER).equalsIgnoreCase(UNKNOWN)
-				&& metaData!=null && metaData.getTraceOwner().equalsIgnoreCase(UNKNOWN)) {
-			isTraceOwnerUpdated = true;
-		}
-		return isTraceOwnerUpdated;
+		metaDataReadWrite.save(filemanager.createFile(path), metaData);
 	}
 
 	@Override
-	public String getJson() {
-		return getJson(metaData);
-	}
-
-	@Override
-	public String getJson(MetaDataModel metaDataModel) {
-		String serialized = "";
-		try {
-			serialized = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(metaDataModel);
-		} catch (IOException e) {
-			LOG.error("IOException :" + e.getMessage());
-		}
-		return serialized;
-	}
-
-	@Override
-	public MetaDataModel initMetaData(TraceDirectoryResult result) {
-		String tracePath = result.getTraceDirectory();
-		if (tracePath == null) {
+	public MetaDataModel initMetaData(PacketAnalyzerResult result) {
+		
+		String tracePath = result.getTraceresult().getTraceDirectory();
+		if ((metaData = metaDataReadWrite.readData(tracePath)) == null) {
 			metaData = new MetaDataModel();
 		} else {
+			// metadata.json file did not exist
 			int pos = tracePath.lastIndexOf(Util.FILE_SEPARATOR);
 			String description = pos > 0 ? tracePath.substring(pos + 1) : tracePath;
 			if (!filemanager.createFile(tracePath, METADATA_FILE).exists()) {
 				metaData = new MetaDataModel();
-	
-				metaData.setDescription             (description);   // User configurable fields
-				metaData.setTraceType               (UNKNOWN);       // User configurable fields
-				metaData.setTargetedApp             (UNKNOWN);       // User configurable fields
-				metaData.setApplicationProducer     (UNKNOWN);       // User configurable fields	
+
+				metaData.setDescription(description);
+				metaData.setTraceType(UNKNOWN);
+				metaData.setTargetedApp(UNKNOWN);
+				metaData.setApplicationProducer(UNKNOWN);
 			} else {
 				try {
 					metaData = loadMetaData(tracePath);
 				} catch (Exception e) {
 					LOG.error("error reading data from BufferedReader", e);
 				}
-			}	
+			}
 			try {
-				if(updateMetaData(result)) {
+				if (updateMetaData(result)) {
 					saveJSON(tracePath);
 				}
 			} catch (Exception e) {
@@ -142,58 +117,113 @@ public class MetaDataHelper implements IMetaDataHelper {
 
 	@Override
 	public MetaDataModel loadMetaData(String tracePath) throws Exception {
-		if (tracePath == null) {
-			throw new Exception("Invalid trace folder :" + tracePath);
-		}
-		BufferedReader reader;
-		File metaFile = filemanager.createFile(tracePath, METADATA_FILE);
-		reader = new BufferedReader(new FileReader(metaFile));
-		StringBuilder temp = new StringBuilder();
-		String line;
-
-		while ((line = reader.readLine()) != null) {
-			temp.append(line);
-		}
-		MetaDataModel metaDataModel = mapper.readValue(temp.toString(), MetaDataModel.class);
-		ZonedDateTime dateTime = formatTime(metaDataModel);
-		metaDataModel.setStartUTC(dateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-		metaData = metaDataModel;
-		try {
-			if (reader != null) {
-				reader.close();
-			}
-		} catch (IOException e) {
-			LOG.error("error closing BufferedReader reader", e);
-		}
-		return metaData;
+		return metaDataReadWrite.readData(tracePath);
 	}
 	
-	private ZonedDateTime formatTime(MetaDataModel metaDataModel) {
-		if(metaDataModel == null || metaDataModel.getStartUTC() == null) {
-			return ZonedDateTime.now();
-		}
-		try{
-			ZonedDateTime parsed = ZonedDateTime.parse(metaDataModel.getStartUTC(), DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-			return parsed;
-		} catch(DateTimeParseException ex) {
-			try {
-				ZonedDateTime parsed = ZonedDateTime.parse(metaDataModel.getStartUTC(),
-					DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.getDefault()));
-				return parsed;
-			} catch(DateTimeParseException ex2) {
-				return ZonedDateTime.now();
+	private void setVideoStreamTotals(MetaStream metaStream, VideoStream videoStream) {
+		bitrateMap = metaStream.getVideoBitrateMap();
+		resolutionMap = metaStream.getVideoResolutionMap();
+		Integer[] count = {0};
+		videoStream.getVideoActiveMap().entrySet().stream().forEach(e -> {
+			
+			if (bitrateMap.containsKey(e.getValue().getBitrate())) {
+				count[0] = bitrateMap.get(e.getValue().getBitrate());
+			} else {
+				count[0] = 0;
 			}
+			bitrateMap.put(e.getValue().getBitrate(), count[0] + 1);
+			
+			
+			if (resolutionMap.containsKey(e.getValue().getResolutionHeight())) {
+				count[0] = resolutionMap.get(e.getValue().getResolutionHeight());
+			} else {
+				count[0] = 0;
+			}
+			resolutionMap.put(e.getValue().getResolutionHeight(), count[0] + 1);
+			
+		});
+		
+		metaStream.setVideoResolutionMap(resolutionMap);
+		metaStream.setVideoBitrateMap(bitrateMap);
+		
+		if (!videoStream.getAudioActiveMap().isEmpty()) {
+			HashMap<String, Integer> channelMap = metaStream.getAudioChannelMap();
+			bitrateMap = metaStream.getAudioBitrateMap();
+			videoStream.getAudioActiveMap().entrySet().stream().forEach(e -> {
+
+				if (bitrateMap.containsKey(e.getValue().getBitrate())) {
+					count[0] = bitrateMap.get(e.getValue().getBitrate());
+				} else {
+					count[0] = 0;
+				}
+				bitrateMap.put(e.getValue().getBitrate(), count[0] + 1);
+
+				if (channelMap.containsKey(e.getValue().getChannels())) {
+					count[0] = channelMap.get(e.getValue().getChannels());
+				} else {
+					count[0] = 0;
+				}
+				channelMap.put(e.getValue().getChannels(), count[0] + 1);
+
+			});
+
+			metaStream.setAudioChannelMap(channelMap);
+			metaStream.setAudioBitrateMap(bitrateMap);
 		}
 	}
 
-	private boolean updateMetaData(TraceDirectoryResult result) {
-		
+	private boolean updateMetaData(PacketAnalyzerResult packetAnalyzerResult) {
+		TraceDirectoryResult result = (TraceDirectoryResult) packetAnalyzerResult.getTraceresult();
 		boolean isMetaDataUpdated = false;
-		if (metaData.getDeviceOrientation().isEmpty()) {
-			metaData.setDeviceOrientation(
-					result.getCollectOptions() != null ? result.getCollectOptions().getOrientation() : "unknown");
+		
+		if (metaData.getVideoStreams().isEmpty() || metaData.getVideoStreams().get(0).getVideoResolutionMap().isEmpty()) {
+			ArrayList<MetaStream> videoStreams = new ArrayList<>();
+
+			for (VideoStream videoStream : packetAnalyzerResult.getStreamingVideoData().getVideoStreams()) {
+				MetaStream metaStream = new MetaStream();
+				metaStream.setVideoDuration(videoStream.getDuration());
+				metaStream.setType(videoStream.getManifest().getVideoFormat().toString());
+				metaStream.setVideo(videoStream.getManifest().getVideoName());
+				metaStream.setVideoOrientation(result.getCollectOptions().getOrientation());
+				
+				metaStream.setVideoDownloadtime(videoStream.getVideoActiveMap().entrySet().stream().mapToDouble(e -> e.getValue().getDLTime()).sum());
+				metaStream.setAudioDownloadtime(videoStream.getAudioActiveMap().entrySet().stream().mapToDouble(e -> e.getValue().getDLTime()).sum());
+				metaStream.setVideoSegmentTotal(videoStream.getVideoActiveMap().size());
+				metaStream.setAudioSegmentTotal(videoStream.getAudioActiveMap().size());
+				
+				setVideoStreamTotals(metaStream, videoStream);
+				videoStream.setMetaStream(metaStream);
+				videoStreams.add(metaStream);
+			}
+			
+			metaData.setVideoStreams(videoStreams);
 			isMetaDataUpdated = true;
 		}
+		
+		if (metaData.getCollectorName().isEmpty()) {
+			metaData.setCollectorName(result.getCollectorName());
+			isMetaDataUpdated = true;
+		}
+		if (metaData.getCollectorVersion().isEmpty()) {
+			metaData.setCollectorVersion(result.getCollectorVersion());
+			isMetaDataUpdated = true;
+		}
+
+		if (metaData.getTraceName().isEmpty()) {
+			String name = result.getTraceDirectory();
+			int pos = name.lastIndexOf(Util.FILE_SEPARATOR);
+			if (pos > 0) {
+				name = name.substring(pos + 1);
+			}
+			metaData.setTraceName(name);
+			isMetaDataUpdated = true;
+		}
+		
+		if (metaData.getDeviceScreenSize() == null) {
+			metaData.setDeviceScreenSize(new Dimension(result.getDeviceScreenSizeX(), result.getDeviceScreenSizeY()));
+			isMetaDataUpdated = true;
+		}
+		
 		if (metaData.getPhoneMake().isEmpty()) {
 			metaData.setPhoneMake(result.getDeviceMake());
 			isMetaDataUpdated = true;
@@ -209,7 +239,7 @@ public class MetaDataHelper implements IMetaDataHelper {
 		if (metaData.getOsVersion().isEmpty()) {
 			metaData.setOsVersion(result.getOsVersion());
 			isMetaDataUpdated = true;
-		}
+		}	
 		
 		if (metaData.getStartUTC().isEmpty()) {
 			ZonedDateTime startUTC = null;
@@ -220,27 +250,28 @@ public class MetaDataHelper implements IMetaDataHelper {
 			metaData.setStartUTC(startUTC != null ? startUTC.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME) : "");
 		}
 		
-		if (metaData.getTraceDuration().isEmpty()) {
-			metaData.setTraceDuration(String.valueOf(result == null ? 0.0 : result.getTraceDuration()));
+		if (metaData.getUtc() == null || metaData.getUtc() == 0L) {
+			metaData.setUtc(result.getTraceDateTime().toInstant().getEpochSecond());
+			isMetaDataUpdated = true;
+		}		
+		
+		if (metaData.getTraceDuration() == null) {
+			metaData.setTraceDuration(result.getTraceDuration());
 			isMetaDataUpdated = true;
 		}
+		
 		if (metaData.getTraceSource().isEmpty()) {
 			metaData.setTraceSource("Manual");
 			isMetaDataUpdated = true;
 		} // MACHINE when tested in automated test harness
 		
-		if (settings != null && (metaData.getTraceOwner() == null || metaData.getTraceOwner().isEmpty())) {
-			metaData.setTraceOwner(
-					(settings.getAttribute(TRACE_OWNER) == null) ? UNKNOWN : settings.getAttribute(TRACE_OWNER));			
-		}
-		
 		if ((metaData.getTargetAppVer().isEmpty() || UNKNOWN.equals(metaData.getTargetAppVer()))
 				&& (!metaData.getTargetedApp().isEmpty() && !UNKNOWN.equals(metaData.getTargetedApp()))) {
 			String appVersion = findAppVersion(result);
-			if(!UNKNOWN.equals(appVersion)) {
+			if (!UNKNOWN.equals(appVersion)) {
 				isMetaDataUpdated = true;
 				metaData.setTargetAppVer(appVersion);
-			}		
+			}
 		}
 
 		return isMetaDataUpdated;
@@ -267,29 +298,10 @@ public class MetaDataHelper implements IMetaDataHelper {
 		metaData.setTargetedApp(targetedApp);
 		metaData.setTraceType(traceType);
 		metaData.setApplicationProducer(appProducer);
-		String localPath = "";
-		if (!tracePath.isEmpty() && !filemanager.isFile(tracePath)) {
-			localPath = filemanager.createFile(tracePath, METADATA_FILE).toString();
-		}
-		
-		if (isNewTraceOwnerAvailable()) {
-			metaData.setTraceOwner(settings.getAttribute(TRACE_OWNER));
-		}
-		String jsonData = getJson(metaData);
-		
-		if (jsonData != null && !jsonData.isEmpty() && localPath != null && !localPath.isEmpty()) {
-			FileOutputStream output;
-			try {
-				output = new FileOutputStream(localPath);
-				output.write(jsonData.getBytes());
-				output.flush();
-				output.close();
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			
+		try {
+			metaDataReadWrite.save(filemanager.createFile(tracePath), metaData);
+		} catch (Exception e) {
+			LOG.error("Faild to save metadata", e);
 		}
 		
 		return metaData;

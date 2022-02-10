@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 AT&T
+ *  Copyright 2015, 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.awt.Desktop;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Window;
 import java.io.IOException;
@@ -30,30 +28,30 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import org.apache.commons.lang.StringUtils;
 import org.jfree.ui.tabbedui.VerticalLayout;
+import org.jfree.util.Log;
+import org.springframework.context.ApplicationContext;
 
+import com.att.aro.core.SpringContextUtil;
+import com.att.aro.core.tracemetadata.IMetaDataHelper;
+import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
+import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.util.Util;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.view.images.Images;
 
-
 /**
- *
- *
-  * A factory class for displaying common message dialogs used by the ARO Data
- * Analyzer.
+ * A factory class for displaying common message dialogs used by the ARO Data Analyzer.
  */
 public class MessageDialogFactory extends JOptionPane{
 	public MessageDialogFactory() {
@@ -100,47 +98,6 @@ public class MessageDialogFactory extends JOptionPane{
 		showMessageDialog(parentComponent,msg, title, PLAIN_MESSAGE);
 	}
 	
-
-	/**
-	 * Displays an error dialog for the specified invalid trace file name. The
-	 * error dialog is associated with the specified parent window, and contains
-	 * the specified exception.
-	 * 
-	 * @param strTraceDir
-	 *            The trace directory of the invalid trace file.
-	 * @param parentComponent
-	 *            The parent window to associate with this dialog.
-	 * @param throwable
-	 *            The exception that should be thrown for this error.
-	 */
-	public void showInvalidTraceDialog(String strTraceDir, Component parentComponent,
-			Throwable throwable) {
-		showMessageDialog(
-				parentComponent,
-				MessageFormat.format(ResourceBundleHelper.getMessageString("Error.invalidTrace"), strTraceDir,
-						throwable.getLocalizedMessage()), ResourceBundleHelper.getMessageString("Error.title"), ERROR_MESSAGE);
-	}
-	
-	/**
-	 * Displays an error dialog for the specified invalid directory. The
-	 * error dialog is associated with the specified parent window, and contains
-	 * the specified exception.
-	 * 
-	 * @param strTraceDir
-	 *            The invalid directory.
-	 * @param parentComponent
-	 *            The parent window to associate with this dialog.
-	 * @param throwable
-	 *            The exception that should be thrown for this error.
-	 */
-	public void showInvalidDirectoryDialog(String strTraceDir, Component parentComponent,
-			Throwable throwable) {
-			showMessageDialog(
-				parentComponent,
-				MessageFormat.format(ResourceBundleHelper.getMessageString("Error.invalidDirecotry"), strTraceDir,
-						throwable.getLocalizedMessage()), ResourceBundleHelper.getMessageString("Error.title"), ERROR_MESSAGE);
-	}
-
 	public void showInformationDialog(Component parent, String message, String title) {
 				showMessageDialog(parent, message, title, INFORMATION_MESSAGE);
 	}
@@ -208,18 +165,6 @@ public class MessageDialogFactory extends JOptionPane{
 				options, options[0]);
 	}
 
-	public int showConfirmDialog2(Component parentComponent, String message, String title, int optionType) {
-		Object[] options = { ResourceBundleHelper.getMessageString("jdialog.option.yes"), ResourceBundleHelper.getMessageString("jdialog.option.no") };
-		return JOptionPane.showOptionDialog(parentComponent
-					, message
-					, title
-					, optionType
-					, JOptionPane.QUESTION_MESSAGE
-					, null
-					, options
-					, options[0]);
-	}
-	
 	public int showStopDialog(Component parentComponent, String message, String title, int optionType) {
 		Object[] options = { ResourceBundleHelper.getMessageString("jdialog.option.stop")};
 		return JOptionPane.showOptionDialog(parentComponent
@@ -247,372 +192,129 @@ public class MessageDialogFactory extends JOptionPane{
 	}
 	
 	/**
-	 * Display input dialog for user to enter tracefolder name and a checkbox for video capture
-	 * 
-	 * @param parent
-	 *            parent component
-	 * @param title
-	 *            what to show on the dialog box title
-	 * @param message
-	 *            what to show to user.
-	 * @param fontsize
-	 *            how big should the font be
-	 * @return String[] result[0] is foldername, result[1] is chckbxCaptureVideo true/false
-	 */
-	public String[] showInputText(Component parent
-								, String title
-								, String message
-								, int fontsize) {
-		
-		String[] result = new String[2];
-		
-		JCheckBox chckbxCaptureVideo;
-		JPanel panel = new JPanel();
-		JLabel label = new JLabel(message + "\r\n");
-		label.setFont(new Font(label.getFont().getName(), Font.PLAIN, fontsize));
-		
-		// TextField
-		JTextField textField = new JTextField(30);
-		panel.add(label);
-		panel.add(textField);
-		textField.selectAll();
-		textField.requestFocusInWindow();
-
-		
-		// Checkbox
-		chckbxCaptureVideo = new JCheckBox("Capture Video");
-		chckbxCaptureVideo.setToolTipText("Capture video of mobile screen");
-		chckbxCaptureVideo.setSelected(true);
-		chckbxCaptureVideo.setBounds(6, 32, 150, 23);
-		panel.add(chckbxCaptureVideo);
-		
-		// Buttons
-		String[] options = new String[] { "OK", "Cancel" };
-
-		textField.selectAll();
-		int opt = MessageDialogFactory.showOptionDialog(parent, panel, title, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
-		
-		String text = null; // if cancel return null else return value
-		if (opt == MessageDialogFactory.OK_OPTION) {
-			text = textField.getText();
-		}
-		
-		result[0] = text;
-		result[1] = chckbxCaptureVideo.isSelected() ? "true" : "false";
-
-		return result;
-	}
-	
-	/**
-	 * Display input dialog for user to enter tracefolder name and a checkbox for video capture
-	 * 
-	 * @param parent
-	 *            parent component
-	 * @param title
-	 *            what to show on the dialog box title
-	 * @param message
-	 *            what to show to user.
-	 * @param fontsize
-	 *            how big should the font be
-	 * @return String[] result[0] is foldername, result[1] is chckbxCaptureVideo true/false
-	 */
-	public String[] showInputTraceFolder(
-								Component parent
-								, String title
-								, String message
-								, int fontsize) {
-		
-		String[] result = new String[2];
-		
-		JCheckBox chckbxCaptureVideo;
-		JPanel panel = new JPanel();
-		JLabel label = new JLabel(message + "\r\n");
-		label.setFont(new Font(label.getFont().getName(), Font.PLAIN, fontsize));
-		
-		// TextField
-		JTextField textField = new JTextField(30);
-		panel.add(label);
-		panel.add(textField);
-		textField.selectAll();
-		textField.requestFocusInWindow();
-		
-		// Checkbox
-		chckbxCaptureVideo = new JCheckBox("Capture Video");
-		chckbxCaptureVideo.setToolTipText("Capture video of mobile screen");
-		chckbxCaptureVideo.setSelected(true);
-		chckbxCaptureVideo.setBounds(6, 32, 150, 23);
-		panel.add(chckbxCaptureVideo);
-		
-		// Buttons
-		String[] options = new String[] { "OK", "Cancel" };
-
-		int opt = MessageDialogFactory.showOptionDialog(parent
-							, panel, title, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
-		
-		String text = null; // if cancel return null else return value
-		if (opt == MessageDialogFactory.OK_OPTION) {
-			text = textField.getText();
-		}
-		
-		result[0] = text;
-		result[1] = chckbxCaptureVideo.isSelected() ? "true" : "false";
-
-		return result;
-	}
-	
-	public String[] showInputTraceFolder2( Component parent
-											, String title
-											, String message
-											, int fontsize) {
-		
-		String[] result = new String[2];
-		
-		JCheckBox chckbxCaptureVideo;
-		JPanel panel = new JPanel();
-		JLabel label = new JLabel(message + "\r\n");
-		label.setFont(new Font(label.getFont().getName(), Font.PLAIN, fontsize));
-		
-		// TextField
-		JTextField textField = new JTextField(30);
-		panel.add(label);
-		panel.add(textField);
-		textField.selectAll();
-		textField.requestFocusInWindow();
-		
-		// Checkbox
-		chckbxCaptureVideo = new JCheckBox("Capture Video");
-		chckbxCaptureVideo.setToolTipText("Capture video of mobile screen");
-		chckbxCaptureVideo.setSelected(true);
-		chckbxCaptureVideo.setBounds(6, 32, 150, 23);
-		panel.add(chckbxCaptureVideo);
-		
-		// Buttons
-		JPanel optionBtns = new JPanel();
-		optionBtns.setLayout(new GridBagLayout());
-		JButton btnOK = new JButton( "OK" );
-		JButton btnCancel = new JButton( "Cancel" );
-
-		optionBtns.add(btnOK, new GridBagConstraints(0, 0, 1, 4, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, null, 0, 0));
-		optionBtns.add(btnCancel, new GridBagConstraints(1, 0, 1, 4, 0.0, 0.0, GridBagConstraints.NORTH, GridBagConstraints.NONE, null, 0, 0));
-		
-		JDialog dialog = new JDialog();
-		dialog.setLayout(new BorderLayout());
-		dialog.add(panel,BorderLayout.NORTH);
-		dialog.add(optionBtns, BorderLayout.SOUTH);
-		dialog.setSize(400, 200);
-		textField.requestFocusInWindow();
-		dialog.setVisible( true );
-		
-//		String text = null; // if cancel return null else return value
-//		if (opt == MessageDialogFactory.OK_OPTION) {
-//		text = textField.getText();
-//		}
-		
-//		result[0] = text;
-//		result[1] = chckbxCaptureVideo.isSelected() ? "true" : "false";
-		
-		return result;
-}
-
-	/**
+	 * Dialog at after stopping a trace, giving options to:
+	 *  [Open] - Open the trace
+	 *  [OK]
 	 * 
 	 * @param parent
 	 * @param path
+	 * @param metaDataModel
 	 * @param videoStatus
 	 * @param traceDuration
 	 * @return
 	 */
-	public String showTimeOutOptions(
-			Component parent
-			, String path
-			, String title
-			, String videoStatus
-			, String traceDuration){
-		
-		Font TEXT_FONT = new Font("TEXT_FONT", Font.PLAIN, 12);
-		int HEADER_DATA_SPACING = 10;
-		
-		JLabel titleLabel;
-		
-//		JLabel pathLabel;
-//		JLabel pathValueLabel;
-		
-		JLabel dataLabel;
-		JLabel dataValueLabel;
-		
-//		JLabel videoLabel;
-		JLabel videoValueLabel;
-		
-//		JLabel durationLabel;
-//		JLabel durationValueLabel;
-		
-		JPanel summaryAlligmentPanel = new JPanel(new BorderLayout());
-		
-		JPanel emulatorSummaryDataPanel = new JPanel();
-		emulatorSummaryDataPanel.setLayout(new VerticalLayout());
-		
-//		pathLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.path"));
-//		pathLabel.setFont(TEXT_FONT);
-//		pathValueLabel = new JLabel(path);
-//		pathValueLabel.setFont(TEXT_FONT);
-		
-		dataLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.timeout.option"));
-		dataLabel.setFont(TEXT_FONT);
-		dataValueLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.timeout.options1"));
-		dataValueLabel.setFont(TEXT_FONT);
-		
-//		videoLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.timeout.options2"));
-//		videoLabel.setFont(TEXT_FONT);
-		videoValueLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.timeout.options2"));
-		videoValueLabel.setFont(TEXT_FONT);
-		
-//		durationLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.duration"));
-//		durationLabel.setFont(TEXT_FONT);
-//		durationValueLabel = new JLabel(traceDuration);
-//		durationValueLabel.setFont(TEXT_FONT);
-		
-		JPanel spacePanel = new JPanel();
-		spacePanel.setPreferredSize(new Dimension(this.getWidth(), HEADER_DATA_SPACING));
-		
-		JPanel summaryDataPanel = new JPanel(new GridLayout(4, 2, 0, 5));
-//		summaryDataPanel.add(pathLabel);
-//		summaryDataPanel.add(pathValueLabel);
-//		summaryDataPanel.add(dataLabel);
-		summaryDataPanel.add(dataValueLabel);
-//		summaryDataPanel.add(videoLabel);
-		summaryDataPanel.add(videoValueLabel);
-//		summaryDataPanel.add(durationLabel);
-//		summaryDataPanel.add(durationValueLabel);
-		
-		JPanel summaryTitlePanel = new JPanel(new BorderLayout());
-		titleLabel = new JLabel(title);
-		titleLabel.setFont(TEXT_FONT);
-		summaryTitlePanel.add(titleLabel, BorderLayout.CENTER);
-		
-		emulatorSummaryDataPanel.add(summaryTitlePanel);
-		emulatorSummaryDataPanel.add(spacePanel);
-		emulatorSummaryDataPanel.add(summaryDataPanel);
-		
-		summaryAlligmentPanel.add(emulatorSummaryDataPanel, BorderLayout.SOUTH);
-		String[] options = new String[] { "Quit"};//, "Stop" };//, "Restart"};
-		int opt = MessageDialogFactory.showOptionDialog(parent, summaryAlligmentPanel, "Confirm", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
-		return options[opt];
-	}
-
+	@SuppressWarnings("null")
 	public boolean showTraceSummary( Component parent
 									, String path
+									, MetaDataModel metaDataModel
 									, boolean videoStatus
 									, String traceDuration){
 		
 		boolean approveOpenTrace = false;
-
-		Font TEXT_FONT = new Font("TEXT_FONT", Font.PLAIN, 12);
+		ApplicationContext context = SpringContextUtil.getInstance().getContext();
+		IMetaDataHelper metaDataHelper = context.getBean("metaDataHelper", MetaDataHelper.class);
+		
 		int HEADER_DATA_SPACING = 10;
 		
-		JLabel summaryLabel;
-		JLabel pathLabel;
-		JLabel pathValueLabel;
-		JLabel dataLabel;
-		JLabel dataValueLabel;
-		JLabel videoLabel;
-		JLabel videoValueLabel;
-		JLabel durationLabel;
-		JLabel durationValueLabel;
-		
-		JPanel summaryAlligmentPanel = new JPanel(new BorderLayout());
-
-		JPanel emulatorSummaryDataPanel = new JPanel();
-		emulatorSummaryDataPanel.setLayout(new VerticalLayout());
-
-		pathLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.path"));
-		pathLabel.setFont(TEXT_FONT);
-		pathValueLabel = new JLabel(path);
-		pathValueLabel.setFont(TEXT_FONT);
-		dataLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.data"));
-		dataLabel.setFont(TEXT_FONT);
-		dataValueLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.dataValue"));
-		dataValueLabel.setFont(TEXT_FONT);
-		videoLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.video"));
-		videoLabel.setFont(TEXT_FONT);
-		videoValueLabel = new JLabel(videoStatus?"Yes":"No");
-		videoValueLabel.setFont(TEXT_FONT);
-		durationLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.duration"));
-		durationLabel.setFont(TEXT_FONT);
-		durationValueLabel = new JLabel(traceDuration);
-		durationValueLabel.setFont(TEXT_FONT);
 
 		JPanel spacePanel = new JPanel();
 		spacePanel.setPreferredSize(new Dimension(this.getWidth(), HEADER_DATA_SPACING));
 
-		JPanel summaryDataPanel = new JPanel(new GridLayout(4, 2, 0, 5));
-		summaryDataPanel.add(pathLabel);
-		summaryDataPanel.add(pathValueLabel);
-		summaryDataPanel.add(dataLabel);
-		summaryDataPanel.add(dataValueLabel);
-		summaryDataPanel.add(videoLabel);
-		summaryDataPanel.add(videoValueLabel);
-		summaryDataPanel.add(durationLabel);
-		summaryDataPanel.add(durationValueLabel);
+		JTextField pathTextField = null;		
+		JTextField dataTextField = null;		
+		JTextField videoTextField = null;		
+		JTextField durationTextField = null;	
 
+		JTextField targetedAppTextField = null;
+		JTextField videoNameTextField = null; 
+		JTextField urlTextField = null; 	
+		JTextField netWorkTextField = null;
+		JTextField traceNotesTextField = null;
+
+		// Section: Trace Summary
 		JPanel summaryTitlePanel = new JPanel(new BorderLayout());
-		summaryLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.summary"));
-		summaryLabel.setFont(TEXT_FONT);
+		JLabel summaryLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.summary"));
+		summaryLabel.setFont(AroFonts.TEXT_FONT);
 		summaryTitlePanel.add(summaryLabel, BorderLayout.CENTER);
-
-		emulatorSummaryDataPanel.add(summaryTitlePanel);
-		emulatorSummaryDataPanel.add(spacePanel);
-		emulatorSummaryDataPanel.add(summaryDataPanel);
-
-		summaryAlligmentPanel.add(emulatorSummaryDataPanel, BorderLayout.SOUTH);
-		String[] options = new String[] { "OK", "Open" };
-		int opt = MessageDialogFactory.showOptionDialog(parent, summaryAlligmentPanel, "Confirm", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
-		approveOpenTrace = (opt == 1);
-		return approveOpenTrace;
 		
+		JPanel summaryLabeledValue = new JPanel(new GridLayout(4, 2, 0, 5));
+		pathTextField     = generateEntries(summaryLabeledValue, AroFonts.TEXT_FONT, "collector.path", 		false, path);
+		dataTextField     = generateEntries(summaryLabeledValue, AroFonts.TEXT_FONT, "collector.data", 		false, ResourceBundleHelper.getMessageString("collector.dataValue"));
+		videoTextField    = generateEntries(summaryLabeledValue, AroFonts.TEXT_FONT, "collector.video", 		false, videoStatus ? "Yes" : "No");
+		durationTextField = generateEntries(summaryLabeledValue, AroFonts.TEXT_FONT, "collector.duration", 	false, traceDuration);
+
+		JPanel summaryPanel = new JPanel(new VerticalLayout());
+		summaryPanel.add(summaryTitlePanel);
+		summaryPanel.add(spacePanel);
+		summaryPanel.add(summaryLabeledValue);
+		// =========================================================
+
+		// Section: MetaData		
+		JPanel metaDataTitlePanel = new JPanel(new BorderLayout());
+		JLabel metaDataLabel = new JLabel(ResourceBundleHelper.getMessageString("collector.metaData"));
+		metaDataLabel.setFont(AroFonts.TEXT_FONT);
+		metaDataTitlePanel.add(metaDataLabel, BorderLayout.CENTER);
+
+		JPanel metaLabeledValue = new JPanel(new GridLayout(5, 2, 0, 5));
+		targetedAppTextField  = generateEntries(metaLabeledValue, AroFonts.TEXT_FONT, "metadata.field.targetedApp"	, true, metaDataModel.getTargetedApp()  );
+		videoNameTextField    = generateEntries(metaLabeledValue, AroFonts.TEXT_FONT, "metadata.field.videoName"	, true, metaDataModel.getVideoName()    );
+		urlTextField          = generateEntries(metaLabeledValue, AroFonts.TEXT_FONT, "metadata.field.url"			, true, metaDataModel.getURL()          );
+		netWorkTextField      = generateEntries(metaLabeledValue, AroFonts.TEXT_FONT, "metadata.field.netWork"		, true, metaDataModel.getNetWork()      );
+		traceNotesTextField   = generateEntries(metaLabeledValue, AroFonts.TEXT_FONT, "metadata.field.traceNotes"	, true, metaDataModel.getTraceNotes()   );
+
+		JPanel metaPanel = new JPanel(new VerticalLayout());
+		metaPanel.add(metaDataTitlePanel);   
+		metaPanel.add(spacePanel);
+		metaPanel.add(metaLabeledValue);
+		// =========================================================
+
+		JPanel traceSummaryPanel = new JPanel(new BorderLayout());
+		traceSummaryPanel.add(summaryPanel, BorderLayout.NORTH);
+		traceSummaryPanel.add(spacePanel, BorderLayout.CENTER);
+		traceSummaryPanel.add(metaPanel, BorderLayout.SOUTH);
+		
+		String[] options = new String[] { "OK", "Open" };
+		int opt = MessageDialogFactory.showOptionDialog(parent, traceSummaryPanel, "Confirm", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+		approveOpenTrace = (opt == 1);
+		
+		try {
+			metaDataModel.setTraceDuration(Double.parseDouble(durationTextField.getText()));
+		} catch (NumberFormatException e) {
+			Log.error("NumberFormatException: ", e);
+			metaDataModel.setTraceDuration(0.0);
+		}
+		
+		metaDataModel.setTargetedApp 	(targetedAppTextField	.getText());
+		metaDataModel.setVideoName   	(videoNameTextField		.getText());
+		metaDataModel.setURL         	(urlTextField			.getText());
+		metaDataModel.setNetWork     	(netWorkTextField		.getText());
+		metaDataModel.setTraceNotes  	(traceNotesTextField	.getText());
+		try {
+			metaDataHelper.saveJSON(path, metaDataModel);
+		} catch (Exception e) {
+			Log.error("Failed to save metadata.json", e);
+		}
+		return approveOpenTrace;
 	}
 	
-	/**
-	 * Display input dialog for user to enter password
-	 * @param parent parent component
-	 * @param title what to show on the dialog box title
-	 * @param message what to show to user.
-	 * @return
-	 */
-	public String showInputPassword(Component parent, String title, String message){
-		return showInputPassword(parent,title,message,14);
-	}
-	/**
-	 * Display input dialog for user to enter password
-	 * @param parent parent component
-	 * @param title what to show on the dialog box title
-	 * @param message what to show to user.
-	 * @param fontsize how big should the font be
-	 * @return
-	 */
-	public String showInputPassword(Component parent, String title, String message, int fontsize){
-		JPanel panel = new JPanel();
-		JLabel label = new JLabel(message+"\r\n");
-		label.setFont(new Font(label.getFont().getName(), Font.PLAIN, fontsize));
-		JPasswordField pass = new JPasswordField(10);
-		panel.add(label);
-		panel.add(pass);
-		pass.selectAll();
-		pass.requestFocusInWindow();
-		
-		String[] options = new String[]{"OK", "Cancel"};
-		
-		int opt = MessageDialogFactory.showOptionDialog(parent, panel, title,
-                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
-                null, options, options[0]);
-		char[] passarr = pass.getPassword();
-		String passwd = null; //if cancel return null else return value
-		if(opt == MessageDialogFactory.OK_OPTION){
-			passwd = new String(passarr);
+	private JTextField generateEntries(JPanel metaDataPane, Font text_font, String mstr, boolean editable, String value) {
+		if (value == null) {
+			value = "";
 		}
+		// Label
+		String sLabel = ResourceBundleHelper.getMessageString(mstr);
+		JLabel label = new JLabel(sLabel);
+		label.setFont(text_font);
+		metaDataPane.add(label);
 
-		return passwd;
+		// value
+		JTextField textField = new JTextField(value);
+		textField.setFont(text_font);
+		textField.setEditable(editable);
+		metaDataPane.add(textField);
+		return textField;
 	}
-
+	
 	/**
 	 * Inform user that phone is rooted and does not have the rooted collector
 	 * supports a hyperlink to the developer portal
@@ -691,9 +393,7 @@ public class MessageDialogFactory extends JOptionPane{
 			}
 		}
 
-
 		return Math.abs(response);
-		
 	}
 
 }

@@ -35,8 +35,9 @@ public class AdaptationSetESL {
 	@XmlAttribute(name = "lang") private String lang;
 	
 	// all
-	@XmlAttribute(name = "minBandwidth") private String minBandwidth;
+	@XmlAttribute(name = "minBandwidth") private Double minBandwidth;
 	@XmlAttribute(name = "contentType")  private String contentType;
+	@XmlAttribute(name = "mimeType")  private String mimeType;
 	
 	@XmlElement(name = "Representation") private List<RepresentationESL> representation;
 	@XmlElement(name = "EncodedSegmentDurations") private EncodedSegmentDurations encodedSegmentDurations;

@@ -1,3 +1,17 @@
+/*  Copyright 2019 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.videoanalysis.pojo;
 
 import java.util.ArrayList;
@@ -5,15 +19,19 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
+import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
+import com.att.aro.core.tracemetadata.pojo.MetaStream;
 import com.att.aro.core.videoanalysis.XYPair;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
@@ -28,6 +46,10 @@ import lombok.Setter;
 @Data
 public class VideoStream {
 
+	public static enum StreamStatus{
+		Load, Play, Stall, NA
+	}
+	
 	private Manifest manifest;
 	
 	/**
@@ -46,7 +68,7 @@ public class VideoStream {
 	 * key definition format sssssssssstttttttt, t = getSegmentStartTime() len = 11, s = segment len = 10
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
-	private SortedMap<String, VideoEvent> audioActiveMap = new TreeMap<>();
+	private TreeMap<String, VideoEvent> audioActiveMap = new TreeMap<>();
 
 	/**
 	 * CC Segments that are considered as playing
@@ -55,7 +77,7 @@ public class VideoStream {
 	 * key definition format sssssssssstttttttt, t = getEndTS() len = 11, s = segment len = 10
 	 */
 	@NonNull@Setter(AccessLevel.NONE)
-	private SortedMap<String, VideoEvent> ccActiveMap = new TreeMap<>();
+	private TreeMap<String, VideoEvent> ccActiveMap = new TreeMap<>();
 
 	/** <pre>
 	 * key definition DLtimestamp-segment
@@ -75,6 +97,8 @@ public class VideoStream {
 	public VideoEvent getStartingSegment() {
 		return videoStartTimeMap.isEmpty() ? null : videoStartTimeMap.firstEntry().getValue();
 	}
+	
+	VideoStreamStartup videoStreamStartup;
 	
 	/** <pre>
 	 * key definition DLtimestamp-segment
@@ -124,10 +148,6 @@ public class VideoStream {
 	@NonNull@Setter(AccessLevel.NONE)
 	private List<VideoStall> videoStallList = new ArrayList<>();
 	
-	public void addStall(VideoEvent videoEvent) {
-		videoStallList.add(new VideoStall(videoEvent));
-	}
-	
 	private Boolean validatedCount = false;
 	private int segmentCount = 0;
 	private double duration = 0;
@@ -138,22 +158,30 @@ public class VideoStream {
 	private int missingSegmentCount = 0;
 	
 	private boolean valid = true;
-	private boolean selected = false;
+	private boolean selected = false;		// selected for graphic display in diagnostics tab
 	private boolean activeState = false;
-	private boolean currentStream = false;
+	private boolean currentStream = false;	// selected in  toggleStream(VideoStream stream, boolean isCurrentStream)
 
 	public VideoEvent audioEvent;
 	
 	private int boIndex = 0;
 	private int ptIndex = 0;
 	
-	// byte buffer
+	/**
+	 * Used in Byte Buffer BufferOccupancyPlot.java
+	 */
 	@NonNull@Setter(AccessLevel.NONE)
 	private ArrayList<XYPair> byteBufferList = new ArrayList<>();
+	
+	/**
+	 * Used in Byte Buffer BufferOccupancyPlot.java
+	 */
 	@NonNull@Setter(AccessLevel.NONE)
-	private SortedMap<Integer, ToolTipDetail> toolTipDetailMap = new TreeMap<>();
+	private SortedMap<Integer, ToolTipDetail> byteToolTipDetailMap = new TreeMap<>();
 
-	// playtime aka:time buffer, bufferInSeconds
+	/**
+	 *  playtime aka:time buffer, bufferInSeconds
+	 */
 	@NonNull@Setter(AccessLevel.NONE)
 	private ArrayList<XYPair> playTimeList = new ArrayList<>();
 	@NonNull@Setter(AccessLevel.NONE)
@@ -161,9 +189,13 @@ public class VideoStream {
 
 	private Double playRequestedTime;
 	private Double videoPlayBackTime;
+
+	@Getter
+	@Setter
+	private MetaStream metaStream;
 	
 	public void clearBufferOccupancyData() {
-		toolTipDetailMap.clear();
+		byteToolTipDetailMap.clear();
 		byteBufferList.clear();
 		boIndex = 0;
 	}
@@ -174,24 +206,40 @@ public class VideoStream {
 		ptIndex = 0;
 	}
 	
-	public void addToolTipPoint(VideoEvent videoEvent, double totalBytes) {
-		if (!toolTipDetailMap.containsKey(boIndex)) {
-			toolTipDetailMap.put(boIndex++, new ToolTipDetail(boIndex, totalBytes, videoEvent));
+	public void addByteToolTipPoint(VideoEvent videoEvent, double totalBytes) {
+		if (!byteToolTipDetailMap.containsKey(boIndex)) {
+			byteToolTipDetailMap.put(boIndex++, new ToolTipDetail(boIndex, totalBytes, videoEvent));
 		}
 	}
 	
-	public void addPlayTimeToolTipPoint(VideoEvent videoEvent, double totalBytes) {
-		if (!playTimeToolTipDetailMap.containsKey(boIndex)) {
-			playTimeToolTipDetailMap.put(boIndex++, new ToolTipDetail(boIndex, totalBytes, videoEvent));
+	public void addPlayTimeToolTipPoint(VideoEvent videoEvent, double currentTotalSeconds, StreamStatus streamStatus) {
+		if (!playTimeToolTipDetailMap.containsKey(ptIndex)) {
+			playTimeToolTipDetailMap.put(
+					ptIndex++
+					, new ToolTipDetail(ptIndex, currentTotalSeconds, videoEvent, streamStatus));
 		}
 	}
 	
-	@Data
+	public void addStall(VideoEvent videoEvent) {
+		videoStallList.add(new VideoStall(videoEvent));
+	}
+	
+	@Setter
+	@Getter
 	@AllArgsConstructor
 	public class ToolTipDetail{
+		
 		int index;
-		double totalBytes;
-		VideoEvent videoEvent;
+		/**
+		 * This is current total buffer, as in totalBytes or totalSeconds
+		 */
+		private double currentTotal;
+		private VideoEvent videoEvent;
+		private StreamStatus streamStatus;
+		
+		public ToolTipDetail(int index, double currentTotal, VideoEvent videoEvent) {
+			this(index, currentTotal, videoEvent,  StreamStatus.NA);
+		}
 		
 		public double getTS() {
 			return videoEvent.getEndTS();
@@ -199,21 +247,47 @@ public class VideoStream {
 		public double getSize() {
 			return videoEvent.getSize();
 		}
+
+		public double getSegmentID() {
+			return videoEvent.getSegmentID();
+		}
+
+		public double getPlayTime() {
+			return videoEvent.getPlayTime();
+		}
+
+		public double getPlayTimeEnd() {
+			return videoEvent.getPlayTimeEnd();
+		}
 		
 		@Override
 		public String toString() {
 				StringBuilder strblr = new StringBuilder(83);
 				strblr.append("index:").append(index);
-				strblr.append(String.format(", totalBytes: %.0f", getTotalBytes()));
+				strblr.append(String.format(", currentTotal: %.0f", getCurrentTotal()));
 				strblr.append(String.format(", endTS: %.3f", getTS()));
-				strblr.append(String.format(", bytes: %.0f", getSize()));
+
+				strblr.append(String.format(", SegID: %.0f", videoEvent.getSegmentID()));
+				strblr.append(String.format(", pTime: %.6f", videoEvent.getPlayTime()));
+				if (videoEvent.getStallTime() > 0) {
+					strblr.append(String.format(", sTS: %.6f", videoEvent.getPlayTime() - videoEvent.getStallTime()));
+				}
 				strblr.append("\n");
 			return strblr.toString();
 		}
 	}
 
+	public VideoEvent getFirstActiveSegment() {
+		return getFirstNormalSegment(videoActiveMap);
+	}
+	
 	public VideoEvent getFirstSegment() {
-		return ((TreeMap<String, VideoEvent>)videoSegmentEventList).firstEntry().getValue();
+		return getFirstNormalSegment((TreeMap<String, VideoEvent>)videoSegmentEventList);
+	}
+
+	private VideoEvent getFirstNormalSegment(TreeMap<String, VideoEvent> videoMap) {
+		Optional<Entry<String, VideoEvent>> firstSegment = videoMap.entrySet().stream().filter(e -> e.getValue().isNormalSegment()).findFirst();
+		return firstSegment.isPresent() ? firstSegment.get().getValue() : null;
 	}
 
 	/**
@@ -390,10 +464,4 @@ public class VideoStream {
 		strblr.append("\n");
 		return strblr.toString();
 	}
-
-	public void setPlayRequestedTime(Double playRequestedTime) {
-		this.playRequestedTime=playRequestedTime;
-	}
-
-
 }

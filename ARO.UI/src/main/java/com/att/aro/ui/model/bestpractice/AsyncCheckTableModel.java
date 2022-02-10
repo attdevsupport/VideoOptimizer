@@ -64,7 +64,7 @@ public class AsyncCheckTableModel extends DataTableModel<AsyncCheckEntry> {
 	 */
 	public AsyncCheckTableModel() {
 		super(COLUMNS);
-		LOGGER.debug("new AsyncCheckTableModel");
+		LOGGER.trace("new AsyncCheckTableModel");
 	}
 
 	/**
@@ -115,7 +115,7 @@ public class AsyncCheckTableModel extends DataTableModel<AsyncCheckEntry> {
 	 */
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		LOGGER.debug(format("getColumnClass, idx: {0}", columnIndex));
+		LOGGER.trace(format("getColumnClass, idx: {0}", columnIndex));
 		switch (columnIndex) {
 		case COL_1:
 			return Double.class;

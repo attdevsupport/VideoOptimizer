@@ -44,7 +44,7 @@ public class CpuActivityReaderImpl extends PeripheralBase implements ICpuActivit
 	public CpuActivityList readData(String directory, double startTime) {
 		String cpuFileName = TraceDataConst.FileName.CPU_FILE;
 		CpuActivityList cpuActivityList = new CpuActivityList();
-		LOGGER.debug("Reading CPU file...");
+		LOGGER.trace("Reading CPU file...");
 		String filepath = directory + Util.FILE_SEPARATOR + cpuFileName;
 		if (!filereader.fileExist(filepath)) {
 			LOGGER.warn("cpu file not found: " + cpuFileName);

@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>4.3.0</version>
+        <version>4.4.0</version>
         <relativePath>../ARO.Parent</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
 		<main.class>com.att.aro.ui.view.MainFrame</main.class>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.deploy.skip>true</maven.deploy.skip>
-		<vo.version>4.3.0</vo.version>
+		<vo.version>4.4.0</vo.version>
 		<jna.version>5.2.0</jna.version>
 	</properties>
 
@@ -79,18 +79,6 @@
 			<version>${vo.version}</version>
 		</dependency>
 		<dependency>
-		  <groupId>org.jfree</groupId>
-		  <artifactId>jfreechart</artifactId>
-		  <version>1.0.17</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.codehaus.mojo</groupId>
-			<artifactId>findbugs-maven-plugin</artifactId>
-			<version>3.0.4</version>
-		</dependency>
-
-		<dependency>
 			<groupId>com.att.aro.datacollector</groupId>
 			<artifactId>vpn-android-collector</artifactId>
 			<version>${vo.version}</version>
@@ -111,6 +99,26 @@
 			<artifactId>vo-analytics</artifactId>
 			<version>${vo.version}</version>
 		</dependency>
+		
+		<dependency>
+		  <groupId>org.jfree</groupId>
+		  <artifactId>jfreechart</artifactId>
+		  <version>1.0.17</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>findbugs-maven-plugin</artifactId>
+			<version>3.0.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.2</version>
+			<scope>provided</scope>
+		</dependency>
+		
 		<dependency>
 			<groupId>javax.media</groupId>
 			<artifactId>jmf</artifactId>
@@ -137,16 +145,10 @@
 		    <version>1.6.1</version>
 		</dependency>
 		<dependency>
-		    <groupId>org.projectlombok</groupId>
-		    <artifactId>lombok</artifactId>
-		    <version>1.18.2</version>
-		    <scope>provided</scope>
-		</dependency>
-		<dependency>
 		    <groupId>org.apache.commons</groupId>
 		    <artifactId>commons-csv</artifactId>
 		    <version>1.8</version>
-		</dependency>		
+		</dependency>	
 	</dependencies>
 
 	<!-- build -->

@@ -366,6 +366,19 @@ public final class ErrorCodeRegistry {
 		return err;
 	}
 
+	/**
+	 * RVI Drop Issue
+	 * @return
+	 */
+	public static ErrorCode getRVIDropIssue(){
+		ErrorCode err = new ErrorCode();
+		err.setCode(529);
+		err.setName("RVI Issue. XCode dropped the RVI connection ");
+		err.setDescription(defaultBundle.getString("Error.rvidropissue"));
+		sendGAErrorCode(err);
+		return err;
+	}
+	
 	private static void sendGAErrorCode(ErrorCode err){
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendErrorEvents(err.getName(),err.getDescription(), false);
 	}

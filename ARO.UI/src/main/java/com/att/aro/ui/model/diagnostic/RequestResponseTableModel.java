@@ -171,7 +171,7 @@ public class RequestResponseTableModel extends DataTableModel<HttpRequestRespons
 					return item.getContentLength();
 				}
 			case ON_WIRE_CONTENT_LENGTH:
-				return item.getRawSize();
+				return item.getRawSize() == -1 ? "No Data" : item.getRawSize();
 			case HTTP_COMPRESSION:
 				return  getHttpCompression(item);
 			case NETWORK_LATENCY_COL:

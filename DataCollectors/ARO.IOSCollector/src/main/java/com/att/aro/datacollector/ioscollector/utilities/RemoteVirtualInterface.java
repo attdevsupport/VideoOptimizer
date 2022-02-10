@@ -213,7 +213,7 @@ public class RemoteVirtualInterface {
 		initDate = startDate;
 		startCaptureDate = startDate;
 		
-		dumpcapExecutor = new ExternalDumpcapExecutor(this.pcapfilepath, sudoPassword, this.runner);
+		dumpcapExecutor = new ExternalDumpcapExecutor(this.pcapfilepath, sudoPassword, "rvi0", this.runner);
 		dumpcapExecutor.start();
 		
 		LOG.info("************  Tcpdump started in background. ****************");
@@ -290,5 +290,9 @@ public class RemoteVirtualInterface {
 
 	public void setRviName(String rviName) {
 		this.rviName = rviName;
+	}
+	
+	public String testRVIConnection(String serialNumber) {
+		return findDeviceInRvictl(serialNumber);
 	}
 }//end class

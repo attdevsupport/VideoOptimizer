@@ -38,7 +38,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class NetworkTypePlot implements IPlot {
-	private static final Logger LOGGER = LogManager.getLogger(NetworkTypePlot.class.getSimpleName());	
+	private static final Logger LOGGER = LogManager.getLogger(NetworkTypePlot.class.getSimpleName());
 
 	@Override
 	public void populate(XYPlot plot, AROTraceData analysis) {
@@ -47,26 +47,26 @@ public class NetworkTypePlot implements IPlot {
 		if (analysis == null) {
 			LOGGER.info("no trace data here");
 		} else {
-			if (analysis.getAnalyzerResult().getTraceresult()
-					.getTraceResultType() == TraceResultType.TRACE_FILE) {
+			if (analysis.getAnalyzerResult().getTraceresult().getTraceResultType() == TraceResultType.TRACE_FILE) {
 				LOGGER.info("no trace folder data here");
 			} else {
-				TraceDirectoryResult traceresult = (TraceDirectoryResult) analysis
-						.getAnalyzerResult().getTraceresult();
+				TraceDirectoryResult traceresult = (TraceDirectoryResult) analysis.getAnalyzerResult().getTraceresult();
 				final XYIntervalSeriesCollection networkDataSeries = new XYIntervalSeriesCollection();
 				final Map<NetworkType, XYIntervalSeries> seriesMap = new EnumMap<NetworkType, XYIntervalSeries>(
 						NetworkType.class);
 				createDataSeriesForAllNetworkTypes(seriesMap, networkDataSeries);
 
-				Iterator<NetworkBearerTypeInfo> iter = traceresult
-						.getNetworkTypeInfos().iterator();
+				Iterator<NetworkBearerTypeInfo> iter = traceresult.getNetworkTypeInfos().iterator();
 				if (iter.hasNext()) {
 					while (iter.hasNext()) {
 						NetworkBearerTypeInfo networkInfo = iter.next();
 						if (networkInfo.getNetworkType() != NetworkType.UNKNOWN) {
-							if ( NetworkType.LTE == networkInfo.getNetworkType() && (NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA == networkInfo.getOverrideNetworkType()
-									|| NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE == networkInfo
-											.getOverrideNetworkType() || NetworkType.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO == networkInfo.getOverrideNetworkType())  ) {
+							if (NetworkType.LTE == networkInfo.getNetworkType()
+									&& (NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA == networkInfo.getOverrideNetworkType()
+											|| NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE == networkInfo
+													.getOverrideNetworkType()
+											|| NetworkType.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO == networkInfo
+													.getOverrideNetworkType())) {
 								seriesMap.get(networkInfo.getOverrideNetworkType()).add(networkInfo.getBeginTimestamp(),
 										networkInfo.getBeginTimestamp(), networkInfo.getEndTimestamp(), 0.5, 0, 1);
 							} else {
@@ -78,8 +78,7 @@ public class NetworkTypePlot implements IPlot {
 				} else {
 					NetworkType nt = traceresult.getNetworkType();
 					if (nt != null && nt != NetworkType.UNKNOWN) {
-						seriesMap.get(nt).add(0, 0,
-								traceresult.getTraceDuration(), 0.5, 0, 1);
+						seriesMap.get(nt).add(0, 0, traceresult.getTraceDuration(), 0.5, 0, 1);
 					}
 				}
 
@@ -89,14 +88,10 @@ public class NetworkTypePlot implements IPlot {
 				// Assign ToolTip to renderer
 				renderer.setBaseToolTipGenerator(new XYToolTipGenerator() {
 					@Override
-					public String generateToolTip(XYDataset dataset,
-							int series, int item) {
-						NetworkType networkType = (NetworkType) networkDataSeries
-								.getSeries(series).getKey();
-						return MessageFormat.format(ResourceBundleHelper
-								.getMessageString("network.tooltip"), dataset
-								.getX(series, item), ResourceBundleHelper
-								.getEnumString(networkType));
+					public String generateToolTip(XYDataset dataset, int series, int item) {
+						NetworkType networkType = (NetworkType) networkDataSeries.getSeries(series).getKey();
+						return MessageFormat.format(ResourceBundleHelper.getMessageString("network.tooltip"),
+								dataset.getX(series, item), ResourceBundleHelper.getEnumString(networkType));
 					}
 				});
 
@@ -106,8 +101,7 @@ public class NetworkTypePlot implements IPlot {
 		}
 	}
 
-	private void createDataSeriesForAllNetworkTypes(
-			final Map<NetworkType, XYIntervalSeries> seriesMap,
+	private void createDataSeriesForAllNetworkTypes(final Map<NetworkType, XYIntervalSeries> seriesMap,
 			final XYIntervalSeriesCollection networkDataSeries) {
 		for (NetworkType nt : NetworkType.values()) {
 			XYIntervalSeries series = new XYIntervalSeries(nt);
@@ -124,10 +118,10 @@ public class NetworkTypePlot implements IPlot {
 		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA), Color.YELLOW);
 		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE), Color.BLACK);
 		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO), Color.MAGENTA);
-				
+
 		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.GSM), Color.DARK_GRAY);
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.UMTS), Color.PINK);		
-		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.EVDO0), Color.BLACK);		
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.UMTS), Color.PINK);
+		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.EVDO0), Color.BLACK);
 		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSDPA), Color.YELLOW);
 		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSPA), Color.ORANGE);
 		renderer.setSeriesPaint(dataSeries.indexOf(NetworkType.HSPAP), Color.MAGENTA);

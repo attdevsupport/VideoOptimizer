@@ -40,7 +40,7 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
     }
 
 	public void applicationInfo(String analyticsTracker, String applicationName, String applicationVersion){
-		LOGGER.debug("applicationInfo called");
+		LOGGER.trace("applicationInfo called");
 
 		gaTracker = GoogleAnalyticsUtil.getConfigSetting().getAttribute("gaTrackerId"); //Added for getting the Tracker ID from config
 		if(gaTracker == null){
@@ -223,7 +223,7 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
 	}
  
 	 private void initializeGATracker(){
-		 LOGGER.debug("initializeGATracker called");
+		 LOGGER.trace("initializeGATracker called");
 	     this.gat = new GoogleAnalyticsTracker(appName, appVersion, gaTracker, AnalyticsCommon.GA_CAPACITY);
 	     this.gaFocusPoint = new GAEntry(appName);
 	 }
@@ -231,7 +231,7 @@ public class GoogleAnalyticsImpl implements IGoogleAnalytics {
 //	@Override
 	public void close() {
 		gat.close();
-		LOGGER.debug("database properly closed");
+		LOGGER.trace("database properly closed");
 	}
 
 }

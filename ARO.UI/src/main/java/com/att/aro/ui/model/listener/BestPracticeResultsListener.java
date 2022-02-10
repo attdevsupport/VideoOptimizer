@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -44,6 +45,7 @@ import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.google.common.collect.Lists;
 
 
@@ -100,6 +102,12 @@ public class BestPracticeResultsListener extends AbstractMenuItemListener {
                                           : "Android";
                 dataRows.add(Arrays.asList(getFontStyledColumn("Device OS"), deviceOSInfo));
 
+                String displayResolutionValue = MessageFormat.format(ResourceBundleHelper.getMessageString("bestPractices.displayResolutionValue"),
+											                		 traceDirResult.getCollectOptions().getOrientation(),
+																	 String.valueOf(traceDirResult.getDeviceScreenSizeX()),
+																	 String.valueOf(traceDirResult.getDeviceScreenSizeY()));
+                dataRows.add(Arrays.asList(getFontStyledColumn("Display Resolution"), displayResolutionValue));
+
                 dataRows.add(Arrays.asList(getFontStyledColumn("Network Type(s)"), traceDirResult.getNetworkTypesList()));
             }
 
@@ -146,6 +154,9 @@ public class BestPracticeResultsListener extends AbstractMenuItemListener {
                 		String.format("%02d:%02d:%02d", traceDurationLong/3600, (traceDurationLong%3600) / 60, traceDurationLong % 60) +
                 		String.format("%.3f", traceDuration - Math.floor(traceDuration)).substring(1)
         		));
+
+                String timeRangeTitle = traceData.getAnalyzerResult().getTraceresult().getTimeRange().getTitle();
+                dataRows.add(Arrays.asList(getFontStyledColumn("Time Range Identifier"), timeRangeTitle != null ? timeRangeTitle : ""));
     			dataRows.add(Arrays.asList(getFontStyledColumn("Start Time (second)"), formatToFixedDecimal(3, timeRangeAnalysis.getStartTime())));
     			dataRows.add(Arrays.asList(getFontStyledColumn("End Time (second)"), formatToFixedDecimal(3, timeRangeAnalysis.getEndTime())));
     		}

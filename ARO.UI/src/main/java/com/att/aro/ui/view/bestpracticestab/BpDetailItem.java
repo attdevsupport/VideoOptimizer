@@ -97,12 +97,6 @@ import com.att.aro.ui.view.menu.file.PreferencesDialog;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
 
 public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
-	private final class HyperlinkAdapter extends MouseAdapter {
-		@Override
-		public void mouseClicked(MouseEvent e) {
-			routeHyperlink();
-		}
-	}
 
 	private static final long serialVersionUID = 1L;
 	JLabel imageLabel = null;
@@ -132,7 +126,7 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 	private static final int TEXT_WIDTH = 600;
 	private static final int FILE_PREFERENCE_VIDEO_INDEX = 2;
 	private static final int VIDEO_TAB_INDEX = 3;
-	private HyperlinkAdapter hyperlinkAdapter = new HyperlinkAdapter();
+	//private HyperlinkAdapter hyperlinkAdapter = new HyperlinkAdapter();
 	private static final Logger LOG = LogManager.getLogger(BpDetailItem.class.getName());
 
 	/**
@@ -665,19 +659,15 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 				resultsTextLabel.setText(bpr.getResultText());
 				imageLabel.setIcon(loadImageIcon(bpr));
 				
-				if (bpType == BestPracticeType.VIDEO_STALL 
-						|| bpType == BestPracticeType.STARTUP_DELAY 
-						|| bpType == BestPracticeType.BUFFER_OCCUPANCY) {
 					if (bpr.getResultType().equals(BPResultType.CONFIG_REQUIRED)) {
 						addConfigIconActions();
 					} else {
 						imageLabel.setToolTipText("");
 						if (imageLabel.getMouseListeners() != null && imageLabel.getMouseListeners().length > 1) {
 							imageLabel.setCursor(Cursor.getDefaultCursor());
-							imageLabel.removeMouseListener(hyperlinkAdapter);
 						}
 					}
-				}
+				
 				
 				BestPracticeType resultType = bpr.getBestPracticeType();
 				switch (resultType) {
@@ -892,7 +882,12 @@ public class BpDetailItem extends AbstractBpPanel implements IAROExpandable {
 		imageLabel.setToolTipText(ResourceBundleHelper.getMessageString("startUpDelay.config"));
 		if (imageLabel.getMouseListeners() != null && imageLabel.getMouseListeners().length < 2) {
 			imageLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-			imageLabel.addMouseListener(hyperlinkAdapter);
+			imageLabel.addMouseListener(new MouseAdapter() {
+				@Override
+				public void mouseClicked(MouseEvent e) {
+					openVideoTab();
+				}
+			});
 		}
 	}
 

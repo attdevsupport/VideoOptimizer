@@ -120,6 +120,8 @@ public class AROToolMenu implements ActionListener {
 		JMenuItem exportExportMenuItem = getMenuItem(MenuItem.menu_tools_sessionsExport, isTracePathEmpty);
 		exportExportMenuItem.addActionListener(new ExportSessionData((MainFrame) parent, Lists.newArrayList(xlsxFilter), 0));
 		toolMenu.add(exportExportMenuItem);
+		toolMenu.addSeparator();
+		toolMenu.add(getMenuItem(MenuItem.menu_tools_editMetadata, isTracePathEmpty));
 
 
 		toolMenu.addSeparator();
@@ -129,9 +131,8 @@ public class AROToolMenu implements ActionListener {
 			toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_clearErrorMsg));
 		}
 		toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_videoParserWizard));
+		
 		if ("dev".equals(SettingsImpl.getInstance().getAttribute("env"))) {
-			toolMenu.addSeparator();
-			toolMenu.add(getMenuItem(MenuItem.menu_tools_editMetadata, isTracePathEmpty));
 			if (SettingsImpl.getInstance().getAttribute("traceHandlerURL") != null && SettingsImpl.getInstance().checkAttributeValue("env", "dev")) {
 				toolMenu.addSeparator();
 				toolMenu.add(getMenuItem(MenuItem.menu_tools_ms_uploadTraceDialog, isTracePathEmpty));
@@ -169,7 +170,7 @@ public class AROToolMenu implements ActionListener {
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_downloadTraceDialog, aEvent)) {
 			openAWSUploadDialog(AWS.DOWNLOAD);
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_ms_uploadTraceDialog, aEvent)
-				|| (menuAdder.isMenuSelected(MenuItem.menu_tools_ms_downloadTraceDialog, aEvent))) {
+			   || (menuAdder.isMenuSelected(MenuItem.menu_tools_ms_downloadTraceDialog, aEvent))) {
 			openATTmsUploadDialog();
 		} else if (menuAdder.isMenuSelected(MenuItem.menu_tools_editMetadata, aEvent)) {
 			openMetadataDialog(aEvent);

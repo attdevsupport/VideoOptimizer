@@ -188,10 +188,10 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				result.setAttenautionEvent(tempResult.getAttenautionEvent());
 			}
 		}
-		result.setMetaData(metaDataHelper.initMetaData(result));
 		PacketAnalyzerResult res = finalResult(result, profile, filter);
+		result.setMetaData(metaDataHelper.initMetaData(res));
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsTimings(pktAnalysisTitle, System.currentTimeMillis() - bpStartTime, analysisCategory);
-		LOGGER.debug(String.format("Time to process PacketAnalyzerImpl %s :%12.4f", pktAnalysisTitle, ((float) (System.currentTimeMillis() - bpStartTime)) / (60 * 60)));
+		LOGGER.debug(String.format("Time to process PacketAnalyzerImpl %s :%12.4f", pktAnalysisTitle, ((float) (System.currentTimeMillis() - bpStartTime)) / 3600.0));
 		return res;
 	}
 
@@ -199,7 +199,8 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		PacketAnalyzerResult data = new PacketAnalyzerResult();
 		if (filter == null) {
 			double endTime = result.getAllpackets().size() > 0
-					? result.getAllpackets().get(result.getAllpackets().size() - 1).getTimeStamp()
+					? Math.max(result.getAllpackets().get(result.getAllpackets().size() - 1).getTimeStamp(),
+							result.getTraceDuration())
 					: 0.0;
 			result.setTimeRange(new TimeRange("Full", TimeRange.TimeRangeType.FULL, 0.0, endTime));
 		} else {
@@ -314,7 +315,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 				data.setStreamingVideoData(videoTrafficCollector.clearData());
 				if (CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), videoBPList)) {
 					if (isCSI || csiDataHelper.doesCSIFileExist(result.getTraceDirectory())) {
-						data.setStreamingVideoData(videoTrafficInferencer.inferVideoData(result, sessionList,  filter != null ? filter.getManifestFilePath() : result.getTraceDirectory()));
+						data.setStreamingVideoData(videoTrafficInferencer.inferVideoData(result, sessionList,  (filter != null && filter.getManifestFilePath() != null) ? filter.getManifestFilePath() : result.getTraceDirectory()));
 					} else {
 						data.setStreamingVideoData(videoTrafficCollector.collect(result, sessionList, requestMap));
 					}
@@ -606,9 +607,9 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 
 			List<HttpRequestResponseInfo> rri = session.getRequestResponseInfo();
 			for (HttpRequestResponseInfo rrInfo : rri) {
-				if (HttpDirection.REQUEST.equals(rrInfo.getDirection()) && HttpRequestResponseInfo.HTTP_GET.equals(rrInfo.getRequestType())
+				if (HttpDirection.REQUEST.equals(rrInfo.getDirection()) 
+						&& HttpRequestResponseInfo.HTTP_GET.equals(rrInfo.getRequestType())
 						&& rrInfo.getObjNameWithoutParams().contains(".")) {
-					rrInfo.setSession(session);
 					double key = getReqInfoKey(rrInfo, 0);
 					if (requestMap.containsKey(key)) {
 						do {

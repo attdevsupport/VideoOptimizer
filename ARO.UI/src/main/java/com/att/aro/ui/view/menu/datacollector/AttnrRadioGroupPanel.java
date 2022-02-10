@@ -28,12 +28,17 @@ import javax.swing.JRadioButton;
 
 import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
-import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.ui.commonui.DataCollectorSelectNStartDialog;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
 public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
+
+	private final int HEIGHT_RESET = 0;
+
+	private final int HEIGHT_LOAD_PROFILE_SECTION = 30;
+
+	private final int HEIGHT_ATTENUATOR_SECTION = 124;
 
 	private static final long serialVersionUID = 1L;
 
@@ -45,19 +50,20 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 	private JRadioButton loadFileBtn;
 	private JRadioButton defaultBtn;
 
+	private int priorHeightAdjustment = 0;
 	private ButtonGroup radioAttnGroup;
 	private AttnrPanel parentPanel;
-	private DataCollectorSelectNStartDialog startDialog;
+	private DataCollectorSelectNStartDialog startCollectDialog;
 	private AttnrThroughputThrottlePanel attnrTTPanel;
 	private AttnrLoadProfilePanel attnrLoadPanel;
 	private DeviceDialogOptions deviceInfo;
 	private AttenuatorModel attenuatorModel;
 
-	public AttnrRadioGroupPanel(AttnrPanel jp, AttenuatorModel attenuatorModel, DataCollectorSelectNStartDialog startDialog, DeviceDialogOptions deviceInfo) {
+	public AttnrRadioGroupPanel(AttnrPanel jp, AttenuatorModel attenuatorModel, DataCollectorSelectNStartDialog startCollectDialog, DeviceDialogOptions deviceInfo) {
 
 		setLayout(new FlowLayout());
 		this.parentPanel = jp;
-		this.startDialog = startDialog;
+		this.startCollectDialog = startCollectDialog;
 		this.attenuatorModel = attenuatorModel;
 		this.deviceInfo = deviceInfo;
 		attnrSlider = ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.slider");
@@ -76,13 +82,10 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 		sliderBtn.addItemListener(this);
 		loadFileBtn.addItemListener(this);
 		defaultBtn.addItemListener(this);
-		
 		defaultBtn.setSelected(true);
 
 		add(defaultBtn);
-
 		add(sliderBtn);
-
 		add(loadFileBtn);
 	}
 
@@ -99,58 +102,67 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 		JRadioButton item = (JRadioButton) event.getItem();
 		String itemStr = item.getText();
 		if (event.getStateChange() == ItemEvent.SELECTED) {
-			if(attnrSlider.equals(itemStr)) {
+			if (attnrSlider.equals(itemStr)) { // Slider
 				parentPanel.getAttnrHolder().remove(getLoadProfilePanel());
 				getLoadProfilePanel().resetComponent();
 				parentPanel.getAttnrHolder().add(getThroughputPanel(), BorderLayout.CENTER);
 				parentPanel.getAttnrHolder().revalidate();
 				parentPanel.getAttnrHolder().repaint();
-	
+
 				attenuatorModel.setConstantThrottle(true);
 				attenuatorModel.setFreeThrottle(false);
 				attenuatorModel.setLoadProfile(false);
-				if(ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
-					startDialog.resizeUltra();
-				} else {
-					startDialog.resizeLarge();
-				}
+				resizeDialog(HEIGHT_ATTENUATOR_SECTION);
 				DataCollectorType collectorType = deviceInfo.getCollector().getType();
-				if(DataCollectorType.IOS.equals(collectorType) && deviceInfo.isSharedNetworkActive()){
-					MessageDialogFactory.getInstance().showInformationDialog(this, deviceInfo.messageComposed(),
-							DeviceDialogOptions.ATTENUATION_TITLE);
-				}else if(DataCollectorType.IOS.equals(collectorType)) {
-					new IOSStepsDialog(startDialog);
+				if (DataCollectorType.IOS.equals(collectorType) && deviceInfo.isSharedNetworkActive()) {
+					MessageDialogFactory.getInstance().showInformationDialog(this, deviceInfo.messageComposed(), ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.title"));
+				} else if (DataCollectorType.IOS.equals(collectorType)) {
+					new IOSStepsDialog(startCollectDialog);
 				}
-			}else if(attnrLoadFile.equals(itemStr)) {
+			} else if (attnrLoadFile.equals(itemStr)) { // Profile
 				parentPanel.getAttnrHolder().remove(getThroughputPanel());
 				getThroughputPanel().resetComponent();
 				parentPanel.getAttnrHolder().add(getLoadProfilePanel());
 				parentPanel.getAttnrHolder().revalidate();
 				parentPanel.getAttnrHolder().repaint();
-	
+
 				attenuatorModel.setConstantThrottle(false);
 				attenuatorModel.setFreeThrottle(false);
 				attenuatorModel.setLoadProfile(true);
-				resizeStartDialog();
-			}else if(attnrNone.equals(itemStr)) {
-				resizeStartDialog();
+				resizeDialog(HEIGHT_LOAD_PROFILE_SECTION);
+			} else if (attnrNone.equals(itemStr)) { // None
+				resizeDialog(HEIGHT_RESET);
 				reset();
-			}else {
-				resizeStartDialog();
+			} else {
+				resizeDialog(HEIGHT_RESET);
 				reset();
-	
+
 			}
 		}
 	}
-
-	private void resizeStartDialog() {
-		if(ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
-			startDialog.resizeLarge();
-		} else {
-			startDialog.resizeMedium();
+	
+	/** <pre>
+	 * Apply new dialog size adjustment after removing prior sizing (if previously applied).
+	 *  Negative values will reduce the height.
+	 *  Positive values will increase the height.
+	 *  A zero value will reverse any priorHeightAdjustment.
+	 * 
+	 * @param adjustment 
+	 */
+	private void resizeDialog(int adjustment) {
+		if (priorHeightAdjustment != 0) {
+			if (adjustment != 0) {
+				startCollectDialog.resizer(-priorHeightAdjustment);
+				priorHeightAdjustment = adjustment;
+			} else {
+				adjustment = -priorHeightAdjustment;
+				priorHeightAdjustment = 0;
+			}
+		} else { // priorHeightAdjustment == 0
+			priorHeightAdjustment = adjustment;
 		}
+		startCollectDialog.resizer(adjustment);
 	}
-
 
 	public AttnrLoadProfilePanel getLoadProfilePanel() {
 		if (attnrLoadPanel == null) {
@@ -223,6 +235,7 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 		DataCollectorType deviceType = deviceInfo.getCollector().getType();
 		switch (deviceType) {
 		case NON_ROOTED_ANDROID:
+		case IOS:
 			this.attenuatorModel = attenuatorModel;
 			attnrTTPanel.setAttenuatorModel(attenuatorModel);
 			attnrLoadPanel.setAttenuatorModel(attenuatorModel);
@@ -233,12 +246,6 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 				parentPanel.getAttnrHolder().add(getThroughputPanel(), BorderLayout.CENTER);
 				parentPanel.getAttnrHolder().revalidate();
 				parentPanel.getAttnrHolder().repaint();
-				if (ResourceBundleHelper.getMessageString("preferences.test.env")
-						.equals(SettingsImpl.getInstance().getAttribute("env"))) {
-					startDialog.resizeUltra();
-				} else {
-					startDialog.resizeLarge();
-				}
 				attnrTTPanel.reselectPriorOptions(attenuatorModel);
 			} else if (!attenuatorModel.isConstantThrottle() && attenuatorModel.isLoadProfile()) {
 				loadFileBtn.setSelected(true);
@@ -247,11 +254,9 @@ public class AttnrRadioGroupPanel extends JPanel implements ItemListener{
 				parentPanel.getAttnrHolder().add(getLoadProfilePanel());
 				parentPanel.getAttnrHolder().revalidate();
 				parentPanel.getAttnrHolder().repaint();
-				resizeStartDialog();
 				attnrLoadPanel.reselectPriorOptions(attenuatorModel);
 			}
 			break;
-		case IOS:
 		case ROOTED_ANDROID:
 			AttenuatorModel attenuatorModelReset = new AttenuatorModel();// reset
 			this.attenuatorModel = attenuatorModelReset;

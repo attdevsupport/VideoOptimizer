@@ -1,6 +1,4 @@
 /*
-
-
  *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -44,6 +42,43 @@ import lombok.Data;
 @Data
 public class VideoEvent implements Comparable<VideoEvent>{
 	
+	@Override
+	public String toString() {
+		StringBuilder strblr = new StringBuilder(83);
+		strblr.append("Content:").append(getContentType());
+		
+		strblr.append(", Norm:").append(isNormalSegment() ? "yes" : "no");
+		strblr.append(", S:").append(isSelected() ? "yes" : "no");
+		strblr.append(", f:").append(getManifest().getVideoFormat());
+		
+		strblr.append(", VideoType :").append(videoType.toString());
+		strblr.append(", Segment ID:").append(String.format("%.0f", segmentID));
+		strblr.append(", Packet ID:").append(String.format("%d", response.getFirstDataPacket().getPacketId()));
+		strblr.append(", PlayTime:").append(String.format("%.03f", playTime));
+		strblr.append(", EndTime:").append(String.format("%.03f", getPlayTimeEnd()));
+		strblr.append(", SegmentStartTime:").append(String.format("%.03f", segmentStartTime));
+		strblr.append(", duration:").append(String.format("%.6f", duration * 1e0));
+		strblr.append(", Session:").append(String.format("%.4f", getSession().getSessionStartTime()));
+		strblr.append(", Quality:").append(quality);
+		strblr.append(", bitrate:").append((int)bitrate);
+		if (getContentType().equals(ContentType.VIDEO)) {
+			strblr.append(", resolutionHeight:").append(resolutionHeight);
+		}
+		strblr.append(", mdatSize:").append(segmentSize);
+		strblr.append(", dlSize:").append(response.getContentLength());
+		if (!rangeList.isEmpty() && rangeList.get(0).isValidRange()) {
+			strblr.append(", Byte Range:").append(rangeList);
+		}
+		strblr.append(", endTS:").append(String.format("%.6f", endTS * 1e0));
+		strblr.append(", file:").append(response.getAssocReqResp().getFileName());
+		if (getContentType().equals(ContentType.VIDEO) && !CollectionUtils.isEmpty(audioMap)) {
+			strblr.append("\nAudioMap:").append(dumpAudioMap());
+		}
+		strblr.append(", channels:").append(channels);		
+		return strblr.toString();
+	}
+
+
 	// 'broken' thumbnail portrait
 	private static final byte[] DEFAULTIMAGE = new byte[] { (byte) 0x89, (byte) 0x50, (byte) 0x4E, (byte) 0x47, (byte) 0x0D, (byte) 0x0A, (byte) 0x1A, (byte) 0x0A, (byte) 0x00, (byte) 0x00,
 			(byte) 0x00, (byte) 0x0D, (byte) 0x49, (byte) 0x48, (byte) 0x44, (byte) 0x52, (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x0E, (byte) 0x00, (byte) 0x00, (byte) 0x00,
@@ -221,13 +256,16 @@ public class VideoEvent implements Comparable<VideoEvent>{
 	private String option = "";
 
 	private boolean defaultThumbnail = false;
+	
+	private boolean failedRequest = false;
+	
 
 	public boolean isMpeg() {
 		return getManifest().getVideoFormat().equals(VideoFormat.MPEG4);
 	}
 	
 	public boolean isNormalSegment() {
-		if (getManifest().getVideoFormat().equals(VideoFormat.MPEG4) && segmentID < 1D) {
+		if (failedRequest || (getManifest().getVideoFormat().equals(VideoFormat.MPEG4) && segmentID < 1D)) {
 			return false;
 		}
 		return true;
@@ -266,37 +304,6 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		HLS_CHILD,
 		SSM,
 		UNKNOWN
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder strblr = new StringBuilder(83);
-		strblr.append("Content:").append(getContentType());
-		strblr.append(", VideoType :").append(videoType.toString());
-		strblr.append(", Segment ID:").append(String.format("%.0f", segmentID));
-		strblr.append(", Packet ID:").append(String.format("%d", response.getFirstDataPacket().getPacketId()));
-		strblr.append(", PlayTime:").append(String.format("%.03f", playTime));
-		strblr.append(", EndTime:").append(String.format("%.03f", getPlayTimeEnd()));
-		strblr.append(", SegmentStartTime:").append(String.format("%.03f", segmentStartTime));
-		strblr.append(", duration:").append(String.format("%.6f", duration * 1e0));
-		strblr.append(", Session:").append(String.format("%.4f", getSession().getSessionStartTime()));
-		strblr.append(", Quality:").append(quality);
-		strblr.append(", bitrate:").append((int)bitrate);
-		if (getContentType().equals(ContentType.VIDEO)) {
-			strblr.append(", resolutionHeight:").append(resolutionHeight);
-		}
-		strblr.append(", mdatSize:").append(segmentSize);
-		strblr.append(", dlSize:").append(response.getContentLength());
-		if (!rangeList.isEmpty() && rangeList.get(0).isValidRange()) {
-			strblr.append(", Byte Range:").append(rangeList);
-		}
-		strblr.append(", endTS:").append(String.format("%.6f", endTS * 1e0));
-		strblr.append(", file:").append(response.getAssocReqResp().getFileName());
-		if (getContentType().equals(ContentType.VIDEO) && !CollectionUtils.isEmpty(audioMap)) {
-			strblr.append("\nAudioMap:").append(dumpAudioMap());
-		}
-		strblr.append(", channels:").append(channels);		
-		return strblr.toString();
 	}
 
 	public String dumpAudioMap() {
@@ -458,7 +465,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		segmentInfo.setSize(segment.getSize());
 		segmentInfo.setDuration(segment.getEndPlayTime() - segment.getStartPlayTime());
 		segmentInfo.setSegmentID(segment.getSegmentIndex());
-		segmentInfo.setBitrate(segmentInfo.getDuration()!=0?(segment.getSize() * 8 / segmentInfo.getDuration()):0);
+		segmentInfo.setBitrate(segmentInfo.getDuration() != 0 ? (segment.getSize() * 8 / segmentInfo.getDuration() / 1000) : 0);
 		segmentInfo.setStartTime(segment.getStartPlayTime());
 		segmentInfo.setContentType(manifest.getContentType());
 		

@@ -1,19 +1,16 @@
 package com.att.aro.core.tracemetadata;
 
-
+import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 
-
 public interface IMetaDataHelper {
 
-	String getJson();
-
-	String getJson(MetaDataModel metaDataModel);
-	
 	void saveJSON(String path) throws Exception;
+	
+	void saveJSON(String path, MetaDataModel metaDataModel) throws Exception;
 
-	MetaDataModel initMetaData(TraceDirectoryResult result);
+	MetaDataModel initMetaData(PacketAnalyzerResult result);
 
 	String findAppVersion(TraceDirectoryResult result);
 

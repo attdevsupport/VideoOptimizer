@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 AT&T
+ *  Copyright 2017, 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,6 @@ public abstract class AbstractBpPanel extends JPanel implements Observer, IUITab
 
 	JPanel dataPanel;
 	HashMap<String,JLabel> labelMap = new HashMap<>();
-
-	static final Font TEXT_FONT = new Font("TextFont", Font.PLAIN, 12);
-	static final Font HEADER_FONT = new Font("HeaderFont", Font.BOLD, 14);
-	static final Font SUMMARY_FONT = new Font("HeaderFont", Font.BOLD, 18);
-	static final Font TEXT_FONT_BOLD = new Font("BoldTextFont", Font.BOLD, 12);
-	static final Font LABEL_FONT = new Font("TEXT_FONT", Font.BOLD, 12);
 
 	public AbstractBpPanel() {
 
@@ -103,7 +97,7 @@ public abstract class AbstractBpPanel extends JPanel implements Observer, IUITab
 		dataPanel.add(infoLabel, new GridBagConstraints(1, gridy, width, 1, weightx, 0.0, GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, insets, 0, 0));
 
 	}
-
+	
 	/**
 	 * @return the aroModel
 	 */

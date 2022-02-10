@@ -129,7 +129,7 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 						break;
 					}
 					if (earlyExit && line.trim().equals(msg)) {
-						LOG.debug("read a line:" + line);
+						LOG.trace("read a line:" + line);
 						builder.append(line);
 						break;
 					}

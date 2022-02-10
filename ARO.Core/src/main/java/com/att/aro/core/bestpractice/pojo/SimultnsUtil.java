@@ -75,7 +75,6 @@ public final class SimultnsUtil {
 			ipMap.put(sessionStartTime, ipInside);
 			if (indSessionVal.getReqRespInfo() != null) {
 				HttpRequestResponseInfo reqResponseSessionData = indSessionVal.getReqRespInfo();
-				reqResponseSessionData.setSession(indSessionVal.getIndSession());
 				if (reqResponseSessionData.getHostName() != null) {
 					domainVal = reqResponseSessionData.getHostName();
 				} else {

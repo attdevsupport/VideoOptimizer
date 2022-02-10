@@ -19,14 +19,8 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
-import java.text.DecimalFormat;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
-import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jfree.chart.labels.XYToolTipGenerator;
@@ -41,8 +35,9 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.XYPair;
 import com.att.aro.core.videoanalysis.impl.BufferInSecondsCalculatorImpl;
-import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
+import com.att.aro.core.videoanalysis.pojo.VideoStream.StreamStatus;
+import com.att.aro.core.videoanalysis.pojo.VideoStream.ToolTipDetail;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.diagnostictab.plot.IPlot;
@@ -50,6 +45,10 @@ import com.att.aro.ui.view.diagnostictab.plot.IPlot;
 import lombok.Getter;
 
 public class VideoBufferPlot implements IPlot {
+	private static final String BUFFER_TIME_OCCUPANCY_TOOLTIP_LOAD = ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip.load");
+	private static final String BUFFER_TIME_OCCUPANCY_TOOLTIP_PLAY = ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip.play");
+	private static final String BUFFER_TIME_OCCUPANCY_TOOLTIP_STALL = ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip.stall");
+
 	private static final Logger LOGGER = LogManager.getLogger(VideoBufferPlot.class);
 	private VideoStream videoStream;
 	@Getter private double maxYValue;
@@ -131,65 +130,34 @@ public class VideoBufferPlot implements IPlot {
 			@Override
 			public String generateToolTip(XYDataset dataset, int series, int item) {
 
-				// Tooltip value
-				Number timestamp = dataset.getX(series, item);
-				Number bufferTime = dataset.getY(series, item);
-				StringBuffer tooltipValue = new StringBuffer();
-
-				Map<Double, Long> segmentEndTimeMap = bufferInSecondsCalculatorImpl.getSegmentEndTimeMap();
-				Map<Long, Double> segmentStartTimeMap = bufferInSecondsCalculatorImpl.getSegmentStartTimeMap();
-				
-				if (MapUtils.isEmpty(videoStream.getVideoActiveMap())) {
-					return null;
-				}
-				
-				double firstSegmentNo = videoStream.getVideoActiveMap().firstEntry().getValue().getSegmentID();
-				
-				DecimalFormat decimalFormat = new DecimalFormat("0.##");
-				if (segmentStartTimeMap == null || segmentStartTimeMap.isEmpty()) {
-					return "-,-,-";
-				}
-
-				List<Long> segmentList = new ArrayList<Long>(segmentEndTimeMap.values());
-				Collections.sort(segmentList);
-				Long lastSegmentNo = -1L;
-				if (segmentList.size() != 0) {
-					lastSegmentNo = segmentList.get(segmentList.size() - 1);
-				}
-				Long segmentNumber = 0L;
-				boolean isSegmentPlaying = false;
-				boolean startup = false;
-				boolean endPlay = false;
-
-				for (double segmentEndTime : segmentEndTimeMap.keySet()) {
-					if (segmentEndTime > timestamp.doubleValue()) {
-						segmentNumber = segmentEndTimeMap.get(segmentEndTime);
-						if (segmentNumber == firstSegmentNo) {
-							startup = true;
-						}
-						if (segmentStartTimeMap.get(segmentNumber) <= timestamp.doubleValue()) {
-							tooltipValue.append(decimalFormat.format(segmentNumber) + ",");
-							isSegmentPlaying = true;
-							startup = false;
-						}
-					} else if (lastSegmentNo.equals(segmentEndTimeMap.get(segmentEndTime)) 
-						   &&  segmentEndTime == timestamp.doubleValue()) {
-						endPlay = true;
-					}
+				ToolTipDetail ttd = videoStream.getPlayTimeToolTipDetailMap().get(item);
+				if (ttd.getStreamStatus().equals(StreamStatus.Load)) {
+					return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP_LOAD
+							, String.format("%d", item)
+							, String.format("%.0f", ttd.getSegmentID())
+							, String.format("%.2f", ttd.getCurrentTotal())
+							, String.format("%.3f", (double) dataset.getX(series, item))
+							));
+				} else if (ttd.getStreamStatus().equals(StreamStatus.Play)) {
+					return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP_PLAY
+							, String.format("%d", item)
+							, String.format("%.0f", ttd.getSegmentID())
+							, String.format("%.2f", ttd.getCurrentTotal())
+							, String.format("%.3f", (double) dataset.getX(series, item))
+							, String.format("%.3f", ttd.getPlayTime())
+							, String.format("%.3f", ttd.getPlayTimeEnd())
+							));
+				} else {
+					return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP_STALL
+							, String.format("%d", item)
+							, String.format("%.0f", ttd.getSegmentID())
+							, String.format("%.2f", ttd.getCurrentTotal())
+							, String.format("%.3f", (double) dataset.getX(series, item))
+							, String.format("%.3f", ttd.getPlayTime())
+							, String.format("%.3f", ttd.getPlayTimeEnd())
+							));
 				}
 
-				if (endPlay || startup) {
-					tooltipValue.append("-,");
-				} else if (!isSegmentPlaying && !startup) {
-					tooltipValue.append("Stall,");
-				}
-
-				tooltipValue.append(String.format("%.2f", bufferTime) + "," + String.format("%.2f", timestamp));
-				VideoEvent event = videoStream.getToolTipDetailMap().get(item).getVideoEvent();
-				
-				String[] value = tooltipValue.toString().split(",");
-				return (MessageFormat.format(ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip")
-						, value[0], value[1], value[2],event.getPlayTime()));
 			}
 
 		};

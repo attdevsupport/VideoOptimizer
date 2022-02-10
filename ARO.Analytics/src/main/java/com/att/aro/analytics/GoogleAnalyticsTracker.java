@@ -216,7 +216,7 @@ public class GoogleAnalyticsTracker {
     public void close(){
     	if(aroDAO != null){
     		aroDAO.closeDB();
-    		LOGGER.info("Properly closed database");
+    		LOGGER.trace("Properly closed database");
     	}
     }
 }

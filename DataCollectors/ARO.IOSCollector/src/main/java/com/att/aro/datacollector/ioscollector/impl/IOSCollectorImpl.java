@@ -31,6 +31,7 @@ import java.util.ResourceBundle;
 
 import javax.swing.SwingWorker;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,12 +43,14 @@ import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.datacollector.IDeviceStatus;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
+import com.att.aro.core.datacollector.pojo.EnvironmentDetails;
 import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
+import com.att.aro.core.util.StringParse;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.datacollector.ioscollector.IOSDevice;
@@ -64,6 +67,7 @@ import com.att.aro.datacollector.ioscollector.utilities.IOSDeviceInfo;
 import com.att.aro.datacollector.ioscollector.utilities.RemoteVirtualInterface;
 import com.att.aro.datacollector.ioscollector.utilities.XCodeInfo;
 import com.att.aro.datacollector.ioscollector.video.VideoCaptureMacOS;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -86,6 +90,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private List<IVideoImageSubscriber> videoImageSubscribers = new ArrayList<IVideoImageSubscriber>();
 	private IOSDeviceInfo deviceinfo;
 	private SwingWorker<String, Object> videoworker;
+	private SwingWorker<String, Object> rviTestWorker;
 	private boolean hasxCodeV = false;
 	private String sudoPassword = "";
 	private String datadir;
@@ -101,6 +106,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private boolean hdVideoPulled = true;
 	private boolean validPW;
 	private String udId = "";
+	private String dumpcapVersion;
 	
 	IExternalProcessRunner runner = new ExternalProcessRunnerImpl();
 
@@ -155,11 +161,22 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			}
 			recordPcapStartStop();
 		}
-
+		
+		if (mitmAttenuator != null) {
+			mitmAttenuator.stopCollect();
+			recordPcapStartStop();
+		}
+		
 		if (packetworker != null) {
 			packetworker.cancel(true);
 			packetworker = null;
 			LOG.info("disposed packetworker");
+		}
+		
+		if (rviTestWorker != null) {
+			rviTestWorker.cancel(true);
+			rviTestWorker = null;
+			LOG.info("disposed rviTestWorker");
 		}
 
 		if (videoCapture != null) {
@@ -167,7 +184,11 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			try (BufferedWriter videoTimeStampWriter = new BufferedWriter(new FileWriter(new File(localTraceFolder, TraceDataConst.FileName.VIDEO_TIME_FILE)));) {
 				LOG.info("Writing video time to file");
 				String timestr = Double.toString(videoCapture.getVideoStartTime().getTime() / 1000.0);
-				timestr += " " + Double.toString(rvi.getTcpdumpInitDate().getTime() / 1000.0);
+				if (rvi != null) {
+					timestr += " " + Double.toString(rvi.getTcpdumpInitDate().getTime() / 1000.0);
+				} else if (mitmAttenuator != null) {
+					timestr += " " + Double.toString(mitmAttenuator.getStartDate().getTime() / 1000.0);
+				}
 				videoTimeStampWriter.write(timestr);
 			} catch (IOException e) {
 				LOG.info("Error writing video time to file: ", e);
@@ -347,22 +368,56 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				return status; // bad or missing sudo password
 			}
 		}
-
-		launchCollection(trafficFilePath, udId, status);
-		if (status.isSuccess()) {
-		    // Start Attenuation
-		    if (saveCollectorOptions == null) {
-		        saveCollectorOptions = new SaveCollectorOptions();
-		    }
-
-		    if ((attenuatorModel.isConstantThrottle()
-		            && (attenuatorModel.isThrottleDLEnabled() || attenuatorModel.isThrottleULEnabled()))) {
-		        startAttenuatorCollection(datadir, attenuatorModel, saveCollectorOptions);
-		    } else {
-		        saveCollectorOptions.recordCollectOptions(datadir, 0, 0, -1, -1, false, "", "PORTRAIT");
-		    }
+		
+		if (saveCollectorOptions == null) {
+	        saveCollectorOptions = new SaveCollectorOptions();
+	    }
+		
+		status = checkDumpcap(status);
+		if (!status.isSuccess()) {
+		    LOG.error("Something went wrong while setting up dumpcap");
+			return status;
+		}
+		
+		if (isCapturingVideo) {
+			status = startVideoCapture(status);
+			if (!status.isSuccess()) {
+			    LOG.error("Something went wrong while starting the video capture");
+				return status;
+			}
 		}
 
+		if (isCapturingVideo && isLiveViewVideo) {
+
+			if (isDeviceConnected) {
+				LOG.info("device is connected");
+			} else {
+				LOG.info("Device not connected");
+			}
+		}
+		
+		try {
+			EnvironmentDetails environmentDetails = new EnvironmentDetails(folderToSaveTrace);
+			environmentDetails.populateDeviceInfo(deviceinfo.getDeviceVersion(), null, IAroDevice.Platform.iOS.name());
+			environmentDetails.populateMacOSDetails(xcode.getXcodeVersion(), dumpcapVersion, getLibimobileDeviceVersion());
+
+			FileWriter writer = new FileWriter(folderToSaveTrace + "/environment_details.json");
+			writer.append(new ObjectMapper().writeValueAsString(environmentDetails));
+			writer.close();
+		} catch (IOException e) {
+			LOG.error("Error while writing environment details", e);
+		}
+
+	    if ((attenuatorModel.isConstantThrottle() && (attenuatorModel.isThrottleDLEnabled() || attenuatorModel.isThrottleULEnabled()))) {
+	    	// Attenuator or Secure Collection performed here
+	    	rvi = null;
+	        startAttenuatorCollection(datadir, attenuatorModel, saveCollectorOptions, status, trafficFilePath);
+	    } else {
+	    	mitmAttenuator = null;
+	    	launchCollection(trafficFilePath, udId, status);
+	        saveCollectorOptions.recordCollectOptions(datadir, 0, 0, -1, -1, false, "", "PORTRAIT");
+	    }
+		
 		return status;
 	}
 
@@ -381,37 +436,14 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		    LOG.error("Failed to setup RVI");
 			return status;
 		}
-
-		status = checkDumpcap(status);
-		if (!status.isSuccess()) {
-		    LOG.error("Something went wrong while setting up dumpcap");
-			return status;
-		}
 			
 		// packet capture start
 		startPacketCollection();
-
-		if (isCapturingVideo) {
-			status = startVideoCapture(status);
-			if (!status.isSuccess()) {
-			    LOG.error("Something went wrong while starting the video capture");
-				return status;
-			}
-		}
-
-		if (isCapturingVideo && isLiveViewVideo) {
-
-			if (isDeviceConnected) {
-				LOG.info("device is connected");
-			} else {
-				LOG.info("Device not connected");
-			}
-		}
-
+		
 		return status;
 	}
 
-	private void startAttenuatorCollection(String trafficFilePath, AttenuatorModel attenuatorModel, SaveCollectorOptions saveCollectorOptions) {
+	private StatusResult startAttenuatorCollection(String traceFolder, AttenuatorModel attenuatorModel,  SaveCollectorOptions saveCollectorOptions, StatusResult status, String trafficFilePath) {
 
 		int throttleDL = 0;
 		int throttleUL = 0;
@@ -426,10 +458,11 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (mitmAttenuator == null) {
 			mitmAttenuator = new MitmAttenuatorImpl();
 		}
-		LOG.info("ios attenuation setting: " + " trafficFilePath: " + trafficFilePath + " throttleDL: " + throttleDL
+		LOG.info("ios attenuation setting: " + " traceFolder: " + traceFolder + " throttleDL: " + throttleDL
 				+ "throttleUL: " + throttleUL);
-		mitmAttenuator.startCollect(trafficFilePath, throttleDL, throttleUL, saveCollectorOptions);
-
+		mitmAttenuator.startCollect(traceFolder, throttleDL, throttleUL, saveCollectorOptions, status, this.sudoPassword, trafficFilePath);
+		
+		return status;
 	}
 
 	private StatusResult startVideoCapture(StatusResult status) {
@@ -520,6 +553,27 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 				}
 				status.setSuccess(false);
 				status.setError(ErrorCodeRegistry.getrviError());
+			} else {
+				rviTestWorker = new SwingWorker<String, Object>() {
+					@Override
+					protected String doInBackground() throws Exception {
+						if (rvi != null) {
+							for (int i = 0; i < 30; i++) {
+								String response = rvi.testRVIConnection(serialNumber);
+								if (StringUtils.isNotEmpty(response) && !response.contains("Could not get list of devices")) {
+									Thread.sleep(1000);
+								} else {
+									status.setSuccess(false);
+									status.setError(ErrorCodeRegistry.getRVIDropIssue());
+									break;
+								}
+							}
+						}
+						return null;
+					}
+				};
+
+				rviTestWorker.execute();
 			}
 		} catch (Exception e) {
 			LOG.error("Exception while trying to setup RVI", e);
@@ -532,7 +586,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 
 	private StatusResult checkDumpcap(StatusResult status) {
 		ExternalProcessRunner runner = new ExternalProcessRunner();
-		String cmd = Util.getDumpCap() + " -D";
+		String cmd = Util.getDumpCap() + " -v";
 		String data = null;
 		try {
 			data = runner.runCmd(new String[] { "bash", "-c", cmd });
@@ -542,6 +596,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			status.setError(ErrorCodeRegistry.getDumpcapError());
 		}
 		if (data != null && data.length() > 1 && !data.contains("command not found:")) {
+			dumpcapVersion = StringParse.findLabeledDataFromString("Dumpcap (Wireshark)", " ", data);
 			status.setSuccess(true);
 		} else {
 			status.setSuccess(false);
@@ -549,6 +604,21 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		}
 
 		return status;
+	}
+
+	private String getLibimobileDeviceVersion() {
+		String data = null;
+		try {
+			data = new ExternalProcessRunner().runCmd(new String[] { "bash", "-c", "/usr/local/bin/ideviceinfo -v" });
+		} catch (Exception e) {
+			LOG.debug("Error while getting ilibmobiledevice library version", e);
+		}
+
+		if (data != null && data.length() > 1 && !data.contains("command not found:")) {
+			data = StringParse.findLabeledDataFromString("ideviceinfo", " ", data.split(Util.LINE_SEPARATOR)[0]);
+		}
+
+		return data;
 	}
 
 	/**
@@ -740,17 +810,17 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		} catch (IOException e) {
 			LOG.error("file creation error: ", e);
 		}
+		
+		
+		long startTime = mitmAttenuator != null ? mitmAttenuator.getStartDate().getTime() : rvi.getStartCaptureDate().getTime();
+		long endTime = mitmAttenuator != null ? mitmAttenuator.getStopDate().getTime() : rvi.getTcpdumpStopDate().getTime();
 
-		String str = String.format("%s\n%.3f\n%d\n%.3f\n", "Synchronized timestamps" // line
-																						// 1
-																						// (header),,
-				, rvi.getStartCaptureDate().getTime() / 1000.0 // line 2 (pcap
-																// start time)
+		String str = String.format("%s\n%.3f\n%d\n%.3f\n", "Synchronized timestamps" // line 1 (header)
+				, startTime / 1000.0 // line 2 (PCAP start time)
 				, 0 // line 3 (userTime) should refer to device. [ not used ]
-				, rvi.getTcpdumpStopDate().getTime() / 1000.0 // line 4 (pcap
-																// stop time)
+				, endTime / 1000.0 // line 4 (PCAP stop time)
 		);
-
+		
 		try {
 			timeStream.write(str.getBytes());
 			timeStream.flush();
@@ -766,9 +836,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		StatusResult status = new StatusResult();
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getIosCollector(),
 				GoogleAnalyticsUtil.getAnalyticsEvents().getEndTrace()); // GA Request
-		if ((attenuatorModel.isThrottleDLEnabled() || attenuatorModel.isThrottleULEnabled()) && mitmAttenuator != null) {
-			mitmAttenuator.stopCollect();
-		}
 		this.hdVideoPulled = true;
 		this.stopWorkers();
 		if (datadir.length() > 1) {
@@ -852,6 +919,11 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		boolean tcpdumpActive = false;
 		int count = 30;
 		int timer = seconds / count;
+		
+		if (mitmAttenuator != null) {
+			return true;
+		}
+		
 		if (packetworker == null || !isRunning()) {
 			return false;
 		}

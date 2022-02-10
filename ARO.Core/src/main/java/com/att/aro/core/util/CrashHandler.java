@@ -31,6 +31,10 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 			IGoogleAnalytics googleAnalytics = GoogleAnalyticsUtil.getGoogleAnalyticsInstance();
 			googleAnalytics.sendCrashEvents(convertTracetoString("", throwable));
 			LogManager.getLogger(CrashHandler.class.getName()).error("Uncaught ARO Exception:", throwable);
+
+			if (throwable.getClass().equals(OutOfMemoryError.class)) {
+				Util.restart(true);
+			}
 		}
 	}
 

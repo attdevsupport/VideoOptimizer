@@ -109,7 +109,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 		int scanLength = strData.length() > 500 ? 20 : strData.length();
 		if (strData.substring(0, scanLength).contains("#EXTM3U")) {
 			newManifest.setVideoType(VideoType.HLS);
-			newManifest.setVideoFormat(VideoFormat.TS);
+			newManifest.setVideoFormat(VideoFormat.UNKNOWN);
 		} else {
 			LOG.debug(String.format("Unrecognized Manifest:%s \ndata:%s",newManifest.getRequest().getObjNameWithoutParams(), strData));
 			return;
@@ -243,6 +243,16 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				// This is only for MPEG video, not for TS
 				// moov segment for mpeg video in HLS
 				// Example: #EXT-X-MAP:URI="93dc5421-9f58-4d34-9452-024797af63bb/35d6-MAIN/02/1200K/map.mp4"
+				
+				if (manifest.getVideoFormat().equals(VideoFormat.UNKNOWN)) {
+					if (sData[itr].contains(".mp4")) {
+						manifest.setVideoFormat(VideoFormat.MPEG4);
+						manifest.getMasterManifest().setVideoFormat(VideoFormat.MPEG4);
+					} else {
+						manifest.setVideoFormat(VideoFormat.TS);
+						manifest.getMasterManifest().setVideoFormat(VideoFormat.TS);
+					}
+				}
 				segmentUriName = StringParse.findLabeledDataFromString("URI=", "\"", sData[itr]);
 				if (segmentUriName.contains("BUMPER") || segmentUriName.contains("DUB_CARD")) {
 					// Excluding DISCONTINUITY sections for BUMPER & DUB_CARD
@@ -303,7 +313,17 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					} else {
 						segmentUriName = sData[++itr];
 					}
-
+					
+					if (manifest.getVideoFormat().equals(VideoFormat.UNKNOWN)) {
+						if (segmentUriName.contains(".mp4")) {
+							manifest.setVideoFormat(VideoFormat.MPEG4);
+							manifest.getMasterManifest().setVideoFormat(VideoFormat.MPEG4);
+						} else {
+							manifest.setVideoFormat(VideoFormat.TS);
+							manifest.getMasterManifest().setVideoFormat(VideoFormat.TS);
+						}
+					}
+					
 					segmentUriName = cleanUriName(segmentUriName);
 					urlMatchDef = defineUrlMatching(segmentUriName);
 					segmentUriName = prefixParentUrlToSegmentUrl(segmentUriName, urlMatchDef, childManifest);

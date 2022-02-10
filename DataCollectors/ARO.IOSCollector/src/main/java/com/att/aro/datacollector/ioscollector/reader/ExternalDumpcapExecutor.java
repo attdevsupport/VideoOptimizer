@@ -36,22 +36,24 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 	ExternalProcessReader processReader;
 	String sudoPassword = "";
 	String dumpcapCommand;
+	String captureInterface;
 	ExternalProcessRunner runner;
 	volatile boolean shutdownSignal = false;
 	int totalpacketCaptured = 0;
 	List<Integer> pidlist;
 
-	public ExternalDumpcapExecutor(String pcappath, String sudopass, ExternalProcessRunner runner) throws Exception {
+	public ExternalDumpcapExecutor(String pcappath, String sudopass, String captureInterface, ExternalProcessRunner runner) throws Exception {
 		this.pcappath = pcappath;
 		this.sudoPassword = sudopass;
 		this.runner = runner;
+		this.captureInterface = captureInterface;
 		pidlist = new ArrayList<Integer>();
 	}
 
 	@Override
 	public void run() {
 		LOG.debug("run");
-		dumpcapCommand = "echo " + this.sudoPassword + " | sudo -S " + Util.getDumpCap() + " -P -i rvi0 -s 0 -Z none -w \"" + this.pcappath + "\"";
+		dumpcapCommand = "echo " + this.sudoPassword + " | sudo -S " + Util.getDumpCap() + " -P -i " + this.captureInterface +" -s 0 -Z none -w \"" + this.pcappath + "\"";
 		String[] cmds = new String[] { "bash", "-c", dumpcapCommand };
 
 		ProcessBuilder builder = new ProcessBuilder(cmds);
