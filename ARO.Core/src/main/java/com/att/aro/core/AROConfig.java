@@ -104,6 +104,7 @@ import com.att.aro.core.peripheral.ICpuTemperatureReader;
 import com.att.aro.core.peripheral.IDeviceDetailReader;
 import com.att.aro.core.peripheral.IDeviceInfoReader;
 import com.att.aro.core.peripheral.IGpsInfoReader;
+import com.att.aro.core.peripheral.IMetaDataReadWrite;
 import com.att.aro.core.peripheral.INetworkTypeReader;
 import com.att.aro.core.peripheral.IPrivateDataReader;
 import com.att.aro.core.peripheral.IRadioInfoReader;
@@ -133,6 +134,7 @@ import com.att.aro.core.peripheral.impl.DeviceDetailReaderImpl;
 import com.att.aro.core.peripheral.impl.DeviceInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.GpsInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.LocationReaderImpl;
+import com.att.aro.core.peripheral.impl.MetaDataReadWrite;
 import com.att.aro.core.peripheral.impl.NetworkTypeReaderImpl;
 import com.att.aro.core.peripheral.impl.PrivateDataReaderImpl;
 import com.att.aro.core.peripheral.impl.RadioInfoReaderImpl;
@@ -200,7 +202,6 @@ import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 import com.att.aro.core.videoanalysis.videoframe.VideoFrameExtractor;
-import com.att.aro.core.videouploadanalysis.ImageBoundsGrabber;
 
 
 /**
@@ -695,10 +696,6 @@ public class AROConfig {
 		return new VideoSegmentAnalyzer();
 	}
 
-	@Bean(name = "imageBoundsGrabber")
-	public ImageBoundsGrabber getImageBoundsGrabber() {
-		return new ImageBoundsGrabber();
-	}
 	
 	@Bean(name ="videoUsagePrefs")
 	public VideoUsagePrefs getVideoUsagePrefs(){
@@ -708,6 +705,11 @@ public class AROConfig {
 	@Bean(name="metaDataHelper")
 	public IMetaDataHelper getMetaDataHelper(){
 		return new MetaDataHelper();
+	}
+	
+	@Bean(name="metaDataReaderWriter")
+	public IMetaDataReadWrite getMetaDataReadWrite(){
+		return new MetaDataReadWrite();
 	}
 
 	@Bean(name ="videoPrefsController")

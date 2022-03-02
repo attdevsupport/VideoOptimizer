@@ -84,6 +84,7 @@ import com.att.aro.core.peripheral.impl.VideoStartupReadWriterImpl;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.peripheral.pojo.UserEvent.UserEventType;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
+import com.att.aro.core.peripheral.pojo.VideoStreamStartup.ValidationStartup;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartupData;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.IStringParse;
@@ -312,7 +313,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * Sets initial start times and selected table items
-	 * 
+	 *
 	 * @param videoStream
 	 */
 	public void makeInitialSelections(VideoStream videoStream) {
@@ -352,7 +353,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * Locate and return the closest UserEvent prior to a given timestamp
-	 * 
+	 *
 	 * @param tsKey
 	 * @return
 	 */
@@ -372,7 +373,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * Calculate output frames per second
-	 * 
+	 *
 	 * @param frameMap
 	 * @return fps
 	 */
@@ -398,7 +399,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * Build and return the SegmentPane, contains SegmentTable and SegmentFrame
-	 * 
+	 *
 	 * @return JPanel SegmentPane
 	 */
 	private JPanel createSegmentPane() {
@@ -406,7 +407,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		panel.setBorder(new RoundedBorder(new Insets(5, 5, 5, 5), null));
 		panel.add(createSegmentPanel(), BorderLayout.WEST);
 		panel.add((segmentFramePanel = createFramePanel()), BorderLayout.EAST);
-		panel.setPreferredSize(adjustHeight(panel, 0.38)); 
+		panel.setPreferredSize(adjustHeight(panel, 0.38));
 		return panel;
 	}
 
@@ -459,7 +460,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		}
 
 		/**
-		 * place image in 
+		 * place image in
 		 * @param bImage
 		 */
 		public void setImage(BufferedImage bImage) {
@@ -573,7 +574,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 			String[] dimension = stringParse.parse(streamSection, " width=(\\d+) height=(\\d+) ");
 
 			Double height = 0D;
-			Double width = height; 
+			Double width = height;
 			if (dimension != null && dimension.length > 1) {
 				width  = StringParse.stringToDouble(dimension[0], 0);
 				height = StringParse.stringToDouble(dimension[1], 0);
@@ -614,12 +615,12 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		Log.info(String.format("h:w = %d:%d", deviceVideoHeight, deviceVideoWidth));
 		Log.info("duration:" + deviceVideoDuration);
 		Log.info("nb_frames:" + deviceVideoNbFrames);
- 
+
 	}
 
 	/**
 	 * Extracts 1 frame every frameSkip count. Results depend on the video. Do not depend on the frame skip to be an exact amount.
-	 * 
+	 *
 	 * @param frameSkip
 	 * @throws Exception
 	 */
@@ -629,11 +630,11 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * Collect frames from startTime for a given count of frames. Frames are added to a TreeMap<Double, BufferedImage> frameMap
-	 * 
+	 *
 	 * Note: If a startTime is calculated to retrieve a specific frame this can fail if the ffmpeg fails to extract one or more frames depending on the state of the
 	 * video file. If accuracy is important, the results should be examined, and adjustments should be made to handle missing frames. Usually this results in
 	 * pulling frames beyond the target.
-	 * 
+	 *
 	 * @param startTime
 	 * @param frameCount
 	 * @param resultSubscriber
@@ -679,7 +680,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * retrieve a frame based on seconds * deviceFrameRate
-	 * 
+	 *
 	 * @param videoEvent
 	 * @return
 	 */
@@ -763,7 +764,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * Builds out UI with User Events and Video Segments
-	 * 
+	 *
 	 * @param vcPlot
 	 *                   - optional, some traces do not contain user events
 	 */
@@ -833,7 +834,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * Build and return the UserEventPane, contains UserEventTable and UserEventFrame
-	 * 
+	 *
 	 * @return JPanel UserEventPane
 	 */
 	private JPanel createUserEventPane() {
@@ -1007,7 +1008,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * Generate a JSlider
-	 * 
+	 *
 	 * @param orientation
 	 * @param minValue
 	 * @param maxValue
@@ -1237,10 +1238,10 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * need to be a radio button box here toggle only if new * old are different
-	 * 
+	 *
 	 * Need to uncheck previous
 	 * Need to set check on newly selected
-	 * @param i 
+	 * @param i
 	 */
 	public void selectSegment(int row) {
 		if (row < 0 || segmentItemList.isEmpty()) {
@@ -1285,8 +1286,8 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	private double getUserEventTimeStamp(UserEvent userEvent) {
 		if (userEvent != null) {
-			return userEvent.getPressTime() != 0 
-					? userEvent.getPressTime() 
+			return userEvent.getPressTime() != 0
+					? userEvent.getPressTime()
 					: userEvent.getReleaseTime();
 		} else {
 			return 0;
@@ -1333,7 +1334,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 	 * Locate UserEvent in allUserEventList/userEventTableItems
 	 * Report index in field variable selectedIdxUE
 	 * make selection in userEventJTable and firePropertyChange
-	 * 
+	 *
 	 * @param indexKey
 	 * @return UserEvent
 	 */
@@ -1422,6 +1423,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		videoStreamStartup.setFirstSegID(videoEvent.getSegmentID());
 		videoStreamStartup.setPlayRequestedTime(videoEvent.getPlayRequestedTime());
 		videoStreamStartup.setManifestReqTime(videoStream2.getManifest().getRequestTime());
+		videoStreamStartup.setValidationStartup(ValidationStartup.USER);
 
 		videoStartupReadWrite.save(traceFolder, videoStreamStartupData);
 	}
@@ -1487,68 +1489,32 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param startupTime
 	 */
 	public void launchStartupCalculations(double startupTime) {
 		try {
 			if (startupTime >= segmentChosen.getVideoEvent().getEndTS() && segmentChosen.isSelected()) {
-				if (videoStreamStartupData == null) {
-					saveStartupDelay(startupTime, segmentChosen.getVideoEvent(), videoStream, userEventChosen);
-				}
-				videoSegmentAnalyzer.propagatePlaytime(startupTime, segmentChosen.getVideoEvent(), videoStream);
-
-				segmentChosen.getVideoEvent().setPlayTime(startupTime);
-				videoStream.setVideoPlayBackTime(startupTime);
-
-				for (VideoStream stream : segmentTablePanel.getVideoStreamCollection()) {
-					if (!stream.equals(videoStream)) {
-						stream.setCurrentStream(false);
-					} else {
-						stream.setCurrentStream(true);
-					}
+				if (videoStreamStartup != null) {
+					videoStreamStartup.setValidationStartup(ValidationStartup.USER);
 				}
 
 				if (!allUserEventList.isEmpty()) {
 					segmentChosen.getVideoEvent().setPlayRequestedTime(Double.valueOf(playRequestedTime.getText()));
 					videoStream.setPlayRequestedTime(Double.valueOf(playRequestedTime.getText()));
 				}
-				videoStream.getManifest().setDelay(startupTime - segmentChosen.getVideoEvent().getEndTS());
-				videoStream.getManifest().setStartupVideoEvent(segmentChosen.getVideoEvent());
-				videoStream.getManifest().setStartupDelay(segmentChosen.getVideoEvent().getSegmentStartTime() - videoStream.getManifest().getRequestTime());
+				saveStartupDelay(startupTime, segmentChosen.getVideoEvent(), videoStream, userEventChosen);
 
-				LOG.info(String.format("Segment playTime = %.03f", segmentChosen.getVideoEvent().getPlayTime()));
-				setTimeJTextField(segmentTimeField, segmentChosen.getVideoEvent().getPlayTime());
-				revalidate();
-
-				for (VideoStream stream : streamingVideoData.getVideoStreamMap().values()) {
-					if (stream.equals(videoStream)) {
-						stream.setSelected(true);
-					} else {
-						stream.setSelected(false);
-					}
-				}
-
+				videoSegmentAnalyzer.applyStartupDelayToStream(startupTime, segmentChosen.getVideoEvent(), videoStream, streamingVideoData);
+				
 				AROTraceData aroTraceData = mainFrame.getController().getTheModel();
-
-				streamingVideoData.scanVideoStreams();
 
 				IVideoBestPractices videoBestPractices = ContextAware.getAROConfigContext().getBean(IVideoBestPractices.class);
 				videoBestPractices.analyze(aroTraceData);
-
 				getGraphPanel().setTraceData(aroTraceData);
-
-				// StartupDelay calculations
-				AROTraceData traceData = vcPlot.refreshPlot(getGraphPanel().getSubplotMap().get(ChartPlotOptions.VIDEO_CHUNKS).getPlot()
-															, getGraphPanel().getTraceData()
-															, startupTime, segmentChosen.getVideoEvent());
-
-				getGraphPanel().setTraceData(traceData);
 
 				VideoManifestPanel videoManifestPanel = segmentTablePanel.getVideoManifestPanel();
 				videoManifestPanel.refresh(segmentTablePanel.getAnalyzerResult());
-
-				saveStartupDelay(startupTime, segmentChosen.getVideoEvent(), videoStream, userEventChosen);
 
 				mainFrame.refreshBestPracticesTab();
 				destroy();
@@ -1597,7 +1563,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	/**
 	 * Get the ceiling key, with provisions for a defaultKey. the defaultKey has a magic value of -1D which causes lastKey to be sent if ceilingKey is null
-	 * 
+	 *
 	 * @param key
 	 * @param defaultKey
 	 * @return ceilingKey, or defaultKey or lastKey()

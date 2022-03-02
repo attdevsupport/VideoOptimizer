@@ -39,7 +39,7 @@ public class Packet implements Serializable {
 		this.microSeconds = microSeconds;
 		data = pcap4jPacket.getRawData();
 		len = pcap4jPacket.length();
-		dataOffset = pcap4jPacket instanceof IpV4Packet || pcap4jPacket instanceof IpV6Packet ? 0 : pcap4jPacket.getHeader().length();
+		dataOffset = pcap4jPacket instanceof IpV4Packet || pcap4jPacket instanceof IpV6Packet || pcap4jPacket.getHeader() == null ? 0 : pcap4jPacket.getHeader().length();
 	}
 
 	/**

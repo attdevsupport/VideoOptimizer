@@ -173,7 +173,7 @@ public enum Images {
 	public ImageIcon getIcon() {
 		if (imageIcon == null) {
 			String resourceName = basePath + rb.getString(PREFIX + this.resourceKey);
-			logger.debug("Creating ImageIcon: " +  resourceName);
+			logger.trace("Creating ImageIcon: " +  resourceName);
 			this.imageIcon = new ImageIcon(getClass().getResource(resourceName));
 		}
 		return imageIcon;

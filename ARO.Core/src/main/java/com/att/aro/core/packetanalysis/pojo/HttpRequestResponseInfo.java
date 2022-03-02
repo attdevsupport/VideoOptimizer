@@ -114,6 +114,10 @@ public class HttpRequestResponseInfo implements Comparable<HttpRequestResponseIn
 	private int rawSize; // Includes headers
 	private boolean ssl;
 	private boolean extractable = true;
+	@Getter @Setter
+	private String exceptionMessege = null;
+	@Getter @Setter
+	private int contentLengthDuringFail;
 
 	// Map of the content offset/
 	private SortedMap<Integer, Integer> contentOffsetLength;

@@ -48,7 +48,7 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 		}
 		
 		String prefValue = setting.getAttribute(prefKey);
-		LOGGER.debug("Retrieving key:" + prefKey + ";value:" + prefValue);
+		LOGGER.trace("Retrieving key:" + prefKey + ";value:" + prefValue);
 		return prefValue;
 	}
 	
@@ -58,7 +58,7 @@ public final class PreferenceHandlerImpl implements IPreferenceHandler {
 		if (prefKey == null || prefValue == null || prefValue.equals("null")) {
 			LOGGER.error("Preference key and preference value cannot be null! " + "key:" + prefKey + " value:" + prefValue);
 		} else {
-			LOGGER.debug("Storing key:" + prefKey + ";value:" + prefValue);
+			LOGGER.trace("Storing key:" + prefKey + ";value:" + prefValue);
 			setting.setAndSaveAttribute(prefKey, prefValue);
 		}
 	}

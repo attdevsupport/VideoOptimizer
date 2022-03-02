@@ -111,7 +111,7 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		cpuList.add(new CpuActivity());
 		when(mockTraceDirResult.getCpuActivityList()).thenReturn(cpuList);
 		when(tracereader.readTraceDirectory(any(String.class))).thenReturn(mockTraceDirResult);
-		when(metaDataHelper.initMetaData(any(TraceDirectoryResult.class))).thenReturn(metaDataModel);
+		when(metaDataHelper.initMetaData(any(PacketAnalyzerResult.class))).thenReturn(metaDataModel);
 
 		ProfileLTE profileLTE = new ProfileLTE();
 		when(profilefactory.createLTEdefault()).thenReturn(profileLTE);

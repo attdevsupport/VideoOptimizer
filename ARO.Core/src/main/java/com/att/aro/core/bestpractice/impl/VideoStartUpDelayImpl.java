@@ -143,9 +143,8 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 			selectedManifestCount = streamingVideoData.getSelectedManifestCount();
 			hasSelectedManifest = (selectedManifestCount > 0);
 			invalidCount = streamingVideoData.getInvalidManifestCount();
-			
-			double definedDelay = videoPref.getVideoUsagePreference().getStartupDelay();
-			startupDelay = definedDelay;
+
+			startupDelay = videoPref.getVideoUsagePreference().getStartupDelay(); // default startup delay
 			startupDelaySet = false;
 			
 			bpResultType = BPResultType.CONFIG_REQUIRED;

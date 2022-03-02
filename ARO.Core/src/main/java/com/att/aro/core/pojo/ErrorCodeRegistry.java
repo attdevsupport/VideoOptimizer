@@ -155,7 +155,8 @@ public final class ErrorCodeRegistry {
 		ErrorCode err = new ErrorCode();
 		err.setCode(ErrorCodeEnum.OUT_OF_MEMEORY.getCode());
 		err.setName("Out of memory");
-		err.setDescription("Trace too big to load");
+		err.setDescription("Trace is too large to load and has caused the system to reach it's memory limit. You may try reopening the trace after allocating more memory by "
+				+ "going into File->Preferences...->General->Max heap in GB.");
 		sendGAErrorCode(err);
 		return err;
 	}

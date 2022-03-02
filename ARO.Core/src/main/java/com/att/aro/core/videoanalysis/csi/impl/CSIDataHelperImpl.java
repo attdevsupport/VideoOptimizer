@@ -63,5 +63,10 @@ public class CSIDataHelperImpl implements ICSIDataHelper {
 	public boolean doesCSIFileExist(String tracePath) {
 		return fileManager.createFile(tracePath + System.getProperty("file.separator") + "CSI", JSON_FILE).exists();
 	}
+
+	@Override
+	public File generateManifestPath(String traceDirectory, String fileName) {
+		return fileManager.createFile(traceDirectory + System.getProperty("file.separator") + "CSI", fileName);
+	}
 	
 }

@@ -43,6 +43,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.IAROService;
+import com.att.aro.core.IVideoBestPractices;
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.configuration.pojo.Profile;
@@ -146,7 +147,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		
 		try {
 			System.gc(); // Request garbage collection before loading a trace
-			LOG.debug("Analyze trace :" + trace);
+			LOG.debug("\nAnalyze trace :" + trace);
 			LOG.debug(String.format("\nTrace initial memory:%d free:%d", Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory()));
 
 			// analyze trace file or directory?
@@ -172,8 +173,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 							SwingUtilities.invokeLater(new Runnable() {
 								@Override
 								public void run() {
-									theView.showChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
-									theView.refresh();
+									analyzeVideoBP();
 								}
 							});
 						};
@@ -362,6 +362,13 @@ public class AROController implements PropertyChangeListener, ActionListener {
 					theModel = model;
 					if (filter == null) { // when the first loading traces, set the filter
 						initializeFilter();
+					} else if (filter.getDomainNames() == null || filter.getDomainNames().isEmpty()) {
+						/* 
+						 * For when there is a TimeRange added to an otherwise empty AnalysisFilter.
+						 * Caused by the analysis flow from opening a trace with an active timerange.json selection
+						 * see: AROController.propertyChange(PropertyChangeEvent)
+						 */ 
+						initializeFilter(filter.getTimeRange());
 					}
 					theView.refresh();
 				}
@@ -372,8 +379,17 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		}
 		(new Thread(() -> GoogleAnalyticsUtil.reportMimeDataType(theModel))).start();
 	}
-
-	private void initializeFilter() {
+	
+	/** <pre>
+	 * Create an AnalysisFilter
+	 * Creates default maps of domainNames and applications
+	 * Combined with the supplied TimeRange or a default TimeRange to create the AnalysisFilter
+	 * 
+	 * This filter will be stored in the current PacketAnalyzerResult
+	 * 
+	 * @param timeRangeParam is optional
+	 */
+	private void initializeFilter(TimeRange... timeRangeParam) {
 		Collection<String> appNames = theModel.getAnalyzerResult().getTraceresult().getAllAppNames();
 		Map<String, Set<InetAddress>> map = theModel.getAnalyzerResult().getTraceresult().getAppIps();
 		Map<InetAddress, String> domainNames = new HashMap<InetAddress, String>();
@@ -392,7 +408,11 @@ public class AROController implements PropertyChangeListener, ActionListener {
 			}
 			applications.put(app, appSelection);
 		}
-		TimeRange timeRange = new TimeRange(0.0, theModel.getAnalyzerResult().getTraceresult().getTraceDuration());
+		
+		TimeRange timeRange = timeRangeParam != null && timeRangeParam.length == 1 && timeRangeParam[0] != null ? timeRangeParam[0] : null;
+		if (timeRange == null) {
+			timeRange = new TimeRange(0.0, theModel.getAnalyzerResult().getTraceresult().getTraceDuration());
+		}
 		AnalysisFilter initFilter = new AnalysisFilter(applications, timeRange, domainNames);
 
 		currentTraceInitialAnalyzerResult = theModel.getAnalyzerResult();
@@ -517,6 +537,23 @@ public class AROController implements PropertyChangeListener, ActionListener {
 				}
 
 				this.theView.updateCollectorStatus(CollectorStatus.STARTED, result);
+			}
+			
+			if (device.getPlatform().equals(IAroDevice.Platform.iOS)) {
+				for (int i = 0; i < 30; i++) {
+					try {
+						if (!result.isSuccess() && result.getError().getCode() == 529) {
+							this.theView.updateCollectorStatus(CollectorStatus.CANCELLED, result);
+							this.theView.stopCollector();
+							break;
+						} else {
+							Thread.sleep(1000);
+						}
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+				}
 			}
 
 		}
@@ -700,6 +737,15 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 */
 	public String[] getApplicationsList(String id) {
 		return context.getBean(IAdbService.class).getApplicationList(id);
+	}
+
+	private void analyzeVideoBP() {
+        ApplicationContext context = SpringContextUtil.getInstance().getContext();
+		IVideoBestPractices videoBestPractices = context.getBean(IVideoBestPractices.class);
+		AROTraceData traceData = getTheModel();
+		videoBestPractices.analyze(traceData);
+		theView.showChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
+		theView.refresh();
 	}
 
 }

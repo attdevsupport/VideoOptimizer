@@ -251,7 +251,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 		MPDEncodedSegment mpdEncodedSegment = (MPDEncodedSegment) manifestView.getManifest();
 		DashEncodedSegmentParser dashEncodedSegmentParser = new DashEncodedSegmentParser(mpdEncodedSegment, newManifest, manifestCollection, childManifest);
 		
-		List<AdaptationSetESL> adaptationSet = dashEncodedSegmentParser.getAdaptationSet();
+		List<AdaptationSetESL> adaptationSetList = dashEncodedSegmentParser.getAdaptationSet();
 		String[] encodedSegmentDurationList = null;
 		Double segmentTimeScale = null;
 		
@@ -266,7 +266,8 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 		Integer track;
 		
 		Double bandWidth;
-		for (AdaptationSetESL adaptation : adaptationSet) {
+		for (AdaptationSetESL adaptation : adaptationSetList) {
+			List<RepresentationESL> representation = adaptation.getRepresentation();
 			if (sortedAdaptationSets.containsKey(adaptation.getContentType())) {
 				sortedAdaptationSet = sortedAdaptationSets.get(adaptation.getContentType());
 			} else {
@@ -274,7 +275,19 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 				sortedAdaptationSets.put(adaptation.getContentType(), sortedAdaptationSet);
 				trackMap.put(createKey(adaptation), 0);
 			}
-			bandWidth = StringParse.stringToDouble(adaptation.getMinBandwidth(), 0);
+			
+			if ((bandWidth = adaptation.getMinBandwidth()) == null || bandWidth == 0) {
+				bandWidth = Double.MAX_VALUE;
+				for (RepresentationESL repSet : representation) {
+					if (repSet.getBandwidth() == null) {
+						bandWidth = 1.0;
+						break;
+					}
+					if (repSet.getBandwidth() < bandWidth) {
+						bandWidth = repSet.getBandwidth();
+					}
+				}
+			}
 			sortedAdaptationSet.put(bandWidth, adaptation);
 		}
 		
@@ -325,7 +338,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 	public SortedMap<Double, RepresentationESL> sortRepresentationByBandwidth(List<RepresentationESL> representationList) {
 		SortedMap<Double, RepresentationESL> sortedRepresentationAmz = new TreeMap<>();
 		for (RepresentationESL representation : representationList) {
-			Double bandwidth = StringParse.stringToDouble(representation.getBandwidth(), 1);
+			Double bandwidth = representation.getBandwidth().doubleValue();
 			sortedRepresentationAmz.put(bandwidth, representation);
 		}
 		return sortedRepresentationAmz;
@@ -496,7 +509,7 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 															, Double segmentTimeScale) {
 		
 		childManifest = createChildManifest(newManifest, "", representation.getBaseURL());
-		childManifest.setBandwidth(StringParse.stringToDouble(representation.getBandwidth(), 0));
+		childManifest.setBandwidth(representation.getBandwidth());
 		childManifest.setCodecs(representation.getCodecs());
 		childManifest.setQuality(qualityID);
 		childManifest.setPixelHeight(StringParse.stringToDouble(representation.getHeight(), 0).intValue());

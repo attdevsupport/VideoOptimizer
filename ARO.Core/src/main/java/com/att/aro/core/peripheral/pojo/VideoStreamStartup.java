@@ -28,7 +28,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true) 
 public class VideoStreamStartup {
+	public enum ValidationStartup {
+		NA, USER, ESTIMATED
+	}
 	private String manifestName;
+	private ValidationStartup validationStartup = ValidationStartup.NA;
 	private double manifestReqTime;
 	private double firstSegID;
 	private double playRequestedTime;
@@ -43,7 +47,8 @@ public class VideoStreamStartup {
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("\n\tVideoStartup :");
 		strblr.append("\t" + (manifestName != null ? manifestName : ""))
-		.append("\n\t\tRequest Time:     \t").append(String.format("%.3f", manifestReqTime))
+		.append("\n\t\tValidation:       \t").append(validationStartup.toString())
+		.append("\n\t\tManifestRequest:  \t").append(String.format("%.3f", manifestReqTime))
 		.append("\n\t\tSegment:          \t").append(firstSegID)
 		.append("\n\t\tStartupTime:      \t").append(String.format("%.3f", startupTime))
 		.append("\n\t\tplayRequestedTime:\t").append(String.format("%.3f", playRequestedTime))

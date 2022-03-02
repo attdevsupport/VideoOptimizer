@@ -24,23 +24,32 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.net.InetAddress;
 import java.text.DecimalFormat;
 import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
 import javax.swing.text.DefaultEditorKit;
@@ -48,10 +57,12 @@ import javax.swing.text.DefaultEditorKit;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.jsoup.helper.StringUtil;
 
 import com.att.aro.core.configuration.pojo.ProfileType;
 import com.att.aro.core.packetanalysis.impl.PacketAnalyzerImpl;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
+import com.att.aro.core.packetanalysis.pojo.ApplicationSelection;
 import com.att.aro.core.packetanalysis.impl.TimeRangeAnalysis;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
@@ -92,7 +103,23 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	private double initTimeRangeStartTime;
 	private double initTimeRangeEndTime;
 	private double endTimeResetValue;
-	
+
+	private boolean ipv4Selection;
+ 	private boolean ipv6Selection;
+ 	private boolean tcpSelection;
+ 	private boolean udpSelection;
+ 	private boolean dnsSelection;
+
+ 	private JPanel checkBoxSelPanel;
+ 	private final JCheckBox chkTCP = new JCheckBox("TCP");
+    private final JCheckBox chkUdp = new JCheckBox("UDP");
+    private final JCheckBox chkDns = new JCheckBox("DNS");
+    private final JCheckBox chkIpv4 = new JCheckBox("IPv4");
+    private final JCheckBox chkIpv6 = new JCheckBox("IPv6");
+
+ 	private PacketAnalyzerResult currentTraceResult;
+ 	private AnalysisFilter initialFilter;
+
 	private JPopupMenu timeRangeContextMenu;
 
 	private IAROView parent;
@@ -115,6 +142,8 @@ public class TimeRangeAnalysisDialog extends JDialog {
 			LOGGER.error("Trace result error!");
 			MessageDialogFactory.getInstance().showErrorDialog(this, "wrong..");
 		}else{
+			currentTraceResult = traceresult;
+			initialFilter = cloneFilter(traceresult.getFilter());
 			endTimeResetValue = traceresult.getTraceresult().getTraceDuration();
 			traceEndTime = endTimeResetValue;	
 			TimeRange timeRange = traceresult.getFilter().getTimeRange();
@@ -135,18 +164,45 @@ public class TimeRangeAnalysisDialog extends JDialog {
 		initialize();
 	}
 
+	private AnalysisFilter cloneFilter(AnalysisFilter filter) {
+
+		Collection<ApplicationSelection> appSel = filter.getApplicationSelections();
+		HashMap<String, ApplicationSelection> applications = new HashMap<String, ApplicationSelection>(appSel.size());
+	
+		for (ApplicationSelection aSel: appSel) {
+			ApplicationSelection clonedAP = new ApplicationSelection(aSel);
+			applications.put(clonedAP.getAppName(), clonedAP);		
+		}
+
+		TimeRange clonedTimeRange = null;
+		if (filter.getTimeRange() != null) {
+			TimeRange original = filter.getTimeRange();
+			clonedTimeRange = new TimeRange(original.getTitle(), original.getTimeRangeType(), original.getBeginTime(), original.getEndTime());
+		}
+
+		
+		AnalysisFilter clonedFilter = new AnalysisFilter(applications, clonedTimeRange, filter.getDomainNames() == null ? null : new HashMap<>(filter.getDomainNames()));	
+		clonedFilter.setIpv4Sel(filter.isIpv4Sel());
+		clonedFilter.setIpv6Sel(filter.isIpv6Sel());
+		clonedFilter.setTcpSel(filter.isTcpSel());
+		clonedFilter.setUdpSel(filter.isUdpSel());
+		clonedFilter.setDnsSelection(filter.isDnsSelection());
+		return clonedFilter;
+	}
+
 	/**
 	 * Initializes the dialog.
 	 * 
 	 * @return void
 	 */
 	private void initialize() {
-		this.setSize(500, 350);
+		this.setSize(500, 450);
 		this.setResizable(false);
 		this.setModal(true);
 		this.setTitle(resourceBundle.getString("timerangeanalysis.title"));
 		this.setLocationRelativeTo(getOwner());
 		this.setContentPane(getJDialogPanel());
+		this.addWindowListener(getWindowListener());
 	}
 
 	/**
@@ -160,11 +216,122 @@ public class TimeRangeAnalysisDialog extends JDialog {
 			jDialogPanel.setLayout(new BorderLayout());
 
 			jDialogPanel.add(getTimeRangeSelectionPanel(), BorderLayout.NORTH);
-			jDialogPanel.add(getTimeRangeDialogButtons(), BorderLayout.CENTER);
-			jDialogPanel.add(getTimeRangeResultsPanel(), BorderLayout.SOUTH);
+			
+			
+			JPanel panel = new JPanel(new BorderLayout());
+			panel.add(getPacketSelectionPanel(), BorderLayout.NORTH);
+			panel.add(getTimeRangeDialogButtons(), BorderLayout.CENTER);
+			panel.add(getTimeRangeResultsPanel(), BorderLayout.SOUTH);
+			jDialogPanel.add(panel, BorderLayout.CENTER);
 		}
 
 		return jDialogPanel;
+	}
+
+	private JPanel getPacketSelectionPanel(){
+		if (checkBoxSelPanel == null) {
+			checkBoxSelPanel = new JPanel();
+		    chkIpv4.setSelected(ipv4Selection = currentTraceResult.getFilter().isIpv4Sel());
+			chkIpv6.setSelected(ipv6Selection = currentTraceResult.getFilter().isIpv6Sel());
+			chkTCP.setSelected(tcpSelection = currentTraceResult.getFilter().isTcpSel());
+			chkUdp.setSelected(udpSelection = currentTraceResult.getFilter().isUdpSel());
+			chkDns.setSelected(dnsSelection = currentTraceResult.getFilter().isDnsSelection());
+					
+			chkIpv4.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent aEvent) {
+					JCheckBox cb = (JCheckBox) aEvent.getSource();
+					ipv4Selection = cb.isSelected();				
+				}
+			});
+	
+			chkIpv6.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent aEvent) {
+					JCheckBox cb = (JCheckBox) aEvent.getSource();
+					ipv6Selection = cb.isSelected();
+				}
+			});
+			
+			chkTCP.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent aEvent) {
+					JCheckBox cb = (JCheckBox) aEvent.getSource();
+					tcpSelection = cb.isSelected();
+				}
+			});
+			
+			chkUdp.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent aEvent) {
+					JCheckBox cb = (JCheckBox) aEvent.getSource();
+					udpSelection = cb.isSelected();
+				}
+			});
+			
+			chkDns.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent aEvent) {
+					JCheckBox cb = (JCheckBox)aEvent.getSource();
+					dnsSelection = cb.isSelected();				
+				}
+			});
+			
+		    checkBoxSelPanel.add(chkIpv4);
+		    checkBoxSelPanel.add(chkIpv6);
+		    checkBoxSelPanel.add(getSeparator(checkBoxSelPanel.getPreferredSize()));
+		    checkBoxSelPanel.add(chkTCP);
+		    checkBoxSelPanel.add(chkUdp);
+		    checkBoxSelPanel.add(chkDns);
+		    checkBoxSelPanel.setSize(50, 20);
+		}
+
+		return checkBoxSelPanel;
+	}
+
+	private JSeparator getSeparator(Dimension dimension) {
+		JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
+		separator.setMaximumSize(dimension);
+		return separator;
+	}
+
+	private boolean updateCurrentfilter() {
+		if (ipv4Selection || ipv6Selection) {
+			if (tcpSelection || udpSelection || dnsSelection) {
+				if (currentTraceResult.getFilter() != null) {
+					AnalysisFilter filter = currentTraceResult.getFilter();
+					Map<InetAddress, String> domainNames = filter.getDomainNames();
+					Map<String, ApplicationSelection> appSelections = new HashMap<>(filter.getAppSelections().size());
+
+					for (ApplicationSelection sel : filter.getAppSelections().values()) {
+						if (domainNames != null) { 
+							sel.setDomainNames(domainNames);
+						}
+						appSelections.put(sel.getAppName(), new ApplicationSelection(sel));
+					}
+
+					filter.setIpv4Sel(ipv4Selection);
+					filter.setIpv6Sel(ipv6Selection);
+					filter.setTcpSel(tcpSelection);
+					filter.setUdpSel(udpSelection);
+					filter.setDnsSelection(dnsSelection);
+					return true;
+				}
+			} else {
+				MessageDialogFactory.getInstance().showErrorDialog(this,
+						resourceBundle.getString("filter.noProtocolSelection.error"));
+			}
+		} else {
+			MessageDialogFactory.getInstance().showErrorDialog(this,
+					resourceBundle.getString("filter.noIpSelection.error"));
+		}
+
+		return false;
 	}
 
 	/**
@@ -206,7 +373,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 		if (timeRangeResultsPanel == null) {
 			timeRangeResultsPanel = new JPanel();
 			timeRangeResultsPanel.setLayout(new BorderLayout());
-			timeRangeResultsPanel.setPreferredSize(new Dimension(500, 230));
+			timeRangeResultsPanel.setPreferredSize(new Dimension(500, 250));
 			JLabel resultsLabel = new JLabel(resourceBundle.getString("timerangeanalysis.results"));
 			if (timeRangeAnalysisResultsTextArea == null) {
 				timeRangeAnalysisResultsTextArea = new JTextArea();
@@ -247,11 +414,8 @@ public class TimeRangeAnalysisDialog extends JDialog {
 			resetButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					traceEndTime = endTimeResetValue;
-					startTimeTextField.setText(DECIMAL_FORMAT.format(0.0));
-					endTimeTextField.setText(DECIMAL_FORMAT.format(endTimeResetValue));
+					reset(true);
 				}
-
 			});
 		}
 
@@ -281,24 +445,20 @@ public class TimeRangeAnalysisDialog extends JDialog {
 						return;
 					}
 
-					double timeRangeEndTime = Double.valueOf(DECIMAL_FORMAT.format( traceEndTime));
+					double timeRangeEndTime = Double.valueOf(doubleToFixedDecimal(traceEndTime, 3));
 					if (startTime < endTime) {
-						if ((startTime >= 0.0) && (startTime <= endTime) &&
-								endTime <= timeRangeEndTime) {
-							
-							AnalysisFilter filter = ((MainFrame) parent).getController().getTheModel().getAnalyzerResult().getFilter();
-							filter.setTimeRange(new TimeRange(startTime, endTime));
-							
-							if (!hasDataAfterFiltering(filter)) {
-								MessageDialogFactory.getInstance().showErrorDialog(TimeRangeAnalysisDialog.this,
-										resourceBundle.getString("timerangeanalysis.noResultDataError"));
-							} else {
-								((MainFrame) parent).updateFilter(filter);
-								dispose();
+						if (startTime >= 0.0 && startTime <= endTime && endTime <= timeRangeEndTime) {
+							if (!updateCurrentfilter()) {
+								return;
 							}
-							
+
+							AnalysisFilter filter = currentTraceResult.getFilter();
+							filter.setTimeRange(new TimeRange(startTime, endTime));
+
+							((MainFrame) parent).updateFilter(filter);
+							dispose();
 						} else {
-							String strErrorMessage = MessageFormat.format(resourceBundle.getString("timerangeanalysis.rangeError"), 0.00, DECIMAL_FORMAT.format(timeRangeEndTime));
+							String strErrorMessage = MessageFormat.format(resourceBundle.getString("timerangeanalysis.rangeError"), 0.00, doubleToFixedDecimal(traceEndTime, 3));
 							MessageDialogFactory.showMessageDialog(
 									TimeRangeAnalysisDialog.this,
 									strErrorMessage,
@@ -321,11 +481,10 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	}
 
 	private boolean hasDataAfterFiltering(AnalysisFilter filter) {	
-		List<PacketInfo> packetsInfoBeforeFilter =  ((MainFrame) parent).getController().getTheModel()
-															.getAnalyzerResult().getTraceresult().getAllpackets();
+		List<PacketInfo> packetsInfoBeforeFilter =  currentTraceResult.getTraceresult().getAllpackets();
 		PacketAnalyzerImpl packetAnalyzerImpl = (PacketAnalyzerImpl) ((MainFrame)parent).getController().getAROService().getAnalyzer();
-		List<PacketInfo> packetsInfoAfterFilter = packetAnalyzerImpl.filterPackets(filter, packetsInfoBeforeFilter);		
-		
+		List<PacketInfo> packetsInfoAfterFilter = packetAnalyzerImpl.filterPackets(filter, packetsInfoBeforeFilter);
+
 		return packetsInfoAfterFilter.size() > 0;
 	}
 
@@ -341,14 +500,23 @@ public class TimeRangeAnalysisDialog extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					PacketAnalyzerResult traceResult = ((MainFrame)parent).getController().getTheModel().getAnalyzerResult();
-					if (traceResult == null) {
+					if (currentTraceResult == null) {
 							MessageDialogFactory.showMessageDialog(
 									TimeRangeAnalysisDialog.this,
 									resourceBundle.getString("menu.error.noTraceLoadedMessage"),
 									resourceBundle.getString("error.title"),
 									JOptionPane.ERROR_MESSAGE);
 					} else {
+						if (!updateCurrentfilter()) {
+							return;
+						}
+
+						if (!hasDataAfterFiltering(currentTraceResult.getFilter())) {
+							MessageDialogFactory.getInstance().showErrorDialog(TimeRangeAnalysisDialog.this,
+									resourceBundle.getString("timerangeanalysis.noResultDataError"));
+							return;
+						}
+
 						double startTime;
 						double endTime;
 						try {
@@ -366,9 +534,9 @@ public class TimeRangeAnalysisDialog extends JDialog {
 						Double traceEndTimeRounded = Double.valueOf(DECIMAL_FORMAT.format(traceEndTime + ROUNDING_VALUE));
 						if (startTime < endTime) {
 							if (startTime >= 0.0 && startTime <= traceEndTimeRounded && endTime >= 0.0 && endTime <= traceEndTimeRounded) {
-								TimeRangeAnalysis timeRangeAnalysis = new TimeRangeAnalysis(startTime, endTime, traceResult);
+								TimeRangeAnalysis timeRangeAnalysis = new TimeRangeAnalysis(startTime, endTime, currentTraceResult, ((MainFrame)parent).getController());
 								String msg = null;
-								ProfileType profileType = traceResult.getProfile().getProfileType();
+								ProfileType profileType = currentTraceResult.getProfile().getProfileType();
 								if (profileType == ProfileType.T3G) {
 									msg = resourceBundle.getString("timerangeanalysis.3g");
 								} else if (profileType == ProfileType.LTE) {
@@ -379,23 +547,24 @@ public class TimeRangeAnalysisDialog extends JDialog {
 
 								timeRangeAnalysisResultsTextArea.setText(MessageFormat.format(
 										(msg == null? "" : msg), 
-										DECIMAL_FORMAT.format(startTime),
-										DECIMAL_FORMAT.format(endTime),
+										doubleToFixedDecimal(startTime, 3),
+										doubleToFixedDecimal(endTime, 3),
 										timeRangeAnalysis.getPayloadLen(),
 										timeRangeAnalysis.getTotalBytes(),
 										timeRangeAnalysis.getUplinkBytes(),
 										timeRangeAnalysis.getDownlinkBytes(),
-										DECIMAL_FORMAT.format(timeRangeAnalysis.getRrcEnergy()),
-										DECIMAL_FORMAT.format(timeRangeAnalysis.getActiveTime()),
-										DECIMAL_FORMAT.format(timeRangeAnalysis.getAverageThroughput()),
-										DECIMAL_FORMAT.format(timeRangeAnalysis.getAverageUplinkThroughput()),
-										DECIMAL_FORMAT.format(timeRangeAnalysis.getAverageDownlinkThroughput())
+										doubleToFixedDecimal(timeRangeAnalysis.getRrcEnergy(), 2),
+										doubleToFixedDecimal(timeRangeAnalysis.getActiveTime(), 2),
+										doubleToFixedDecimal(timeRangeAnalysis.getAverageThroughput(), 2),
+										doubleToFixedDecimal(timeRangeAnalysis.getAverageUplinkThroughput(), 2),
+										doubleToFixedDecimal(timeRangeAnalysis.getAverageDownlinkThroughput(), 2)
+									+ getResultPanelNote(timeRangeAnalysis)
 								));
 
 								timeRangeStartTime = startTime;
 								timeRangeEndTime = endTime;
 							} else {
-								String strErrorMessage = MessageFormat.format(resourceBundle.getString("timerangeanalysis.rangeError"), 0.00, DECIMAL_FORMAT.format(traceEndTimeRounded));
+								String strErrorMessage = MessageFormat.format(resourceBundle.getString("timerangeanalysis.rangeError"), 0.00, doubleToFixedDecimal(traceEndTimeRounded, 3));
 								MessageDialogFactory.showMessageDialog(
 										TimeRangeAnalysisDialog.this,
 										strErrorMessage,
@@ -418,6 +587,36 @@ public class TimeRangeAnalysisDialog extends JDialog {
 		return calculateStatisticsButton;
 	}
 
+	private String doubleToFixedDecimal(double number, int scale) {
+		return String.format("%." + scale + "f", number);
+	}
+	
+	private String getResultPanelNote(TimeRangeAnalysis timeRangeAnalysis) {
+		String str = "";
+		if (ipv4Selection && !timeRangeAnalysis.isIpv4Present()) {
+			str = StringUtil.isBlank(str) ? "IPv4" : str + ", IPV4";
+		}
+
+		if (ipv6Selection && !timeRangeAnalysis.isIpv6Present()) {
+			str = StringUtil.isBlank(str) ? "IPv6" : str + ", IPv6";
+		}
+
+		if (tcpSelection && !timeRangeAnalysis.isTcpPresent()) {
+			str = StringUtil.isBlank(str) ? "TCP" : str + ", TCP";
+		}
+
+		if (udpSelection && !timeRangeAnalysis.isUdpPresent()) {
+			str = StringUtil.isBlank(str) ? "UDP" : str + ", UDP";
+		}
+
+		if (dnsSelection && !timeRangeAnalysis.isDnsPresent()) {
+			str = StringUtil.isBlank(str) ? "DNS" : str + ", DNS";
+		}
+
+		return StringUtil.isBlank(str) ? "" : "\n\nNote: Current data does not have any " + str + " packets! "
+				+ "To include these packets, please reanalyze after selecting the desired options.";
+	}
+
 	/**
 	 * Initializes and returns the cancel button.
 	 */
@@ -429,7 +628,8 @@ public class TimeRangeAnalysisDialog extends JDialog {
 
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
-					closeWindow();
+					reset(false);
+					dispose();
 				}
 
 			});
@@ -438,10 +638,19 @@ public class TimeRangeAnalysisDialog extends JDialog {
 		return cancelButton;
 	}
 
-	private void closeWindow() {
-		AnalysisFilter filter = ((MainFrame) parent).getController().getTheModel().getAnalyzerResult().getFilter();
-		filter.setTimeRange(new TimeRange(initTimeRangeStartTime, initTimeRangeEndTime));
-		dispose();
+	private void reset(boolean cloneFilter) {
+		traceEndTime = endTimeResetValue;
+		startTimeTextField.setText(DECIMAL_FORMAT.format(0.0));
+		endTimeTextField.setText(doubleToFixedDecimal(endTimeResetValue, 3));
+		chkIpv4.setSelected(ipv4Selection = initialFilter.isIpv4Sel());
+		chkIpv6.setSelected(ipv6Selection = initialFilter.isIpv6Sel());
+		chkTCP.setSelected(tcpSelection = initialFilter.isTcpSel());
+		chkUdp.setSelected(udpSelection = initialFilter.isUdpSel());
+		chkDns.setSelected(dnsSelection = initialFilter.isDnsSelection());
+
+		currentTraceResult.setFilter(cloneFilter ? cloneFilter(initialFilter) : initialFilter);
+		currentTraceResult.getFilter().setTimeRange(new TimeRange(initTimeRangeStartTime, initTimeRangeEndTime));
+		timeRangeAnalysisResultsTextArea.setText("");
 	}
 
 	/**
@@ -450,7 +659,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	private JTextField getStartTimeTextField() {
 		if (startTimeTextField == null) {
 			startTimeTextField = new JTextField(8);
-			String strStartTime = DECIMAL_FORMAT.format(timeRangeStartTime);
+			String strStartTime = doubleToFixedDecimal(timeRangeStartTime, 3);
 			startTimeTextField.setText(strStartTime);
 			
 			startTimeTextField.addFocusListener(new FocusListener() {
@@ -461,7 +670,9 @@ public class TimeRangeAnalysisDialog extends JDialog {
 					Matcher matcher = pattern.matcher(startTimeTextField.getText());
 					
 					if (!matcher.find()) {
-						MessageDialogFactory.showMessageDialog(TimeRangeAnalysisDialog.this, resourceBundle.getString("timerangeanalysis.numberError"));
+						if (!e.getOppositeComponent().equals(cancelButton) && !e.getOppositeComponent().equals(resetButton)) {
+							MessageDialogFactory.showMessageDialog(TimeRangeAnalysisDialog.this, resourceBundle.getString("timerangeanalysis.numberError"));
+						}
 						return;
 					} else {
 						if (!NumberUtils.isNumber(startTimeTextField.getText())) {
@@ -502,7 +713,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	private JTextField getEndTimeTextField() {
 		if (endTimeTextField == null) {
 			endTimeTextField = new JTextField(8);
-			String strEndTime = DECIMAL_FORMAT.format(timeRangeEndTime);
+			String strEndTime = doubleToFixedDecimal(timeRangeEndTime, 3);
 			endTimeTextField.setText(strEndTime);
 			
 			endTimeTextField.addFocusListener(new FocusListener() {
@@ -513,7 +724,9 @@ public class TimeRangeAnalysisDialog extends JDialog {
 					Matcher matcher = pattern.matcher(endTimeTextField.getText());
 					
 					if (!matcher.find()) {
-						MessageDialogFactory.showMessageDialog(TimeRangeAnalysisDialog.this, resourceBundle.getString("timerangeanalysis.numberError"));
+						if (!e.getOppositeComponent().equals(cancelButton) && !e.getOppositeComponent().equals(resetButton)) {
+							MessageDialogFactory.showMessageDialog(TimeRangeAnalysisDialog.this, resourceBundle.getString("timerangeanalysis.numberError"));
+						}
 						return;
 					} else {
 						if (!NumberUtils.isNumber(endTimeTextField.getText())) {
@@ -553,11 +766,49 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	@Override
 	public void setVisible(boolean visible) {
 		if (!isVisible() || !visible) {
-			DecimalFormat decimalFormat = new DecimalFormat("0.00");
-			startTimeTextField.setText(decimalFormat.format(timeRangeStartTime));
-			endTimeTextField.setText(decimalFormat.format(timeRangeEndTime));
+			startTimeTextField.setText(doubleToFixedDecimal(timeRangeStartTime, 3));
+			endTimeTextField.setText(doubleToFixedDecimal(timeRangeEndTime, 3));
 		}
 		super.setVisible(visible);
 	}
 
+	private WindowListener getWindowListener() {
+		return (new WindowListener() {
+			
+			@Override
+			public void windowOpened(WindowEvent e) {
+				// Auto-generated method 				
+			}
+			
+			@Override
+			public void windowIconified(WindowEvent e) {
+				// Auto-generated method 		
+			}
+			
+			@Override
+			public void windowDeiconified(WindowEvent e) {
+				// Auto-generated method 
+			}
+			
+			@Override
+			public void windowDeactivated(WindowEvent e) {
+				// Auto-generated method 
+			}
+			
+			@Override
+			public void windowClosing(WindowEvent e) {
+				reset(false);
+				dispose();
+			}
+			
+			@Override
+			public void windowClosed(WindowEvent e) {
+			}
+			
+			@Override
+			public void windowActivated(WindowEvent e) {
+				// Auto-generated method 
+			}
+		});	
+	}
 }

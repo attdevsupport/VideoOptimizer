@@ -134,7 +134,7 @@ public class AROTraceData {
 	public MetaDataModel getMetaDataModel() {
 		MetaDataModel metadataModel = null;
 		if (analyzerResult != null && analyzerResult.getTraceresult() instanceof TraceDirectoryResult) {
-			metadataModel = metaDataHelper.initMetaData((TraceDirectoryResult) analyzerResult.getTraceresult());
+			metadataModel = metaDataHelper.initMetaData(analyzerResult);
 		}
 		return (metadataModel == null ? new MetaDataModel() : metadataModel);
 	}

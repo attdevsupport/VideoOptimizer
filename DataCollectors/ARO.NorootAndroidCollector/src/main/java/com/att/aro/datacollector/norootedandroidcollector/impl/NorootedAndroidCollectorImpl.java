@@ -19,6 +19,7 @@ package com.att.aro.datacollector.norootedandroidcollector.impl;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -50,6 +51,7 @@ import com.att.aro.core.datacollector.DataCollectorType;
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.datacollector.IDeviceStatus;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
+import com.att.aro.core.datacollector.pojo.EnvironmentDetails;
 import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
@@ -68,6 +70,7 @@ import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.datacollector.norootedandroidcollector.impl.CpuTraceCollector.State;
 import com.att.aro.datacollector.norootedandroidcollector.pojo.ErrorCodeRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImageSubscriber {
 
@@ -535,6 +538,18 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			result.setError(ErrorCodeRegistry.getTimeoutVpnActivation());
 			result.setSuccess(false);
 			return result;
+		} else {
+			// Write environment details
+			try {
+				EnvironmentDetails environmentDetails = new EnvironmentDetails(folderToSaveTrace);
+				environmentDetails.populateDeviceInfo(aroDevice.getOS(), aroDevice.isRooted(), aroDevice.getPlatform().name());
+
+				FileWriter writer = new FileWriter(folderToSaveTrace + "/environment_details.json");
+				writer.append(new ObjectMapper().writeValueAsString(environmentDetails));
+				writer.close();
+			} catch (IOException e) {
+				LOG.error("Error while writing environment details", e);
+			}	
 		}
 		new Thread(() -> {
 			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(

@@ -44,6 +44,8 @@ import com.att.aro.core.videoanalysis.XYPair;
 import com.att.aro.core.videoanalysis.impl.BufferInSecondsCalculatorImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
+import com.att.aro.core.videoanalysis.pojo.VideoStream.StreamStatus;
+import com.att.aro.core.videoanalysis.pojo.VideoStream.ToolTipDetail;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -52,7 +54,9 @@ import lombok.Setter;
 
 public class BufferInSecondsPlot implements IPlot {
 
-	private static final String BUFFER_TIME_OCCUPANCY_TOOLTIP = ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip");
+	private static final String BUFFER_TIME_OCCUPANCY_TOOLTIP_LOAD = ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip.load");
+	private static final String BUFFER_TIME_OCCUPANCY_TOOLTIP_PLAY = ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip.play");
+	private static final String BUFFER_TIME_OCCUPANCY_TOOLTIP_STALL = ResourceBundleHelper.getMessageString("bufferTimeoccupancy.tooltip.stall");
 
 	private static final Logger LOG = LogManager.getLogger(BufferInSecondsPlot.class.getName());
 	
@@ -69,7 +73,8 @@ public class BufferInSecondsPlot implements IPlot {
 	
 	private VideoStream videoStream;
 
-	@Getter@Setter
+	@Getter
+	@Setter
 	private TreeMap<VideoEvent, Double> chunkPlayTimeMap;
 
 	@Override
@@ -85,7 +90,7 @@ public class BufferInSecondsPlot implements IPlot {
 					this.videoStream = videoStream;
 					LOG.debug("VideoStream :" + videoStream.getManifest().getVideoName());
 					seriesPlayTimeBuffer = new XYSeries("Play Time Buffer");
-					double yPlotValue = 0.00;// VID-TODO refactor out
+					double yPlotValue = 0.00;
 					for (XYPair xy : videoStream.getPlayTimeList()) {
 						 yPlotValue = xy.getYVal();
 						
@@ -96,7 +101,7 @@ public class BufferInSecondsPlot implements IPlot {
 					}
 					Collections.sort(bufferTimeList);
 					seriesPlayTimeBufferCollection.addSeries(seriesPlayTimeBuffer);
-					LOG.debug(videoStream.getToolTipDetailMap());
+					LOG.debug(videoStream.getByteToolTipDetailMap());
 				}
 			}
 
@@ -127,13 +132,34 @@ public class BufferInSecondsPlot implements IPlot {
 
 			@Override
 			public String generateToolTip(XYDataset dataset, int series, int item) {
-				VideoEvent event = videoStream.getToolTipDetailMap().get(item).getVideoEvent();
-				return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP
-						, String.format("%.0f%s", event.getSegmentID(), event.getStallTime() > 0 ? " (Stalled)" : "")
-						, String.format("%.2f", (double) dataset.getY(series, item) / (1000 * 1000))
-						, String.format("%.3f", dataset.getX(series, item))
-						, String.format("%.3f", event.getPlayTime())
-						));
+
+				ToolTipDetail ttd = videoStream.getPlayTimeToolTipDetailMap().get(item);
+				if (ttd.getStreamStatus().equals(StreamStatus.Load)) {
+					return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP_LOAD
+							, String.format("%d", item)
+							, String.format("%.0f", ttd.getSegmentID())
+							, String.format("%.2f", ttd.getCurrentTotal())
+							, String.format("%.3f", (double) dataset.getX(series, item))
+							));
+				} else if (ttd.getStreamStatus().equals(StreamStatus.Play)) {
+					return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP_PLAY
+							, String.format("%d", item)
+							, String.format("%.0f", ttd.getSegmentID())
+							, String.format("%.2f", ttd.getCurrentTotal())
+							, String.format("%.3f", (double) dataset.getX(series, item))
+							, String.format("%.3f", ttd.getPlayTime())
+							, String.format("%.3f", ttd.getPlayTimeEnd())
+							));
+				} else {
+					return (MessageFormat.format(BUFFER_TIME_OCCUPANCY_TOOLTIP_STALL
+							, String.format("%d", item)
+							, String.format("%.0f", ttd.getSegmentID())
+							, String.format("%.2f", ttd.getCurrentTotal())
+							, String.format("%.3f", (double) dataset.getX(series, item))
+							, String.format("%.3f", ttd.getPlayTime())
+							, String.format("%.3f", ttd.getPlayTimeEnd())
+							));
+				}
 			}
 		};
 	}

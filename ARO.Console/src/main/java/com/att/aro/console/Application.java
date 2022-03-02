@@ -61,6 +61,7 @@ import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.ErrorCode;
+import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.Orientation;
@@ -86,6 +87,8 @@ public final class Application implements IAROView {
     private VideoOption videoOption = VideoOption.NONE;
 
     ResourceBundle buildBundle = ResourceBundle.getBundle("build");
+
+	private MetaDataModel metaDataModel;
 
     private Application(String[] args) {
 
@@ -849,7 +852,7 @@ public final class Application implements IAROView {
     }
 
     @Override
-    public void startCollector(IAroDevice device, String tracePath, Hashtable<String, Object> extraParams) {
+    public void startCollector(IAroDevice device, String tracePath, Hashtable<String, Object> extraParams, MetaDataModel metaDataModel) {
     }
 
     @Override
@@ -918,6 +921,11 @@ public final class Application implements IAROView {
 	public void updateFilter(AnalysisFilter filter) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public MetaDataModel getMetaDataModel() {
+		return metaDataModel;
 	}
 
 

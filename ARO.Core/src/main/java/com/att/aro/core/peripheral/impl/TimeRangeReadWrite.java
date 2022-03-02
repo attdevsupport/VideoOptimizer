@@ -29,7 +29,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class TimeRangeReadWrite implements ITimeRangeReadWrite {	
-	private static final Logger LOG = LogManager.getLogger(VideoStartupReadWriterImpl.class.getName());
+	private static final Logger LOG = LogManager.getLogger(TimeRangeReadWrite.class.getName());
 	
 	@Autowired private IFileManager filemanager;
 	
@@ -71,7 +71,7 @@ public class TimeRangeReadWrite implements ITimeRangeReadWrite {
 			}
 			String jsonData = serialize(traceTimeRange);
 			if (jsonData.equals(jsonDataSaved)) {
-				LOG.debug("Startup delay has no changes, so not saving");
+				LOG.debug("Time-Range has no changes, so not saving");
 				return true;
 			}
 			this.traceTimeRange = traceTimeRange;
@@ -84,7 +84,7 @@ public class TimeRangeReadWrite implements ITimeRangeReadWrite {
 				output.write(jsonData.getBytes());
 				output.flush();
 				output.close();
-				LOG.debug("Startup delay saved");
+				LOG.debug("Time-Range saved");
 				jsonDataSaved = jsonData;
 				return true;
 			}

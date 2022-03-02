@@ -46,6 +46,7 @@ import org.apache.log4j.Logger;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.preferences.UserPreferencesFactory;
+import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
@@ -259,6 +260,7 @@ public class OpenPcapFileDialog extends JDialog {
 			} else {
 				deleteDirectory(newPcapFileTracePath);
 			}
+			PreferenceHandlerImpl.getInstance().setPref("TRACE_PATH", originalPcapFileObj.toString());
 		}
 
 		return null;

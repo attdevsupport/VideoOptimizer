@@ -28,7 +28,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JMenuItem;
 import javax.swing.JTable;
 import javax.swing.table.TableColumn;
-
+import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.ui.model.DataTable;
 import com.att.aro.ui.model.DataTableModel;
 import com.att.aro.ui.model.diagnostic.TCPUDPFlowsTableModel;
@@ -133,32 +133,39 @@ public class TCPFlowsDataTable<T> extends DataTable<T>
 		return selectedRows;
 	}
 	
-	class MyMouseListener extends MouseAdapter{  
-	      public void mouseClicked(MouseEvent mouseEvent) {  
-	          int checkedCount = 0;  
-	          
-	          rendererComponent.removeItemListener(it);  
-	          
-	          if (rendererComponent instanceof JCheckBox) {  
-	              boolean[] flags = new boolean[table.getRowCount()];  
-	              for (int i = 0; i < table.getRowCount(); i++) {  
-	                  flags[i] = ((Boolean) table.getValueAt(i, table.convertColumnIndexToView(1))).booleanValue();
-	                  if(flags[i]){  
-	                      checkedCount++;  
-	                  }  
-	              }
-	              if(checkedCount== table.getRowCount()){  
-	                  ((JCheckBox)rendererComponent).setSelected(true);                 
-	              }  
-	              if(checkedCount!= table.getRowCount()){  
-	                  ((JCheckBox)rendererComponent).setSelected(false);      
-	              } 
-				diagnostics.openCollapsiblePane();
-	          }  
-	          rendererComponent.addItemListener(it);  
-	          table.getTableHeader().repaint();  
-	      }  
-	  }
+	class MyMouseListener extends MouseAdapter {
+		public void mouseClicked(MouseEvent mouseEvent) {
+			if (mouseEvent.getClickCount() == 2 && mouseEvent.getButton() == MouseEvent.BUTTON1) {
+				Session selectedSession = getModel().getSessionMap().get(getSessionKey(table.getSelectedRow()));
+				new ServerNameIndicationDialog(selectedSession);
+			} else {
+				int checkedCount = 0;
+				rendererComponent.removeItemListener(it);
+				if (rendererComponent instanceof JCheckBox) {
+					boolean[] flags = new boolean[table.getRowCount()];
+					for (int i = 0; i < table.getRowCount(); i++) {
+						flags[i] = ((Boolean) table.getValueAt(i, table.convertColumnIndexToView(1))).booleanValue();
+						if (flags[i]) {
+							checkedCount++;
+						}
+					}
+					if (checkedCount == table.getRowCount()) {
+						((JCheckBox) rendererComponent).setSelected(true);
+					}
+					if (checkedCount != table.getRowCount()) {
+						((JCheckBox) rendererComponent).setSelected(false);
+					}
+					diagnostics.openCollapsiblePane();
+				}
+				rendererComponent.addItemListener(it);
+				table.getTableHeader().repaint();
+			}
+		}
+	}
+	
+	public String getSessionKey(int selectedRow) {
+        return table.getValueAt(selectedRow, 4) + "$" + table.getValueAt(selectedRow, 5) + "$" + table.getValueAt(selectedRow, 3);
+    }
 	  
 	public void setHeaderDefaultValue() {
 		((JCheckBox) rendererComponent).setSelected(true);

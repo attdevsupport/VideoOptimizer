@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -65,7 +66,7 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 	@NonNull@Setter(AccessLevel.PROTECTED)
 	private BestPracticeType							bestPracticeType = BestPracticeType.VIDEOUSAGE;
 	@NonNull@Setter(AccessLevel.PROTECTED)
-	private SortedMap<Double, VideoStream>				videoStreamMap = new TreeMap<>();
+	private NavigableMap<Double, VideoStream>			videoStreamMap = new TreeMap<>();
 	@NonNull
 	private SortedMap<Double, HttpRequestResponseInfo>	requestMap = new TreeMap<>();
 	@NonNull@Setter(AccessLevel.PROTECTED)

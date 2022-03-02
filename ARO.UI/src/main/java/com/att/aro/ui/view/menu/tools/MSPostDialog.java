@@ -120,7 +120,6 @@ public class MSPostDialog extends PostDialog{
 		int width = screenSize.width;
 		setBounds(width/3, height/20, 400, 150);
 		
-		
 		panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		add(panel);
@@ -207,19 +206,19 @@ public class MSPostDialog extends PostDialog{
 		Label traceSourceLabel          = new Label(ResourceBundleHelper.getMessageString("metadata.field.traceSource"));
 		Label traceOwnerLabel           = new Label(ResourceBundleHelper.getMessageString("metadata.field.traceOwner"));
 		
-		description                  = new Label(                      metaData.getDescription        ());
-		traceType                    = new Label(                      metaData.getTraceType          ());
-		targetedApp                  = new Label(                      metaData.getTargetedApp        ());
-		applicationProducer          = new Label(                      metaData.getApplicationProducer());
-		targetAppVer                 = new Label(                      metaData.getTargetAppVer       ());
-		deviceOrientation            = new Label(                      metaData.getDeviceOrientation  ());
-		phoneMake                    = new Label(                      metaData.getPhoneMake          ());
-		phoneModel                   = new Label(                      metaData.getPhoneModel         ());
-		os                           = new Label(                      metaData.getOs                 ());
-		osVersion                    = new Label(                      metaData.getOsVersion          ());
-		startUTC                     = new Label(                      metaData.getStartUTC           ());
-		traceSource                  = new Label(                      metaData.getTraceSource        ());
-		traceOwner                   = new Label(                      metaData.getTraceOwner         ());
+		description                  = new Label(   metaData.getDescription            () );
+		traceType                    = new Label(   metaData.getTraceType              () );
+		targetedApp                  = new Label(   metaData.getTargetedApp            () );
+		applicationProducer          = new Label(   metaData.getApplicationProducer    () );
+		targetAppVer                 = new Label(   metaData.getTargetAppVer           () );
+		deviceOrientation            = new Label(   metaData.getDeviceOrientation().toString());
+		phoneMake                    = new Label(   metaData.getPhoneMake              () );
+		phoneModel                   = new Label(   metaData.getPhoneModel             () );
+		os                           = new Label(   metaData.getOs                     () );
+		osVersion                    = new Label(   metaData.getOsVersion              () );
+		startUTC                     = new Label(   metaData.getStartUTC			   () );
+		traceSource                  = new Label(   metaData.getTraceSource            () );
+		traceOwner                   = new Label(   metaData.getTraceOwner             () );
 	
 		int idx = 0;
 		JPanel panel = new JPanel(new GridBagLayout());

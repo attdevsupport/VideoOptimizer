@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2019 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +18,8 @@ package com.att.aro.core.videoanalysis.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.NavigableMap;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -33,15 +32,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
+import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
+import com.att.aro.core.peripheral.pojo.UserEvent;
+import com.att.aro.core.peripheral.pojo.UserEvent.UserEventType;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
+import com.att.aro.core.peripheral.pojo.VideoStreamStartup.ValidationStartup;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartupData;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
 import com.att.aro.core.videoanalysis.XYPair;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
-import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs.DUPLICATE_HANDLING;
@@ -52,7 +54,8 @@ public class VideoSegmentAnalyzer {
 
 	private static final Logger LOG = LogManager.getLogger(VideoSegmentAnalyzer.class.getName());
 
-	@Autowired private IVideoUsagePrefsManager videoUsagePrefsManager;
+	@Autowired
+	private IVideoUsagePrefsManager videoUsagePrefsManager;
 
 	private VideoStreamStartupData videoStreamStartupData;
 	private VideoStreamStartup videoStreamStartup;
@@ -64,17 +67,22 @@ public class VideoSegmentAnalyzer {
 
 	private List<VideoStall> stalls = new ArrayList<>();
 
-	@Nonnull private DUPLICATE_HANDLING duplicateHandling = DUPLICATE_HANDLING.LAST;
-	
-	@NonNull private ArrayList<XYPair> byteBufferList; // from videoStream.getByteBufferList();
-	@NonNull private VideoStream videoStream;
+	@Nonnull
+	private DUPLICATE_HANDLING duplicateHandling = DUPLICATE_HANDLING.LAST;
 
-	@NonNull private ArrayList<XYPair> playTimeList;
+	@NonNull
+	private ArrayList<XYPair> byteBufferList; // from videoStream.getByteBufferList();
+	@NonNull
+	private VideoStream videoStream;
+
+	@NonNull
+	private ArrayList<XYPair> playTimeList;
 
 	public VideoStreamStartup findStartupFromName(VideoStreamStartupData videoStreamStartupData, VideoStream videoStream) {
 		if (videoStreamStartupData != null && videoStream != null) {
 			for (VideoStreamStartup videoStreamStartup : videoStreamStartupData.getStreams()) {
 				if (videoStream.getManifest().getVideoName().equals(videoStreamStartup.getManifestName())) {
+					videoStream.getManifest().setDelay(videoStreamStartup.getStartupTime() - videoStreamStartup.getManifestReqTime());
 					return this.videoStreamStartup = videoStreamStartup;
 				}
 			}
@@ -82,35 +90,104 @@ public class VideoSegmentAnalyzer {
 		return null;
 	}
 
+	/**
+	 * <pre>
+	 * Loads, and or creates estimated, startup data for a stream Populates
+	 * VideoStreamStartup from first segment and manifest data. Populates
+	 * VideoStream so that graphs can be displayed. Attaches to VideoStream to aid
+	 * SegmentTablePanel
+	 *
+	 * @param result
+	 * @param videoStream
+	 * @return existing or estimated VideoStreamStartup
+	 */
+	public VideoStreamStartup locateStartupDelay(AbstractTraceResult result, VideoStream videoStream) {
+		if (result instanceof TraceDirectoryResult) {
+			if ((videoStreamStartupData = ((TraceDirectoryResult) result).getVideoStartupData()) != null) {
+				if ((videoStreamStartup = findStartupFromName(videoStreamStartupData, videoStream)) != null) {
+					if (videoStreamStartup.getValidationStartup().equals(ValidationStartup.NA)) {
+						videoStreamStartup.setValidationStartup(ValidationStartup.USER);
+					}
+				}
+			} else {
+				videoStreamStartupData = new VideoStreamStartupData();
+			}
+			if (videoStreamStartup == null) {
+				VideoEvent firstEvent = null;
+				videoStreamStartup = new VideoStreamStartup(videoStream.getManifest().getVideoName());
+				videoStreamStartup.setValidationStartup(ValidationStartup.ESTIMATED);
+				videoStreamStartupData.getStreams().add(videoStreamStartup);
+				if (!CollectionUtils.isEmpty(videoStream.getVideoActiveMap())) {
+					firstEvent = videoStream.getFirstActiveSegment();
+				} else {
+					firstEvent = videoStream.getFirstSegment();
+					if (firstEvent == null) {
+						return null; // invalid stream, no first segment that is a normal segment
+					}
+					if (videoStream.getManifest().getRequestTime() == 0.0) {
+						// CSI there is no requestTime so make an estimate
+						videoStream.getManifest().setRequestTime(firstEvent.getRequest().getTimeStamp() - videoPrefs.getStallRecovery());
+					}
+				}				
+				
+				if (firstEvent.getPlayRequestedTime() == 0) {
+					firstEvent.setPlayRequestedTime(videoStream.getManifest().getRequestTime());
+				}
+				firstEvent.setStartupOffset(firstEvent.getDLLastTimestamp() + videoPrefs.getStallRecovery());
+				
+				videoStreamStartup.setFirstSegID(firstEvent.getSegmentID());
+				videoStreamStartup.setManifestReqTime(firstEvent.getManifest().getRequestTime());
+				videoStreamStartup.setStartupTime(firstEvent.getStartupOffset());
+				
+				if (videoStreamStartup.getUserEvent() == null) {
+					UserEvent userEvent = new UserEvent();
+					double pressTime = videoStream.getManifest().getRequestTime();
+					userEvent.setPressTime(pressTime);
+					userEvent.setReleaseTime(pressTime);
+					userEvent.setEventType(UserEventType.EVENT_UNKNOWN);
+					videoStreamStartup.setUserEvent(userEvent);
+				}
+			}
+
+			videoStream.getManifest().setDelay(videoStreamStartup.getStartupTime() - videoStreamStartup.getManifestReqTime());
+			videoStream.setVideoPlayBackTime(videoStreamStartup.getStartupTime());
+			videoStream.setVideoStreamStartup(videoStreamStartup);
+			((TraceDirectoryResult) result).setVideoStartupData(videoStreamStartupData);
+
+		}
+		return videoStreamStartup;
+	}
+
 	public void process(AbstractTraceResult result, StreamingVideoData streamingVideoData) {
 		if (result instanceof TraceDirectoryResult) {
 			videoStreamStartupData = ((TraceDirectoryResult) result).getVideoStartupData();
 			this.videoPrefs = videoUsagePrefsManager.getVideoUsagePreference();
 			if (!CollectionUtils.isEmpty(streamingVideoData.getVideoStreamMap())) {
-				for (VideoStream videoStream : streamingVideoData.getVideoStreamMap().values()) {
-					if (videoStream.isSelected() && !CollectionUtils.isEmpty(videoStream.getVideoEventMap())) {
-						videoStreamStartup = findStartupFromName(videoStreamStartupData, videoStream);
+				NavigableMap<Double, VideoStream> reverseVideoStreamMap = streamingVideoData.getVideoStreamMap().descendingMap();
+				for (VideoStream videoStream : reverseVideoStreamMap.values()) {
+					if (!CollectionUtils.isEmpty(videoStream.getVideoEventMap())) {
+						if ((videoStreamStartup = locateStartupDelay(result, videoStream)) == null) {
+							continue; // StartupDelay could not be set, usually an invalid Stream
+						}
+
 						double startupDelay;
 						VideoEvent chosenEvent;
 						if (videoStreamStartup != null && videoStream.getManifest().getVideoName().equals(videoStreamStartup.getManifestName())) {
 							startupDelay = videoStreamStartup.getStartupTime();
-							double segID = videoStreamStartup.getFirstSegID();
-							chosenEvent = videoStream.getVideoEventBySegment(segID);
-						} else {
-							ArrayList<VideoEvent> videoStreamFiltered = sortBySegThenStartTS(videoStream);
-							if (videoStreamFiltered.stream().findFirst().isPresent()) {
-								Optional<VideoEvent> event = videoStreamFiltered.stream().filter(v -> v.isNormalSegment()).findFirst();
-								chosenEvent = event.isPresent() ? event.get() : videoStreamFiltered.get(0); //
-								startupDelay = chosenEvent.getDLLastTimestamp() + videoPrefs.getStallRecovery();
-							} else {
-								continue;
+							chosenEvent = videoStream.getVideoEventBySegment(videoStreamStartup.getFirstSegID());
+							if (videoStreamStartup.getUserEvent() != null) {
+								videoStream.setPlayRequestedTime(videoStreamStartup.getUserEvent().getPressTime());
 							}
+						} else {
+							continue;
 						}
 
 						duplicateHandling = videoPrefs.getDuplicateHandling();
 						LOG.debug(String.format("Stream RQ:%10.3f", videoStream.getManifest().getRequestTime()));
-						propagatePlaytime(startupDelay, chosenEvent, videoStream);
-						videoStream.setDuration(videoStream.getVideoEventMap().entrySet().stream().filter(f -> f.getValue().isSelected() && f.getValue().isNormalSegment()).mapToDouble(x -> x.getValue().getDuration()).sum());
+						applyStartupDelayToStream(startupDelay, chosenEvent, videoStream, streamingVideoData);
+						videoStream.setDuration(videoStream.getVideoEventMap().entrySet().stream()
+								.filter(f -> f.getValue().isSelected() && f.getValue().isNormalSegment())
+								.mapToDouble(x -> x.getValue().getDuration()).sum());
 					} else {
 						videoStream.setDuration(0);
 						videoStream.setSelected(false);
@@ -129,27 +206,55 @@ public class VideoSegmentAnalyzer {
 
 	private void populateActiveMap(SortedMap<String, VideoEvent> activeMap, SortedMap<String, VideoEvent> eventMap) {
 		activeMap.clear();
-		eventMap.entrySet().stream().filter(f -> f.getValue().isSelected() && f.getValue().isNormalSegment()).forEach(v -> activeMap.put(v.getKey(), v.getValue()));
+		eventMap.entrySet().stream().filter(f -> f.getValue().isSelected() && f.getValue().isNormalSegment())
+				.forEach(v -> activeMap.put(v.getKey(), v.getValue()));
+	}
+	
+	public void applyStartupDelayToStream(double startupTime, VideoEvent chosenVideoEvent, VideoStream videoStream, StreamingVideoData streamingVideoData) {
+
+		if (chosenVideoEvent == null && (chosenVideoEvent = videoStream.getFirstSegment()) != null) {
+			chosenVideoEvent.setSelected(true);
+			videoStream.getManifest().setStartupVideoEvent(chosenVideoEvent);
+		}
+		if (chosenVideoEvent != null) {
+			propagatePlaytime(startupTime, chosenVideoEvent, videoStream);
+
+			chosenVideoEvent.setPlayTime(startupTime);
+			videoStream.setVideoPlayBackTime(startupTime);
+
+			videoStream.getManifest().setDelay(startupTime - chosenVideoEvent.getEndTS());
+			videoStream.getManifest().setStartupVideoEvent(chosenVideoEvent);
+			videoStream.getManifest().setStartupDelay(chosenVideoEvent.getSegmentStartTime() - videoStream.getManifest().getRequestTime());
+		}
+		streamingVideoData.scanVideoStreams();
+		
+		for (VideoStream stream : streamingVideoData.getVideoStreamMap().values()) {
+			if (stream.equals(videoStream)) {
+				stream.setSelected(true);
+				stream.setCurrentStream(true);
+			} else {
+				stream.setSelected(false);
+				stream.setCurrentStream(false);
+			}
+		}
 	}
 
 	/**
 	 * not quite there yet
-	 * 
-	 * for each segment:
-	 *  playtime = SegmentStartTime + startupOffset + stallOffset
-	 * 
-	 * if playtime is before segment has arrived
-	 *  need to increment stallOffset to bring playtime up to arrival time plus all overhead of recovery from stall
-	 * 
+	 *
+	 * for each segment: playtime = SegmentStartTime + startupOffset + stallOffset
+	 *
+	 * if playtime is before segment has arrived need to increment stallOffset to
+	 * bring playtime up to arrival time plus all overhead of recovery from stall
+	 *
 	 * @param startupTime
-	 * @param chosenEvent
+	 * @param chosenVideoEvent
 	 * @param videoStream
 	 */
-	public void propagatePlaytime(double startupTime, VideoEvent chosenEvent, VideoStream videoStream) {
+	public void propagatePlaytime(double startupTime, VideoEvent chosenVideoEvent, VideoStream videoStream) {
 
-		int baseEvent = videoStream.getManifest().isVideoFormat(VideoFormat.MPEG4) ? 0 : -1;
 		double startupOffset;
-		startupOffset = chosenEvent != null ? startupTime - chosenEvent.getSegmentStartTime() : 0;
+		startupOffset = chosenVideoEvent != null ? startupTime - chosenVideoEvent.getSegmentStartTime() : 0;
 		stallOffset = 0;
 		totalStallOffset = 0;
 		VideoEvent priorEvent = null;
@@ -169,7 +274,7 @@ public class VideoSegmentAnalyzer {
 		ArrayList<VideoEvent> videoStreamFiltered = sortBySegThenStartTS(videoStream);
 
 		for (VideoEvent videoEvent : videoStreamFiltered) {
-			if (videoEvent.getSegmentID() > baseEvent) {
+			if (videoEvent.isNormalSegment()) {
 				if (priorEvent != null && videoEvent.isSelected()) {
 					double playtime = videoEvent.getSegmentStartTime() + startupOffset + totalStallOffset;
 
@@ -185,8 +290,7 @@ public class VideoSegmentAnalyzer {
 						LOG.debug(String.format("VideoStall %.0f: %8.6f", videoEvent.getSegmentID(), videoEvent.getStallTime()));
 					}
 					VideoEvent audioStall;
-					if (isAudio 
-							&& (audioStall = syncWithAudio(startupOffset, videoStream, audioStreamMap, videoEvent)) != null 
+					if (isAudio && (audioStall = syncWithAudio(startupOffset, videoStream, audioStreamMap, videoEvent)) != null
 							&& audioStall.getStallTime() > 0) {
 						LOG.debug(String.format("audioStall %.0f: %8.6f", audioStall.getSegmentID(), audioStall.getStallTime()));
 					}
@@ -201,9 +305,9 @@ public class VideoSegmentAnalyzer {
 
 		populateActive(videoStream);
 		generateByteBufferData(videoStream);
-		generatePlayTimeData(videoStream);
+		generatePlaytimeData(videoStream);
 
-		LOG.debug(videoStream.getToolTipDetailMap().keySet());
+		LOG.debug(videoStream.getByteToolTipDetailMap().keySet());
 	}
 
 	private ArrayList<VideoEvent> sortBySegThenStartTS(VideoStream videoStream) {
@@ -215,188 +319,20 @@ public class VideoSegmentAnalyzer {
 	}
 
 	/**
-	 * Scans VideoStream to produce/populate
-	 * 	- VideoStream.
-	 *  - VideoStream.
-	 *  
-	 * @param timelineMap
-	 * @param eventTimeLine
+	 * Creates and stores Playtime chart points and tooltip data directly into
+	 * videoStream not meant to create any object data to be used locally in this
+	 * class
+	 *
+	 * @param videoStream
 	 */
-	private void generatePlayTimeData(VideoStream videoStream) {
-		Double playTime = 0D;
-		this.videoStream = videoStream;
-		videoStream.clearPlayTimeData();
-
-		playTimeList = videoStream.getPlayTimeList();
-		TreeMap<String, VideoEvent> videoActiveMap = videoStream.getVideoActiveMap(); // VideoSegments that are considered as playing
-		TreeMap<Double, Double> timelineMap = new TreeMap<>();
-		TreeMap<Double, VideoEvent> stallMap = new TreeMap<>();
-
-		Map<Double, VideoEvent> eventTimeLine = populateTimelineMaps(playTime, videoActiveMap, timelineMap, stallMap);
-
-		generatePlayPoints(timelineMap, eventTimeLine);
+	private void generatePlaytimeData(VideoStream videoStream) {
+		new PlayTimeData(videoStream);
 	}
 
 	/**
-	 * Populates timelineMap, and stallMap
-	 * 
-	 * @param playTime
-	 * @param videoActiveMap
-	 * @param timelineMap
-	 * @param stallMap
-	 * 
-	 * @return total playtime
-	 */
-	private Map<Double, VideoEvent> populateTimelineMaps(Double playTime, TreeMap<String, VideoEvent> videoActiveMap, TreeMap<Double, Double> timelineMap, TreeMap<Double, VideoEvent> stallMap) {
-		double stallCheck = 0;
-		Map<Double, VideoEvent> eventTimeLine = new TreeMap<>();
-		for (VideoEvent event : videoActiveMap.values()) {
-
-			timelineMap.put(event.getEndTS(), event.getDuration());
-			timelineMap.put(event.getPlayTime(), -event.getDuration());
-			
-			eventTimeLine.put(event.getEndTS(), event);
-			eventTimeLine.put(event.getPlayTime(), event);
-
-			if (event.getStallTime() > 0) {
-				timelineMap.put(stallCheck, 0D);
-				stallMap.put(event.getPlayTime() - event.getStallTime(), event);
-			}
-			stallCheck = event.getPlayTime() + event.getDuration();
-		}
-		return eventTimeLine;
-	}
-	
-	private Double addPlayTimePoints(Double buffer, VideoEvent event, double timestamp, double duration) {
-		
-		double buffer2 = buffer + duration;
-		playTimeList.add(new XYPair(timestamp, buffer2));
-		
-		this.videoStream.addPlayTimeToolTipPoint(event, buffer);
-		this.videoStream.addPlayTimeToolTipPoint(event, buffer2);
-
-		LOG.debug(String.format("t%.3f\t%.3f", timestamp, buffer2));
-		
-		return buffer2;
-	}
-
-	/**
-	 * Generates points for Playtimeline (timestamp, play_time_buffer)
-	 * Generates tooltip data
-	 * 
-	 * @param timelineMap
-	 * @param eventTimeLine
-	 */
-	private void generatePlayPoints(TreeMap<Double, Double> timelineMap, Map<Double, VideoEvent> eventTimeLine) {
-		boolean isPlaying = false;
-		Double playTime;
-		VideoEvent videoEvent;
-
-		playTime = 0D;
-		Double dur2 = 0D, dur1 = 0D;
-		Double ts1 = 0D, ts2 = 0D;
-		Double stepDur1 = 0D;
-
-		Iterator<Double> timeLineIterator = timelineMap.keySet().iterator();
-		while ((ts1 = getNextKey(timeLineIterator)) != null) {
-			videoEvent = eventTimeLine.get(ts1);
-			dur1 = timelineMap.get(ts1);
-			if ((ts2 = timelineMap.higherKey(ts1)) != null) {
-				dur2 = timelineMap.get(ts2);
-			}
-
-			if (dur2 == null) {
-				// reached the end
-				playTime = addPlayTimePoints(playTime, videoEvent, ts1, 0);
-				playTime = addPlayTimePoints(playTime, videoEvent, ts1, dur1);
-			} else {
-				if (dur1 == 0) {
-					isPlaying = false; // stalled
-				}
-
-				if (!isPlaying) {
-					// filling buffer
-					playTime = addPlayTimePoints(playTime, videoEvent, ts1, 0);
-					if (dur1 > 0) {
-						playTime = addPlayTimePoints(playTime, videoEvent, ts1, dur1);
-					} else if (dur1 < 0) {
-						isPlaying = true; // not stalled anymore
-					}
-				}
-
-				if (isPlaying) {
-					if (ts2 != null && (dur1 < 0 && (stepDur1 = ts2 - ts1) < Math.abs(dur1) - 1e-6)) {
-						do {
-							playTime = addPlayTimePoints(playTime, videoEvent, ts2, -stepDur1);
-							if (nearEquals(stepDur1, Math.abs(dur1), -7)) {
-								break;
-							}
-							if (dur1 < 0 && Math.abs(dur1 += stepDur1) > 1e-6) {
-								playTime = addPlayTimePoints(playTime, videoEvent, ts2, dur2);
-							} else {
-								ts1 = getNextKey(timeLineIterator);
-								ts2 = getNextKey(timeLineIterator);
-								if (ts1 != null && ts2 != null) {
-									stepDur1 = ts2 - ts1;
-									dur2 = timelineMap.get(ts2);
-									playTime = addPlayTimePoints(playTime, videoEvent, ts2, -(ts2 - ts1));
-									if (dur2 == 0) {
-										// skip
-										ts1 = getNextKey(timeLineIterator);
-										isPlaying = false;
-									} else {
-										ts2 = getNextKey(timeLineIterator);
-										playTime = addPlayTimePoints(playTime, videoEvent, ts2, dur2);
-									}
-								}
-								break;
-							}
-							if ((ts1 = getNextKey(timeLineIterator)) != null && (ts2 = timelineMap.higherKey(ts1)) != null) {
-								dur2 = timelineMap.get(ts2);
-							}
-							if (ts1 != null && ts2 != null) {
-								stepDur1 = ts2 - ts1;
-							}
-
-						} while (dur1 < 1e-6 && ts2 != null);
-					} else {
-						if (dur2 == 0) {
-							isPlaying = false;
-						}
-						if (ts2 != null) {
-							playTime = addPlayTimePoints(playTime, videoEvent, ts2, dur1);
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	/**
-	 * Compare two Doubles while allowing for some degree of drift. I difference between the doubles is less than 10^exp
-	 * 
-	 * @param stepDur1
-	 * @param dur1
-	 * @param exp
-	 * @return
-	 */
-	private boolean nearEquals(Double stepDur1, Double dur1, double exp) {
-		return (Math.abs(stepDur1 - dur1) < Math.pow(10, exp));
-	}
-
-	private Double getNextKey(Iterator<Double> timeLineIterator) {
-		Double timestamp = null;
-		if (timeLineIterator.hasNext()) {
-			timestamp = timeLineIterator.next();
-		}
-		return timestamp;
-	}
-
-	/**
-	 * Scans VideoStream to produce/populate
-	 * 	- VideoStream.byteBufferList
-	 *  - VideoStream.toolTipDetailMap
-	 * 
+	 * Scans VideoStream to produce/populate - VideoStream.byteBufferList -
+	 * VideoStream.toolTipDetailMap
+	 *
 	 * @param videoStream
 	 */
 	private void generateByteBufferData(VideoStream videoStream) {
@@ -404,17 +340,21 @@ public class VideoSegmentAnalyzer {
 		Double buffer = 0D;
 		VideoEvent eventDL;
 		double timeKey = 0D;
-		
+
 		this.videoStream = videoStream;
 		videoStream.clearBufferOccupancyData();
 
 		TreeMap<Double, VideoEvent> mergedPlayMap = new TreeMap<>();
 		TreeMap<String, VideoEvent> mergedMap = new TreeMap<>();
-		mergedMap.putAll(videoStream.getVideoEventMap());
-		mergedMap.putAll(videoStream.getAudioEventMap());
+
+		videoStream.getVideoEventMap().entrySet().stream().filter((f) -> !f.getValue().isFailedRequest()).forEach(e -> {
+			mergedMap.put(e.getKey(), e.getValue());
+		});
+		videoStream.getAudioEventMap().entrySet().stream().filter((f) -> !f.getValue().isFailedRequest()).forEach(e -> {
+			mergedMap.put(e.getKey(), e.getValue());
+		});
 
 		byteBufferList = videoStream.getByteBufferList();
-		LOG.debug("\ntime     buffer");
 		for (String key : mergedMap.keySet()) {
 			eventDL = mergedMap.get(key);
 			if (eventDL.isNormalSegment()) {
@@ -446,57 +386,59 @@ public class VideoSegmentAnalyzer {
 		double buffer2 = buffer + delta;
 		byteBufferList.add(new XYPair(startTS, buffer));
 		byteBufferList.add(new XYPair(startTS, buffer2));
-		this.videoStream.addToolTipPoint(event, buffer);
-		this.videoStream.addToolTipPoint(event, buffer2);
-		LOG.debug(String.format("%.3f\t%.0f", startTS, buffer));
-		LOG.debug(String.format("%.3f\t%.0f", startTS, buffer2));
+		this.videoStream.addByteToolTipPoint(event, buffer);
+		this.videoStream.addByteToolTipPoint(event, buffer2);
 		return buffer2;
 	}
 
 	private void applyDuplicateHandlingRules(SortedMap<String, VideoEvent> eventStreamMap) {
 		VideoEvent priorEvent = null;
-		ArrayList<VideoEvent> videoStreamFiltered = new ArrayList<VideoEvent>(eventStreamMap.values());
-		Collections.sort(videoStreamFiltered, new VideoEventComparator(SortSelection.END_TS));
-		Collections.sort(videoStreamFiltered, new VideoEventComparator(SortSelection.SEGMENT_ID));
-		
-		for (VideoEvent event : videoStreamFiltered) {
-			event.setSelected(true); // set to 'selected' so applyRules can judge
-			applyRules(event, priorEvent);
-			if (event.isSelected()) {
-				priorEvent = event;
+		ArrayList<VideoEvent> videoStreamSorted = new ArrayList<VideoEvent>(eventStreamMap.values());
+		Collections.sort(videoStreamSorted, new VideoEventComparator(SortSelection.END_TS));
+		Collections.sort(videoStreamSorted, new VideoEventComparator(SortSelection.SEGMENT_ID));
+
+		for (VideoEvent event : videoStreamSorted) {
+			if (event.isNormalSegment()) {
+				event.setSelected(true); // set to 'selected' so applyRules can judge
+				applyRules(event, priorEvent);
+				if (event.isSelected()) {
+					priorEvent = event;
+				}
+			} else {
+				LOG.debug("reject:" + event);
 			}
 		}
 	}
 
 	/**
-	 * Compare event and priorEvent against duplicateHandling rules.
-	 * When a VideoEvent has a competing segmentID, the two VideoEvents will be compared with the "loser" being deselected
-	 * 
+	 * Compare event and priorEvent against duplicateHandling rules. When a
+	 * VideoEvent has a competing segmentID, the two VideoEvents will be compared
+	 * with the "loser" being deselected
+	 *
 	 * @param event
 	 * @param priorEvent
 	 */
 	private void applyRules(VideoEvent event, VideoEvent priorEvent) {
 		boolean tempFlag = false;
-		if (priorEvent != null) {
+		if (event.isNormalSegment() && priorEvent != null) {
 			if (priorEvent.getSegmentID() == event.getSegmentID()) {
 				if (duplicateHandling.equals(DUPLICATE_HANDLING.FIRST)) {
 					tempFlag = event.getEndTS() < priorEvent.getEndTS();
 				} else if (duplicateHandling.equals(DUPLICATE_HANDLING.LAST)) {
 					tempFlag = event.getEndTS() > priorEvent.getEndTS();
 				} else if (duplicateHandling.equals(DUPLICATE_HANDLING.HIGHEST)) {
-				tempFlag = Integer.valueOf(event.getQuality()).compareTo(Integer.valueOf(priorEvent.getQuality())) > 0;
+					tempFlag = Integer.valueOf(event.getQuality()).compareTo(Integer.valueOf(priorEvent.getQuality())) > 0;
 				}
 				event.setSelected(tempFlag);
 				priorEvent.setSelected(!tempFlag);
 			}
-			
 		}
 	}
 
 	/**
 	 * <pre>
 	 * Calculate a segmentStallOffset in seconds.
-	 * 
+	 *
 	 * @param current     startupOffset in seconds
 	 * @param videoEvent  either Audio or Video
 	 * @param stallOffset
@@ -514,16 +456,19 @@ public class VideoSegmentAnalyzer {
 		return offset;
 	}
 
-	/**<pre>
-	 * Scan through all audio event related to videoEvent
-	 *   Starting with audio event from before the videoEvent
-	 *   Record all audio segments associated with Video segment.
-	 *   Including partial overlaps, often audio and video segments do not start at the same time.
-	 * 
+	/**
+	 * <pre>
+	 * Scan through all audio event related to videoEvent Starting with audio event
+	 * from before the videoEvent Record all audio segments associated with Video
+	 * segment. Including partial overlaps, often audio and video segments do not
+	 * start at the same time.
+	 *
 	 * @param startupOffset
-	 * 
+	 *
 	 * @param videoStream      contains collections of Video, Audio and Captioning
-	 * @param audioStreamMap contains all audio in videoStream (when non-muxed) <key definition: segmentStartTime, endTS(in milliseconds)>
+	 * @param audioStreamMap   contains all audio in videoStream (when non-muxed)
+	 *                         <key definition: segmentStartTime, endTS(in
+	 *                         milliseconds)>
 	 * @param videoEvent       The video segment to receive audio linkage
 	 * @param appliedStallTime
 	 * @return audioEvent associated with a stall
@@ -531,7 +476,7 @@ public class VideoSegmentAnalyzer {
 	private VideoEvent syncWithAudio(double startupOffset, VideoStream videoStream, TreeMap<String, VideoEvent> audioStreamMap, VideoEvent videoEvent) {
 		VideoEvent audioEvent = null;
 		String segmentStartTime = VideoStream.generateTimestampKey(videoEvent.getSegmentStartTime());
-		String segmentEndTime   = VideoStream.generateTimestampKey(videoEvent.getSegmentStartTime() + videoEvent.getDuration());
+		String segmentEndTime = VideoStream.generateTimestampKey(videoEvent.getSegmentStartTime() + videoEvent.getDuration());
 
 		String audioKeyStart = null;
 		String audioKeyEnd = null;
@@ -608,6 +553,7 @@ public class VideoSegmentAnalyzer {
 
 	/**
 	 * incorporates stallRecovery + stallPausePoint
+	 *
 	 * @return
 	 */
 	private double getStallRecovery() {
@@ -625,5 +571,4 @@ public class VideoSegmentAnalyzer {
 			x.getValue().setStallTime(0);
 		});
 	}
-
 }

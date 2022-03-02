@@ -137,7 +137,7 @@ public class MinificationTableModel extends DataTableModel<MinificationEntry> {
 	 */
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		MinificationTableModel.LOGGER.debug(format("getColumnClass, idx: {0}", columnIndex));
+		MinificationTableModel.LOGGER.trace(format("getColumnClass, idx: {0}", columnIndex));
 		switch (columnIndex) {
 		case COL_1:
 			return Double.class;

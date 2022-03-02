@@ -36,6 +36,7 @@ import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
+import com.att.aro.ui.commonui.AroFonts;
 import com.att.aro.ui.utils.CommonHelper;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -97,25 +98,25 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 		JLabel totalAppScoreLabel      = new JLabel();
 		JLabel totalhttpsDataLabel     = new JLabel();
         
-        summaryHeaderLabel        .setFont(SUMMARY_FONT);
-        statisticsHeaderLabel     .setFont(SUMMARY_FONT);
-        attenuatorHeaderLabel 	  .setFont(SUMMARY_FONT);
+        summaryHeaderLabel        .setFont(AroFonts.SUMMARY_FONT);
+        statisticsHeaderLabel     .setFont(AroFonts.SUMMARY_FONT);
+        attenuatorHeaderLabel 	  .setFont(AroFonts.SUMMARY_FONT);
                                                          
-        appScoreLabel             .setFont(TEXT_FONT);
-        causesScoreLabel          .setFont(TEXT_FONT);
-        durationLabel             .setFont(TEXT_FONT);
-        effectsScoreLabel         .setFont(TEXT_FONT);
-        energyConsumedLabel       .setFont(TEXT_FONT);
-        httpsDataAnalyzedLabel    .setFont(TEXT_FONT);
-        summaryFillerHeaderLabel  .setFont(TEXT_FONT);
-        testFillerHeaderLabel     .setFont(TEXT_FONT);
-        totalAppScoreLabel        .setFont(TEXT_FONT);
-        totalDataLabel            .setFont(TEXT_FONT);
-        totalPayloadDataLabel	  .setFont(TEXT_FONT);
-        totalhttpsDataLabel       .setFont(TEXT_FONT);
+        appScoreLabel             .setFont(AroFonts.TEXT_FONT);
+        causesScoreLabel          .setFont(AroFonts.TEXT_FONT);
+        durationLabel             .setFont(AroFonts.TEXT_FONT);
+        effectsScoreLabel         .setFont(AroFonts.TEXT_FONT);
+        energyConsumedLabel       .setFont(AroFonts.TEXT_FONT);
+        httpsDataAnalyzedLabel    .setFont(AroFonts.TEXT_FONT);
+        summaryFillerHeaderLabel  .setFont(AroFonts.TEXT_FONT);
+        testFillerHeaderLabel     .setFont(AroFonts.TEXT_FONT);
+        totalAppScoreLabel        .setFont(AroFonts.TEXT_FONT);
+        totalDataLabel            .setFont(AroFonts.TEXT_FONT);
+        totalPayloadDataLabel	  .setFont(AroFonts.TEXT_FONT);
+        totalhttpsDataLabel       .setFont(AroFonts.TEXT_FONT);
         
-        downlinkLabel			  .setFont(TEXT_FONT);
-        uplinkLabel				  .setFont(TEXT_FONT);
+        downlinkLabel			  .setFont(AroFonts.TEXT_FONT);
+        uplinkLabel				  .setFont(AroFonts.TEXT_FONT);
         
         add(layoutDataPanel(), BorderLayout.CENTER);
 
@@ -136,19 +137,19 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 
 			int idx = 0;
 			
-			addLabelLineName(summaryHeaderLabel        , "bestPractices.header.summary"         ,   idx ,2, weightX, insets, SUMMARY_FONT);  //
-			addLabelLineName(statisticsHeaderLabel     , "bestPractices.header.statistics"      , ++idx ,2, weightX, insets, HEADER_FONT);   //
+			addLabelLineName(summaryHeaderLabel        , "bestPractices.header.summary"         ,   idx ,2, weightX, insets, AroFonts.SUMMARY_FONT);  //
+			addLabelLineName(statisticsHeaderLabel     , "bestPractices.header.statistics"      , ++idx ,2, weightX, insets, AroFonts.HEADER_FONT);   //
 
-			addLabelLineName(durationLabel             , "bestPractices.duration"               , ++idx ,2, weightX, insets, TEXT_FONT);     //
-			addLabelLineName(totalDataLabel            , "bestPractices.totalDataTransfered"    , ++idx ,2, weightX, insets, TEXT_FONT);     //
-			addLabelLineName(totalPayloadDataLabel     , "bestPractices.totalPayloadData"       , ++idx ,2, weightX, insets, TEXT_FONT);     //
-			addLabelLineName(energyConsumedLabel       , "bestPractices.energyConsumed"         , ++idx ,2, weightX, insets, TEXT_FONT);     //
-			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     //
+			addLabelLineName(durationLabel             , "bestPractices.duration"               , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
+			addLabelLineName(totalDataLabel            , "bestPractices.totalDataTransfered"    , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
+			addLabelLineName(totalPayloadDataLabel     , "bestPractices.totalPayloadData"       , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
+			addLabelLineName(energyConsumedLabel       , "bestPractices.energyConsumed"         , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
+			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
 			
-			addLabelLineName(attenuatorHeaderLabel     , "bestPractice.header.attenuator"      , ++idx ,2, weightX, insets, HEADER_FONT);
-			addLabelLineName(downlinkLabel			   , "bestPractice.header.attenuator.downlink", ++idx ,2, weightX, insets, TEXT_FONT);
-			addLabelLineName(uplinkLabel			   , "bestPractice.header.attenuator.uplink", ++idx ,2, weightX, insets, TEXT_FONT);
-			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, TEXT_FONT);     //
+			addLabelLineName(attenuatorHeaderLabel     , "bestPractice.header.attenuator"      , ++idx ,2, weightX, insets, AroFonts.HEADER_FONT);
+			addLabelLineName(downlinkLabel			   , "bestPractice.header.attenuator.downlink", ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);
+			addLabelLineName(uplinkLabel			   , "bestPractice.header.attenuator.uplink", ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);
+			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
 			
 		}
 		return dataPanel;

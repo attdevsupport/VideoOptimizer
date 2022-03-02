@@ -86,18 +86,19 @@ public class VideoTrafficInferencer {
 		possibleAudioRequestMap = new TreeMap<>();
 		streamingVideoData = new StreamingVideoData(result.getTraceDirectory());
 		boolean flag = false;
+		File manifestFile;
 		
 		if (result.getTraceDirectory().equals(manifestFilePath)) {
 			CSIManifestAndState csiState = csiDataHelper.readData(manifestFilePath + System.getProperty("file.separator") + "CSI");
 			if (csiState.getAnalysisState().equals("Fail")) {
 				return streamingVideoData;
 			}
-			manifestFilePath = csiState.getManifestFileLocation();
+			manifestFile = csiDataHelper.generateManifestPath(manifestFilePath, csiState.getManifestFileName());
 		} else {
 			flag = true;
+			manifestFile = new File(manifestFilePath);
 		}
 		
-		File manifestFile = new File(manifestFilePath);
 		byte[] fileContent;
 		VideoManifest videoManifest = new VideoManifest();
 		List<Track> tracks = new ArrayList<>();
@@ -112,7 +113,7 @@ public class VideoTrafficInferencer {
 				ObjectMapper mapper = new ObjectMapper();
 				mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 				try {
-					videoManifest = mapper.readValue(new File(manifestFilePath), VideoManifest.class);
+					videoManifest = mapper.readValue(manifestFile, VideoManifest.class);
 				} catch (IOException ioe) {
 					LOGGER.error("Exception while parsing Manifest JSON for CSI", ioe);
 				}
@@ -194,7 +195,7 @@ public class VideoTrafficInferencer {
 		}
 		
 		if (flag) {
-			saveCSIManifestAndState(manifestFilePath);
+			saveCSIManifestAndState(manifestFile.toString());
 		}
 		
 		videoSegmentAnalyzer.process(result, streamingVideoData);
@@ -208,7 +209,6 @@ public class VideoTrafficInferencer {
 			if (manifestPath != null) {
 				CSIManifestAndState csiState = new CSIManifestAndState();
 				csiState.setAnalysisState(streamingVideoData.getVideoStreams().size() > 0 ? "Success" : "Fail");
-				csiState.setManifestFileLocation(manifestFilePath);
 				Path fileName = manifestPath.getFileName();
 				csiState.setManifestFileName(fileName != null ? fileName.toString() : "");
 				fileName = manifestPath.getParent();
@@ -422,7 +422,6 @@ public class VideoTrafficInferencer {
 		for (Session session : sessionList) {
 			List<HttpRequestResponseInfo> rriList = session.getRequestResponseInfo();
 			for (HttpRequestResponseInfo rrInfo : rriList) {
-				rrInfo.setSession(session);
 				if (rrInfo.getContentLength() > 0 && rrInfo.getDirection() == HttpDirection.RESPONSE) {
 					rrInfo.setKey(getReqInfoKey(rrInfo.getTimeStamp(), ++counter));
 					requestMap.put(rrInfo.getKey(), rrInfo);

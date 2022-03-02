@@ -29,9 +29,14 @@ import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.RRCState;
 import com.att.aro.core.packetanalysis.pojo.RrcStateRange;
+import com.att.aro.core.packetreader.pojo.IPPacket;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
+import com.att.aro.core.packetreader.pojo.TCPPacket;
+import com.att.aro.core.packetreader.pojo.UDPPacket;
+import com.att.aro.mvc.AROController;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.Getter;
 
 
@@ -56,6 +61,20 @@ public class TimeRangeAnalysis implements Serializable {
 	private double activeTime;
 	private double rrcEnergy;
 
+	@SuppressFBWarnings(justification="No bug", value="SE_BAD_FIELD")
+	private AROController controller;
+
+	@Getter
+	private boolean ipv4Present;
+	@Getter
+	private boolean ipv6Present;
+	@Getter
+	private boolean tcpPresent;
+	@Getter
+	private boolean udpPresent;
+	@Getter
+	private boolean dnsPresent;
+
 
 	/**
 	 * Constructor taking start time and end time of the time range, and performs analysis to populate remaining fields
@@ -70,26 +89,17 @@ public class TimeRangeAnalysis implements Serializable {
 	}
 
 	/**
-	 * Initializes an instance of the TimeRangeAnalysis class, using the specified start and 
-	 * end times, total number of bytes transferred, payload length, active state time, and RRC energy value. 
-	 * 
-	 * @param startTime The start of the time range (in seconds). 
-	 * @param endTime The end of the time range (in seconds). 
-	 * @param totalBytes The total bytes transferred, including all packet headers. 
-	 * @param payloadLen The length of the payload in bytes.
-	 * @param activeTime The total amount of high energy radio time. 
-	 * @param energy The amount of RRC energy used to deliver the payload.
+	 * Constructor taking start time and end time of the time range, and performs analysis to populate remaining fields after filtering
+	 * @param startTime
+	 * @param endTime
+	 * @param analysisData
+	 * @param controller
 	 */
-	public TimeRangeAnalysis(double startTime, double endTime, long totalBytes, long uplinkBytes, long downlinkBytes,
-			long payloadLen, double activeTime, double rrcEnergy) {
+	public TimeRangeAnalysis(double startTime, double endTime, PacketAnalyzerResult analysisData, AROController controller) {
 		this.startTime = startTime;
 		this.endTime = endTime;
-		this.totalBytes = totalBytes;
-		this.uplinkBytes = uplinkBytes;
-		this.downlinkBytes = downlinkBytes;
-		this.payloadLen = payloadLen;
-		this.activeTime = activeTime;
-		this.rrcEnergy = rrcEnergy;
+		this.controller = controller;
+		performTimeRangeAnalysis(analysisData);
 	}
 
 	/**
@@ -148,7 +158,7 @@ public class TimeRangeAnalysis implements Serializable {
 	 * @return The throughput value, in kilobits per second.
 	 */
 	public double getAverageThroughput() {
-		return (totalBytes * 8 / 1000) / (endTime - startTime);
+		return (totalBytes * 8.0 / 1000) / (endTime - startTime);
 	}
 	
 	/**
@@ -156,7 +166,7 @@ public class TimeRangeAnalysis implements Serializable {
 	 * @return The uplink throughput value, in kilobits per second.
 	 */
 	public double getAverageUplinkThroughput() {
-		return (uplinkBytes * 8 / 1000) / (endTime - startTime);
+		return (uplinkBytes * 8.0 / 1000) / (endTime - startTime);
 	}
 	
 	/**
@@ -164,9 +174,9 @@ public class TimeRangeAnalysis implements Serializable {
 	 * @return The downlink throughput value, in kilobits per second.
 	 */
 	public double getAverageDownlinkThroughput() {
-		return (downlinkBytes * 8 / 1000) / (endTime - startTime);
+		return (downlinkBytes * 8.0 / 1000) / (endTime - startTime);
 	}
-	
+
 
 	/**
 	 * Performs a TimeRangeAnalysis on the trace data.
@@ -175,12 +185,39 @@ public class TimeRangeAnalysis implements Serializable {
 	private void performTimeRangeAnalysis(PacketAnalyzerResult analysisData) {
 		if (analysisData != null) {
 			List<RrcStateRange> rrcCollection = analysisData.getStatemachine().getStaterangelist();
+
 			List<PacketInfo> packets = analysisData.getTraceresult().getAllpackets();
+			if (controller != null) {
+				PacketAnalyzerImpl packetAnalyzerImpl = (PacketAnalyzerImpl) (controller.getAROService().getAnalyzer());
+				packets = packetAnalyzerImpl.filterPackets(analysisData.getFilter(), packets);
+			}
+
 			Profile profile = analysisData.getProfile();
 			int packetNum = packets.size();
 
 			for (int i = 0; i < packetNum; i++) {
 				PacketInfo packetInfo = packets.get(i);
+				
+				if ((!ipv4Present || !ipv6Present) &&  packetInfo.getPacket() instanceof IPPacket) {
+					IPPacket p = (IPPacket) packetInfo.getPacket();
+					if(p.getIPVersion() == 4) {
+						ipv4Present = true;
+					} else if (p.getIPVersion() == 6) {
+						ipv6Present = true;
+					}
+				}
+
+				if (!tcpPresent && packetInfo.getPacket() instanceof TCPPacket) {
+					tcpPresent = true;
+				} else if ((!udpPresent || !dnsPresent) && packetInfo.getPacket() instanceof UDPPacket) {
+					UDPPacket p = (UDPPacket) packetInfo.getPacket();
+					udpPresent = true;
+
+					if (p.isDNSPacket()) {
+						dnsPresent = true;
+					}
+				}
+
 				if (packetInfo.getTimeStamp() >= startTime && packetInfo.getTimeStamp() <= endTime) {
 					payloadLen += packetInfo.getPayloadLen();
 					totalBytes += packetInfo.getLen();

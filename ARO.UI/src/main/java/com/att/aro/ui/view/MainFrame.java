@@ -70,6 +70,7 @@ import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.ErrorCodeEnum;
 import com.att.aro.core.pojo.VersionInfo;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
+import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.util.CrashHandler;
 import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.core.util.FFprobeConfirmationImpl;
@@ -83,6 +84,7 @@ import com.att.aro.ui.collection.AROCollectorSwingWorker;
 import com.att.aro.ui.commonui.ARODiagnosticsOverviewRouteImpl;
 import com.att.aro.ui.commonui.AROSwingWorker;
 import com.att.aro.ui.commonui.AROUIManager;
+import com.att.aro.ui.commonui.ApplicationRestartDialog;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.GUIPreferences;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
@@ -167,7 +169,11 @@ public class MainFrame implements SharedAttributesProcesses {
 	@Getter
 	private AROSwingWorker<Void, Void> aroSwingWorker;
 	
+	@Getter @Setter
 	private Hashtable<String,Object> previousOptions;
+
+	@Getter @Setter
+	private MetaDataModel metaDataModel;
 	
 	@Setter
 	@Getter
@@ -219,48 +225,62 @@ public class MainFrame implements SharedAttributesProcesses {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					window = new MainFrame();
-					window.frmApplicationResourceOptimizer.setVisible(true);
-					setLocationMap();
-					openSessionTimeStamp = new Date();   
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				final SplashScreen splash = new SplashScreen();
-				splash.setVisible(true);
-				splash.setAlwaysOnTop(true);
-				new SwingWorker<Object, Object>() {
-					@Override
-					protected Object doInBackground() {
-						try {
-							Thread.sleep(2000);
-						} catch (InterruptedException e) {
+					try {
+						window = new MainFrame();
+						if (args.length >= 1) {
+							String[] errorArg = args[0].split("=");
+							if ("error".equals(errorArg[0]) && Boolean.TRUE.equals(Boolean.valueOf(errorArg[1]))) {
+								new ApplicationRestartDialog(window, BUNDLE.getString("error.outofmemory.message"), BUNDLE.getString("error.outofmemory.title")).setVisible(true);
+							}
 						}
-						return null;
-					}
-					@Override
-					protected void done() {
-						splash.dispose();
-					}
-				}.execute();
 
-				new Thread(() -> {
-					if (window.ffmpegConfirmationImpl.checkFFmpegExistance() == false) {
-						SwingUtilities.invokeLater(() -> window.launchDialog(new FFmpegConfirmationDialog()));
+						window.frmApplicationResourceOptimizer.setVisible(true);
+						setLocationMap();
+						openSessionTimeStamp = new Date();   
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
-				},"ffmpeg check").start();
-				
-				new Thread(() -> {
-					if (window.ffprobeConfirmationImpl.checkFFprobeExistance() == false) {
-						SwingUtilities.invokeLater(() -> window.launchDialog(new FFprobeConfirmationDialog()));
-					}
-				},"ffprobe check").start();
-				
-				new Thread(() -> {
-					if (Util.isMacOS() && !window.pcapConfirmationImpl.checkPcapVersion()) {
-						SwingUtilities.invokeLater(() -> window.launchDialog(new PcapConfirmationDialog()));
-					}
-				},"pcapConfirmation").start();
+					final SplashScreen splash = new SplashScreen();
+					splash.setVisible(true);
+					splash.setAlwaysOnTop(true);
+					new SwingWorker<Object, Object>() {
+						@Override
+						protected Object doInBackground() {
+							try {
+								Thread.sleep(2000);
+							} catch (InterruptedException e) {
+							}
+							return null;
+						}
+						@Override
+						protected void done() {
+							splash.dispose();
+						}
+					}.execute();
+
+					new Thread(() -> {
+						if (window.ffmpegConfirmationImpl.checkFFmpegExistance() == false) {
+							SwingUtilities.invokeLater(() -> window.launchDialog(new FFmpegConfirmationDialog()));
+						}
+					},"ffmpeg check").start();
+
+					new Thread(() -> {
+						if (window.ffprobeConfirmationImpl.checkFFprobeExistance() == false) {
+							SwingUtilities.invokeLater(() -> window.launchDialog(new FFprobeConfirmationDialog()));
+						}
+					},"ffprobe check").start();
+
+					new Thread(() -> {
+						if (Util.isMacOS() && !window.pcapConfirmationImpl.checkPcapVersion()) {
+							SwingUtilities.invokeLater(() -> window.launchDialog(new PcapConfirmationDialog()));
+						}
+					},"pcapConfirmation").start();
+				} catch (OutOfMemoryError error) {
+	                LOG.error("Application exceeded the system memory", error);
+	                Util.restart(true);
+				} catch (Exception e) {
+	                LOG.error("Something went wrong while application execution", e);
+				}
 			}
 		});
 	}
@@ -458,6 +478,11 @@ public class MainFrame implements SharedAttributesProcesses {
 	}
 
 
+	/**
+	 * Modify the path of the analyzed trace file/folder
+	 * @param path: file path of the trace file/folder
+	 * @param timeRange, is optional and as such, should be omitted, when simply opening a trace without a time-range
+	 */
 	@Override
 	public void updateTracePath(File path, TimeRange... timeRange) {
 		if (path != null) {
@@ -564,16 +589,23 @@ public class MainFrame implements SharedAttributesProcesses {
 		if (aroController != null) {
 			AROTraceData traceData = aroController.getTheModel();
 			if (traceData.isSuccess()) {
-				modelObserver.refreshModel(traceData);
-				this.profile = traceData.getAnalyzerResult().getProfile();
-				if (traceData.getAnalyzerResult().getTraceresult().getTraceResultType() == TraceResultType.TRACE_DIRECTORY) {
-					TraceDirectoryResult traceResults = (TraceDirectoryResult) traceData.getAnalyzerResult().getTraceresult();
-					(new Thread(() -> sendGATraceParams(traceResults))).start();
-					Util.updateRecentItem(traceResults.getTraceDirectory());
-					frmApplicationResourceOptimizer.setJMenuBar(mainMenu.getAROMainFileMenu());
-					frmApplicationResourceOptimizer.getJMenuBar().updateUI();
+				try {
+					modelObserver.refreshModel(traceData);
+					this.profile = traceData.getAnalyzerResult().getProfile();
+					if (traceData.getAnalyzerResult().getTraceresult().getTraceResultType() == TraceResultType.TRACE_DIRECTORY) {
+						TraceDirectoryResult traceResults = (TraceDirectoryResult) traceData.getAnalyzerResult().getTraceresult();
+						(new Thread(() -> sendGATraceParams(traceResults))).start();
+						Util.updateRecentItem(traceResults.getTraceDirectory());
+						frmApplicationResourceOptimizer.setJMenuBar(mainMenu.getAROMainFileMenu());
+						frmApplicationResourceOptimizer.getJMenuBar().updateUI();
+					}
+				} catch (OutOfMemoryError err) {
+					LOG.error("Out of memory exception after a successful trace analysis", err);
+					Util.restart(true);
 				}
 			} else if (traceData.getError() != null) {
+				LOG.info("Error code details: " + traceData.getError());
+
 				if (isUpdateRequired(traceData.getError().getCode())) {
 					Util.updateRecentItem(tracePath);
 				}
@@ -588,7 +620,12 @@ public class MainFrame implements SharedAttributesProcesses {
 						LOG.info("Thread sleep exception");
 					}
 				}
-				MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(), traceData.getError().getDescription());
+
+				if (ErrorCodeEnum.OUT_OF_MEMEORY.getCode() == traceData.getError().getCode()) {
+					Util.restart(true);
+				} else {
+					MessageDialogFactory.getInstance().showErrorDialog(window.getJFrame(), traceData.getError().getDescription());
+				}
 			} else {
 				showErrorMessage("menu.error.unknownfileformat");
 			}
@@ -665,6 +702,17 @@ public class MainFrame implements SharedAttributesProcesses {
 		return profile;
 	}
 
+	/**
+	 * property "reportPath" 
+	 * 
+	 * property "profile" - Apply a profile to already open trace
+	 * 
+	 * property "filter" - Apply a filter to already open trace
+	 * 
+	 * property "tracePath" - open a trace
+	 * 	oldValue - previous trace path or TimeRange to apply to the trace to be opened
+	 *  newValue - is a new tracefolder path
+	 */
 	public void notifyPropertyChangeListeners(String property, Object oldValue, Object newValue) {
 		if (property.equals("profile")) {
 			new AROSwingWorker<Void, Void>(frmApplicationResourceOptimizer, propertyChangeListeners, property, oldValue,
@@ -687,8 +735,13 @@ public class MainFrame implements SharedAttributesProcesses {
 	}
 
 	@Override
-	public void startCollector(IAroDevice device, String traceFolderName, Hashtable<String, Object> extraParams) {
-		previousOptions = extraParams;
+	public void startCollector(IAroDevice device, String traceFolderName, Hashtable<String, Object> extraParams, MetaDataModel metaDataModel) {
+		previousOptions = new Hashtable<String, Object>();
+		previousOptions.putAll(extraParams); // save for next Start Collector dialog
+		// remove items before launch collection
+		extraParams.remove("DIALOG_SIZE");
+		extraParams.remove("MetaDataExpanded");
+		this.metaDataModel = metaDataModel;
 		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 1, "startCollector",
 				device, traceFolderName, extraParams).execute();
 	}
@@ -805,7 +858,8 @@ public class MainFrame implements SharedAttributesProcesses {
 			LOG.info("stopDialog");
 			String traceFolder = aroController.getTraceFolderPath();
 			int seconds = (int) (aroController.getTraceDuration()/1000);
-			boolean approveOpenTrace = MessageDialogFactory.getInstance().showTraceSummary(frmApplicationResourceOptimizer, traceFolder, !aroController.getVideoOption().equals(VideoOption.NONE), Util.formatHHMMSS(seconds));
+			boolean approveOpenTrace = MessageDialogFactory.getInstance().showTraceSummary(
+							frmApplicationResourceOptimizer, traceFolder, metaDataModel, !aroController.getVideoOption().equals(VideoOption.NONE), Util.formatHHMMSS(seconds));
 			if (approveOpenTrace){
 				updateTracePath(new File(aroController.getTraceFolderPath()));
 			}
@@ -901,25 +955,10 @@ public class MainFrame implements SharedAttributesProcesses {
 		return videoTab;
 	}
 
-	public void postToAmvots(AbstractTraceResult traceResult, VideoStream videoStream) {
-		if (TraceResultType.TRACE_DIRECTORY.equals(traceResult.getTraceResultType())) {
-			new Thread(() -> {
-				SwingUtilities.invokeLater(() -> window.launchDialog(new VideoPostDialog(traceResult, videoStream)));
-			}).start();
-		}
-	}
 	
 	@Override
 	public String[] getApplicationsList(String id) {
 		return aroController.getApplicationsList(id);
-	}
-
-	public Hashtable<String,Object> getPreviousOptions() {
-		return previousOptions;
-	}
-
-	public void setPreviousOptions(Hashtable<String,Object> previousOptions) {
-		this.previousOptions = previousOptions;
 	}
 
 }

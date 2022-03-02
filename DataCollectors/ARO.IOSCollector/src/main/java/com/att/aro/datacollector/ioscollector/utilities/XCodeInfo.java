@@ -27,10 +27,13 @@ import lombok.Data;
 @Data
 public class XCodeInfo {
 
+	private static final Logger LOG = LogManager.getLogger(XCodeInfo.class);
+
 	ExternalProcessRunner runner = null;
     private boolean xcodeCLTError = false;
 	private String path = null;
-	private static final Logger LOG = LogManager.getLogger(XCodeInfo.class);
+	private String xcodeVersion;
+
 
 	public XCodeInfo() {
 		runner = new ExternalProcessRunner();
@@ -126,7 +129,11 @@ public class XCodeInfo {
 			String[] version = xCodeVersion.split("\\r?\\n");
 			String xCode = version[0];
 			String versionOfxCode = xCode.substring(xCode.indexOf(" "));
-			LOG.info(" Version Code : " + versionOfxCode);
+			if (versionOfxCode != null) {
+				xcodeVersion  = versionOfxCode.trim();
+			}
+
+			LOG.info(" Version Code : " + xcodeVersion);
 			int versionNumber = 0;
 			try {
 				versionNumber = Integer.parseInt(versionOfxCode.substring(0, versionOfxCode.indexOf(".")).trim());

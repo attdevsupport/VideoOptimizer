@@ -44,7 +44,7 @@ public class SegmentTableModel extends AbstractTableModel {
 	public static final String TCP_STATE = ResourceBundleHelper.getMessageString("video.tab.segment.TCPState");
 	public static final String TRACK = ResourceBundleHelper.getMessageString("video.tab.segment.Track");
 	public static final String CHANNELS = ResourceBundleHelper.getMessageString("video.tab.segment.Channels");
-	public static final String STARTUP_DELAY = ResourceBundleHelper.getMessageString("video.userevent.dlStartDelay");
+	public static final String DOWNLOAD_DELAY = ResourceBundleHelper.getMessageString("video.userevent.dlStartDelay");
 	public static final String PLAYBACK_DELAY= ResourceBundleHelper.getMessageString("video.userevent.playBackDelay");
 	
 	List<VideoEvent> videoEventList;
@@ -65,7 +65,7 @@ public class SegmentTableModel extends AbstractTableModel {
 		STALL_TIME,
 		TCP_SESSION,
 		TCP_STATE,
-		STARTUP_DELAY, 
+		DOWNLOAD_DELAY, 
 		PLAYBACK_DELAY,
 		SESSION_LINK
 	};
@@ -98,11 +98,12 @@ public class SegmentTableModel extends AbstractTableModel {
             TOTAL_BYTES.equals(columnNames[columnIndex])      ? Integer.valueOf(String.format("%.0f", videoSegment.getTotalBytes())) :
             DURATION.equals(columnNames[columnIndex])         ? Double.valueOf(String.format("%.6f", videoSegment.getDuration())) :
             TCP_SESSION.equals(columnNames[columnIndex])      ? Double.valueOf(String.format("%06.3f", videoSegment.getSession().getSessionStartTime())) :
+            	
             TCP_STATE.equals(columnNames[columnIndex])        ? findTermination(videoSegment) :
             SESSION_LINK.equals(columnNames[columnIndex])     ? videoSegment.getSession() :
             CHANNELS.equals(columnNames[columnIndex])         ? videoSegment.getChannels() == null ? "NA " : videoSegment.getChannels() :
-            STARTUP_DELAY.equals(columnNames[columnIndex])    ? (playRequestedTime != 0.0 ? (String.format("%.3f",(videoSegment.getDLTimeStamp() - playRequestedTime))) : "-") :
-            PLAYBACK_DELAY.equals(columnNames[columnIndex])   ? (playRequestedTime != 0.0 ? (String.format("%.3f", (videoSegment.getPlayTime() - playRequestedTime))): "-") :
+            DOWNLOAD_DELAY.equals(columnNames[columnIndex])    ? (playRequestedTime != 0.0 && videoSegment.isNormalSegment() && (videoSegment.getDLTimeStamp() - playRequestedTime) > 0 ? (String.format("%.3f", (videoSegment.getDLTimeStamp() - playRequestedTime))) : "-") :
+            PLAYBACK_DELAY.equals(columnNames[columnIndex])   ? (playRequestedTime != 0.0 && videoSegment.isNormalSegment() && (videoSegment.getPlayTime() - playRequestedTime) > 0 ? (String.format("%.3f", (videoSegment.getPlayTime() - playRequestedTime))): "-") :
             ""
         );
 	}
@@ -112,7 +113,7 @@ public class SegmentTableModel extends AbstractTableModel {
 		return videoSegment.getBitrate();
 	}
 
-	SegmentTableModel(Collection<VideoEvent> videoEventList, double playRequestedTime) {
+	protected SegmentTableModel(Collection<VideoEvent> videoEventList, double playRequestedTime) {
 		this.videoEventList = new ArrayList<>();
 		for (VideoEvent event : videoEventList) {
 			this.videoEventList.add(event);
@@ -138,6 +139,9 @@ public class SegmentTableModel extends AbstractTableModel {
 			case "AR": case "R": value = "RST"; break;
 			default: break;
 			}
+		}
+		if (videoSegment.isFailedRequest()) {
+			value = "FAILED";
 		}
 		return value;
 	}

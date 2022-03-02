@@ -25,7 +25,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
@@ -42,6 +44,7 @@ import org.springframework.beans.factory.annotation.Value;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
+import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.StringParse;
@@ -62,6 +65,7 @@ import com.att.aro.core.videoanalysis.pojo.VideoFormat;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.core.videoanalysis.videoframe.FFmpegRunner;
 
+import lombok.Getter;
 import lombok.NonNull;
 
 public class VideoStreamConstructor {
@@ -98,6 +102,9 @@ public class VideoStreamConstructor {
 	// Used for tracking segments by request object name to avoid repeated analysis
 	// Inner map is mapped from segment's byte range as key and duration as value
 	private Map<ChildManifest, Map<String, Double>> segmentInformationByFile = new HashMap<>();
+	
+	@Getter
+	private SortedMap<Double, HttpRequestResponseInfo> failedSegmentRequests = new TreeMap<>();
 
 	public VideoStreamConstructor() {
 		init();
@@ -142,12 +149,15 @@ public class VideoStreamConstructor {
 		}
 		return objName;
 	}
-
+	private enum StreamContentType{
+		VIDEO,
+		MANIFEST
+	}
 	public void extractVideo(StreamingVideoData streamingVideoData, HttpRequestResponseInfo request, Double timeStamp) {
 		CRC32 crc32 = new CRC32();
 		ChildManifest childManifest = null;
 
-		byte[] content = extractContent(request);
+		byte[] content = extractContent(request, StreamContentType.VIDEO);
 		if (content == null) {
 			return;
 		}
@@ -157,48 +167,11 @@ public class VideoStreamConstructor {
 		
 		this.streamingVideoData = streamingVideoData;
 	
-		if ((manifestCollection = manifestBuilder.findManifest(request)) == null) {
-			
-			if (manifestBuilder instanceof ManifestBuilderHLS) {
-				if (manifestBuilderDASH.getManifestCollection() != null && (manifestCollection = manifestBuilderDASH.findManifest(request)) != null) {
-					manifestBuilder = manifestBuilderDASH;
-				}
-			} else if (manifestBuilder instanceof ManifestBuilderDASH) {
-				if (manifestBuilderHLS.getManifestCollection() != null && (manifestCollection = manifestBuilderHLS.findManifest(request)) != null) {
-					manifestBuilder = manifestBuilderHLS;
-				}
-			}
-			if (manifestCollection == null) {
-				LOG.debug("manifestCollection is null :" + request.getObjUri());
-				extractedSaveUnhandledContent(streamingVideoData, request, content);
-				return;
-			}
-		}
-
-		if ((childManifest = locateChildManifestAndSegmentInfo(request, content, timeStamp, manifestCollection)) == null) {
-			LOG.debug("ChildManifest wasn't found for segment request:" + request.getObjUri());
-			extractedSaveUnhandledContent(streamingVideoData, request, content);	
+		childManifest = matchSegment(streamingVideoData, request, timeStamp, content);
+		if (childManifest == null) {
 			return;
 		}
 		
-		if ((videoStream = streamingVideoData.getVideoStream(manifestCollection.getManifest().getRequestTime())) == null) {
-			videoStream = new VideoStream();
-			videoStream.setManifest(manifestCollection.getManifest());
-			streamingVideoData.addVideoStream(manifestCollection.getManifest().getRequestTime(), videoStream);
-		}
-
-		if (segmentInfo == null) {
-			LOG.debug("segmentInfo is null :" + request.getObjUri());
-			extractedSaveUnhandledContent(streamingVideoData, request, content);			
-			return;
-		}
-
-		if (segmentInfo.getQuality().equals("0") && manifestCollection.getManifest().isVideoTypeFamily(VideoType.DASH)) {
-			LOG.debug("Found DASH Track 0, determine what happened and if it is a problem :" + request.getObjNameWithoutParams());
-			extractedSaveUnhandledContent(streamingVideoData, request, content);	
-			return;
-		}
-
 		String name = manifestBuilder.buildSegmentName(request, extractExtensionFromRequest(request));
 
 		crc32.update(content);
@@ -241,14 +214,70 @@ public class VideoStreamConstructor {
 		videoEvent.isDefaultThumbnail();
 	}
 
-	public void extractedSaveUnhandledContent(StreamingVideoData streamingVideoData, HttpRequestResponseInfo request, byte[] content) {
-		File unhandledPath = filemanager.createFile(streamingVideoData.getVideoPath(), "_Unhandled_segments");
-		if (!unhandledPath.exists()) {
-			filemanager.mkDir(unhandledPath);
+	/** <pre>
+	 * Matches segment request to find ManifestCollection, ChilldManifest and SegmentInfo.
+	 * If anything fails then failed match is saved into "_Unhandled_segments" folder.
+	 * 
+	 * @param streamingVideoData
+	 * @param request
+	 * @param timeStamp
+	 * @param content
+	 * @return
+	 */
+	private ChildManifest matchSegment(StreamingVideoData streamingVideoData, HttpRequestResponseInfo request,
+			Double timeStamp, byte[] content) {
+
+		if ((manifestCollection = matchManifest(request, content)) != null
+			&& (childManifest = locateChildManifestAndSegmentInfo(request, content, timeStamp, manifestCollection)) != null
+			&& segmentInfo != null) {
+
+			if ((videoStream = streamingVideoData.getVideoStream(manifestCollection.getManifest().getRequestTime())) == null) {
+				videoStream = new VideoStream();
+				videoStream.setManifest(manifestCollection.getManifest());
+				streamingVideoData.addVideoStream(manifestCollection.getManifest().getRequestTime(), videoStream);
+			}
+			
+		} else {
+			LOG.debug("failed to match request to a segment :" + request.getObjUri());
+			extractedSaveUnhandledContent(streamingVideoData, request, content);
+			return null;
 		}
-		File fullPathName = filemanager.createFile(unhandledPath.toString(),
-				String.format("%09.0f_%s", request.getAssocReqResp().getLastPacketTimeStamp() * 1000, request.getFileName()));
-		savePayload(content, fullPathName.toString());
+		return childManifest;
+	}
+
+	private ManifestCollection matchManifest(HttpRequestResponseInfo request, byte[] content) {
+		if ((manifestCollection = manifestBuilder.findManifest(request)) == null) {
+
+			if (manifestBuilder instanceof ManifestBuilderHLS) {
+				if (manifestBuilderDASH.getManifestCollection() != null
+						&& (manifestCollection = manifestBuilderDASH.findManifest(request)) != null) {
+					manifestBuilder = manifestBuilderDASH;
+				}
+			} else if (manifestBuilder instanceof ManifestBuilderDASH) {
+				if (manifestBuilderHLS.getManifestCollection() != null
+						&& (manifestCollection = manifestBuilderHLS.findManifest(request)) != null) {
+					manifestBuilder = manifestBuilderHLS;
+				}
+			}
+		}
+		return manifestCollection;
+	}
+
+	public void extractedSaveUnhandledContent(StreamingVideoData streamingVideoData, HttpRequestResponseInfo request, byte[] content) {
+		if (content != null) {
+			File unhandledPath = filemanager.createFile(streamingVideoData.getVideoPath(), "_Unhandled_segments");
+			if (!unhandledPath.exists()) {
+				filemanager.mkDir(unhandledPath);
+			}
+			File fullPathName = filemanager.createFile(unhandledPath.toString(), String.format("%09.0f_%s",
+					request.getAssocReqResp().getLastPacketTimeStamp() * 1000, request.getFileName()));
+			savePayload(content, fullPathName.toString());
+
+			LOG.warn(String.format("Failed to locate Segment data for %s, saved at: %s",
+					request.getObjNameWithoutParams(), fullPathName.toString()));
+		} else {
+			LOG.warn("Failed to locate Segment data for " + request);
+		}
 	}
 
 	/**
@@ -286,7 +315,7 @@ public class VideoStreamConstructor {
 			}
 		}
 		return srcString;
-	}
+	}	
 
 	public String buildSegmentFullPathName(StreamingVideoData streamingVideoData, HttpRequestResponseInfo request) {
 		String fileName = request.getFileName();
@@ -384,7 +413,9 @@ public class VideoStreamConstructor {
     			if (brKey != null) {
     			    // If Segment list is empty, it is possible that the manifest is part of standard dash implementation.
     			    // As part of standard dash implementation, we assume that the segment information exists in sidx box in the fragmented mp4 received in the response of the request.
-    		        populateSegmentInformation(request, content, childManifest);
+					if (content != null) {
+						populateSegmentInformation(request, content, childManifest);
+					}
     
     				if ((segmentInfo = childManifest.getSegmentInfoTrie().get(brKey.toLowerCase())) == null) {
     					segmentInfo = childManifest.getSegmentInfoTrie().get(brKey.toUpperCase());
@@ -579,7 +610,7 @@ public class VideoStreamConstructor {
 		LOG.debug("\nHLS request:\n" + request.getObjUri());
 		this.streamingVideoData = streamingVideoData;
 
-		byte[] content = extractContent(request);
+		byte[] content = extractContent(request, StreamContentType.MANIFEST);
 		if (content == null) {
 			return null;
 		}
@@ -693,8 +724,8 @@ public class VideoStreamConstructor {
 
 	}
 
-	private byte[] extractContent(HttpRequestResponseInfo request) {
-		LOG.debug(String.format(" %d: %s",request.getFirstDataPacket().getPacketId(), request.getFileName()));
+	private byte[] extractContent(HttpRequestResponseInfo request, StreamContentType streamType) {
+		LOG.debug(String.format(" %d: %s", request.getFirstDataPacket().getPacketId(), request.getFileName()));
 		byte[] content = null;
 		try {
 			content = reqhelper.getContent(request.getAssocReqResp(), request.getSession());
@@ -702,22 +733,71 @@ public class VideoStreamConstructor {
 				content = null;
 			}
 		} catch (Exception e) {
-			LOG.error(String.format("Download FAILED :%s :%s", request.getObjUri(), e.getMessage()));
+			request.getObjUri();
+			String message = e.getMessage();
+			LOG.debug(String.format("Download FAILED :%s :%s", request.getObjUri(), message));
 			content = null;
 		}
 
 		if (content == null) {
 			addFailedRequest(request);
-		} else {
-			streamingVideoData.addRequest(request);
+			if (streamType.equals(StreamContentType.VIDEO)) {
+				failedSegmentRequests.put(request.getTimeStamp(), request);
+			} else {
+
+			}
 		}
+		streamingVideoData.addRequest(request);
+
 		return content;
 	}
 
 	public void addFailedRequest(HttpRequestResponseInfo request) {
+		
 		streamingVideoData.addFailedRequestMap(request);
 	}
 
+	public void processFailures() {
+		double sumDelivered = 0;
+		double sumExpected = 0;
+		for (HttpRequestResponseInfo request : failedSegmentRequests.values()) {
+			// Guarantee a request, not a response
+			request = (request.getDirection() == HttpDirection.RESPONSE)
+					? request.getAssocReqResp()
+					: request;
+			HttpRequestResponseInfo response = request.getAssocReqResp();
+			
+			sumDelivered += response.getContentLengthDuringFail();
+			sumExpected  += response.getContentLength();
+
+			if ((childManifest = matchSegment(streamingVideoData, request, request.getTimeStamp(), null)) != null) {
+				VideoEvent videoEvent = new VideoEvent(
+						null
+						, manifestCollection.getManifest()
+						, segmentInfo
+						, childManifest
+						, (int) response.getContentLengthDuringFail()
+						, response
+						, 0L
+						);
+
+				videoEvent.setFailedRequest(true);
+				videoStream.addVideoEvent(videoEvent);
+				LOG.debug("Failed segment added to videStream: " + videoEvent);
+
+			} else {
+				// logging a failed segment that could not be matched with a VideoStream
+				LOG.warn(String.format("Unmatched - failed segment: %s delivered %.0f of %.0f"
+						, request.getObjNameWithoutParams()
+						, sumDelivered
+						, sumExpected
+						));
+			}
+		}
+		
+		LOG.info(String.format("Of the %d failed video downloads, total percentage received was: %.2f", failedSegmentRequests.size(), (sumDelivered / sumExpected) * 100) + "%");
+	}
+	
 	/**
 	 * <pre>Extract a DASH manifest from traffic data
 	 * 
@@ -729,7 +809,7 @@ public class VideoStreamConstructor {
 		LOG.debug("extractManifestDash - request :" + request);
 		manifestBuilder = manifestBuilderDASH;
 		this.streamingVideoData = streamingVideoData;
-		byte[] content = extractContent(request);
+		byte[] content = extractContent(request, StreamContentType.MANIFEST);
 		if (content == null) {
 			return null;
 		}

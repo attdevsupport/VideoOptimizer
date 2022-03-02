@@ -39,13 +39,13 @@ public class TimeRange implements Serializable {
 		,FULL
 	}
 
-	String title;
-	TimeRangeType timeRangeType = TimeRangeType.DEFAULT;
-	Double beginTime;
-	Double endTime;
+	private String title;
+	private TimeRangeType timeRangeType = TimeRangeType.DEFAULT;
+	private Double beginTime;
+	private Double endTime;
 	
 	@JsonIgnoreProperties(value = { "path" })
-	String path;
+	private String path;
 	 
 	
 	/**

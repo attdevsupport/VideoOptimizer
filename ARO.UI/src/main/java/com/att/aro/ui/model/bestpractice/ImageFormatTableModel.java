@@ -137,7 +137,7 @@ public class ImageFormatTableModel extends DataTableModel<ImageMdataEntry> {
 	 */
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		ImageFormatTableModel.LOGGER.debug(format("getColumnClass, idx: {0}", columnIndex));
+		ImageFormatTableModel.LOGGER.trace(format("getColumnClass, idx: {0}", columnIndex));
 		switch (columnIndex) {
 		case COL_1:
 			return Double.class;

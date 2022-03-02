@@ -46,6 +46,7 @@ import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
+import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.impl.IOSCollectorImpl;
@@ -63,7 +64,7 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
 public class ARODataCollectorMenu implements ActionListener , MenuListener{
 
 	private static final Logger LOG = LogManager.getLogger(ARODataCollectorMenu.class.getName());
-	private static final String SharedNetIF= "bridge100";
+	private static final String SharedNetIF = "bridge100";
 
 	private IFileManager fileManager = new FileManagerImpl();
 
@@ -76,11 +77,12 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 	private String menuItemDatacollectorStop = ResourceBundleHelper.getMessageString("menu.datacollector.stop");
 	
 	private Hashtable<String,Object> previousOptions;
+	private MetaDataModel metaDataModel;
 
 	/**
 	 * @wbp.parser.entryPoint
 	 */
-	public ARODataCollectorMenu(SharedAttributesProcesses parent){
+	public ARODataCollectorMenu(SharedAttributesProcesses parent) {
 		super();
 		this.parent = parent;
 	}
@@ -90,7 +92,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 	 */
 	public JMenu getMenu() {
 		
-		if(dataCollectorMenu == null){
+		if (dataCollectorMenu == null) {
 			dataCollectorMenu = new JMenu(ResourceBundleHelper.getMessageString("menu.datacollector"));
 			dataCollectorMenu.setMnemonic(KeyEvent.VK_UNDEFINED);
 			
@@ -104,35 +106,35 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		return dataCollectorMenu;
 	}
 
-	private JMenuItem getJdataCollectorStart(){
+	private JMenuItem getJdataCollectorStart() {
 		dataCollectorStartMenuItem = getMenuItemInstance();
 		dataCollectorStartMenuItem.setText(menuItemDatacollectorStart);
 		dataCollectorStartMenuItem.addActionListener(this);
 		return dataCollectorStartMenuItem;
 	}
 	
-	private JMenuItem getJdataCollectorStop(){
+	private JMenuItem getJdataCollectorStop() {
 		dataCollectorStopMenuItem = getMenuItemInstance();
 		dataCollectorStopMenuItem.setText(menuItemDatacollectorStop);
 		dataCollectorStopMenuItem.addActionListener(this);
 		return dataCollectorStopMenuItem;
 	}
 	
-	private JMenuItem getMenuItemInstance(){
+	private JMenuItem getMenuItemInstance() {
 		return new JMenuItem();
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent aEvent) {
 		
-		if(aEvent.getActionCommand().equalsIgnoreCase(menuItemDatacollectorStart)){
+		if (aEvent.getActionCommand().equalsIgnoreCase(menuItemDatacollectorStart)) {
 			
 			Object event = aEvent.getSource();
-			if (event instanceof JMenuItem){
+			if (event instanceof JMenuItem) {
 
 				List<IDataCollector> collectors = parent.getAvailableCollectors();
 				
-				if (collectors == null || collectors.isEmpty()){
+				if (collectors == null || collectors.isEmpty()) {
 					MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame()
 							, ResourceBundleHelper.getMessageString("collector.nocollectors")
 							, ResourceBundleHelper.getMessageString("menu.error.title")
@@ -147,8 +149,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 				
 				IAroDevices aroDevices = parent.getAroDevices();
 				IAroDevice device = null;
-			
-				
+							
 				if (aroDevices.size() != 0) {
 					device = chooseDevice(aroDevices, collectors);
 				} else {
@@ -191,13 +192,15 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		String traceFolderName = "";
 		String profileLocation = "";
 		
-		if (((MainFrame) parent).getPreviousOptions()!=null) {
+		if (((MainFrame) parent).getPreviousOptions() != null) {
 			previousOptions = ((MainFrame) parent).getPreviousOptions();
 		}
 		
-		DataCollectorSelectNStartDialog dialog = new DataCollectorSelectNStartDialog(((MainFrame) parent).getJFrame(), parent, deviceList, traceFolderName, collectors, true, previousOptions);
+		metaDataModel = new MetaDataModel();
+		
+		DataCollectorSelectNStartDialog dialog = new DataCollectorSelectNStartDialog(((MainFrame) parent).getJFrame(), parent, deviceList, traceFolderName, collectors, true, previousOptions, metaDataModel);
 
-		if (dialog.getResponse()){
+		if (dialog.getResponse()) {
 			
 			device = dialog.getDevice();
 			traceFolderName = dialog.getTraceFolder();
@@ -218,7 +221,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			if (device.isPlatform(IAroDevice.Platform.iOS)) {
 				IDataCollector iosCollector = findIOSCollector(collectors);
 				
-				if((throttleDLEnable||throttleULEnable) && !NetworkUtil.isNetworkUp(SharedNetIF)) {
+				if ((throttleDLEnable || throttleULEnable) && !NetworkUtil.isNetworkUp(SharedNetIF)) {
  					 MessageDialogFactory.getInstance().showInformationDialog(
 								((MainFrame) parent).getJFrame(),
 								ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.attenuation.finalwarning")	,							
@@ -228,14 +231,14 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 				
 				if (!checkSetSuPassword(iosCollector)) {
 					return null;
-				}else{
+				} else {
 					LOG.info("pw validated");
-				}				
+				}			
 			}
 
 			String traceFolderPath = (device.getPlatform().equals(IAroDevice.Platform.Android))
-					?Util.getAROTraceDirAndroid() + System.getProperty("file.separator") + traceFolderName
-					:Util.getAROTraceDirIOS()     + System.getProperty("file.separator") + traceFolderName;
+					? Util.getAROTraceDirAndroid() + System.getProperty("file.separator") + traceFolderName
+					: Util.getAROTraceDirIOS() + System.getProperty("file.separator") + traceFolderName;
 
 			String currentPath = ((MainFrame) parent).getTracePath();
 
@@ -269,7 +272,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 							
 							}
 						}
-
 					}
 					fileManager.deleteFolderContents(traceFolderPath);
 				} else {
@@ -277,16 +279,15 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 				}
 			}
 
- 			Hashtable<String,Object> extras = new Hashtable<String,Object>();
- 			extras.put("device", device);
-			extras.put("video_option", dialog.getRecordVideoOption());
-			extras.put("videoOrientation", dialog.getVideoOrientation());
-			extras.put("AttenuatorModel", dialog.getDeviceOptionPanel().getAttenuatorModel());
-			extras.put("TraceFolderName", traceFolderName);
-			extras.put("assignPermission", ((MainFrame) parent).isAutoAssignPermissions());
-			
-			((MainFrame) parent).startCollector(device, traceFolderName, extras);
-			
+ 			Hashtable<String, Object> extras = prepareStartCollectorExtras(device, traceFolderName, dialog);
+
+			updateMetaData(device, traceFolderName, dialog);
+			extras.put("DIALOG_SIZE", dialog.getBaseSize());
+			if (dialog.getDeviceOptionPanel().getLabeledExpandedOptionFields().isVisible()) {
+				extras.put("MetaDataExpanded", true);
+			}
+			((MainFrame) parent).startCollector(device, traceFolderName, extras, metaDataModel);
+
 		} else {
 			traceFolderName = null;
 		}
@@ -294,6 +295,45 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		dialog.dispose();
 
 		return device;
+	}
+
+	private Hashtable<String, Object> prepareStartCollectorExtras(IAroDevice device, String traceFolderName, DataCollectorSelectNStartDialog dialog) {
+		Hashtable<String,Object> extras = new Hashtable<String,Object>();
+		extras.put("device"					, device);                                                           
+		extras.put("video_option"			, dialog.getRecordVideoOption());
+		extras.put("videoOrientation"		, dialog.getVideoOrientation());                                     
+		extras.put("AttenuatorModel"		, dialog.getDeviceOptionPanel().getAttenuatorModel());               
+		extras.put("TraceFolderName"		, traceFolderName);
+		                                                                                                         
+		if (dialog.getDeviceOptionPanel().isExpandedTraceSettings()) {                                           
+			if (Platform.iOS != device.getPlatform()) {                                                             
+				extras.put("selectedAppName", dialog.getDeviceOptionPanel().getAppSelected());                   
+			}                                                                                                    
+			extras.put("traceDesc"			, StringUtils.isEmpty(dialog.getDeviceOptionPanel().getTraceDesc())  
+											? traceFolderName                                                    
+											: dialog.getDeviceOptionPanel().getTraceDesc());                     
+			extras.put("traceType"			, dialog.getDeviceOptionPanel().getTraceType());                     
+			extras.put("targetedApp"		, dialog.getDeviceOptionPanel().getTargetedApp());					
+			extras.put("appProducer"		, dialog.getDeviceOptionPanel().getAppProducer());				     
+		}                                                                                                                                                                                                                  
+		                                                                                                            
+		extras.put("assignPermission", ((MainFrame) parent).isAutoAssignPermissions());
+		return extras;
+	}
+
+	private void updateMetaData(IAroDevice device, String traceFolderName, DataCollectorSelectNStartDialog dialog) {
+		metaDataModel.setPhoneMake(device.getDeviceName());
+		metaDataModel.setPhoneModel(device.getModel());
+		metaDataModel.setOs(device.getOS());
+		metaDataModel.setDeviceOrientation(dialog.getVideoOrientation().name());
+		metaDataModel.setAttenuation(dialog.getDeviceOptionPanel().getAttenuatorModel());
+		metaDataModel.setTraceStorage(traceFolderName);
+		metaDataModel.setApplicationId(dialog.getDeviceOptionPanel().getAppSelected());
+		metaDataModel.setDescription(dialog.getDeviceOptionPanel().getTraceDesc());
+		metaDataModel.setTraceType(dialog.getDeviceOptionPanel().getTraceType());
+		metaDataModel.setTargetedApp(dialog.getDeviceOptionPanel().getTargetedApp());
+		metaDataModel.setApplicationProducer(dialog.getDeviceOptionPanel().getAppProducer());
+		metaDataModel.setTraceOwner(Util.getAttribute(MetaDataModel.TRACE_OWNER));
 	}
 
 	public SharedAttributesProcesses getParent() {
@@ -307,17 +347,17 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 	 * @param iosCollector
 	 * @return 
 	 */
-	private boolean checkSetSuPassword(IDataCollector iosCollector){
+	private boolean checkSetSuPassword(IDataCollector iosCollector) {
 		boolean validated = false;
 		if (iosCollector.getPassword().isEmpty()) {
 			String password = "invalid";
 			String hint = "";
 			do {
 				password = requestPassword(hint);
-				if (password == null){
+				if (password == null) {
 					return false;
 				}
-				if (iosCollector.setPassword(password)){
+				if (iosCollector.setPassword(password)) {
 					validated = true;
 					break;
 				} else {
@@ -330,7 +370,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		return validated;
 	}
 	
-
 	/**
 	 * ask user for a password
 	 * @param hint 
@@ -373,7 +412,7 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 	 * @param active
 	 */
 	public void setStartMenuItem(boolean active) {
-		LOG.debug(active?"set start":"set stop");
+		LOG.trace(active ? "set start" : "set stop");
 		dataCollectorStartMenuItem.setEnabled(active);
 		dataCollectorStopMenuItem.setEnabled(!active);
 	}

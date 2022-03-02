@@ -30,6 +30,7 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
+import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.video.pojo.VideoOption;
 
 /**
@@ -104,8 +105,8 @@ public interface IAROView {
 	 * @param delayTime
 	 * @param secure
 	 */
-	void startCollector(IAroDevice device, String tracePath, Hashtable<String, Object> extraParams); // VideoOption videoOption, int delayTime, boolean secure);
-	
+	void startCollector(IAroDevice device, String tracePath, Hashtable<String, Object> extraParams, MetaDataModel metaDataModel); // VideoOption videoOption, int delayTime, boolean secure);
+
 	/**
 	 * Action to start an iOS collector
 	 * @param iOsCollector: iOSCollector instance
@@ -129,6 +130,8 @@ public interface IAROView {
 	 * Action to force an Android collector apk to be stopped
 	 */
 	void haltCollector();
+	
+	MetaDataModel getMetaDataModel();
 	
 	/**
 	 * Return the list of connected devices

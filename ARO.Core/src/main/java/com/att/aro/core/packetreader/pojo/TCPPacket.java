@@ -61,12 +61,16 @@ public class TCPPacket extends IPPacket implements Serializable {
 	private boolean ssl;
 	private boolean decrypted;
 	private boolean sslHandshake;
+	@Getter
+	private boolean clientHello;
 	@Getter @Setter
 	private boolean retransmission = false;
 	private boolean sslApplicationData;
 	private Set<String> unsecureSSLVersions;
 	private Set<String> weakCipherSuites;
 	private String selectedCipherSuite;
+	@Getter
+	private String serverNameIndication = "";
 
 
 	public TCPPacket(long seconds, long microSeconds, org.pcap4j.packet.Packet pcap4jPacket, TcpPacket pcap4jTCPPacket) {
@@ -440,12 +444,19 @@ public class TCPPacket extends IPPacket implements Serializable {
 					return;
 				}
 			}
-			
+			clientHello = true;
 			skip(bytes, 3);		// skip length of client hello
 			skip(bytes, 2);		// skip TLS version
 			skip(bytes, 32);	// skip random
-			int lengthOfSessionID = getSessionIDLength(bytes);	// skip length of session ID
+			int lengthOfSessionID = getIntFromBytesForLength(bytes, 1);	// Session ID is stored in 1 byte
 			skip(bytes, lengthOfSessionID);	// skip session ID if session ID is NOT empty
+			int lengthOfCipherSuites = getIntFromBytesForLength(bytes, 2); // Length of Cipher Suites are stored in 2 bytes
+			skip(bytes, lengthOfCipherSuites); // skip length of Cipher Suites 
+			int compressionMethodLength = getIntFromBytesForLength(bytes, 1); // Compression Method is stored in 1 byte
+			skip(bytes, compressionMethodLength); // skip length of Compression Method 
+			int extensionsLength = getIntFromBytesForLength(bytes, 2); // Length of Extensions are stored in 2 bytes
+			// https://stackoverflow.com/questions/17832592/extract-server-name-indication-sni-from-tls-client-hello
+			serverNameIndication = parseExtensionsAndExtractSNI(bytes, extensionsLength);
 		} catch (Exception e) {
 			
 		} finally {
@@ -453,6 +464,30 @@ public class TCPPacket extends IPPacket implements Serializable {
 		}
 	}
 	
+	private String parseExtensionsAndExtractSNI(ByteBuffer bytes, int extensionsLength) {
+		String SNI = "";
+		while (bytes.position() + extensionsLength <= bytes.limit()) {
+			byte[] tempBytes = new byte[2];
+			bytes.get(tempBytes);
+			int type = convertByteArrayToInt(tempBytes);
+			bytes.get(tempBytes);
+			int length = convertByteArrayToInt(tempBytes);
+			if (type == 0 && length > 0) { //Indicative of the presence of a valid server name extension
+				skip(bytes, 3);
+				bytes.get(tempBytes);
+				length = convertByteArrayToInt(tempBytes);
+				tempBytes = new byte[length];
+				bytes.get(tempBytes);
+				SNI = new String(tempBytes);
+				break;
+			} else {
+				skip(bytes, length);
+				extensionsLength -=  (length + 4);
+			}
+		}
+		return SNI;
+	}
+
 	/**
 	 * get selected cipher suite from server hello
 	 * @param bytes
@@ -471,7 +506,7 @@ public class TCPPacket extends IPPacket implements Serializable {
 			skip(bytes, 3);		// skip length of server hello
 			skip(bytes, 2);		// skip TLS version
 			skip(bytes, 32);	// skip random
-			int lengthOfSessionID = getSessionIDLength(bytes);	// skip length of session ID
+			int lengthOfSessionID = getIntFromBytesForLength(bytes, 1);	// skip length of session ID
 			skip(bytes, lengthOfSessionID);	// skip session ID if session ID is NOT empty
 			setCipherSuite(bytes);
 		}catch (Exception e) {
@@ -487,37 +522,33 @@ public class TCPPacket extends IPPacket implements Serializable {
 	 * @param length
 	 */
 	private void skip(ByteBuffer bytes, int length) {
-		for(int i = 0; i < length; i++) {
-			if (bytes.position() >= bytes.limit()) {
-				break;
-			}
-			bytes.get();
-		}
+		byte[] skipArray = ((bytes.position() + length) <= bytes.limit() ? new byte[length] : new byte[bytes.limit() - bytes.position()]);
+		bytes.get(skipArray);
 	}
 	
 	/**
-	 * get length of session ID
+	 * get an int from a defined number of bytes (Usually denotes a length)
 	 * @param bytes
 	 * @return
 	 */
-	private int getSessionIDLength(ByteBuffer bytes) {
-		byte[] bytesForLength = new byte[1];
-		bytesForLength[0] = bytes.get();
-		return getLength(bytesForLength);
+	private int getIntFromBytesForLength(ByteBuffer bytes, int noOfBytesToConvert) {
+		byte[] bytesForLength = new byte[noOfBytesToConvert];
+		bytes.get(bytesForLength);
+		return convertByteArrayToInt(bytesForLength);
 	}
 	
 	/**
-	 * get length from byte array
-	 * @param length
+	 * convert byte array into a decimal value
+	 * @param bytes[]
 	 * @return
 	 */
-	private int getLength(byte[] bytes) {
-		int length = 0;
+	private int convertByteArrayToInt(byte[] bytes) {
+		int value = 0;
 		for(int i = 0; i < bytes.length; i++) {
 			int shift = 8 * (bytes.length - i - 1);
-			length += bytes[i] << shift;
+			value += bytes[i] << shift;
 		}
-		return length;
+		return value;
 	}
 	
 	/**

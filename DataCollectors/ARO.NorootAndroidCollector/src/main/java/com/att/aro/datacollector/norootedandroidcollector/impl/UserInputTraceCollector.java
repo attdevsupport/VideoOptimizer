@@ -94,7 +94,7 @@ public class UserInputTraceCollector implements Runnable {
 		
 		String line = extrunner.executeCmd(cmd);
 		
-		LOGGER.info("start process userinput mon script response:" + line);
+		LOGGER.trace("start process userinput mon script response:" + line);
 	}
 	
 	/**

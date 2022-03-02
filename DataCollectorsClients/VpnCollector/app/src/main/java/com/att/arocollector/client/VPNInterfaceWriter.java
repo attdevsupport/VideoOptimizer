@@ -26,6 +26,7 @@ import com.att.arotcpcollector.ip.IPHeader;
 import com.att.arotcpcollector.ip.IPPacketFactory;
 import com.att.arotcpcollector.ip.IPv4Header;
 import com.att.arotcpcollector.socket.IDataReceivedSubscriber;
+import com.att.arotcpcollector.PacketData;
 import com.att.arotcpcollector.socket.SocketData;
 import com.att.arotcpcollector.tcp.PacketHeaderException;
 import com.att.arotcpcollector.tcp.TCPHeader;
@@ -107,6 +108,7 @@ public class VPNInterfaceWriter implements Runnable, IDataReceivedSubscriber {
 
 					try {
 						clientPacketWriter.write(packet);
+						socketData.sendDataToPcap(new PacketData(packet), false); // send packet off to be recorded in traffic.cap
 					} catch (IOException e) {
 						Log.e(TAG, "Failed to write packet: " + e.getMessage(),e);
 					}

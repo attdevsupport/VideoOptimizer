@@ -40,6 +40,5 @@ public class CSIManifestAndState {
 	
 	@Nonnull private String analysisState = "";
 	@Nonnull private String manifestFileName = "";
-	@Nonnull private String manifestFileLocation = "";
 	
 }

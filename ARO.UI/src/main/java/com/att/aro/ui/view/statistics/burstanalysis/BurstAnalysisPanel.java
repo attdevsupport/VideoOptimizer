@@ -161,7 +161,7 @@ public class BurstAnalysisPanel extends JPanel implements IUITabPanelLayoutUpdat
 	public DataTable<Burst> getBurstTable() {
 		if (burstTable == null) {
 			burstTable = new DataTable<Burst>(burstTableModel);
-			table.setName(ResourceBundleHelper.getMessageString("statistics.individual.burst.analysis.tableName"));
+			burstTable.setName(ResourceBundleHelper.getMessageString("statistics.individual.burst.analysis.tableName"));
 			burstTable.setGridColor(Color.LIGHT_GRAY);
 			burstTable.setAutoCreateRowSorter(true);
 

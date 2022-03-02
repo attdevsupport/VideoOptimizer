@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 AT&T
+ * Copyright 2016, 2021 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -50,6 +51,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.plaf.basic.BasicArrowButton;
 
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.LogManager;
@@ -60,7 +62,9 @@ import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
+import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -72,21 +76,21 @@ import com.att.aro.ui.view.menu.datacollector.DeviceTablePanel;
 import com.att.aro.ui.view.menu.datacollector.HelpDialog;
 import com.att.aro.ui.view.menu.datacollector.IOSStepsDialog;
 
+import lombok.Getter;
+
 /**
  * Represents the dialog that is used to start the ARO Data Collector. The
  * dialog prompts the user to enter a trace folder name, and starts the ARO Data
  * Collector on the device emulator when the Start button is clicked.
  */
 public class DataCollectorSelectNStartDialog extends JDialog implements KeyListener{
-	private static final Dimension PREFERRED_SIZE_LARGE = new Dimension(650, 575);
-	private static final Dimension PREFERRED_SIZE_MEDIUM = new Dimension(650, 440);
-	private static final Dimension PREFERRED_SIZE_SMALL = new Dimension(650, 400);
-	private static final Dimension PREFERRED_SIZE_ULTRA = new Dimension(650, 675);
+
+	private final int HEIGHT_METADATA_SECTION = 135;
 
 	private static final long serialVersionUID = 1L;
 	
 	private static final Logger LOG = LogManager.getLogger(DataCollectorSelectNStartDialog.class);	
-	private static final int TRACE_FOLDER_ALLOWED_LENGTH = 50;
+	private final int TRACE_FOLDER_ALLOWED_LENGTH = 50;
 
 	private boolean proceed;
 	
@@ -111,6 +115,13 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	private JLabel helpLabel;
 	
 	private SharedAttributesProcesses mainframeParent;
+	@Getter
+	private BasicArrowButton expansionArrowButton;
+	private JPanel expandedOptionsPanel;
+	private MetaDataModel metaDataModel;
+
+	private int baseHeight;
+	private int baseWidth;
 
 	/**
 	 * Initializes a new instance of the DataCollectorStartDialog class using
@@ -126,7 +137,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 * @wbp.parser.constructor
 	 */
 	public DataCollectorSelectNStartDialog(Frame owner) {
-		this(owner, null, null, null, null, true, null);
+		this(owner, null, null, null, null, true, null, new MetaDataModel());
 	}
 
 	/**
@@ -148,9 +159,19 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 * @param recordVideo
 	 *            A boolean value that indicates whether to record video for
 	 *            this trace or not.
+	 * @param metaDataModel 
 	 */
-	public DataCollectorSelectNStartDialog(Frame owner, SharedAttributesProcesses mainframeParent, ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo, Hashtable<String, Object> previousOptions) {
+	public DataCollectorSelectNStartDialog(Frame owner
+											, SharedAttributesProcesses mainframeParent
+											, ArrayList<IAroDevice> deviceList
+											, String traceFolderName
+											, List<IDataCollector> collectors
+											, boolean recordVideo
+											, Hashtable<String, Object> previousOptions
+											, MetaDataModel metaDataModel) {
 		super(owner);
+
+		this.metaDataModel = metaDataModel;
 		initialize(mainframeParent, deviceList, traceFolderName, collectors, recordVideo, previousOptions);
 	}
 
@@ -159,7 +180,13 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 * 
 	 * @return void
 	 */
-	private void initialize(SharedAttributesProcesses mainframeParent, ArrayList<IAroDevice> deviceList, String traceFolderName, List<IDataCollector> collectors, boolean recordVideo, Hashtable<String, Object> previousOptions) {
+	private void initialize(SharedAttributesProcesses mainframeParent
+							, ArrayList<IAroDevice> deviceList
+							, String traceFolderName
+							, List<IDataCollector> collectors
+							, boolean recordVideo
+							, Hashtable<String, Object> previousOptions) {
+		
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("StartCollectorWindow");
 		this.setModal(true);
 		this.setTitle(ResourceBundleHelper.getMessageString("dlog.collector.title"));
@@ -168,9 +195,26 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		this.deviceList = deviceList;
 		this.collectors = collectors;
 		
+		if (previousOptions == null) {
+			if (Util.isWindowsOS()) {
+				baseWidth = 648;
+				baseHeight = 390;
+			} else {
+				baseWidth = 630;
+				baseHeight = 390;
+			}
+		} else {
+			Dimension prevSize = (Dimension) previousOptions.get("DIALOG_SIZE");
+			baseHeight = (int) prevSize.getHeight();
+			baseWidth = (int) prevSize.getWidth();
+		}
+		
 		this.setContentPane(getJContentPane());
 		this.pack();
-		this.setLocationRelativeTo(getOwner());
+		
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		this.setLocation((int) (screenSize.width * .10), (int) (screenSize.height * .1));
+		
 		this.getRootPane().setDefaultButton(getStartButton());
 		
 		getJTraceFolderTextField().setText(traceFolderName);
@@ -179,6 +223,20 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		deviceOptionPanel.showVideoOrientation(false);
 		
 		reselectPriorOptionsForDeviceDialog(previousOptions);
+		
+		baseHeight += (this.deviceList.size() - 1) * 20;
+		setPreferredSize(getInitialDimension());
+		setMinimumSize(getPreferredSize());
+		jContentPane.setPreferredSize(getPreferredSize());
+		this.pack();
+	}
+	
+	public Dimension getBaseSize() {
+		return new Dimension(baseWidth, (int) (getSize().getHeight() - ((deviceList.size() - 1) * 20)));
+	}
+
+	private Dimension getInitialDimension() {
+		return new Dimension(baseWidth, baseHeight);
 	}
 
 	private void reselectPriorOptionsForDeviceDialog(Hashtable<String, Object> previousOptions) {
@@ -190,42 +248,46 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	/**
 	 * This method initializes jContentPane
 	 * 
-	 * @return javax.swing.JPanel
 	 */
 	private JPanel getJContentPane() {
 		if (jContentPane == null) {
-			jContentPane = new JPanel(new BorderLayout());
+			jContentPane = new JPanel(new GridBagLayout());
 			jContentPane.setBorder(new EmptyBorder(10,10,10,10));
-			jContentPane.add(getDeviceSelectionPanel(), BorderLayout.PAGE_START);
-			jContentPane.add(getTraceOptionsPanel(),BorderLayout.CENTER);
-			jContentPane.add(getButtonPanel(), BorderLayout.PAGE_END);
+			jContentPane.add(getDeviceSelectionPanel(), new GridBagConstraints(0, 0, 1, 1, 2.0, 1.0, GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0)); // BorderLayout.PAGE_START);
+			jContentPane.add(getButtonPanel(), new GridBagConstraints(0, 1, 1, 1, 2.0, 1.0, GridBagConstraints.SOUTH, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0)); // , BorderLayout.PAGE_END);
 		}
 		return jContentPane;
 	}
 	
-	public void resizeLarge() {
-		jContentPane.setPreferredSize(PREFERRED_SIZE_LARGE);
-		this.pack();
-		this.setLocationRelativeTo(getOwner());
+	/**
+	 * Apply an adjustment (adjustHeight) to dialog size
+	 * Negative values will reduce the height. Positive values will increase the height
+	 * a zero value restore to original height
+	 * 
+	 * @param adjustHeight
+	 */
+	public void resizer(int adjustHeight) {
+		Dimension dim = jContentPane.getPreferredSize();
+		if (dim.getHeight() < 40) { // detect if no PreferredSize has been set. The value of 40 is beyond large enough to detect the situation, and way to small to display anything
+			dim = getInitialDimension();
+		} else if (adjustHeight != 0) {
+			dim = new Dimension((int) dim.getWidth(), (int) (dim.getHeight() + adjustHeight));
+		} else {
+			dim = new Dimension((int) dim.getWidth(), (int) (getDeviceSelectionPanel().getHeight() + getButtonPanel().getHeight()));
+		}
+		if (dim.getHeight() > 0) {
+			jContentPane.setPreferredSize(dim);
+			jContentPane.setPreferredSize(jContentPane.getPreferredSize());
+			jContentPane.revalidate();
+			setPreferredSize(dim);
+			setMinimumSize(jContentPane.getPreferredSize());
+			this.pack();
+		} else {
+			LOG.error("incorrect dialog dimensions" + dim);
+		}
 	}
 	
-	public void resizeMedium() {
-		jContentPane.setPreferredSize(PREFERRED_SIZE_MEDIUM);
-		this.pack();
-		this.setLocationRelativeTo(getOwner());
-	}
 	
-	public void resizeSmall() {
-		jContentPane.setPreferredSize(PREFERRED_SIZE_SMALL);
-		this.pack();
-		this.setLocationRelativeTo(getOwner());
-	}
-	
-	public void resizeUltra() {
-		jContentPane.setPreferredSize(PREFERRED_SIZE_ULTRA);
-		this.pack();
-		this.setLocationRelativeTo(getOwner());
-	}
 	
 	/**
 	 * 
@@ -240,12 +302,17 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		deviceTablePanel.setSubscriber(deviceOptionPanel);
 		deviceTablePanel.autoSelect();
 
-		deviceOptionPanel.showVideoOrientation(true);
+		deviceOptionPanel.showVideoOrientation(false);
+		
+		expandedOptionsPanel = deviceOptionPanel.getExpandedContent();
+		expandedOptionsPanel.setVisible(false);
 		
 		Insets insets = new Insets(0, 0, 0, 0);
-		deviceSelectionPanel.add(getHeaderPanel(),new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, insets, 0, 0));
-		deviceSelectionPanel.add(deviceTablePanel,new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, insets, 0, 0));
-		deviceSelectionPanel.add(deviceOptionPanel,new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		deviceSelectionPanel.add(getHeaderPanel(), new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		deviceSelectionPanel.add(deviceTablePanel, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		deviceSelectionPanel.add(deviceOptionPanel, new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		deviceSelectionPanel.add(getArrowButton(), new GridBagConstraints(0, 3, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.EAST, insets, 0, 0));
+		deviceSelectionPanel.add(deviceOptionPanel.getExpandedContent(), new GridBagConstraints(0, 4, 1, 1, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		
 		return deviceSelectionPanel;
 	}
@@ -256,7 +323,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	
 	public DeviceDialogOptions getDeviceOptionPanel() {
 		if (deviceOptionPanel == null) {
-			deviceOptionPanel = new DeviceDialogOptions(this, collectors);
+			deviceOptionPanel = new DeviceDialogOptions(this, collectors, metaDataModel);
 			deviceOptionPanel.setVisible(true);
 		}
 		return deviceOptionPanel;
@@ -278,7 +345,8 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		if (buttonPanel == null) {
 			buttonPanel = new JPanel();
 			buttonPanel.setLayout(new BorderLayout());
-			buttonPanel.add(getJButtonGrid(), BorderLayout.CENTER);
+			buttonPanel.add(getTraceOptionsPanel(),BorderLayout.CENTER);
+			buttonPanel.add(getJButtonGrid(), BorderLayout.SOUTH);
 		}
 		return buttonPanel;
 	}
@@ -291,12 +359,36 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	private JPanel getJButtonGrid() {
 		if (jButtonGrid == null) {
 			jButtonGrid = new JPanel();
-			jButtonGrid.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+			jButtonGrid.setBorder(BorderFactory.createEmptyBorder(2, 10, 2, 10));
 			jButtonGrid.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
 			jButtonGrid.add(getCancelButton());
 			jButtonGrid.add(getStartButton());
 		}
 		return jButtonGrid;
+	}
+
+	private JButton getArrowButton() {
+		expansionArrowButton = new BasicArrowButton(SwingConstants.EAST);
+
+		expansionArrowButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				proceed = false;
+				LOG.debug("clicked: Expand Trace metadata section");
+				if (expansionArrowButton.getDirection() == SwingConstants.EAST) {
+					expansionArrowButton.setDirection(SwingConstants.SOUTH);
+					deviceOptionPanel.setExpandedTraceSettings(true);
+					deviceOptionPanel.getLabeledExpandedOptionFields().setVisible(true);
+					resizer(HEIGHT_METADATA_SECTION);
+				} else {
+					expansionArrowButton.setDirection(SwingConstants.EAST);
+					deviceOptionPanel.setExpandedTraceSettings(false);
+					deviceOptionPanel.getLabeledExpandedOptionFields().setVisible(false);
+					resizer(-HEIGHT_METADATA_SECTION);
+				}
+			}
+		});
+		return expansionArrowButton;
 	}
 
 	/**
@@ -310,86 +402,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 			}
 			startButton = new JButton();
 			startButton.setText(ResourceBundleHelper.getMessageString("Button.start"));
-			startButton.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(ActionEvent arg0) {
-					LOG.debug("Button.start");
-					String traceFolderName = traceFolderNameField.getText();
-					AttnrRadioGroupPanel radioGP = getDeviceOptionPanel().getAttnrGroup().getAttnrRadioGP();					
-					if (radioGP.getSliderBtn().isSelected()) {
-						boolean isAttenuateSelected = radioGP.getThroughputPanel().getDownloadCheckBox().isSelected()
-								|| radioGP.getThroughputPanel().getUploadCheckBox().isSelected();
-						if (!isAttenuateSelected) {
-							LOG.info("need to set at least one DL or UL for the throttle");
-							proceed = false;
-					        showAttenuationError();
-							return;
-						}
-					}	
-					
-					boolean secureOrAttnEnabled = deviceOptionPanel.getAttnrGroup().getAttnrRadioGP().getSliderBtn().isSelected();
-					if (deviceTablePanel.getSelection().isPlatform(Platform.iOS)) {
-						if (deviceTablePanel.getSelection().getProductName()==null||deviceTablePanel.getSelection().getModel()==null) {
-							JOptionPane.showMessageDialog(DataCollectorSelectNStartDialog.this
-									, ResourceBundleHelper.getMessageString("Error.app.nolibimobiledevice")
-									, MessageFormat.format(ResourceBundleHelper.getMessageString("Error.app.noprerequisitelib"), 
-															ApplicationConfig.getInstance().getAppShortName())
-									, JOptionPane.ERROR_MESSAGE);
-							return;
-						}
-						if (secureOrAttnEnabled && (!deviceOptionPanel.isSharedNetworkActive())) {
-							 new IOSStepsDialog(DataCollectorSelectNStartDialog.this);
-							return;
-						}
-					}
-
-					// don't allow whitespace
-					traceFolderName = traceFolderName.replaceAll("\\s", "");					
-					if (!traceFolderName.isEmpty()) {
-						proceed = true;
-						if (traceFolderNameField.getText() != null) {
-							if (isContainsSpecialCharacterorSpace(traceFolderNameField.getText())) {
-								JOptionPane.showMessageDialog(getCollectorDialogComponent()
-															, ResourceBundleHelper.getMessageString("Error.specialchar")
-															, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
-																					ApplicationConfig.getInstance().getAppShortName())
-															, JOptionPane.ERROR_MESSAGE);
-								return;
-							} else if (traceFolderNameField.getText().toString().length() > TRACE_FOLDER_ALLOWED_LENGTH) {
-								JOptionPane.showMessageDialog(getCollectorDialogComponent()
-															, ResourceBundleHelper.getMessageString("Error.tracefolderlength")
-															, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
-																					ApplicationConfig.getInstance().getAppShortName())
-															, JOptionPane.ERROR_MESSAGE);
-								return;
-							} else {
-								DataCollectorSelectNStartDialog.this.dispose();
-							}
-						}
-					} else {
-						LOG.info("traceFolderName is blank");
-						proceed = false;
-						JOptionPane.showMessageDialog(getCollectorDialogComponent()
-								, ResourceBundleHelper.getMessageString("Error.tracefolderempty")
-								, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
-														ApplicationConfig.getInstance().getAppShortName())
-								, JOptionPane.ERROR_MESSAGE);					
-						traceFolderNameField.requestFocus();
-					}
-					
-					if (deviceTablePanel.getSelection().isPlatform(Platform.Android) &&  !((AROAndroidDevice)deviceTablePanel.getSelection()).isAPKInstalled()) {
-						if (MessageDialogFactory.showConfirmDialog(getCollectorDialogComponent(), ResourceBundleHelper.getMessageString("Message.permissions.warning")
-								, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
-														ApplicationConfig.getInstance().getAppShortName())
-								, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-							((MainFrame) getMainframeParent()).setAutoAssignPermissions(true);
-						} else {
-							((MainFrame) getMainframeParent()).setAutoAssignPermissions(false);
-						}
-					}
-				}
-			});
+			startButton.addActionListener(startButtonActionListener());
 			if (deviceTablePanel.getSelection() != null && traceFolderNameField != null){
 				startButton.setEnabled(true);
 			} else {
@@ -397,8 +410,90 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 			}
 			return startButton;
 	}
-	
 
+	private ActionListener startButtonActionListener() {
+		return new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				LOG.debug("Button.start");
+				String traceFolderName = traceFolderNameField.getText();
+				AttnrRadioGroupPanel radioGP = getDeviceOptionPanel().getAttnrGroup().getAttnrRadioGP();					
+				if (radioGP.getSliderBtn().isSelected()) {
+					boolean isAttenuateSelected = radioGP.getThroughputPanel().getDownloadCheckBox().isSelected()
+							|| radioGP.getThroughputPanel().getUploadCheckBox().isSelected();
+					if (!isAttenuateSelected) {
+						LOG.info("need to set at least one DL or UL for the throttle");
+						proceed = false;
+				        showAttenuationError();
+						return;
+					}
+				}	
+				
+				boolean secureOrAttnEnabled = deviceOptionPanel.getAttnrGroup().getAttnrRadioGP().getSliderBtn().isSelected();
+				if (deviceTablePanel.getSelection().isPlatform(Platform.iOS)) {
+					if (deviceTablePanel.getSelection().getProductName() == null || deviceTablePanel.getSelection().getModel() == null) {
+						JOptionPane.showMessageDialog(DataCollectorSelectNStartDialog.this
+								, ResourceBundleHelper.getMessageString("Error.app.nolibimobiledevice")
+								, MessageFormat.format(ResourceBundleHelper.getMessageString("Error.app.noprerequisitelib"),
+										ApplicationConfig.getInstance().getAppShortName())
+								, JOptionPane.ERROR_MESSAGE);
+						return;
+					}
+					if (secureOrAttnEnabled && (!deviceOptionPanel.isSharedNetworkActive())) {
+						new IOSStepsDialog(DataCollectorSelectNStartDialog.this);
+						return;
+					}
+				}
+
+				// don't allow whitespace
+				traceFolderName = traceFolderName.replaceAll("\\s", "");					
+				if (!traceFolderName.isEmpty()) {
+					proceed = true;
+					if (traceFolderNameField.getText() != null) {
+						if (isContainsSpecialCharacterorSpace(traceFolderNameField.getText())) {
+							JOptionPane.showMessageDialog(getCollectorDialogComponent()
+														, ResourceBundleHelper.getMessageString("Error.specialchar")
+														, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
+																				ApplicationConfig.getInstance().getAppShortName())
+														, JOptionPane.ERROR_MESSAGE);
+							return;
+						} else if (traceFolderNameField.getText().toString().length() > TRACE_FOLDER_ALLOWED_LENGTH) {
+							JOptionPane.showMessageDialog(getCollectorDialogComponent()
+														, ResourceBundleHelper.getMessageString("Error.tracefolderlength")
+														, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
+																				ApplicationConfig.getInstance().getAppShortName())
+														, JOptionPane.ERROR_MESSAGE);
+							return;
+						} else {
+							DataCollectorSelectNStartDialog.this.dispose();
+						}
+					}
+				} else {
+					LOG.info("traceFolderName is blank");
+					proceed = false;
+					JOptionPane.showMessageDialog(getCollectorDialogComponent()
+							, ResourceBundleHelper.getMessageString("Error.tracefolderempty")
+							, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
+													ApplicationConfig.getInstance().getAppShortName())
+							, JOptionPane.ERROR_MESSAGE);					
+					traceFolderNameField.requestFocus();
+				}
+				
+				if (deviceTablePanel.getSelection().isPlatform(Platform.Android) &&  !((AROAndroidDevice)deviceTablePanel.getSelection()).isAPKInstalled()) {
+					if (MessageDialogFactory.showConfirmDialog(getCollectorDialogComponent(), ResourceBundleHelper.getMessageString("Message.permissions.warning")
+							, MessageFormat.format(ResourceBundleHelper.getMessageString("aro.title.short"), 
+													ApplicationConfig.getInstance().getAppShortName())
+							, JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+						((MainFrame) getMainframeParent()).setAutoAssignPermissions(true);
+					} else {
+						((MainFrame) getMainframeParent()).setAutoAssignPermissions(false);
+					}
+				}
+			}
+		};
+	}
+	
 	private DataCollectorSelectNStartDialog getCollectorDialogComponent(){
 		return this;
 	}
@@ -463,6 +558,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 			optionsPanel.setLayout(new GridBagLayout());
 			optionsPanel.add(getTraceNamePanel(), gridBagConstraints);
 		}
+		optionsPanel.setMinimumSize(optionsPanel.getPreferredSize());
 		return optionsPanel;
 	}
 
@@ -490,6 +586,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 			jAdvancedOptionsPanel.add(getJTraceFolderLabel());
 			jAdvancedOptionsPanel.add(getJTraceFolderTextField());
 		}
+		jAdvancedOptionsPanel.setMinimumSize(jAdvancedOptionsPanel.getPreferredSize());
 		return jAdvancedOptionsPanel;
 	}
 
@@ -512,7 +609,6 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		traceFolderNameField.setActionCommand("TraceFolderName");
 		return traceFolderNameField;
 	}
-
 
 	private boolean isContainsSpecialCharacterorSpace(String tracefolername) {
 		boolean isContainsSC = false;
@@ -633,4 +729,5 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	public void setTraceFolderName (String traceFolderName) {
 		traceFolderNameField.setText(traceFolderName);
 	}
+
 }

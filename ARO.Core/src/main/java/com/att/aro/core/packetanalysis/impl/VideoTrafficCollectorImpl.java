@@ -98,7 +98,9 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		
 		LOG.debug("\n**** processSegments() ****");
 		processSegments();
-
+		
+		videoStreamConstructor.processFailures();
+		
 		videoStreamConstructor.clear();
 		manifestReqMap.clear();
 	

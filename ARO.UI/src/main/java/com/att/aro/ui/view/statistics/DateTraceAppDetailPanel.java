@@ -55,7 +55,6 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		bestPractices_os_version,
 		bestPractices_networktype,
 		bestPractices_profile,
-		secure_title
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -93,7 +92,6 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_os_version).build());
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_networktype).build());
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_profile).build());
-			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.secure_title).build());
 		}
 		tabPanelCommon.setText(LabelKeys.bestPractices_date, EMPTY_SPACE);
 
@@ -162,7 +160,8 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 	}
 
 
-	private void refreshTraceDirectory(TraceDirectoryResult traceDirectoryResults) {
+	private void refreshTraceDirectory(PacketAnalyzerResult traceResults) {
+		TraceDirectoryResult traceDirectoryResults = (TraceDirectoryResult) traceResults.getTraceresult();
 		tabPanelCommon.setText(LabelKeys.bestPractices_applicationversion,
 				traceDirectoryResults.getCollectorVersion());
 		tabPanelCommon.setText(LabelKeys.bestPractices_devicemodel,
@@ -177,10 +176,14 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 				traceDirectoryResults.getOsVersion());
 		tabPanelCommon.setText(LabelKeys.bestPractices_networktype,
 				traceDirectoryResults.getNetworkTypesList());
-		tabPanelCommon.setText(LabelKeys.secure_title,
-				traceDirectoryResults.getCollectOptions().getSecureStatus().toString());
-		tabPanelCommon.setText(LabelKeys.bestPractices_range,
-				traceDirectoryResults.getTimeRange().getRange());
+
+		String timeRangeText;
+		if (traceDirectoryResults.getTimeRange().getTitle() == null) {
+			timeRangeText = String.format("%.3f - %.3f", traceResults.getTimeRangeAnalysis().getStartTime(), traceResults.getTimeRangeAnalysis().getEndTime());
+		} else {
+			timeRangeText = traceDirectoryResults.getTimeRange().getRange();
+		}
+		tabPanelCommon.setText(LabelKeys.bestPractices_range, timeRangeText);
 	}
 
 	private void clearDirResults() {
@@ -189,7 +192,6 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		tabPanelCommon.setText(LabelKeys.bestPractices_display_resolution, "");
 		tabPanelCommon.setText(LabelKeys.bestPractices_os_version, "");
 		tabPanelCommon.setText(LabelKeys.bestPractices_networktype, "");
-		tabPanelCommon.setText(LabelKeys.secure_title, "");
 	}
 
 	@Override
@@ -200,7 +202,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		if (traceResults != null) {
 			refreshCommon(traceResults,appNames);
 			if (traceResults.getTraceResultType() == TraceResultType.TRACE_DIRECTORY) {
-				refreshTraceDirectory((TraceDirectoryResult) traceResults);
+				refreshTraceDirectory(analyzerResults);
 			} else {
 				clearDirResults();
 			}

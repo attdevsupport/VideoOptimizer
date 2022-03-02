@@ -39,6 +39,7 @@ import javax.swing.JPanel;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.ui.commonui.AroFonts;
 import com.att.aro.ui.commonui.TabPanelJScrollPane;
 import com.att.aro.ui.commonui.UIComponent;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -131,7 +132,7 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 
 			JLabel testConductedHeaderLabel = new JLabel(ResourceBundleHelper.getMessageString("bestPractices.header.testsConducted"));
 			testConductedHeaderLabel.setBackground(Color.WHITE);
-			testConductedHeaderLabel.setFont(HEADER_FONT);
+			testConductedHeaderLabel.setFont(AroFonts.HEADER_FONT);
 			dataPanel.add(testConductedHeaderLabel, new GridBagConstraints(
 					0, idx
 					, 3, 1
@@ -141,7 +142,7 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 					, new Insets(0, 0, 0, 0)
 					, 0, 0));
 			
-			addLabelLine(testFillerHeaderLabel, " ", ++idx, 2, weightX, insets, TEXT_FONT);
+			addLabelLine(testFillerHeaderLabel, " ", ++idx, 2, weightX, insets, AroFonts.TEXT_FONT);
 
 			if (bpResults != null && !bpResults.isEmpty()){
 				addTestsConductedSummary();
@@ -320,7 +321,7 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 		titleLabel.addMouseListener(mouseAdapter);
 		titleLabel.addMouseMotionListener(mouseAdapter);
 		
-		titleLabel.setFont(TEXT_FONT);
+		titleLabel.setFont(AroFonts.TEXT_FONT);
 		dataPanel.add(iconLabel, getTestsConductedGridConstraints(column, gridY));
 		dataPanel.add(titleLabel, getTestsConductedGridConstraints(column + 1, gridY));
 	}

@@ -585,6 +585,14 @@ public class VlcjPlayer implements IVideoPlayer {
             LOGGER.error("player is not available!");
             return;
         }
+        
+        File videoFile = new File(videoPath);
+        
+        if (videoFile != null && videoFile.exists() && videoFile.length() < 2) {
+        	videoFile.delete();
+        	LOGGER.info("deleted empty video file");
+        	return;
+		}
 
         frame.setLocation(Toolkit.getDefaultToolkit().getScreenSize().width - playerContentWidth, 0);
         frame.pack();

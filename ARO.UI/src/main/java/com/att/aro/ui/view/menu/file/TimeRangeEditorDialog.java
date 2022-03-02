@@ -105,6 +105,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 	private TraceTimeRange traceTimeRange;
 	@Getter
 	private TimeRange timeRange;
+	private double traceTimeDuration;
 	private double deviceVideoDuration;
 	private double initialDeviceVideoOffset;
 	@Getter
@@ -415,7 +416,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 			traceTimeRange = new TraceTimeRange();
 		}
 		if (traceTimeRange.getTimeRangeList().isEmpty()) {
-			timeRange = new TimeRange("FULL", TimeRangeType.DEFAULT, 0, deviceVideoDuration);
+			timeRange = new TimeRange("FULL", TimeRangeType.DEFAULT, 0, traceTimeDuration);
 			traceTimeRange.getTimeRangeList().add(timeRange);
 		}
 		LOG.debug("Save trace range: " + traceTimeRange);
@@ -1116,7 +1117,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 			deviceVideoNbFrames = StringParse.findLabeledDoubleFromString("nb_frames=", " ", streamSection);
 			Double duration = StringParse.findLabeledDoubleFromString("duration=", " ", streamSection);
 			if (duration != null) {
-				deviceVideoDuration = duration;
+				deviceVideoDuration = Math.max(deviceVideoDuration, duration);
 			}
 		}
 
@@ -1128,18 +1129,21 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 			LOG.error("VideoFrameExtractor Exception:" + e.getMessage());
 		}
 
-		initialDeviceVideoOffset = getTrafficTime();
-		
+		Double[] timeFileValues = getTraceTime();
+		traceTimeDuration = (timeFileValues[1] - timeFileValues[0]) / 1000;
+		double videoStartTime = getVideoTime();
+		initialDeviceVideoOffset = (videoStartTime - timeFileValues[0]) / 1000;
+
+		LOG.info("timeDuration :" + traceTimeDuration);
 		LOG.info("videoDuration :" + deviceVideoDuration);
 		LOG.info("videoOffset :" + initialDeviceVideoOffset);
 		LOG.info(String.format("h:w = %d:%d", deviceVideoHeight, deviceVideoWidth));
-		LOG.info("duration:" + deviceVideoDuration);
+		
+		traceTimeDuration = Math.max(traceTimeDuration, deviceVideoDuration);
+		LOG.info("duration:" + traceTimeDuration);
 		LOG.info("nb_frames:" + deviceVideoNbFrames);
+		
 
-	}
-
-	private double getTrafficTime() {
-		return (getVideoTime() - getTraceTime()) / 1000;
 	}
 	
 	private double getVideoTime() {
@@ -1148,28 +1152,36 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 		File timeFile = fileManager.createFile(traceFolder, "video_time");
 		try {
 			timeArray = fileManager.readAllLine(timeFile.toString());
-			if (timeArray[0].contains(" ")) {
-				vTime0 = StringParse.stringToDouble(StringUtils.substringBefore(timeArray[0], " "), 0) * 1000;
-			} else {
-				vTime0 = StringParse.stringToDouble(timeArray[0], 0) * 1000;
+			if (timeArray != null && timeArray.length > 0) {
+				if (timeArray[0].contains(" ")) {
+					vTime0 = StringParse.stringToDouble(StringUtils.substringBefore(timeArray[0], " "), 0);
+				} else {
+					vTime0 = StringParse.stringToDouble(timeArray[0], 0);
+				}
 			}
-
 		} catch (IOException e) {
 			LOG.error("Failed to obtain video time.", e);
 		}
-		return vTime0;
+
+		return vTime0 * 1000;
 	}
 	
-	private double getTraceTime() {
+	private Double[] getTraceTime() {
 		String[] timeArray;
-		Double time0 = 0D;
+		Double[] time0 = {0D,0D};
 		File timeFile = fileManager.createFile(traceFolder, "time");
+
 		try {
 			timeArray = fileManager.readAllLine(timeFile.toString());
-			time0 = StringParse.stringToDouble(timeArray[1], 0)*1000;
+			if (timeArray != null && timeArray.length > 0) {
+				time0[0] = Double.valueOf(timeArray[1]) * 1000;
+				time0[1] = Double.valueOf(timeArray[3]) * 1000;
+			}
+
 		} catch (IOException e) {
 			LOG.error("Failed to obtain trace time.", e);
 		}
+
 		return time0;
 	}
 

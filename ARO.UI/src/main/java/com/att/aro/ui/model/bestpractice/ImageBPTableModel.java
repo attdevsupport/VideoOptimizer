@@ -136,7 +136,7 @@ public class ImageBPTableModel extends DataTableModel<ImageMdataEntry> {
 	 */
 	@Override
 	public Class<?> getColumnClass(int columnIndex) {
-		ImageBPTableModel.LOGGER.debug(format("getColumnClass, idx: {0}", columnIndex));
+		ImageBPTableModel.LOGGER.trace(format("getColumnClass, idx: {0}", columnIndex));
 		switch (columnIndex) {
 		case COL_1:
 			return Double.class;

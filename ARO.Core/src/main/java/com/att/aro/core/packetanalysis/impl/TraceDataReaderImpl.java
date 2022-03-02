@@ -64,6 +64,7 @@ import com.att.aro.core.peripheral.ICpuActivityReader;
 import com.att.aro.core.peripheral.ICpuTemperatureReader;
 import com.att.aro.core.peripheral.IDeviceDetailReader;
 import com.att.aro.core.peripheral.IGpsInfoReader;
+import com.att.aro.core.peripheral.IMetaDataReadWrite;
 import com.att.aro.core.peripheral.INetworkTypeReader;
 import com.att.aro.core.peripheral.IPrivateDataReader;
 import com.att.aro.core.peripheral.IRadioInfoReader;
@@ -76,6 +77,7 @@ import com.att.aro.core.peripheral.IVideoTimeReader;
 import com.att.aro.core.peripheral.IWakelockInfoReader;
 import com.att.aro.core.peripheral.IWifiInfoReader;
 import com.att.aro.core.peripheral.LocationReader;
+import com.att.aro.core.peripheral.impl.MetaDataReadWrite;
 import com.att.aro.core.peripheral.impl.ThermalStatusReaderImpl;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisInfo;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisResult;
@@ -105,6 +107,7 @@ import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.util.Util;
+
 public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	private static final Logger LOGGER = LogManager.getLogger(TraceDataReaderImpl.class.getName());
 
@@ -190,7 +193,10 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 	@Autowired
 	private IVideoStartupReadWrite videoStartupReader;
-		
+	
+	@Autowired
+	IMetaDataReadWrite metaDataReadWrite;
+
 	private Set<String> localIPAddresses = null;
 	private Set<String> remoteIPAddresses = null;
 	private Set<Integer> remotePortNumbers = null;
@@ -294,9 +300,9 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if (filereader.fileExist(filepath) && !Util.isLinuxOS()) {
 			crypto.readSSLKeys(filepath);
 			result.setCrypto(crypto);
-			LOGGER.info("crypto read:" + crypto.getSSLKeyList().size() + " records");
+			LOGGER.trace("crypto read:" + crypto.getSSLKeyList().size() + " records");
 		} else {
-			LOGGER.info("No SSL keys");
+			LOGGER.trace("No SSL keys");
 		}
 	}
 
@@ -1067,6 +1073,9 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		
 		VideoStreamStartupData videoStreamStartupData = videoStartupReader.readData(result.getTraceDirectory());
 		result.setVideoStartupData(videoStreamStartupData);
+		
+		result.setMetaData(metaDataReadWrite.readData(result.getTraceDirectory()));
+		
 	}
 
 }// end class

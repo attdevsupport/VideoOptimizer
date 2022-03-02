@@ -27,6 +27,7 @@ import java.util.zip.ZipException;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 import com.att.aro.core.packetanalysis.IByteArrayLineReader;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
@@ -120,12 +121,15 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 	/**
 	 * get content of the request/response in byte[]
 	 * 
-	 * @param request
+	 * @param request actually this is the response to the request
 	 * @return byte array
 	 * @throws Exception
 	 */
 	public byte[] getContent(HttpRequestResponseInfo request, Session session) throws Exception {
-
+		if (!request.isExtractable() && !StringUtils.isEmpty(request.getExceptionMessege())) {
+			// already seen this exception so don't try again
+			throw new Exception("As seen before Exception: " + request.getExceptionMessege());
+		}
 		LOG.debug("getContent(Req, Session) :" + request.toString());
 		String contentEncoding = request.getContentEncoding();
 		byte[] payload;
@@ -175,15 +179,19 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
             if (request.isChunkModeFinished()) {
                 payload = output.toByteArray();
             } else {
-                throw new Exception(String.format("Unexpected Chunk End at request time: %.3f, request.getAssocReqResp() is %s. The content may be corrupted.",
+                request.setExtractable(false);
+            	request.setExceptionMessege(String.format("Unexpected Chunk End at request time: %.3f, request.getAssocReqResp() is %s. The content may be corrupted.",
                         request.getTimeStamp(), objectName));
+                throw new Exception(request.getExceptionMessege());
             }
         } else if (payload.length < request.getContentLength()) {
             request.setExtractable(false);
+            request.setContentLengthDuringFail(payload.length);
             float payloadPercentage = (float)payload.length / request.getContentLength() * 100;
-            throw new Exception(String.format("PayloadException: At request time: %.3f, request.getAssocReqResp() is %s. "
+            request.setExceptionMessege(String.format("PayloadException: At request time: %.3f, request.getAssocReqResp() is %s. "
                     + "The content may be corrupted. Buffer exceeded: only %.2f percent arrived",
                     request.getTimeStamp(), objectName, payloadPercentage));
+            throw new Exception(request.getExceptionMessege());
         }
 
 		// Decompress GZIP Content
@@ -219,8 +227,11 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 				return new byte[0];
 			}
 		} catch (IOException ioe) {
-			throw new ZipException(String.format("UnzipException: At request time: %.3f, request.getAssocReqResp() is %s. The content may be corrupted.",
+			request.setExtractable(false);
+        	request.setExceptionMessege(String.format("UnzipException: At request time: %.3f, request.getAssocReqResp() is %s. The content may be corrupted.",
 			        request.getTimeStamp(), request.getAssocReqResp() == null ? "N/A" : request.getAssocReqResp()));
+            throw new ZipException(request.getExceptionMessege());
+            
 		} finally {
 			
 			if (brotliInputStream != null) {

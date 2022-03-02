@@ -261,7 +261,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 				MissingTraceFiles missingTraceFiles = new MissingTraceFiles(traceFolder);
 				Set<File> missingFiles = missingTraceFiles.retrieveMissingFiles();
 				if (missingFiles.size() > 0) {
-					LOG.debug(MessageFormat.format(ResourceBundleHelper.getMessageString(MenuItem.file_missingAlert),
+					LOG.trace(MessageFormat.format(ResourceBundleHelper.getMessageString(MenuItem.file_missingAlert),
 							missingTraceFiles.formatMissingFiles(missingFiles)));
 				}
 			}

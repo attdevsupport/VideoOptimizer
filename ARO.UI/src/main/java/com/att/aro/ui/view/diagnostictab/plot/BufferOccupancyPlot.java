@@ -92,12 +92,10 @@ public class BufferOccupancyPlot implements IPlot {
 						}
 						bufferSizeList.add(yPlotValue);
 						seriesByteBuffer.add(xy.getXVal(), yPlotValue);
-						LOG.debug(String.format("%.3f\t%.0f", xy.getXVal(), yPlotValue));
-						
 					}
 					Collections.sort(bufferSizeList);
 					bufferFillDataCollection.addSeries(seriesByteBuffer);
-					LOG.debug(videoStream.getToolTipDetailMap());
+					LOG.debug(videoStream.getByteToolTipDetailMap());
 				}
 			}
 
@@ -127,7 +125,7 @@ public class BufferOccupancyPlot implements IPlot {
 				Number timestamp = dataset.getX(series, item);
 				Number bufferSize = dataset.getY(series, item);
 
-				VideoEvent event = videoStream.getToolTipDetailMap().get(item).getVideoEvent();
+				VideoEvent event = videoStream.getByteToolTipDetailMap().get(item).getVideoEvent();
 				double segmentID = event.getSegmentID();
 				ContentType type = event.getContentType();
 				double play = event.getPlayTime();

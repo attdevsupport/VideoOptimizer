@@ -33,7 +33,6 @@ import javax.swing.JSplitPane;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.ui.commonui.IARODiagnosticsOverviewRoute;
 import com.att.aro.ui.commonui.IAROPrintable;
 import com.att.aro.ui.commonui.ImagePanel;
@@ -155,28 +154,22 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 		topLeftPanel.setOpaque(false);
 
 		dateTraceAppDetailPanel = new DateTraceAppDetailPanel();
-		topLeftPanel.add(dateTraceAppDetailPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		topLeftPanel.add(dateTraceAppDetailPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		bpObservable.registerObserver(dateTraceAppDetailPanel);
 
 		// BP Overall -aka- AROBpOverallResulsPanel
 		BpTestStatisticsPanel testStatisticsPanel = new BpTestStatisticsPanel();
-		topLeftPanel.add(testStatisticsPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0,
-				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+		topLeftPanel.add(testStatisticsPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		bpObservable.registerObserver(testStatisticsPanel);
+
+		MetadataPanel metadataPanel = new MetadataPanel(aroView);
+		metadataPanel.setMinimumSize(metadataPanel.getPreferredSize());
+		bpObservable.registerObserver(metadataPanel);
+		JSplitPane topSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, topLeftPanel, metadataPanel);
+		topSplitPane.setResizeWeight(0);
+		topSplitPane.setOpaque(false);
+		topPanel.add(topSplitPane, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		
-		if (ResourceBundleHelper.getMessageString("preferences.test.env").equals(SettingsImpl.getInstance().getAttribute("env"))) {
-			MetadataPanel metadataPanel = new MetadataPanel();
-			bpObservable.registerObserver(metadataPanel);
-			JSplitPane bottomSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, topLeftPanel, metadataPanel);
-			bottomSplitPane.setResizeWeight(0.3);
-			bottomSplitPane.setOpaque(false);
-			topPanel.add(bottomSplitPane, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.HORIZONTAL, insets, 0, 0));
-		} else {
-			topPanel.add(topLeftPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
-					GridBagConstraints.HORIZONTAL, insets, 0, 0));
-		}
 		// Separator
 		topPanel.add(UIComponent.getInstance().getSeparator()
 				, new GridBagConstraints(0, section++

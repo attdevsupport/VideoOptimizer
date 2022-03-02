@@ -261,9 +261,9 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 	 */
 	private void identifyOSInfo(String packetFile) {
 		String cmd = Util.getCapinfos() + " " + packetFile;
-		LOGGER.info("Getting OS Info with command: " + cmd);
+		LOGGER.trace("Getting OS Info with command: " + cmd);
 		String result = externalProcessRunner.executeCmd(cmd);
-		LOGGER.debug("capinfos command result: " + result);
+		LOGGER.debug("OS Info for Packet Reader: " + result);
 
 		String osInfo = StringParse.findLabeledDataFromString("Capture oper-sys", ":", result);
 		LOGGER.error("OS info: " + osInfo);
@@ -293,6 +293,7 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 					boolean modifierAccessible = modifiers.isAccessible();
 					modifiers.setAccessible(true);
 			        modifiers.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+					@SuppressWarnings("unchecked")
 					Map<ProtocolFamily, Object> map = (Map<ProtocolFamily, Object>) (field.get(StaticProtocolFamilyPacketFactory.getInstance()));
 					map.put(PF_INET6, map.get(old_af_inet6_obj));
 					modifiers.setInt(field, field.getModifiers() & Modifier.FINAL);

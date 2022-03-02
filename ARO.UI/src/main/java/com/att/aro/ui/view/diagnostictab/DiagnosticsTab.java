@@ -75,7 +75,6 @@ import com.att.aro.view.images.Images;
 
 import lombok.Getter;
 
-
 public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListener {
 	private static final long serialVersionUID = 1L;
 	private static final Logger LOGGER = LogManager.getLogger(DiagnosticsTab.class);	
@@ -230,8 +229,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 
 	private JSplitPane getOrientationPanel() {
 		if (internalPanel == null) {
-			internalPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, getJTCPFlowsPanel(),
-					getJTCPFlowsContentTabbedPane());
+			internalPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, getJTCPFlowsPanel(), getJTCPFlowsContentTabbedPane());
 			internalPanel.setOneTouchExpandable(true);
 			internalPanel.setContinuousLayout(true);
 			internalPanel.setResizeWeight(0.5);
@@ -740,14 +738,11 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 	}
 
 	public void setHighlightedTCP(HttpRequestResponseInfo reqResInfo) {
-		for (HttpRequestResponseInfoWithSession reqResSession : requestResponseWithSession) {
-			if (reqResSession.getInfo().equals(reqResInfo)) {
-				Session sessionTemp = reqResSession.getSession();
-				LOGGER.info("local port = " + sessionTemp.getLocalPort());
-				setHighlightedTCP(reqResSession.getSession());
-				jHttpReqResPanel.setHighlightedRequestResponse(reqResInfo);
-				break;
-			}
+		if (reqResInfo.getSession() != null) {
+			setHighlightedTCP(reqResInfo.getSession());
+			jHttpReqResPanel.setHighlightedRequestResponse(reqResInfo);
+		} else {
+			LOGGER.warn("rrInfo is missing a session link:" + reqResInfo);
 		}
 	}
 
