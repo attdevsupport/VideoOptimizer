@@ -15,22 +15,31 @@
 */
 package com.att.aro.core.packetanalysis.pojo;
 
-import javax.annotation.Nonnull;
-
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 
 import lombok.Data;
+import lombok.Getter;
 
 @Data
 public class VideoStall {
+	
+	private VideoEvent videoEvent;
 	private double duration;
 	private double stallStartTimestamp;
 	private double stallEndTimestamp;
+	@Getter private String stallState = "";
 
-	private VideoEvent videoEvent;
-	@Nonnull
-	private String stallState = "";
+	public VideoStall(VideoEvent videoEvent) {
+		this.videoEvent = videoEvent;
+		stallStartTimestamp = videoEvent.getPlayTime() - videoEvent.getStallTime();
+		stallEndTimestamp = videoEvent.getPlayTime();
+		duration = stallEndTimestamp - stallStartTimestamp;
+	}
 
+	public VideoEvent getSegmentTryingToPlay() {
+		return videoEvent;
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder(83);
@@ -42,31 +51,7 @@ public class VideoStall {
 			.append(", end :").append(String.format("%.3f :", stallEndTimestamp));
 		return strblr.toString();
 	}
-
-	public VideoStall(double stallStartTimestamp) {
-		setStallStartTimestamp(stallStartTimestamp);
-	}
-
-	public VideoStall(VideoEvent videoEvent) {
-		setVideoEvent(videoEvent);
-		setStallStartTimestamp(videoEvent.getPlayTime() - videoEvent.getStallTime());
-		setStallEndTimestamp(videoEvent.getPlayTime());
-		setDuration(stallEndTimestamp - stallStartTimestamp);
-	}
-
-	public void setStallEndTimestamp(double stallEndTimestamp) {
-		this.stallEndTimestamp = stallEndTimestamp;
-		setDuration(this.stallEndTimestamp - this.stallStartTimestamp);
-	}
-
-	public void setSegmentTryingToPlay(VideoEvent videoEvent) {
-		setVideoEvent(videoEvent);
-	}
-
-	public VideoEvent getSegmentTryingToPlay() {
-		return getVideoEvent();
-	}
-
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj) {

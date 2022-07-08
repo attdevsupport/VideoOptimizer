@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 AT&T
+ *  Copyright 2012, 2022 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,12 @@ package com.att.aro.datacollector.ioscollector.utilities;
 import java.io.IOException;
 import java.util.Date;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
+import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
 import com.att.aro.datacollector.ioscollector.reader.ExternalDumpcapExecutor;
-import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
 import com.att.aro.datacollector.ioscollector.reader.PcapHelper;
 
 /**
@@ -34,7 +35,7 @@ public class RemoteVirtualInterface {
 	private static final Logger LOG = LogManager.getLogger(RemoteVirtualInterface.class);
 	String serialNumber = "";
 	String sudoPassword = "";//we need to ask user for password to run some command on Mac
-	ExternalProcessRunner runner = null;
+	private IExternalProcessRunner extRunner;
 	Date initDate;
 	Date startCaptureDate;
 	Date startDate;
@@ -51,12 +52,11 @@ public class RemoteVirtualInterface {
 	private String rviPath;
 
 	public RemoteVirtualInterface(String sudoPassword) {
-
 		this.sudoPassword = sudoPassword;
 		startDate = new Date();
 		initDate = startDate;
-		runner = new ExternalProcessRunner();
-		pcaphelp = new PcapHelper(runner);
+		extRunner = new ExternalProcessRunnerImpl();
+		pcaphelp = new PcapHelper(extRunner);
 		xcode = new XCodeInfo();
 		rviPath = xcode.getPath();
 	}
@@ -79,8 +79,6 @@ public class RemoteVirtualInterface {
 	 * @throws Exception
 	 */
 	public boolean setup(String serialNumber, String pcapFilePath) throws Exception {
-		
-
 		launchDaemons();
 		
 		boolean success = false;
@@ -119,14 +117,8 @@ public class RemoteVirtualInterface {
 
 	private void launchDaemons() {
 		if (!launchDaemonsExecuted) {
-			String[] cmnd = new String[] { "bash", "-c", "echo " + this.sudoPassword 
-					+ " | sudo -S launchctl load -w /System/Library/LaunchDaemons/com.apple.rpmuxd.plist" };
-			try {
-				runner.runCmd(cmnd);
-				launchDaemonsExecuted = true;
-			} catch (IOException e) {
-				LOG.error("IOException", e);
-			}
+			extRunner.executeCmd("echo " + this.sudoPassword + " | sudo -S launchctl load -w /System/Library/LaunchDaemons/com.apple.rpmuxd.plist");
+			launchDaemonsExecuted = true;
 		}
 	}
 
@@ -142,15 +134,10 @@ public class RemoteVirtualInterface {
 	 */
 	private boolean rviConnection(String mode, String serialNumber) {
 		String cmdResponse;
-		try {
-			String cmdString = rviPath + " " + mode + " " + serialNumber;
-			cmdResponse = runner.runCmd(cmdString);
-			LOG.debug("cmd : " + cmdString);
-			LOG.debug("cmdResponse : " + cmdResponse);
-		} catch (IOException e) {
-			LOG.error("IOException", e);
-			return false;
-		}
+		String cmdString = rviPath + " " + mode + " " + serialNumber;
+		cmdResponse = extRunner.executeCmd(cmdString);
+		LOG.debug("cmd : " + cmdString);
+		LOG.debug("cmdResponse : " + cmdResponse);
 		if (cmdResponse != null && cmdResponse.contains("[SUCCEEDED]") && !cmdResponse.contains("Stopping")) {
 			String[] splitResponse = cmdResponse.split("interface");
 			if (splitResponse.length > 1) {
@@ -171,16 +158,11 @@ public class RemoteVirtualInterface {
 	 * @return 
 	 */
 	public void disconnectFromRvi(String serialNumber) {
-		// TODO needs to handle multiple device serialnumbers
 		String response = null;
-		try {
-			do {
-				rviConnection("-x", serialNumber);
-				response = runner.runCmd(rviPath + " -l");
-			} while (!response.trim().equals("Could not get list of devices"));
-		} catch (IOException e) {
-			LOG.error("IOException", e);
-		}
+		do {
+			rviConnection("-x", serialNumber);
+			response = extRunner.executeCmd(rviPath + " -l");
+		} while (!response.trim().equals("Could not get list of devices"));
 	}
 
 	/**
@@ -190,14 +172,7 @@ public class RemoteVirtualInterface {
 	 * @return rvi device associated with serialNumber
 	 */
 	private String findDeviceInRvictl(String serialNumber) {
-		String data;
-		try {
-			data = runner.runCmd(rviPath + " -l | grep " + serialNumber + " |awk -F \"interface \" '{print $2}'");
-		} catch (IOException e) {
-			LOG.error("IOException", e);
-			return null;
-		}
-		return data;
+		return extRunner.executeCmd(rviPath + " -l | grep " + serialNumber + " |awk -F \"interface \" '{print $2}'");
 	}
 
 	/**
@@ -206,14 +181,13 @@ public class RemoteVirtualInterface {
 	 * @throws Exception
 	 */
 	public void startCapture() throws Exception {
-		
 		LOG.info("********** Starting dumpcap... **********");
 		
 		startDate = new Date();
 		initDate = startDate;
 		startCaptureDate = startDate;
 		
-		dumpcapExecutor = new ExternalDumpcapExecutor(this.pcapfilepath, sudoPassword, "rvi0", this.runner);
+		dumpcapExecutor = new ExternalDumpcapExecutor(this.pcapfilepath, sudoPassword, "rvi0", extRunner);
 		dumpcapExecutor.start();
 		
 		LOG.info("************  Tcpdump started in background. ****************");
@@ -223,7 +197,6 @@ public class RemoteVirtualInterface {
 	 * stop background thread that run dumpcap and destroy thread
 	 */
 	public void stopCapture() {
-		
 		LOG.info("********** Stop dumpcap... **********");
 
 		if (dumpcapExecutor != null) {
@@ -258,7 +231,6 @@ public class RemoteVirtualInterface {
 	 * Stop RVI and stop packet capture.
 	 */
 	public void stop() throws IOException {
-
 		this.stopCapture();
 		disconnectFromRvi(serialNumber);
 		this.hasSetup = false;
@@ -295,4 +267,4 @@ public class RemoteVirtualInterface {
 	public String testRVIConnection(String serialNumber) {
 		return findDeviceInRvictl(serialNumber);
 	}
-}//end class
+}

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 AT&T
+ *  Copyright 2015, 2022 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 	 */
 	@Override
 	public String executeCmd(String cmd) {
-		return executeCmd(cmd, true, true);
+		return executeCmdRunner(null, cmd, false, "", true, true);
 	}
 
 	@Override
@@ -77,8 +77,7 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 	
 	@Override
 	public String executeCmd(File workingPath, String cmd, boolean redirectErrorStream, boolean readCommandResponse) {
-		String result = executeCmdRunner(workingPath, cmd, false, "", redirectErrorStream, readCommandResponse);
-		return result;
+		return executeCmdRunner(workingPath, cmd, false, "", redirectErrorStream, readCommandResponse);
 	}
 
 	@Override
@@ -97,10 +96,10 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		if (redirectErrorStream) {
 			pbldr.redirectErrorStream(true);
 		}
-		String binPath = Util.getBinPath();
-		if (!StringUtils.isEmpty(binPath)) {
+		
+		if (!StringUtils.isEmpty(Util.USER_PATH)) {
 			Map<String, String> envs = pbldr.environment();
-			envs.put("PATH", System.getenv("PATH") + ":" + binPath);
+			envs.put("PATH", System.getenv("PATH") + ":" + Util.USER_PATH);
 		}
 
 		if (!Util.isWindowsOS()) {
@@ -115,7 +114,7 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 			pbldr.command(new String[] { "CMD", "/C", cmd });
 		}
 
-		StringBuilder builder = new StringBuilder();
+		StringBuilder builder = new StringBuilder("");
 		try {
 			Process proc = pbldr.start();
 			
@@ -153,9 +152,7 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 			if (input != null) {
 				input.close();
 			}
-			if (process != null) {
-				process.destroy();
-			}
+			process.destroy();
 			String datastr = null;
 			if (out != null) {
 				datastr = out.toString();
@@ -190,9 +187,7 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 			if (input != null) {
 				input.close();
 			}
-			if (process != null) {
-				process.destroy();
-			}
+			process.destroy();
 			String datastr = null;
 			if (out != null) {
 				datastr = out.toString();
@@ -200,7 +195,6 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 			return datastr;
 		}
 	}
-
 
 	@Override
 	public String runGetString(String command) throws IOException {
@@ -226,13 +220,8 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		while ((totalread = input.read(data, 0, data.length)) != -1) {
 			out.write(data, 0, totalread);
 		}
-
-		if (input != null) {
-			input.close();
-		}
-		if (process != null) {
-			process.destroy();
-		}
+		input.close();
+		process.destroy();
 		return out;
 	}
 

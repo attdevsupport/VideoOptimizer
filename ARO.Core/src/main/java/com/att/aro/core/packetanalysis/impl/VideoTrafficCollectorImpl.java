@@ -79,7 +79,7 @@ public class VideoTrafficCollectorImpl implements IVideoTrafficCollector {
 		long analysisStartTime = System.currentTimeMillis();
 		
 		tracePath = result.getTraceDirectory() + Util.FILE_SEPARATOR;
-		LOG.debug("\n**** VideoAnalysis for :" + tracePath + "****");
+		LOG.debug("\n****< VideoAnalysis for :" + tracePath + " >****");
 	      
 		init();
 		

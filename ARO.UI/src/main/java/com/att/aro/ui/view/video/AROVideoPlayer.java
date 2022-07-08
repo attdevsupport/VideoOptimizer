@@ -53,8 +53,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
@@ -67,6 +67,8 @@ import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.view.images.Images;
+
+import lombok.Getter;
 
 /**
  * Displays the ARO Video Player UI, and provides Video player handling for the Play and Pause functions. The AROVideoPlayer class provides methods for
@@ -100,7 +102,12 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	private AbstractTraceResult tdResult;
 	private DiagnosticsTab aroAdvancedTab;
 	private SharedAttributesProcesses aroView;
-	
+
+    @Getter
+    private String videoPath;
+    @Getter
+	private boolean started = false;
+    
 	public AROVideoPlayer(SharedAttributesProcesses aroView){
     	this.aroView = aroView;
     }
@@ -187,16 +194,16 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 		
 		aroAdvancedTab.setVideoPlayer(this);
 		
-		String mediaUrl = VideoUtil.getMediaUrl(traceFile); // file:/Users/barrynelson/AROTraceAndroid/nt/video.mov
-		if (traceFile == null || mediaUrl == null) {
+		videoPath = VideoUtil.getMediaUrl(traceFile);
+		if (videoPath == null) {
 			setVideoNotAvailableImage(true);
 			return;
 		}
 		double videoStartTime = tdResult.getVideoStartTime();
 		if(videoStartTime < 0.00001) { //checking if the video start time isn't available
-			videoStartTime = new FileManagerImpl().getCreatedTime(mediaUrl)*1000;
+			videoStartTime = new FileManagerImpl().getCreatedTime(videoPath)*1000;
 		}
-		MediaLocator mlr = new MediaLocator(mediaUrl);
+		MediaLocator mlr = new MediaLocator(videoPath);
 		try {
 			videoPlayer = Manager.createRealizedPlayer(mlr);
 
@@ -266,7 +273,7 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 		});
 
 		setVisible(true);
-		if (!tdResult.isNativeVideo()) {
+		if (!tdResult.isDeviceScreenVideo()) {
 			jButton.setVisible(true);
 		}
 		aroAdvancedTab.setGraphPanelClicked(false);
@@ -415,8 +422,8 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 	
 	@Override
 	public boolean isPlaying() {
-		
-		if(null != videoPlayer) {
+
+		if (null != videoPlayer) {
 			return videoPlayer.getState() == Controller.Started;
 		}
 		return false;
@@ -478,17 +485,23 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 		
 		setBounds(xPosition, yPosition, frameWidth, frameHeight);
 		setVisibility(true);
+		started = true;
 	}
 	
-	public void stopPlayer(){
-		
-		if(null != videoPlayer) {
+	public void stopPlayer() {
+		if (null != videoPlayer) {
 			videoPlayer.stop();
+			started = false;
 		}
 	}
 
 	@Override
 	public void notifyLauncher(boolean enabled) {
 		aroView.updateVideoPlayerSelected(enabled);
+	}
+
+	@Override
+	public boolean isStarted() {
+		return started;
 	}
 }

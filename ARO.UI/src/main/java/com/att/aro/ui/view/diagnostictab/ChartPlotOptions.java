@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 public enum ChartPlotOptions {
 
 	CPU, TEMPERATURE, ALARM, BURST_COLORS, BATTERY, WAKELOCK, SCREEN, RADIO, BLUETOOTH, CAMERA, GPS, 
-	WIFI, ATTENUATION, SPEED_THROTTLE, UL_PACKETS, DL_PACKETS, BURSTS, USER_INPUT, RRC, THROUGHPUT, LATENCY, CONNECTIONS, 
+	WIFI, ATTENUATION, SPEED_THROTTLE, UL_PACKETS, DL_PACKETS, BURSTS, USER_INPUT, RRC, THROUGHPUT, THROUGHPUTUL, THROUGHPUTDL, LATENCY, CONNECTIONS, 
 	NETWORK_TYPE, BUFFER_OCCUPANCY, VIDEO_CHUNKS, BUFFER_TIME_OCCUPANCY, 
 	DEFAULT_VIEW, DEFAULT_VIDEO_VIEW;
 
@@ -110,6 +110,8 @@ public enum ChartPlotOptions {
 		defaultChartPlotList.add(USER_INPUT);
 		defaultChartPlotList.add(RRC);
 		defaultChartPlotList.add(THROUGHPUT);
+		defaultChartPlotList.add(THROUGHPUTUL);
+		defaultChartPlotList.add(THROUGHPUTDL);
 		defaultChartPlotList.add(LATENCY);
 		return Collections.unmodifiableList(defaultChartPlotList);
 	}
@@ -117,6 +119,8 @@ public enum ChartPlotOptions {
 	public static List<ChartPlotOptions> getVideoDefaultView() {
 		List<ChartPlotOptions> defaultChartPlotList = new ArrayList<ChartPlotOptions>();
 		defaultChartPlotList.add(THROUGHPUT);
+		defaultChartPlotList.add(THROUGHPUTUL);
+		defaultChartPlotList.add(THROUGHPUTDL);
 		defaultChartPlotList.add(UL_PACKETS);
 		defaultChartPlotList.add(DL_PACKETS);
 		defaultChartPlotList.add(BUFFER_OCCUPANCY);

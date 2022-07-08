@@ -171,9 +171,13 @@ public class VideoWriterImpl implements IVideoWriter{
 	@Override
 	public void close() throws IOException {
 		try {
-			qtOutputStream.close();
+			if (qtOutputStream != null) {
+				qtOutputStream.finish();
+				qtOutputStream.close();
+				qtOutputStream = null;
+			}
 		} catch (IOException e) {
-			LOGGER.warn("Exception closing video output stream"+ e.getMessage());
+			LOGGER.warn("Exception closing video output stream" + e.getMessage());
 		}
 	}
 

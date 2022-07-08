@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 AT&T
+ *  Copyright 2017, 2022 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ import javax.media.jai.OpImage;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
@@ -48,7 +48,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 	
 	private static final Logger LOG = LogManager.getLogger(ScreenshotManager.class.getName());
 	
-	IExternalProcessRunner runner = new ExternalProcessRunnerImpl();
+	IExternalProcessRunner extRunner = new ExternalProcessRunnerImpl();
 	Process proc = null;
 	String lastmessage = "";
 	int counter = 0;
@@ -60,11 +60,14 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 
 	File tmpfolder;
 
+	private String exeIdeviceScreenShot;
+
 	public void setIsReady(boolean isReady) {
 		isready = isReady;
 	}
 
 	public ScreenshotManager(String folder, String udid) {
+		
 		imagefolder = folder + Util.FILE_SEPARATOR + "tmp";
 		tmpfolder = new File(imagefolder);
 		this.udid = udid;
@@ -73,16 +76,37 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 			tmpfolder.mkdirs();
 			LOG.debug("exists :" + tmpfolder.exists());
 		}
+		checkScreenshot();
+	}
+
+	private boolean checkScreenshot() {
+		
+		isready = false;
+		exeIdeviceScreenShot = Util.getIdeviceScreenshot();
+		if (!new File(exeIdeviceScreenShot).exists()) {
+			String spath = extRunner.executeCmd("which " + exeIdeviceScreenShot);
+			if (spath.startsWith("/")) {
+				exeIdeviceScreenShot = spath.trim();
+			}
+		}
+
+		String result = extRunner.executeCmd(String.format("%s -u %s %s", exeIdeviceScreenShot, udid,  new File(imagefolder, "test.tiff").toString()));
+		if (!result.contains("screenshotr")) {
+			File screenshotTest = new File(result.trim().substring(result.indexOf(imagefolder)));
+			if (screenshotTest.exists()) {
+				screenshotTest.delete();
+				isready = true;
+			}
+		}
+
+		return isready;
 	}
 
 	@Override
 	public void run() {
-		String exeIdeviceScreenShot = Util.getIdeviceScreenshot();
-		File exefile = new File(exeIdeviceScreenShot);
-		if (!exefile.exists()) {
-			LOG.info("Not found exepath: " + exeIdeviceScreenShot);
-			isready = false;
-		} else if (StringUtils.isNotBlank(udid) && !exeIdeviceScreenShot.contains("-u")) {
+		String screenshotResponse;
+
+		if (StringUtils.isNotBlank(udid) && !exeIdeviceScreenShot.contains("-u")) {
 			exeIdeviceScreenShot += " -u " + udid;
 		}
 
@@ -96,12 +120,12 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 					LOG.error("Failed to create image folder", e);
 				}
 			}
-			
-			String results = runner.executeCmd(exeIdeviceScreenShot + " " + img);
-			if (!results.isEmpty() && !results.contains("Screenshot saved to")) {
+
+			screenshotResponse = extRunner.executeCmd(exeIdeviceScreenShot + " " + img);
+			if (!screenshotResponse.isEmpty() && !screenshotResponse.contains("Screenshot saved to")) {
 				isready = false; 
 				isReadyForRead = false;
-				LOG.error("iOS screenshot failure: " + results);
+				LOG.error("iOS screenshot failure: " + screenshotResponse);
 				shutDown();
 				break;
 			}
@@ -262,4 +286,4 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 	public void setReadyForRead(boolean isReadyForRead) {
 		this.isReadyForRead = isReadyForRead;
 	}
-}// end class
+}

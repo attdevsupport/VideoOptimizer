@@ -43,7 +43,6 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class BpTestStatisticsPanel extends AbstractBpPanel {
 	private static final long serialVersionUID = 1L;
 
-	private JLabel summaryHeaderLabel;
 	private JLabel statisticsHeaderLabel;
 	private JLabel durationLabel;
 	private JLabel totalDataLabel;
@@ -78,8 +77,7 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 		numFormat = NumberFormat.getNumberInstance();
 		decFormat = new DecimalFormat("#.##");
 		
-	    summaryHeaderLabel             = new JLabel();
-        statisticsHeaderLabel          = new JLabel();
+	    statisticsHeaderLabel          = new JLabel();
 
         attenuatorHeaderLabel		   = new JLabel();
         downlinkLabel				   = new JLabel();
@@ -98,7 +96,6 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 		JLabel totalAppScoreLabel      = new JLabel();
 		JLabel totalhttpsDataLabel     = new JLabel();
         
-        summaryHeaderLabel        .setFont(AroFonts.SUMMARY_FONT);
         statisticsHeaderLabel     .setFont(AroFonts.SUMMARY_FONT);
         attenuatorHeaderLabel 	  .setFont(AroFonts.SUMMARY_FONT);
                                                          
@@ -132,24 +129,18 @@ public class BpTestStatisticsPanel extends AbstractBpPanel {
 
  		
 		if (dataPanel == null) {
-			dataPanel = new JPanel(new GridBagLayout());
-			dataPanel.setBackground(Color.WHITE);//UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
-
 			int idx = 0;
-			
-			addLabelLineName(summaryHeaderLabel        , "bestPractices.header.summary"         ,   idx ,2, weightX, insets, AroFonts.SUMMARY_FONT);  //
+			dataPanel = new JPanel(new GridBagLayout());
+			dataPanel.setBackground(Color.WHITE);//UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));		
 			addLabelLineName(statisticsHeaderLabel     , "bestPractices.header.statistics"      , ++idx ,2, weightX, insets, AroFonts.HEADER_FONT);   //
-
 			addLabelLineName(durationLabel             , "bestPractices.duration"               , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
 			addLabelLineName(totalDataLabel            , "bestPractices.totalDataTransfered"    , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
 			addLabelLineName(totalPayloadDataLabel     , "bestPractices.totalPayloadData"       , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
 			addLabelLineName(energyConsumedLabel       , "bestPractices.energyConsumed"         , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
-			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
-			
+			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //			
 			addLabelLineName(attenuatorHeaderLabel     , "bestPractice.header.attenuator"      , ++idx ,2, weightX, insets, AroFonts.HEADER_FONT);
 			addLabelLineName(downlinkLabel			   , "bestPractice.header.attenuator.downlink", ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);
 			addLabelLineName(uplinkLabel			   , "bestPractice.header.attenuator.uplink", ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);
-			addLabelLineName(summaryFillerHeaderLabel  , " "                                    , ++idx ,2, weightX, insets, AroFonts.TEXT_FONT);     //
 			
 		}
 		return dataPanel;

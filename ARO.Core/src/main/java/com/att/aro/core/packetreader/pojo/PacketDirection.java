@@ -27,5 +27,10 @@ public enum PacketDirection {
 	/**
 	 * The packet is traveling in the down link (Response) direction. 
 	 */
-	DOWNLINK
+	DOWNLINK,
+	/**
+	 * The packet (Response) direction is IRRELEVANT. 
+	 */
+	BOTH
+	
 }

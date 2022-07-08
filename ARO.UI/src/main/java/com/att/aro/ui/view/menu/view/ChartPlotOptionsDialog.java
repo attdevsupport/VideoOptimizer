@@ -77,6 +77,8 @@ public class ChartPlotOptionsDialog extends JDialog {
 	private JCheckBox jWifiStateCheckBox;
 	private JCheckBox jNetworkTypeCheckBox;
 	private JCheckBox jThroughputCheckBox;
+	private JCheckBox jThroughputULCheckBox;
+	private JCheckBox jThroughputDLCheckBox;
 	private JCheckBox jLatencyCheckbox;
 	private JCheckBox jConnectionsCheckBox;
 	private JCheckBox jUplinkCheckBox;
@@ -111,7 +113,7 @@ public class ChartPlotOptionsDialog extends JDialog {
 		chart_options_dialog_ulpackets, chart_options_dialog_dlpackets, chart_options_dialog_bursts, 
 		chart_options_dialog_userinput, chart_options_dialog_rrc, chart_options_dialog_radio, chart_options_dialog_bluetooth, 
 		chart_options_dialog_camera, chart_options_dialog_battery, chart_options_dialog_screen, 
-		chart_options_dialog_throughput, chart_options_dialog_latency, chart_options_dialog_connections, chart_options_dialog_bufferTime_occupancy, chart_options_dialog_video, 
+		chart_options_dialog_throughput, chart_options_dialog_ULthroughput, chart_options_dialog_DLthroughput, chart_options_dialog_latency, chart_options_dialog_connections, chart_options_dialog_bufferTime_occupancy, chart_options_dialog_video, 
 		chart_options_dialog_temperature,chart_options_dialog_attenation,chart_options_dialog_speedthrottle
 	}
 
@@ -392,6 +394,14 @@ public class ChartPlotOptionsDialog extends JDialog {
 					DialogItem.chart_options_dialog_throughput, ChartPlotOptions.THROUGHPUT),
 					getGridBagConstraints(counter++));
 			addActionListener(jThroughputCheckBox);
+			jAdvancedOptionsPanel.add(jThroughputULCheckBox = getJCheckBox(jThroughputDLCheckBox,
+					DialogItem.chart_options_dialog_ULthroughput, ChartPlotOptions.THROUGHPUTUL),
+					getGridBagConstraints(counter++));
+			addActionListener(jThroughputULCheckBox);
+			jAdvancedOptionsPanel.add(jThroughputDLCheckBox = getJCheckBox(jThroughputDLCheckBox,
+					DialogItem.chart_options_dialog_DLthroughput, ChartPlotOptions.THROUGHPUTDL),
+					getGridBagConstraints(counter++));
+			addActionListener(jThroughputDLCheckBox);
 			jAdvancedOptionsPanel.add(jLatencyCheckbox = getJCheckBox(jLatencyCheckbox,
 					DialogItem.chart_options_dialog_latency, ChartPlotOptions.LATENCY),
 					getGridBagConstraints(counter++));

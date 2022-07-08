@@ -182,15 +182,6 @@ public class MissingTraceFiles {
 		addMissingFileMaybe(TraceDataConst.FileName.TEMPERATURE_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.LOCATION_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.RADIO_EVENTS_FILE, missingFiles);
-		if (isFilePresent(ResourceBundleHelper.getMessageString("video.videoDisplayFile")) ||
-				isFilePresent(ResourceBundleHelper.getMessageString(
-					"video.videoFileOnDevice"))) {
-			addMissingFileMaybe(TraceDataConst.FileName.VIDEO_TIME_FILE, missingFiles);
-		}
-		if (isFilePresent(ResourceBundleHelper.getMessageString("video.exVideoDisplayFile")) ||
-				isExternalVideoSourceFilePresent("video.mp4", "video.mov")){
-			addMissingFileMaybe(TraceDataConst.FileName.EXVIDEO_TIME_FILE, missingFiles);
-		}
 //		addMissingFileMaybe(TraceDataConst.FileName.SSLKEY_FILE, missingFiles);
 
 		// TODO:  Move this to Core (preferably immutable through a builder and no setters)!

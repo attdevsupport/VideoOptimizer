@@ -28,6 +28,7 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.peripheral.IMetaDataReadWrite;
@@ -61,11 +62,18 @@ public class MetaDataHelper implements IMetaDataHelper {
 	private HashMap<Double, Integer> bitrateMap;
 
 	private HashMap<Integer, Integer> resolutionMap;
+
+	private boolean isTraceDirectoryResult;
 	
 	@Override
 	public void saveJSON(String path, MetaDataModel metaData) throws Exception {
 		this.metaData = metaData;
 		saveJSON(path);
+	}
+	
+	@Override
+	public boolean saveJSON() {
+		return metaDataReadWrite.save();
 	}
 	
 	/**
@@ -172,8 +180,17 @@ public class MetaDataHelper implements IMetaDataHelper {
 		}
 	}
 
-	private boolean updateMetaData(PacketAnalyzerResult packetAnalyzerResult) {
-		TraceDirectoryResult result = (TraceDirectoryResult) packetAnalyzerResult.getTraceresult();
+	@Override
+	public boolean updateMetaData(PacketAnalyzerResult packetAnalyzerResult) {
+		AbstractTraceResult result = packetAnalyzerResult.getTraceresult();
+		if (result == null) {
+			return false;
+		}
+		isTraceDirectoryResult = result instanceof TraceDirectoryResult;
+		if ((metaData = result.getMetaData()) == null) {
+			metaData = new MetaDataModel();
+		}
+
 		boolean isMetaDataUpdated = false;
 		
 		if (metaData.getVideoStreams().isEmpty() || metaData.getVideoStreams().get(0).getVideoResolutionMap().isEmpty()) {
@@ -184,7 +201,9 @@ public class MetaDataHelper implements IMetaDataHelper {
 				metaStream.setVideoDuration(videoStream.getDuration());
 				metaStream.setType(videoStream.getManifest().getVideoFormat().toString());
 				metaStream.setVideo(videoStream.getManifest().getVideoName());
-				metaStream.setVideoOrientation(result.getCollectOptions().getOrientation());
+				if (isTraceDirectoryResult) {
+					metaStream.setVideoOrientation(((TraceDirectoryResult) result).getCollectOptions().getOrientation());
+				}
 				
 				metaStream.setVideoDownloadtime(videoStream.getVideoActiveMap().entrySet().stream().mapToDouble(e -> e.getValue().getDLTime()).sum());
 				metaStream.setAudioDownloadtime(videoStream.getAudioActiveMap().entrySet().stream().mapToDouble(e -> e.getValue().getDLTime()).sum());
@@ -200,15 +219,12 @@ public class MetaDataHelper implements IMetaDataHelper {
 			isMetaDataUpdated = true;
 		}
 		
-		if (metaData.getCollectorName().isEmpty()) {
-			metaData.setCollectorName(result.getCollectorName());
+		if (metaData.getTraceStorage().isEmpty()) {
+			String name = result.getTraceDirectory();
+			metaData.setTraceStorage(name);
 			isMetaDataUpdated = true;
 		}
-		if (metaData.getCollectorVersion().isEmpty()) {
-			metaData.setCollectorVersion(result.getCollectorVersion());
-			isMetaDataUpdated = true;
-		}
-
+		
 		if (metaData.getTraceName().isEmpty()) {
 			String name = result.getTraceDirectory();
 			int pos = name.lastIndexOf(Util.FILE_SEPARATOR);
@@ -219,31 +235,10 @@ public class MetaDataHelper implements IMetaDataHelper {
 			isMetaDataUpdated = true;
 		}
 		
-		if (metaData.getDeviceScreenSize() == null) {
-			metaData.setDeviceScreenSize(new Dimension(result.getDeviceScreenSizeX(), result.getDeviceScreenSizeY()));
-			isMetaDataUpdated = true;
-		}
-		
-		if (metaData.getPhoneMake().isEmpty()) {
-			metaData.setPhoneMake(result.getDeviceMake());
-			isMetaDataUpdated = true;
-		}
-		if (metaData.getPhoneModel().isEmpty()) {
-			metaData.setPhoneModel(result.getDeviceModel());
-			isMetaDataUpdated = true;
-		}
-		if (metaData.getOs().isEmpty()) {
-			metaData.setOs(result.getOsType());
-			isMetaDataUpdated = true;
-		}
-		if (metaData.getOsVersion().isEmpty()) {
-			metaData.setOsVersion(result.getOsVersion());
-			isMetaDataUpdated = true;
-		}	
 		
 		if (metaData.getStartUTC().isEmpty()) {
 			ZonedDateTime startUTC = null;
-			if (result != null && result.getTraceDateTime() != null) {
+			if (result.getTraceDateTime() != null) {
 				startUTC = ZonedDateTime.ofInstant(result.getTraceDateTime().toInstant(), ZoneId.systemDefault());
 				isMetaDataUpdated = true;
 			}
@@ -265,15 +260,48 @@ public class MetaDataHelper implements IMetaDataHelper {
 			isMetaDataUpdated = true;
 		} // MACHINE when tested in automated test harness
 		
-		if ((metaData.getTargetAppVer().isEmpty() || UNKNOWN.equals(metaData.getTargetAppVer()))
-				&& (!metaData.getTargetedApp().isEmpty() && !UNKNOWN.equals(metaData.getTargetedApp()))) {
-			String appVersion = findAppVersion(result);
-			if (!UNKNOWN.equals(appVersion)) {
+		
+		if (isTraceDirectoryResult) {
+			TraceDirectoryResult tdResult = (TraceDirectoryResult) result;
+
+			if (metaData.getDeviceScreenSize() == null) {
+				metaData.setDeviceScreenSize(new Dimension(tdResult.getDeviceScreenSizeX(), tdResult.getDeviceScreenSizeY()));
 				isMetaDataUpdated = true;
-				metaData.setTargetAppVer(appVersion);
+			}
+			if (metaData.getCollectorName().isEmpty()) {
+				metaData.setCollectorName(tdResult.getCollectorName());
+				isMetaDataUpdated = true;
+			}
+			if (metaData.getCollectorVersion().isEmpty()) {
+				metaData.setCollectorVersion(tdResult.getCollectorVersion());
+				isMetaDataUpdated = true;
+			}
+			if (metaData.getPhoneMake().isEmpty()) {
+				metaData.setPhoneMake(tdResult.getDeviceMake());
+				isMetaDataUpdated = true;
+			}
+			if (metaData.getPhoneModel().isEmpty()) {
+				metaData.setPhoneModel(tdResult.getDeviceModel());
+				isMetaDataUpdated = true;
+			}
+			if (metaData.getOs().isEmpty()) {
+				metaData.setOs(tdResult.getOsType());
+				isMetaDataUpdated = true;
+			}
+			if (metaData.getOsVersion().isEmpty()) {
+				metaData.setOsVersion(tdResult.getOsVersion());
+				isMetaDataUpdated = true;
+			}
+
+			if ((metaData.getTargetAppVer().isEmpty() || UNKNOWN.equals(metaData.getTargetAppVer()))
+					&& (!metaData.getTargetedApp().isEmpty() && !UNKNOWN.equals(metaData.getTargetedApp()))) {
+				String appVersion = findAppVersion(tdResult);
+				if (!UNKNOWN.equals(appVersion)) {
+					isMetaDataUpdated = true;
+					metaData.setTargetAppVer(appVersion);
+				}
 			}
 		}
-
 		return isMetaDataUpdated;
 	}
 

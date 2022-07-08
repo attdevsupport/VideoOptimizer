@@ -91,12 +91,12 @@ public class BufferInSecondsPlot implements IPlot {
 					LOG.debug("VideoStream :" + videoStream.getManifest().getVideoName());
 					seriesPlayTimeBuffer = new XYSeries("Play Time Buffer");
 					double yPlotValue = 0.00;
+					int cntr = 0;
 					for (XYPair xy : videoStream.getPlayTimeList()) {
 						 yPlotValue = xy.getYVal();
-						
+						LOG.debug(String.format("%d\t%.3f\t%.3f", cntr++, xy.getXVal(), xy.getYVal()));
 						bufferTimeList.add(yPlotValue);
 						seriesPlayTimeBuffer.add(xy.getXVal(), yPlotValue);
-						LOG.debug(String.format("%.3f\t%.0f", xy.getXVal(), yPlotValue));
 						
 					}
 					Collections.sort(bufferTimeList);

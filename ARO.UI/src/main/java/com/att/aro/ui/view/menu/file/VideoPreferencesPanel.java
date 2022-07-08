@@ -55,7 +55,7 @@ public class VideoPreferencesPanel extends JPanel {
 	private static final Logger LOG = LogManager.getLogger(VideoPreferencesPanel.class.getName());
 
 	private static final long serialVersionUID = 1L;
-	private static final int MAX_BUFFER = 5000;
+	private static final int MAX_BUFFER = 100;
 	private static final int MAX_STALLTRIGGERTIME = 10;
 	private static final int MAX_STALLRECOVERY = 10;
 	private static final int MAX_TARGETEDSTARTUPDELAY = 10;
@@ -103,8 +103,7 @@ public class VideoPreferencesPanel extends JPanel {
 			}
 		} else {
 			try {
-				videoUsagePrefs = ContextAware.getAROConfigContext().getBean("videoUsagePrefs", VideoUsagePrefs.class); // new
-																														// VideoUsagePrefs();
+				videoUsagePrefs = ContextAware.getAROConfigContext().getBean("videoUsagePrefs", VideoUsagePrefs.class);
 				temp = mapper.writeValueAsString(videoUsagePrefs);
 				prefs.setPref(VideoUsagePrefs.VIDEO_PREFERENCE, temp);
 			} catch (IOException e) {
@@ -125,13 +124,9 @@ public class VideoPreferencesPanel extends JPanel {
 			jDialogPanel.setAlignmentX(CENTER_ALIGNMENT);
 			jDialogPanel.setLayout(new GridBagLayout());
 
-			jDialogPanel.add(getWarnFailPanel(),
-					getGridBagConstraints(1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 0));
-			jDialogPanel.add(new JPanel(),
-					getGridBagConstraints(1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 1));
-
-			jDialogPanel.add(getVideoPrefencesPanel(),
-					getGridBagConstraints(1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 2));
+			jDialogPanel.add(getWarnFailPanel(), getGridBagConstraints(1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 0));
+			jDialogPanel.add(new JPanel(), getGridBagConstraints(1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 1));
+			jDialogPanel.add(getVideoPrefencesPanel(), getGridBagConstraints(1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, 2));
 
 		}
 
@@ -162,23 +157,24 @@ public class VideoPreferencesPanel extends JPanel {
 		Label segRedundancyLabel = new Label(ResourceBundleHelper.getMessageString("segmentRedundancy.title"));
 
 		startupDelayEdit = new JTextField(String.format("%.3f",
-				Double.valueOf(videoUsagePrefs.getStartUpDelayWarnVal() == 0.0 ?
-						Double.valueOf( ResourceBundleHelper.getMessageString("preferences.video.defaultStartUpDelayWarnVal"))
-						: videoUsagePrefs.getStartUpDelayWarnVal())), 5);
-
+				Double.valueOf(videoUsagePrefs.getStartUpDelayWarnVal() == 0.0
+				? Double.valueOf( ResourceBundleHelper.getMessageString("preferences.video.defaultStartUpDelayWarnVal"))
+				: videoUsagePrefs.getStartUpDelayWarnVal())), 5);
 		stallDurationWarnEdit = new JTextField(String.format("%.3f",
-				Double.valueOf(videoUsagePrefs.getStallDurationWarnVal() == 0.0 ?
-						Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.defaultStallDurationWarnVal"))
-						: videoUsagePrefs.getStallDurationWarnVal())), 5);
+				Double.valueOf(videoUsagePrefs.getStallDurationWarnVal() == 0.0 
+				? Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.defaultStallDurationWarnVal"))
+				: videoUsagePrefs.getStallDurationWarnVal())), 5);
 		stallDurationFailEdit = new JTextField(String.format("%.3f",
-				Double.valueOf(videoUsagePrefs.getStallDurationFailVal() == 0.0 ?
-						Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.defaultStallDurationFailVal"))
-						: videoUsagePrefs.getStallDurationFailVal())), 5);
-
-		segRedundancyWarnEdit = new JTextField(String.valueOf(videoUsagePrefs.getSegmentRedundancyWarnVal() == 0.0 ? 
-				ResourceBundleHelper.getMessageString("preferences.video.defaultSegmentRedundancyWarnVal") : videoUsagePrefs.getSegmentRedundancyWarnVal()), 5);
-		segRedundancyFailEdit = new JTextField(String.valueOf(videoUsagePrefs.getSegmentRedundancyFailVal() == 0.0 ? 
-				ResourceBundleHelper.getMessageString("preferences.video.defaultSegmentRedundancyFailVal")
+				Double.valueOf(videoUsagePrefs.getStallDurationFailVal() == 0.0 
+				? Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.defaultStallDurationFailVal"))
+				: videoUsagePrefs.getStallDurationFailVal())), 5);
+		segRedundancyWarnEdit = new JTextField(String.valueOf(
+				videoUsagePrefs.getSegmentRedundancyWarnVal() == 0.0 
+				? ResourceBundleHelper.getMessageString("preferences.video.defaultSegmentRedundancyWarnVal")
+				: videoUsagePrefs.getSegmentRedundancyWarnVal()), 5);
+		segRedundancyFailEdit = new JTextField(String.valueOf(
+				videoUsagePrefs.getSegmentRedundancyFailVal() == 0.0 
+				? ResourceBundleHelper.getMessageString("preferences.video.defaultSegmentRedundancyFailVal")
 				: videoUsagePrefs.getSegmentRedundancyFailVal()), 5);
 
 		startupDelayEdit.setInputVerifier(getNumericInputVerifier(MAX_STARTUPDELAY, 0.01, 3));
@@ -206,12 +202,9 @@ public class VideoPreferencesPanel extends JPanel {
 		panel.setAlignmentX(CENTER_ALIGNMENT);
 		panel.setBorder(new RoundedBorder(new Insets(1, 10, 10, 10), null));
 		addHeaderLine(panel);
-		addTopLine(startupDelayLabel, startupDelayEdit, panel,
-				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
-		addMultipleEditsLine(stallDurationLabel, stallDurationWarnEdit, stallDurationFailEdit, panel,
-				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
-		addMultipleEditsLine(segRedundancyLabel, segRedundancyWarnEdit, segRedundancyFailEdit, panel,
-				new Label(ResourceBundleHelper.getMessageString("units.count")));
+		addTopLine(startupDelayLabel, startupDelayEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.seconds")));
+		addMultipleEditsLine(stallDurationLabel, stallDurationWarnEdit, stallDurationFailEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.seconds")));
+		addMultipleEditsLine(segRedundancyLabel, segRedundancyWarnEdit, segRedundancyFailEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.count")));
 		addDefaultButton(panel, 1, inputVerifier);
 		return panel;
 
@@ -224,7 +217,7 @@ public class VideoPreferencesPanel extends JPanel {
 	private Component getVideoPrefencesPanel() {
 
 		stallTriggerTimeEdit = new JTextField(String.format("%.3f", videoUsagePrefs.getStallTriggerTime()), 5);
-		maxBufferEdit = new JTextField(String.format("%.2f", videoUsagePrefs.getMaxBuffer()), 5);
+		maxBufferEdit = new JTextField(String.format("%.1f", videoUsagePrefs.getMaxBuffer()), 5);
 		stallPausePointEdit = new JTextField(String.format("%.4f", videoUsagePrefs.getStallPausePoint()), 5);
 		stallRecoveryEdit = new JTextField(String.format("%.4f", videoUsagePrefs.getStallRecovery()), 5);
 		targetedStartupDelayEdit = new JTextField(String.format("%.2f", videoUsagePrefs.getStartupDelay()), 5);
@@ -233,7 +226,7 @@ public class VideoPreferencesPanel extends JPanel {
 		stallTriggerTimeEdit.setInputVerifier(getNumericInputVerifier(MAX_STALLTRIGGERTIME, 0.01, 3));
 		stallTriggerTimeEdit.addKeyListener(getKeyListener(stallTriggerTimeEdit));
 		
-		maxBufferEdit.setInputVerifier(getNumericInputVerifier(MAX_BUFFER, 0, 2));
+		maxBufferEdit.setInputVerifier(getNumericInputVerifier(MAX_BUFFER, 0, 1));
 		maxBufferEdit.addKeyListener(getKeyListener(maxBufferEdit));
 		
 		stallPausePointEdit.setInputVerifier(getNumericInputVerifier(MAX_STALLRECOVERY, 0, 4));
@@ -272,31 +265,22 @@ public class VideoPreferencesPanel extends JPanel {
 	}
 
 	private void addVideoPreference(JPanel panel) {
-		Label stallTriggerTimeLabel = new Label(
-				ResourceBundleHelper.getMessageString("video.usage.dialog.stallTriggerTime"));
+		Label stallTriggerTimeLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallTriggerTime"));
 		Label maxBufferLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.maxBuffer"));
-		Label duplicateHandlingLabel = new Label(
-				ResourceBundleHelper.getMessageString("video.usage.dialog.duplicateHandling"));
-		Label stallPausePointLabel = new Label(
-				ResourceBundleHelper.getMessageString("video.usage.dialog.stallPausePoint"));
+		Label duplicateHandlingLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.duplicateHandling"));
+		Label stallPausePointLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallPausePoint"));
 		Label stallRecoveryLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.stallRecovery"));
-		Label targetedStartupDelayLabel = new Label(
-				ResourceBundleHelper.getMessageString("video.usage.dialog.targetedStartupDelay"));
+		Label targetedStartupDelayLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.targetedStartupDelay"));
 		Label nearStallLabel = new Label(ResourceBundleHelper.getMessageString("video.usage.dialog.nearStall"));
-		
-		addLine(targetedStartupDelayLabel, targetedStartupDelayEdit, panel,
-				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
-		addLine(stallTriggerTimeLabel, stallTriggerTimeEdit, panel,
-				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
-		addLine(stallPausePointLabel, stallPausePointEdit, panel,
-				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
-		addLine(stallRecoveryLabel, stallRecoveryEdit, panel,
-				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
-		addLine(nearStallLabel, nearStallEdit, panel,
-				new Label(ResourceBundleHelper.getMessageString("units.seconds")));
+
+		addLine(targetedStartupDelayLabel, targetedStartupDelayEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.seconds")));
+		addLine(stallTriggerTimeLabel, stallTriggerTimeEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.seconds")));
+		addLine(stallPausePointLabel, stallPausePointEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.seconds")));
+		addLine(stallRecoveryLabel, stallRecoveryEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.seconds")));
+		addLine(nearStallLabel, nearStallEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.seconds")));
 		addLine(maxBufferLabel, maxBufferEdit, panel, new Label(ResourceBundleHelper.getMessageString("units.mbytes")));
 		addLineComboBox(duplicateHandlingLabel, duplicateHandlingEditCombo, panel);
-		
+
 	}
 
 	private KeyListener getKeyListener(JTextField textField) {
@@ -395,50 +379,39 @@ public class VideoPreferencesPanel extends JPanel {
 	}
 
 	private void setDefault() {
-		
-		if(preferencesDialog.getPopup() != null) {
-			preferencesDialog.getPopup().hide();
-		}	
+
+		if (preferencesDialog.getPopup() != null) {
+			preferencesDialog.getPopup()
+					.hide();
+		}
 		toggleOtherFields(true);
-		
-		startupDelayEdit.setText(String.format("%.3f", Double.valueOf(
-				ResourceBundleHelper.getMessageString("preferences.video.defaultStartUpDelayWarnVal"))));
-		stallDurationWarnEdit.setText(
-				String.format("%.3f", Double.valueOf(
-				ResourceBundleHelper.getMessageString("preferences.video.defaultStallDurationWarnVal"))));
-		
-		stallDurationFailEdit.setText(String.format("%.3f", Double.valueOf(
-				ResourceBundleHelper.getMessageString("preferences.video.defaultStallDurationFailVal"))));	
-		
+
+		startupDelayEdit	 .setText(String.format("%.3f", Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.defaultStartUpDelayWarnVal"))));
+		stallDurationWarnEdit.setText(String.format("%.3f", Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.defaultStallDurationWarnVal"))));
+		stallDurationFailEdit.setText(String.format("%.3f", Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.defaultStallDurationFailVal"))));
 		segRedundancyWarnEdit.setText(ResourceBundleHelper.getMessageString("preferences.video.defaultSegmentRedundancyWarnVal"));
 		segRedundancyFailEdit.setText(ResourceBundleHelper.getMessageString("preferences.video.defaultSegmentRedundancyFailVal"));
-		
+
 		this.repaint();
 	}
 
 	
 
 	private void setPreferencesDefault() {
-		
-		if(preferencesDialog.getPopup() != null) {
+
+		if (preferencesDialog.getPopup() != null) {
 			preferencesDialog.getPopup().hide();
-		}	
+		}
 		toggleOtherFields(true);
-		
-		stallTriggerTimeEdit.setText(String.format("%.3f",
-				Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.stallTriggerTime"))));
-		maxBufferEdit.setText(String.format("%.2f",
-				Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.maxBuffer"))));
-		stallPausePointEdit.setText(String.format("%.4f",
-				Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.stallPausePoint"))));
-		stallRecoveryEdit.setText(String.format("%.4f",
-				Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.stallRecovery"))));
-		targetedStartupDelayEdit.setText(String.format("%.2f",
-				Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.targetedStartupDelay"))));
-		nearStallEdit.setText(String.format("%.4f",
-				Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.nearStall"))));
-		startupDelayReminder.setSelected(true);
-		duplicateHandlingEditCombo.setSelectedItem(DUPLICATE_HANDLING.HIGHEST);
+
+		stallTriggerTimeEdit	.setText(String.format("%.3f", Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.stallTriggerTime"))));
+		maxBufferEdit			.setText(String.format("%.1f", Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.maxBuffer"))));
+		stallPausePointEdit		.setText(String.format("%.4f", Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.stallPausePoint"))));
+		stallRecoveryEdit		.setText(String.format("%.4f", Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.stallRecovery"))));
+		targetedStartupDelayEdit.setText(String.format("%.2f", Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.targetedStartupDelay"))));
+		nearStallEdit			.setText(String.format("%.4f", Double.valueOf(ResourceBundleHelper.getMessageString("preferences.video.nearStall"))));
+		startupDelayReminder	.setSelected(true);
+		duplicateHandlingEditCombo.setSelectedItem(DUPLICATE_HANDLING.LAST);
 		this.repaint();
 	}
 

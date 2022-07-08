@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +55,7 @@ import com.att.aro.core.util.Util;
 public class FileManagerImpl implements IFileManager {
 
 	private static final Logger LOGGER = LogManager.getLogger(FileManagerImpl.class.getName());
-	
+
 	@Autowired
 	private IExternalProcessRunner extrunner;
 
@@ -105,8 +106,17 @@ public class FileManagerImpl implements IFileManager {
 
 	@Override
 	public boolean fileExist(String path) {
-		File file = new File(path);
-		return file.exists();
+		return Files.exists(Paths.get(path));
+	}
+
+	@Override
+	public boolean fileExist(String folder, String file) {
+		return Files.exists(Paths.get(folder, file));
+	}
+
+	@Override
+	public boolean fileExist(File folder, String file) {
+		return Files.exists(Paths.get(folder.toString(), file));
 	}
 
 	@Override
@@ -131,10 +141,22 @@ public class FileManagerImpl implements IFileManager {
 	}
 
 	@Override
+	public File createEmptyFile(File traceFolder, String fileName) {
+		try {
+			File temp = createFile(traceFolder, fileName);
+			temp.createNewFile();
+			return temp;
+		} catch (IOException e) {
+			LOGGER.error("failed to create '" + fileName + "' file", e);
+			return null;
+		}
+	}
+
+	@Override
 	public void mkDir(String path) {
 		mkDir(new File(path));
 	}
-	
+
 	@Override
 	public void mkDir(File dirinfo) {
 		if (!dirinfo.exists()) {
@@ -160,7 +182,7 @@ public class FileManagerImpl implements IFileManager {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Completely delete a folder and all contents
 	 */
@@ -172,7 +194,7 @@ public class FileManagerImpl implements IFileManager {
 			LOGGER.error("Failed to delete " + folderPath, e);
 		}
 	}
-	
+
 	@Override
 	public boolean deleteFolderContents(String folderPath) {
 
@@ -190,11 +212,9 @@ public class FileManagerImpl implements IFileManager {
 		return delResult;
 	}
 
-	
 	@Override
 	public boolean directoryDeleteInnerFiles(String directoryPath) {
-		if ((Util.isWindowsOS() && ("C:\\".equals(directoryPath) || "C:".equals(directoryPath)))
-				|| "/".equals(directoryPath)) {
+		if ((Util.isWindowsOS() && ("C:\\".equals(directoryPath) || "C:".equals(directoryPath))) || "/".equals(directoryPath)) {
 			LOGGER.error("Illegal attempt to delete files in " + directoryPath);
 			return false;
 		}
@@ -209,11 +229,11 @@ public class FileManagerImpl implements IFileManager {
 		}
 		return true;
 	}
-	
+
 	@Override
 	public String[] findFiles(String path, final String fileName) {
 
-		if (path==null || fileName ==null) {
+		if (path == null || fileName == null) {
 			return new String[] {};
 		}
 		String name1 = StringUtils.substringBeforeLast(fileName, ".");
@@ -262,7 +282,7 @@ public class FileManagerImpl implements IFileManager {
 		File file = new File(filepath);
 		return file.lastModified();
 	}
-	
+
 	public long getCreatedTime(String filePath) throws IOException {
 		File file = new File(filePath);
 		FileTime fileTime = (FileTime) Files.getAttribute(file.toPath(), "creationTime", LinkOption.NOFOLLOW_LINKS);
@@ -350,7 +370,7 @@ public class FileManagerImpl implements IFileManager {
 	@Override
 	public boolean deleteFile(String path) {
 		boolean success = false;
-		if(fileExist(path)){
+		if (fileExist(path)) {
 			success = createFile(path).delete();
 		}
 		return success;
@@ -369,7 +389,7 @@ public class FileManagerImpl implements IFileManager {
 	public boolean renameFile(File origFileName, String newName) {
 		String path = origFileName.getParent();
 		File renameFile = createFile(path, newName);
-		
+
 		return (!renameFile.exists() && origFileName.renameTo(renameFile));
 	}
 
@@ -379,20 +399,13 @@ public class FileManagerImpl implements IFileManager {
 			return tracePath;
 		}
 		if (Util.isMacOS()) {
-			String cmd ="if [ -f \"%path%\" -a ! -L \"%path%\" ]; then\n"
-					  + " item_name=`basename \"%path%\"`\n"
-					  + " item_parent=`dirname \"%path%\"`\n"
-					  + " item_parent=\"`cd \\\"${item_parent}\\\" 2>/dev/null && pwd || echo \\\"${item_parent}\\\"`\"\n"
-					  + " item_path=\"${item_parent}/${item_name}\"\n"
-					  + " line_1='tell application \"Finder\"'"
-					  + " line_2='set theItem to (POSIX file \"'${item_path}'\") as alias'\n"
-					  + " line_3='if the kind of theItem is \"alias\" then'\n"
-					  + " line_4='get the posix path of (original item of theItem as text)'\n"
-					  + " line_5='end if'\n"
-					  + " line_6='end tell'\n"
-					  + " orig=`osascript -e \"$line_1\" -e \"$line_2\" -e \"$line_3\" -e \"$line_4\" -e \"$line_5\" -e \"$line_6\"`\n"
-					  + " echo \"$orig\"\n"
-					  + "fi\n";
+			String cmd = "if [ -f \"%path%\" -a ! -L \"%path%\" ]; then\n" + " item_name=`basename \"%path%\"`\n" + " item_parent=`dirname \"%path%\"`\n"
+					+ " item_parent=\"`cd \\\"${item_parent}\\\" 2>/dev/null && pwd || echo \\\"${item_parent}\\\"`\"\n"
+					+ " item_path=\"${item_parent}/${item_name}\"\n" + " line_1='tell application \"Finder\"'"
+					+ " line_2='set theItem to (POSIX file \"'${item_path}'\") as alias'\n" + " line_3='if the kind of theItem is \"alias\" then'\n"
+					+ " line_4='get the posix path of (original item of theItem as text)'\n" + " line_5='end if'\n" + " line_6='end tell'\n"
+					+ " orig=`osascript -e \"$line_1\" -e \"$line_2\" -e \"$line_3\" -e \"$line_4\" -e \"$line_5\" -e \"$line_6\"`\n" + " echo \"$orig\"\n"
+					+ "fi\n";
 			cmd = cmd.replaceAll("%path%", tracePath.getAbsolutePath());
 			String results = extrunner.executeCmd(cmd);
 			if (StringUtils.isEmpty(results) || results.contains("execution error:")) {
@@ -411,7 +424,7 @@ public class FileManagerImpl implements IFileManager {
 				return tracePath;
 			}
 
-		}  else {
+		} else {
 			return tracePath;
 		}
 	}

@@ -421,6 +421,15 @@ public class VideoEvent implements Comparable<VideoEvent>{
 
 	}
 	
+	/**
+	 * Create VideoEvent from CSI only
+	 * 
+	 * 
+	 * @param image
+	 * @param manifest
+	 * @param segment
+	 * @param response
+	 */
 	public VideoEvent(byte[] image, Manifest manifest, Segment segment, HttpRequestResponseInfo response) {
 		
 		this.segmentInfo = createSegmentInfo(manifest, segment);
@@ -459,6 +468,13 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		}
 	}
 
+	/**
+	 * Create SegmentInfo from CSI only
+	 * 
+	 * @param manifest
+	 * @param segment
+	 * @return
+	 */
 	private SegmentInfo createSegmentInfo(Manifest manifest, Segment segment) {
 		SegmentInfo segmentInfo = new SegmentInfo();
 		

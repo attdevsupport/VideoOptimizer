@@ -48,7 +48,7 @@ import com.att.aro.core.pojo.VersionInfo;
 import com.att.aro.core.report.IReport;
 import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
-import com.att.aro.core.util.Util;
+import com.att.aro.mvc.IAROView;
 
 /**
  * This class provides access to ARO.Core functionality for analyzing and
@@ -544,8 +544,8 @@ public class AROServiceImpl implements IAROService {
 	 *             if trace file not found
 	 */
 	@Override
-	public AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory) throws IOException {
-		return analyzeDirectory(requests, traceDirectory, null, null);
+	public AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory, IAROView aroView) throws IOException {
+		return analyzeDirectory(requests, traceDirectory, aroView, null, null);
 	}
 
 	/**
@@ -572,16 +572,15 @@ public class AROServiceImpl implements IAROService {
 	 *             if trace file not found
 	 */
 	@Override
-	public AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory, Profile profile,
-			AnalysisFilter filter) throws IOException {
+	public AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory, IAROView aroView, Profile profile, AnalysisFilter filter) throws IOException {
 		AROTraceData data = new AROTraceData();
 		PacketAnalyzerResult result = null;
-		if (!filemanager.fileExist(traceDirectory + Util.FILE_SEPARATOR + "traffic.cap")) {
+		if (!filemanager.fileExist(traceDirectory, aroView.getTrafficFile())) {
 			data.setError(ErrorCodeRegistry.getTrafficFileNotFound());
 			data.setSuccess(false);
 		} else {
 			try {
-				result = packetanalyzer.analyzeTraceDirectory(traceDirectory, profile, filter);
+				result = packetanalyzer.analyzeTraceDirectory(traceDirectory, aroView, profile, filter);
 			} catch (FileNotFoundException ex) {
 				data.setError(ErrorCodeRegistry.getTraceDirNotFound());
 				return data;

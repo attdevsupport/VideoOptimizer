@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express orimplied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.peripheral.impl;
 
 import static org.junit.Assert.assertEquals;
@@ -22,10 +37,23 @@ import org.mockito.MockitoAnnotations;
 import com.att.aro.core.BaseTest;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
+import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
+import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.peripheral.pojo.VideoTime;
 import com.att.aro.core.util.Util;
 
 public class VideoTimeReaderImplTest extends BaseTest {
+	
+	@Rule
+	public TemporaryFolder folder = new TemporaryFolder();
+	
+	private File exVideoDisplayFileName;
+	private File nativeVideoDisplayfile;
+	private File VIDEO_TIME_FILE;
+	private File EXVIDEO_TIME_FILE;
+	private String tracePath;
+	private File nativeVideoFileOnDevice;
+	private AbstractTraceResult traceResult;
 
 	@InjectMocks
 	VideoTimeReaderImpl videoTimeReaderImpl;
@@ -41,23 +69,13 @@ public class VideoTimeReaderImplTest extends BaseTest {
 		MockitoAnnotations.initMocks(this);
 		videoTimeReaderImpl.setFileReader(fileReader);
 		tracePath = folder.getRoot().toString();
-		
+		traceResult = new TraceDirectoryResult();
 	}
 
 	@After
 	public void destroy() {
 		folder.delete();
 	}
-	
-	@Rule
-	public TemporaryFolder folder = new TemporaryFolder();
-	
-	private File exVideoDisplayFileName;
-	private File nativeVideoDisplayfile;
-	private File VIDEO_TIME_FILE;
-	private File EXVIDEO_TIME_FILE;
-	private String tracePath;
-	private File nativeVideoFileOnDevice;
 	
 	/**
 	 * create & populate file
@@ -94,9 +112,10 @@ public class VideoTimeReaderImplTest extends BaseTest {
 
 		Date traceDateTime = new Date((long) 1414092264446.0);
 		VideoTime videoTime = null;
+		traceResult.setTraceDateTime(traceDateTime);
 
 		nativeVideoDisplayfile = makeFile("exvideo.mov", null);
-		videoTime = videoTimeReaderImpl.readData(tracePath, traceDateTime);
+		videoTime = videoTimeReaderImpl.readData(tracePath, traceResult);
 		assertEquals(true, videoTime.isExVideoTimeFileNotFound());
 		nativeVideoDisplayfile.delete();
 		nativeVideoDisplayfile = null;
@@ -111,12 +130,13 @@ public class VideoTimeReaderImplTest extends BaseTest {
 		
 
 		Date traceDateTime = new Date((long) 1414092264446.0);
+		traceResult.setTraceDateTime(traceDateTime);
 		VideoTime videoTime = null;
 
 		VIDEO_TIME_FILE = makeFile("video_time", new String[] { "1.41409226371E9 1.414092261198E9" });
-		videoTime = videoTimeReaderImpl.readData(tracePath, traceDateTime);
+		videoTime = videoTimeReaderImpl.readData(tracePath, traceResult);
 		assertEquals(1.4140922669580002E9, videoTime.getVideoStartTime(), 0);
-		assertEquals(true, videoTime.isNativeVideo());
+		assertEquals(true, videoTime.isDeviceScreenVideo());
 		assertEquals(false, videoTime.isExVideoFound());
 		assertEquals(false, videoTime.isExVideoTimeFileNotFound());
 		VIDEO_TIME_FILE.delete();
@@ -133,13 +153,14 @@ public class VideoTimeReaderImplTest extends BaseTest {
 		
 
 		Date traceDateTime = new Date((long) 1414092264446.0);
+		traceResult.setTraceDateTime(traceDateTime);
 		VideoTime videoTime = null;
 
 		nativeVideoDisplayfile = makeFile("video.mov", null);
 		VIDEO_TIME_FILE = makeFile("video_time", new String[] { "1.41409226371E9 1.414092261198E9" });
-		videoTime = videoTimeReaderImpl.readData(tracePath, traceDateTime);
+		videoTime = videoTimeReaderImpl.readData(tracePath, traceResult);
 		assertEquals(1.4140922669580002E9, videoTime.getVideoStartTime(), 0);
-		assertEquals(true, videoTime.isNativeVideo());
+		assertEquals(true, videoTime.isDeviceScreenVideo());
 		assertEquals(false, videoTime.isExVideoFound());
 		assertEquals(false, videoTime.isExVideoTimeFileNotFound());
 		nativeVideoDisplayfile.delete();
@@ -158,14 +179,15 @@ public class VideoTimeReaderImplTest extends BaseTest {
 		
 
 		Date traceDateTime = new Date((long) 1414092264446.0);
+		traceResult.setTraceDateTime(traceDateTime);
 		VideoTime videoTime = null;
 
 		
 		exVideoDisplayFileName = makeFile("exvideo.mov", null);
 		EXVIDEO_TIME_FILE = makeFile("exVideo_time", new String[] { "1.41409226371E9 1.414092261198E9" });
-		videoTime = videoTimeReaderImpl.readData(tracePath, traceDateTime);
+		videoTime = videoTimeReaderImpl.readData(tracePath, traceResult);
 		assertEquals(1.4140922669580002E9, videoTime.getVideoStartTime(), 0);
-		assertEquals(false, videoTime.isNativeVideo());
+		assertEquals(false, videoTime.isDeviceScreenVideo());
 		assertEquals(true, videoTime.isExVideoFound());
 		assertEquals(false, videoTime.isExVideoTimeFileNotFound());
 		videoTimeReaderImpl.isExternalVideoSourceFilePresent("video.mp4", "video.mov", true, tracePath);
@@ -173,8 +195,6 @@ public class VideoTimeReaderImplTest extends BaseTest {
 		exVideoDisplayFileName = null;
 		EXVIDEO_TIME_FILE.delete();
 		EXVIDEO_TIME_FILE = null;
-
-
 	}
 	
 	/*
@@ -199,20 +219,34 @@ public class VideoTimeReaderImplTest extends BaseTest {
 	}
 	
 	/**
-	 *  test to compute & update video start time from the video.mp4 ffmpeg result
+	 *  test to compute & update video start time from the video.mp4 ffmpeg
+	 *  Using (1)traceDateTime
+	 *        (2)trace start time (pcap0Time)
+	 *        (3)Video creationTime (time when video was closed
+	 *        (4)Video duration
+	 *        
+	 *  VideoCreation time was deliberately altered to look as if the phone's time zone was off from the computer
+	 *  video_time file was setup with a bad timestamp to be replaced with best recalculation, to align with traffic time
+	 *  
 	 */
 	@Test
 	public void readData5(){
-		Date traceDateTime = new Date((long) 1414092264446.0);
+		Date traceDateTime = new Date((long) 1479853.857);
+		traceResult.setTraceDateTime(traceDateTime);
+		traceResult.setPcapTime0(1.479853857E9);
 		VideoTime videoTime = null;
+		String videoFileName = "video.mp4";
 
-		nativeVideoFileOnDevice = makeFile("video.mp4", null);
-		VIDEO_TIME_FILE = makeFile("video_time", new String[] { "1.41409226371E9 1.414092261198E9" });
-		String result = " Duration: 00:05:53.95, \n creation_time   : 2019-01-21 22:24:10" ;
+		nativeVideoFileOnDevice = makeFile(videoFileName, null);
+		VIDEO_TIME_FILE = makeFile("video_time", new String[] { "1.4798539802E9" });
+		
+		String durCreationStrings = " creation_time   : 2016-11-22T13:31:05.000000Z  \n Duration: 00:00:51.80, start: 0.000000, bitrate: 217 kb/s";
+
 		String cmd = Util.getFFMPEG() + " -i " + "\"" + nativeVideoFileOnDevice.getAbsolutePath() +"\"";
-		Mockito.when(extRunner.executeCmd(cmd)).thenReturn(result);
-		videoTime = videoTimeReaderImpl.readData(tracePath, traceDateTime);
-		assertEquals(1.54810909605E9, videoTime.getVideoStartTime(), 0);
+		Mockito.when(extRunner.executeCmd(cmd)).thenReturn(durCreationStrings);
+		
+		videoTime = videoTimeReaderImpl.readData(tracePath, traceResult, videoFileName);
+		assertEquals(1.479853857E9, videoTime.getVideoStartTime(), 0);
 		
 		nativeVideoFileOnDevice.delete();
 		nativeVideoFileOnDevice = null;

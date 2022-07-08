@@ -33,6 +33,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import javax.swing.ImageIcon;
@@ -578,7 +579,7 @@ public class WaterfallPanel extends TabPanelJPanel {
 		int iterations = 0;
 		while (iterations++ < 10 && (data == null || isEmpty(data.getBestPracticeResults()))) {
 			try {
-				Thread.sleep(250);// Gives time for best practices to gather required data
+				Thread.sleep(1000);// Gives time for best practices to gather required data
 			} catch (InterruptedException e) {
 				// Do nothing
 			}
@@ -587,10 +588,14 @@ public class WaterfallPanel extends TabPanelJPanel {
 		if (data != null && CollectionUtils.isNotEmpty(data.getBestPracticeResults())) {
 			Optional<AbstractBestPracticeResult> optionalResult = data.getBestPracticeResults().stream()
 					.filter((result) -> result.getBestPracticeType() == BestPracticeType.MULTI_SIMULCONN).findFirst();
-			if (optionalResult.isPresent()) {
-				time = ((SimultnsConnectionResult) optionalResult.get()).getResults().stream()
-						.max((e1, e2) -> e2.getConcurrentSessions() - e1.getConcurrentSessions()).get()
-						.getStartTimeStamp();
+			if (optionalResult.isPresent() && optionalResult.get() instanceof SimultnsConnectionResult) {
+				try {
+					time = ((SimultnsConnectionResult) optionalResult.get()).getResults().stream()
+							.max((e1, e2) -> e2.getConcurrentSessions() - e1.getConcurrentSessions()).get()
+							.getStartTimeStamp();
+				} catch (NoSuchElementException exception) {
+					return time;
+				}
 			}
 		}
 		return time;

@@ -732,18 +732,8 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	/**
 	 * @return String of comma separated network types
 	 */
-	public String getNetworkTypesList() {
-		if (networkTypesList != null && !networkTypesList.isEmpty()) {
-			StringBuffer networksList = new StringBuffer();
-			for (NetworkType networkType : networkTypesList) {
-
-				networksList.append(networkType.toString());
-				networksList.append(" , ");
-			}
-			return networksList.toString().substring(0, networksList.toString().lastIndexOf(","));
-		} else {
-			return "";
-		}
+	public List<NetworkType> getNetworkTypesList() {		
+		return (networkTypesList != null && !networkTypesList.isEmpty()) ? networkTypesList : null;
 	}
 
 	/**

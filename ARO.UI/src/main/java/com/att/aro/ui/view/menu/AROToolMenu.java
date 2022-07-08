@@ -26,6 +26,7 @@ import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JMenu;
@@ -39,10 +40,11 @@ import org.apache.log4j.Logger;
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
+import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
+import com.att.aro.core.util.VideoUtils;
 import com.att.aro.ui.commonui.AROMenuAdder;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
@@ -52,13 +54,13 @@ import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.menu.tools.AWSDialog;
 import com.att.aro.ui.view.menu.tools.AWSDialog.AWS;
-import com.google.common.collect.Lists;
 import com.att.aro.ui.view.menu.tools.ExportReport;
 import com.att.aro.ui.view.menu.tools.MSPostDialog;
 import com.att.aro.ui.view.menu.tools.MetadataDialog;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
 import com.att.aro.ui.view.menu.tools.RegexWizard;
 import com.att.aro.ui.view.menu.tools.TimeRangeAnalysisDialog;
+import com.google.common.collect.Lists;
 
 /**
  * This class adds the menu items under the Tools menu
@@ -96,8 +98,15 @@ public class AROToolMenu implements ActionListener {
 		toolMenu.setMnemonic(KeyEvent.VK_UNDEFINED);
 		boolean isTracePathEmpty = true;
 		isTracePathEmpty = isTracePathEmpty();
+
 		if (Desktop.isDesktopSupported()) {
-			toolMenu.add(getMenuItem(MenuItem.menu_tools_wireshark, isTracePathEmpty));
+			boolean noPcap = true;
+			if (parent.getTracePath() != null) {
+				if (VideoUtils.validateFolder(new File(parent.getTracePath()), VideoUtils.TRAFFIC, VideoUtils.TRAFFIC_EXTENTIONS).size() > 0) {
+					noPcap = false;
+				}
+			}
+			toolMenu.add(getMenuItem(MenuItem.menu_tools_wireshark, noPcap));
 		}
 		toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_timeRangeAnalysis));
 		toolMenu.addSeparator();
@@ -121,8 +130,7 @@ public class AROToolMenu implements ActionListener {
 		exportExportMenuItem.addActionListener(new ExportSessionData((MainFrame) parent, Lists.newArrayList(xlsxFilter), 0));
 		toolMenu.add(exportExportMenuItem);
 		toolMenu.addSeparator();
-		toolMenu.add(getMenuItem(MenuItem.menu_tools_editMetadata, isTracePathEmpty));
-
+		toolMenu.add(getMenuItem(MenuItem.menu_tools_editMetadata, (isTracePathEmpty || new File(parent.getTracePath(), ".temp_trace").exists())));
 
 		toolMenu.addSeparator();
 		toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_privateData));
@@ -192,35 +200,30 @@ public class AROToolMenu implements ActionListener {
 
 	private void openPcapAnalysis() {
 
-		// Open PCAP analysis tool
+		// Open PCAP analysis tool - Wireshark most likely
 		AROTraceData traceData = ((MainFrame) parent).getController().getTheModel();
 		IFileManager fileManager = ContextAware.getAROConfigContext().getBean(IFileManager.class);
 		File dir = fileManager.createFile(traceData.getAnalyzerResult().getTraceresult().getTraceDirectory());
-		File[] trafficFiles;
-		if (fileManager.isFile(dir.getAbsolutePath())) {
-			trafficFiles = new File[] { new File(dir.getAbsolutePath()) };
-		} else {
-			trafficFiles = getTrafficTextFiles(dir);
 
+		String trafficFile = parent.getTrafficFile();
+		File capFile = null;
+
+		if ((capFile = new File(dir, trafficFile)).exists()) {
+
+		} else if ((capFile = new File(dir.getParentFile(), trafficFile)).exists()) {
+			dir = dir.getParentFile();
+		} else {
+			return;
 		}
-		if (trafficFiles != null && trafficFiles.length > 0) {
-			try {
-				for (File trafficFile : trafficFiles) {
-					if (trafficFile.getName().equals(TraceDataConst.FileName.PCAP_FILE)) {
-						Desktop.getDesktop().open(trafficFile);
-						break;
-					}
-				}
-			} catch (NullPointerException e) {
-				MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
-						ResourceBundleHelper.getMessageString("menu.tools.error.noPcap"));
-			} catch (IllegalArgumentException e) {
-				MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
-						ResourceBundleHelper.getMessageString("menu.tools.error.noPcap"));
-			} catch (IOException e) {
-				MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(),
-						ResourceBundleHelper.getMessageString("menu.tools.error.noPcapApp"));
-			}
+
+		try {
+			Desktop.getDesktop().open(capFile);
+		} catch (IllegalArgumentException e) {
+			LOG.error("Failed to open traffic file:" + capFile, e);
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(), "Traffic file (" + trafficFile + ") not found");
+		} catch (IOException e) {
+			LOG.error("Failed to open traffic file:" + capFile, e);
+			MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame(), ResourceBundleHelper.getMessageString("menu.tools.error.noPcapApp"));
 		}
 	}
 
@@ -239,9 +242,11 @@ public class AROToolMenu implements ActionListener {
 	 */
 	private boolean isTracePathEmpty() {
 		boolean isTracePathEmpty = false;
+
 		if (((MainFrame) parent).getController() != null) {
 			AROTraceData traceData = ((MainFrame) parent).getController().getTheModel();
-			if (traceData == null || traceData.getAnalyzerResult() == null
+			if (traceData == null 
+					|| traceData.getAnalyzerResult() == null 
 					|| traceData.getAnalyzerResult().getTraceresult() == null
 					|| traceData.getAnalyzerResult().getTraceresult().getTraceDirectory() == null) {
 				isTracePathEmpty = true;
@@ -250,25 +255,6 @@ public class AROToolMenu implements ActionListener {
 			isTracePathEmpty = true;
 		}
 		return isTracePathEmpty;
-	}
-
-	/**
-	 * Returns a list of cap or pcap files in the specified folder
-	 * 
-	 * @param dir the specified folder where to look for pcap/cap files
-	 * @return a list of the pcap files found in the specified folder
-	 */
-	private File[] getTrafficTextFiles(File dir) {
-		return dir.listFiles(new FilenameFilter() {
-
-			@Override
-			public boolean accept(File dir, String name) {
-				if (name.indexOf("traffic") > -1)
-					return true;
-				else
-					return false;
-			}
-		});
 	}
 
 	private void openTimeRangeAnalysis() {
@@ -287,10 +273,9 @@ public class AROToolMenu implements ActionListener {
 		if (privateDataDialog == null) {
 			privateDataDialog = new PrivateDataDialog(parent);
 		}
-		if (privateDataDialog != null) {
-			privateDataDialog.setVisible(true);
-			privateDataDialog.setAlwaysOnTop(true);
-		}
+		privateDataDialog.setVisible(true);
+		privateDataDialog.setAlwaysOnTop(true);
+
 	}
 
 	private void openAWSUploadDialog(AWS awsMode) {
@@ -301,7 +286,7 @@ public class AROToolMenu implements ActionListener {
 	}
 
 	private void openMetadataDialog(ActionEvent aEvent) {
-		new MetadataDialog(parent, (JMenuItem) aEvent.getSource());
+		new MetadataDialog(parent, (JMenuItem) aEvent.getSource(), null);
 	}
 
 	private void openATTmsUploadDialog() {

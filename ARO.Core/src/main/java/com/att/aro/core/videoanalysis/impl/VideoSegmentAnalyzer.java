@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
-import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.peripheral.pojo.UserEvent;
@@ -60,12 +59,9 @@ public class VideoSegmentAnalyzer {
 	private VideoStreamStartupData videoStreamStartupData;
 	private VideoStreamStartup videoStreamStartup;
 	private VideoUsagePrefs videoPrefs;
-	private VideoStall videoStall;
 
 	private double stallOffset;
 	private double totalStallOffset;
-
-	private List<VideoStall> stalls = new ArrayList<>();
 
 	@Nonnull
 	private DUPLICATE_HANDLING duplicateHandling = DUPLICATE_HANDLING.LAST;
@@ -210,6 +206,14 @@ public class VideoSegmentAnalyzer {
 				.forEach(v -> activeMap.put(v.getKey(), v.getValue()));
 	}
 	
+	/**<pre>
+	 * Analyze segments for Playtime {Buffer  (Seconds)}, ByteBuffer {Buffer (MBytes)}, tooltips etc
+	 * 
+	 * @param startupTime
+	 * @param chosenVideoEvent
+	 * @param videoStream
+	 * @param streamingVideoData
+	 */
 	public void applyStartupDelayToStream(double startupTime, VideoEvent chosenVideoEvent, VideoStream videoStream, StreamingVideoData streamingVideoData) {
 
 		if (chosenVideoEvent == null && (chosenVideoEvent = videoStream.getFirstSegment()) != null) {
@@ -239,10 +243,11 @@ public class VideoSegmentAnalyzer {
 		}
 	}
 
-	/**
-	 * not quite there yet
-	 *
-	 * for each segment: playtime = SegmentStartTime + startupOffset + stallOffset
+	/**<pre>
+	 * Apply Video preference rules, to determine which segments will be considered as in Play.
+	 * All segments in Play will have a playtime (Playback Time). The point in the trace timeline where the segment starts playing.
+	 * 
+	 * For each segment: playtime = SegmentStartTime + startupOffset + stallOffset
 	 *
 	 * if playtime is before segment has arrived need to increment stallOffset to
 	 * bring playtime up to arrival time plus all overhead of recovery from stall
@@ -261,6 +266,7 @@ public class VideoSegmentAnalyzer {
 		double priorDuration = 0;
 
 		clearStalls(videoStream);
+		
 		videoStream.clearBufferOccupancyData();
 		videoStream.applyStartupOffset(startupOffset);
 
@@ -302,12 +308,10 @@ public class VideoSegmentAnalyzer {
 				priorEvent = videoEvent;
 			}
 		}
-
+		
 		populateActive(videoStream);
 		generateByteBufferData(videoStream);
 		generatePlaytimeData(videoStream);
-
-		LOG.debug(videoStream.getByteToolTipDetailMap().keySet());
 	}
 
 	private ArrayList<VideoEvent> sortBySegThenStartTS(VideoStream videoStream) {
@@ -496,22 +500,12 @@ public class VideoSegmentAnalyzer {
 					double audioPlaytime = audioEvent.getSegmentStartTime() + startupOffset + totalStallOffset;
 
 					if (audioEvent.getDLLastTimestamp() > audioPlaytime) {
-
-						double stallPoint = lastAudioEvent.getSegmentStartTime() + audioEvent.getDuration() - videoPrefs.getStallPausePoint();
 						stallOffset = audioEvent.getDLLastTimestamp() - audioEvent.getPlayTime() + getStallRecovery();
 						stallOffset = calcSegmentStallOffset(startupOffset, audioEvent, totalStallOffset);
 						stallOffset = audioEvent.getDLLastTimestamp() - audioPlaytime + getStallRecovery();
-
 						audioEvent.setStallTime(stallOffset);
 						videoEvent.setStallTime(stallOffset);
 						totalStallOffset += stallOffset;
-						videoStall = new VideoStall(stallPoint);
-						videoStall.setSegmentTryingToPlay(audioEvent);
-						videoStall.setStallEndTimestamp(audioEvent.getPlayTime());
-
-						double resumePoint = audioEvent.getDLLastTimestamp() + getStallRecovery();
-						videoStall.setStallEndTimestamp(resumePoint);
-						stalls.add(videoStall);
 					}
 				}
 				// advance to next segmentStartTime
@@ -561,6 +555,7 @@ public class VideoSegmentAnalyzer {
 	}
 
 	private void clearStalls(VideoStream videoStream) {
+		videoStream.getVideoStallList().clear();
 		clearStalls(videoStream.getVideoEventMap());
 		clearStalls(videoStream.getAudioEventMap());
 		clearStalls(videoStream.getCcEventMap());

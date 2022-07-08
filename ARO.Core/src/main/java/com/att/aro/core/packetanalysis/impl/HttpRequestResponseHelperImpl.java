@@ -137,7 +137,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 		String objectName = request.getAssocReqResp() == null ? "N/A" : request.getAssocReqResp().getObjNameWithoutParams();
 		
 		payload = request.getPayloadData().toByteArray();
-        if (!session.isIOSSecureSession() && request.isChunked()) {
+        if (request.isChunked()) {
             storageReader.init(payload);
             String line;
             output = new ByteArrayOutputStream();

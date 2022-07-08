@@ -18,6 +18,7 @@ package com.att.aro.core.packetanalysis.impl;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -107,6 +108,7 @@ import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.util.Util;
+import com.att.aro.mvc.IAROView;
 
 public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	private static final Logger LOGGER = LogManager.getLogger(TraceDataReaderImpl.class.getName());
@@ -197,6 +199,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	@Autowired
 	IMetaDataReadWrite metaDataReadWrite;
 
+	private IAROView aroView;
 	private Set<String> localIPAddresses = null;
 	private Set<String> remoteIPAddresses = null;
 	private Set<Integer> remotePortNumbers = null;
@@ -238,10 +241,11 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	 *            full path to physical directory
 	 * @throws FileNotFoundException
 	 */
-	public TraceDirectoryResult readTraceDirectory(String directoryPath) throws FileNotFoundException {
+	public TraceDirectoryResult readTraceDirectory(String directoryPath, IAROView aroView) throws FileNotFoundException {
 		if (!filereader.directoryExist(directoryPath)) {
 			throw new FileNotFoundException("Not found directory: " + directoryPath);
 		}
+		this.aroView = aroView;
 		TraceDirectoryResult result = new TraceDirectoryResult();
 		result.setTraceDirectory(directoryPath);
 
@@ -275,7 +279,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 		readWakelockInfo(result);
 
-		readVideoTime(result);
+		readVideoTime(result, aroView.getVideoFile());
 
 		readSSLKeys(result);
 
@@ -336,6 +340,8 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		result.setAllpackets(allPackets);
 
 		readPrivateData(result);
+
+		result.setMetaData(metaDataReadWrite.readData(result.getTraceDirectory()));
 
 		return result;
 	}
@@ -427,11 +433,11 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	 */
 	private TraceDirectoryResult readTimeAndPcap(TraceDirectoryResult dresult) throws IOException {
 		TraceDirectoryResult result = dresult;
-		String filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TIME_FILE;
+		String filepath;
 
 		Double startTime = null;
 		Double duration = null;
-		if (filereader.fileExist(filepath)) {
+		if (filereader.fileExist(result.getTraceDirectory(), TraceDataConst.FileName.TIME_FILE)) {
 			TraceTime times = readTimes(result);
 			startTime = times.getStartTime();
 			if (times.getEventTime() != null) {
@@ -452,8 +458,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if (dresult.getTraceFile() != null && !dresult.getTraceFile().equals("")) {
 			filepath = result.getTraceFile();
 		} else {
-			filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TRAFFIC
-					+ TraceDataConst.FileName.CAP_EXT;
+			filepath = Paths.get(result.getTraceDirectory(), aroView.getTrafficFile()).toString();
 		}
 
 		this.init();
@@ -462,19 +467,19 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		if (result == null) {
 			return new TraceDirectoryResult();
 		}
-
+		
+		// load all traffic{X}.cap files, where {X} is an integer number starting with 1
 		for (int i = 1;; i++) {
-			filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TRAFFIC + i
-					+ TraceDataConst.FileName.CAP_EXT;
+			filepath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.TRAFFIC + i + TraceDataConst.FileName.CAP_EXT;
 			if (filereader.fileExist(filepath)) {
 				result = (TraceDirectoryResult) this.readPcapTraceFile(filepath, startTime, duration, result);
 			} else {
 				break;
 			}
 		}
+		
 		if (result != null) {
-			String secureFilePath = result.getTraceDirectory() + Util.FILE_SEPARATOR
-					+ TraceDataConst.FileName.SECURE_PCAP_FILE;
+			String secureFilePath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.SECURE_PCAP_FILE;
 			if (filereader.fileExist(secureFilePath)) {
 				try {
 					isSecurePcap = true;
@@ -540,9 +545,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 				LOGGER.debug("No app ID for packet " + packetIdx);
 			}
 		}
-
 		return appName;
-
 	}
 
 	/**
@@ -647,8 +650,9 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	/**
 	 * Method to read times from the video time trace file and store video time
 	 * variables.
+	 * @param string 
 	 */
-	private void readVideoTime(AbstractTraceResult result) {
+	private void readVideoTime(AbstractTraceResult result, String... videoFile) {
 		// Read the external video file,If available.
 		String dirParent = null;
 		if (result.getTraceResultType().equals(TraceResultType.TRACE_FILE)) {
@@ -658,11 +662,11 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		}
 		LOGGER.info("dirParent: " + dirParent);
 
-		VideoTime vtime = videotimereader.readData(dirParent, result.getTraceDateTime());
+		VideoTime vtime = videotimereader.readData(dirParent, result, videoFile);
 		result.setVideoStartTime(vtime.getVideoStartTime());
 		result.setExVideoFound(vtime.isExVideoFound());
 		result.setExVideoTimeFileNotFound(vtime.isExVideoTimeFileNotFound());
-		result.setNativeVideo(vtime.isNativeVideo());
+		result.setDeviceScreenVideo(vtime.isDeviceScreenVideo());
 		if (result.getVideoStartTime() == 0.0) {
 			result.setVideoStartTime(result.getPcapTime0());
 		}

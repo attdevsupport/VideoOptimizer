@@ -15,61 +15,18 @@
  */
 package com.att.aro.core.packetanalysis.pojo;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * A utility class used for storing and returning trace time
  * information.
  */
+@Getter
+@Setter
 public class TraceTime {
 	private Double startTime;
 	private Double eventTime;
 	private Double duration;
 	private Integer timezoneOffset;
-	
-	/**
-	 * Returns the start time.
-	 * 
-	 * @return The start time.
-	 */
-	public Double getStartTime() {
-		return startTime;
-	}
-	public void setStartTime(Double starttime){
-		this.startTime = starttime;
-	}
-
-	/**
-	 * Returns the time of an event.
-	 * 
-	 * @return The event Time.
-	 */
-	public Double getEventTime() {
-		return eventTime;
-	}
-	public void setEventTime(Double eventtime){
-		this.eventTime = eventtime;
-	}
-
-	/**
-	 * Returns the duration.
-	 * 
-	 * @return The duration value (in seconds).
-	 */
-	public Double getDuration() {
-		return duration;
-	}
-	public void setDuration(Double duration){
-		this.duration = duration;
-	}
-
-	/**
-	 * Returns the timezone.
-	 * 
-	 * @return The timezone offset value (in minutes).
-	 */
-	public Integer getTimezoneOffset() {
-		return timezoneOffset;
-	}
-	public void setTimezoneOffset(Integer timezoneoffset){
-		this.timezoneOffset = timezoneoffset;
-	}
 }

@@ -22,6 +22,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,6 +35,7 @@ import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
+import com.att.aro.core.peripheral.pojo.NetworkType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.util.Util;
@@ -55,6 +57,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		bestPractices_os_version,
 		bestPractices_networktype,
 		bestPractices_profile,
+		secure_title
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -92,6 +95,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_os_version).build());
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_networktype).build());
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_profile).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.secure_title).build());
 		}
 		tabPanelCommon.setText(LabelKeys.bestPractices_date, EMPTY_SPACE);
 
@@ -175,7 +179,9 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		tabPanelCommon.setText(LabelKeys.bestPractices_os_version,
 				traceDirectoryResults.getOsVersion());
 		tabPanelCommon.setText(LabelKeys.bestPractices_networktype,
-				traceDirectoryResults.getNetworkTypesList());
+				traceDirectoryResults.getNetworkTypesList()!=null ? getNetworkTypeList(traceDirectoryResults.getNetworkTypesList()) : "" );
+		tabPanelCommon.setText(LabelKeys.secure_title,
+				traceDirectoryResults.getCollectOptions().getSecureStatus().toString());
 
 		String timeRangeText;
 		if (traceDirectoryResults.getTimeRange().getTitle() == null) {
@@ -192,6 +198,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		tabPanelCommon.setText(LabelKeys.bestPractices_display_resolution, "");
 		tabPanelCommon.setText(LabelKeys.bestPractices_os_version, "");
 		tabPanelCommon.setText(LabelKeys.bestPractices_networktype, "");
+		tabPanelCommon.setText(LabelKeys.secure_title, "");
 	}
 
 	@Override
@@ -210,5 +217,28 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 					analyzerResults.getProfile().getName() : "TBD";
 			tabPanelCommon.setText(LabelKeys.bestPractices_profile, profileName);
 		}
+	}
+	
+	private String getNetworkTypeList(List<NetworkType> networkTypesList) {			
+
+		if (networkTypesList != null && !networkTypesList.isEmpty()) {
+			StringBuffer networksList = new StringBuffer();
+			for (NetworkType networkType : networkTypesList) {
+				if (networkType.equals(NetworkType.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO)
+						|| networkType.equals(NetworkType.OVERRIDE_NETWORK_TYPE_LTE_CA)
+						|| networkType.equals(NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA)
+						|| networkType.equals(NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE)) {
+					networksList.append(ResourceBundleHelper.getMessageString("NetworkType." + networkType.toString()));
+				} else {
+					networksList.append(networkType.toString());
+				}
+
+				networksList.append(" , ");
+			}
+			return networksList.toString().substring(0, networksList.toString().lastIndexOf(","));
+		} else {
+			return "";
+		}
+	
 	}
 }

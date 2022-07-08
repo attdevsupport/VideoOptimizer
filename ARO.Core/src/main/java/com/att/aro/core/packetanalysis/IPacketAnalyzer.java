@@ -24,11 +24,12 @@ import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
+import com.att.aro.mvc.IAROView;
 
 public interface IPacketAnalyzer {
 	PacketAnalyzerResult analyzeTraceFile(String traceFilePath, Profile profile, 
 			AnalysisFilter filter) throws IOException;
-	PacketAnalyzerResult analyzeTraceDirectory(String traceDirectory, Profile profile, 
+	PacketAnalyzerResult analyzeTraceDirectory(String traceDirectory, IAROView aroView, Profile profile, 
 			AnalysisFilter filter) throws FileNotFoundException;
     Statistic getStatistic(List<PacketInfo> packetInfos);
 }

@@ -28,6 +28,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import com.att.aro.core.packetanalysis.IThroughputCalculator;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Throughput;
+import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
@@ -35,10 +36,9 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class ThroughputPlot implements IPlot{
 	private IThroughputCalculator throughputHelper = ContextAware
 			.getAROConfigContext().getBean(IThroughputCalculator.class);
-	private static final String THROUGHPUT_TOOLTIP = ResourceBundleHelper
-			.getMessageString("throughput.tooltip");
+	private static final String THROUGHPUT_TOOLTIP = ResourceBundleHelper.getMessageString("throughput.tooltip");
 
-	public void populate(XYPlot plot, AROTraceData analysis) {
+	public void populate(XYPlot plot, AROTraceData analysis, PacketDirection packetDirection) {
 		XYSeries series = new XYSeries(0);
 		if (analysis != null) {
 
@@ -55,50 +55,57 @@ public class ThroughputPlot implements IPlot{
 			double startTime = analysis.getAnalyzerResult().getFilter().getTimeRange().getBeginTime();
 			for (Throughput t : throughputHelper.calculateThroughput(startTime,
 					maxTS, analysis.getAnalyzerResult().getProfile()
-							.getThroughputWindow(), packets)) {
+							.getThroughputWindow(), getPackets(packets, packetDirection))) {
 
 				double time = t.getTime();
 				double kbps = t.getKbps();
 				if (kbps != 0.0) {
 					if (zeroTime != null && zeroTime.doubleValue() != lastTime) {
 						series.add(lastTime, 0.0);
-						tooltipList.add(MessageFormat.format(
-								THROUGHPUT_TOOLTIP, 0.0));
+						tooltipList.add(MessageFormat.format(THROUGHPUT_TOOLTIP, lastTime, 0.0));
 					}
 					// Add slot to data set
 					series.add(time, kbps);
-
-					tooltipList.add(MessageFormat.format(THROUGHPUT_TOOLTIP,
-							kbps));
+					tooltipList.add(MessageFormat.format(THROUGHPUT_TOOLTIP, time, kbps));
 					zeroTime = null;
 				} else {
 					if (zeroTime == null) {
 						// Add slot to data set
 						series.add(time, kbps);
-
-						tooltipList.add(MessageFormat.format(
-								THROUGHPUT_TOOLTIP, kbps));
+						tooltipList.add(MessageFormat.format(THROUGHPUT_TOOLTIP, time, kbps));
 						zeroTime = Double.valueOf(time);
 					}
 				}
 
 				lastTime = time;
 			}
-			plot.getRenderer().setBaseToolTipGenerator(
-					new XYToolTipGenerator() {
-
+			plot.getRenderer().setBaseToolTipGenerator(new XYToolTipGenerator() {
 						@Override
-						public String generateToolTip(XYDataset dataset,
-								int series, int item) {
-
+						public String generateToolTip(XYDataset dataset, int series, int item) {
 							// Tooltip displays throughput value
 							return tooltipList.get(item);
 						}
-
 					});
 		}
-
 		plot.setDataset(new XYSeriesCollection(series));
-//		return plot;
+	}
+	
+	private List<PacketInfo> getPackets(List<PacketInfo> packets, PacketDirection packetDirection) {
+		if (packetDirection != PacketDirection.BOTH) {
+			List<PacketInfo> filteredPackets = new ArrayList<PacketInfo>();
+			for (PacketInfo packet : packets) {
+				if (packet.getDir() == packetDirection) {
+					filteredPackets.add(packet);
+				}
+			}
+			return filteredPackets;
+		}
+		return packets;
+
+	}
+
+	@Override
+	public void populate(XYPlot plot, AROTraceData analysis) {
+		populate(plot, analysis, PacketDirection.BOTH);
 	}
 }

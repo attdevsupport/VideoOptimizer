@@ -233,7 +233,6 @@ public abstract class ManifestBuilder {
 	
 	protected ChildManifest locateChildManifest(Manifest manifest) {
 		childManifest = null;
-
 		for (UrlMatchDef urlMatchDef : manifest.getMasterManifest().getSegUrlMatchDef()) {
 	        referenceKey =  Util.decodeUrlEncoding(buildUriNameKey(urlMatchDef, manifest.getRequest()));
 
@@ -352,6 +351,7 @@ public abstract class ManifestBuilder {
 	protected SegmentInfo createSegmentInfo(ChildManifest childManifest, String parameters, String segmentUriName) {
 		int segmentID = childManifest.getNextSegmentID();
 		SegmentInfo segmentInfo = new SegmentInfo();
+		segmentInfo.setSegmentUriName(segmentUriName);
 		segmentInfo.setChildManifest(childManifest);
 		segmentInfo.setVideo(childManifest.isVideo());
 		segmentInfo.setDuration(StringParse.findLabeledDoubleFromString(":", "\\,", parameters));
@@ -425,7 +425,6 @@ public abstract class ManifestBuilder {
 					if (lastManifestReqTime == 0 || lastManifestReqTime < manifestReqTime) {
 						for (UrlMatchDef urlMatchDef : manifestCollection.getManifest().getMasterManifest().getSegUrlMatchDef()) {
 							key = buildUriNameKey(urlMatchDef, request);
-							// VID-TODO find #EXT-X-MAP:URI="5b3733a4-e7db-4700-975b-4e842c158274/3cec-BUMPER/02/1200K/map.mp4"
 							key += "|" + formatTimeKey(manifestCollection.getManifest().getRequestTime());
 							if (!StringUtils.isEmpty(key)) {
 								if (locatePatKey(segmentManifestCollectionMap, key, request, urlMatchDef) != null) {
@@ -510,7 +509,6 @@ public abstract class ManifestBuilder {
 
 		return manifestCollectionToBeReturned;
 	}
-
 	
 	public String locatePatChildManifestKey(PatriciaTrie<ChildManifest> patMap, String key) {
 		String foundKey = patMap.selectKey(key);

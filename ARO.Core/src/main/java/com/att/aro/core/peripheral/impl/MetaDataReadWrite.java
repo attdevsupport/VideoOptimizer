@@ -28,6 +28,8 @@ import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.Getter;
+
 public class MetaDataReadWrite implements IMetaDataReadWrite {	
 	private static final Logger LOG = LogManager.getLogger(MetaDataReadWrite.class.getName());
 	
@@ -37,28 +39,46 @@ public class MetaDataReadWrite implements IMetaDataReadWrite {
 	
 	private static final String JSON_FILE = "metadata.json";
 
+	@Getter
 	private MetaDataModel metaData;
 
 	private String jsonDataSaved = ""; // for comparison purposes before saving, do not want to save if no changes to file
 
+	private String tracePath;
+
 	@Override
 	public MetaDataModel readData(String tracePath) {
-
+		metaData = null;
 		File jsonFile = filemanager.createFile(tracePath, JSON_FILE);
+		this.tracePath = tracePath;
 		if (jsonFile.exists()) {
-				try {
-					String jsonDataString = filemanager.readAllData(jsonFile.toString());
-					metaData = mapper.readValue(jsonDataString, MetaDataModel.class);
-					jsonDataSaved = serialize(metaData);
-				} catch (Exception e) {
-					LOG.debug("failed to load time-range data: " + e.getMessage());
-				}
+			try {
+				String jsonDataString = filemanager.readAllData(jsonFile.toString());
+				metaData = mapper.readValue(jsonDataString, MetaDataModel.class);
+				jsonDataSaved = jsonDataString;
+			} catch (Exception e) {
+				LOG.debug("failed to load time-range data: " + e.getMessage());
+			}
 		} else {
-			metaData = null;
+			metaData = new MetaDataModel();
+			jsonDataSaved = "";
 		}
 		return metaData;
 	}
 
+	@Override
+	public boolean save() {
+		if (tracePath != null) {
+			try {
+				return save(new File(tracePath), metaData);
+			} catch (Exception e) {
+				LOG.error("Failed to store JSON", e);
+				e.printStackTrace();
+			}
+		}
+		return false;
+	}
+			
 	@Override
 	public boolean save(File traceFolder, MetaDataModel metaDataModel) throws Exception {
 		

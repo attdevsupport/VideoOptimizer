@@ -77,7 +77,10 @@ public class VideoManifestPanel extends TabPanelJScrollPane{
 				panel.add(segmentTable);
 			}
 		} else {
-			if (analyzerResult != null && analyzerResult.getAnalyzerResult() != null && analyzerResult.getAnalyzerResult().getStreamingVideoData() != null && analyzerResult.getAnalyzerResult().getStreamingVideoData().getRequestMap() != null
+			if (analyzerResult != null 
+					&& analyzerResult.getAnalyzerResult() != null 
+					&& analyzerResult.getAnalyzerResult().getStreamingVideoData() != null 
+					&& analyzerResult.getAnalyzerResult().getStreamingVideoData().getRequestMap() != null
 					&& !analyzerResult.getAnalyzerResult().getStreamingVideoData().getRequestMap().isEmpty()) {
 				JLabel lbl = new JLabel(ResourceBundleHelper.getMessageString("videotab.nostream.segments"));
 				lbl.setFont(new Font("accordionLabel", Font.ITALIC, 14));

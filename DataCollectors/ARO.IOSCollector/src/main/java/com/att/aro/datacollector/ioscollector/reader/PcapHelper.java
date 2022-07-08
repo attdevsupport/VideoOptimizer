@@ -15,24 +15,27 @@
  */
 package com.att.aro.datacollector.ioscollector.reader;
 
-import java.io.IOException;
 import java.util.Date;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
+import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
+import com.att.aro.core.util.StringParse;
+import com.att.aro.core.util.Util;
 
 public class PcapHelper {
-	ExternalProcessRunner runner;
+	IExternalProcessRunner extRunner;
 	private static final Logger LOG = LogManager.getLogger(PcapHelper.class);
 
 	public PcapHelper() {
-		runner = new ExternalProcessRunner();
+		extRunner = new ExternalProcessRunnerImpl();
 	}
 
-	public PcapHelper(ExternalProcessRunner runner) {
-		this.runner = runner;
+	public PcapHelper(IExternalProcessRunner extRunner) {
+		this.extRunner = extRunner;
 	}
 
 	/**
@@ -41,40 +44,15 @@ public class PcapHelper {
 	 * 
 	 * @param filepath
 	 *            full path to the packet file pcap/cap
-	 * @return instance of Date if availale or null
+	 * @return instance of Date if available or null
 	 */
 	public Date getFirstPacketDate(String filepath) {
-		String cmd = "tcpdump -tt -c 2 -r " + filepath;
-		String data = "";
-		try {
-			long timeout = 3000;
-			data = runner.runCmdWithTimeout(new String[] { "bash", "-c", cmd }, timeout);
-		} catch (IOException e) {
-			LOG.debug("IOException:", e);
-		}
-		if (data.length() > 1) {
-			String dtstring = getFirstPacketTime(data);
-			if (dtstring.length() > 0) {
-				LOG.info("found packet date string: " + dtstring);
-				double d = Double.parseDouble(dtstring);
-				long tick = (long) (d * 1000);
-				Date dt = new Date(tick);
-
-				return dt;
-			}
+		// read first entry out of traffic file
+		String data = extRunner.executeCmd(String.format("%s -r %s -c 1 -t e |awk -F ' '  '{print $2}'", Util.getTshark(), filepath));
+		if (!StringUtils.isEmpty(data)) {
+			LOG.info("found packet date string: " + data);
+			return new Date((long) (StringParse.stringToDouble(data, 0) * 1000));
 		}
 		return null;
-	}
-
-	private String getFirstPacketTime(String data) {
-		String sub = "";
-		Pattern pattern = Pattern.compile("\\d{10}\\.\\d{6}");
-		Matcher matcher = pattern.matcher(data);
-		if (matcher.find()) {
-			int start = matcher.start();
-			int end = matcher.end();
-			sub = data.substring(start, end);
-		}
-		return sub;
 	}
 }

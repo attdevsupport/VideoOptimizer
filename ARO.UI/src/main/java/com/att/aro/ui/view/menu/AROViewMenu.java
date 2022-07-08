@@ -46,14 +46,10 @@ public class AROViewMenu implements ActionListener, MenuListener {
 	private JMenu viewMenu;
 	private ChartPlotOptionsDialog menuViewOptionsDialog;
 
-	private final JCheckBoxMenuItem menuViewVideo =
-			menuAdder.getCheckboxMenuItemInstance(MenuItem.menu_view_video);
-	private final JMenuItem menuViewApps =
-			menuAdder.getMenuItemInstance(MenuItem.menu_view_apps);
-	private final JMenuItem menuToolsExcludetimerangeanalysis =
-			menuAdder.getMenuItemInstance(MenuItem.menu_tools_excludetimerangeanalysis);
-	private final JMenuItem menuViewOptions =
-			menuAdder.getMenuItemInstance(MenuItem.menu_view_options);
+	private final JCheckBoxMenuItem menuViewVideo = menuAdder.getCheckboxMenuItemInstance(MenuItem.menu_view_video);
+	private final JMenuItem menuViewApps = menuAdder.getMenuItemInstance(MenuItem.menu_view_apps);
+	private final JMenuItem menuToolsExcludetimerangeanalysis = menuAdder.getMenuItemInstance(MenuItem.menu_tools_excludetimerangeanalysis);
+	private final JMenuItem menuViewOptions = menuAdder.getMenuItemInstance(MenuItem.menu_view_options);
 
 	private enum MenuItem {
 		menu_view,

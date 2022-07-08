@@ -63,15 +63,10 @@ import org.apache.log4j.Logger;
 import org.springframework.util.CollectionUtils;
 
 import com.att.aro.core.IVideoBestPractices;
-import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
-import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
-import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartup.ValidationStartup;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
@@ -94,7 +89,6 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOG = LogManager.getLogger(SegmentTablePanel.class);
-	private static IFileManager fileManager = (IFileManager) ContextAware.getAROConfigContext().getBean("fileManager");
 
 	private JPanel hiddenPanel;
 	
@@ -112,7 +106,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 	private JPanel titlePanel;
 	
 	@Getter
-	private JCheckBox enableCheckBox;
+	private JCheckBox enableStreamCheckBox;
 
 	private static final int HEIGHT_MAC = 18;
 	private static final int HEIGHT_LINUX = 23;
@@ -126,9 +120,6 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 	public static final String VIDEO_TABLE_NAME = "Video";
 	public static final String AUDIO_TABLE_NAME = "Audio";
 	public static final String CAPTION_TABLE_NAME = "Captioning";
-	private JButton uploadButton;
-
-	private TraceDirectoryResult traceDirectoryResult;
 
 	/**
 	 * collection of tables for use when resizing & toggling
@@ -180,12 +171,12 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		if (videoStream != null && (videoStream.getPlayRequestedTime() != null || videoStream.getVideoPlayBackTime() != null)) {
 			
 			defineStartupDelayButton(videoStream);
-			enableCheckBox.setSelected(videoStream.isCurrentStream());
+			enableStreamCheckBox.setSelected(videoStream.isCurrentStream());
 			this.videoStream.setSelected(videoStream.isCurrentStream());
 
 		} else {
 			if (videoStreamCollection.size() > 1) {
-				enableCheckBox.setSelected(false);
+				enableStreamCheckBox.setSelected(false);
 			}
 		}
 		refresh(checkBoxVideo, checkBoxAudio);
@@ -306,8 +297,6 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		}
 	}
 
-
-	
 	public void launchStartUpDelayDialog() {
 
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendViews("StartupDelayDialog");
@@ -328,7 +317,6 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 				LOG.error("Exception in StartupDelayDialog:", e);
 				new MessageDialogFactory().showErrorDialog(null, ResourceBundleHelper.getMessageString("startupdelay.error.message"));
 			}
-
 		}
 	}
 
@@ -392,26 +380,27 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 
 
 	private Component getCheckBoxStreamEnable() {
-		enableCheckBox = new JCheckBox();
+		enableStreamCheckBox = new JCheckBox();
 		videoStreamCollection = analyzerResult.getAnalyzerResult().getStreamingVideoData().getVideoStreamMap().values();
 		boolean selected = videoStream.getVideoEventMap() != null ? true : false;
 		if (!selected 
 				|| videoStream.getVideoEventMap().isEmpty()
 				|| ((VideoEvent) videoStream.getVideoEventMap().values().toArray()[0]).getSegmentID() < 0) {
-			enableCheckBox.setEnabled(false);
+			enableStreamCheckBox.setEnabled(false);
 		} else {
 			boolean selectCheckBox = videoStreamCollection.size() == 1;
+			// VID-TODO Probable fix point here
 			videoStream.setSelected(selectCheckBox);
-			enableCheckBox.setSelected(selectCheckBox);
+			enableStreamCheckBox.setSelected(selectCheckBox);
 			if (selectCheckBox) {
 				refreshStream();
 			}
-			enableCheckBox.addActionListener(addActionListener());
+			enableStreamCheckBox.addActionListener(addEnableStreamCheckBoxActionListener());
 		}
-		return enableCheckBox;
+		return enableStreamCheckBox;
 	}
 
-	private ActionListener addActionListener() {
+	private ActionListener addEnableStreamCheckBoxActionListener() {
 		return new ActionListener() {
 
 			@Override
@@ -424,7 +413,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 						reAnalyze();
 					} else {
 						videoStream.setSelected(true);
-						enableCheckBox.setSelected(true);
+						enableStreamCheckBox.setSelected(true);
 					}
 				}
 			}
@@ -444,7 +433,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 
 	private void toggleStream(VideoStream stream, boolean isCurrentStream) {
 		stream.setSelected(isCurrentStream);
-		enableCheckBox.setSelected(isCurrentStream);
+		enableStreamCheckBox.setSelected(isCurrentStream);
 		stream.setCurrentStream(isCurrentStream);
 	}
 
@@ -460,7 +449,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 							&& ((VideoEvent) videoStream.getVideoEventsBySegment().toArray()[0]).getSegmentID() >= 0)) {
 
 						videoStream.setSelected(manifest.isSelected());
-						enableCheckBox.setSelected(videoStream.isSelected());
+						enableStreamCheckBox.setSelected(videoStream.isSelected());
 						streamingVideoData.setValidatedCount(false);
 						break;
 					}
@@ -522,41 +511,33 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		if (manifestFlag) {
 			if (videoStream.getVideoEventsBySegment() != null) {
 				text = (!videoStream.isValid())
-						? MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"), viewIndex,
-								videoStream.getManifest().getVideoName())
-						: MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.manifest.name"), viewIndex,
-								videoStream.getManifest().getVideoName());
+						? MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"), viewIndex, videoStream.getManifest().getVideoName())
+						: MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.manifest.name"), viewIndex, videoStream.getManifest().getVideoName());
 			} else {
-				text = MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"), viewIndex,
-						videoStream.getManifest().getVideoName());
+				text = MessageFormat.format(ResourceBundleHelper.getMessageString("videotab.invalid.manifest.name"), viewIndex, videoStream.getManifest().getVideoName());
 			}
 			lbl.setText(text + ", segment count:" + videoStream.getVideoEventMap().size());
 
 			// add the chunk/segment tables
 			if (!CollectionUtils.isEmpty(videoStream.getVideoEventMap())) {
 				videoTableScrollPane = new JScrollPane();
-				videoTablePanel = getStreamTable(VIDEO_TABLE_NAME, videoStream.getVideoEventMap(),
-						videoTableScrollPane);
+				videoTablePanel = getStreamTable(VIDEO_TABLE_NAME, videoStream.getVideoEventMap(), videoTableScrollPane);
 				checkBoxVideo.setSelected(true);
-				hiddenPanel.add(videoTablePanel, new GridBagConstraints(1, 1, 1, 2, 1.0, 1.0,
-						GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, new Insets(10, 10, 5, 10), 0, 0));
+				hiddenPanel.add(videoTablePanel, new GridBagConstraints(1, 1, 1, 2, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, new Insets(10, 10, 5, 10), 0, 0));
 			}
 			// AUDIO
 			if (!CollectionUtils.isEmpty(videoStream.getAudioEventMap())) {
 				audioTableScrollPane = new JScrollPane();
-				audioTablePanel = getStreamTable(AUDIO_TABLE_NAME, videoStream.getAudioEventMap(),
-						audioTableScrollPane);
+				audioTablePanel = getStreamTable(AUDIO_TABLE_NAME, videoStream.getAudioEventMap(), audioTableScrollPane);
 				checkBoxAudio.setSelected(true);
-				hiddenPanel.add(audioTablePanel, new GridBagConstraints(2, 2, 1, 2, 1.0, 1.0,
-						GridBagConstraints.NORTHEAST, GridBagConstraints.HORIZONTAL, new Insets(10, 10, 5, 10), 0, 0));
+				hiddenPanel.add(audioTablePanel, new GridBagConstraints(2, 2, 1, 2, 1.0, 1.0, GridBagConstraints.NORTHEAST, GridBagConstraints.HORIZONTAL, new Insets(10, 10, 5, 10), 0, 0));
 			}
 			// Closed Caption / subtitles
 			if (!CollectionUtils.isEmpty(videoStream.getCcEventMap())) {
 				ccTableScrollPane = new JScrollPane();
 				captionTablePanel = getStreamTable(CAPTION_TABLE_NAME, videoStream.getCcEventMap(), ccTableScrollPane);
 				checkBoxCC.setSelected(true);
-				hiddenPanel.add(captionTablePanel, new GridBagConstraints(3, 2, 1, 2, 1.0, 1.0,
-						GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, new Insets(10, 10, 5, 10), 0, 0));
+				hiddenPanel.add(captionTablePanel, new GridBagConstraints(3, 2, 1, 2, 1.0, 1.0, GridBagConstraints.NORTHWEST, GridBagConstraints.HORIZONTAL, new Insets(10, 10, 5, 10), 0, 0));
 			}
 		}
 	}

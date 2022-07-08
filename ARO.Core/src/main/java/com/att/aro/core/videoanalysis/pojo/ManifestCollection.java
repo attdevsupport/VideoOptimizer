@@ -40,8 +40,17 @@ public class ManifestCollection {
 	private static final Logger LOG = LogManager.getLogger(ManifestCollection.class.getName());
 	private Manifest manifest;
 	
+	/**
+	 * This is used to maintain proper segment coordination across manifests
+	 * VOD will all match.
+	 * LIVE will increment over time, but not tied to time
+	 * 
+	 * see: ChildManifest
+	 * The ChildManifest with the lowest sequenceStart, greater than zero value will define minimumSequenceStart
+	 * 
+	 */
 	@Setter(AccessLevel.NONE)
-	private int minimumSequenceStart = 0;
+	private int minimumSequenceStart = -1;
 	
 	private int commonBaseLength = -1;
 	private int segmentFileNameLength;
@@ -55,12 +64,8 @@ public class ManifestCollection {
 	 * Key: segmentUriName
 	 */
 	@NonNull
-	@Setter
+	@Getter
 	private PatriciaTrie<SegmentInfo> segmentTrie = new PatriciaTrie<>();
-	
-	public PatriciaTrie<SegmentInfo> getSegmentTrie() {
-		return segmentTrie;
-	}
 
 	/**<pre>
 	 * Trie of ChildManifest
@@ -188,7 +193,8 @@ public class ManifestCollection {
 				Iterator<String> keys = uriNameChildMap.keySet().iterator();
 				while (keys.hasNext()) {
 					String key = keys.next();
-					strblr.append("\n\t\tchildMap_key: " + key);
+					strblr.append("\n\t\tchildMap: " + key);
+					strblr.append("\tSequence : " + uriNameChildMap.get(key).getSequenceStart());
 					if (uriNameChildMap.get(key).getManifest() != null) {
 						strblr.append("\n" + uriNameChildMap.get(key).dumpSegmentList());
 					}
@@ -202,9 +208,25 @@ public class ManifestCollection {
 		return segmentCounter++;
 	}
 	
-	public void setMinimumSequenceStart(int mediaSequence) {
-		if (minimumSequenceStart == 0 || mediaSequence < minimumSequenceStart) {
+	/**
+	 * This is used to maintain proper segment coordination across the multitude of live manifests
+	 * 
+	 * The childManifest with the lowest, greater than zero value will define minimumSequenceStart
+	 * 
+	 * Note: setting a lower mediaSequence should trigger a reassignment of SegmentInfo values
+	 * in all ChildManifests with higher sequenceStart values
+	 * 
+	 * @param mediaSequence
+	 * @return offset if minimumSequenceStart was replaced with a new minimum value
+	 */
+	public int setMinimumSequenceStart(int mediaSequence) {
+		int offset = 0;
+		if ((minimumSequenceStart == -1 && mediaSequence > -1) || mediaSequence < minimumSequenceStart) {
+			offset = minimumSequenceStart > -1 ? minimumSequenceStart - mediaSequence : 0;
 			minimumSequenceStart = mediaSequence;
+			return offset;
+		} else {
+			return offset;
 		}
 	}
 }

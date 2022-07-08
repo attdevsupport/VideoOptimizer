@@ -64,12 +64,30 @@ public class PlayTimeData {
 
 		// creates TreeMaps for DownLoadKeys and PlayKeys
 		videoStream.getVideoActiveMap().entrySet().forEach(e -> {
-			videoDownLoadKeyMap.put(e.getValue().getEndTS(), e.getValue());
-			videoPlayKeyMap.put(e.getValue().getPlayTime(), e.getValue());
+			safePutDblKeyedMap(videoDownLoadKeyMap, e.getValue().getEndTS(), e.getValue());
+			safePutDblKeyedMap(videoPlayKeyMap, e.getValue().getPlayTime(), e.getValue());
 		});
 		
 		videoStream.clearPlayTimeData();
 		process();
+	}
+
+	/**
+	 * <pre>
+	 * Put values into a map with double keys, with minor increment, to guarantee addition to the map
+	 * Will increment key by 1e-12 until a gap is found
+	 * 
+	 * @param dblKeyMap
+	 * @param endTS
+	 * @param value		VideoEvent
+	 */
+	private void safePutDblKeyedMap(TreeMap<Double, VideoEvent> dblKeyMap, double endTS, VideoEvent value) {
+		double key = endTS;
+
+		while (dblKeyMap.containsKey(key)) {
+			key += 1e-12;
+		}
+		dblKeyMap.put(key, value);
 	}
 
 	private void process() {
@@ -92,9 +110,7 @@ public class PlayTimeData {
 	private void handlePreload(Double playKey) {
 		// preload "buffering"
 		while (loadNextDlEvent() && dlKey < playKey) {
-			logPoint( dlEvent, dlKey, buffer, StreamStatus.Load);
-			buffer += dlEvent.getDuration();
-			logPoint( dlEvent, dlKey, buffer, StreamStatus.Load);
+			logDownloadEvent();
 		}
 	}
 
@@ -112,7 +128,7 @@ public class PlayTimeData {
 		while (loadNextPlayEvent()) {
 			durationRemainder = plEvent.getDuration();
 			playTimeEnd = plEvent.getPlayTimeEnd();
-		
+			
 			durationRemainder = handleDownloadsDuringEventPlay(durationRemainder, playTimeEnd);
 			
 			// Handles any Play time after last download event
@@ -139,6 +155,13 @@ public class PlayTimeData {
 		}
 	}
 
+	public void logDownloadEvent() {
+		logPoint( dlEvent, dlKey, buffer, StreamStatus.Load);
+		buffer += dlEvent.getDuration();
+		logPoint( dlEvent, dlKey, buffer, StreamStatus.Load);
+		dlKV = null;
+	}
+
 	/**
 	 * Only to be called from handlePlay()
 	 * 
@@ -149,15 +172,16 @@ public class PlayTimeData {
 	private double handleDownloadsDuringEventPlay(double durationRemainder, double playTimeEnd) {
 		logPoint(plEvent, plKey, buffer, StreamStatus.Play);
 		Double priorKey = plKey;
-
-		if (dlItr.hasNext() && dlKey < playTimeEnd) {
+		
+		if (dlKV != null && dlKey < playTimeEnd && (dlItr.hasNext() || !priorKey.equals(dlKey))) {
 			do {
 				double partial = dlKey - priorKey;
 				durationRemainder -= partial;
 				buffer -= partial;
 				logPoint(dlEvent, dlKey, buffer, StreamStatus.Load);
 				buffer += dlEvent.getDuration();
-				logPoint( plEvent, dlKey, buffer, StreamStatus.Play);
+				dlKV = null;
+				logPoint(plEvent, dlKey, buffer, StreamStatus.Play);
 				priorKey = dlKey;
 			} while (loadNextDlEvent() && dlKey < playTimeEnd);
 		}
@@ -168,19 +192,22 @@ public class PlayTimeData {
 	 * Only to be called from handlePlay
 	 * 
 	 * Handles all loads that happen within the stall condition
+	 * @return 
 	 * 
 	 */
 	private void handleStallRecovery() {
 		// a stall was located
 		loadNextPlayEvent();
-		
+
 		while (dlItr.hasNext() && (Precision.round(dlKey, 5) <  Precision.round(plKey, 5))) { // dlKey < plKey
 			logPoint( dlEvent, dlKey, buffer, StreamStatus.Load);
 			buffer += dlEvent.getDuration();
+			dlKV = null;
 			logPoint( plEvent, dlKey, buffer, StreamStatus.Stall);
 			loadNextDlEvent();
 		}
 		plKey = videoPlayKeyMap.lowerKey(plKey);
+		return;
 	}
 	
 	/**
@@ -199,9 +226,14 @@ public class PlayTimeData {
 	}
 
 	private boolean loadNextPlayEvent() {
-		plKey = videoPlayKeyMap.higherKey(plKey);
-		if (plKey != null) {
-			plEvent = videoPlayKeyMap.get(plKey);
+		try {
+			if (!videoPlayKeyMap.lastKey().equals(plKey) && (plKey = videoPlayKeyMap.higherKey(plKey)) != null) {
+				plEvent = videoPlayKeyMap.get(plKey);
+			} else {
+				return false;
+			}
+		} catch (Exception e) {
+			LOG.debug("Reached end, no more keys! This should not happen.");
 		}
 		return plKey != null;
 	}

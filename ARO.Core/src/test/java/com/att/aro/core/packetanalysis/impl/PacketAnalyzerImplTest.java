@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express orimplied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.packetanalysis.impl;
 
 import static org.junit.Assert.assertEquals;
@@ -17,7 +32,6 @@ import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -55,6 +69,7 @@ import com.att.aro.core.peripheral.pojo.CpuActivity;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
 import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
+import com.att.aro.mvc.IAROView;
 
 @SuppressWarnings("unchecked")
 public class PacketAnalyzerImplTest extends BaseTest {
@@ -75,6 +90,8 @@ public class PacketAnalyzerImplTest extends BaseTest {
 	private IBurstCollectionAnalysis burstcollectionanalyzer;
 	@Mock
 	private IPktAnazlyzerTimeRangeUtil pktTimeUtil;
+	@Mock
+	IAROView aroView;
 
 	@Before
 	public void setup() {
@@ -110,18 +127,18 @@ public class PacketAnalyzerImplTest extends BaseTest {
 		CpuActivityList cpuList = new CpuActivityList();
 		cpuList.add(new CpuActivity());
 		when(mockTraceDirResult.getCpuActivityList()).thenReturn(cpuList);
-		when(tracereader.readTraceDirectory(any(String.class))).thenReturn(mockTraceDirResult);
+
+		when(tracereader.readTraceDirectory(any(String.class), any(IAROView.class))).thenReturn(mockTraceDirResult);
 		when(metaDataHelper.initMetaData(any(PacketAnalyzerResult.class))).thenReturn(metaDataModel);
 
 		ProfileLTE profileLTE = new ProfileLTE();
 		when(profilefactory.createLTEdefault()).thenReturn(profileLTE);
-
-		PacketAnalyzerResult testResult = iPacketAnalyzer.analyzeTraceDirectory("", profileLTE, filter);
+		
+		PacketAnalyzerResult testResult = iPacketAnalyzer.analyzeTraceDirectory("", aroView, profileLTE, filter);
 		assertEquals(null, testResult.getSessionlist());
 	}
 	
 	@Test
-	@Ignore
 	public void  Test_analyzeTraceFile_returnIsPacketAnalyzerResult() throws  Exception{
 		iPacketAnalyzer.setProfileFactory(profilefactory);
 

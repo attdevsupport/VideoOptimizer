@@ -1,15 +1,15 @@
 /*
- *  Copyright 2021 AT&T
+ *  Copyright 2022 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0 
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express orimplied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
@@ -260,7 +260,7 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 	 * @param packetFile pcap/pcapng file path
 	 */
 	private void identifyOSInfo(String packetFile) {
-		String cmd = Util.getCapinfos() + " " + packetFile;
+		String cmd = String.format("%s \"%s\"", Util.getCapinfos(), packetFile);
 		LOGGER.trace("Getting OS Info with command: " + cmd);
 		String result = externalProcessRunner.executeCmd(cmd);
 		LOGGER.debug("OS Info for Packet Reader: " + result);
@@ -334,7 +334,7 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 		try {
 	        // Write content data (json file) to a temporary file to enable reading json entry in a streaming fashion
             tempFile = File.createTempFile("temp" + RANDOM.nextInt(), ".json");
-            String cmd = Util.getTshark() + " -r \"" + packetfile + "\" -x -T json -j \"frame\" > " + tempFile.getAbsolutePath();
+            String cmd = String.format("%s -r \"%s\" -x -T json -j \"frame\" > \"%s\"", Util.getTshark(), packetfile, tempFile.getAbsolutePath());
             LOGGER.info("Exporting raw packet data to external path " + tempFile.getAbsolutePath() + " for pcapng file " + packetfile + " with command: " + cmd);
 
             String result = externalProcessRunner.executeCmd(cmd);

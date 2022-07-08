@@ -131,7 +131,7 @@ public class IPEndPointSummaryTableModel extends DataTableModel<IPPacketSummary>
 	protected Object getColumnValue(IPPacketSummary item, int columnIndex) {
 		switch(columnKeysCollection[columnIndex]) {
 			case endpointsummary_ipAddress:
-				return item.getIPAddress() != null ? Util.getDefaultAppName(item.getIPAddress().toString().substring(1)) : TraceDataReaderImpl.UNKNOWN_APPNAME;
+				return parseForwardSlash(item);
 			case endpointsummary_packets:
 				return item.getPacketCount();
 			case endpointsummary_payload_bytes:
@@ -143,6 +143,17 @@ public class IPEndPointSummaryTableModel extends DataTableModel<IPPacketSummary>
 			default:
 				return null;
 		}
+	}
+
+	private Object parseForwardSlash(IPPacketSummary item) {
+		String ipAddress = TraceDataReaderImpl.UNKNOWN_APPNAME;
+		if (item.getIPAddress() != null) {
+			ipAddress = Util.getDefaultAppName(item.getIPAddress().toString());
+			if ("/".contentEquals(ipAddress.substring(0, 1))) {
+				ipAddress = ipAddress.substring(1);
+			}
+		}
+		return ipAddress;
 	}
 
 	/**

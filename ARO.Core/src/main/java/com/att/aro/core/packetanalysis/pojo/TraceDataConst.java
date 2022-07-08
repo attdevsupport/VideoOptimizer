@@ -129,6 +129,7 @@ public class TraceDataConst {
 		public static final int GSM = 16;
 		public static final int IWLAN = 18;
 		public static final int NR = 20; // new radio 5G
+		public static final int UNDEFINED = 999;
 
 	}
 	

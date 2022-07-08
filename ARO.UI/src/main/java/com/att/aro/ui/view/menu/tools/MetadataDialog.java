@@ -25,6 +25,7 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Label;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -53,15 +54,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.AroFonts;
 import com.att.aro.ui.commonui.ContextAware;
-import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
+
+import lombok.Getter;
 
 public class MetadataDialog extends JDialog {
 
@@ -72,6 +76,7 @@ public class MetadataDialog extends JDialog {
 	private static final Logger LOGGER = LogManager.getLogger(MetadataDialog.class);
 
 	private MetaDataHelper metadataHelper = ContextAware.getAROConfigContext().getBean(MetaDataHelper.class);
+	@Getter
 	private MetaDataModel metaDataModel;
 
 	private JButton okButton;
@@ -82,7 +87,6 @@ public class MetadataDialog extends JDialog {
 	private JPanel jContentPane;
 	private final JMenuItem callerMenuItem;
 	private final SharedAttributesProcesses parent;
-	private EnableEscKeyCloseDialog enableEscKeyCloseDialog;
 		
 	private Label traceStorageLabel = new Label();
 	private Label descriptionLabel = new Label();
@@ -104,15 +108,30 @@ public class MetadataDialog extends JDialog {
 	private JTextField networkField = new JTextField();	
 	private JTextField traceOwnerField = new JTextField();
 	private JTextArea traceNotes = new JTextArea();
+	private int traceNotesLineCount =  0;
 	
 	private String tracePath = "";
-	private TraceDirectoryResult result;
+	private AbstractTraceResult result;
 
 	private JScrollPane notesScrollPane;
 
 	private JPanel notesScrollPanel;
 
-	public MetadataDialog(SharedAttributesProcesses parent, JMenuItem callerMenuItem) {
+	@Getter private Point traceNotesCaretPoint;
+	@Getter private int traceNotesCaretPosition;
+	
+	@Getter
+	private boolean cancelled = false;
+
+	private String buTraceNotes;
+
+	/**
+	 * 
+	 * @param i null value indicates leave CaretPosition to default
+	 * @param parent
+	 * @param callerMenuItem
+	 */
+	public MetadataDialog(SharedAttributesProcesses parent, JMenuItem callerMenuItem, Integer caretPosition) {
 		super(parent.getFrame());
 		this.parent = parent;
 		this.callerMenuItem = callerMenuItem;
@@ -122,6 +141,12 @@ public class MetadataDialog extends JDialog {
 		try {
 			extractMetaDataModel();
 			init();
+			if (caretPosition != null) {
+				traceNotesCaretPosition = caretPosition;
+				traceNotes.setCaretPosition(traceNotesCaretPosition);
+			}
+			buTraceNotes = metaDataModel.getTraceNotes();
+			traceNotesLineCount = traceNotes.getLineCount();
 			setMinimumSize(getPreferredSize());
 			this.setVisible(true);
 		} catch (Exception e) {
@@ -131,7 +156,7 @@ public class MetadataDialog extends JDialog {
 	}
 
 	private void extractMetaDataModel() throws Exception {
-		result = getTraceDirectoryResult();
+		result = getAbstractTraceResult();
 		tracePath = getTracePath();
 		if (result != null && result.getMetaData() != null) {
 			metaDataModel = result.getMetaData();
@@ -145,7 +170,6 @@ public class MetadataDialog extends JDialog {
 		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		this.setTitle("Metadata");
 		this.setModal(true);
-		enableEscKeyCloseDialog = new EnableEscKeyCloseDialog(getRootPane(), this, false);
 		this.addWindowListener(new WindowAdapter() {
 			
 			@Override
@@ -155,10 +179,8 @@ public class MetadataDialog extends JDialog {
 			}
 			
 			@Override
-			public void windowDeactivated(WindowEvent event) {
-				if (enableEscKeyCloseDialog.consumeEscPressed()) {
-					dispose();
-				}
+			public void windowClosing(WindowEvent e) {
+				cancelDialog();
 			}
 		});
 		
@@ -176,7 +198,7 @@ public class MetadataDialog extends JDialog {
 
 		FontMetrics fm = traceNotes.getFontMetrics(AroFonts.TEXT_FONT);
 		int columnCount = 0;
-		String[] rows = traceNotes.getText().split(System.lineSeparator());
+		String[] rows = traceNotes.getText().split("\n");
 		int textAreaRows = 1;
 		if (rows.length > 0) {
 			for (int row = 0; row < rows.length; row++) {
@@ -185,31 +207,25 @@ public class MetadataDialog extends JDialog {
 					longestRow = row;
 				}
 			}
-			textAreaRows = StringUtils.countMatches(traceNotes.getText(), System.lineSeparator());
+			textAreaRows = StringUtils.countMatches(traceNotes.getText(), "\n");
 			width = SwingUtilities.computeStringWidth(fm, rows[longestRow]) + 240;
 			if (width < DEFAULT_WIDTH) {
 				width = DEFAULT_WIDTH;
 			}
 		}
 		
-		int height = fm.getHeight();
-		height = textAreaRows * height;
+		int fontHeight = fm.getHeight() + (Util.isWindowsOS() ? 1 : 0);
+		int height = textAreaRows * fontHeight + fontHeight;
 
 		notesScrollPane.setPreferredSize(new Dimension(960, 400));
-		notesPanel.setPreferredSize(new Dimension(width * 2, height * 1));
+		notesPanel.setPreferredSize(new Dimension(width * 2, height));
 
 		notesScrollPane.setMinimumSize(notesScrollPane.getPreferredSize());
 		notesPanel.setMinimumSize(notesPanel.getPreferredSize());
+		
+		traceNotesLineCount = traceNotes.getLineCount();
 	}
 	
-	@Override
-	public void dispose() {
-		if (callerMenuItem != null) {
-			callerMenuItem.setEnabled(true);
-		}
-		super.dispose();
-	}
-
 	private JComponent getJContentPane() {
 		if (jContentPane == null) {
 			jContentPane = new JPanel(new GridBagLayout());
@@ -337,9 +353,12 @@ public class MetadataDialog extends JDialog {
 
 			private void updateText(Document document) {
 				try {
-					Method method = Class.forName("com.att.aro.core.tracemetadata.pojo.MetaDataModel")
-							.getMethod(value.getName(), String.class);
+					Method method = Class.forName("com.att.aro.core.tracemetadata.pojo.MetaDataModel").getMethod(value.getName(), String.class);
 					method.invoke(metaDataModel, document.getText(0, document.getLength()));
+
+					if (traceNotes.getLineCount() != traceNotesLineCount) {
+						adjustDimensions();
+					}
 				} catch (NoSuchMethodException | SecurityException | ClassNotFoundException e) {
 					LOGGER.error("Exception Thrown for Metadata Update. Method name not found");
 				} catch (IllegalAccessException e) {
@@ -385,7 +404,7 @@ public class MetadataDialog extends JDialog {
 			jButtonGrid.setBorder(BorderFactory.createEmptyBorder(2, 2, 8, 8));
 			jButtonGrid.setLayout(gridLayout);
 			jButtonGrid.add(okButton = getButton("Save & Close", (ActionEvent arg) -> saveAndClose()));
-			jButtonGrid.add(getButton("Cancel", (ActionEvent arg) -> dispose()));
+			jButtonGrid.add(getButton("Cancel", (ActionEvent arg) -> cancelDialog()));
 		}
 		return jButtonGrid;
 	}
@@ -397,11 +416,28 @@ public class MetadataDialog extends JDialog {
 		return button;
 	}
 
+	@Override
+	public void dispose() {
+		if (callerMenuItem != null) {
+			callerMenuItem.setEnabled(true);
+		}
+		super.dispose();
+	}
+
+	private void cancelDialog() {
+		cancelled = true;
+		metaDataModel.setTraceNotes(buTraceNotes);
+		buTraceNotes = null;
+		dispose();
+	}
+	
 	private void saveAndClose() {
 		try {
 			if (result != null) {
 				result.setMetaData(metadataHelper.getMetaData());
 				metadataHelper.saveJSON(tracePath);
+				this.traceNotesCaretPoint = traceNotes.getCaret().getMagicCaretPosition();
+				this.traceNotesCaretPosition = traceNotes.getCaretPosition();
 			}
 			dispose();
 			((MainFrame) parent).refreshBestPracticesTab();
@@ -414,11 +450,11 @@ public class MetadataDialog extends JDialog {
 		return result != null ? result.getTraceDirectory() : null;
 	}
 
-	private TraceDirectoryResult getTraceDirectoryResult() {
-		TraceDirectoryResult result = null;
+	private AbstractTraceResult getAbstractTraceResult() {
+		AbstractTraceResult result = null;
 		if (((MainFrame) parent).getController().getCurrentTraceInitialAnalyzerResult() != null 
 		 && ((MainFrame) parent).getController().getCurrentTraceInitialAnalyzerResult().getTraceresult() != null) {
-			result = (TraceDirectoryResult) ((MainFrame) parent).getController().getCurrentTraceInitialAnalyzerResult().getTraceresult();
+			result = ((MainFrame) parent).getController().getCurrentTraceInitialAnalyzerResult().getTraceresult();
 		}
 		return result;
 	}

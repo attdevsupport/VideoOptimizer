@@ -35,7 +35,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
-import java.util.ResourceBundle;
 import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
@@ -73,6 +72,7 @@ import com.att.aro.core.peripheral.impl.TimeRangeReadWrite;
 import com.att.aro.core.peripheral.pojo.TraceTimeRange;
 import com.att.aro.core.util.StringParse;
 import com.att.aro.core.util.Util;
+import com.att.aro.core.util.VideoUtils;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.videoanalysis.videoframe.FrameReceiver;
 import com.att.aro.core.videoanalysis.videoframe.FrameRequest;
@@ -89,7 +89,6 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 	private static final Logger LOG = LogManager.getLogger(TimeRangeEditorDialog.class.getName());
 	private static final long serialVersionUID = 1L;
 
-	private static final ResourceBundle resourceBundle = ResourceBundleHelper.getDefaultBundle();
 	private int frameImagePanelPanelLandscape = 380;
 	private int frameImagePanelPanelPortrait = 240;
 	private static final int SLIDER_SENSITIVITY = 25;
@@ -1043,20 +1042,36 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 	 * @throws Exception
 	 */
 	private void loadVideoData(File videoFrameFolder) throws Exception {
-		File movVideoPath = fileManager.createFile(traceFolder, resourceBundle.getString("video.videoDisplayFile"));
-		File mp4VideoPath = fileManager.createFile(traceFolder, resourceBundle.getString("video.videoFileOnDevice"));
+		File movVideoPath = null;
+		File mp4VideoPath = null;		
+		
+		String[] videoFiles = VideoUtils.validateFolder(traceFolder, VideoUtils.VIDEO, VideoUtils.VIDEO_EXTENTIONS).get(VideoUtils.VIDEO);
+		if (videoFiles == null || videoFiles.length == 0) {
+			splash.dispose();
+			throw new Exception("No Video Files found");
+		}
+		if (videoFiles.length == 1) {
+			mp4VideoPath = fileManager.createFile(traceFolder, videoFiles[0]);
+		} else if (videoFiles.length == 2) {
+			movVideoPath = fileManager.createFile(traceFolder, videoFiles[0]);
+			mp4VideoPath = fileManager.createFile(traceFolder, videoFiles[1]);
+		} else {
+			String message = "Wrong Video File count" + videoFiles.length;
+			splash.dispose();
+			throw new Exception(message);
+		}
 		
 		File deviceVideoPath = null;
-		Double durationMP4 = 0D;
-		String resultsMP4 = null;
 		Double durationMOV = 0D;
-		String resultsMOV = null;
+		String resultsMOV = "";
+		Double durationMP4 = 0D;
+		String resultsMP4 = "";
 		
 		if (mp4VideoPath.exists()) {
 			resultsMP4 = extractDeviceVideoInfo(mp4VideoPath);
 			durationMP4 = StringParse.findLabeledDoubleFromString("duration=", " ", resultsMP4);
 		}
-		if (movVideoPath.exists()) {
+		if (movVideoPath != null && movVideoPath.exists()) {
 			resultsMOV = extractDeviceVideoInfo(movVideoPath);
 			durationMOV = StringParse.findLabeledDoubleFromString("duration=", " ", resultsMOV);
 		}
@@ -1073,7 +1088,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 			frameImagePanelPanelPortrait = 195;
 		}
 		
-		if (!deviceVideoPath.exists()) {
+		if (deviceVideoPath == null || !deviceVideoPath.exists() || results.isEmpty()) {
 			throw new Exception("No Device Video file");
 		}
 		

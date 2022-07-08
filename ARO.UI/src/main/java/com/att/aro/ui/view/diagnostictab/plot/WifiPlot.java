@@ -61,8 +61,8 @@ public class WifiPlot implements IPlot{
 				XYIntervalSeries series = new XYIntervalSeries(eventType);
 				seriesMap.put(eventType, series);
 				switch (eventType) {
-				case WIFI_UNKNOWN:
-				case WIFI_DISABLED:
+				case UNKNOWN:
+				case OFF:
 					// Don't chart these
 					break;
 				default:
@@ -88,13 +88,13 @@ public class WifiPlot implements IPlot{
 			for (WifiState eventType : WifiState.values()) {
 				Color paint;
 				switch (eventType) {
-				case WIFI_CONNECTED:
-				case WIFI_CONNECTING:
-				case WIFI_DISCONNECTING:
+				case CONNECTED:
+				case CONNECTING:
+				case DISCONNECTING:
 					paint = new Color(34, 177, 76);
 					break;
-				case WIFI_DISCONNECTED:
-				case WIFI_SUSPENDED:
+				case DISCONNECTED:
+				case SUSPENDED:
 					paint = Color.YELLOW;
 					break;
 				default:
@@ -119,9 +119,9 @@ public class WifiPlot implements IPlot{
 							dataset.getX(series, item),
 							ResourceBundleHelper.getEnumString(eventType)));
 					switch (eventType) {
-					case WIFI_CONNECTED:
+					case CONNECTED:
 						WifiInfo info = eventMap.get(dataset.getX(series, item));
-						if (info != null && info.getWifiState() == WifiState.WIFI_CONNECTED) {
+						if (info != null && info.getWifiState() == WifiState.CONNECTED) {
 							message.append(MessageFormat.format(ResourceBundleHelper.getMessageString("wifi.connTooltip"),
 									info.getWifiMacAddress(), info.getWifiRSSI(),
 									info.getWifiSSID()));

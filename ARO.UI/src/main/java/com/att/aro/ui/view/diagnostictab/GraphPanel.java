@@ -29,6 +29,7 @@ import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,6 +75,7 @@ import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
+import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
@@ -165,6 +167,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private GraphPanelCrossHairHandle handlePanel;
 
 	private ThroughputPlot throughput;
+	private ThroughputPlot throughputDL;
+	private ThroughputPlot throughputUL;
 	private BurstPlot burstPlot;
 	private RrcPlot rrcPlot;
 	private UserEventPlot eventPlot;
@@ -273,7 +277,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	}
 
 	private List<PacketInfo> allPackets;
-	private double allTcpSessions;
+	private double allSessions;
 	private double traceDuration;
 	private DiagnosticsTab parent;
 	private Border border;
@@ -296,6 +300,10 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		this.parent = parent;
 		subplotMap.put(ChartPlotOptions.THROUGHPUT
 				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.throughput"), getBarPlot().drawXYItemPlot(true), 2));
+		subplotMap.put(ChartPlotOptions.THROUGHPUTUL
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.throughputUL"), getBarPlot().drawXYItemPlot(true), 2));
+		subplotMap.put(ChartPlotOptions.THROUGHPUTDL
+				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.throughputDL"), getBarPlot().drawXYItemPlot(true), 2));
 		subplotMap.put(ChartPlotOptions.LATENCY
 				, new GraphPanelPlotLabels(ResourceBundleHelper.getMessageString("chart.latency"), getBarPlot().drawXYItemPlot(true), 2));
 		subplotMap.put(ChartPlotOptions.BURSTS
@@ -375,7 +383,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		double filteredEndTime = 0.0;
 		double filteredDuration = filteredSessionTraceData.getAnalyzerResult().getTraceresult().getTraceDuration();
 
-		List<Session> tcpsessionsList = new ArrayList<Session>();
+		List<Session> sessionList = new ArrayList<Session>();
 		if (getTraceData() == null) {
 			return;
 		} else {			
@@ -384,17 +392,17 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			Map<String, Boolean> subcheckboxMap = model.getCheckboxMap();
 			for (Map.Entry<String, Boolean> entry : subcheckboxMap.entrySet()) {
 				if (entry.getValue()) {
-					tcpsessionsList.add(subSessionMap.get(entry.getKey()));
+					sessionList.add(subSessionMap.get(entry.getKey()));
 				}
 			}
 
-			filteredSessionTraceData.getAnalyzerResult().setSessionlist(tcpsessionsList);
+			filteredSessionTraceData.getAnalyzerResult().setSessionlist(sessionList);
 		}
 
 		List<PacketInfo> packetsForSelectedSession = new ArrayList<PacketInfo>();
-		for (Session tcpSession : tcpsessionsList) {
-			if (tcpSession.getTcpPackets() != null) {
-				packetsForSelectedSession.addAll(tcpSession.getTcpPackets());
+		for (Session session : sessionList) {
+			if (session.getAllPackets() != null) {
+				packetsForSelectedSession.addAll(session.getAllPackets());
 			}
 		}
 
@@ -410,7 +418,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 		// Adding the TCP packets to the trace for getting redoing the analysis
 		if (packetsForSelectedSession.size() > 0) {
-			if (tcpsessionsList.size() == getAllTcpSessions()) {
+			if (sessionList.size() == getAllSessions()) {
 				// For select all use all exiting packets
 				filteredSessionTraceData.getAnalyzerResult().getTraceresult().setAllpackets(getAllPackets());
 				selectedAllPackets = true;
@@ -425,19 +433,19 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			filteredEndTime = filteredDuration;
 		} else {
 			int index = 0;
-			for (Session tcpSession : tcpsessionsList) {
-				if (tcpSession.getTcpPackets().size() != 0) {
+			for (Session session : sessionList) {
+				if (session.getAllPackets().size() != 0) {
 					if (index == 0) {
-						filteredStartTime = tcpSession.getTcpPackets().get(0).getTimeStamp();
-						filteredEndTime = tcpSession.getTcpPackets().get(0).getTimeStamp();
+						filteredStartTime = session.getAllPackets().get(0).getTimeStamp();
+						filteredEndTime = session.getAllPackets().get(0).getTimeStamp();
 					}
 
-					if (filteredStartTime > tcpSession.getTcpPackets().get(0).getTimeStamp()) {
-						filteredStartTime = tcpSession.getTcpPackets().get(0).getTimeStamp();
+					if (filteredStartTime > session.getAllPackets().get(0).getTimeStamp()) {
+						filteredStartTime = session.getAllPackets().get(0).getTimeStamp();
 					}
 
-					if (filteredEndTime < tcpSession.getTcpPackets().get(0).getTimeStamp()) {
-						filteredEndTime = tcpSession.getTcpPackets().get(0).getTimeStamp();
+					if (filteredEndTime < session.getAllPackets().get(0).getTimeStamp()) {
+						filteredEndTime = session.getAllPackets().get(0).getTimeStamp();
 					}
 					index++;
 				}
@@ -476,8 +484,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			filteredSessionTraceData.getAnalyzerResult().setFilter(filter);
 			Statistic stat = ContextAware.getAROConfigContext().getBean(IPacketAnalyzer.class).getStatistic(packetsForSelectedSession);
 			long totaltemp = 0;
-			for (Session byteCountSession : tcpsessionsList) {
-				totaltemp += byteCountSession.getBytesTransferred();
+			for (PacketInfo packetInfo : packetsForSelectedSession) {
+				totaltemp += packetInfo.getLen();
 			}
 			stat.setTotalByte(totaltemp);
 			AbstractRrcStateMachine statemachine = ContextAware.getAROConfigContext().getBean(IRrcStateMachineFactory.class).create(
@@ -492,7 +500,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 						filteredSessionTraceData.getAnalyzerResult().getTraceresult().getUserEvents(),
 						filteredSessionTraceData.getAnalyzerResult().getTraceresult().getCpuActivityList()
 								.getCpuActivities(),
-						tcpsessionsList);
+						sessionList);
 			}
 			filteredSessionTraceData.getAnalyzerResult().getStatistic().setTotalByte(stat.getTotalByte());
 			filteredSessionTraceData.getAnalyzerResult().setStatemachine(statemachine);
@@ -513,12 +521,12 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		if (aroTraceData != null) {
 			setAllPackets(aroTraceData.getAnalyzerResult().getTraceresult().getAllpackets());
 			setTraceDuration(aroTraceData.getAnalyzerResult().getTraceresult().getTraceDuration());
-			setAllTcpSessions(aroTraceData.getAnalyzerResult().getSessionlist().size());// list
+			setAllSessions(aroTraceData.getAnalyzerResult().getSessionlist().size());// list
 																						// length
 		} else {
 			setAllPackets(new LinkedList<PacketInfo>());
 			setTraceDuration(0);
-			setAllTcpSessions(0);
+			setAllSessions(0);
 		}
 
 		if (aroTraceData != null 
@@ -555,7 +563,19 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					if (throughput == null) {
 						throughput = new ThroughputPlot();
 					}
-					throughput.populate(entry.getValue().getPlot(), aroTraceData);
+					throughput.populate(entry.getValue().getPlot(), aroTraceData, PacketDirection.BOTH);
+					break;
+				case THROUGHPUTUL:
+					if (throughputUL == null) {
+						throughputUL = new ThroughputPlot();
+					}
+					throughputUL.populate(entry.getValue().getPlot(), aroTraceData, PacketDirection.UPLINK);
+					break;
+				case THROUGHPUTDL:
+					if (throughputDL == null) {
+						throughputDL = new ThroughputPlot();
+					}
+					throughputDL.populate(entry.getValue().getPlot(), aroTraceData, PacketDirection.DOWNLINK);
 					break;
 				case BURSTS:
 					if (burstPlot == null) {
@@ -1337,8 +1357,14 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		} else if (ZOOM_OUT_ACTION.equals(e.getActionCommand())) {
 			zoomOut();
 		} else if (SAVE_AS_ACTION.equals(e.getActionCommand())) {
-			graphHelper.SaveImageAs(getViewport(),
-					getTraceData().getAnalyzerResult().getTraceresult().getTraceDirectory());
+			String tracePath;
+			if ((tracePath = getTraceData().getAnalyzerResult().getTraceresult().getTraceFile()) != null) {
+				// folder containing the cap/pcap file
+				tracePath = (new File(tracePath)).getParent();
+			} else {
+				tracePath = getTraceData().getAnalyzerResult().getTraceresult().getTraceDirectory();
+			}
+			graphHelper.SaveImageAs(getViewport(), tracePath);
 		}
 	}
 
@@ -1350,12 +1376,12 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		this.allPackets = allPackets;
 	}
 
-	public double getAllTcpSessions() {
-		return allTcpSessions;
+	public double getAllSessions() {
+		return allSessions;
 	}
 
-	public void setAllTcpSessions(double allTcpSessions) {
-		this.allTcpSessions = allTcpSessions;
+	public void setAllSessions(double allSessions) {
+		this.allSessions = allSessions;
 	}
 
 	public double getTraceDuration() {

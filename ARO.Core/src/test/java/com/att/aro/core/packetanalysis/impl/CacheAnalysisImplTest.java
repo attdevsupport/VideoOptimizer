@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express orimplied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.packetanalysis.impl;
 
 import static org.junit.Assert.assertEquals;
@@ -316,8 +331,8 @@ public class CacheAnalysisImplTest extends BaseTest {
 		CacheAnalysis testResult = cacheAnalysis.analyze(sessionList);
 		assertEquals(4, testResult.getCacheExpirationResponses().size());
 		assertEquals(60, testResult.getDiagnosisResults().size());
-		assertEquals(95, testResult.getDuplicateContentBytes());
-		assertEquals(0.475, testResult.getDuplicateContentBytesRatio(), 0.225);
-		assertEquals(38, testResult.getDuplicateContentWithOriginals().size());
+		assertEquals(45, testResult.getDuplicateContentBytes());
+		assertEquals(0, testResult.getDuplicateContentBytesRatio(), 0.225);
+		assertEquals(18, testResult.getDuplicateContentWithOriginals().size());
 	}
 }

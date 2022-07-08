@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express orimplied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.bestpractice.impl;
 
 import static org.junit.Assert.assertEquals;
@@ -19,7 +34,6 @@ import com.att.aro.core.bestpractice.pojo.HttpsUsageResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
-import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
 
 public class HttpsUsageImplTest extends BaseTest {
@@ -38,12 +52,6 @@ public class HttpsUsageImplTest extends BaseTest {
 	public void testParentDomainNameUsed_DifferentSubdomains() {
 		pktAnalyzerResult = domainNameTestSetup("157.56.19.80", "216.58.194.196", "www.gstatic.com", "ssl.gstatic.com",
 				"www.arotest.com");
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
-
 		httpsUsageResult = (HttpsUsageResult) httpsUsageImpl.runTest(pktAnalyzerResult);
 		httpsUsageEntries = httpsUsageResult.getResults();
 		domainNameTestVerification(httpsUsageEntries);
@@ -53,12 +61,6 @@ public class HttpsUsageImplTest extends BaseTest {
 	public void testParentDomainNameUsed_MultiLevelDomainNames() {
 		pktAnalyzerResult = domainNameTestSetup("157.56.19.80", "216.58.194.196", "bogusa.bogusb.gstatic.com",
 				"bogusa.gstatic.com", "www.arotest.com");
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
-
 		httpsUsageResult = (HttpsUsageResult) httpsUsageImpl.runTest(pktAnalyzerResult);
 		httpsUsageEntries = httpsUsageResult.getResults();
 		domainNameTestVerification(httpsUsageEntries);
@@ -96,12 +98,6 @@ public class HttpsUsageImplTest extends BaseTest {
 		sessions.add(session1);
 		sessions.add(session2);
 		pktAnalyzerResult.setSessionlist(sessions);
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
-
 		httpsUsageResult = (HttpsUsageResult) httpsUsageImpl.runTest(pktAnalyzerResult);
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(2, httpsUsageEntries.size());
@@ -118,12 +114,6 @@ public class HttpsUsageImplTest extends BaseTest {
 	public void testParentDomainNameUsed_IPDomainNameMix() {
 		pktAnalyzerResult = domainNameTestSetup("157.56.19.80", "216.58.194.196", "157.56.19.80", "www.gstatic.com",
 				"www.arotest.com");
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
-
 		httpsUsageResult = (HttpsUsageResult) httpsUsageImpl.runTest(pktAnalyzerResult);
 		httpsUsageEntries = httpsUsageResult.getResults();
 		domainNameTestVerification(httpsUsageEntries);
@@ -134,12 +124,6 @@ public class HttpsUsageImplTest extends BaseTest {
 		String domainNameUnderTest = "bzsvdcwfxtqfy";
 		pktAnalyzerResult = domainNameTestSetup("157.56.19.80", "216.58.194.196", "157.56.19.80", "www.gstatic.com",
 				domainNameUnderTest);
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
-
 		httpsUsageResult = (HttpsUsageResult) httpsUsageImpl.runTest(pktAnalyzerResult);
 		httpsUsageEntries = httpsUsageResult.getResults();
 		domainNameTestVerification(httpsUsageEntries, domainNameUnderTest);
@@ -150,12 +134,6 @@ public class HttpsUsageImplTest extends BaseTest {
 		String domainNameUnderTest = null;
 		pktAnalyzerResult = domainNameTestSetup("157.56.19.80", "216.58.194.196", "157.56.19.80", "www.gstatic.com",
 				domainNameUnderTest);
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
-
 		httpsUsageResult = (HttpsUsageResult) httpsUsageImpl.runTest(pktAnalyzerResult);
 		httpsUsageEntries = httpsUsageResult.getResults();
 		domainNameTestVerification(httpsUsageEntries, "");
@@ -166,12 +144,6 @@ public class HttpsUsageImplTest extends BaseTest {
 		String domainNameUnderTest = "";
 		pktAnalyzerResult = domainNameTestSetup("157.56.19.80", "216.58.194.196", "157.56.19.80", "www.gstatic.com",
 				domainNameUnderTest);
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
-
 		httpsUsageResult = (HttpsUsageResult) httpsUsageImpl.runTest(pktAnalyzerResult);
 		httpsUsageEntries = httpsUsageResult.getResults();
 		domainNameTestVerification(httpsUsageEntries, domainNameUnderTest);
@@ -204,12 +176,6 @@ public class HttpsUsageImplTest extends BaseTest {
 		sessions.add(session1);
 		sessions.add(session2);
 		pktAnalyzerResult.setSessionlist(sessions);
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
-
 		httpsUsageResult = (HttpsUsageResult) httpsUsageImpl.runTest(pktAnalyzerResult);
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(1, httpsUsageEntries.size());
@@ -265,12 +231,6 @@ public class HttpsUsageImplTest extends BaseTest {
 		sessions.add(session2);
 		sessions.add(session3);
 		pktAnalyzerResult.setSessionlist(sessions);
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
-
 		httpsUsageResult = (HttpsUsageResult) httpsUsageImpl.runTest(pktAnalyzerResult);
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(1, httpsUsageEntries.size());
@@ -353,11 +313,11 @@ public class HttpsUsageImplTest extends BaseTest {
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(2, httpsUsageEntries.size());
 		if (httpsUsageEntries.get(0).getIPAddress().equals("157.56.19.80")) {
-			assertEquals("0.06", httpsUsageEntries.get(0).getTotalHttpTrafficInKB());
-			assertEquals("0.02", httpsUsageEntries.get(1).getTotalHttpTrafficInKB());
+			assertEquals("0.293", httpsUsageEntries.get(0).getTotalHttpTrafficInKB());
+			assertEquals("0.098", httpsUsageEntries.get(1).getTotalHttpTrafficInKB());
 		} else {
-			assertEquals("0.02", httpsUsageEntries.get(0).getTotalHttpTrafficInKB());
-			assertEquals("0.06", httpsUsageEntries.get(1).getTotalHttpTrafficInKB());
+			assertEquals("0.098", httpsUsageEntries.get(0).getTotalHttpTrafficInKB());
+			assertEquals("0.293", httpsUsageEntries.get(1).getTotalHttpTrafficInKB());
 		}
 	}
 
@@ -368,11 +328,11 @@ public class HttpsUsageImplTest extends BaseTest {
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(2, httpsUsageEntries.size());
 		if (httpsUsageEntries.get(0).getIPAddress().equals("157.56.19.80")) {
-			assertEquals("0.06", httpsUsageEntries.get(0).getTotalTrafficInKB());
-			assertEquals("0.08", httpsUsageEntries.get(1).getTotalTrafficInKB());
+			assertEquals("0.293", httpsUsageEntries.get(0).getTotalTrafficInKB());
+			assertEquals("0.391", httpsUsageEntries.get(1).getTotalTrafficInKB());
 		} else {
-			assertEquals("0.08", httpsUsageEntries.get(0).getTotalTrafficInKB());
-			assertEquals("0.06", httpsUsageEntries.get(1).getTotalTrafficInKB());
+			assertEquals("0.391", httpsUsageEntries.get(0).getTotalTrafficInKB());
+			assertEquals("0.293", httpsUsageEntries.get(1).getTotalTrafficInKB());
 		}
 	}
 
@@ -398,10 +358,10 @@ public class HttpsUsageImplTest extends BaseTest {
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(0, httpsUsageEntries.size());
 		assertEquals(BPResultType.PASS, httpsUsageResult.getResultType());
-//		assertEquals(
-//				ApplicationConfig.getInstance().getAppShortName()
-//						+ " discovered 0 non-HTTPS connection and it passes the test.",
-//				httpsUsageResult.getResultText());
+		assertEquals(
+				ApplicationConfig.getInstance().getAppShortName()
+						+ " discovered 0 non-HTTPS connection and it passes the test.",
+				httpsUsageResult.getResultText());
 	}
 
 	@Test
@@ -411,10 +371,10 @@ public class HttpsUsageImplTest extends BaseTest {
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(1, httpsUsageEntries.size());
 		assertEquals(BPResultType.WARNING, httpsUsageResult.getResultType());
-//		assertEquals(
-//				ApplicationConfig.getInstance().getAppShortName()
-//						+ " discovered 1 non-HTTPS connections, which is 13% of all the TCP sessions.",
-//				httpsUsageResult.getResultText());
+		assertEquals(
+				ApplicationConfig.getInstance().getAppShortName()
+						+ " discovered 1 non-HTTPS connections, which is 13% of all the TCP sessions.",
+				httpsUsageResult.getResultText());
 	}
 
 	@Test
@@ -424,10 +384,10 @@ public class HttpsUsageImplTest extends BaseTest {
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(1, httpsUsageEntries.size());
 		assertEquals(BPResultType.WARNING, httpsUsageResult.getResultType());
-//		assertEquals(
-//				ApplicationConfig.getInstance().getAppShortName()
-//						+ " discovered 3 non-HTTPS connections, which is 38% of all the TCP sessions.",
-//				httpsUsageResult.getResultText());
+		assertEquals(
+				ApplicationConfig.getInstance().getAppShortName()
+						+ " discovered 3 non-HTTPS connections, which is 38% of all the TCP sessions.",
+				httpsUsageResult.getResultText());
 	}
 
 	@Test
@@ -437,10 +397,10 @@ public class HttpsUsageImplTest extends BaseTest {
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(2, httpsUsageEntries.size());
 		assertEquals(BPResultType.WARNING, httpsUsageResult.getResultType());
-//		assertEquals(
-//				ApplicationConfig.getInstance().getAppShortName()
-//						+ " discovered 4 non-HTTPS connections, which is 50% of all the TCP sessions.",
-//				httpsUsageResult.getResultText());
+		assertEquals(
+				ApplicationConfig.getInstance().getAppShortName()
+						+ " discovered 4 non-HTTPS connections, which is 50% of all the TCP sessions.",
+				httpsUsageResult.getResultText());
 	}
 
 	@Test
@@ -450,10 +410,10 @@ public class HttpsUsageImplTest extends BaseTest {
 		httpsUsageEntries = httpsUsageResult.getResults();
 		assertEquals(1, httpsUsageEntries.size());
 		assertEquals(BPResultType.WARNING, httpsUsageResult.getResultType());
-//		assertEquals(
-//				ApplicationConfig.getInstance().getAppShortName()
-//						+ " discovered 3 non-HTTPS connections, which is 38% of all the TCP sessions.",
-//				httpsUsageResult.getResultText());
+		assertEquals(
+				ApplicationConfig.getInstance().getAppShortName()
+						+ " discovered 3 non-HTTPS connections, which is 38% of all the TCP sessions.",
+				httpsUsageResult.getResultText());
 	}
 
 	private PacketAnalyzerResult domainNameTestSetup(String ipAddressA, String ipAddressB, String sessionDomainName1,
@@ -586,11 +546,6 @@ public class HttpsUsageImplTest extends BaseTest {
 		sessions.add(session1);
 		sessions.add(session2);
 		sessions.add(session3);
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
 		pktAnalyzerResult.setSessionlist(sessions);
 		return pktAnalyzerResult;
 	}
@@ -791,11 +746,6 @@ public class HttpsUsageImplTest extends BaseTest {
 		sessions.add(session6);
 		sessions.add(session7);
 		sessions.add(session8);
-    	Statistic statistic = new Statistic();
-    	statistic.setTotalByte(123);
-    	statistic.setTotalHTTPSByte(123);
-    	statistic.setTotalHTTPSBytesNotAnalyzed(123);
-    	pktAnalyzerResult.setStatistic(statistic);
 		pktAnalyzerResult.setSessionlist(sessions);
 		return pktAnalyzerResult;
 	}

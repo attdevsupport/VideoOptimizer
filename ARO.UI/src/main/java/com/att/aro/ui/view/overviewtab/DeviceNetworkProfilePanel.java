@@ -27,6 +27,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.util.List;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -38,6 +39,7 @@ import org.apache.log4j.Logger;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.CollectOptions;
+import com.att.aro.core.peripheral.pojo.NetworkType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.ui.commonui.AROUIManager;
@@ -214,9 +216,9 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 		this.profileValueLabel.setText(aModel.getAnalyzerResult().getProfile().getName());
 
 		if (TraceResultType.TRACE_DIRECTORY.equals(aModel.getAnalyzerResult().getTraceresult().getTraceResultType())) {
-			TraceDirectoryResult tracedirectoryResult = (TraceDirectoryResult)aModel.getAnalyzerResult().getTraceresult();
-			this.networkTypeValueLabel.setText(tracedirectoryResult.getNetworkTypesList());
-			CollectOptions collectOptions = tracedirectoryResult.getCollectOptions();
+			TraceDirectoryResult traceDirectoryResult = (TraceDirectoryResult)aModel.getAnalyzerResult().getTraceresult();
+			this.networkTypeValueLabel.setText(traceDirectoryResult.getNetworkTypesList()!=null ? getNetworkTypeList(traceDirectoryResult.getNetworkTypesList()) : "" );
+			CollectOptions collectOptions = traceDirectoryResult.getCollectOptions();
 			if (collectOptions != null) {
 				if(collectOptions.isAttnrProfile()){
  					this.downlinkLabel.setText("Attenuation Profile: ");
@@ -266,6 +268,31 @@ public class DeviceNetworkProfilePanel extends TabPanelJPanel {
 			this.uplinkValueLabel.setText("");
 		}
 	}
+
+	private String getNetworkTypeList(List<NetworkType> networkTypesList) {			
+
+		if (networkTypesList != null && !networkTypesList.isEmpty()) {
+			StringBuffer networksList = new StringBuffer();
+			for (NetworkType networkType : networkTypesList) {
+				if (networkType.equals(NetworkType.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO)
+						|| networkType.equals(NetworkType.OVERRIDE_NETWORK_TYPE_LTE_CA)
+						|| networkType.equals(NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA)
+						|| networkType.equals(NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE)) {
+					networksList.append(ResourceBundleHelper.getMessageString("NetworkType." + networkType.toString()));
+				} else {
+					networksList.append(networkType.toString());
+				}
+
+				networksList.append(" , ");
+			}
+			return networksList.toString().substring(0, networksList.toString().lastIndexOf(","));
+		} else {
+			return "";
+		}
+	
+	}
+
+
 
 	private String getTracePath(String traceDirectory) {
 		StringBuilder tracePath = new StringBuilder();

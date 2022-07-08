@@ -25,10 +25,11 @@ import org.apache.commons.collections.CollectionUtils;
 import com.amazonaws.services.s3.transfer.Transfer.TransferState;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
-import net.lingala.zip4j.util.Zip4jConstants;
+import net.lingala.zip4j.model.enums.CompressionLevel;
+import net.lingala.zip4j.model.enums.CompressionMethod;
 
 @SuppressFBWarnings({ "NP_UNWRITTEN_FIELD", "UWF_UNWRITTEN_FIELD" })
 public class TraceManager {
@@ -80,8 +81,8 @@ public class TraceManager {
 			return "";
 		}
 		ZipParameters parameters = new ZipParameters();
-		parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
-		parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+		parameters.setCompressionMethod(CompressionMethod.DEFLATE);
+		parameters.setCompressionLevel(CompressionLevel.ULTRA);
 		String zipFileName = folderName(trace);
 		ZipFile zipfile;
 		try {
