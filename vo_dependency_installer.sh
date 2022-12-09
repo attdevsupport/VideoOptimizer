@@ -1,7 +1,65 @@
 #!/bin/bash
 
 #=======================================
-init_brew (){
+# Copyright 2022 AT&T
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#======================================
+
+#=======================================
+# vo_dependency_installer.sh
+# version 1.0.0.0
+#
+# Howto use this script:
+#   From your browser, select 'Save' and choose or create an empty folder. Make sure the script has the extension '.sh'.
+#   Safari defaults to '.txt' so be sure the change it.
+# 
+#   Open a terminal in the folder containing the script.
+#   Launch the script with './vo_dependency_installer.sh'
+#   At one point you will be prompted for your sudo password
+#   There are two instances of 'sudo make install'
+# =======================================
+#
+#  This bash shell script will install needed dependancies
+# for VideoOptimizer on Macintosh computers.
+# This script will run some checks of versions before proceding.
+# Conditions can change with each update to operating systems and other software.
+# 
+# It is advised that the computer is backed up, and important data is safely stored.
+# 
+# The dependancies that are required include some 'HEAD' versions, which are not yet 
+# considered to be stable. 'libimobiledevice' is installed under HEAD, which may bring 
+# other dependancies, possibly also HEAD versions.
+# Some of the depenancies do not have functional formula to allow 'brew' to install them, 
+# and there for must be cloned from github and compiled.
+# 
+# These include 'ifuse' and 'libimobiledevice-glue'
+# see:
+#   git clone https://github.com/libimobiledevice/ifuse.git
+#   git clone https://github.com/libimobiledevice/libimobiledevice-glue.git
+# 
+# There are some basic requirements before this script can be run.
+# 1 You must have and run this under an Admin account, do not run under 'sudo'
+# 1 macOS 12.6.1
+# 2 Xcode 14.1
+# 3 brew (aka HomeBrew https://brew.sh) 
+# 
+# Testing:
+# This script has been tested on Macbook Pro intel and M1 machines running Monterey 12.6 and Ventura early December 2022
+# 
+# 
+#=======================================
+function init_brew (){
 echo "
 
 >>>>> init_brew <<<<<"
@@ -16,10 +74,9 @@ echo "
 }
 
 #=======================================
-do_uninstall () {
-echo "
-
->>>>> uninstall <<<<<"
+function do_uninstall () {
+echo ""
+echo ">>>>> uninstall <<<<<"
 	echo "uninstall usbmuxd, libplist, libimobiledevice, ifuse"
 	brew uninstall --ignore-dependencies usbmuxd 2>/dev/null
 	brew uninstall --ignore-dependencies libplist 2>/dev/null
@@ -28,10 +85,9 @@ echo "
 }
 
 #=======================================
-compile_libimobiledevice-glue () {
-echo "
-
->>>>> compile_libimobiledevice-glue <<<<<"
+function compile_libimobiledevice-glue () {
+echo ""
+echo ">>>>> compile_libimobiledevice-glue <<<<<"
 
 	# install dependencies
 	# 1 libplist non-head version
@@ -49,6 +105,7 @@ echo "
 	 		./autogen.sh --prefix=/opt/homebrew
 		fi 
 		make
+		echo "sudo make install"
 		sudo make install
 	
 		if [ "${ARCH_NAME}" = "x86_64" ]; then
@@ -66,10 +123,9 @@ echo "
 }
 
 #=======================================
-install_libimobiledevice () {
-echo "
-
->>>>> install_libimobiledevice <<<<<"
+function install_libimobiledevice () {
+echo ""
+echo ">>>>> install_libimobiledevice <<<<<"
 	
 	brew uninstall --ignore-dependencies libimobiledevice 2>/dev/null
 	
@@ -81,10 +137,9 @@ echo "
 # install ifuse
 # plus openssl
 # on intel openssl requires non-head version of libimobiledevice
-install_ifuse () {
-echo "
-
->>>>> install_ifuse <<<<<"
+function install_ifuse () {
+echo ""
+echo ">>>>> install_ifuse <<<<<"
 
 # install dependencies
 	# 1 libimobiledevice non-head version for openssl
@@ -130,16 +185,18 @@ echo "
 	
 	# now compile ifuse
 	./autogen.sh  
-	make 
+	make
+	echo "sudo make install"
 	sudo make install
 }
 
 #=======================================
-do_install () {
+function do_install () {
 
-echo "
-====>>>>> do_install <<<<<====
-"
+echo ""
+echo "====>>>>> do_install <<<<<===="
+echo ""
+
 	echo "Archetecture $ARCH_NAME"
 	
 	echo "============================ prepare ============================"
@@ -179,10 +236,63 @@ echo "
 }
 
 #=======================================
-exit_install (){
+function exit_install (){
 	exit 0
 }
 
+function machine_precheck (){
+
+	if [[ `which brew` == "" ]];then
+		echo "brew is not installed"
+		echo "To install, please visit: https://brew.sh"
+		exit 0
+	fi
+
+	BREW_CONFIG=`brew config`
+	
+	regex="(macOS: ([0-9]*)\.([0-9]*)\.([0-9]*))\-.+(CLT: ([0-9]*)\.([0-9]*)\.([0-9]*)).+(Xcode: ([0-9]*)\.([0-9]*))"
+
+	if [[ "$BREW_CONFIG" =~ $regex ]]
+	then
+		FAIL=false
+		echo ""
+		echo "check "${BASH_REMATCH[1]}
+	
+		if [ ${BASH_REMATCH[2]} \< 13 ]
+		then
+			if [ ${BASH_REMATCH[2]} \< 12 ] || [ ${BASH_REMATCH[3]} \< 6 ]
+			then 
+				echo "${BASH_REMATCH[1]} version needs updating to at least 12.6.1"
+				FAIL=true
+			fi
+		fi
+	
+		echo "check "${BASH_REMATCH[5]}
+		if [ ${BASH_REMATCH[6]} \< 15 ] ; then
+			if [ ${BASH_REMATCH[6]} \< 14 ] || [ ${BASH_REMATCH[7]} \< 1 ] ; then 
+				echo "${BASH_REMATCH[5]} version needs updating to at least 14.1"
+				FAIL=true
+			fi
+		fi
+
+		echo "check "${BASH_REMATCH[9]}
+		if [ ${BASH_REMATCH[10]} \< 15 ] ; then
+			if [ ${BASH_REMATCH[10]} \< 14 ] || [ ${BASH_REMATCH[11]} \< 1 ] ; then 
+				echo "${BASH_REMATCH[9]} version needs updating to at least 14.1"
+				FAIL=true
+			fi
+		fi
+	
+		if [ $FAIL == true ] ; then
+			echo "This configuration cannot complete unless the above updates have been performed"
+		else
+			echo "ready to proceed!"
+		fi
+	else
+		echo "Unable to retrieve 'brew config' results"
+		echo "Please review installations of brew, Xcode and Xcode's commandline tools"
+	fi
+}
 #-----------------------------------------------------
 # vo_installer.sh
 #-----------------------------------------------------
@@ -194,6 +304,18 @@ if [ ! "$PTH" = "" ]; then
 	echo "This can cause problems during installation."
 	echo "Please launch $0 from an other location where there are no spaces in the path"
 	exit_install
+fi
+
+machine_precheck > error.log
+
+test=`cat error.log|grep "ready to proceed\!"`
+
+if [ "$test" == "" ];then
+	cat error.log
+	exit 0
+else
+	rm error.log
+	echo $test
 fi
 
 if [ ! "${PWD##*/}" = "libimobile_installation" ]
