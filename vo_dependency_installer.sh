@@ -18,7 +18,7 @@
 
 #=======================================
 # vo_dependency_installer.sh
-# version 1.0.0.0
+# version 1.0.0.1
 #
 # Howto use this script:
 #   From your browser, select 'Save' and choose or create an empty folder. Make sure the script has the extension '.sh'.
@@ -146,7 +146,9 @@ echo ">>>>> install_ifuse <<<<<"
 	# 2 openssl
 	
 	if [ "${ARCH_NAME}" = "x86_64" ]; then
-		brew install libimobiledevice 
+		brew install libimobiledevice
+	else
+		install_libimobiledevice
 	fi
 	brew install openssl
 	
@@ -231,8 +233,9 @@ echo ""
 	fi
 
 	echo "============================ libimobiledevice HEAD version ============================"
-	install_libimobiledevice
-
+	if [ "${ARCH_NAME}" = "x86_64" ]; then
+		install_libimobiledevice
+	fi
 }
 
 #=======================================
