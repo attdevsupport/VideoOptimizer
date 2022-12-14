@@ -28,8 +28,8 @@ import java.util.concurrent.ExecutionException;
 import javax.swing.JFrame;
 import javax.swing.SwingWorker;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;

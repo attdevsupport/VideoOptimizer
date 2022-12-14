@@ -23,6 +23,9 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
 import com.att.aro.core.tracemetadata.pojo.MetaStream;
@@ -45,6 +48,7 @@ import lombok.Setter;
  */
 @Data
 public class VideoStream {
+	private static final Logger LOG = LogManager.getLogger(VideoStream.class.getName());
 
 	public static enum StreamStatus{
 		Load, Play, Stall, NA
@@ -291,15 +295,26 @@ public class VideoStream {
 	}
 
 	/**
-	 * Add VideoEvent to both  and segmentEventList.
+	 * Add VideoEvent to Video, Audio & CC. plus segmentEventList.
 	 * 
 	 * @param segment
 	 * @param timestamp
 	 * @param videoEvent
 	 */
 	public void addVideoEvent(VideoEvent videoEvent) {
+
 		String keyDLtime = generateEventKey(videoEvent.getEndTS(), videoEvent.getSegmentID());
 		String keyStartTime = generateEventKey(videoEvent.getSegmentStartTime(), videoEvent.getEndTS() * 1000);
+		/* 
+		 * Check for assignment problems.
+		 * Duplicate segments do not get requested at the same time, and so the EndTS's for same segment #'s should not collide
+		 * In other words plays request segments within a track. Track changes only occur when the player decides to change tracks.
+		 * No need to "fix" things here, just log so it can get fixed at the source of problem.
+		 */
+		if (videoEventMap.containsKey(keyDLtime) || audioEventMap.containsKey(keyDLtime) || ccEventMap.containsKey(keyDLtime)) {
+			LOG.debug("VideoEvent download TS collision" + videoEvent);
+		}
+
 		switch (videoEvent.getContentType()) {
 		case VIDEO:
 		case MUXED:

@@ -551,6 +551,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		sessionsSortedByTimestamp = analyzerResult.getAnalyzerResult().getSessionlist();
 		setRequestResponseWithSession(buildHttpRequestResponseWithSession(analyzerResult.getAnalyzerResult().getSessionlist()));
 		getGraphPanel().refresh(analyzerResult);
+		aroview.refreshBestPracticesTab();
 		// clear table
 		jPacketViewTableModel.removeAllRows();
 		getJHttpReqResPanel().getjRequestResponseTableModel().removeAllRows();

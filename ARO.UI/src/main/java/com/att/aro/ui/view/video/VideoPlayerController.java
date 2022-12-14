@@ -15,6 +15,7 @@
 */
 package com.att.aro.ui.view.video;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
@@ -26,6 +27,7 @@ import org.apache.log4j.Logger;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.VideoUtils;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 
 public class VideoPlayerController implements Observer {
@@ -76,30 +78,40 @@ public class VideoPlayerController implements Observer {
 	public void update(Observable observable, Object model) {
 		traceResult = ((AROTraceData) model).getAnalyzerResult().getTraceresult();
 		TraceResultType traceResultType = traceResult.getTraceResultType();
-		traceDirectory = traceResult.getTraceDirectory();	
+		traceDirectory = traceResult.getTraceDirectory();
 
 		if (traceDirectory == null) {
 			LOGGER.error("Trace dir is null, error launching video player.");
 			return;
 		}
 
-		if (traceResultType == TraceResultType.TRACE_FILE
-				|| !(VideoUtil.mp4VideoExists(traceDirectory) || VideoUtil.movVideoExists(traceDirectory))) {
+		if (traceResultType == TraceResultType.TRACE_FILE 
+				|| !(VideoUtils.validateFolder(new File(traceResult.getTraceDirectory()), VideoUtils.VIDEO, VideoUtils.VIDEO_EXTENTIONS).size() > 0)) {
+			// no video file found the trace folder
 			currentPlayer.clear();
-			currentPlayer.notifyLauncher(false);
+			currentPlayer.notifyLauncher(false); 
 			return;
-		}
+		} else {
+			// there is a video file inside of the trace folder
+			IVideoPlayer player = getPlayer(VideoPlayerType.MP4_VLCJ);
+			if (player == null) {
+				LOGGER.error("Error launching video player - no appropriate Mp4 or Mov player found");
+				return;
+			}
 
-		IVideoPlayer player = getPlayer(VideoPlayerType.MP4_VLCJ);;
-		if (player == null) {
-			LOGGER.error("Error launching video player - no appropriate Mp4 or Mov player found");
-			return;
+			int attempt = 0;
+			do {
+				player.loadVideo(traceResult);
+			} while (attempt++ < 2 && !player.isStarted());
+			if (!player.isStarted()) {
+				LOGGER.error("Video failed to load");
+				player.setVisibility(false);
+			} else {
+				diagnosticsTab.setVideoPlayer(player);
+				setCurrentVideoPlayer(player);
+				player.notifyLauncher(true);
+			}
 		}
-
-		player.loadVideo(traceResult);	
-		diagnosticsTab.setVideoPlayer(player);
-		setCurrentVideoPlayer(player);
-		player.notifyLauncher(true);
 	}
 
 	public void launchPlayer(int xPosition, int yPosition, int frameWidth, int frameHeight) {	

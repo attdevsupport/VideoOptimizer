@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.bestpractice.impl;
 
 import static org.junit.Assert.assertEquals;
@@ -52,7 +67,7 @@ public class TransmissionPrivateDataTest extends BaseTest {
 		packetAnalyzerResult = getPacketAnalyzerResult(keywords, text);
 		result = (TransmissionPrivateDataResult) ((TransmissionPrivateDataImpl) bestPractice).runTest(packetAnalyzerResult);
 		
-		assertEquals(0, result.getResults().size());
+		assertEquals(1, result.getResults().size());
 	}
 
 	@Test
@@ -78,8 +93,8 @@ public class TransmissionPrivateDataTest extends BaseTest {
 		packetAnalyzerResult = getPacketAnalyzerResult(keywords, text);
 		result = (TransmissionPrivateDataResult) ((TransmissionPrivateDataImpl) bestPractice).runTest(packetAnalyzerResult);
 		
-		assertEquals(0, result.getResults().size());
-		assertEquals(BPResultType.PASS, result.getResultType());
+		assertEquals(2, result.getResults().size());
+		assertEquals(BPResultType.WARNING, result.getResultType());
 	}
 	
 	@Test
@@ -96,8 +111,8 @@ public class TransmissionPrivateDataTest extends BaseTest {
 		packetAnalyzerResult = getPacketAnalyzerResult(keywords, text);
 		result = (TransmissionPrivateDataResult) ((TransmissionPrivateDataImpl) bestPractice).runTest(packetAnalyzerResult);
 		
-		assertEquals(0, result.getResults().size());
-		assertEquals(BPResultType.PASS, result.getResultType());
+		assertEquals(6, result.getResults().size());
+		assertEquals(BPResultType.FAIL, result.getResultType());
 	}
 	
 	private PacketAnalyzerResult getPacketAnalyzerResult(Map<String, String> keywords, String text) {

@@ -52,7 +52,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.codehaus.plexus.util.FileUtils;
 
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
@@ -65,6 +64,7 @@ public final class Util {
 
 	public final static Logger LOG = Logger.getLogger(Util.class.getName());
 	
+	public static final StringParse stringParse = new StringParse();
 	public static final String WIRESHARK_PATH = "WIRESHARK_PATH";
 	public static final String FFMPEG = "ffmpeg";
 	public static final String RECENT_TRACES = "RECENT_TRACES";
@@ -88,12 +88,21 @@ public final class Util {
 	public static final String OS_VERSION = extractVersion();
 	public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
 	
-	private static final Pattern htmlEncodePattern = Pattern.compile("%[a-fA-F0-9]");
+	private static final Pattern htmlEncodePattern = Pattern.compile("%[a-fA-F0-9]");	
 	
-	public static String APK_FILE_NAME = "VPNCollector-4.4.%s.apk";
+	public static String APK_FILE_NAME = "VPNCollector-4.5.%s.apk";
 	
 	public static final String ARO_PACKAGE_NAME = "com.att.arocollector";
 
+	public static final String USER_PATH = 
+			isMacOS()
+			? StringParse.findLabeledDataFromString("PATH=\"", "\"", EXTERNAL_PROCESS_RUNNER.executeCmd("/usr/libexec/path_helper"))
+			: System.getProperty("user.dir");
+
+	public static String getUserPath() {
+		return USER_PATH;
+	}
+	
 	public static void restart(boolean isError) {
 		LOG.info("Restarting now!");
 		try {
@@ -234,9 +243,6 @@ public final class Util {
 	 */
 	public static String getAppPath() {
 		return System.getProperty("user.dir");
-		// File filepath = new
-		// File(Util.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-		// return filepath.getParentFile().getParent();
 	}
 
 	/**
@@ -374,36 +380,51 @@ public final class Util {
 	}
 
 	/**
+	 * Convert hh:mm:ss.sss to seconds
+	 * Convert mm:ss.sss to seconds
 	 * 
-	 * @param creationTime
-	 * @param sdFormatStr format string for SimpleDateFormat(sdFormatStr)
+	 * @param hhmmss
+	 * @param pm		flag to indicate PM
 	 * @return
 	 */
-	public static long parseForUTC(String creationTime, String sdFormatStr) {
-		long milli = 0;
-		long mSec = 0;
-		if (creationTime != null) {
-
-			int msecPos = creationTime.indexOf('.') + 1;
-			if (creationTime.indexOf("Z") == msecPos + 3) {
-				creationTime = creationTime.replaceAll("Z", "");
+	public static double parseTimeOfDay(String hhmmss, boolean pm) throws Exception {
+		double seconds = 0;
+		String[] timeparts = fillFormat(hhmmss).split(":");
+		int[] max = { 24, 60, 60 };
+		if (pm) {
+			max[0] = 12;
+		}
+		int[] multiplier = { 3600, 60, 1 };
+		for (int idx = 0; idx < timeparts.length; idx++) {
+			if (Double.valueOf(timeparts[idx]) > max[idx]) {
+				throw new Exception(String.format("Illegal time value (%s) in (%s)", timeparts[idx], hhmmss));
 			}
-			SimpleDateFormat sdf = new SimpleDateFormat(sdFormatStr);
-			sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
-			Date date = null;
-			try {
-				mSec = msecPos > 0 ? Long.valueOf(creationTime.substring(msecPos).replaceAll("\\d{3}Z", "")): 0;
-				while (mSec > 1000) {// only allow 3 digits of milliseconds
-					mSec /= 10;
-				}
-				creationTime = creationTime.replaceAll("\\d{3}Z", "");
-				date = sdf.parse(creationTime.replace('T', ' '));
-				milli = date.getTime() + mSec;
-			} catch (Exception e) {
-				logger.error("Date parsing error :" + e.getMessage());
+			seconds += (double) (Double.valueOf(timeparts[idx]) * multiplier[idx]);
+		}
+
+		if (pm) {
+			if (seconds > 43200) {
+				throw new Exception(String.format("Illegal time value in (%s) when using PM flag (adding 12hr of seconds)", hhmmss));
+			}
+			seconds += 43200;
+		}
+		return seconds;
+	}
+	
+	/**
+	 * Guarantee that hh:mm:ss.s has all fields
+	 * 
+	 * @param hhmmss
+	 * @return
+	 */
+	private static String fillFormat(String hhmmss) {
+		int sectionCount = StringUtils.countMatches(hhmmss, ":");
+		if (sectionCount < 2) {
+			for (int idx = 2-sectionCount; idx > 0; idx--) {
+				hhmmss = "00:" + hhmmss;
 			}
 		}
-		return milli;
+		return hhmmss;
 	}
 
 	/**
@@ -441,6 +462,54 @@ public final class Util {
 			return parseForUTC(creationTime, "yyyyMMdd HHmmssSSS") + rounding;
 		}
 	}
+	
+	/**
+	 * 
+	 * @param creationTime
+	 * @param sdFormatStr format string for SimpleDateFormat(sdFormatStr)
+	 * @return
+	 */
+	public static long parseForUTC(String creationTime, String sdFormatStr) {
+		String[] tzOffset;
+		long milli = 0;
+		long mSec = 0;
+		if (creationTime != null) {
+
+			int msecPos = creationTime.indexOf('.') + 1;
+			SimpleDateFormat sdf = new SimpleDateFormat(sdFormatStr);
+			if (creationTime.contains("Z")) {
+				creationTime = creationTime.replaceAll("Z", "");
+				sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+			} else if ((tzOffset = stringParse.parse(creationTime, ":.*(-\\d{4})")) != null) {
+				sdf.setTimeZone(TimeZone.getTimeZone("GMT"+tzOffset[0]));
+			} else {
+				sdf.setTimeZone(TimeZone.getTimeZone("PST"));
+			}
+			Date date = null;
+			try {
+				mSec = msecPos > 0 ? Long.valueOf(creationTime.substring(msecPos).replaceAll("\\d{3}Z", "")) : 0;
+				while (mSec > 1000) { // only allow 3 digits of milliseconds
+					mSec /= 10;
+				}
+				creationTime = creationTime.replaceAll("\\d{3}Z", "");
+				date = sdf.parse(creationTime.replace('T', ' '));
+				milli = date.getTime() + mSec;
+			} catch (Exception e) {
+				logger.error("Date parsing error :" + e.getMessage());
+			}
+		}
+		return milli;
+	}
+
+	private static String getTimeZone() {
+		String timezoneID = SettingsImpl.getInstance().getAttribute("timezoneID"); // user can manually store any timezonID for special purposes, manually only
+		if (timezoneID == null || timezoneID.isEmpty()) {
+			timezoneID = TimeZone.getDefault().getID(); // default to local timezoneID of computer
+		}
+		return timezoneID;
+	}
+
+
 	
 	public static String formatYMD(long timestamp) {
 		String pattern = "yyyy-MM-dd HH:mm:ss";
@@ -799,10 +868,8 @@ public final class Util {
 
 	public static String getBinPath() {
 		String path;
-		if (isWindowsOS()) {
+		if (isWindowsOS() || isMacOS()) {
 			path = "";
-		} else if (isMacOS()) {
-			path = "/usr/local/bin/";
 		} else {
 			path = "/usr/bin/";
 		}		
@@ -845,12 +912,13 @@ public final class Util {
 		} else {
 			if (isMacOS()) {
 				path = getWireshark() + "/Contents/MacOS/" + libraryName;
+				return validateInputLink(path);
 			} else {
 				path = getBinPath() + libraryName;
 			}
 		}
 
-		return validateInputLink(path);
+		return path;
 	}
 
 	public static String getFFMPEG() {
@@ -858,13 +926,7 @@ public final class Util {
 		if (StringUtils.isNotBlank(config)) {
 			return validateInputLink(config);
 		}
-		String ffmpeg;
-		if (isWindowsOS()) {
-			ffmpeg = "ffmpeg.exe";
-		} else {
-			ffmpeg = getBinPath() + "ffmpeg";
-		} 
-		return ffmpeg;
+		return "ffmpeg";
 	}
 
 	public static String getFFPROBE() {
@@ -872,13 +934,7 @@ public final class Util {
 		if (StringUtils.isNotBlank(config)) {
 			return validateInputLink(config);
 		}
-		String ffprobe;
-		if (isWindowsOS()) {
-			ffprobe = ("ffprobe.exe");
-		} else {
-			ffprobe = getBinPath() + "ffprobe";
-		}
-		return ffprobe;
+		return "ffprobe";
 	}
 
 	public static String getIfuse() {
@@ -896,7 +952,7 @@ public final class Util {
 				try (FileInputStream fis = new FileInputStream(imgfile);
 						BufferedInputStream bis = new BufferedInputStream(fis);
 						DataInputStream inputStrm = new DataInputStream(bis)) {
-					if (inputStrm != null && inputStrm.readInt() == 0xffd8ffe0) {
+					if (inputStrm.readInt() == 0xffd8ffe0) {
 						isJPG = true;
 					}
 				} catch (Exception e) {
@@ -1097,9 +1153,9 @@ public final class Util {
 	public static String getIdeviceScreenshot() {
 		String config = SettingsImpl.getInstance().getAttribute(IDEVICESCREENSHOT);
 		if (StringUtils.isNotBlank(config)) {
-			return validateInputLink(config);
+			return config;
 		}
-		return getBinPath() + "idevicescreenshot";
+		return "idevicescreenshot";
 	}
 
 	public static String percentageFormat(double inputValue) {
@@ -1136,14 +1192,13 @@ public final class Util {
 	 * @return destination path for PNG file
 	 */
 	public static String extractFrameToPNG(double timestamp, String videoPath, String ximagePath) {
-		String cmd = Util.getFFMPEG() + " -y -i " + "\"" + videoPath + "\"" + " -ss " + timestamp + "   -vframes 1 "
-				+ "\"" + ximagePath + "\"";
+		String cmd = String.format("%s -y -i " + "\"%s\"" + " -ss %.0f -vframes 1 \"%s\"", Util.getFFMPEG(), videoPath, timestamp, ximagePath);
 		EXTERNAL_PROCESS_RUNNER.executeCmd(cmd);
 		return ximagePath;
 	}
 
 	public static String validateInputLink(String inputValue) {
-		if (StringUtils.isNotBlank(inputValue) && Util.isWindowsOS()) {
+		if (StringUtils.isNotBlank(inputValue) && Util.isWindowsOS() && inputValue.split("\\\\").length > 1) {
 			inputValue = wrapText(inputValue);
 		}
 		return inputValue;
@@ -1178,6 +1233,7 @@ public final class Util {
 		String recentTraces = SettingsImpl.getInstance().getAttribute(RECENT_TRACES);
 		if (!StringUtils.isEmpty(recentTraces)) {
 			if (recentTraces.charAt(0) != '\"') {
+				// If see any really old, single recent format, wipe it out
 				SettingsImpl.getInstance().setAndSaveAttribute(RECENT_TRACES, "");
 			} else {
 				String[] recentItems = getRecentlyOpenedTraces();
@@ -1186,8 +1242,7 @@ public final class Util {
 						if (recentItems[i] != null) {
 							recentItems[i] = checkForCsvEscapedCharacters(recentItems[i]);
 							String recentMenuItem = getTraceName(recentItems[i]);
-							recentItems[i] = StringEscapeUtils
-									.unescapeJava(StringEscapeUtils.unescapeCsv(recentItems[i]));
+							recentItems[i] = StringEscapeUtils.unescapeJava(StringEscapeUtils.unescapeCsv(recentItems[i]));
 							if (!recentMenuItem.isEmpty() && new File(recentItems[i]).exists()) {
 								recentMenuItems.put(recentItems[i], recentMenuItem);
 							}
@@ -1199,9 +1254,8 @@ public final class Util {
 		return recentMenuItems;
 	}
 
-	private static String checkForCsvEscapedCharacters(String recentItem){
-		if (recentItem.contains("\"") || recentItem.contains(",")
-				|| recentItem.contains(LINE_SEPARATOR)) {
+	private static String checkForCsvEscapedCharacters(String recentItem) {
+		if (recentItem.contains("\"") || recentItem.contains(",") || recentItem.contains(LINE_SEPARATOR)) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(QUOTE);
 			sb.append(recentItem);
@@ -1267,16 +1321,36 @@ public final class Util {
 		}
 		return "\"" + path + "\"";
 	}
+	
+	/**
+	 * 
+	 * @param traceDirectory is a folder or a cap or pcap file
+	 * @return String of full path
+	 */
+	private static String applyTraceNamingRules(String traceDirectory) {
+		File trace = new File(traceDirectory);
+		if (trace.isDirectory()) {
+			return trace.toString();
+		} else {
+			if ((new File(trace.getParentFile(), ".temp_trace").exists())) {
+				// only cap, pcap, pcapng type files will be added
+				return new File(trace.getParentFile().getParentFile(), trace.getName()).toString();
+			} else {
+				return trace.getParentFile().toString();
+			}
+		}
+	}
+	
 	/***
 	 * Updates the recent trace Directory to the RECENT_TRACES in
 	 * config.properties Makes sure there are only 5 or less items in the
 	 * attribute
 	 * 
-	 * @param traceDirectory
+	 * @param file
 	 */
-	public static void updateRecentItem(String traceDirectory) {
+	public static void updateRecentItem(String file) {
 		StringBuilder recentMenuBuilder = new StringBuilder();
-		String value = escapeCsv(escapeJava(traceDirectory));
+		String value = escapeCsv(escapeJava(applyTraceNamingRules(file)));
 		
 		if (value.startsWith(QUOTE)) {
 			recentMenuBuilder.append(value);
@@ -1295,9 +1369,8 @@ public final class Util {
 					for (int i = 0; i < recentMenu.length; i++) {
 						if (counter < RECENT_TRACES_MAXSIZE) {
 							recentMenu[i] = checkForCsvEscapedCharacters(recentMenu[i]);
-							String recentMenuPath = StringEscapeUtils
-									.unescapeJava(StringEscapeUtils.unescapeCsv(recentMenu[i]));
-							if (!compareValues(recentMenu[i], value) && new File(recentMenuPath).exists()) {
+							String recentMenuPath = StringEscapeUtils.unescapeJava(StringEscapeUtils.unescapeCsv(recentMenu[i]));
+							if (!compareValues(recentMenu[i], value) && new File(recentMenuPath).exists() && !(new File(recentMenuPath, ".temp_trace").exists())) {
 								recentMenuBuilder.append(",");
 								String recentValue = recentMenu[i];
 								if (recentValue.startsWith(QUOTE)) {
@@ -1336,16 +1409,8 @@ public final class Util {
 		return isFilesforAnalysisAvailable;
 	}
 
-	public static boolean hasTrafficFile(File traceFile) {
-		if (traceFile != null && traceFile.isDirectory()) {
-			String[] fileList = traceFile.list();
-			if (fileList != null && fileList.length != 0) {
-				if (FileUtils.fileExists(traceFile.getAbsolutePath() + FILE_SEPARATOR + "traffic.cap")) {
-					return true;
-				}
-			}
-		}
-		return false;
+	public static boolean fileExists(String folder, String file) {
+		return Files.exists(Paths.get(folder, file));
 	}
 
 	private static boolean compareValues(String recentMenu, String value) {
@@ -1443,5 +1508,13 @@ public final class Util {
 	 */
 	public static int getAdjustedWidth(int baseWidth) {
 		return Util.isMacOS() ? baseWidth : baseWidth + 5;
+	}
+
+	public static IExternalProcessRunner getExternalProcessRunner() {
+		return EXTERNAL_PROCESS_RUNNER;
+	}
+
+	public static StringParse getStringParse() {
+		return stringParse;
 	}
 }

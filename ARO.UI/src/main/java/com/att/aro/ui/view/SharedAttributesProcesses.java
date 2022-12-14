@@ -89,4 +89,7 @@ public interface SharedAttributesProcesses extends IAROView {
 	void dataDump(File dir) throws IOException;
 	void updateChartSelection(List<ChartPlotOptions> optionsSelected);
 	void dispose();
+	void setTrafficFile(String trafficFile);
+	void setPcapTempWrap(boolean b);
+	
 }

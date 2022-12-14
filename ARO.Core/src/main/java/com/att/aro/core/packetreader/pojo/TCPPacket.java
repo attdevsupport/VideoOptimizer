@@ -366,8 +366,8 @@ public class TCPPacket extends IPPacket implements Serializable {
 			if (isSecureSSLVersion(majorVersion, minorVersion) 
 					&& (contentType == TLS_CHANGE_CIPHER_SPEC
 							|| contentType == TLS_ALERT
-							|| contentType == TLS_HANDSHAKE || contentType == TLS_APPLICATION)
-					&& bytes.array().length >= result) {
+							|| contentType == TLS_HANDSHAKE 
+							|| contentType == TLS_APPLICATION)) {
 				this.ssl = true;
 				if (contentType == TLS_HANDSHAKE) {
 					this.sslHandshake = true;

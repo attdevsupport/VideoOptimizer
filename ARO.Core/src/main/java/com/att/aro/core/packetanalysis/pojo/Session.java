@@ -370,7 +370,21 @@ public class Session implements Serializable, Comparable<Session> {
 		}
 		return Util.byteArrayToString(contentData.toByteArray());
 	}
-
+	
+	public String getProtocolClassification() {
+        if (isUdpOnly()) {
+            if (53 == getLocalPort() || 53 == getRemotePort()) {
+                return "DNS";
+            } else if (443 == getLocalPort() || 443 == getRemotePort() || 80 == getLocalPort() || 80 == getRemotePort()) {
+                return "UDP/QUIC";
+            } else {
+                return "UDP";
+            }
+        } else {
+            return "TCP";
+        }
+	}
+	
 	/**
 	 * for debugging purposes
 	 */

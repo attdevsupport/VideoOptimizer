@@ -115,9 +115,7 @@ public class SegmentTableModel extends AbstractTableModel {
 
 	protected SegmentTableModel(Collection<VideoEvent> videoEventList, double playRequestedTime) {
 		this.videoEventList = new ArrayList<>();
-		for (VideoEvent event : videoEventList) {
-			this.videoEventList.add(event);
-		}
+		this.videoEventList.addAll(videoEventList);
 		this.playRequestedTime = playRequestedTime;
 	}
 

@@ -24,28 +24,27 @@ import java.util.List;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.IExternalProcessReaderSubscriber;
 
 public class ExternalDumpcapExecutor extends Thread implements IExternalProcessReaderSubscriber {
 	
 	private static final Logger LOG = LogManager.getLogger(ExternalDumpcapExecutor.class);
-	BufferedWriter writer;
 	Process proc = null;
 	String pcappath;
 	ExternalProcessReader processReader;
 	String sudoPassword = "";
-	String dumpcapCommand;
 	String captureInterface;
-	ExternalProcessRunner runner;
+	IExternalProcessRunner extRunner;
 	volatile boolean shutdownSignal = false;
 	int totalpacketCaptured = 0;
 	List<Integer> pidlist;
 
-	public ExternalDumpcapExecutor(String pcappath, String sudopass, String captureInterface, ExternalProcessRunner runner) throws Exception {
+	public ExternalDumpcapExecutor(String pcappath, String sudopass, String captureInterface, IExternalProcessRunner extRunner) throws Exception {
 		this.pcappath = pcappath;
 		this.sudoPassword = sudopass;
-		this.runner = runner;
+		this.extRunner = extRunner;
 		this.captureInterface = captureInterface;
 		pidlist = new ArrayList<Integer>();
 	}
@@ -53,8 +52,7 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 	@Override
 	public void run() {
 		LOG.debug("run");
-		dumpcapCommand = "echo " + this.sudoPassword + " | sudo -S " + Util.getDumpCap() + " -P -i " + this.captureInterface +" -s 0 -Z none -w \"" + this.pcappath + "\"";
-		String[] cmds = new String[] { "bash", "-c", dumpcapCommand };
+		String[] cmds = new String[] { "bash", "-c", "echo " + sudoPassword + " | sudo -S " + Util.getDumpCap() + " -P -i " + captureInterface +" -s 0 -Z none -w \"" + pcappath + "\"" };
 
 		ProcessBuilder builder = new ProcessBuilder(cmds);
 		builder.redirectErrorStream(true);
@@ -66,7 +64,6 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 			return;
 		}
 
-		writer = new BufferedWriter(new OutputStreamWriter(proc.getOutputStream()));
 		processReader = new ExternalProcessReader(proc.getInputStream());
 		processReader.addSubscriber(ExternalDumpcapExecutor.this);
 		processReader.start();
@@ -85,32 +82,24 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 	 * @return process string from ps
 	 */
 	private boolean findPcapPathProcess(int attemptCounter) {
-
-		String[] pscmd = new String[] { "bash", "-c", "ps ax | grep \"" + this.pcappath + "\"" };
 		boolean result = false;
 
 		while ((!result) || (attemptCounter-- > 0)) {
-			try {
-				String str = runner.runCmd(pscmd);
-				String[] strarr = str.split("\n");
-				String token;
-				// find child process first
-				for (int i = 0; i < strarr.length; i++) {
-					token = strarr[i];
-					if (token.contains(this.pcappath) && !token.contains("grep ") && !token.contains("sudo ")) {
-						// record the ProcessID
-						this.extractPid(token);
-						result = true;
-						break;
-					}
+			String str = extRunner.executeCmd("ps ax | grep \"" + this.pcappath.replaceAll("p$", "[pP]") + "\"");
+			String[] strarr = str.split("\n");
+			String token;
+			// find child process first
+			for (int i = 0; i < strarr.length; i++) {
+				token = strarr[i];
+				if (token.contains(this.pcappath) && !token.contains("grep ") && !token.contains("sudo ")) {
+					// record the ProcessID
+					this.extractPid(token);
+					result = true;
+					return true;
 				}
-			} catch (IOException e1) {
-				LOG.debug("IOException:", e1);
 			}
 			try {
 				sleep(50);
-
-			
 			} catch (InterruptedException e) {
 				LOG.debug("InterruptedException:", e);
 			}
@@ -138,18 +127,11 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 	public void stopTshark() {
 
 		LOG.info("shutting down tshark");
-		
+
 		if (pidlist.size() > 0) {
 			this.shutdownSignal = false;
-			String cmd;
 			for (Integer pid : pidlist) {
-				try {
-					cmd = "echo " + this.sudoPassword + " | sudo -S kill -SIGINT " + pid;
-					String[] pscmd = new String[] { "bash", "-c", cmd };
-					runner.runCmd(pscmd);
-				} catch (IOException e) {
-					LOG.error("Exception while stopping tcpdump", e);
-				}
+				extRunner.executeCmd("echo " + this.sudoPassword + " | sudo -S kill -SIGINT " + pid);
 			}
 			if (processReader != null) {
 				processReader.setStop();//signal loop to quit
@@ -171,14 +153,9 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 	}
 
 	private void enableTraceAccess() {
-		String[] command = new String[] { "bash", "-c", "echo " + this.sudoPassword + " | sudo -S chmod 666 \"" + this.pcappath + "\""};
 		String result = null;
-		try {
-			result = runner.runCmd(command);
-			LOG.info(result);
-		} catch (IOException e) {
-		    LOG.error("Something went wrong while  enabling access to trace path " + pcappath, e);
-		}
+		result = extRunner.executeCmd("echo " + this.sudoPassword + " | sudo -S chmod 666 \"" + this.pcappath + "\"");
+		LOG.info(result);
 	}
 
 	/**

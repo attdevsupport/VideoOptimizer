@@ -52,19 +52,20 @@ public class BurstPlot implements IPlot{
 				burstMap.put(eventType, new ArrayList<Burst>());
 			}
 			final List<Burst> burstStates = analysis.getAnalyzerResult().getBurstCollectionAnalysisData().getBurstCollection();
-			Iterator<Burst> iter = burstStates.iterator();
-			while (iter.hasNext()) {
-				Burst currEvent = iter.next();
-				if (currEvent != null) {
-					BurstCategory burstState = currEvent.getBurstCategory(); 
-					if (burstState != null) {
-						seriesMap.get(burstState).add(currEvent.getBeginTime(),
-								currEvent.getBeginTime(), currEvent.getEndTime(), 0.5, 0, 1);
-						burstMap.get(burstState).add(currEvent);
+			if (burstStates != null) {
+				Iterator<Burst> iter = burstStates.iterator();
+				while (iter.hasNext()) {
+					Burst currEvent = iter.next();
+					if (currEvent != null) {
+						BurstCategory burstState = currEvent.getBurstCategory();
+						if (burstState != null) {
+							seriesMap.get(burstState).add(currEvent.getBeginTime(), currEvent.getBeginTime(),
+									currEvent.getEndTime(), 0.5, 0, 1);
+							burstMap.get(burstState).add(currEvent);
+						}
 					}
 				}
 			}
-
 			Color myGreen = new Color(34, 177, 76);
 			Color lightGreen = new Color(134, 232, 162);
 

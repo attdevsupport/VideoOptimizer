@@ -19,9 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
+import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
 import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.IExternalProcessReaderSubscriber;
 import com.att.aro.datacollector.ioscollector.IOSDeviceStatus;
@@ -32,37 +34,28 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
 	String exepath;
 	ExternalProcessReader procreader;
 	int pid = 0;
-	ExternalProcessRunner runner;
+	IExternalProcessRunner extRunner;
 	volatile boolean shutdownSignal = false;
 	List<IOSDeviceStatus> subscribers;
 
 	public ExternalDeviceMonitorIOS() {
-		this.runner = new ExternalProcessRunner();
+		this.extRunner = new ExternalProcessRunnerImpl();
 		init();
 	}
 
-	public ExternalDeviceMonitorIOS(ExternalProcessRunner runner) {
-		this.runner = runner;
+	public ExternalDeviceMonitorIOS(IExternalProcessRunner extRunner) {
+		this.extRunner = extRunner;
 		init();
 	}
 
 	void init() {
 		subscribers = new ArrayList<IOSDeviceStatus>();
-		
-		exepath = Util.getVideoOptimizerLibrary()
-				+ Util.FILE_SEPARATOR + ".drivers" 
-				+ Util.FILE_SEPARATOR + "libimobiledevice" 
-				+ Util.FILE_SEPARATOR + "idevicesyslog_aro";
+		exepath = Util.getVideoOptimizerLibrary() + "/.drivers/libimobiledevice/idevicesyslog_aro";
 		clearExe();
 	}
 
 	public void clearExe() {
-		try {
-			String[] cmd = {"bash", "-c", "fuser -f "+exepath+"|xargs kill"};
-			runner.runCmd(cmd);
-		} catch (IOException e) {
-			LOG.error("IOException", e);
-		}
+		extRunner.executeCmd("fuser -f " + exepath + "|xargs kill");
 	}
 	
 	public void subscribe(IOSDeviceStatus subscriber) {
@@ -88,35 +81,37 @@ public class ExternalDeviceMonitorIOS extends Thread implements IExternalProcess
 		procreader.start();
 
 		setPid(exepath);
-		
+
 		try {
 			proc.waitFor();
+
 		} catch (InterruptedException e) {
-		    LOG.warn("Thread interrupted", e);
+			LOG.warn("Thread interrupted", e);
 		}
 	}
 
 	/**
 	 * locate first instance of theExec process and set the pid value in this.pid
 	 * 
-	 * @param theExec
+	 * @param theExec - idevicesyslog_aro
 	 */
 	private void setPid(String theExec) {
 		String response = null;
 		try {
-			String cmd = "fuser -f " + theExec;
-			response = runner.runCmd(cmd);
+			response = extRunner.executeCmdRunner(null, "fuser -f " + theExec, false, "", false, true);
 			String[] pids = response.trim().split("\\s+");
 			if (pids.length > 0 && !"".equals(pids[0])) {
- 				pid = Integer.parseInt(pids[0]);
+				pid = Integer.parseInt(pids[0]);
 			}
-		} catch (IOException | NumberFormatException e) {
+
+		} catch (Exception e) {
 			LOG.error("IOException | NumberFormatException ", e);
-		}  
+		}
 	}
 
 	/**
 	 * signals pid process to 
+	 * that process was for idevicesyslog_aro which is no more
 	 */
 	public void stopMonitoring() {
 		if (pid > 0) {

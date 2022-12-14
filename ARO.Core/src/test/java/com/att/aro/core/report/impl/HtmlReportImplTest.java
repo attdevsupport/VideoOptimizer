@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.report.impl;
 
 import static org.junit.Assert.assertFalse;
@@ -13,7 +28,6 @@ import java.util.List;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -63,7 +77,6 @@ public class HtmlReportImplTest extends BaseTest{
     }
     
     @Test
-    @Ignore
     public void reportGenerator_retunrIsTrue(){
     	AccessingPeripheralResult access = new AccessingPeripheralResult();
     	access.setResultType(BPResultType.PASS);
@@ -87,7 +100,6 @@ public class HtmlReportImplTest extends BaseTest{
     	AROTraceData results = new AROTraceData();
     	PacketAnalyzerResult analyzerResult = new PacketAnalyzerResult();
     	TraceDirectoryResult tracedirresult = new TraceDirectoryResult();
-    	
     	EnergyModel energyModel = new EnergyModel();    	
     	Statistic statistic = new Statistic();
     	statistic.setTotalByte(123);

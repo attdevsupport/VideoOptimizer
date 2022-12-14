@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 AT&T
+ *  Copyright 2012, 2022 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,14 @@ import java.util.ResourceBundle;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
+import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
 
 public class IOSDeviceInfo {
 	private static final Logger LOG = LogManager.getLogger(IOSDeviceInfo.class);
-	private static final String IDEVICE_INFO = "/usr/local/bin/ideviceinfo";
-	ExternalProcessRunner runner;
+	private static final String IDEVICE_INFO = "ideviceinfo";
+	private IExternalProcessRunner extRunner = new ExternalProcessRunnerImpl();
+	
 	Map<String, String> list;
 	String buildversion;
 	boolean foundrealscreensize = false;
@@ -41,7 +43,6 @@ public class IOSDeviceInfo {
 
 	public IOSDeviceInfo() {
 		list = new HashMap<String, String>();
-		runner = new ExternalProcessRunner();		
 		buildversion = buildBundle.getString("build.majorversion");
 	}
 
@@ -54,13 +55,17 @@ public class IOSDeviceInfo {
 	public boolean recordDeviceInfo(String deviceId, String filepath) {
 		boolean retrievedSuccess = false;
 		File exefile = new File(IDEVICE_INFO);
-		LOG.debug("exepath :"+IDEVICE_INFO);
+		String result = extRunner.executeCmd("which " + IDEVICE_INFO);
+		if (result.contains("/" + IDEVICE_INFO)) {
+			exefile = new File(result.trim());
+		}
+		LOG.debug("exepath :" + exefile.toString());
 		this.currentFilepath = filepath;
 
 		if (!exefile.exists()) {
 			LOG.error(" " + IDEVICE_INFO + " is not found.");
 		} else {
- 			try {
+			try {
 				String data = getDeviceData(deviceId);
 				readData(data);
 				writeData(filepath);
@@ -68,13 +73,12 @@ public class IOSDeviceInfo {
 			} catch (IOException e) {
 				LOG.error("recordDeviceInfo IOException:", e);
 			}
- 		}
+		}
 		return retrievedSuccess;
 	}
 
 	public String getDeviceData(String deviceId) throws IOException {
-		String[] cmds = new String[] { "bash", "-c", IDEVICE_INFO + " -u " + deviceId };
-		String data = runner.runCmd(cmds);
+		String data = extRunner.executeCmd(IDEVICE_INFO + " -u " + deviceId);
 		return data;
 	}
 

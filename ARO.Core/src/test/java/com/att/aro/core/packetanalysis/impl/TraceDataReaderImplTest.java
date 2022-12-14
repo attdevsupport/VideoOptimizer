@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.packetanalysis.impl;
 
 
@@ -47,6 +62,7 @@ import com.att.aro.core.peripheral.pojo.DeviceDetail;
 import com.att.aro.core.peripheral.pojo.NetworkTypeObject;
 import com.att.aro.core.securedpacketreader.ICrypto;
 import com.att.aro.core.util.Util;
+import com.att.aro.mvc.IAROView;
 
 
 public class TraceDataReaderImplTest extends BaseTest {
@@ -56,6 +72,7 @@ public class TraceDataReaderImplTest extends BaseTest {
 	TraceDataReaderImpl traceDataReaderImpl;
 	IFileManager filereader;
 	ICrypto crypto;
+	IAROView aroView;
 
 	@Mock
 	IPacketReader packetreader;
@@ -136,11 +153,13 @@ public class TraceDataReaderImplTest extends BaseTest {
 		TraceFileResult result = traceDataReaderImpl.readTraceFile(Util.getCurrentRunningDir()+Util.FILE_SEPARATOR+"traffic.cap");
 		assertSame(0,result.getAllpackets().size());
 	}
-
+	
 	@Test
 	public void readTraceDir_()throws IOException{
-		String[] time = {"1410212153 1410213352","272927100","1410213352.550"};
-
+		String[] time = {"Synchronized timestamps",
+				"1410212153.578",
+				"272927100",
+				"1410213352.550"};
 		String[] appId = {"5","5","13","-127"};
 		traceDataReaderImpl.setFileReader(filereader);
 		when(filereader.directoryExist(any(String.class))).thenReturn(true);
@@ -208,7 +227,7 @@ public class TraceDataReaderImplTest extends BaseTest {
 		NetworkTypeObject obj = new NetworkTypeObject();
 		when(networktypereader
 				.readData(any(String.class),any(double.class),any(double.class))).thenReturn(obj);
-		TraceDirectoryResult result = traceDataReaderImpl.readTraceDirectory(Util.getCurrentRunningDir());
+		TraceDirectoryResult result = traceDataReaderImpl.readTraceDirectory(Util.getCurrentRunningDir(), null);
 		assertSame(3,result.getAppIds().size());
 	}
 	
@@ -277,7 +296,8 @@ public class TraceDataReaderImplTest extends BaseTest {
 		NetworkTypeObject obj = new NetworkTypeObject();
 		when(networktypereader
 				.readData(any(String.class),any(double.class),any(double.class))).thenReturn(obj);
-		TraceDirectoryResult result = traceDataReaderImpl.readTraceDirectory(Util.getCurrentRunningDir());
+		
+		TraceDirectoryResult result = traceDataReaderImpl.readTraceDirectory(Util.getCurrentRunningDir(), aroView);
 		assertSame(0,result.getAppIds().size());
 	}
 	

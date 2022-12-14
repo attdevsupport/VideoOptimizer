@@ -20,6 +20,8 @@ package com.att.aro.core.bestpractice.impl;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -36,6 +38,7 @@ import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
+import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 
 /**
@@ -110,8 +113,7 @@ public class VideoStallImpl implements IBestPractice {
 	private int invalidCount;
 
 	@Override
-	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {
-		List<VideoStall> videoStallResult = tracedata.getVideoStalls();
+	public AbstractBestPracticeResult runTest(PacketAnalyzerResult tracedata) {	
 		List<VideoStall> stallResult = new ArrayList<VideoStall>();
 
 		result = new VideoStallResult();
@@ -137,14 +139,23 @@ public class VideoStallImpl implements IBestPractice {
 					result.setResultText(noManifestsSelected);
 				}
 			} else if (selectedManifestCount > 1) {
+				bpResultType = BPResultType.CONFIG_REQUIRED;
 				result.setResultText(multipleManifestsSelected);
+				result.setResultExcelText(bpResultType.getDescription());
+				result.setSelfTest(false);
 			} else if (hasSelectedManifest) {
-
+				int stallCount = 0;
 				bpResultType = BPResultType.SELF_TEST;
 				double stallTriggerTime = videoPref.getVideoUsagePreference().getStallTriggerTime();
-				int stallCount = 0;
-				if (videoStallResult != null) {
-					for (VideoStall stall : videoStallResult) {
+				Optional<Entry<Double, VideoStream>> vsFound = videoStreamCollection.entrySet()
+						.stream()
+						.filter(f -> f.getValue().isSelected() && !f.getValue().getVideoActiveMap().isEmpty())
+						.findFirst();
+				
+				if (vsFound.isPresent()) {
+					VideoStream videoStream = vsFound.get().getValue();
+
+					for (VideoStall stall : videoStream.getVideoStallList()) {
 						if (stall.getDuration() >= stallTriggerTime) {
 							stallCount++;
 							stallResult.add(updateStallResult(stall));
@@ -226,8 +237,8 @@ public class VideoStallImpl implements IBestPractice {
 
 	private VideoStall updateStallResult(VideoStall stall) {
 		BPResultType bpResultType = Util.checkPassFailorWarning(stall.getDuration()
-											, videoPref.getVideoUsagePreference().getStallDurationWarnVal()
-											, videoPref.getVideoUsagePreference().getStallDurationFailVal());
+									, videoPref.getVideoUsagePreference().getStallDurationWarnVal()
+									, videoPref.getVideoUsagePreference().getStallDurationFailVal());
 		if (bpResultType == BPResultType.FAIL) {
 			failCount = failCount + 1;
 		} else if (bpResultType == BPResultType.PASS) {

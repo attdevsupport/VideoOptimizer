@@ -20,12 +20,15 @@ import static com.att.aro.core.settings.SettingsUtil.retrieveBestPractices;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
@@ -39,9 +42,9 @@ import com.android.ddmlib.IDevice;
 import com.att.aro.console.printstreamutils.ImHereThread;
 import com.att.aro.console.printstreamutils.NullOut;
 import com.att.aro.console.printstreamutils.OutSave;
+import com.att.aro.console.util.MacHotspotUtil;
 import com.att.aro.console.util.ThrottleUtil;
 import com.att.aro.console.util.UtilOut;
-import com.att.aro.console.util.MacHotspotUtil;
 import com.att.aro.core.IAROService;
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.configuration.pojo.Profile;
@@ -58,12 +61,15 @@ import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
+import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.pojo.ErrorCode;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.util.NetworkUtil;
+import com.att.aro.core.util.StringParse;
 import com.att.aro.core.util.Util;
+import com.att.aro.core.util.VideoUtils;
 import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.mvc.AROController;
@@ -89,6 +95,10 @@ public final class Application implements IAROView {
     ResourceBundle buildBundle = ResourceBundle.getBundle("build");
 
 	private MetaDataModel metaDataModel;
+
+	private String trafficFile;
+
+	private String videoFile;
 
     private Application(String[] args) {
 
@@ -409,6 +419,36 @@ public final class Application implements IAROView {
         // analyze trace file or directory?
         OutSave outSave = prepareSystemOut();
         ImHereThread imHereThread = new ImHereThread(outSave.getOut(), Logger.getRootLogger());
+        
+		Map<String, String[]> traceFileMap;
+		if ((traceFileMap = VideoUtils.validateFolder(new File(trace))).size() > 0) {
+			String[] trafficFile = traceFileMap.get(VideoUtils.TRAFFIC);
+			String[] videoFile = traceFileMap.get(VideoUtils.VIDEO);		
+			if (trafficFile.length == 1 && videoFile.length == 1) {
+				setTrafficFile(trafficFile[0]);
+				setVideoFile(videoFile[0]);
+			} else {
+				LOGGER.error("Invalid trace folder: There are " + trafficFile.length + " traffic files in the folder");
+				outln("\n\nInvalid trace folder: There are " + trafficFile.length + " traffic files in the folder.");
+				exitCLI(outSave, imHereThread);
+			}
+			IFileManager fileManager = context.getBean(IFileManager.class);
+			if (!fileManager.fileExist(trace, "time")) {
+				String capinfosData = Util.getExternalProcessRunner().executeCmd(String.format("%s \"%s\"", Util.getCapinfos(), new File(trace, trafficFile[0]).toString()));
+				
+				double start = Util.parseForUTC(StringParse.findLabeledDataFromString("First packet time:", Util.LINE_SEPARATOR, capinfosData) + "Z") / 1000;
+				double end = Util.parseForUTC(StringParse.findLabeledDataFromString("Last packet time:", Util.LINE_SEPARATOR, capinfosData)) / 1000;
+				String timeText = String.format("Synchronized timestamps\n%.3f\n%.0f\n%.3f", start, 0.0, end);
+				InputStream stream = new ByteArrayInputStream(timeText.getBytes());
+				try {
+					fileManager.saveFile(stream, trace + "/time");
+					fileManager.createEmptyFile(new File(trace), ".readme");
+				} catch (IOException e1) {
+					LOGGER.error("failed to save 'time' file", e1);
+				}
+			}
+		}
+        
         try {
             if (serv.isFile(trace)) {
                 try {
@@ -419,7 +459,7 @@ public final class Application implements IAROView {
                 }
             } else {
                 try {
-                    results = serv.analyzeDirectory(retrieveBestPractices(), trace);
+                    results = serv.analyzeDirectory(retrieveBestPractices(), trace, this);
                 } catch (IOException e) {
                     errln("Error occured analyzing trace directory, detail: " + e.getMessage());
                     System.exit(1);
@@ -454,7 +494,16 @@ public final class Application implements IAROView {
         System.exit(0);
     }
 
-    private VideoOption configureVideoOption(String videoOption) {
+	private void exitCLI(OutSave outSave, ImHereThread imHereThread) {
+		imHereThread.endIndicator();
+		while (imHereThread.isRunning()) {
+			Thread.yield();
+		}
+		restoreSystemOut(outSave);
+		System.exit(0);
+	}
+
+	private VideoOption configureVideoOption(String videoOption) {
         VideoOption option = VideoOption.NONE;
         switch (videoOption) {
             case "yes":
@@ -598,7 +647,6 @@ public final class Application implements IAROView {
                 extras.put("video_option", getVideoOption());
                 extras.put("videoOrientation", videoOrientation == null ? Orientation.PORTRAIT : videoOrientation);
                 extras.put("AttenuatorModel", model);
-
                 extras.put("assignPermission", false);
                 result = runCommand(cmds, collector, cmds.getSudo(), extras);
             } finally {
@@ -765,8 +813,6 @@ public final class Application implements IAROView {
                 .append("\nRun Android collector to capture trace with video:").append("\n    slow video is 1-2 frames per second: ")
                 .append("\n  --startcollector rooted_android --output /User/documents/test --video slow")
 
-                .append("\n  --startcollector vpn_android --output /User/documents/test --video slow")
-
                 .append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation applied:")
                 .append("\n    throttle uplink throughput can accept 64k - 100m (102400k)")
                 .append("\n    throttle downlink throughput can accept 64k - 100m (102400k)")
@@ -778,7 +824,6 @@ public final class Application implements IAROView {
                 .append("\nRun iOS collector to capture trace with video: ").append("\n    trace will be overwritten if it exists: ")
                 .append("\n  --startcollector ios --deviceid udid/deviceIdentifier --overwrite yes --output /Users/{user}/tracefolder --video hd --sudo password")
 
- 
                 .append("\nRun iOS collector to capture trace with video and uplink/downlink attenuation applied: ")
                 .append("\n  --startcollector ios --deviceid udid/deviceIdentifier --output /user/documents/(trace name) --video slow --throttleUL 2m --throttleDL 64k --sudo password")
 
@@ -814,6 +859,11 @@ public final class Application implements IAROView {
     // ------------------------------------------------------------------------------------------------------------------
 
     @Override
+    public void updateTracePath(File path, TimeRange... timeRange) {
+        LOGGER.info(path);
+    }
+
+    @Override
     public void updateProfile(Profile profile) {
         LOGGER.info("updateProfile:" + profile);
     }
@@ -825,8 +875,8 @@ public final class Application implements IAROView {
     }
 
     @Override
-    public void updateTracePath(File path, TimeRange... timeRange) {
-    	 LOGGER.info(path);
+    public void updateFilter(AnalysisFilter filter) {
+        LOGGER.info("updateFilter:" + filter);
     }
 
     @Override
@@ -918,15 +968,39 @@ public final class Application implements IAROView {
     }
 
 	@Override
-	public void updateFilter(AnalysisFilter filter) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	public MetaDataModel getMetaDataModel() {
 		return metaDataModel;
 	}
 
+	@Override
+	public void refreshBestPracticesTab() {
+		// Ignore, commandline does not do this
+	}
 
+	@Override
+	public void clearPreviousTraceData() {
+		setTrafficFile(null); // forget previous trace and video selections
+		setVideoFile(null);
+	}
+
+	@Override
+	public void setTrafficFile(String trafficFile) {
+		this.trafficFile = trafficFile;
+	}
+	
+	@Override
+	public String getTrafficFile() {
+		return this.trafficFile != null ? this.trafficFile : TraceDataConst.FileName.PCAP_FILE;
+	}
+
+	@Override
+	public void setVideoFile(String videoFile) {
+		this.videoFile = videoFile;
+	}
+
+	@Override
+	public String getVideoFile() {
+		return videoFile;
+	}
+	
 }

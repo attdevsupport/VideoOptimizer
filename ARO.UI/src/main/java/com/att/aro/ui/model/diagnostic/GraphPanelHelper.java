@@ -99,6 +99,8 @@ public class GraphPanelHelper{
 		plotOrder.add(ChartPlotOptions.ATTENUATION);
 		plotOrder.add(ChartPlotOptions.SPEED_THROTTLE);
 		plotOrder.add(ChartPlotOptions.THROUGHPUT);
+		plotOrder.add(ChartPlotOptions.THROUGHPUTUL);
+		plotOrder.add(ChartPlotOptions.THROUGHPUTDL);
 		plotOrder.add(ChartPlotOptions.LATENCY);
 		plotOrder.add(ChartPlotOptions.CONNECTIONS);
 		plotOrder.add(ChartPlotOptions.UL_PACKETS);
@@ -153,9 +155,8 @@ public class GraphPanelHelper{
 		return tickUnits;
 	}
 	
-	public void SaveImageAs(JViewport pane,String graphPanelSaveDirectory ){
-		
- 
+	public void SaveImageAs(JViewport pane, String graphPanelSaveDirectory) {
+
 		JFileChooser fc = new JFileChooser(graphPanelSaveDirectory);
 
 		// Set up file types
@@ -181,9 +182,8 @@ public class GraphPanelHelper{
 				String strFileLowerCase = strFile.toLowerCase();
 				String fileDesc = fc.getFileFilter().getDescription();
 				String fileType = ResourceBundleHelper.getMessageString("fileChooser.contentType.jpg");
-				if ((fileDesc.equalsIgnoreCase(ResourceBundleHelper.getMessageString("fileChooser.contentDisplayType.png")) || strFileLowerCase
-						.endsWith(ResourceBundleHelper.getMessageString("fileType.filters.dot")
-								+ fileTypesPng[0].toLowerCase()))) {
+				if ((fileDesc.equalsIgnoreCase(ResourceBundleHelper.getMessageString("fileChooser.contentDisplayType.png"))
+						|| strFileLowerCase.endsWith(ResourceBundleHelper.getMessageString("fileType.filters.dot") + fileTypesPng[0].toLowerCase()))) {
 					fileType = fileTypesPng[0];
 				}
 				if (strFile.length() > 0) {
@@ -191,8 +191,7 @@ public class GraphPanelHelper{
 					graphPanelSaveDirectory = fc.getCurrentDirectory().getPath();
 
 					if ((fileType != null) && (fileType.length() > 0)) {
-						String fileTypeLowerCaseWithDot = ResourceBundleHelper.getMessageString("fileType.filters.dot")
-								+ fileType.toLowerCase();
+						String fileTypeLowerCaseWithDot = ResourceBundleHelper.getMessageString("fileType.filters.dot") + fileType.toLowerCase();
 						if (!strFileLowerCase.endsWith(fileTypeLowerCaseWithDot)) {
 							strFile += ResourceBundleHelper.getMessageString("fileType.filters.dot") + fileType;
 						}
@@ -200,9 +199,8 @@ public class GraphPanelHelper{
 					plotImageFile = new File(strFile);
 					boolean bAttemptToWriteToFile = true;
 					if (plotImageFile.exists()) {
-						if ( MessageDialogFactory .showConfirmDialog(pane, MessageFormat.format(
-								ResourceBundleHelper.getMessageString("fileChooser.fileExists"),
-								plotImageFile.getAbsolutePath()), 
+						if (MessageDialogFactory.showConfirmDialog(pane,
+								MessageFormat.format(ResourceBundleHelper.getMessageString("fileChooser.fileExists"), plotImageFile.getAbsolutePath()),
 								ResourceBundleHelper.getMessageString("fileChooser.confirm"), JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
 							bAttemptToWriteToFile = false;
 						}
@@ -210,22 +208,19 @@ public class GraphPanelHelper{
 					if (bAttemptToWriteToFile) {
 						try {
 							if (fileType != null && fileType.equalsIgnoreCase(fileTypesPng[0])) {
-								BufferedImage bufImage = ImageHelper.createImage(pane.getBounds().width,pane.getBounds().height);
+								BufferedImage bufImage = ImageHelper.createImage(pane.getBounds().width, pane.getBounds().height);
 								Graphics2D g = bufImage.createGraphics();
 								pane.paint(g);
 								ImageIO.write(bufImage, "png", plotImageFile);
 							} else {
-								BufferedImage bufImage = ImageHelper.createImage(pane.getBounds().width,pane.getBounds().height);
+								BufferedImage bufImage = ImageHelper.createImage(pane.getBounds().width, pane.getBounds().height);
 								Graphics2D g = bufImage.createGraphics();
 								pane.paint(g);
 								ImageIO.write(bufImage, "jpg", plotImageFile);
 							}
 							bSavedOrCancelled = true;
 						} catch (IOException e) {
-							 MessageDialogFactory .showMessageDialog(
-									pane,
-									ResourceBundleHelper.getMessageString("fileChooser.errorWritingToFile"
-											+ plotImageFile.toString()));
+							MessageDialogFactory.showMessageDialog(pane, ResourceBundleHelper.getMessageString("fileChooser.errorWritingToFile") + plotImageFile.toString());
 						}
 					}
 				}

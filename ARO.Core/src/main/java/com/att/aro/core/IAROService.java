@@ -25,6 +25,7 @@ import com.att.aro.core.packetanalysis.IPacketAnalyzer;
 import com.att.aro.core.packetanalysis.pojo.AnalysisFilter;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.mvc.IAROView;
 
 /**
  * This class provides access to ARO.Core functionality for analyzing and
@@ -194,7 +195,7 @@ public interface IAROService {
 	 * @throws IOException
 	 *             if trace file not found
 	 */
-	AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory) throws IOException;
+	AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory, IAROView aroView) throws IOException;
 
 	/**
 	 * Launches an analysis of a trace directory with the results populating an
@@ -216,7 +217,7 @@ public interface IAROService {
 	 * @throws IOException
 	 *             if trace file not found
 	 */
-	AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory, Profile profile, AnalysisFilter filter) throws IOException;
+	AROTraceData analyzeDirectory(List<BestPracticeType> requests, String traceDirectory, IAROView aroView, Profile profile, AnalysisFilter filter) throws IOException;
 
 	List<AbstractBestPracticeResult> analyze(PacketAnalyzerResult result,
 			List<BestPracticeType> requests);

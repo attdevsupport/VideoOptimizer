@@ -84,7 +84,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	private ApplicationContext context = SpringContextUtil.getInstance().getContext();
 
 	@Autowired
-	private IAROService serv;
+	private IAROService aroService;
 	
 	private static final Logger LOG = LogManager.getLogger(AROController.class.getName());
 	private IDataCollector collector;
@@ -126,7 +126,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 * @return
 	 */
 	public IAROService getAROService() {
-		return serv;
+		return aroService;
 	}
 
 	/**
@@ -141,7 +141,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 */
 	public AROTraceData runAnalyzer(String trace, Profile profile, AnalysisFilter filter) {
 
-		serv = context.getBean(IAROService.class);
+		aroService = context.getBean(IAROService.class);
 		AROTraceData results = new AROTraceData();
 		long analysisStartTime = System.currentTimeMillis();
 		
@@ -152,10 +152,10 @@ public class AROController implements PropertyChangeListener, ActionListener {
 
 			// analyze trace file or directory?
 			try {
-				if (serv.isFile(trace)) {
-					results = serv.analyzeFile(retrieveBestPractices(), trace, profile, filter);
+				if (aroService.isFile(trace)) {
+					results = aroService.analyzeFile(retrieveBestPractices(), trace, profile, filter);
 				} else {
-					results = serv.analyzeDirectory(retrieveBestPractices(), trace, profile, filter);
+					results = aroService.analyzeDirectory(retrieveBestPractices(), trace, theView, profile, filter);
 				}
 				if (results.getAnalyzerResult() != null 
 						&& results.getAnalyzerResult().getStreamingVideoData() != null
@@ -198,6 +198,12 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		return results;
 	}
 
+	private void analyzeVideoBP() {
+		SpringContextUtil.getInstance().getContext().getBean(IVideoBestPractices.class).analyze(getTheModel());
+		theView.showChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
+		theView.refresh();
+	}
+	
 	/**
 	 * Not to be directly called. Triggers a re-analysis if a property change is detected.
 	 */
@@ -318,14 +324,14 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	public boolean printReport(boolean json, String reportPath) {
 		boolean res = false;
 		if (json) {
-			res = serv.getJSonReport(reportPath, theModel);
+			res = aroService.getJSonReport(reportPath, theModel);
 			if (res) {
 				LOG.info("Successfully produce JSON report: " + reportPath);
 			} else {
 				LOG.info("Failed to produce JSON report: " + reportPath);
 			}
 		} else {
-			res = serv.getHtmlReport(reportPath, theModel);
+			res = aroService.getHtmlReport(reportPath, theModel);
 			if (res) {
 				LOG.info("Successfully produce HTML report: " + reportPath);
 			} else {
@@ -738,14 +744,4 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	public String[] getApplicationsList(String id) {
 		return context.getBean(IAdbService.class).getApplicationList(id);
 	}
-
-	private void analyzeVideoBP() {
-        ApplicationContext context = SpringContextUtil.getInstance().getContext();
-		IVideoBestPractices videoBestPractices = context.getBean(IVideoBestPractices.class);
-		AROTraceData traceData = getTheModel();
-		videoBestPractices.analyze(traceData);
-		theView.showChartItems(HIDE_SHOW_CHARTPLOTOPTIONS);
-		theView.refresh();
-	}
-
 }

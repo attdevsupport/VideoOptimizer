@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.packetanalysis.impl;
 
 import static org.junit.Assert.assertEquals;
@@ -88,7 +103,7 @@ public class HttpRequestResponseHelperImplTest extends BaseTest {
 			assertEquals(stringData, httpRequestResponseHelper.getContentString(req, session));
 			Mockito.when(session.getStorageDl()).thenReturn(data);
 		} catch (Exception e) {
-			assertEquals(null, e.getMessage());
+			assertEquals("The content may be corrupted.", e.getMessage());
 		}
 
 		// bad gzip data
@@ -104,8 +119,29 @@ public class HttpRequestResponseHelperImplTest extends BaseTest {
 		}
 	}
 
+	@Test
+	public void isSameContent_resultIsTrue() {
+		HttpRequestResponseInfo reqLeft = new HttpRequestResponseInfo();
+		HttpRequestResponseInfo reqRight = new HttpRequestResponseInfo();
+		SortedMap<Integer, Integer> testMap = new TreeMap<Integer, Integer>();
+		testMap.put(1, 1);
+		testMap.put(2, 2);
+		reqLeft.setContentLength(1);
+		reqLeft.setContentOffsetLength(testMap);
+		reqLeft.setPacketDirection(PacketDirection.DOWNLINK);
+		reqRight.setContentLength(1);
+		reqRight.setContentOffsetLength(testMap);
+		reqRight.setPacketDirection(PacketDirection.DOWNLINK);
 
-	@Ignore
+		Session sessionRight = new Session(null, null, 0, 0, "");
+		sessionRight.setStorageDl(storage);
+		Session sessionLeft = new Session(null, null, 0, 0, "");
+		sessionLeft.setStorageDl(storage);
+
+		boolean testResult = httpRequestResponseHelper.isSameContent(reqLeft, reqRight, sessionLeft, sessionRight);
+		assertTrue(testResult);
+	}
+
 	@Test
 	public void isSameContent_resultIsFalse() {
 		HttpRequestResponseInfo reqLeft = new HttpRequestResponseInfo();
@@ -124,6 +160,8 @@ public class HttpRequestResponseHelperImplTest extends BaseTest {
 		sessionRight.setStorageDl(storage);
 		Session sessionLeft = new Session(null, null, 0, 0, "");
 		sessionLeft.setStorageDl(storage);
+
+		httpRequestResponseHelper.isSameContent(reqLeft, reqRight, sessionLeft, sessionRight);
 		boolean testResult = httpRequestResponseHelper.isSameContent(reqLeft, reqRight, sessionLeft, sessionRight);
 		assertFalse(testResult);
 

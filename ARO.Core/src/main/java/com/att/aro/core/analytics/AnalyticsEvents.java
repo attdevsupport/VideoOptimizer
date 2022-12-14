@@ -83,12 +83,6 @@ public class AnalyticsEvents {
 	@Value("${ga.request.event.collector.emulator}")
 	private String emulator;
 
-	@Value("${ga.request.event.category.secureCollector}")
-	private String secureCollectorEvent;
-	
-	@Value("${ga.request.event.secureCollector.action.applied}")
-	private String secureCollectorApplied;
-	
 	@Value("${ga.request.event.category.attenuation}")
 	private String attenuationEvent;
 	
@@ -262,14 +256,6 @@ public class AnalyticsEvents {
 	 */
 	public String getEmulator() {
 		return emulator;
-	}
-
-	public String getSecureCollectorEvent() {
-		return secureCollectorEvent;
-	}
-
-	public String getSecureCollectorApplied() {
-		return secureCollectorApplied;
 	}
 
 	public String getAttenuationEvent() {

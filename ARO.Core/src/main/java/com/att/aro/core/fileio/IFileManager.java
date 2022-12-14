@@ -43,6 +43,8 @@ public interface IFileManager {
 	boolean isFile(String filepath);
 
 	boolean fileExist(String path);
+	boolean fileExist(String directoryPath, String path);
+	boolean fileExist(File directoryPath, String path);
 
 	boolean directoryExist(String directoryPath);
 
@@ -150,6 +152,15 @@ public interface IFileManager {
 	File deAlias(File tracePath);
 
 	String[] findFiles(String localVidsFolder, String fileName);
+
+	/**
+	 * Create an empty file in traceFolder
+	 * 
+	 * @param traceFolder
+	 * @param fileName
+	 * @return File or null if failed
+	 */
+	File createEmptyFile(File traceFolder, String fileName);
 
 
 

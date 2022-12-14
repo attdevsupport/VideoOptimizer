@@ -74,11 +74,10 @@ public final class VideoUtil {
 			if (isPcaPFile(traceDirectory)) {
 				traceDirectory = traceDirectory.getParentFile();
 			}
-			File videoFile = new File(traceDirectory, ResourceBundleHelper.getMessageString("video.videoDisplayFile"));
+			File videoFile = new File(traceDirectory, "video.mov"); // don't care that this is hard coded
 			int totalVideoFiles = getVideoFilesCount(traceDirectory);
 			if ((totalVideoFiles > 0) || !videoFile.exists() || isMediaConversionError) {
-				File videoFileFromDevice = new File(traceDirectory,
-						ResourceBundleHelper.getMessageString("video.videoFileOnDevice"));
+				File videoFileFromDevice = new File(traceDirectory, "video.mp4" ); // don't care that this is hard coded
 
 				if (totalVideoFiles > 1) {
 					// if more then one media file exists in directory
@@ -101,12 +100,6 @@ public final class VideoUtil {
 					if (exVideoMov != null && exVideoMov.canRead()) {
 						result = "file:" + exVideoMov.getAbsolutePath();
 					}
-					// else {
-					// // No external converted MOV present, so convert the
-					// // native video source.
-					// convertVideoToMOV(traceDirectory, videoFileFromDevice,
-					// videoFile);
-					// }
 				}
 			}
 			if ((videoFile.canRead()) && (totalVideoFiles == 0)) {
@@ -179,8 +172,8 @@ public final class VideoUtil {
 							case VOB:
 							case MOV:
 							case MP4:
-								if (!file.getName().equals("video.mp4") 
-										&& !file.getName().equals("video.mov")
+								if (!file.getName().equals(TraceDataConst.FileName.VIDEO_MP4_FILE) 
+										&& !file.getName().equals(TraceDataConst.FileName.VIDEO_MOV_FILE)
 										&& !file.getName().equals("exvideo.mov")) {
 									existingExternalVideoFile = file;
 									totalVideoFile++;

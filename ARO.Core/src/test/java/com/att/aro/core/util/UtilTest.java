@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.core.util;
 
 import static org.junit.Assert.assertEquals;
@@ -11,8 +26,8 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Comparator;
-import org.apache.log4j.Level;
 
+import org.apache.log4j.Level;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -265,34 +280,33 @@ public class UtilTest {
 	@Test
 	public void testParseForUTC_when_no_dashes_or_colons() {
 		long result;
-		result = Util.parseForUTC("20191101T0243301975739");	assertEquals(1572576210198L, result);
-		result = Util.parseForUTC("20191101T024330197");	    assertEquals(1572576210197L, result);
-		result = Util.parseForUTC("20191101T024330197");	    assertEquals(1572576210197L, result);
-		result = Util.parseForUTC("20180111T221459");	assertEquals(1515708899000L, result);
-		result = Util.parseForUTC("20180111T221459456");	assertEquals(1515708899456L, result);
-		result = Util.parseForUTC("2018-01-11T22:14:59");	assertEquals(1515708899000L, result);
-		result = Util.parseForUTC("20180111T221459000");	assertEquals(1515708899000L, result);
-		result = Util.parseForUTC("20180111T221459");		assertEquals(1515708899000L, result);
-		result = Util.parseForUTC("20191106T172805265");	assertEquals(1573061285265L, result);
-		result = Util.parseForUTC("20161122T223027123");	assertEquals(1479853827123L, result);
+		result = Util.parseForUTC("20191101T0243301975739");	assertEquals(1572601410198L, result);
+		result = Util.parseForUTC("20191101T024330197");	    assertEquals(1572601410197L, result);
+		result = Util.parseForUTC("20180111T221459");		    assertEquals(1515737699000L, result);
+		result = Util.parseForUTC("20180111T221459456");	    assertEquals(1515737699456L, result);
+		result = Util.parseForUTC("2018-01-11T22:14:59");	    assertEquals(1515737699000L, result);
+		result = Util.parseForUTC("20180111T221459000");	    assertEquals(1515737699000L, result);
+		result = Util.parseForUTC("20180111T221459");		    assertEquals(1515737699000L, result);
+		result = Util.parseForUTC("20191106T172805265");	    assertEquals(1573090085265L, result);
+		result = Util.parseForUTC("20161122T223027123");	    assertEquals(1479882627123L, result);
 	}
-
+	
 	@Test
-	public void testParseForUTC() {
-		long result;
-		long result1 = Util.parseForUTC("2020-01-16T20:28:00.405Z");      
-		long result2 = Util.parseForUTC("2020-01-16T20:28:08.413Z");      assertEquals(8008L, result2-result1);
-		result = Util.parseForUTC("2020-01-16T20:41:37.221");		assertEquals(1579207297221L, result);
-		result = Util.parseForUTC("2020-01-16T20:41:37.221Z");		assertEquals(1579207297221L, result);
-		result = Util.parseForUTC("2016-11-22T22:30:27.000000Z");	assertEquals(1479853827000L, result);
-		result = Util.parseForUTC("2016-11-22T22:30:27.591");		assertEquals(1479853827591L, result);
-		result = Util.parseForUTC("2016-11-22T22:30:27.59100");     assertEquals(1479853827591L, result);
-		result = Util.parseForUTC("2016-11-22T22:30:27.591000Z");   assertEquals(1479853827591L, result);
-		// test for truncation, not rounding                        ;
-		result = Util.parseForUTC("2016-11-22T22:30:27.123999Z");   assertEquals(1479853827123L, result);
-		result = Util.parseForUTC("2018-01-11T22:14:59.000000Z");   assertEquals(1515708899000L, result);
-		result = Util.parseForUTC("2018-01-11T22:14:59");           assertEquals(1515708899000L, result);
-		result = Util.parseForUTC("2018-01-11 22:14:59");           assertEquals(1515708899000L, result);
+	public void testParseForUTC() throws Exception{
+		assertEquals(1649962687000L, Util.parseForUTC("2022-04-14T18:58:07Z"));
+		assertEquals(1649962687000L, Util.parseForUTC("2022-04-14T11:58:07-0700"));
+		assertEquals(1649962687000L, Util.parseForUTC("2022-04-14T11:58:07"));
+		assertEquals(1649962698735L, Util.parseForUTC("2022-04-14 11:58:18.073562"));
+		assertEquals(1649962698735L, Util.parseForUTC("2022-04-14T18:58:18.073562Z"));
+	}
+	
+	@Test
+	public void roundTripTestUTC() throws Exception{
+		String thatTimeStr = "18:58:07.123";
+		double thatTime = Util.parseTimeOfDay(thatTimeStr, false);
+		String nowTimeStr = Util.formatHHMMSSs(thatTime).trim();
+		double nownowTime = Util.parseTimeOfDay(nowTimeStr, false);
+		assertEquals(thatTime, nownowTime, 0);
 	}
 	
 	@Test
@@ -301,5 +315,40 @@ public class UtilTest {
 		String converted = "$'\\x5cone\\x21two$three\\x27four'";
 		String result = Util.wrapPasswordForEcho(raw);
 		assertEquals(converted, result);
+	}
+	
+	@Test
+	public void testParseTimeOfDay()  throws Exception{
+		assertEquals(59.567, Util.parseTimeOfDay("59.567", false), 0);
+		assertEquals(86400.0, Util.parseTimeOfDay("23:59:60", false), 0);
+		assertEquals(86400.0, Util.parseTimeOfDay("11:59:60", true), 0);
+		assertEquals(43200.0, Util.parseTimeOfDay("11:59:60", false), 0);
+		assertEquals(86400.0, Util.parseTimeOfDay("24:00:00", false), 0);
+		
+		try {
+			Util.parseTimeOfDay("12:00:01", true);
+		} catch (Exception e) {
+			assertEquals("Illegal time value in (12:00:01) when using PM flag (adding 12hr of seconds)", e.getMessage());
+		}
+		try {
+			Util.parseTimeOfDay("25:00:00", false);
+		} catch (Exception e) {
+			assertEquals("Illegal time value (25) in (25:00:00)", e.getMessage());
+		}
+		try {
+			Util.parseTimeOfDay("20:67:00", false);
+		} catch (Exception e) {
+			assertEquals("Illegal time value (67) in (20:67:00)", e.getMessage());
+		}
+		try {
+			Util.parseTimeOfDay("00:00:16878289", false);
+		} catch (Exception e) {
+			assertEquals("Illegal time value (16878289) in (00:00:16878289)", e.getMessage());
+		}
+		try {
+			Util.parseTimeOfDay("00:00:-30", false);
+		} catch (Exception e) {
+			assertEquals("Illegal time value (-30) in (00:00:-30)", e.getMessage());
+		}
 	}
 }

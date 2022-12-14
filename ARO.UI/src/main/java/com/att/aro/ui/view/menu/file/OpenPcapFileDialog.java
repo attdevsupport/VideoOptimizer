@@ -1,11 +1,11 @@
 /*
- *  Copyright 2021 AT&T
+ *  Copyright 2022 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0 
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,6 @@
  * limitations under the License.
 */
 package com.att.aro.ui.view.menu.file;
-
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -56,6 +55,7 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 
+import lombok.Getter;
 
 public class OpenPcapFileDialog extends JDialog {
 	private static final long serialVersionUID = 496350871409866509L;
@@ -70,11 +70,14 @@ public class OpenPcapFileDialog extends JDialog {
 	private JPanel jButtonGrid;
 	private JButton okButton;
 
+	@Getter
 	private final String newPcapFileTracePath;
 	private final File originalPcapFileObj;
 
-	private static IExternalProcessRunner extRunner = (IExternalProcessRunner) ContextAware.getAROConfigContext().getBean("externalProcessRunnerImpl");
+	@Getter
+	private boolean retainDirectory;
 
+	private static IExternalProcessRunner extRunner = (IExternalProcessRunner) ContextAware.getAROConfigContext().getBean("externalProcessRunnerImpl");
 
 	public OpenPcapFileDialog(SharedAttributesProcesses parent, Component caller, File pcapFile) {
 		this.parent = parent;
@@ -86,6 +89,7 @@ public class OpenPcapFileDialog extends JDialog {
 		originalPcapFileObj = pcapFile;
 
 		init(newDirectoryName);
+		setModal(true);
 	}
 
 	private void init(String newDirectoryName) {
@@ -112,14 +116,15 @@ public class OpenPcapFileDialog extends JDialog {
 		if (jContentPane == null) {
 			jContentPane = new JPanel(new BorderLayout());
 
-			JLabel desc = new JLabel(MessageFormat.format(ResourceBundleHelper.getMessageString("menu.file.pcap.dialog.desc"), newDirectoryName), SwingConstants.LEFT);
+			JLabel desc = new JLabel(MessageFormat.format(ResourceBundleHelper.getMessageString("menu.file.pcap.dialog.desc")
+					, newDirectoryName), SwingConstants.LEFT);
 			desc.setFont(new Font("Arial", Font.PLAIN, 15));
 			JPanel lblPanel = new JPanel(new BorderLayout());
 			lblPanel.add(desc);
 
-	        jContentPane.add(lblPanel, BorderLayout.NORTH);
+			jContentPane.add(lblPanel, BorderLayout.NORTH);
 			jContentPane.add(getButtonPanel(), BorderLayout.SOUTH);
-			jContentPane.setBorder(BorderFactory.createEmptyBorder(20,20,20,20));
+			jContentPane.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
 			jContentPane.setPreferredSize(new Dimension(600, 225));
 		}
@@ -169,8 +174,8 @@ public class OpenPcapFileDialog extends JDialog {
 
 	private void process(boolean retainDirectory) {
 		setVisible(false);
-
-		SwingWorker<Void, Void> worker = new SwingWorker<Void,Void>(){
+		this.retainDirectory = retainDirectory;
+		SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
 			@Override
 			protected Void doInBackground() throws Exception {
 				return processPcapFile(retainDirectory);
@@ -194,25 +199,31 @@ public class OpenPcapFileDialog extends JDialog {
 		StringBuilder commands = new StringBuilder();
 
 		if (Util.isWindowsOS()) {
-			commands.append("mkdir \"" + newPcapFileTracePath + "\" && ");
+			commands.append(String.format("mkdir \"%s\"  && ", newPcapFileTracePath));
 			// Create an empty .readme file to identify if its a folder created by VO
-			commands.append("type nul > \"" + newPcapFileTracePath + Util.FILE_SEPARATOR + ".readme\" && ");
-			commands.append("attrib +h \"" + newPcapFileTracePath + Util.FILE_SEPARATOR + ".readme\" && ");
+			commands.append(String.format("type nul > \"%s\\.readme\" && ", newPcapFileTracePath));
+			commands.append(String.format("attrib +h \"%s\\.readme\" && ", newPcapFileTracePath));
 
 			if (retainDirectory) {
-				commands.append("move \"" + originalPcapFileObj.getAbsolutePath() + "\" \"" + newPcapFileTracePath + "\"");
+				commands.append(String.format("move \"%s\" \"%s\"", originalPcapFileObj.getAbsolutePath(), newPcapFileTracePath));
+
 			} else {
-				commands.append("copy \"" + originalPcapFileObj.getAbsolutePath() + "\" \"" + newPcapFileTracePath + "\"");
+				// Create an empty ".temp_trace" to identify newly created trace folder is a temporary folder, during refresh (MainFrame.refresh())
+				commands.append(String.format("type nul > \"%s\\.temp_trace\" && ", newPcapFileTracePath));
+				commands.append(String.format("attrib +h \"%s\\.temp_trace\" && ", newPcapFileTracePath));
+				commands.append(String.format("copy \"%s\" \"%s\"", originalPcapFileObj.getAbsolutePath(), newPcapFileTracePath));
 			}
 		} else {
-			commands.append("mkdir '" + newPcapFileTracePath + "' ; ");
 			// Create an empty .readme file to identify if its a folder created by VO
-			commands.append("touch '" + newPcapFileTracePath + Util.FILE_SEPARATOR + ".readme' ; ");
+			commands.append(String.format("mkdir '%s';", newPcapFileTracePath));
+			commands.append(String.format("touch '%s/.readme';", newPcapFileTracePath));
 
 			if (retainDirectory) {
-				commands.append("mv '" + originalPcapFileObj.getAbsolutePath() + "' '" + newPcapFileTracePath + "'");
+				commands.append(String.format("mv '%s' '%s';", originalPcapFileObj.getAbsolutePath(), newPcapFileTracePath));
 			} else {
-				commands.append("ln -s '" + originalPcapFileObj.getAbsolutePath() + "' '" + newPcapFileTracePath + Util.FILE_SEPARATOR + originalPcapFileObj.getName() + "'");
+				commands.append(String.format("cd '%s';ln -s '../%s' '%s';", newPcapFileTracePath, originalPcapFileObj.getName(), originalPcapFileObj.getName()));
+				commands.append(String.format("touch '%s/.temp_trace';", newPcapFileTracePath));
+				parent.setPcapTempWrap(true);
 			}
 		}
 
@@ -220,16 +231,13 @@ public class OpenPcapFileDialog extends JDialog {
 		String result = extRunner.executeCmd(commands.toString());
 		LOG.debug("Command execution result: " + result);
 
-		reloadTrace();
-		if (retainDirectory) {
-			UserPreferencesFactory.getInstance().create().setLastTraceDirectory(new File(newPcapFileTracePath));
-		}
+		loadTrace();
 		GoogleAnalyticsUtil.getAndIncrementTraceCounter();
-		
+
 		// Delete the new directory after analysis is completed, if don't need to retain
 		if (!retainDirectory) {
 			if (parent instanceof MainFrame) {
-				while(!((MainFrame) parent).getAroSwingWorker().isDone()) {
+				while (!((MainFrame) parent).getAroSwingWorker().isDone()) {
 					LOG.debug("Waiting for analysis to be completed");
 					Util.sleep(1000);
 				}
@@ -246,10 +254,8 @@ public class OpenPcapFileDialog extends JDialog {
 								Util.sleep(1000);
 							}
 							Util.sleep(1000);
-
 							deleteDirectory(newPcapFileTracePath);
 						};
-
 						new Thread(waitingForUpdate, "FFMpegRunnerWaitingThread").start();
 					} else {
 						deleteDirectory(newPcapFileTracePath);
@@ -275,11 +281,17 @@ public class OpenPcapFileDialog extends JDialog {
 		}
 	}
 
-	private void reloadTrace() {
+	private void loadTrace() {
 		LOG.info("Starting analysis");
 		if (parent instanceof MainFrame) {
 			if (StringUtils.isNotBlank(newPcapFileTracePath)) {
-				parent.updateTracePath(new File(newPcapFileTracePath + Util.FILE_SEPARATOR + originalPcapFileObj.getName()));
+				// open PCAP
+				File tracePath = new File(newPcapFileTracePath, originalPcapFileObj.getName());
+				parent.updateTracePath(tracePath);
+				UserPreferencesFactory.getInstance().create().setLastTraceDirectory(tracePath.isFile() 
+									? tracePath.getParentFile().getParentFile()
+									: tracePath.getParentFile().getParentFile().getParentFile());
+				GoogleAnalyticsUtil.getAndIncrementTraceCounter();
 			}
 		}
 		LOG.info("Ending analysis");

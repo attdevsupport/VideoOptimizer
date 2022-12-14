@@ -15,10 +15,9 @@
  */
 package com.att.aro.core.peripheral;
 
-import java.util.Date;
-
+import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.peripheral.pojo.VideoTime;
 
 public interface IVideoTimeReader {
-	VideoTime readData(String directory, Date traceTime);
+	VideoTime readData(String directory, AbstractTraceResult result, String... deviceVideoFile);
 }

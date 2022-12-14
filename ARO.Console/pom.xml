@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>4.4.0</version>
+        <version>4.5.0</version>
         <relativePath>../ARO.Parent</relativePath>
     </parent>
 
@@ -17,7 +17,7 @@
 	<properties>
 		<main.class>com.att.aro.console.Application</main.class>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<vo.version>4.4.0</vo.version>
+		<vo.version>4.5.0</vo.version>
 		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
 

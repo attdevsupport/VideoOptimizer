@@ -152,7 +152,10 @@ public class Manifest {
 	}
 
 	public String displayContent(boolean numbered, int skipTrigger) {
-		String[] line = new String(getContent()).split("\n");
+		if (content == null) {
+			return "";
+		}
+		String[] line = new String(content).split("\n");
 		StringBuilder strblr = new StringBuilder("Manifest :");
 		strblr.append(getVideoName());
 		strblr.append("\n");
@@ -175,11 +178,10 @@ public class Manifest {
 		return strblr.toString();
 	}
 
-
 	@Override
 	public String toString() {
 		StringBuilder strblr = new StringBuilder("\n\tManifest :");
-		strblr.append(" requestTime :").append(String.format("%.3f", requestTime));
+		strblr.append(" requestTime :").append(String.format("%.4f", requestTime));
 		strblr.append(", VideoType :" + getVideoType());
 		strblr.append("\n\t, Type :").append(getManifestType());
 		strblr.append(String.format(manifestType.equals(ManifestType.MASTER)

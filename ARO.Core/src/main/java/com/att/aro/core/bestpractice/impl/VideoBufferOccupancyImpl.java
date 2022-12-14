@@ -76,6 +76,9 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 
 	@Value("${bufferOccupancy.results}")
 	private String textResults;
+	
+	@Value("${bufferOccupancy.simple.results}")
+	private String textSimpleResults;
 
 	@Value("${bufferOccupancy.excel.results}")
     private String textExcelResults;
@@ -163,14 +166,14 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 				double maxBufferInMB = 0;
 
 				if (bufferBPResult != null && bufferBPResult.getBufferByteDataSet().size() > 0) {
-				    double megabyteDivisor = 1000 * 1000;
-				    maxBufferInMB = bufferBPResult.getMaxBuffer() / megabyteDivisor; // getMaxBuffer() returns in bytes
+					double megabyteDivisor = 1000 * 1000;
+					maxBufferInMB = bufferBPResult.getMaxBuffer() / megabyteDivisor; // getMaxBuffer() returns in bytes
 					List<Double> bufferDataSet = bufferBPResult.getBufferByteDataSet();
 					result.setMinBufferByte(bufferDataSet.get(0) / megabyteDivisor); // In MB
 					double bufferSum = bufferDataSet.stream().reduce((a, b) -> a + b).get();
 					result.setAvgBufferByte((bufferSum / bufferDataSet.size()) / megabyteDivisor);
 				} else {
-				    maxBufferInMB = 0;
+					maxBufferInMB = 0;
 				}
 
 				if (bufferTimeBPResult != null && bufferTimeBPResult.getBufferTimeDataSet().size() > 0) {
@@ -188,21 +191,32 @@ public class VideoBufferOccupancyImpl implements IBestPractice {
 				double maxBufferSet = getVideoPrefMaxBuffer();
 				if (maxBufferSet != 0) {
 					percentage = (maxBufferInMB / maxBufferSet) * 100;
-				}
 
-				if (MapUtils.isEmpty(streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList())) {
-					result.setResultText(startUpDelayNotSet);
-					bpResultType = BPResultType.CONFIG_REQUIRED;
-				} else {
-					if (percentage > 100) {
-						bpResultType = BPResultType.WARNING;
+					if (MapUtils.isEmpty(streamingVideoData.getStreamingVideoCompiled().getChunkPlayTimeList())) {
+						result.setResultText(startUpDelayNotSet);
+						bpResultType = BPResultType.CONFIG_REQUIRED;
+					} else {
+						if (percentage > 100) {
+							bpResultType = BPResultType.WARNING;
+						}
+						bpResultType = BPResultType.PASS;
+						result.setResultText(MessageFormat.format(this.textResults
+											, String.format("%.2f", percentage)
+											, String.format("%.2f", maxBufferInMB)
+											, String.format("%.2f", maxBufferSet)));
+						result.setResultExcelText(
+								MessageFormat.format(textExcelResults
+											, bpResultType.getDescription()
+											, String.format("%.2f", percentage)
+											, String.format("%.2f", maxBufferInMB)));
 					}
-					bpResultType = BPResultType.PASS;
-					result.setResultText(MessageFormat.format(this.textResults, String.format("%.2f", percentage), String.format("%.2f", maxBufferInMB),
-							String.format("%.2f", maxBufferSet)));
+				} else {
+					bpResultType = BPResultType.SELF_TEST;
+					result.setResultText(MessageFormat.format(this.textSimpleResults, String.format("%.2f", maxBufferInMB)));
 					result.setResultExcelText(
-				        MessageFormat.format(textExcelResults, bpResultType.getDescription(), String.format("%.2f", percentage), String.format("%.2f", maxBufferInMB))
-			        );
+							MessageFormat.format(textExcelResults
+										, bpResultType.getDescription()
+										, String.format("%.2f", maxBufferInMB)));
 				}
 			}
 		} else {

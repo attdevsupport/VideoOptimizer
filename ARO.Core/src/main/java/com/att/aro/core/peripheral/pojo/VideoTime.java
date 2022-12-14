@@ -15,38 +15,21 @@
  */
 package com.att.aro.core.peripheral.pojo;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
- * 
- * Date: October 7, 2014
+ * exVideoFound
+ * exVideoTimeFileNotFound
+ * videoStartTime
+ * deviceScreenVideo - is there a video of the device screen
+ *
  */
+@Getter
+@Setter
 public class VideoTime {
 	private boolean exVideoFound = false;
 	private boolean exVideoTimeFileNotFound = false;
-	private double videoStartTime = 0.0;
-	private boolean nativeVideo = false;
-	public boolean isExVideoFound() {
-		return exVideoFound;
-	}
-	public void setExVideoFound(boolean exVideoFound) {
-		this.exVideoFound = exVideoFound;
-	}
-	public boolean isExVideoTimeFileNotFound() {
-		return exVideoTimeFileNotFound;
-	}
-	public void setExVideoTimeFileNotFound(boolean exVideoTimeFileNotFound) {
-		this.exVideoTimeFileNotFound = exVideoTimeFileNotFound;
-	}
-	public double getVideoStartTime() {
-		return videoStartTime;
-	}
-	public void setVideoStartTime(double videoStartTime) {
-		this.videoStartTime = videoStartTime;
-	}
-	public boolean isNativeVideo() {
-		return nativeVideo;
-	}
-	public void setNativeVideo(boolean nativeVideo) {
-		this.nativeVideo = nativeVideo;
-	}
-	
+	private double  videoStartTime = 0.0;
+	private boolean deviceScreenVideo = false;
 }

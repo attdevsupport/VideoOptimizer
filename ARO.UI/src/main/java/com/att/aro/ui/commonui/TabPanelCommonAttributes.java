@@ -331,12 +331,21 @@ public class TabPanelCommonAttributes {
 			return this;
 		}
 
+		public Builder enumKeyLabel(Enum<?> enumParm) {
+			if (enumParm != null) {
+				key = enumParm.name().replaceAll("_", ".");
+			}
+			header(true);
+			return this;
+		}
 		public Builder enumKey(Enum<?> enumParm) {
 			if (enumParm != null) {
 				key = enumParm.name().replaceAll("_", ".");
 			}
+			header(false);
 			return this;
 		}
+	
 		public Builder contents(String contents) {
 			this.contents = contents;
 			return this;

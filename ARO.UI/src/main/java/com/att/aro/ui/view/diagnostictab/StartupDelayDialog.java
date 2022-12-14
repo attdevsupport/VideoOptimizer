@@ -33,7 +33,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -527,7 +526,7 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 	public void prepVideoSegments(VideoStream videoStream) {
 		this.activeSegmentList.clear();
-		for (VideoEvent videoEvent : videoStream.getVideoEventsBySegment()) {
+		for (VideoEvent videoEvent : videoStream.getVideoActiveMap().values()) {
 			if (videoEvent.isNormalSegment() && videoEvent.isSelected()) {
 				activeSegmentMap.put(videoEvent.getPlayTime(), videoEvent);
 				activeSegmentList.add(videoEvent);
@@ -549,11 +548,8 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 		String temp =  ((TraceDirectoryResult) parentPanel.getTraceData().getAnalyzerResult().getTraceresult()).getDeviceDetail().getScreenSize();
 		String[] deviceScreenSize = stringParse.parse(temp, "(\\d+)\\*(\\d+)");
 		setDeviceScreenDimension(new Dimension(StringParse.stringToDouble(deviceScreenSize[0], 800).intValue(), StringParse.stringToDouble(deviceScreenSize[1], 600).intValue()));
-
-		String movVideoPath = traceResult.getTraceDirectory() + Util.FILE_SEPARATOR + resourceBundle.getString("video.videoDisplayFile");
-		String mp4VideoPath = traceResult.getTraceDirectory() + Util.FILE_SEPARATOR + resourceBundle.getString("video.videoFileOnDevice");
-
-		deviceVideoPath = new File(mp4VideoPath).exists() ? mp4VideoPath : movVideoPath;
+		
+		deviceVideoPath = videoPlayer.getVideoPath();
 
 		String cmd = String.format("%s -i \"%s\" %s", Util.getFFPROBE(), deviceVideoPath, " -v quiet -show_entries stream=height,width,nb_frames,duration,codec_name");
 
@@ -1513,10 +1509,11 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 				videoBestPractices.analyze(aroTraceData);
 				getGraphPanel().setTraceData(aroTraceData);
 
+				// refresh displays
 				VideoManifestPanel videoManifestPanel = segmentTablePanel.getVideoManifestPanel();
 				videoManifestPanel.refresh(segmentTablePanel.getAnalyzerResult());
 
-				mainFrame.refreshBestPracticesTab();
+				mainFrame.refresh();
 				destroy();
 			}
 		} catch (Exception ex) {

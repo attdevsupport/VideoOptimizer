@@ -43,19 +43,18 @@ import lombok.NoArgsConstructor;
 @JsonInclude(Include.NON_NULL)
 public class MetaDataModel {
 	
-	public static final String UNKNOWN = "unknown";
 	public static final String TRACE_OWNER = "traceOwner";
 
 	@Nonnull private String traceStorage = "";    
 	@Nonnull private String traceName = "";    			
 
 	@Nonnull private String description = "";      
-	@Nonnull private String traceType = UNKNOWN;             // VOD, Social, other
-	@Nonnull private String targetedApp = UNKNOWN;                             
-	@Nonnull private String applicationProducer = UNKNOWN;       
+	@Nonnull private String traceType = "";             // VOD, Social, other
+	@Nonnull private String targetedApp = "";                             
+	@Nonnull private String applicationProducer = "";       
 	
 	// auto filled in after running trace and analyzing, before results export
-	@Nonnull private String deviceOrientation = "UNKNOWN";     // PORTRAIT/LANDSCAPE                                                                                                            
+	@Nonnull private String deviceOrientation = "";     // PORTRAIT/LANDSCAPE                                                                                                            
 	@Nonnull private String phoneMake = "";                                                                                                            
 	@Nonnull private String phoneModel = "";  
 	private Dimension deviceScreenSize = null;

@@ -41,11 +41,11 @@ public class VideoUsagePrefs {
 	private double startupDelay = 10.000D; // default startup delay
 	private double maxBuffer = 100.0D; // MB
 	private double stallTriggerTime = .05D; // in seconds
-	private DUPLICATE_HANDLING duplicateHandling = DUPLICATE_HANDLING.HIGHEST;
+	private DUPLICATE_HANDLING duplicateHandling = DUPLICATE_HANDLING.LAST;
 	private boolean ffmpegConfirmationShowAgain = false;
 	private boolean ffprobeConfirmationShowAgain = false;
-	private double stallPausePoint = 0.0D;
-	private double stallRecovery = 0.0D;
+	private double stallPausePoint = 0.9D;
+	private double stallRecovery = 0.1D;
 	private double nearStall = 0.01D;
 	@Value("${preferences.video.defaultSegmentRedundancyWarnVal : 15 }")
 	private double segmentRedundancyWarnVal;

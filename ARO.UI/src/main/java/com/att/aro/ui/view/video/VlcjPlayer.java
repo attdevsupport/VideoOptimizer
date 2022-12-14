@@ -31,6 +31,7 @@ import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.nio.file.Files;
 import java.text.MessageFormat;
 
 import javax.swing.JButton;
@@ -57,6 +58,7 @@ import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.view.images.Images;
 
+import lombok.Getter;
 import uk.co.caprica.vlcj.factory.MediaPlayerFactory;
 import uk.co.caprica.vlcj.media.MediaRef;
 import uk.co.caprica.vlcj.player.base.MediaPlayer;
@@ -88,7 +90,11 @@ public class VlcjPlayer implements IVideoPlayer {
     private JPanel dummyMediaComponentCard;
     private JPanel dummyMediaComponentCardPanel;
     private String currentCard;
+    
+    @Getter
     private String videoPath;
+    @Getter
+	private boolean started = false;
 
     private static final String[] MEDIA_PLAYER_FACTORY_ARGS = {
             "--video-title=vlcj video output",
@@ -396,7 +402,7 @@ public class VlcjPlayer implements IVideoPlayer {
 
         return player.status().isPlaying();
     }
-
+    
     @Override
     public void launchPlayer(final int xPosition, final int yPosition, final int frameWidth, final int frameHeight) {
         SwingUtilities.invokeLater(new Runnable() {
@@ -550,15 +556,18 @@ public class VlcjPlayer implements IVideoPlayer {
 
     @Override
     public void loadVideo(AbstractTraceResult traceResult) {
-        /*
-         * Without calling stop(), the player view will still show the image from the
-         * previous video after calling prepareMedia() on the new video.
-         */
-        String movVideoPath = traceResult.getTraceDirectory() + Util.FILE_SEPARATOR + ResourceBundleHelper.getMessageString("video.videoDisplayFile");
-        String mp4VideoPath = traceResult.getTraceDirectory() + Util.FILE_SEPARATOR + ResourceBundleHelper.getMessageString("video.videoFileOnDevice");
+    	videoPath = aroView.getVideoFile();
+		File videoFile = null;
+		if (videoPath != null) {
+			videoFile = new File(traceResult.getTraceDirectory(), videoPath);
+			videoPath = videoFile.toString();
+		} else {
+			// This condition should never happen
+			// VideoPlayerController does not attempt when there is no video
+            LOGGER.error("no video is not available!");
+            return;
+		}
         
-        videoPath = new File(mp4VideoPath).exists() ? mp4VideoPath : movVideoPath;
-
         /*
          * start then pause in order for graph panel and video player to be able to go
          * in sync before user starts playing the video
@@ -586,8 +595,6 @@ public class VlcjPlayer implements IVideoPlayer {
             return;
         }
         
-        File videoFile = new File(videoPath);
-        
         if (videoFile != null && videoFile.exists() && videoFile.length() < 2) {
         	videoFile.delete();
         	LOGGER.info("deleted empty video file");
@@ -597,10 +604,14 @@ public class VlcjPlayer implements IVideoPlayer {
         frame.setLocation(Toolkit.getDefaultToolkit().getScreenSize().width - playerContentWidth, 0);
         frame.pack();
 
-        player.media().start(videoPath, videoOptions);
+		if ((started = player.media().start(videoPath, videoOptions)) == false) {
+			return;
+		}
+        
         // Make sure the media has been started playing
         long start = System.currentTimeMillis();
-        while (player.status().position() == 0) {
+        int timeout = 0;
+		while (player.status().position() == 0) {
             try {
                 Thread.sleep(20);
             } catch (InterruptedException e) {

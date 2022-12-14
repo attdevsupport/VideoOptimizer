@@ -63,6 +63,20 @@ public interface IAROView {
 	 */
 	void updateReportPath(File path);
 	
+	/** <Pre>
+	 * Forget previous trace and video selections
+	 * 
+	 * Clear videoFile and traffic file
+	 * prior to choosing a trace folder or pcap file 
+	 */
+	void clearPreviousTraceData();
+	
+	void setTrafficFile(String trafficFile);
+	String getTrafficFile();
+
+	void setVideoFile(String videoFile);
+	String getVideoFile();
+	
 	/**
 	 * Modify the filter associated with the ARO model
 	 * @param AnalysisFilter: filter containing time range, applications, processes selection
@@ -194,4 +208,6 @@ public interface IAROView {
 	 * @param status
 	 */
 	void setDeviceDataPulled(boolean status);
+
+	void refreshBestPracticesTab();
 }

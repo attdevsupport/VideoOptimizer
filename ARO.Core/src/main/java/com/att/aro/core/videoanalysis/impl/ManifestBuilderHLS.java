@@ -97,10 +97,8 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 			return;
 		}
 		String strData = (new String(data)).trim();
-		String[] sData = strData.split("\r\n");
-		if (sData == null || sData.length == 1) {
-			sData = strData.split("[\n\r]");
-		}
+		String[] sData = strData.replaceAll("\r\n", "\n").split("[\n\r]");
+		
 		if (sData.length < 2) {
 			LOG.debug("Invalid Playlist: " + strData);
 			return;
@@ -117,6 +115,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 		int[] byteRangeOffest = new int[] { 0 }; // for #EXT-X-BYTERANGE usage only
 		adjustDurationNeeded = false;
 		String[] flag;
+		int childFastForward = 0;
 		
 		for (int itr = 0; itr < sData.length; itr++) {
 			
@@ -166,6 +165,17 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				} else {
 					LOG.debug("Unknown HLS manifest:\n" + strData);
 					return;
+				}
+				break;
+
+			case "#EXT-X-MEDIA-SEQUENCE": // Indicates the sequence number of the first URL that appears in a playlist file
+				childFastForward = processXMediaSequence(sData, itr);
+				// childFastForward is used in 'case "#EXTINF":'
+				if (childFastForward <= itr) {
+					// do not go backwards
+					childFastForward = 0;
+				} else {
+					LOG.debug("Fastforward to line:" + childFastForward);
 				}
 				break;
 				
@@ -303,6 +313,10 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				if (childManifest == null) {
 					LOG.debug("failed to locate child manifest " + sData[++itr]);
 				} else {
+					if (childFastForward > itr) { // used in live, to skip already handled entries
+						itr = childFastForward;
+						childFastForward = 0;
+					}
 					String parameters = sData[itr];
 					byteRangeSegmentKey = "";
 					String byteRangeTagName = "#EXT-X-BYTERANGE";
@@ -325,6 +339,7 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 					}
 					
 					segmentUriName = cleanUriName(segmentUriName);
+					String orgSegmentUriName = segmentUriName;
 					urlMatchDef = defineUrlMatching(segmentUriName);
 					segmentUriName = prefixParentUrlToSegmentUrl(segmentUriName, urlMatchDef, childManifest);
 
@@ -333,10 +348,9 @@ public class ManifestBuilderHLS extends ManifestBuilder {
     				LOG.debug("EXTINF defineUrlMatching(childUriName): " + urlMatchDef);
 					
 					segmentInfo = createSegmentInfo(childManifest, parameters, segmentUriName);
-
-					String[] segmentMatch = stringParse.parse(segmentUriName, "-([0-9]*T[0-9]*)-([0-9]*)-");
-					if (segmentMatch != null) {
-						newManifest.getTimeScale();
+					segmentInfo.setSegmentUriName(orgSegmentUriName);
+					
+					if (segmentUriName.matches("-([0-9]*T[0-9]*)-([0-9]*)-")) {
 						segmentInfo.setStartTime(0);
 					}
 
@@ -358,22 +372,6 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 				break;
 
 			case "#EXT-X-KEY": // Segment is encrypted using [METHOD=____]
-				break;
-
-			case "#EXT-X-MEDIA-SEQUENCE": // Indicates the sequence number of the first URL that appears in a playlist file
-				mediaSequence = StringParse.findLabeledDoubleFromString("#EXT-X-MEDIA-SEQUENCE", ":", sData[itr]);
-				if (mediaSequence != null) {
-					if (childManifest.getSequenceStart() < 0) {
-						childManifest.setSequenceStart(mediaSequence.intValue());
-					}
-					manifestCollection.setMinimumSequenceStart(mediaSequence.intValue());
-					if (!sData[sData.length - 1].startsWith("#EXT-X-ENDLIST")) {
-						Integer pointer;
-						if ((pointer = findIndex(sData, childManifest)) != null) {
-							itr = pointer;
-						}
-					}
-				}
 				break;
 
 			case "#EXT-X-TARGETDURATION": // Specifies the maximum media-file duration.
@@ -429,20 +427,176 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 		}
 	}
 
+	private int processXMediaSequence(String[] sData, int oItr) {
+		int updateItr = oItr;
+		mediaSequence = StringParse.findLabeledDoubleFromString("#EXT-X-MEDIA-SEQUENCE", ":", sData[oItr]);
+		
+		if (mediaSequence != null) {
+			if (childManifest.getSequenceStart() < 0) {
+				childManifest.setSequenceStart(mediaSequence.intValue());
+			}
+			
+			int offset = manifestCollection.setMinimumSequenceStart(mediaSequence.intValue());
+			if (offset > 0) {
+				LOG.debug("new minimum: " + manifestCollection.getMinimumSequenceStart());
+				adjustSegmentInfo(mediaSequence, offset);
+			}
+			
+			if (!sData[sData.length - 1].startsWith("#EXT-X-ENDLIST")) { // "#EXT-X-ENDLIST" is found in VOD
+				Integer pointer =1;
+				if ((pointer = findIndex(sData, childManifest)) != null) {
+					updateItr = pointer;
+				}
+				
+				SegmentInfo matchedSegmentInfo;
+				if ((matchedSegmentInfo = synchronizeMediaSequence(sData, mediaSequence)) != null) {
+					childManifest.setSequenceStart(mediaSequence.intValue());
+					if (childManifest.isTrackChange()) {
+						childManifest.setNextSegmentID(matchedSegmentInfo.getSegmentID());
+						childManifest.setSegmentStartTime(matchedSegmentInfo.getStartTime());
+						updateItr = 0; // no fast forward
+					} else {
+						childManifest.setNextSegmentID(matchedSegmentInfo.getSegmentID() + 1);
+						childManifest.setSegmentStartTime(matchedSegmentInfo.getStartTime() + matchedSegmentInfo.getDuration());
+						updateItr = matchedSegmentInfo.getChildManifesLineIndex();
+					}
+				}
+			}
+		}
+		return updateItr;
+	}
+
 	/**
-	 * Scans, backwards from end of file, for the last segment reference processed.
+	 * Apply offsets to all existing SegmentInfo(s) to allow for an incoming Child manifest with an earlier mediSequence 
+	 * 
+	 * @param offset
+	 */
+	private void adjustSegmentInfo(Double mediaSequence, int offset) {
+		manifestCollection.getUriNameChildMap().entrySet().stream()
+			.filter(e -> e.getValue().getSequenceStart() > mediaSequence)
+				.forEach(m -> {
+					ChildManifest childManifest = m.getValue();
+					childManifest.getSegmentInfoTrie().entrySet().stream().forEach(c -> {
+						segmentInfo = c.getValue();
+						segmentInfo.setSegmentID(segmentInfo.getSegmentID() + offset);
+						segmentInfo.setStartTime(segmentInfo.getStartTime() + offset * segmentInfo.getDuration());
+					});
+				});
+	}
+
+	private SegmentInfo synchronizeMediaSequence(String[] sData, Double newMediaSequence) {
+		if (!manifestCollection.getUriNameChildMap().isEmpty()) {
+			int prevSeq = newMediaSequence.intValue() - 1;
+			int minSeq = manifestCollection.getMinimumSequenceStart();
+			Optional<Entry<String, ChildManifest>> matchd = manifestCollection.getUriNameChildMap()
+					.entrySet()
+					.parallelStream()
+					.filter(e -> e.getValue().getSequenceStart() == prevSeq)
+					.findFirst();
+			if (matchd.isPresent()) {
+				SegmentInfo segmentInfo;
+				ChildManifest cmf = matchd.get().getValue();
+				if (childManifest.getQuality() != cmf.getQuality()) {
+					childManifest.setTrackChange(true);
+					segmentInfo = findFirstOverlapIndex(sData, cmf, minSeq, prevSeq);
+				} else {
+					childManifest.setTrackChange(false);
+					segmentInfo = findLastOverlapIndex(sData, cmf, minSeq, prevSeq);
+				}
+				return segmentInfo;
+			} else {
+				LOG.debug("nothing found! for mediaSequencee:" + newMediaSequence);
+			}
+		} else {
+			LOG.error("NO prebuilt Childmanifests found!");
+		}
+		return null;
+	}
+
+	/**
+	 *  find last processed segmentUri in childManifest data
 	 * 
 	 * @param sData
-	 * @param childManifest
-	 * @return index of last segment reference, null if not found
+	 * @param cmf
+	 * @param minSeq
+	 * @param prevSeq
+	 * @return
 	 */
+	private SegmentInfo findLastOverlapIndex(String[] sData, ChildManifest cmf, int minSeq, int prevSeq) {
+		SegmentInfo segmentInfo = null;
+		int idx;
+		int lineLocation = 0;
+		for (idx = sData.length - 1; idx > 1; idx--) {
+			if (sData[idx].contains("#EXTINF:")) {
+				lineLocation = idx;
+				continue;
+			}
+			if (!sData[idx].startsWith("#") && (segmentInfo = locateSegmentInfo(cmf, sData[idx])) != null) {
+				segmentInfo.setChildManifesLineIndex(lineLocation);
+				break;
+			}
+		}
+
+		// Now have:
+		// 	segmentInfo,	the last one in cmf.getSegmentInfoTrie() 
+		// 	idx,			index of segmentUriName in current new childManifest (HLS playlist)
+		return segmentInfo;
+	}
+
+	private SegmentInfo findFirstOverlapIndex(String[] sData, ChildManifest cmf, int minSeq, int prevSeq) {
+		// VID-TODO May need to allow starting at 0 or 1 to accommodate MPEG and TS
+		SegmentInfo segmentInfo = null;
+		String segmentUriName = "";
+
+		// find first segmentUri in childManifest data
+		int idx = 0;
+		for (idx = 3; idx < sData.length - 1; idx++) {
+			if (sData[idx].contains("#EXTINF:")) {
+				if (sData[idx + 1].startsWith("#")) {
+					segmentUriName = sData[idx + 2];
+				} else {
+					segmentUriName = sData[idx + 1];
+				}
+				break;
+			}
+		}
+		String key = segmentUriName;
+
+		Optional<Entry<String, SegmentInfo>> oEntry = cmf.getSegmentInfoTrie().entrySet().stream()
+				.filter(e -> e.getKey().contains(key))
+				.findFirst();
+
+		if (oEntry.isPresent()) {
+			Entry<String, SegmentInfo> entry = oEntry.get();
+			segmentInfo = entry.getValue();
+			segmentInfo.setChildManifesLineIndex(idx);
+		}
+
+		return segmentInfo;
+	}
+
+	private SegmentInfo locateSegmentInfo(ChildManifest cmf, String childManifestSegment) {
+		String key = childManifestSegment;
+
+		Optional<Entry<String, SegmentInfo>> oEntry = cmf.getSegmentInfoTrie().entrySet().stream()
+				.filter(e -> e.getKey().contains(key))
+				.findFirst();
+
+		Entry<String, SegmentInfo> entry = oEntry.isPresent() ? oEntry.get() : null;
+		return (entry != null) ? entry.getValue() : null;
+	}
+
 	private Integer findIndex(String[] sData, ChildManifest childManifest) {
 		Integer pointer = null;
 		int segmentCount = childManifest.getNextSegmentID() - 1; // The last segmentID used
 		if (segmentCount > 0) {
 
-			Optional<Entry<String, SegmentInfo>> first = childManifest.getSegmentInfoTrie().entrySet().stream().filter(
-					(e) -> e.getValue().getSegmentID() == segmentCount).findFirst();
+			Optional<Entry<String, SegmentInfo>> first = childManifest.getSegmentInfoTrie()
+					.entrySet()
+					.stream()
+					.filter((e) -> e.getValue().getSegmentID() == segmentCount)
+					.findFirst();
+			
 			if (first.isPresent()) {
 				String key = first.get().getKey();
 				for (int idx = sData.length - 1; idx > 0; idx--) {

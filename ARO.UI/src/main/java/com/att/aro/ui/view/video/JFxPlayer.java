@@ -28,8 +28,8 @@ import java.util.HashMap;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
@@ -50,12 +50,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
+import lombok.Getter;
 
 @SuppressWarnings("restriction")
 public class JFxPlayer implements IVideoPlayer {
 
 	private static final Logger LOGGER = LogManager.getLogger(JFxPlayer.class);	
-	private String traceDirectory;
 	private AbstractTraceResult traceResult;
 	private double videoOffset;
 	private DiagnosticsTab diagnosticsTab;
@@ -66,6 +66,11 @@ public class JFxPlayer implements IVideoPlayer {
 	private int playerContentHeight;
 	private Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 	private SharedAttributesProcesses aroView;
+    
+    @Getter
+    private String videoPath;
+    @Getter
+	private boolean started = false;
 
 	public JFxPlayer(SharedAttributesProcesses aroView){
     	this.aroView = aroView;
@@ -112,8 +117,7 @@ public class JFxPlayer implements IVideoPlayer {
             }
        });
     }
-
-     
+    
     private void initFX(JFXPanel fxPanel) {
         Scene scene = createScene();
         fxPanel.setScene(scene);
@@ -150,9 +154,8 @@ public class JFxPlayer implements IVideoPlayer {
     }
 
     private void setPlayerControl() {
-    	String videoFile = traceDirectory + System.getProperty("file.separator") 
-    	+ ResourceBundleHelper.getMessageString("video.videoFileOnDevice");
-    	String mediaUrl = new File(videoFile).toURI().toString();
+    	videoPath = aroView.getVideoFile();
+    	String mediaUrl = new File(videoPath).toURI().toString();
     	
      	Media media = new Media(mediaUrl);
         mediaPlayer = new MediaPlayer(media);
@@ -201,7 +204,7 @@ public class JFxPlayer implements IVideoPlayer {
 			startTime = filter.getTimeRange().getBeginTime();
 		}
 		setMediaTime(startTime);
-		
+		started = true;
 		diagnosticsTab.setGraphPanelClicked(false);
 	}
 
@@ -284,7 +287,6 @@ public class JFxPlayer implements IVideoPlayer {
 	@Override
 	public void loadVideo(AbstractTraceResult traceResult) {
 		this.traceResult = traceResult;
-		traceDirectory = traceResult.getTraceDirectory();
 		try {
 			refresh();
 		} catch (IOException e) {
@@ -298,5 +300,10 @@ public class JFxPlayer implements IVideoPlayer {
 	@Override
 	public void notifyLauncher(boolean enabled) {
 		aroView.updateVideoPlayerSelected(enabled);
+	}
+
+	@Override
+	public boolean isStarted() {
+		return started;
 	}
 }

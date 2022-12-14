@@ -34,10 +34,12 @@ import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.util.IResultSubscriber;
 import com.att.aro.core.util.Util;
 
-import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
-import net.lingala.zip4j.util.Zip4jConstants;
+import net.lingala.zip4j.model.enums.CompressionLevel;
+import net.lingala.zip4j.model.enums.CompressionMethod;
+import net.lingala.zip4j.model.enums.EncryptionMethod;
 
 public class Compressor implements Runnable {
 	private String targetFolder;
@@ -188,8 +190,8 @@ public class Compressor implements Runnable {
 		}
 
 		ZipParameters parameters = new ZipParameters();
-		parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
-		parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_ULTRA);
+		parameters.setCompressionMethod(CompressionMethod.DEFLATE);
+		parameters.setCompressionLevel(CompressionLevel.ULTRA);
 		ZipFile zipfile;
 		try {
 			zipfile = new ZipFile(targetFolder + FILE_SEPARATOR + zippedName);

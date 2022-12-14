@@ -37,6 +37,7 @@ import javax.swing.border.EmptyBorder;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
@@ -78,8 +79,8 @@ public class MSPostDialog extends PostDialog{
 			".DS_Store"
 			, "trace.zip"
 			, "trace.zip64"
-			, "video.mov"
-			, "video.mp4"
+			, TraceDataConst.FileName.VIDEO_MOV_FILE
+			, TraceDataConst.FileName.VIDEO_MP4_FILE
 			, "video_segments"
 			, "thumbnailVideo.png"
 			, "frameImage.png"

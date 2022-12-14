@@ -34,8 +34,12 @@ import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.peripheral.pojo.ThermalStatusInfo;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.securedpacketreader.ICrypto;
+import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Common trace data returned from reading trace file
@@ -203,7 +207,7 @@ public abstract class AbstractTraceResult {
 	 * </ul>
 	 */
 	@JsonIgnore
-	protected boolean nativeVideo;
+	protected boolean deviceScreenVideo;
 
 	@JsonIgnore
 	private ICrypto crypto;
@@ -211,6 +215,11 @@ public abstract class AbstractTraceResult {
 	@JsonIgnore
 	private List<VideoEvent> videoEvents;
 	protected TraceResultType traceResultType;
+	
+	@Setter
+	@Getter
+	@JsonIgnore
+	private MetaDataModel metaData;
 
 	/**
 	 * time offset of first pcap packet from timeFile start of trace
@@ -242,7 +251,8 @@ public abstract class AbstractTraceResult {
 
 		exVideoTimeFileNotFound = false;
 		exVideoFound = false;
-		nativeVideo = false;
+		deviceScreenVideo = false;
+		metaData = null;
 	}
 
 	/**
@@ -331,8 +341,8 @@ public abstract class AbstractTraceResult {
 	/**
 	 * @return boolean true if native video (video_time)
 	 */
-	public boolean isNativeVideo() {
-		return nativeVideo;
+	public boolean isDeviceScreenVideo() {
+		return deviceScreenVideo;
 	}
 
 	/**
@@ -345,10 +355,10 @@ public abstract class AbstractTraceResult {
 
 	/**
 	 * Sets true if native video (video_time)
-	 * @param nativeVideo - true if native video (video_time)
+	 * @param deviceScreenVideo - true if native video (video_time)
 	 */
-	public void setNativeVideo(boolean nativeVideo) {
-		this.nativeVideo = nativeVideo;
+	public void setDeviceScreenVideo(boolean deviceScreenVideo) {
+		this.deviceScreenVideo = deviceScreenVideo;
 	}
 
 	/**

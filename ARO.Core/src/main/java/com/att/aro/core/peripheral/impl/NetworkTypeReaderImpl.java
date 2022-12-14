@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.pojo.NetworkBearerTypeInfo;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
@@ -66,11 +66,14 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 			String[] fields = line.split(" ");
 			if (fields.length >= 2) {
 				beginTime = Util.normalizeTime(Double.parseDouble(fields[0]), startTime);
+				
 				try {
-					networkType = getNetworkTypeFromCode(Integer.parseInt(fields[1]));
+					int overriderNetworkTypeFromCode = TraceDataConst.TraceNetworkType.UNDEFINED;
 					if (fields.length > 2) {
-						overrideNetworkType = getOverriderNetworkTypeFromCode(Integer.parseInt(fields[2]));
+						overriderNetworkTypeFromCode = Integer.parseInt(fields[2]);
+						overrideNetworkType = getOverriderNetworkTypeFromCode(overriderNetworkTypeFromCode);
 					}
+					networkType = getNetworkTypeFromCode(Integer.parseInt(fields[1]), overriderNetworkTypeFromCode);
 				} catch (NumberFormatException e) {
 					networkType = NetworkType.UNKNOWN;
 					LOGGER.warn("Invalid network type [" + fields[1] + "]");
@@ -84,10 +87,12 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 						networkTypeInfos
 								.add(new NetworkBearerTypeInfo(beginTime, endTime, networkType, overrideNetworkType));
 						try {
-							networkType = getNetworkTypeFromCode(Integer.parseInt(fields[1]));
+							int overriderNetworkTypeFromCode = TraceDataConst.TraceNetworkType.UNDEFINED;
 							if (fields.length > 2) {
-								overrideNetworkType = getOverriderNetworkTypeFromCode(Integer.parseInt(fields[2]));
+								overriderNetworkTypeFromCode = Integer.parseInt(fields[2]);
+								overrideNetworkType = getOverriderNetworkTypeFromCode(overriderNetworkTypeFromCode);
 							}
+							networkType = getNetworkTypeFromCode(Integer.parseInt(fields[1]), overriderNetworkTypeFromCode);
 						} catch (NumberFormatException e) {
 							networkType = NetworkType.UNKNOWN;
 							LOGGER.warn("Invalid network type [" + fields[1] + "]");
@@ -107,7 +112,7 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 		return obj;
 	}
 
-	private NetworkType getNetworkTypeFromCode(int networkTypeCode) {
+	private NetworkType getNetworkTypeFromCode(int networkTypeCode, int overriderNetworkTypeFromCode) {
 		switch (networkTypeCode) {
 		case TraceDataConst.TraceNetworkType.WIFI:
 			return NetworkType.WIFI;
@@ -128,7 +133,7 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 		case TraceDataConst.TraceNetworkType.HSPAP:
 			return NetworkType.HSPAP;
 		case TraceDataConst.TraceNetworkType.LTE:
-			return NetworkType.LTE;
+			 return overriderNetworkTypeFromCode == TraceDataConst.TraceNetworkType.UNDEFINED ? NetworkType.LTE : getOverriderNetworkTypeFromCode(overriderNetworkTypeFromCode);		
 		case TraceDataConst.TraceNetworkType.UNKNOWN:
 			return NetworkType.UNKNOWN;
 		default:
@@ -136,7 +141,7 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 		}
 
 	}
-	
+
 	/**
 	 * This information is provided in accordance with carrier policy and branding preferences.
 	 * The number is based on Android document from TelephonyDisplayInfo.java
@@ -147,7 +152,7 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 	private NetworkType getOverriderNetworkTypeFromCode(int overrideNetworkTypeCode) {
 		switch (overrideNetworkTypeCode) {
 		case 0:
-			return NetworkType.OVERRIDE_NETWORK_TYPE_NONE;
+			return NetworkType.UNKNOWN;
 		case 1:
 			return NetworkType.OVERRIDE_NETWORK_TYPE_LTE_CA;
 		case 2:
@@ -157,9 +162,10 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 		case 4:
 			return NetworkType.OVERRIDE_NETWORK_TYPE_NR_NSA_MMWAVE;
 		default:
-			return NetworkType.OVERRIDE_NETWORK_TYPE_NONE;
+			return NetworkType.UNKNOWN;
 		}		
 	}
+	
 
 	
 }//end class

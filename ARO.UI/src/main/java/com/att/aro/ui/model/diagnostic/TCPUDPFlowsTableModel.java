@@ -313,17 +313,8 @@ public class TCPUDPFlowsTableModel extends DataTableModel<Session> {
                     return item.getTcpPackets().size();
                 }
             case PROTOCOL_COL:
-                if (item.isUdpOnly()) {
-                    if (53 == item.getLocalPort() || 53 == item.getRemotePort()) {
-                        return ResourceBundleHelper.getMessageString("tcp.dns");
-                    } else if (443 == item.getLocalPort() || 443 == item.getRemotePort() || 80 == item.getLocalPort() || 80 == item.getRemotePort()) {
-                        return ResourceBundleHelper.getMessageString("tcp.quic");
-                    } else {
-                        return ResourceBundleHelper.getMessageString("tcp.udp");
-                    }
-                } else {
-                    return ResourceBundleHelper.getMessageString("tcp.tcp");
-                }
+            	return item.getProtocolClassification();
+            	
             case NW_LATENCY_COL:
                 if (!item.isUdpOnly() && !item.getSynAckPackets().isEmpty() && !item.getSynPackets().isEmpty()) {
                 	return item.getLatency()== -1 ? "N/A" : (item.getLatency() > 0 ? Util.formatDoubleToMicro(item.getLatency()) : "0.0");

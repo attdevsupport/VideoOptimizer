@@ -20,11 +20,12 @@ import java.io.IOException;
 
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceFileResult;
+import com.att.aro.mvc.IAROView;
 
 public interface ITraceDataReader {
 	
 	TraceFileResult readTraceFile(String traceFilePath) throws IOException;
 	
-	TraceDirectoryResult readTraceDirectory(String directoryPath) throws FileNotFoundException;
+	TraceDirectoryResult readTraceDirectory(String directoryPath, IAROView aroView) throws FileNotFoundException;
 	
 }

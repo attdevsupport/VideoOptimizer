@@ -57,7 +57,7 @@ import javax.swing.text.DefaultEditorKit;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.jsoup.helper.StringUtil;
+import org.jsoup.internal.StringUtil;
 
 import com.att.aro.core.configuration.pojo.ProfileType;
 import com.att.aro.core.packetanalysis.impl.PacketAnalyzerImpl;
@@ -196,7 +196,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 	 * @return void
 	 */
 	private void initialize() {
-		this.setSize(500, 450);
+		this.setSize(500, 500);
 		this.setResizable(false);
 		this.setModal(true);
 		this.setTitle(resourceBundle.getString("timerangeanalysis.title"));
@@ -373,7 +373,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 		if (timeRangeResultsPanel == null) {
 			timeRangeResultsPanel = new JPanel();
 			timeRangeResultsPanel.setLayout(new BorderLayout());
-			timeRangeResultsPanel.setPreferredSize(new Dimension(500, 250));
+			timeRangeResultsPanel.setPreferredSize(new Dimension(500, 300));
 			JLabel resultsLabel = new JLabel(resourceBundle.getString("timerangeanalysis.results"));
 			if (timeRangeAnalysisResultsTextArea == null) {
 				timeRangeAnalysisResultsTextArea = new JTextArea();

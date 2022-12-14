@@ -42,12 +42,11 @@ import com.att.aro.ui.commonui.UIComponent;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.AROModelObserver;
 import com.att.aro.ui.view.MainFrame;
-import com.att.aro.ui.view.statistics.DateTraceAppDetailPanel;
 
 /**
  * 
  */
-public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintable{
+public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -57,15 +56,14 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 	private JPanel mainPanel;
 	private IARODiagnosticsOverviewRoute diagnosticsOverviewRoute;
 	private MainFrame aroView;
-	private DateTraceAppDetailPanel dateTraceAppDetailPanel ;
-
+	private DateTraceAppDetailPanel dateTraceAppDetailPanel;
 
 	Insets insets = new Insets(10, 1, 10, 1);
 
 	private BpDetailResultsPanel bpDetailResultsPanel;
-	
+
 	private Map<String, Point> titleToLocation;
-	
+
 	/**
 	 * Create the panel.
 	 */
@@ -77,58 +75,44 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 		bpObservable = new AROModelObserver();
 
 		container = new JPanel(new BorderLayout());
-		
+
 		String headerTitle = ApplicationConfig.getInstance().getAppBrandName() + " "
 				+ MessageFormat.format(ResourceBundleHelper.getMessageString("bestPractices.header.result"),
 						ApplicationConfig.getInstance().getAppCombinedName());
-				
+
 		container.add(UIComponent.getInstance().getLogoHeader(headerTitle), BorderLayout.NORTH);
 
 		ImagePanel panel = new ImagePanel(null);
 		panel.setLayout(new GridBagLayout());
 
-		panel.add(layoutDataPanel(), new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0
-				, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL
-				, new Insets(10, 10, 0, 10)
-				, 0, 0));
+		panel.add(layoutDataPanel(), new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL, new Insets(10, 10, 0, 10), 0, 0));
 		container.add(panel, BorderLayout.CENTER);
 		setViewportView(container);
 		getVerticalScrollBar().setUnitIncrement(10);
 		getHorizontalScrollBar().setUnitIncrement(10);
-		
+
 		titleToLocation = new HashMap<String, Point>();
-	
+
 	}
 
 	@Override
 	public JPanel layoutDataPanel() {
 		if (mainPanel == null) {
-			
+
 			mainPanel = new JPanel(new GridBagLayout());
-		//	mainPanel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
+			// mainPanel.setBackground(UIManager.getColor(AROUIManager.PAGE_BACKGROUND_KEY));
 			mainPanel.setOpaque(false);
-			
+
 			int section = 1;
 
-			mainPanel.add(buildTopGroup(), new GridBagConstraints(
-					0, section++
-					, 1, 1
-					, 1.0, 0.0
-					, GridBagConstraints.CENTER
-					, GridBagConstraints.HORIZONTAL
-					, new Insets(0, 0, 0, 0)
-					, 0, 0));
-			
+			mainPanel.add(buildTopGroup(), new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+
 			// BP Detail -aka- AROBpDetailedResultPanel
 			bpDetailResultsPanel = new BpDetailResultsPanel(aroView, diagnosticsOverviewRoute);
-			mainPanel.add(bpDetailResultsPanel, new GridBagConstraints(
-					0, section++
-					, 1, 1
-					, 1.0, 0.0
-					, GridBagConstraints.CENTER
-					, GridBagConstraints.HORIZONTAL
-					, new Insets(0, 0, 0, 0)
-					, 0, 0));
+			mainPanel.add(bpDetailResultsPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0,
+					GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
 			bpObservable.registerObserver(bpDetailResultsPanel);
 
 		}
@@ -139,73 +123,98 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 	 * 
 	 */
 	private JPanel buildTopGroup() {
-		
-		JPanel topPanel;
-		topPanel = new JPanel(new GridBagLayout());
+
+		JPanel topPanel = new JPanel(new GridBagLayout());
 
 		topPanel.setOpaque(false);
 		topPanel.setBorder(new RoundedBorder(new Insets(20, 20, 20, 20), Color.WHITE));
 
+		JSplitPane summaryPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		int section = 0;
 
-		//top summary
-		JPanel topLeftPanel;
-		topLeftPanel = new JPanel(new GridBagLayout());
-		topLeftPanel.setOpaque(false);
+		summaryPanel.setOpaque(false);
+		summaryPanel.setBorder(new RoundedBorder(new Insets(20, 20, 20, 20), Color.WHITE));
 
 		dateTraceAppDetailPanel = new DateTraceAppDetailPanel();
-		topLeftPanel.add(dateTraceAppDetailPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		bpObservable.registerObserver(dateTraceAppDetailPanel);
+		dateTraceAppDetailPanel.setPreferredSize(getPreferredSize());
 
 		// BP Overall -aka- AROBpOverallResulsPanel
 		BpTestStatisticsPanel testStatisticsPanel = new BpTestStatisticsPanel();
-		topLeftPanel.add(testStatisticsPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		bpObservable.registerObserver(testStatisticsPanel);
+
+		TraceNotesPanel traceNotesPanel = new TraceNotesPanel(aroView);
+		traceNotesPanel.setMinimumSize(traceNotesPanel.getPreferredSize());
+		bpObservable.registerObserver(traceNotesPanel);
+
+		TraceInfoPanel traceInfoPanel = new TraceInfoPanel();
+		traceInfoPanel.setMinimumSize(traceInfoPanel.getPreferredSize());
+		bpObservable.registerObserver(traceInfoPanel);
+
+		JSplitPane traceNotesSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, traceInfoPanel, traceNotesPanel);
+		traceNotesSplitPane.setResizeWeight(0.7);
+		traceNotesSplitPane.setDividerSize(0);
+		traceNotesSplitPane.setOpaque(false);
+		traceNotesSplitPane.setBorder(null);
+
+		JSplitPane topSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, dateTraceAppDetailPanel, testStatisticsPanel);
+		topSplitPane.setResizeWeight(0.7);
+		// topSplitPane.setDividerSize(0);
+		topSplitPane.setOpaque(false);
+		topSplitPane.setBorder(null);
+
+		JSplitPane leftSplitPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topSplitPane, traceNotesSplitPane);
+		leftSplitPanel.setResizeWeight(0);
+		leftSplitPanel.setDividerSize(0);
+		leftSplitPanel.setOpaque(false);
+		leftSplitPanel.setBorder(null);
 
 		MetadataPanel metadataPanel = new MetadataPanel(aroView);
 		metadataPanel.setMinimumSize(metadataPanel.getPreferredSize());
 		bpObservable.registerObserver(metadataPanel);
-		JSplitPane topSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, topLeftPanel, metadataPanel);
-		topSplitPane.setResizeWeight(0);
-		topSplitPane.setOpaque(false);
-		topPanel.add(topSplitPane, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
+
+		DeviceInfoPanel deviceInfoPanel = new DeviceInfoPanel(aroView);
+		deviceInfoPanel.setMinimumSize(deviceInfoPanel.getPreferredSize());
+		bpObservable.registerObserver(deviceInfoPanel);
+
+		JSplitPane rightSplitPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, deviceInfoPanel, metadataPanel);
+		rightSplitPanel.setResizeWeight(0);
+		rightSplitPanel.setDividerSize(0);
+		rightSplitPanel.setOpaque(false);
+		rightSplitPanel.setBorder(null);
+
+		summaryPanel.add(leftSplitPanel);
+		summaryPanel.add(rightSplitPanel);
+		summaryPanel.setResizeWeight(0);
+
+		topPanel.add(summaryPanel, new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, insets, 0, 0));
 		
 		// Separator
-		topPanel.add(UIComponent.getInstance().getSeparator()
-				, new GridBagConstraints(0, section++
-										, 1, 1
-										, 1.0, 0.0
-										, GridBagConstraints.CENTER
-										, GridBagConstraints.HORIZONTAL
-										, new Insets(0, 0, 10, 0)
-										, 0, 0));
-
+		topPanel.add(UIComponent.getInstance().getSeparator(), new GridBagConstraints(0, section++, 1, 1, 1.0, 0.0,
+				GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 10, 0), 0, 0));
 
 		// BP Overall -aka- AROBpOverallResulsPanel
 		BpTestsConductedPanel bpTestsConductedPanel = new BpTestsConductedPanel(this);
-		topPanel.add(bpTestsConductedPanel, new GridBagConstraints(
-				0, section++ 						//   int gridx, int gridy
-				, 1, 1 								// , int gridwidth,  int gridheight
-				, 0.0, 0.0 							// , double weightx, double weighty
-				, GridBagConstraints.CENTER 		// , int anchor
-				, GridBagConstraints.HORIZONTAL 	// , int fill
-				, new Insets(0, 0, 0, 0) 			// , Insets insets
-				, 0, 0)); 							// , int ipadx, int ipady
+		topPanel.add(bpTestsConductedPanel, new GridBagConstraints(0, section++ // int gridx, int gridy
+				, 1, 1 // , int gridwidth, int gridheight
+				, 0.0, 0.0 // , double weightx, double weighty
+				, GridBagConstraints.CENTER // , int anchor
+				, GridBagConstraints.HORIZONTAL // , int fill
+				, new Insets(0, 0, 0, 0) // , Insets insets
+				, 0, 0)); // , int ipadx, int ipady
 		bpObservable.registerObserver(bpTestsConductedPanel);
-		
+
 		return topPanel;
 	}
 
 	/**
-	 * Refreshes the AROBestPracticesTab using the specified trace analysis
-	 * data. This method is typically called when a new trace file is loaded.
+	 * Refreshes the AROBestPracticesTab using the specified trace analysis data.
+	 * This method is typically called when a new trace file is loaded.
 	 * 
-	 * @param analysisData
-	 *            The trace analysis data.
+	 * @param analysisData The trace analysis data.
 	 */
 	@Override
 	public void refresh(AROTraceData aModel) {
-		//System.out.println("---------BestPracticesTab.refresh(AROTraceData)");
 		bpObservable.refreshModel(aModel);
 	}
 
@@ -216,6 +225,7 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 
 	/**
 	 * Triggers and expansion of any tableViews that need expanding before returning the container.
+	 * 
 	 * @return a JPanel prepared for printing everything
 	 */
 	@Override
@@ -226,9 +236,9 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 
 	@Override
 	public void setScrollLocationMap() {
-		int startY = getStartPointY();	// start point
+		int startY = getStartPointY(); // start point
 		int screenHeight = (int) Toolkit.getDefaultToolkit().getScreenSize().getHeight();
-		
+
 		ArrayList<BpDetail> sectionList = bpDetailResultsPanel.getExpandableList();
 
 		for (BpDetail section : sectionList) {
@@ -236,19 +246,19 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 
 			int headerHeight = (int) (section.getHeader().getBounds().getHeight()
 					+ section.getDateTraceAppDetailPanel().getBounds().getHeight());
-			startY += headerHeight + 10;	// Insets from BestPracticesTab, for the top of each section
+			startY += headerHeight + 10; // Insets from BestPracticesTab, for the top of each section
 
 			for (BpDetailItem item : itemList) {
 				Point p = new Point(0, startY + screenHeight);
 				titleToLocation.put(item.getNameTextLabel().getText(), p);
 
-				startY += item.getBounds().getHeight() + 2;	// Insets from BpDetail panel
+				startY += item.getBounds().getHeight() + 2; // Insets from BpDetail panel
 			}
-			
-			startY += 10;	// Insets from BestPracticesTab, for the bottom of each section
+
+			startY += 10; // Insets from BestPracticesTab, for the bottom of each section
 		}
 	}
-	
+
 	private int getStartPointY() {
 		return (int) bpDetailResultsPanel.getLocation().getY();
 	}
@@ -260,5 +270,5 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 	public DateTraceAppDetailPanel getDateTraceAppDetailPanel() {
 		return dateTraceAppDetailPanel;
 	}
-	
+
 }

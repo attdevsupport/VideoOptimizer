@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.datacollector.ioscollector.attenuator;
 
 import java.util.Date;
@@ -23,7 +38,7 @@ public class MitmAttenuatorImpl {
 	private LittleProxyWrapper littleProxy;
  	public static final String COLLECT_OPTIONS = "collect_options";
  	private static final int THREAD_NUM = 3;
-    public void startCollect(String traceFolder,int throttleReadStream, int throttleWriteStream,
+    public void startCollect(String traceFolder,int throttleReadStream, int throttleWriteStream,boolean secure,
     		SaveCollectorOptions saveCollectorOptions, StatusResult status, String sudoPassword, String trafficFilePath) {
 		LOG.info("Launch mitm and pcap4j thread pool");
 		startDate = new Date();
@@ -31,7 +46,7 @@ public class MitmAttenuatorImpl {
 		int throttleWriteStreambps = throttleWriteStream*128;
 		LOG.info("Little proxy throttle: "+"throttleReadStreambps: "
 			    + throttleReadStreambps + "throttleWriteStreambps: "+ throttleWriteStreambps );
-		recordCollectOptions(traceFolder, 0, 0, throttleReadStream, throttleWriteStream, false, "",
+		recordCollectOptions(traceFolder, 0, 0, throttleReadStream, throttleWriteStream, false, secure, "",
 				"PORTRAIT", saveCollectorOptions);
 		littleProxy = new LittleProxyWrapper(status, sudoPassword, trafficFilePath);
 		littleProxy.setThrottleReadStream(throttleReadStreambps);
@@ -39,7 +54,6 @@ public class MitmAttenuatorImpl {
 	    littleProxy.setTraceFolder(traceFolder);
    		pool = Executors.newFixedThreadPool(THREAD_NUM);
  		pool.execute(littleProxy);
- 		
      }
     
     public void stopCollect() {
@@ -48,7 +62,6 @@ public class MitmAttenuatorImpl {
     		littleProxy.stop();	
     		stopDate = new Date();
     	}
-		
 		if(pool!=null) {
 			pool.shutdown();
 			try {
@@ -70,7 +83,7 @@ public class MitmAttenuatorImpl {
     }
     
 	private void recordCollectOptions(String trafficFilePath, int delayTimeDL, int delayTimeUL, int throttleDL,
-			int throttleUL, boolean atnrProfile, String atnrProfileName, String videoOrientation,
+			int throttleUL, boolean atnrProfile, boolean secure, String atnrProfileName, String videoOrientation,
 			SaveCollectorOptions writeCollectOption) {
 		LOG.info("set Down stream Delay Time: " + delayTimeDL + " set Up stream Delay Time: " + delayTimeUL
 				+ " set Profile: " + atnrProfile + " set Profile name: " + atnrProfileName);
@@ -81,7 +94,7 @@ public class MitmAttenuatorImpl {
 		if (throttleUL == 0) {
 			throttleUL = -1;
 		}
-		writeCollectOption.recordCollectOptions(trafficFilePath, 0, 0, throttleDL, throttleUL, atnrProfile,
+		writeCollectOption.recordCollectOptions(trafficFilePath, 0, 0, throttleDL, throttleUL, atnrProfile, secure,
 				atnrProfileName, "PORTRAIT");
 
 	}

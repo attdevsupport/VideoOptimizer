@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 AT&T
+ *  Copyright 2019, 2022 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,18 +44,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
-/**
- * <pre>
- * 
- *  >>into some other object(s) held here
- *   ⁃ chunksBySegment
- *   ⁃ chunkPlayTimeList
- *   ⁃ veManifestList (what is this)
- *   ⁃ filteredSegments
- *   ⁃ allSegments (what is this)
- *   ⁃ duplicateChunks
- *
- */
 @Data
 @EqualsAndHashCode(callSuper=false)
 @JsonIgnoreType
@@ -189,7 +177,7 @@ public class StreamingVideoData extends AbstractBestPracticeResult {
 				continue;
 			}
 			if (lastEvent != null && event.getSegmentID() != lastEvent.getSegmentID()) {
-				double dif = event.getPlayTime() - lastEvent.getPlayTimeEnd();
+				double dif = event.getPlayTime() - (lastEvent.getPlayTimeEnd() + lastEvent.getStallTime());
 				if (dif > threshold) {
 					// found gap, could be one or many segments missing
 					LOG.debug(String.format("GAP after %s, segment:%.0f", lastEvent.getContentType().toString(), lastEvent.getSegmentID()));

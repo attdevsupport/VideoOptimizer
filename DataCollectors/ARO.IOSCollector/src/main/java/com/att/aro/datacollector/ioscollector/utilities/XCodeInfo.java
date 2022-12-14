@@ -15,12 +15,11 @@
  */
 package com.att.aro.datacollector.ioscollector.utilities;
 
-import java.io.IOException;
-
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-import com.att.aro.datacollector.ioscollector.reader.ExternalProcessRunner;
+import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
 
 import lombok.Data;
 
@@ -29,18 +28,17 @@ public class XCodeInfo {
 
 	private static final Logger LOG = LogManager.getLogger(XCodeInfo.class);
 
-	ExternalProcessRunner runner = null;
-    private boolean xcodeCLTError = false;
+	IExternalProcessRunner extRunner = null;
+	private boolean xcodeCLTError = false;
 	private String path = null;
 	private String xcodeVersion;
 
-
 	public XCodeInfo() {
-		runner = new ExternalProcessRunner();
+		extRunner = new ExternalProcessRunnerImpl();
 	}
 
-	public XCodeInfo(ExternalProcessRunner runner) {
-		this.runner = runner;
+	public XCodeInfo(IExternalProcessRunner extRunner) {
+		this.extRunner = extRunner;
 	}
 
 	/**
@@ -50,29 +48,16 @@ public class XCodeInfo {
 	 * @return true or false
 	 */
 	public boolean isRVIAvailable() {
-		if (path != null) {
+		if (path == null) {
+			String result = extRunner.executeCmd("which rvictl");
+			if (result != null && result.length() > 1) {
+				this.path = result.trim();
+				return true;
+			}
+		} else {
 			return true;
 		}
-		return (isRVIAvailable("") || isRVIAvailable("/Library/Apple/usr/bin/"));
-	}
-
-	public boolean isRVIAvailable(String path) {
-		boolean isAvailable = false;
-		String[] cmd = new String[] { "bash", "-c", "which " + path + "rvictl" };
-		String result = "";
-
-		try {
-			result = runner.runCmd(cmd);
-		} catch (IOException e) {
-			LOG.debug("IOException:", e);
-		}
-
-		if (result != null && result.length() > 1) {
-			isAvailable = true;
-			this.path = result.trim();
-		}
-
-		return isAvailable;
+		return false;
 	}
 
 	public String getPath() {
@@ -84,7 +69,7 @@ public class XCodeInfo {
 		}
 		return path;
 	}
-	
+
 	/**
 	 * Find whether xcode is installed or not.
 	 * 
@@ -92,15 +77,10 @@ public class XCodeInfo {
 	 */
 	public boolean isXcodeAvailable() {
 		boolean flag = false;
-		String[] cmd = new String[] { "bash", "-c", "which xcodebuild" };
 		String xCode = "";
 
-		try {
-			xCode = runner.runCmd(cmd);
-			LOG.info("xCode Installation Dir : " + xCode);
-		} catch (IOException ioE) {
-			LOG.debug("IOException:", ioE);
-		}
+		xCode = extRunner.executeCmd("which xcodebuild");
+		LOG.info("xCode Installation Dir : " + xCode);
 
 		if (xCode != null && xCode.length() > 1) {
 			flag = true;
@@ -117,20 +97,14 @@ public class XCodeInfo {
 	 */
 	public boolean isXcodeSupportedVersionInstalled() {
 		boolean supportedVersionFlag = false;
-		String[] cmd = new String[] { "bash", "-c", "xcodebuild -version" };
-		String xCodeVersion = "";
-		try {
-			xCodeVersion = runner.runCmd(cmd);
-			LOG.info("xCode Version : " + xCodeVersion);
-		} catch (IOException ex) {
-			LOG.debug("IOException:", ex);
-		}
+		String xCodeVersion = extRunner.executeCmd("xcodebuild -version");
+		LOG.info("xCode Version : " + xCodeVersion);
 		if (!xCodeVersion.isEmpty()) {
 			String[] version = xCodeVersion.split("\\r?\\n");
 			String xCode = version[0];
 			String versionOfxCode = xCode.substring(xCode.indexOf(" "));
 			if (versionOfxCode != null) {
-				xcodeVersion  = versionOfxCode.trim();
+				xcodeVersion = versionOfxCode.trim();
 			}
 
 			LOG.info(" Version Code : " + xcodeVersion);
@@ -154,7 +128,5 @@ public class XCodeInfo {
 	public boolean isXcodeCLTError() {
 		return xcodeCLTError;
 	}
-	
-	
-}//end class
 
+}

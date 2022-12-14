@@ -71,12 +71,14 @@ public class PacketDataItem extends YIntervalDataItem{
 			double beginTime = packets.get(0).getTimeStamp();
 			double endTime = packets.get(packets.size() - 1).getTimeStamp();
 
-			displayInfo.append(MessageFormat.format(SESSION_TOOLTIP,
-					beginTime, endTime, session.getRemoteIP()
-							.getHostAddress(),
-					 Integer.toString(session.getRemotePort()),
-					 Integer.toString(session.getLocalPort())));
-		}
+			displayInfo.append(MessageFormat.format(SESSION_TOOLTIP
+					, session.getProtocolClassification()
+					, beginTime
+					, endTime
+					, session.getRemoteIP().getHostAddress()
+					, Integer.toString(session.getRemotePort())
+					, Integer.toString(session.getLocalPort())));
+}
 		
 		// Delete the httpinfo from the 4.1.1 code,verified redundancy.
 		
