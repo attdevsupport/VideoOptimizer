@@ -20,7 +20,7 @@ import java.net.URISyntaxException;
 import java.util.regex.Matcher;
 
 import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 
 import com.att.aro.core.packetanalysis.IParseHeaderLine;

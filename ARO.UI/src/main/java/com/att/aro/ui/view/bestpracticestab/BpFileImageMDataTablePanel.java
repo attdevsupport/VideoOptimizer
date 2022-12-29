@@ -20,7 +20,7 @@ import java.util.Collection;
 
 import javax.swing.JTable;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.att.aro.core.bestpractice.pojo.ImageMdataEntry;
 import com.att.aro.core.pojo.AROTraceData;

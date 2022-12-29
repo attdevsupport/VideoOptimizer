@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>4.5.0</version>
+        <version>${vo.version}</version>
         <relativePath>../../ARO.Parent</relativePath>
     </parent>
 
@@ -14,11 +14,7 @@
 	<packaging>jar</packaging>
 	<name>VO IOS Collector</name>
 	<description>IOS data collector for ARO.</description>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.deploy.skip>true</maven.deploy.skip>
-		<vo.version>4.5.0</vo.version>		
-	</properties>
+	
 	<licenses>
 		<license>
 			<name>Apache v2</name>
@@ -27,171 +23,37 @@
 		</license>
 	</licenses>
 
-	<repositories>
-		<repository>
-			<id>central</id>
-			<name>Central Repository</name>
-			<url>https://repo1.maven.org/maven2/</url>
-		</repository>
-		<repository>
-			<id>apache.snapshots</id>
-			<name>Apache Development Snapshot Repository</name>
-			<url>https://repository.apache.org/content/repositories/snapshots/</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>sonatype-public</id>
-			<name>Sonatype Public</name>
-			<url>http://repository.sonatype.org/content/groups/public</url>
-		</repository>
-	</repositories>
-
-	<pluginRepositories>
-		<pluginRepository>
-			<id>central</id>
-			<name>Maven Plugin Repository</name>
-			<url>https://repo1.maven.org/maven2/</url>
-			<layout>default</layout>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<releases>
-				<updatePolicy>never</updatePolicy>
-			</releases>
-		</pluginRepository>
-	</pluginRepositories>
-
 	<dependencies>
 		<dependency>
 			<groupId>com.att.aro</groupId>
 			<artifactId>vo-core</artifactId>
 			<version>${vo.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>javax.media</groupId>
-			<artifactId>jmf</artifactId>
-			<version>2.1.1e</version>
-		</dependency>
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
-			<version>2.4</version>
-			<!-- <scope>provided</scope> -->
-		</dependency>
-		<dependency>
-		    <groupId>org.codehaus.mojo</groupId>
-		    <artifactId>findbugs-maven-plugin</artifactId>
-		    <version>3.0.4</version>
-		</dependency>
-		<dependency>
-		   <groupId>com.github.ganskef</groupId>
-		   <artifactId>littleproxy-mitm</artifactId>
-		   <version>1.1.0</version>
-		</dependency>
-		<dependency>
-		  <groupId>org.nanohttpd</groupId>
-		  <artifactId>nanohttpd</artifactId>
-		  <version>2.3.1</version>
-		</dependency>		
-		<dependency>
-			<groupId>org.nanohttpd</groupId>
-			<artifactId>nanohttpd-webserver</artifactId>
-			<version>2.3.1</version>
-		</dependency>
-		<dependency>
-		  <groupId>org.projectlombok</groupId>
-		  <artifactId>lombok</artifactId>
-		  <version>1.18.2</version>
-		  <scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.assertj</groupId>
-			<artifactId>assertj-core</artifactId>
-			<version>3.11.1</version>
-			<scope>test</scope>
-		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.7.1.1</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
+					<effort>Max</effort>
+					<threshold>Max</threshold>
+					<maxRank>15</maxRank>
+					<xmlOutput>true</xmlOutput>
+					<xmlOutputDirectory>${project.build.directory}/spotBugs</xmlOutputDirectory>
 				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.4</version>
-				<configuration>
-					<outputDirectory>${basedir}/libs</outputDirectory>
-					<archive>
-						<manifest>
-							<addClasspath>true</addClasspath>
-							<mainClass>${main.class}</mainClass>
-						</manifest>
-					</archive>
-				</configuration>
-			</plugin>
-			<plugin>
-	            <groupId>org.codehaus.mojo</groupId>
-	            <artifactId>findbugs-maven-plugin</artifactId>
-	            <version>3.0.4</version>
-	            <configuration>
-	            	<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
-	                <effort>Max</effort>
-	                <threshold>Max</threshold>
-	                <maxRank>15</maxRank>
-	                <xmlOutput>true</xmlOutput>
-	                <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-	            </configuration>
-	            <executions>
-	                <execution>
-	                    <id>analyze-compile</id>
-	                    <!-- <phase>compile</phase> -->
-	                    <goals>
-	                        <goal>check</goal>
-	                    </goals>
-	                </execution>
-	            </executions>
-	        </plugin>
-			<plugin>
-				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
 					<execution>
-						<phase>install</phase>
+						<id>analyze-compile</id>
 						<goals>
-							<goal>copy-dependencies</goal>
+							<goal>check</goal>
 						</goals>
-						<configuration>
-							<outputDirectory>${basedir}/libs</outputDirectory>
-						</configuration>
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.17</version>
-				<dependencies>
-					<dependency>
-						<groupId>org.apache.maven.surefire</groupId>
-						<artifactId>surefire-junit47</artifactId>
-						<version>2.16</version>
-					</dependency>
-				</dependencies>
-			</plugin>
 		</plugins>
 	</build>
-
 </project>

@@ -73,7 +73,6 @@ public class Session implements Serializable, Comparable<Session> {
 	private PacketInfo dnsResponsePacket;
 	private PacketInfo lastSslHandshakePacket;
 	
-	private boolean iOSSecureSession;
 	
 	private boolean dataInaccessible = false;
 	
@@ -93,6 +92,8 @@ public class Session implements Serializable, Comparable<Session> {
 	
 	/**
 	 * SNI name in the Client Hello request for TCP or UDP SSL/QUIC sessions
+	 * Currently this is might not populated for every Session do to Client Hello being in separate packets.
+	 * Refer to ServerNameIndicationDialog.getSNIData()
 	 */
 	private String serverNameIndication;
 
@@ -291,14 +292,9 @@ public class Session implements Serializable, Comparable<Session> {
 	 * @return The start time of the session.
 	 */
 	public double getSessionStartTime() {
-		if (tcpPackets != null && !tcpPackets.isEmpty()) {
-			return tcpPackets.get(0).getTimeStamp();
+		if (allPackets != null) {
+			return allPackets.get(0).getTimeStamp();
 		}
-
-		if (udpPackets != null && !udpPackets.isEmpty()) {
-			return udpPackets.get(0).getTimeStamp();
-		}
-
 		return 0.0;
 	}
 
@@ -309,15 +305,9 @@ public class Session implements Serializable, Comparable<Session> {
 	 * @return The end time of the session.
 	 */
 	public double getSessionEndTime() {
-		
-		if (tcpPackets != null && !tcpPackets.isEmpty()) {
-			return tcpPackets.get(tcpPackets.size() - 1).getTimeStamp();
+		if (allPackets != null) {
+			return allPackets.get(allPackets.size() - 1).getTimeStamp();
 		}
-
-		if (udpPackets != null && !udpPackets.isEmpty()) {
-			return udpPackets.get(udpPackets.size() - 1).getTimeStamp();
-		}
-
 		return 0.0;
 	}
 

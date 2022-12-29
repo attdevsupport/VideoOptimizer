@@ -30,12 +30,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.hyperic.sigar.Sigar;
-
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
@@ -201,8 +199,9 @@ public final class JvmSettings implements Settings {
 			try {
 				if (Util.isMacOS()) {
 					// locate MB
-					Sigar sigar = new Sigar();
-					installedRam = sigar.getMem().getRam();
+					String cmd = "sysctl -n hw.memsize";
+					String result = externalProcessRunner.executeCmd(cmd);
+					installedRam = Math.round(StringParse.stringToDouble(result, 0).longValue() / Double.valueOf(MULTIPLIER * MULTIPLIER));
 				} else if (Util.isWindowsOS()) {
 					// locate Bytes convert to MB
 					String cmd = "wmic memorychip get capacity";

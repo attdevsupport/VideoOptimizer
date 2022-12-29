@@ -17,10 +17,9 @@ package com.att.aro.core.mobiledevice.pojo;
 
 import java.util.ArrayList;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.SpringContextUtil;
@@ -29,8 +28,7 @@ import com.att.aro.core.mobiledevice.IAndroidDevice;
 
 public class AroDevices implements IAroDevices {
 
-	private static final Logger LOG = LogManager.getLogger(AroDevices.class.getName());	
-	private ApplicationContext context = SpringContextUtil.getInstance().getContext();
+	private static final Logger LOG = LogManager.getLogger(AroDevices.class.getName());
 
 	ArrayList<IAroDevice> deviceList = null;
 
@@ -40,7 +38,7 @@ public class AroDevices implements IAroDevices {
 	public AroDevices() {
 		deviceList = new ArrayList<IAroDevice>();
 		if (androidDev == null) {
-			androidDev = context.getBean(IAndroidDevice.class);
+			androidDev = SpringContextUtil.getInstance().getContext().getBean(IAndroidDevice.class);
 		}
 	}
 

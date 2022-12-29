@@ -17,6 +17,7 @@ package com.att.aro.datacollector.norootedandroidcollector.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,28 +44,22 @@ import com.att.aro.core.concurrent.IThreadExecutor;
 import com.att.aro.core.datacollector.IVideoImageSubscriber;
 import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
 import com.att.aro.core.video.IVideoCapture;
 import com.att.aro.core.video.pojo.VideoOption;
 
 public class NorootedAndroidCollectorImplTest{
 	
-	@Mock
-	Logger logMock;
-	@Mock
-	IReadWriteFileExtractor extractor;
-	@Mock
-	IThreadExecutor threadExecutor;
-	@Mock
-	IVideoCapture videoCapture;
-	@Mock
-	IDevice device;
-	@Mock
-	IAdbService adbService;
-	@Mock
-	IFileManager fileManager;
-	@Mock
-	IAndroid android;
+	@Mock Logger logMock;
+	@Mock IReadWriteFileExtractor extractor;
+	@Mock IThreadExecutor threadExecutor;
+	@Mock IVideoCapture videoCapture;
+	@Mock IDevice device;
+	@Mock IAdbService adbService;
+	@Mock IFileManager fileManager;
+	@Mock IAndroid android;
+	@Mock IAroDevice selectedAroDevice;
 	
 	String[] noVpnCon = {"some ip "};
 	String[] vpnActive = {"some ip ", "tun0: ip 10. some"};
@@ -99,6 +94,9 @@ public class NorootedAndroidCollectorImplTest{
 		
 		Mockito.doNothing().when(logMock).info(Mockito.anyString());
 		Mockito.doNothing().when(logMock).debug(Mockito.anyString());
+		
+
+		when(selectedAroDevice.getId() ).thenReturn("device1");
 	}
 
 	@Ignore
@@ -113,7 +111,7 @@ public class NorootedAndroidCollectorImplTest{
 		StatusResult sResult= null;
 		
 		
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, "testDeice", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, null, extranalParams, null);
 		
 		assertEquals(402, sResult.getError().getCode());
 		
@@ -122,7 +120,7 @@ public class NorootedAndroidCollectorImplTest{
 		
 		Mockito.when(fileManager.directoryExist(Mockito.anyString())).thenReturn(false);
 		
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, "testDeice", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, null, extranalParams, null);
 		assertEquals(406, sResult.getError().getCode());
 		
 		Mockito.when(fileManager.directoryExist(Mockito.anyString())).thenReturn(true);
@@ -138,7 +136,7 @@ public class NorootedAndroidCollectorImplTest{
 			exp.printStackTrace();
 		}
 		
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, "testDeice", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, null, extranalParams, null);
 		assertEquals(403, sResult.getError().getCode());
 		
 		try {
@@ -147,7 +145,7 @@ public class NorootedAndroidCollectorImplTest{
 			exp.printStackTrace();
 		}
 		
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, "testDeice", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, null, extranalParams, null);
 		assertEquals(404, sResult.getError().getCode());
 		
 		Mockito.when(android.removeEmulatorData(Mockito.any(IDevice.class), Mockito.anyString())).thenReturn(true);
@@ -159,24 +157,24 @@ public class NorootedAndroidCollectorImplTest{
 		
 		Mockito.when(fileManager.fileExist(Mockito.anyString())).thenReturn(true);
 		Mockito.when(android.runApkInDevice(Mockito.any(IDevice.class),Mockito.anyString())).thenReturn(false);
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, "device1", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, selectedAroDevice, extranalParams, null);
 		
 		assertEquals(405, sResult.getError().getCode());
 		
 		Mockito.when(fileManager.fileExist(Mockito.anyString())).thenReturn(false);
 		Mockito.when(extractor.extractFiles(Mockito.anyString(), Mockito.anyString(), Mockito.any(ClassLoader.class))).thenReturn(false);
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, "device1", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, selectedAroDevice, extranalParams, null);
 		assertEquals(401, sResult.getError().getCode());
 		
 		Mockito.when(android.getShellReturn(Mockito.any(IDevice.class), Mockito.anyString())).thenReturn(noVpnCon);
 		Mockito.when(fileManager.fileExist(Mockito.anyString())).thenReturn(true);
 		Mockito.when(android.runApkInDevice(Mockito.any(IDevice.class),Mockito.anyString())).thenReturn(true);
-	//	sResult = nonRootedAndroidCollector.startCollector(true, "test", false, "device1", extranalParams, null);
+	//	sResult = nonRootedAndroidCollector.startCollector(true, "test", false, selectedAroDevice, extranalParams, null);
 	//	assertEquals(407, sResult.getError().getCode());
 		
 		Mockito.when(android.getShellReturn(Mockito.any(IDevice.class), Mockito.anyString())).thenReturn(noVpnCon).thenReturn(vpnActive);
 		
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, "device1", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.NONE, false, selectedAroDevice, extranalParams, null);
 		
 		assertTrue(sResult.isSuccess());
 		
@@ -197,7 +195,7 @@ public class NorootedAndroidCollectorImplTest{
 		}
 		
 		Mockito.when(android.getShellReturn(Mockito.any(IDevice.class), Mockito.anyString())).thenReturn(noVpnCon).thenReturn(vpnActive);		
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.LREZ, false, "device1", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.LREZ, false, selectedAroDevice, extranalParams, null);
 		
 		assertTrue(sResult.isSuccess());
 		
@@ -211,7 +209,7 @@ public class NorootedAndroidCollectorImplTest{
 		}
 		
 		Mockito.when(android.getShellReturn(Mockito.any(IDevice.class), Mockito.anyString())).thenReturn(noVpnCon).thenReturn(vpnActive);		
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.LREZ, false, "device1", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.LREZ, false, selectedAroDevice, extranalParams, null);
 		assertEquals(400, sResult.getError().getCode());
 		
 	}
@@ -312,7 +310,7 @@ public class NorootedAndroidCollectorImplTest{
 		
 		nonRootedAndroidCollector.stopRunning();
 		Mockito.when(android.getShellReturn(Mockito.any(IDevice.class), Mockito.anyString())).thenReturn(noVpnCon).thenReturn(vpnActive);		
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.LREZ, false, "device1", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", VideoOption.LREZ, false, selectedAroDevice, extranalParams, null);
 		
 		assertTrue(sResult.isSuccess());
 		
@@ -346,7 +344,7 @@ public class NorootedAndroidCollectorImplTest{
 			e.printStackTrace();
 		}
 		
-		sResult = nonRootedAndroidCollector.startCollector(true, "test", true, "device1", extranalParams, null);
+		sResult = nonRootedAndroidCollector.startCollector(true, "test", true, selectedAroDevice, extranalParams, null);
 		
 		assertTrue(sResult.isSuccess());
 

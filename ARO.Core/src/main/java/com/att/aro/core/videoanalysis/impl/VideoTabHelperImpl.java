@@ -20,7 +20,7 @@ package com.att.aro.core.videoanalysis.impl;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.att.aro.core.packetanalysis.IVideoTrafficCollector;

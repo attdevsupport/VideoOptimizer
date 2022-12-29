@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,7 +38,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,10 +106,87 @@ public class FileManagerImpl implements IFileManager {
 	}
 
 	@Override
+	public boolean move(File source, String destination) {
+		return move(source.toString(), destination);
+	}
+	
+	@Override
+	public boolean move(String source, String destination) {
+		Path temp = null;
+		try {
+			temp = Files.move(Paths.get(source), Paths.get(destination));
+		} catch (IOException e) {
+			LOGGER.error(String.format("Failed to move: %s > %s", source, destination), e);
+		}
+		return temp != null;
+	}
+	
+	@Override
+	public boolean copy(File source, File destination) {
+		try {
+			Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
+		} catch (IOException e) {
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public boolean copy(String source, String destination) {
+		return copy(new File(source), new File(destination));
+	}
+	
+	@Override
 	public boolean fileExist(String path) {
 		return Files.exists(Paths.get(path));
 	}
 
+	@Override
+	public boolean createLink(File link, File target) {
+		if (link.exists()) {
+			return false;
+		}
+		try {
+			Files.createLink(link.toPath(), target.toPath());
+		} catch (IOException e) {
+			LOGGER.error("Failed to createLink :", e);
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public boolean createLink(String link, String target) {
+		return createLink(new File(link), new File(target));
+	}
+	
+	@Override
+	public boolean createSymbolicLink(File link, File target) {
+		if (Util.isWindowsOS()) {
+			// For Windows create a hard link instead
+			return createLink(link, target);
+		}
+		if (link.exists()) {
+			return false;
+		}
+		try {
+			Files.createSymbolicLink(link.toPath(), target.toPath());
+		} catch (IOException e) {
+			LOGGER.error("Failed to create SymbolicLink: ", e);
+			return false;
+		}
+		return true;
+	}
+	
+	@Override
+	public boolean createSymbolicLink(String link, String target) {
+		if (Util.isWindowsOS()) {
+			// For Windows create a hard link instead
+			return createLink(new File(link), new File(target));
+		}
+		return createSymbolicLink(new File(link), new File(target));
+	}
+	
 	@Override
 	public boolean fileExist(String folder, String file) {
 		return Files.exists(Paths.get(folder, file));
@@ -141,9 +219,14 @@ public class FileManagerImpl implements IFileManager {
 	}
 
 	@Override
-	public File createEmptyFile(File traceFolder, String fileName) {
+	public File createEmptyFile(String folder, String file) {
+		return createEmptyFile(new File(folder), file);
+	}
+	
+	@Override
+	public File createEmptyFile(File folder, String fileName) {
 		try {
-			File temp = createFile(traceFolder, fileName);
+			File temp = createFile(folder, fileName);
 			temp.createNewFile();
 			return temp;
 		} catch (IOException e) {
@@ -197,7 +280,11 @@ public class FileManagerImpl implements IFileManager {
 
 	@Override
 	public boolean deleteFolderContents(String folderPath) {
-
+		File folder = new File(folderPath);
+		if (!folder.exists()) {
+			mkDir(folder);
+			return true;
+		}
 		String[] files = list(folderPath, null);
 		boolean delResult = true;
 		for (String file : files) {
@@ -207,7 +294,7 @@ public class FileManagerImpl implements IFileManager {
 			}
 			boolean tempResult = deleteFile(filepath);
 			delResult = delResult && tempResult;
-			LOGGER.debug("delete :" + file + (tempResult ? " deleted" : " failed"));
+			LOGGER.debug("delete :" + filepath + (tempResult ? " deleted" : " failed"));
 		}
 		return delResult;
 	}
@@ -408,7 +495,10 @@ public class FileManagerImpl implements IFileManager {
 					+ "fi\n";
 			cmd = cmd.replaceAll("%path%", tracePath.getAbsolutePath());
 			String results = extrunner.executeCmd(cmd);
-			if (StringUtils.isEmpty(results) || results.contains("execution error:")) {
+			if (StringUtils.isEmpty(results)) {
+				return tracePath;
+			}
+			if (results.contains("execution error:")) {
 				LOGGER.error("shell error:" + results);
 				return tracePath;
 			}

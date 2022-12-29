@@ -31,6 +31,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import com.att.aro.mvc.IAROView;
+import com.att.aro.ui.view.MainFrame;
 
 public class DownloadManifest extends JDialog implements ActionListener{
 	private static final long serialVersionUID = 1L;
@@ -92,20 +93,19 @@ public class DownloadManifest extends JDialog implements ActionListener{
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		JButton btn = (JButton)e.getSource();
-		if(btn.getName().equals("SelectFile")){
+		JButton btn = (JButton) e.getSource();
+		if (btn.getName().equals("SelectFile")) {
 			JFileChooser fileChooser = new JFileChooser();
 			int result = fileChooser.showOpenDialog(this);
-			if(result == JFileChooser.APPROVE_OPTION){
+			if (result == JFileChooser.APPROVE_OPTION) {
 				nameLbl.setText(fileChooser.getSelectedFile().getPath());
 			}
-		}else if(btn.getName().equals("Load")){
+		} else if (btn.getName().equals("Load")) {
 			dispose();
-			//this.aroView.getTracePath();
+			((MainFrame) aroView).wipeCurrentTraceInitialAnalyzerResult();
 			this.aroView.updateTracePath(new File(this.aroView.getTracePath()));
-			//this.aroView.refresh();
 		}
-		
+
 	}
 }
 

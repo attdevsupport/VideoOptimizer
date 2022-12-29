@@ -17,24 +17,24 @@ package com.att.aro.core.packetanalysis.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.util.Map;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.zip.GZIPInputStream;
+import java.io.IOException;
 import java.util.zip.ZipException;
+import java.util.zip.GZIPInputStream;
 
-import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.log4j.LogManager;
 import org.springframework.util.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import com.aayushatharva.brotli4j.Brotli4jLoader;
+import com.aayushatharva.brotli4j.decoder.BrotliInputStream;
 import com.att.aro.core.packetanalysis.IByteArrayLineReader;
 import com.att.aro.core.packetanalysis.IHttpRequestResponseHelper;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.Session;
-import com.nixxcode.jvmbrotli.common.BrotliLoader;
-import com.nixxcode.jvmbrotli.dec.BrotliInputStream;
 
 /**
  * helper class for dealing HttpRequestResponseInfo object
@@ -126,7 +126,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 	 * @throws Exception
 	 */
 	public byte[] getContent(HttpRequestResponseInfo request, Session session) throws Exception {
-		if (!request.isExtractable() && !StringUtils.isEmpty(request.getExceptionMessege())) {
+		if (!request.isExtractable() && StringUtils.hasLength(request.getExceptionMessege())) {
 			// already seen this exception so don't try again
 			throw new Exception("As seen before Exception: " + request.getExceptionMessege());
 		}
@@ -207,7 +207,7 @@ public class HttpRequestResponseHelperImpl implements IHttpRequestResponseHelper
 					output.write(buffer, 0, len);
 				}
 			} else if (HttpRequestResponseInfo.CONTENT_ENCODING_BROTLI.equals(contentEncoding) && payload != null) {
-				BrotliLoader.isBrotliAvailable();
+				Brotli4jLoader.ensureAvailability();
 				output = new ByteArrayOutputStream();
 				brotliInputStream = new BrotliInputStream(new ByteArrayInputStream(payload));
 				int read = brotliInputStream.read();

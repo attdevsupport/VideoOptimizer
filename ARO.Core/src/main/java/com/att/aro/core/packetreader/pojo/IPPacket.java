@@ -21,13 +21,16 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
+import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.pcap4j.packet.ArpPacket;
+import org.pcap4j.packet.ArpPacket.ArpHeader;
+import org.pcap4j.packet.EthernetPacket;
 import org.pcap4j.packet.IpPacket;
 import org.pcap4j.packet.IpV4Packet;
 import org.pcap4j.packet.IpV4Packet.IpV4Header;
 import org.pcap4j.packet.IpV6Packet;
 import org.pcap4j.packet.IpV6Packet.IpV6Header;
-import org.apache.log4j.LogManager;
 
 /**
  * A bean class that provides access to IP Packet data.
@@ -55,15 +58,25 @@ public class IPPacket extends Packet implements Serializable {
 	private int payloadLen;
 
 
+	@Override
+	public String toString() {
+		StringBuilder sbr = new StringBuilder("IPPacket :");
+		sbr.append(String.format("\n\tSRC :%s", getSourceIPAddress()));
+		sbr.append(String.format("\n\tDST :%s", getDestinationIPAddress()));
+		sbr.append(String.format("\n\tSeconds :%d.%d", getSeconds(), getMicroSeconds()));
+		sbr.append(String.format("\n\tdataOffset :%d", dataOffset));
+		sbr.append(String.format("\n\tlen :%d", getLen()));
+		return sbr.toString();
+	}
 
 	public IPPacket(long seconds, long microSeconds, org.pcap4j.packet.Packet pcap4jPacket) {
 		super(seconds, microSeconds, pcap4jPacket);
 
 		IpPacket pcap4jIPPacket = pcap4jPacket.get(IpPacket.class);
+
 		if (pcap4jIPPacket instanceof IpV4Packet) {
 			IpV4Packet ipv4Packet = (IpV4Packet) pcap4jIPPacket;
 			IpV4Header ipv4Header = ipv4Packet.getHeader();
-
 			ipVersion = 0x04;
 			rsvFrag = ipv4Header.getReservedFlag();
 			dontFrag = ipv4Header.getDontFragmentFlag();
@@ -73,20 +86,22 @@ public class IPPacket extends Packet implements Serializable {
 			protocol = ipv4Header.getProtocol().value();
 			sourceIPAddress = ipv4Header.getSrcAddr();
 			destinationIPAddress = ipv4Header.getDstAddr();
-
 			packetLength = ipv4Packet.length();
 			payloadLen = ipv4Packet.getPayload() != null ? ipv4Packet.getPayload().length() : 0;
 			dataOffset = super.getDataOffset() + ipv4Header.length();
 		} else if (pcap4jIPPacket instanceof IpV6Packet) {
 			IpV6Packet ipv6Packet = (IpV6Packet) pcap4jIPPacket;
 			IpV6Header ipv6Header = ipv6Packet.getHeader();
-
 			ipVersion = 0x06;
 			sourceIPAddress = ipv6Header.getSrcAddr();
 			destinationIPAddress = ipv6Header.getDstAddr();
 			packetLength = ipv6Packet.length(); 
 			payloadLen = ipv6Header.getPayloadLengthAsInt();
 			dataOffset = super.getDataOffset() + ipv6Header.length();
+		} else if (pcap4jPacket instanceof EthernetPacket && ((EthernetPacket) pcap4jPacket).getPayload().getHeader() instanceof ArpHeader) {
+			ArpHeader arpHeader = ((ArpPacket) ((EthernetPacket) pcap4jPacket).getPayload()).getHeader();
+			sourceIPAddress = arpHeader.getSrcProtocolAddr();
+			destinationIPAddress = arpHeader.getDstProtocolAddr();
 		}
 	}
 

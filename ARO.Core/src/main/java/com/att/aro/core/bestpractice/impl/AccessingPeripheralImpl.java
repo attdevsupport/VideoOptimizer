@@ -18,7 +18,7 @@ package com.att.aro.core.bestpractice.impl;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.bestpractice.IBestPractice;

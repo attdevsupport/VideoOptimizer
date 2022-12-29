@@ -26,6 +26,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +52,7 @@ import javax.swing.table.TableRowSorter;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.jfree.chart.entity.ChartEntity;
 
 import com.att.aro.core.bestpractice.pojo.ForwardSecrecyEntry;
 import com.att.aro.core.bestpractice.pojo.TransmissionPrivateDataEntry;
@@ -215,8 +218,8 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			graphPanel.setMaxZoom(MAX_ZOOM);
 			graphPanel.addGraphPanelListener(new GraphPanelListener() {
 				@Override
-				public void graphPanelClicked(double timeStamp) {
-					setTimeLineToTable(timeStamp);
+				public void graphPanelClicked(double timeStamp, ChartEntity entity) {
+					setTimeLineToTable(timeStamp, entity);
 					if (getVideoPlayer() != null) {
 						graphPanelClicked = true;
 						getVideoPlayer().setMediaTime(timeStamp);
@@ -311,8 +314,6 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 						boolean centerGraph = !(crossHairValue <= graphPanel.getViewportUpperBound()
 								&& crossHairValue >= graphPanel.getViewportLowerBound());
 						graphPanel.setGraphView(crossHairValue, centerGraph); // crossHairValue+103
-						// getJHttpReqResPanel().select(
-						// packetInfo.getRequestResponseInfo());
 						if (videoPlayer != null) {
 							// logger.info("enter getJPacketViewTable()");
 							videoPlayer.setMediaTime(graphPanel.getCrosshair());
@@ -550,7 +551,7 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 		
 		sessionsSortedByTimestamp = analyzerResult.getAnalyzerResult().getSessionlist();
 		setRequestResponseWithSession(buildHttpRequestResponseWithSession(analyzerResult.getAnalyzerResult().getSessionlist()));
-		getGraphPanel().refresh(analyzerResult);
+		getGraphPanel().refresh(analyzerResult, false);
 		aroview.refreshBestPracticesTab();
 		// clear table
 		jPacketViewTableModel.removeAllRows();
@@ -670,11 +671,21 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 
 	// old analyzer method name is setTimeLineLinkedComponents(double
 	// timeStamp,double dTimeRangeInterval)
-	public void setTimeLineToTable(double timeStamp) {
-		// logger.info("enter setTimeLineTable()");
+	public void setTimeLineToTable(double timeStamp, ChartEntity entity) {
 		if (getAroTraceData() == null) {
 			LOGGER.info("no analyze traces data");
 		} else {
+			int packetID = -1;
+			if (entity.getToolTipText() != null && entity.getToolTipText().contains("Packet ID")) {
+				String packetString = entity.getToolTipText().substring(entity.getToolTipText().indexOf("Packet ID:") + 11, entity.getToolTipText().indexOf("<br>Packet Timestamp:"));
+				try {
+					packetID = NumberFormat.getNumberInstance(java.util.Locale.US).parse(packetString).intValue();
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+
+			}
+			
 			boolean bTCPTimeStampFound = false;
 			boolean bExactMatch = false;
 			// Attempt to find corresponding packet for time.
@@ -683,24 +694,39 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			double previousPacketTimeStampDiff = 9999.0;
 			Session bestMatchingTcpSession = null;
 			PacketInfo bestMatchingPacketInfo = null;
-			// logger.info("enter sesionlist for loop");
-			for (Session tcpSess : getAroTraceData().getAnalyzerResult().getSessionlist()) {
-				PacketInfo packetInfo = diagHelper.getBestMatchingPacketInTcpSession(tcpSess, bExactMatch, timeStamp,
-						MATCH_SECONDS_RANGE);
-				if (packetInfo != null) {
-					packetTimeStamp = packetInfo.getTimeStamp();
-					packetTimeStampDiff = timeStamp - packetTimeStamp;
-					if (packetTimeStampDiff < 0.0) {
-						packetTimeStampDiff *= -1.0;
+			if (packetID >= 0) {
+				for (Session session : getAroTraceData().getAnalyzerResult().getSessionlist()) {
+					for (PacketInfo packetInfo : session.getAllPackets()) {
+						if (packetInfo.getPacketId() == packetID) {
+							bestMatchingTcpSession = session;
+							bestMatchingPacketInfo = packetInfo;
+							bTCPTimeStampFound = true;
+							break;
+						}
 					}
-					if (packetTimeStampDiff < previousPacketTimeStampDiff) {
-						bestMatchingTcpSession = tcpSess;
-						bestMatchingPacketInfo = packetInfo;
-						bTCPTimeStampFound = true;
+					if (bTCPTimeStampFound) {
+						break;
+					}
+				}
+			} else {
+				for (Session tcpSess : getAroTraceData().getAnalyzerResult().getSessionlist()) {
+
+					PacketInfo packetInfo = diagHelper.getBestMatchingPacketInTcpSession(tcpSess, bExactMatch,
+							timeStamp, MATCH_SECONDS_RANGE);
+					if (packetInfo != null) {
+						packetTimeStamp = packetInfo.getTimeStamp();
+						packetTimeStampDiff = timeStamp - packetTimeStamp;
+						if (packetTimeStampDiff < 0.0) {
+							packetTimeStampDiff *= -1.0;
+						}
+						if (packetTimeStampDiff < previousPacketTimeStampDiff) {
+							bestMatchingTcpSession = tcpSess;
+							bestMatchingPacketInfo = packetInfo;
+							bTCPTimeStampFound = true;
+						}
 					}
 				}
 			}
-			// logger.info("leave sesionlist for loop");
 			if (bTCPTimeStampFound) {
 				getJTCPFlowsTable().selectItem(bestMatchingTcpSession);
 				getJPacketViewTable().selectItem(bestMatchingPacketInfo);
@@ -708,15 +734,8 @@ public class DiagnosticsTab extends TabPanelJPanel implements ListSelectionListe
 			} else {
 				getJTCPFlowsTable().selectItem(null);
 				getJPacketViewTable().selectItem(null);
-				// if (videoPlayer != null) {
-				// bTCPPacketFound = false;
-				// videoPlayer.setMediaDisplayTime(graphPanel
-				// .getCrosshair());
-				// }
-				// }
 			}
 		}
-		// logger.info("leave setTimeLineTable()");
 	}
 
 	public boolean getTCPPacketFoundStatus() {

@@ -27,4 +27,6 @@ public interface IMetaDataReadWrite {
 
 	boolean save();
 
+	public MetaDataModel getBackupModel() throws Exception;
+
 }

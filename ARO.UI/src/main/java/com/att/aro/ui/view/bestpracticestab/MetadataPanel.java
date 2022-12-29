@@ -31,14 +31,10 @@ import javax.swing.UIManager;
 
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
-import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
-import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.ui.commonui.AROUIManager;
 import com.att.aro.ui.commonui.AroFonts;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.view.MainFrame;
 
 public class MetadataPanel extends AbstractBpPanel {
@@ -56,7 +52,6 @@ public class MetadataPanel extends AbstractBpPanel {
 	private JPanel textAreaWrapper = new JPanel();
 	private Insets insets = new Insets(2, 2, 2, 2);
 	private final double weightX = 0.5;
-	private IMetaDataHelper metaDataHelper = ContextAware.getAROConfigContext().getBean(IMetaDataHelper.class);
 
 	/***
 	 * Create labels and set font

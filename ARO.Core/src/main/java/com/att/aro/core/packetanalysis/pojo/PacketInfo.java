@@ -88,6 +88,20 @@ public class PacketInfo implements Comparable<PacketInfo>, Serializable {
 	private String strTcpFlags = "";
 
 
+	@Override
+	public String toString() {
+		StringBuilder sbr = new StringBuilder("PacketInfo :");
+		sbr.append(packet.getClass().getSimpleName());
+		sbr.append(String.format("\n PacketID :%s", packetId));
+		if (packet instanceof IPPacket) {
+			sbr.append(String.format("\n\tSRC :%s", ((IPPacket) getPacket()).getSourceIPAddress()));
+			sbr.append(String.format("\n\tDST :%s", ((IPPacket) getPacket()).getDestinationIPAddress()));
+		}
+		sbr.append(String.format("\n TimeStamp :%s", getTimeStamp()));
+		sbr.append(String.format("\n PacketDir :%s", dir));
+		return sbr.toString();
+	}
+	
 	/**
 	 * Initializes an instance of the PacketInfo class, using the specified packet data.
 	 * 

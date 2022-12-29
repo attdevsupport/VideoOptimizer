@@ -22,7 +22,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.pojo.VersionInfo;

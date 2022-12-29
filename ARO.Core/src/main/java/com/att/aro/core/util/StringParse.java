@@ -15,11 +15,12 @@
 */
 package com.att.aro.core.util;
 
+import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public final class StringParse implements IStringParse{
 
@@ -178,10 +179,17 @@ public final class StringParse implements IStringParse{
 	@Override
 	public String[] parse(String targetString, String regex) {
 		
-		Pattern pattern = Pattern.compile(regex);
+		Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
 		return parse(targetString, pattern);
 	}
 	
+	/**
+	 * regex match search of all lines in targetString
+	 * 
+	 * @param targetString
+	 * @param regex
+	 * @return String[], of first match found in targetString
+	 */
 	@Override
 	public String[] parse(String targetString, Pattern pattern) {
 
@@ -195,6 +203,43 @@ public final class StringParse implements IStringParse{
 			}
 		}
 		return temp;
+	}
+
+	/**
+	 * regex match search of all lines in targetString
+	 * 
+	 * @param results		usually this should be an empty list
+	 * @param targetString
+	 * @param regex			regex may have multiple capture groups, resulting String[]'s will be merged
+	 * @return ArrayList<String>, of all matches found in targetString
+	 */
+	@Override
+	public List<String> parse(List<String> results, String targetString, String regex) {
+		Pattern pattern = Pattern.compile(regex, Pattern.MULTILINE);
+		return parse(results, targetString, pattern);
+	}
+
+	/**
+	 * regex match search of all lines in targetString
+	 * 
+	 * @param results		usually this should be an empty list
+	 * @param targetString
+	 * @param pattern		pattern may have multiple capture groups, resulting String[]'s will be merged
+	 * @return ArrayList<String>, of all matches found in targetString
+	 */
+	@Override
+	public List<String> parse(List<String> results, String targetString, Pattern pattern) {
+		Matcher matcher = pattern.matcher(targetString);
+		while (matcher.find()) {
+			String line = "";
+			for (int i = 1; i <= matcher.groupCount(); i++) {
+				if (matcher.group(i) != null) {
+					line += matcher.group(i);
+				}
+			}
+			results.add(line);
+		}
+		return results;
 	}
 
 	public static int[] getStringPositions(String inputStr, String matchStr) {

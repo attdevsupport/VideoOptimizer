@@ -68,7 +68,7 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 	protected int rowPadding;
 	
 	public DeviceTablePanel() {
-		rowPadding = (Util.isWindowsOS()) ? 7 : 0;
+		rowPadding = (Util.isMacOS()) ? 0 : 10;
 		initTableModel();
 		setLayout(new BorderLayout());
 
@@ -202,7 +202,7 @@ public class DeviceTablePanel extends JPanel implements MouseListener{
 			if (optionPanel != null) {
 				validated = optionPanel.setDevice(selectedIAroDevice);
 				if (optionPanel.isExpandedTraceSettings()) {
-					if (selectedIAroDevice!=null && !selectedIAroDevice.getPlatform().equals(IAroDevice.Platform.Android)) {
+					if (!selectedIAroDevice.getPlatform().equals(IAroDevice.Platform.Android)) {
 						optionPanel.getAppSelector().setVisible(false);
 						optionPanel.getLabelAppSelectorTitle().setVisible(false);
 					} else {

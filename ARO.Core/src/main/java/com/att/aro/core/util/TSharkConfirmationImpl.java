@@ -16,7 +16,7 @@
 package com.att.aro.core.util;
 
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import com.att.aro.core.commandline.IExternalProcessRunner;

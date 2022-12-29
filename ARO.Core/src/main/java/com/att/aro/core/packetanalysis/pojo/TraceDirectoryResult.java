@@ -26,6 +26,7 @@ import com.att.aro.core.peripheral.pojo.AlarmAnalysisInfo;
 import com.att.aro.core.peripheral.pojo.AlarmInfo;
 import com.att.aro.core.peripheral.pojo.AttenuatorEvent;
 import com.att.aro.core.peripheral.pojo.BatteryInfo;
+import com.att.aro.core.peripheral.pojo.CellInfo;
 import com.att.aro.core.peripheral.pojo.CollectOptions;
 import com.att.aro.core.peripheral.pojo.DeviceDetail;
 import com.att.aro.core.peripheral.pojo.LocationEvent;
@@ -36,7 +37,6 @@ import com.att.aro.core.peripheral.pojo.TemperatureEvent;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartupData;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
-import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
@@ -181,6 +181,8 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	 * from collect options directory - collect_options
 	 */
 	private CollectOptions collectOptions;
+	
+	private List<CellInfo> cellInfoList;
 
 	private boolean secureTrace;
 
@@ -269,9 +271,6 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 	private NetworkType networkType;
 
 	@JsonIgnore
-	private MetaDataModel metaData;
-	
-	@JsonIgnore
 	private VideoStreamStartupData videoStreamStartupData;
 	
 	public CollectOptions getCollectOptions() {
@@ -318,6 +317,7 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 		cameraActiveDuration = 0;
 		missingFiles = new HashSet<String>();
 		networkTypesList = new ArrayList<NetworkType>();
+		cellInfoList = new ArrayList<>();
 		totalNoPackets = 0;
 	}
 
@@ -803,21 +803,20 @@ public class TraceDirectoryResult extends AbstractTraceResult {
 		this.videoStreamStartupData = videoStreamStartupData;
 	}
 
-	public MetaDataModel getMetaData() {
-		return metaData;
-	}
-
-	public void setMetaData(MetaDataModel metaData) {
-		this.metaData = metaData;
-	}
-
-
 	public boolean isSecureTrace() {
 	    return secureTrace;
 	}
 
 	public void setSecureTrace(boolean secureTrace) {
 	    this.secureTrace = secureTrace;
+	}
+
+	public List<CellInfo> getCellInfoList() {
+		return cellInfoList;
+	}
+
+	public void setCellInfoList(List<CellInfo> cellInfoList) {
+		this.cellInfoList = cellInfoList;
 	}
 
     @Override

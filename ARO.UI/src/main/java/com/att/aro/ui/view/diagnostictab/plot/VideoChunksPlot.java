@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jfree.chart.labels.XYToolTipGenerator;
@@ -43,11 +43,8 @@ import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
-import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.impl.SortSelection;
 import com.att.aro.core.videoanalysis.impl.VideoChunkPlotterImpl;
@@ -81,7 +78,6 @@ public class VideoChunksPlot implements IPlot {
 	private VideoChunkPlotterImpl videoChunkPlotter;
 	private Map<Integer, Double> seriesDataSets;
 	boolean isReDraw = false;
-	private Map<Integer, AbstractBestPracticeResult> removeList = new HashMap<>();
 
 	public VideoChunksPlot() {
 		filteredChunks = new ArrayList<>();
@@ -99,7 +95,7 @@ public class VideoChunksPlot implements IPlot {
 	private TreeMap<VideoEvent, Double> chunkPlayTime = new TreeMap<>();
 
 	// StartupDelay calculations
-	public AROTraceData refreshPlot(XYPlot plot, AROTraceData traceData, double startTime, VideoEvent selectedChunk) {
+	public void refreshPlot(XYPlot plot, AROTraceData traceData, double startTime, VideoEvent selectedChunk) {
 		chunkPlayTime.clear();
 		chunkPlayTime.put(selectedChunk, startTime);
 
@@ -108,27 +104,11 @@ public class VideoChunksPlot implements IPlot {
 		bufferInSecondsPlot.setChunkPlayTimeMap(chunkPlayTime);
 
 		populate(plot, traceData);
-		AbstractBestPracticeResult startupDelayBPResult = videoChunkPlotter.refreshStartUpDelayBP(traceData);
-
-		if (traceData.getAnalyzerResult().getStreamingVideoData().getStreamingVideoCompiled().getChunksBySegmentID().isEmpty()) {
-			return refreshBPVideoResults(traceData, startupDelayBPResult, null, null);
-		}
 
 		bufferInSecondsPlot.populate(bufferTimeXYPlot, traceData);
 		bufferOccupancyPlot.populate(bufferOccupancyXYPlot, traceData);
 
 		refreshVCPlot(plot, traceData);
-
-		AbstractBestPracticeResult stallBPResult = null;
-		AbstractBestPracticeResult bufferOccupancyBPResult = null;
-		List<BestPracticeType> bpList = SettingsUtil.retrieveBestPractices();
-		if (bpList.contains(BestPracticeType.VIDEO_STALL)) {
-			stallBPResult = videoChunkPlotter.refreshVideoStallBP(traceData);
-		}
-		if (bpList.contains(BestPracticeType.BUFFER_OCCUPANCY)) {
-			bufferOccupancyBPResult = videoChunkPlotter.refreshVideoBufferOccupancyBP(traceData);
-		}
-		return refreshBPVideoResults(traceData, startupDelayBPResult, stallBPResult, bufferOccupancyBPResult);
 	}
 
 	private void setChunkPlayBackTimeCollection(AROTraceData traceData) {
@@ -147,47 +127,6 @@ public class VideoChunksPlot implements IPlot {
 	public void refreshVCPlot(XYPlot plot, AROTraceData traceData) {
 		isReDraw = true;
 		populate(plot, traceData);
-	}
-
-	private void updateAbstractBestPracticeParameters(AbstractBestPracticeResult bp, AbstractBestPracticeResult videoBPResult, int index) {
-		bp.setAboutText(videoBPResult.getAboutText());
-		bp.setDetailTitle(videoBPResult.getDetailTitle());
-		bp.setLearnMoreUrl(videoBPResult.getLearnMoreUrl());
-		bp.setOverviewTitle(videoBPResult.getOverviewTitle());
-		bp.setResultText(videoBPResult.getResultText());
-		bp.setResultType(videoBPResult.getResultType());
-		removeList.put(index, bp);
-	}
-
-	private AROTraceData refreshBPVideoResults(AROTraceData model, AbstractBestPracticeResult bpResult, AbstractBestPracticeResult stallBPResult,
-			AbstractBestPracticeResult bufferOccupancyBPResult) {
-		removeList.clear();
-		AROTraceData trace = model;
-		for (AbstractBestPracticeResult bp : model.getBestPracticeResults()) {
-			if (bp.getBestPracticeType() == BestPracticeType.STARTUP_DELAY) {
-				updateAbstractBestPracticeParameters(bp, bpResult, model.getBestPracticeResults().indexOf(bp));
-			} else if (stallBPResult != null && bp.getBestPracticeType() == BestPracticeType.VIDEO_STALL) {
-				updateAbstractBestPracticeParameters(bp, stallBPResult, model.getBestPracticeResults().indexOf(bp));
-			} else if (bufferOccupancyBPResult != null && bp.getBestPracticeType() == BestPracticeType.BUFFER_OCCUPANCY) {
-				updateAbstractBestPracticeParameters(bp, bufferOccupancyBPResult, model.getBestPracticeResults().indexOf(bp));
-			}
-		}
-		if (!removeList.isEmpty()) {
-			for (int index : removeList.keySet()) {
-				AbstractBestPracticeResult bp = removeList.get(index);
-				trace.getBestPracticeResults().remove(bp);
-				AbstractBestPracticeResult result = null;
-				if (bp.getBestPracticeType() == BestPracticeType.STARTUP_DELAY) {
-					result = bpResult;
-				} else if (bp.getBestPracticeType() == BestPracticeType.VIDEO_STALL) {
-					result = stallBPResult;
-				} else if (bp.getBestPracticeType() == BestPracticeType.BUFFER_OCCUPANCY) {
-					result = bufferOccupancyBPResult;
-				}
-				trace.getBestPracticeResults().add(index, result);
-			}
-		}
-		return trace;
 	}
 
 	public void setBufferOccupancyPlot(XYPlot bufferOccupancyPlot) {

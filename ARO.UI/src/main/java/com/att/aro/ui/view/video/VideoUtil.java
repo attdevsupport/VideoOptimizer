@@ -29,6 +29,7 @@ import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
@@ -150,7 +151,7 @@ public final class VideoUtil {
 			
 			for (File file : files) {
 				if (!file.isDirectory()) {
-					String fileExtension = getExtension(file.getName());
+					String fileExtension = Util.getExtension(file.getName());
 					if (fileExtension != null && file.getName().startsWith("._")) {
 						try {
 							if (fileExtension.equals("3gp")) {
@@ -191,20 +192,6 @@ public final class VideoUtil {
 			}
 		} // end of if ((traceDirectory != null)
 		return totalVideoFile;
-	}
-
-	/**
-	 * Returns file extension.
-	 * 
-	 * @param fileName
-	 * @return extension.
-	 */
-	private static String getExtension(String fileName) {
-		int extensionIndex = fileName.lastIndexOf(".");
-		if (extensionIndex == -1) {
-			return null;
-		}
-		return fileName.substring(extensionIndex + 1, fileName.length());
 	}
 
 	/**

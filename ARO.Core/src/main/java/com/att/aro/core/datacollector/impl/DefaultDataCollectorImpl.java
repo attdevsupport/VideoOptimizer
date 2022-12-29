@@ -121,7 +121,8 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 	 * @return a StatusResult to hold result and success or failure
 	 */
 	@Override
-	public StatusResult startCollector(boolean isCommandLine, String folderToSaveTrace, VideoOption videoOption, boolean isLiveViewVideo, String deviceId, Hashtable<String, Object> extraParams, String password) {
+	public StatusResult startCollector(boolean isCommandLine, String folderToSaveTrace, VideoOption videoOption, boolean isLiveViewVideo,
+			IAroDevice anAroDevice, Hashtable<String, Object> extraParams, String password) {
 		return null;
 	}
 
@@ -134,20 +135,7 @@ public class DefaultDataCollectorImpl implements IDataCollector {
 	public boolean isRunning() {
 		return false;
 	}
-
-//	/**
-//	 * Start collector in background and returns result which indicates success
-//	 * or error and detail data.
-//	 * 
-//	 * @param folderToSaveTrace
-//	 *            directory to save trace to
-//	 * @return a StatusResult to hold result and success or failure
-//	 */
-//	@Override
-//	public StatusResult startCollector(String folderToSaveTrace) {
-////		return null;
-//	}
-//
+	
 	/**
 	 * Start collector in background and returns result which indicates success
 	 * or error and detail data.

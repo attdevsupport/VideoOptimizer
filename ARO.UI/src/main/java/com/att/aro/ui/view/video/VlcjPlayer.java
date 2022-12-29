@@ -31,7 +31,6 @@ import java.awt.event.MouseMotionAdapter;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.nio.file.Files;
 import java.text.MessageFormat;
 
 import javax.swing.JButton;
@@ -610,8 +609,7 @@ public class VlcjPlayer implements IVideoPlayer {
         
         // Make sure the media has been started playing
         long start = System.currentTimeMillis();
-        int timeout = 0;
-		while (player.status().position() == 0) {
+        while (player.status().position() == 0) {
             try {
                 Thread.sleep(20);
             } catch (InterruptedException e) {

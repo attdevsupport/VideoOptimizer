@@ -15,38 +15,113 @@
 */
 package com.att.aro.core.mobiledevice.pojo;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IDevice.DeviceState;
+import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.android.IAndroid;
 import com.att.aro.core.android.impl.AndroidImpl;
+import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.datacollector.IDataCollector;
+import com.att.aro.core.parse.DevInterface;
 import com.att.aro.core.util.StringParse;
 import com.att.aro.core.util.Util;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public class AROAndroidDevice implements IAroDevice {
 
-	private final Platform platform = IAroDevice.Platform.Android;
+	private final Platform platform = IAroDevice.Platform.Android;	
+	
+	private static final IExternalProcessRunner EXTERNAL_PROCESS_RUNNER = SpringContextUtil.getInstance().getContext()
+			.getBean(IExternalProcessRunner.class);
+	private static final Logger LOG = LogManager.getLogger(AROAndroidDevice.class.getName());
 
+	private DevInterface devInterface = new DevInterface();
+	
 	AroDeviceState state = AroDeviceState.Unknown; // Available, in-use, Unknown
 	
 	private IDevice device;
-
 	boolean rootflag;
-
 	private IDataCollector dataCollector = null;
-
 	private AroDeviceState devState = null;
-
 	private String abi;
-	
 	private IAndroid android;
+
+	@Setter @Getter private boolean timingOffset;
+	
+	@Setter @Getter private String voTimeZoneID;
+	@Setter @Getter private double voTimestamp;
+	
+	@Getter	private Double deviceTimestamp = 0D;
+	@Getter private String deviceTimeZoneID;	// America/Los_Angeles
+
+	@Setter
+	@Getter
+	private List<String[]> ipAddressList;
+	@Setter
+	@Getter
+	private List<String[]> voIpAddressList;
 
 	public AROAndroidDevice(IDevice device, boolean rootflag) {
 		this.device = device;
 		this.rootflag = rootflag;
 		android = new AndroidImpl();
+		try {
+			deviceTimeZoneID = device.getSystemProperty("persist.sys.timezone").get(1, TimeUnit.SECONDS);
+		} catch (InterruptedException | ExecutionException | TimeoutException e) {
+			LOG.error("Failed to get TimeZoneID from phone :", e);
+		}
+	}
+	
+	@Override
+	public Double obtainDeviceTimestamp() {
+		String[] commands = Util.getCommand("adb");
+		File commandFileParent = commands[0] != null ? new File(commands[0]) : null;
+		String cmd = String.format("%s -s %s shell 'echo $EPOCHREALTIME'", commands[1], device.getSerialNumber());
+		if (Util.isWindowsOS()) {
+			cmd = cmd.replaceAll("'", "\"");
+		}
+		String epochRealTime = EXTERNAL_PROCESS_RUNNER.executeCmd(commandFileParent, cmd, true, true);
+		if (epochRealTime.trim().matches("^[0-9\\.]*")) {
+			deviceTimestamp = StringParse.stringToDouble(epochRealTime, 0);
+		} else {
+			LOG.error("Problem with Android:" + epochRealTime);
+		}
+		return deviceTimestamp;
+	}
+
+	@Override
+	public List<String[]> obtainDeviceIpAddress() {
+		List<String[]> ipList = new ArrayList<>();
+		
+		String[] commands = Util.getCommand("adb");
+		File commandFileParent = commands[0] != null ? new File(commands[0]) : null;
+		String cmd = String.format("%s -s %s shell ip addr", commands[1], device.getSerialNumber());
+		if (Util.isWindowsOS()) {
+			cmd = cmd.replaceAll("'", "\"");
+		}
+		String ipAddr = EXTERNAL_PROCESS_RUNNER.executeCmd(commandFileParent, cmd, true, true);
+
+		ipAddr = ipAddr.replaceAll("addr: ", "").replaceAll("addr:", "");
+
+		return devInterface.parseLinuxIP(ipList, ipAddr);
+	}
+
+	@Override
+	public double getTimeDiff() {
+		return voTimestamp - deviceTimestamp;
 	}
 	
 	/**
@@ -202,12 +277,15 @@ public class AROAndroidDevice implements IAroDevice {
 	public String toString() {
 		return new String("Android:"+getProductName() 
 		+ (rootflag?" (rooted)":"")
+		+ ", deviceTimeZoneID:" + getDeviceTimeZoneID()
+		+ ", deviceTimestamp:" + getDeviceTimestamp()
 		+ ", state:" + getState()
 		+ ", api:" + getApi()
 		+ ", abi:" + getAbi()
 		+ ", id:" + getId() 
 		+ ", model:" + getModel() 
-		+ ", DevName:" + getDeviceName());
+		+ ", DevName:" + getDeviceName()
+		);
 }
 
 	@Override
@@ -262,4 +340,5 @@ public class AROAndroidDevice implements IAroDevice {
 		}
 		return (Objects.equals(deviceAPKVersion, newAPKVersion));
 	}
+
 }

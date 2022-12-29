@@ -24,7 +24,7 @@ import java.util.TreeMap;
 
 import javax.annotation.Nonnull;
 
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 

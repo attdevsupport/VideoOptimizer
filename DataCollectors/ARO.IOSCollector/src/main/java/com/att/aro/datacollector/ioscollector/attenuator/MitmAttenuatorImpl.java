@@ -38,7 +38,7 @@ public class MitmAttenuatorImpl {
 	private LittleProxyWrapper littleProxy;
  	public static final String COLLECT_OPTIONS = "collect_options";
  	private static final int THREAD_NUM = 3;
-    public void startCollect(String traceFolder,int throttleReadStream, int throttleWriteStream,boolean secure,
+    public void startCollect(String traceFolder,int throttleReadStream, int throttleWriteStream,
     		SaveCollectorOptions saveCollectorOptions, StatusResult status, String sudoPassword, String trafficFilePath) {
 		LOG.info("Launch mitm and pcap4j thread pool");
 		startDate = new Date();
@@ -46,7 +46,7 @@ public class MitmAttenuatorImpl {
 		int throttleWriteStreambps = throttleWriteStream*128;
 		LOG.info("Little proxy throttle: "+"throttleReadStreambps: "
 			    + throttleReadStreambps + "throttleWriteStreambps: "+ throttleWriteStreambps );
-		recordCollectOptions(traceFolder, 0, 0, throttleReadStream, throttleWriteStream, false, secure, "",
+		recordCollectOptions(traceFolder, 0, 0, throttleReadStream, throttleWriteStream, false, "",
 				"PORTRAIT", saveCollectorOptions);
 		littleProxy = new LittleProxyWrapper(status, sudoPassword, trafficFilePath);
 		littleProxy.setThrottleReadStream(throttleReadStreambps);
@@ -83,7 +83,7 @@ public class MitmAttenuatorImpl {
     }
     
 	private void recordCollectOptions(String trafficFilePath, int delayTimeDL, int delayTimeUL, int throttleDL,
-			int throttleUL, boolean atnrProfile, boolean secure, String atnrProfileName, String videoOrientation,
+			int throttleUL, boolean atnrProfile, String atnrProfileName, String videoOrientation,
 			SaveCollectorOptions writeCollectOption) {
 		LOG.info("set Down stream Delay Time: " + delayTimeDL + " set Up stream Delay Time: " + delayTimeUL
 				+ " set Profile: " + atnrProfile + " set Profile name: " + atnrProfileName);
@@ -94,7 +94,7 @@ public class MitmAttenuatorImpl {
 		if (throttleUL == 0) {
 			throttleUL = -1;
 		}
-		writeCollectOption.recordCollectOptions(trafficFilePath, 0, 0, throttleDL, throttleUL, atnrProfile, secure,
+		writeCollectOption.recordCollectOptions(trafficFilePath, 0, 0, throttleDL, throttleUL, atnrProfile,
 				atnrProfileName, "PORTRAIT");
 
 	}

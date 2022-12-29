@@ -53,7 +53,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.basic.BasicArrowButton;
 
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -125,23 +125,6 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 
 	/**
 	 * Initializes a new instance of the DataCollectorStartDialog class using
-	 * the specified instance of the ApplicationResourceOptimizer, and
-	 * DatacollectorBridge.
-	 * 
-	 * @param owner
-	 *            - The ApplicationResourceOptimizer instance.
-	 * 
-	 * @param aroDataCollectorBridge
-	 *            - The DataCollectorBridge instance for capturing traces from a
-	 *            device emulator.
-	 * @wbp.parser.constructor
-	 */
-	public DataCollectorSelectNStartDialog(Frame owner) {
-		this(owner, null, null, null, null, true, null, new MetaDataModel());
-	}
-
-	/**
-	 * Initializes a new instance of the DataCollectorStartDialog class using
 	 * the specified instance of the ApplicationResourceOptimizer,
 	 * DatacollectorBridge, trace folder name, and video flag.
 	 * 
@@ -196,18 +179,22 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		this.collectors = collectors;
 		
 		if (previousOptions == null) {
-			if (Util.isWindowsOS()) {
+			if (Util.isMacOS()) {
 				baseWidth = 648;
-				baseHeight = 390;
-			} else {
-				baseWidth = 630;
-				baseHeight = 390;
+				baseHeight = 360;
+			} else if (Util.isWindowsOS()) {
+				baseWidth = 690;
+				baseHeight = 410;
+			} else { // Linux
+				baseWidth = 690;
+				baseHeight = 360;
 			}
 		} else {
 			Dimension prevSize = (Dimension) previousOptions.get("DIALOG_SIZE");
 			baseHeight = (int) prevSize.getHeight();
 			baseWidth = (int) prevSize.getWidth();
 		}
+		baseHeight += getDeviceListHeight();
 		
 		this.setContentPane(getJContentPane());
 		this.pack();
@@ -224,17 +211,20 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		
 		reselectPriorOptionsForDeviceDialog(previousOptions);
 		
-		baseHeight += (this.deviceList.size() - 1) * 20;
 		setPreferredSize(getInitialDimension());
 		setMinimumSize(getPreferredSize());
 		jContentPane.setPreferredSize(getPreferredSize());
 		this.pack();
 	}
+
+	private int getDeviceListHeight() {
+		return 30 + (deviceList.size() * 20);
+	}
 	
 	public Dimension getBaseSize() {
-		return new Dimension(baseWidth, (int) (getSize().getHeight() - ((deviceList.size() - 1) * 20)));
+		return new Dimension(baseWidth, (int) (getSize().getHeight() - getDeviceListHeight()));
 	}
-
+	
 	private Dimension getInitialDimension() {
 		return new Dimension(baseWidth, baseHeight);
 	}
@@ -268,10 +258,12 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 	 */
 	public void resizer(int adjustHeight) {
 		Dimension dim = jContentPane.getPreferredSize();
-		if (dim.getHeight() < 40) { // detect if no PreferredSize has been set. The value of 40 is beyond large enough to detect the situation, and way to small to display anything
+		// If no PreferredSize has been set. 
+		// The value of 40 is beyond large enough to detect the situation, and way to small to display anything
+		if (dim.getHeight() < 40) {
 			dim = getInitialDimension();
 		} else if (adjustHeight != 0) {
-			dim = new Dimension((int) dim.getWidth(), (int) (dim.getHeight() + adjustHeight));
+			dim = new Dimension((int) dim.getWidth(), (int) (dim.getHeight() + adjustHeight)); // adjustHeight expands or contracts
 		} else {
 			dim = new Dimension((int) dim.getWidth(), (int) (getDeviceSelectionPanel().getHeight() + getButtonPanel().getHeight()));
 		}
@@ -298,7 +290,7 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 
 		deviceTablePanel = getTablePanel(deviceList);
 		deviceOptionPanel = getDeviceOptionPanel();
-
+		
 		deviceTablePanel.setSubscriber(deviceOptionPanel);
 		deviceTablePanel.autoSelect();
 
@@ -333,9 +325,13 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		DeviceTablePanel deviceTablePanel = new DeviceTablePanel();
 		deviceTablePanel.subscribe(this);
 		deviceTablePanel.setData(deviceList);
+		LOG.error("SET setPreferredSize");
+		deviceTablePanel.setPreferredSize(new Dimension(620, getDeviceListHeight()));
+		deviceTablePanel.setMinimumSize(deviceTablePanel.getPreferredSize());
+		LOG.trace("deviceTablePanel pref dimensions:" + deviceTablePanel.getPreferredSize().getWidth() + " x " + deviceTablePanel.getPreferredSize().getHeight());
 		return deviceTablePanel;
 	}
-	
+
 	/**
 	 * This method initializes buttonPanel
 	 * 
@@ -367,6 +363,10 @@ public class DataCollectorSelectNStartDialog extends JDialog implements KeyListe
 		return jButtonGrid;
 	}
 
+	/**
+	 * Expand/Collapse Metadata secttion
+	 * @return
+	 */
 	private JButton getArrowButton() {
 		expansionArrowButton = new BasicArrowButton(SwingConstants.EAST);
 

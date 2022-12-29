@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 import java.util.zip.CRC32;
 
 import org.apache.commons.collections4.trie.PatriciaTrie;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;

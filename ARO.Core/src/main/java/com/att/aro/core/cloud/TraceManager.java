@@ -19,17 +19,18 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.regex.Pattern;
+import java.util.zip.ZipException;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.amazonaws.services.s3.transfer.Transfer.TransferState;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.model.enums.CompressionLevel;
 import net.lingala.zip4j.model.enums.CompressionMethod;
+
 
 @SuppressFBWarnings({ "NP_UNWRITTEN_FIELD", "UWF_UNWRITTEN_FIELD" })
 public class TraceManager {
@@ -85,10 +86,11 @@ public class TraceManager {
 		parameters.setCompressionLevel(CompressionLevel.ULTRA);
 		String zipFileName = folderName(trace);
 		ZipFile zipfile;
+		zipfile = new ZipFile(trace + FILE_SEPARATOR + zipFileName + ".zip");
 		try {
-			zipfile = new ZipFile(trace + FILE_SEPARATOR + zipFileName + ".zip");
 			zipfile.addFiles(sourceFileList, parameters);
-		} catch (ZipException e) {
+		} catch (net.lingala.zip4j.exception.ZipException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		notifyListeners(State.DONE);
@@ -105,24 +107,30 @@ public class TraceManager {
  		if(remoteSelectedTrace!=null && remoteSelectedTrace.length()>4) {
  			folderName = remoteSelectedTrace.substring(0,remoteSelectedTrace.length()-4);	// .zip 
  		}
-		unZip(path,folderName);
+		try {
+			unZip(path,folderName);
+		} catch (ZipException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		removeZip(path);
 		return State.COMPLETE;
 	}
 
-	public void unZip(String zipFile, String saveTo) {
+	public void unZip(String zipFile, String saveTo) throws ZipException {
 		notifyListeners(State.UNCOMPRESSING);
 		if (zipFile == null) {
 			return;
 		}
 		File tempFile = new File(zipFile);
+		ZipFile zipfile = new ZipFile(zipFile);
+		String savedFolder = tempFile.getParent() + FILE_SEPARATOR + saveTo;
+		File folder = new File(savedFolder);
+		folder.mkdir();
 		try {
-			ZipFile zipfile = new ZipFile(zipFile);
-			String savedFolder = tempFile.getParent() + FILE_SEPARATOR + saveTo;
-			File folder = new File(savedFolder);
-			folder.mkdir();
 			zipfile.extractAll(savedFolder);
-		} catch (ZipException e) {
+		} catch (net.lingala.zip4j.exception.ZipException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		notifyListeners(State.DONE);

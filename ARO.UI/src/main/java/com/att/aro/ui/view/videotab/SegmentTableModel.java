@@ -102,8 +102,8 @@ public class SegmentTableModel extends AbstractTableModel {
             TCP_STATE.equals(columnNames[columnIndex])        ? findTermination(videoSegment) :
             SESSION_LINK.equals(columnNames[columnIndex])     ? videoSegment.getSession() :
             CHANNELS.equals(columnNames[columnIndex])         ? videoSegment.getChannels() == null ? "NA " : videoSegment.getChannels() :
-            DOWNLOAD_DELAY.equals(columnNames[columnIndex])    ? (playRequestedTime != 0.0 && videoSegment.isNormalSegment() && (videoSegment.getDLTimeStamp() - playRequestedTime) > 0 ? (String.format("%.3f", (videoSegment.getDLTimeStamp() - playRequestedTime))) : "-") :
-            PLAYBACK_DELAY.equals(columnNames[columnIndex])   ? (playRequestedTime != 0.0 && videoSegment.isNormalSegment() && (videoSegment.getPlayTime() - playRequestedTime) > 0 ? (String.format("%.3f", (videoSegment.getPlayTime() - playRequestedTime))): "-") :
+            DOWNLOAD_DELAY.equals(columnNames[columnIndex])   ? (playRequestedTime != 0.0 && videoSegment.isNormalSegment() && (videoSegment.getDLTimeStamp() - playRequestedTime) > 0 ? Double.valueOf(String.format("%.3f", (videoSegment.getDLTimeStamp() - playRequestedTime))) : "-") :
+            PLAYBACK_DELAY.equals(columnNames[columnIndex])   ? (playRequestedTime != 0.0 && videoSegment.isNormalSegment() && (videoSegment.getPlayTime() - playRequestedTime) > 0 ? Double.valueOf(String.format("%.3f", (videoSegment.getPlayTime() - playRequestedTime))): "-") :
             ""
         );
 	}

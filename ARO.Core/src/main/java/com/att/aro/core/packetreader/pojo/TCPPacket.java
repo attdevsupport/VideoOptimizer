@@ -72,6 +72,16 @@ public class TCPPacket extends IPPacket implements Serializable {
 	@Getter
 	private String serverNameIndication = "";
 
+	@Override
+	public String toString() {
+		StringBuilder sbr = new StringBuilder("TCPPacket :");
+		sbr.append(String.format("\n\tSRC :%s", getSourceIPAddress()));
+		sbr.append(String.format("\n\tDST :%s", getDestinationIPAddress()));
+		sbr.append(String.format("\n\tSeconds :%d.%d", getSeconds(), getMicroSeconds()));
+		sbr.append(String.format("\n\tdataOffset :%d", dataOffset));
+		sbr.append(String.format("\n\tlen :%d", getLen()));
+		return sbr.toString();
+	}
 
 	public TCPPacket(long seconds, long microSeconds, org.pcap4j.packet.Packet pcap4jPacket, TcpPacket pcap4jTCPPacket) {
 		super(seconds, microSeconds, pcap4jPacket);

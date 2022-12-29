@@ -38,12 +38,13 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
+import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.preferences.UserPreferencesFactory;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
@@ -77,12 +78,15 @@ public class OpenPcapFileDialog extends JDialog {
 	@Getter
 	private boolean retainDirectory;
 
-	private static IExternalProcessRunner extRunner = (IExternalProcessRunner) ContextAware.getAROConfigContext().getBean("externalProcessRunnerImpl");
+	private IFileManager fileManager = ContextAware.getAROConfigContext().getBean(IFileManager.class);
 
-	public OpenPcapFileDialog(SharedAttributesProcesses parent, Component caller, File pcapFile) {
+	private File pcapFile;
+
+	public OpenPcapFileDialog(SharedAttributesProcesses parent, Component caller, File pcapFile, String dotReadme) {
 		this.parent = parent;
 		this.caller = caller;
 		caller.setEnabled(false);
+		this.pcapFile = pcapFile;
 
 		String newDirectoryName = pcapFile.getName().substring(0, pcapFile.getName().lastIndexOf("."));
 		newPcapFileTracePath = pcapFile.getParent() + Util.FILE_SEPARATOR + newDirectoryName;
@@ -174,6 +178,8 @@ public class OpenPcapFileDialog extends JDialog {
 
 	private void process(boolean retainDirectory) {
 		setVisible(false);
+		wrapPcap(retainDirectory);
+		
 		this.retainDirectory = retainDirectory;
 		SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
 			@Override
@@ -196,41 +202,7 @@ public class OpenPcapFileDialog extends JDialog {
 	}
 
 	private Void processPcapFile(boolean retainDirectory) {
-		StringBuilder commands = new StringBuilder();
-
-		if (Util.isWindowsOS()) {
-			commands.append(String.format("mkdir \"%s\"  && ", newPcapFileTracePath));
-			// Create an empty .readme file to identify if its a folder created by VO
-			commands.append(String.format("type nul > \"%s\\.readme\" && ", newPcapFileTracePath));
-			commands.append(String.format("attrib +h \"%s\\.readme\" && ", newPcapFileTracePath));
-
-			if (retainDirectory) {
-				commands.append(String.format("move \"%s\" \"%s\"", originalPcapFileObj.getAbsolutePath(), newPcapFileTracePath));
-
-			} else {
-				// Create an empty ".temp_trace" to identify newly created trace folder is a temporary folder, during refresh (MainFrame.refresh())
-				commands.append(String.format("type nul > \"%s\\.temp_trace\" && ", newPcapFileTracePath));
-				commands.append(String.format("attrib +h \"%s\\.temp_trace\" && ", newPcapFileTracePath));
-				commands.append(String.format("copy \"%s\" \"%s\"", originalPcapFileObj.getAbsolutePath(), newPcapFileTracePath));
-			}
-		} else {
-			// Create an empty .readme file to identify if its a folder created by VO
-			commands.append(String.format("mkdir '%s';", newPcapFileTracePath));
-			commands.append(String.format("touch '%s/.readme';", newPcapFileTracePath));
-
-			if (retainDirectory) {
-				commands.append(String.format("mv '%s' '%s';", originalPcapFileObj.getAbsolutePath(), newPcapFileTracePath));
-			} else {
-				commands.append(String.format("cd '%s';ln -s '../%s' '%s';", newPcapFileTracePath, originalPcapFileObj.getName(), originalPcapFileObj.getName()));
-				commands.append(String.format("touch '%s/.temp_trace';", newPcapFileTracePath));
-				parent.setPcapTempWrap(true);
-			}
-		}
-
-		LOG.debug("Command to execute: " + commands.toString());
-		String result = extRunner.executeCmd(commands.toString());
-		LOG.debug("Command execution result: " + result);
-
+		((MainFrame)parent).wipeCurrentTraceInitialAnalyzerResult();
 		loadTrace();
 		GoogleAnalyticsUtil.getAndIncrementTraceCounter();
 
@@ -272,6 +244,25 @@ public class OpenPcapFileDialog extends JDialog {
 		return null;
 	}
 
+	/**
+	 * Wraps pcap file inside of a new folder with the same name as the pcap file, minus the extension
+	 * setting an invisible file ".readme" or ".temp_trace"
+	 * 
+	 * @param retainDirectory
+	 */
+	private void wrapPcap(boolean retainDirectory) {
+		fileManager.mkDir(newPcapFileTracePath);
+		File destination = new File(newPcapFileTracePath, pcapFile.getName());
+		if (retainDirectory) {
+			fileManager.move(originalPcapFileObj.toString(), destination.toString());
+			Util.createTimeFile(destination.getParentFile(), destination.getName(), TraceDataConst.FileName.DOT_README);
+		} else {
+			fileManager.createEmptyFile(newPcapFileTracePath, ".temp_trace");
+			fileManager.createLink(destination, originalPcapFileObj);
+			parent.setPcapTempWrap(true);
+		}
+	}
+
 	private void deleteDirectory(String directoryPath) {
 		try {
 			FileUtils.deleteDirectory(new File(directoryPath));
@@ -294,6 +285,6 @@ public class OpenPcapFileDialog extends JDialog {
 				GoogleAnalyticsUtil.getAndIncrementTraceCounter();
 			}
 		}
-		LOG.info("Ending analysis");
+		LOG.info("Launched PCAP analysis");
 	}
 }

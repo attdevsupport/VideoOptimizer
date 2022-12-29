@@ -15,7 +15,7 @@
 */
 package com.att.aro.console.util;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Throttle number and unit utility class 

@@ -30,32 +30,46 @@ import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.Throughput;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 
-public class ThroughputPlot implements IPlot{
-	private IThroughputCalculator throughputHelper = ContextAware
-			.getAROConfigContext().getBean(IThroughputCalculator.class);
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class ThroughputPlot implements IPlot {
+	private IThroughputCalculator throughputHelper = ContextAware.getAROConfigContext()
+			.getBean(IThroughputCalculator.class);
 	private static final String THROUGHPUT_TOOLTIP = ResourceBundleHelper.getMessageString("throughput.tooltip");
+	public static final String THROUGHPUT_TIME_DELTA = "THROUGHPUT_TIME_DELTA";
+
+	private double throughputTimeWindow = 1;
+	private boolean throughputDropdownClicked;
 
 	public void populate(XYPlot plot, AROTraceData analysis, PacketDirection packetDirection) {
 		XYSeries series = new XYSeries(0);
 		if (analysis != null) {
 
 			// Get packet iterators
-			List<PacketInfo> packets = analysis.getAnalyzerResult()
-					.getTraceresult().getAllpackets();
-			final double maxTS = analysis.getAnalyzerResult().getTraceresult()
-					.getTraceDuration();
-		
+			List<PacketInfo> packets = analysis.getAnalyzerResult().getTraceresult().getAllpackets();
+			final double maxTS = analysis.getAnalyzerResult().getTraceresult().getTraceDuration();
+
 			final List<String> tooltipList = new ArrayList<String>(1000);
 
 			Double zeroTime = null;
 			double lastTime = 0.0;
 			double startTime = analysis.getAnalyzerResult().getFilter().getTimeRange().getBeginTime();
-			for (Throughput t : throughputHelper.calculateThroughput(startTime,
-					maxTS, analysis.getAnalyzerResult().getProfile()
-							.getThroughputWindow(), getPackets(packets, packetDirection))) {
+
+			if (!isThroughputDropdownClicked()) {
+				String timeFromConfig = Util.getAttribute(THROUGHPUT_TIME_DELTA);
+				setThroughputTimeWindow(timeFromConfig.isEmpty() 
+						? analysis.getAnalyzerResult().getProfile().getThroughputWindow()
+						: Double.parseDouble(timeFromConfig.substring(0, timeFromConfig.length() - 1)));
+			}
+
+			for (Throughput t : throughputHelper.calculateThroughput(startTime, maxTS, getThroughputTimeWindow(), getPackets(packets, packetDirection))) {
 
 				double time = t.getTime();
 				double kbps = t.getKbps();
@@ -80,16 +94,16 @@ public class ThroughputPlot implements IPlot{
 				lastTime = time;
 			}
 			plot.getRenderer().setBaseToolTipGenerator(new XYToolTipGenerator() {
-						@Override
-						public String generateToolTip(XYDataset dataset, int series, int item) {
-							// Tooltip displays throughput value
-							return tooltipList.get(item);
-						}
-					});
+				@Override
+				public String generateToolTip(XYDataset dataset, int series, int item) {
+					// Tooltip displays throughput value
+					return tooltipList.get(item);
+				}
+			});
 		}
 		plot.setDataset(new XYSeriesCollection(series));
 	}
-	
+
 	private List<PacketInfo> getPackets(List<PacketInfo> packets, PacketDirection packetDirection) {
 		if (packetDirection != PacketDirection.BOTH) {
 			List<PacketInfo> filteredPackets = new ArrayList<PacketInfo>();

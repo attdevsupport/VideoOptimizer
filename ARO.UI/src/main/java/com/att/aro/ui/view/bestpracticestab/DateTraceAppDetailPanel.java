@@ -21,9 +21,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.JPanel;
 
@@ -34,6 +36,7 @@ import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.packetanalysis.pojo.TraceResultType;
+import com.att.aro.core.peripheral.pojo.CellInfo;
 import com.att.aro.core.peripheral.pojo.NetworkType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
@@ -53,6 +56,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		bestPractices_applicationversion,
 		bestPractices_networktype,
 		bestPractices_profile,
+		bestPractices_cellinfo,
 		secure_title
 	}
 
@@ -87,6 +91,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_application).build());
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_applicationversion).build());
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_networktype).build());
+			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_cellinfo).build());
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.bestPractices_profile).build());
 			attributes = tabPanelCommon.addLabelLine(new TabPanelCommonAttributes.Builder().copyNextLine(attributes).enumKey(LabelKeys.secure_title).build());
 		}
@@ -163,6 +168,7 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 				traceDirectoryResults.getCollectorVersion());
 		tabPanelCommon.setText(LabelKeys.bestPractices_networktype,
 				traceDirectoryResults.getNetworkTypesList()!=null ? getNetworkTypeList(traceDirectoryResults.getNetworkTypesList()) : "" );
+		tabPanelCommon.setText(LabelKeys.bestPractices_cellinfo, getCellInfo(traceDirectoryResults.getCellInfoList()));
 		tabPanelCommon.setText(LabelKeys.secure_title,
 				traceDirectoryResults.getCollectOptions().getSecureStatus().toString());
 
@@ -221,4 +227,23 @@ public class DateTraceAppDetailPanel extends TabPanelJPanel {
 		}
 	
 	}
+	
+	public String getCellInfo(List<CellInfo> cellInfoList) {
+		StringBuilder cellInfoResult = new StringBuilder();
+		List<String> cellTowerList = new ArrayList<>();
+
+		if (!cellInfoList.isEmpty()) {
+			for (CellInfo cellInfo : cellInfoList) {
+				cellTowerList.add(cellInfo.getCarrierName() + " / " + cellInfo.getCellID());
+			}
+			cellTowerList.stream().distinct().forEach(e -> {
+				if(cellInfoResult.length() > 0) {
+					cellInfoResult.append(", ");
+				}
+				cellInfoResult.append(e);
+			});
+		}
+		return cellInfoResult.toString();
+	}
+
 }

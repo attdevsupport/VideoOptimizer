@@ -46,8 +46,11 @@ public class PcapConfirmationImpl {
 				if (idx == points.length) {
 					break;
 				}
-				if (points[idx].compareTo(least[idx]) < 0) {
+				
+				if (Integer.parseInt(points[idx])<(Integer.parseInt(least[idx]))) {
 					return false;
+				} else {
+					return true;
 				}
 			}
 		}

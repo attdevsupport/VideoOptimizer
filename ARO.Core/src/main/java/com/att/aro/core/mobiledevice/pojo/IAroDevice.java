@@ -15,10 +15,12 @@
 */
 package com.att.aro.core.mobiledevice.pojo;
 
+import java.util.List;
+
 import com.att.aro.core.datacollector.IDataCollector;
 
 public interface IAroDevice {
-
+	
 	public enum AroDeviceState {
 		Available, in_use, Offline, Unauthorized, Unknown, Invalid
 	}
@@ -63,4 +65,25 @@ public interface IAroDevice {
 	Object getDevice();
 
 	void setStatus(AroDeviceState status);
+	
+	String getDeviceTimeZoneID();
+	Double obtainDeviceTimestamp();
+	Double getDeviceTimestamp();
+
+	void setTimingOffset(boolean timingOffset);
+	double getTimeDiff();
+	boolean isTimingOffset();
+	
+	void setVoTimeZoneID(String voTimeZoneID);
+	String getVoTimeZoneID();
+	
+	void setVoTimestamp(double voCurrentUTC);
+	double getVoTimestamp();
+
+	List<String[]> obtainDeviceIpAddress();
+	List<String[]> getIpAddressList();
+	List<String[]> getVoIpAddressList();
+	void setIpAddressList(List<String[]> ipList);
+	void setVoIpAddressList(List<String[]> voIpAddressList);
+	
 }

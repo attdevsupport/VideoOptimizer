@@ -328,7 +328,7 @@ public class VideoEvent implements Comparable<VideoEvent>{
 		}
 
 		BufferedImage image = null;
-		image = ImageHelper.getImageFromByte(imageArray);
+		image = ImageHelper.convertToBufferedImage(imageArray);
 		thumbnail = image;
 		if (image != null) {
 			int height = image.getHeight();

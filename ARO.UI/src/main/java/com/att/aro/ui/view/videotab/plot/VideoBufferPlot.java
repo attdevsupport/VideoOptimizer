@@ -32,13 +32,10 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.XYPair;
-import com.att.aro.core.videoanalysis.impl.BufferInSecondsCalculatorImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.core.videoanalysis.pojo.VideoStream.StreamStatus;
 import com.att.aro.core.videoanalysis.pojo.VideoStream.ToolTipDetail;
-import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.utils.ResourceBundleHelper;
 import com.att.aro.ui.view.diagnostictab.plot.IPlot;
 
@@ -57,9 +54,6 @@ public class VideoBufferPlot implements IPlot {
 	@Getter private double minXValue;
 	private XYSeries bufferProgressSeries = new XYSeries("Buffer Time");
 	
-	private BufferInSecondsCalculatorImpl bufferInSecondsCalculatorImpl = (BufferInSecondsCalculatorImpl) ContextAware.getAROConfigContext()
-			.getBean("bufferInSecondsCalculatorImpl", PlotHelperAbstract.class);
-
 	/*
 	 * launched by:
 	 *  -> SegmentBufferGraphPanel.refresh(AROTraceData, VideoStream, JCheckBox, JCheckBox)

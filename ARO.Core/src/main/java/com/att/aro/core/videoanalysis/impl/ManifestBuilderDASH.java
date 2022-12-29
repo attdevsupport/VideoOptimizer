@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.trie.PatriciaTrie;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
@@ -348,7 +348,6 @@ public class ManifestBuilderDASH extends ManifestBuilder {
 		//  DASH SegmentTimeline
 		newManifest.setVideoType(VideoType.DASH_SEGMENTTIMELINE);
 		MPDSegmentTimeline mpdSegmentTimeline = (MPDSegmentTimeline) manifestView.getManifest();
-		long mediaPresentationDuration = isoConvertDurationTime(mpdSegmentTimeline.getMediaPresentationDuration());
 		
 		Pattern nameRegex = Pattern.compile("\\/([^\\/]*)\\/$");
 		String[] urlName;

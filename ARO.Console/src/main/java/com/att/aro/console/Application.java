@@ -15,7 +15,7 @@
 */
 package com.att.aro.console;
 
-import static com.att.aro.core.settings.SettingsUtil.retrieveBestPractices;
+import static com.att.aro.core.settings.SettingsUtil.getSelectedBPsList;
 
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeListener;
@@ -26,10 +26,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.TimeZone;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -76,6 +78,9 @@ import com.att.aro.mvc.AROController;
 import com.att.aro.mvc.IAROView;
 import com.beust.jcommander.JCommander;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public final class Application implements IAROView {
 
     private final Logger LOGGER = Logger.getLogger(Application.class);
@@ -99,6 +104,10 @@ public final class Application implements IAROView {
 	private String trafficFile;
 
 	private String videoFile;
+	
+	@Setter
+	@Getter
+	private List<String[]> voIpAddressList;
 
     private Application(String[] args) {
 
@@ -424,7 +433,7 @@ public final class Application implements IAROView {
 		if ((traceFileMap = VideoUtils.validateFolder(new File(trace))).size() > 0) {
 			String[] trafficFile = traceFileMap.get(VideoUtils.TRAFFIC);
 			String[] videoFile = traceFileMap.get(VideoUtils.VIDEO);		
-			if (trafficFile.length == 1 && videoFile.length == 1) {
+			if (trafficFile.length == 1) {
 				setTrafficFile(trafficFile[0]);
 				setVideoFile(videoFile[0]);
 			} else {
@@ -434,7 +443,9 @@ public final class Application implements IAROView {
 			}
 			IFileManager fileManager = context.getBean(IFileManager.class);
 			if (!fileManager.fileExist(trace, "time")) {
-				String capinfosData = Util.getExternalProcessRunner().executeCmd(String.format("%s \"%s\"", Util.getCapinfos(), new File(trace, trafficFile[0]).toString()));
+				String[] commands = Util.getParentAndCommand(Util.getCapinfos());
+				String cmd = String.format("%s \"%s\"", commands[1], new File(trace, trafficFile[0]).toString());
+				String capinfosData = Util.getExternalProcessRunner().executeCmd((commands[0] != null) ? new File(commands[0]) : null, cmd, true, true);
 				
 				double start = Util.parseForUTC(StringParse.findLabeledDataFromString("First packet time:", Util.LINE_SEPARATOR, capinfosData) + "Z") / 1000;
 				double end = Util.parseForUTC(StringParse.findLabeledDataFromString("Last packet time:", Util.LINE_SEPARATOR, capinfosData)) / 1000;
@@ -452,14 +463,14 @@ public final class Application implements IAROView {
         try {
             if (serv.isFile(trace)) {
                 try {
-                    results = serv.analyzeFile(retrieveBestPractices(), trace);
+                    results = serv.analyzeFile(getSelectedBPsList(), trace);
                 } catch (IOException | TsharkException e) {
                     errln("Error occured analyzing trace, detail: " + e.getMessage());
                     System.exit(1);
                 }
             } else {
                 try {
-                    results = serv.analyzeDirectory(retrieveBestPractices(), trace, this);
+                    results = serv.analyzeDirectory(getSelectedBPsList(), trace, this);
                 } catch (IOException e) {
                     errln("Error occured analyzing trace directory, detail: " + e.getMessage());
                     System.exit(1);
@@ -559,7 +570,6 @@ public final class Application implements IAROView {
         String throttleDL = cmds.getThrottleDL();
         return ThrottleUtil.getInstance().parseNumCvtUnit(throttleDL);
     }
-
 
     void printError(ErrorCode error) {
         err("Error code: " + error.getCode());
@@ -704,7 +714,25 @@ public final class Application implements IAROView {
     private StatusResult runCommand(Commands cmds, IDataCollector collector, String password, Hashtable<String, Object> extras) {
         StatusResult result;
         if (cmds.getDeviceid() != null) {
-            result = collector.startCollector(true, cmds.getOutput(), getVideoOption(), false, cmds.getDeviceid(), extras, password);
+        	ArrayList<IAroDevice> aroDeviceList = aroController.getAroDevices().getDeviceList();
+        	IAroDevice aroDevice = null;
+			for (IAroDevice aDevice : aroDeviceList) {
+				if (aDevice.getId().equals(cmds.getDeviceid())) {
+					aroDevice = aDevice;		
+					String voTimeZoneID = TimeZone.getDefault().getID();
+					double voCurrentUTC = System.currentTimeMillis() / 1000.0;
+					double deviceCurrentUTC = 0;
+					boolean timingOffset = false;
+					deviceCurrentUTC = aroDevice.obtainDeviceTimestamp();
+					double timeDiff = voCurrentUTC - deviceCurrentUTC;
+					timingOffset = (voTimeZoneID.equals(aroDevice.getDeviceTimeZoneID()) && Math.abs(timeDiff) <= 2);
+					aroDevice.setTimingOffset(timingOffset);
+					aroDevice.setVoTimeZoneID(voTimeZoneID);
+					aroDevice.setVoTimestamp(voCurrentUTC);
+					break;
+				}
+			}
+            result = collector.startCollector(true, cmds.getOutput(), getVideoOption(), false, aroDevice, extras, password);
         } else {
             result = collector.startCollector(true, cmds.getOutput(), getVideoOption(), false, null, extras, password);
         }
@@ -810,8 +838,11 @@ public final class Application implements IAROView {
                 .append("\n  --listcollectors: optional command to list available data collector.")
                 .append("\n  --verbose:  optional command to enable detailed messages for '--analyze' and '--startcollector'")
                 .append("\n  --help,-h,-?: show help menu.").append("\n\nUsage examples: ").append("\n=============")
+                
                 .append("\nRun Android collector to capture trace with video:").append("\n    slow video is 1-2 frames per second: ")
                 .append("\n  --startcollector rooted_android --output /User/documents/test --video slow")
+
+                .append("\n  --startcollector vpn_android --output /User/documents/test --video slow")
 
                 .append("\nRun Non-rooted Android collector to capture trace with video and uplink/downlink attenuation applied:")
                 .append("\n    throttle uplink throughput can accept 64k - 100m (102400k)")
@@ -823,6 +854,9 @@ public final class Application implements IAROView {
 
                 .append("\nRun iOS collector to capture trace with video: ").append("\n    trace will be overwritten if it exists: ")
                 .append("\n  --startcollector ios --deviceid udid/deviceIdentifier --overwrite yes --output /Users/{user}/tracefolder --video hd --sudo password")
+
+                .append("\nRun iOS collector to capture trace with video: ")
+                .append("\n  --startcollector ios --deviceid udid/deviceIdentifier --output /user/documents/(trace name) --video slow --sudo password")
 
                 .append("\nRun iOS collector to capture trace with video and uplink/downlink attenuation applied: ")
                 .append("\n  --startcollector ios --deviceid udid/deviceIdentifier --output /user/documents/(trace name) --video slow --throttleUL 2m --throttleDL 64k --sudo password")
@@ -958,6 +992,10 @@ public final class Application implements IAROView {
     public void showChartItems(String... chartPlotOptionEnumNames) {
     }
 
+	@Override
+	public AROController getController() {
+		return null;
+	}
 
     public VideoOption getVideoOption() {
         return videoOption;

@@ -25,8 +25,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.android.ddmlib.AdbCommandRejectedException;
@@ -104,33 +104,10 @@ public class RootedAndroidCollectorImpl implements IDataCollector, IVideoImageSu
 	private static final String[] EMULATORCOLLECTOR_TRACEFILENAMES = { "cpu", "appid", "appname", "time", "processed_events", "traffic.cap" };
 	//files to pull from device
 	
-	private static final String[] DEVICECOLLECTORFILENAMES = { "traffic.cap"
-																, "cpu"
-																, "cpu_log.txt"
-																, "appid"
-																, "appname"
-																, "time"
-																, "processed_events"
-																, "active_process"
-																, "battery_events"
-																, "bluetooth_events"
-																, "camera_events"
-																, "device_details"
-																, "device_info"
-																, "gps_events"
-																, "network_details"
-																, "prop"
-																, "radio_events"
-																, "screen_events"
-																, "screen_rotations"
-																, "user_input_log_events"
-																, "batteryinfo_dump"
-																, "dmesg"
-																, "video_time"
-																, "wifi_events" 
-																, "alarm_info_end"
-																, "alarm_info_start"
-																};
+	private static final String[] DEVICECOLLECTORFILENAMES = { "traffic.cap", "cpu", "cpu_log.txt", "appid", "appname", "time", "processed_events",
+			"active_process", "battery_events", "bluetooth_events", "camera_events", "device_details", "device_info", "gps_events", "network_details", "prop",
+			"radio_events", "screen_events", "screen_rotations", "user_input_log_events", "batteryinfo_dump", "dmesg", "video_time", "wifi_events",
+			"alarm_info_end", "alarm_info_start" };
 
 	private List<IVideoImageSubscriber> videoImageSubscribers = new ArrayList<IVideoImageSubscriber>();
 	private boolean seLinuxEnforced;
@@ -192,17 +169,21 @@ public class RootedAndroidCollectorImpl implements IDataCollector, IVideoImageSu
 	 * Start collector in background and returns result which indicates success
 	 * or error and detail data.
 	 * 
-	 * @param folderToSaveTrace
-	 *            directory to save trace to
-	 * @param videoOption
-	 *            optional flag to capture video of device. default is false
-	 * @param isLiveViewVideo
-	 *            this flag is ignored in Android
+	 * @param isCommandLine		true is cli, false is VO
+	 * @param folderToSaveTrace	directory to save trace to
+	 * @param videoOption		optional flag to capture video of device. default is VideoOption.NONE
+	 * @param isLiveViewVideo	ignored
+	 * @param aroDevice			optional aroDevice the selected device to capture. default is the only connected device.
+	 * @param extraParams		ignored
+	 * @param password			ignored
+	 * 
 	 * @return a StatusResult to hold result and success or failure
 	 */
 	@Override
-	public StatusResult startCollector(boolean isCommandLine, String folderToSaveTrace, VideoOption videoOption_old, boolean isLiveViewVideo, String deviceId, Hashtable<String, Object> extraParams, String password) {
-
+	public StatusResult startCollector(boolean isCommandLine, String folderToSaveTrace, VideoOption videoOption_old, boolean isLiveViewVideo,
+			IAroDevice anAroDevice, Hashtable<String, Object> extraParams, String password) {
+		
+		String deviceId = anAroDevice == null ? null : anAroDevice.getId();
 		VideoOption m_videoOption = VideoOption.NONE;
 		if (extraParams != null) {
 			m_videoOption = (VideoOption) extraParams.get("video_option");

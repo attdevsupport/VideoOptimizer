@@ -29,6 +29,8 @@ import org.apache.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
+import com.aayushatharva.brotli4j.Brotli4jLoader;
+import com.aayushatharva.brotli4j.encoder.BrotliOutputStream;
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
@@ -41,8 +43,6 @@ import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
-import com.nixxcode.jvmbrotli.common.BrotliLoader;
-import com.nixxcode.jvmbrotli.enc.BrotliOutputStream;
 
 /**
  * best practice for text file compression
@@ -263,9 +263,8 @@ public class FileCompressionImpl implements IBestPractice {
 		if(content == null){
 			return 0;
 		}
-
 		BrotliOutputStream brotli = null;
-		BrotliLoader.isBrotliAvailable();
+		Brotli4jLoader.ensureAvailability();
 		try(ByteArrayOutputStream out = new ByteArrayOutputStream(content.length)) {
 			brotli = new BrotliOutputStream(out);
 			brotli.write(content);

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.att.aro.core.datacollector.pojo.EnvironmentDetails;
 import com.att.aro.core.peripheral.pojo.BluetoothInfo;
 import com.att.aro.core.peripheral.pojo.CameraInfo;
 import com.att.aro.core.peripheral.pojo.CpuActivityList;
@@ -220,6 +221,15 @@ public abstract class AbstractTraceResult {
 	@Getter
 	@JsonIgnore
 	private MetaDataModel metaData;
+	
+	@Setter
+	@Getter
+	@JsonIgnore
+	private EnvironmentDetails environmentDetails;
+
+	@Getter
+	@Setter
+	private List<String> localIpAddressList;
 
 	/**
 	 * time offset of first pcap packet from timeFile start of trace
@@ -253,6 +263,7 @@ public abstract class AbstractTraceResult {
 		exVideoFound = false;
 		deviceScreenVideo = false;
 		metaData = null;
+		environmentDetails = null;
 	}
 
 	/**

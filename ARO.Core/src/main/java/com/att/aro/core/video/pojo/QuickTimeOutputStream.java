@@ -552,16 +552,6 @@ public class QuickTimeOutputStream {
 		if (imgWidth == -1) {
 			imgWidth = image.getWidth();
 			imgHeight = image.getHeight();
-		} else {
-			// The dimension of the image must match the dimension of the video
-			// track
-			if (imgWidth != image.getWidth() || imgHeight != image.getHeight()) {
-				throw new IllegalArgumentException("Dimensions of image["
-						+ videoFrames.size() + "] (width=" + image.getWidth()
-						+ ", height=" + image.getHeight()
-						+ ") differs from image[0] (width=" + imgWidth
-						+ ", height=" + imgHeight);
-			}
 		}
 
 		long offset = out.getStreamPosition();

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +31,10 @@ import org.springframework.beans.factory.annotation.Value;
 import com.att.aro.core.bestpractice.IBestPractice;
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
+import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.bestpractice.pojo.VideoStartUpDelayResult;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
+import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.IVideoUsagePrefsManager;
 import com.att.aro.core.videoanalysis.pojo.Manifest;
@@ -191,7 +193,9 @@ public class VideoStartUpDelayImpl implements IBestPractice {
 
 						result.setResults(compApps);
 
-						bpResultType = Util.checkPassFailorWarning(startupDelay, warningValue);
+						bpResultType = SettingsUtil.getSelectedBPsList().contains(BestPracticeType.STARTUP_DELAY)
+								? Util.checkPassFailorWarning(startupDelay, warningValue)
+								: BPResultType.NONE;
 						if (bpResultType.equals(BPResultType.PASS)) {
 							result.setResultText(MessageFormat.format(textResultPass, startupDelay, startupDelay == 1 ? "" : "s"));
 							result.setResultExcelText(BPResultType.PASS.getDescription());

@@ -105,20 +105,28 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		String videoPath = directory + Util.FILE_SEPARATOR + videoOfDeviceScreen;
 		if (filereader.fileExist(videoPath)) {
 			String[] lines = getVideoTimeContent();
+			
+			// updates if video_time:
+			//   1) does not exist
+			//   2) does not contain a second line that is matched with VideoTimeReaderImpl.VALIDATED
 			if ((lines == null || lines.length == 1 || (lines.length > 1 && (!lines[1].startsWith(VALIDATED))))) {
 				double startTime;
-				// updates if video_time:
-				//   1) does not exist
-				//   2) does not contain a second line that is matched with VideoTimeReaderImpl.VALIDATED
-				if (videoPath.endsWith("mov")) {
+				
+				// Analyzing start-time based on the video type
+				String ffmpegData = getFfmpegVideoData(videoPath);		// Get Ffmpeg data
+				
+				if (ffmpegData.contains("quicktime.creationdate")) {											// QT Video
+					String createQTTime = StringParse.findLabeledDataFromString("com.apple.quicktime.creationdate:", "\n", ffmpegData).trim();
+					startTime = ((double) Util.parseForUTC(createQTTime)) / 1000.0;
+				} else if (videoPath.endsWith("mov")) {															// Mov Video
 					if (lines != null) {
 						String str = lines[lines.length - 1].replaceAll("^.+-", "");
-						startTime = "blank".equals(str) ? getStartTime(videoPath) : Double.valueOf(str.replaceAll(" .*", ""));
+						startTime = "blank".equals(str) ? getStartTime(ffmpegData, videoPath) : Double.valueOf(str.replaceAll(" .*", ""));
 					} else {
-						startTime = getStartTime(videoPath);
+						startTime = getStartTime(ffmpegData, videoPath);
 					}
-				} else {
-					startTime = getFfmpegVideoStartTime(videoPath);
+				} else {																						// All other videos
+					startTime = getStartTimeFromFFmpegData(ffmpegData, videoPath);
 				}
 				videoStartTime = startTime != -1 ? startTime : videoStartTime;
 
@@ -141,29 +149,15 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 		return videoStartTime;
 	}
 	
-	/**<pre>
-	 * VO's video.mov file has a modification time stemming from the beginning of the file being written, at the  start of the video.mov frame capture.
-	 * This modification time is not changed with each slide being added.
+	/**
+	 * Takes ffmpeg data result for the video and gives the start time
 	 * 
+	 * @param ffmpegData
 	 * @param videoPath
-	 * @return double
+	 * @return
 	 */
-	private double getStartTime(String videoPath) {
-		double startTime = 0;
-		try {
-			// obtain File modification time, which works as creationtime for video.mov on Windows, Mac & Linux
-			startTime = (double) Files.readAttributes(Paths.get(videoPath), BasicFileAttributes.class).lastModifiedTime().toMillis();
-		} catch (IOException e) {
-			startTime = getFfmpegVideoStartTime(videoPath);
-		}
-		return startTime;
-	}
-
-	public double getFfmpegVideoStartTime(String videoPath) {
-		double ffmpegStartTime = -1;
-		String cmd = Util.getFFMPEG() + " -i " + "\"" + videoPath + "\"";
-		String result = extrunner.executeCmd(cmd);
-		String durationStr = StringParse.findLabeledDataFromString("Duration: ", ",", result);
+	private double getStartTimeFromFFmpegData(String ffmpegData, String videoPath) {
+		String durationStr = StringParse.findLabeledDataFromString("Duration: ", ",", ffmpegData);
 		double duration = 0;
 		try {
 			duration = durationStr != null ? Util.parseTimeOfDay(durationStr, false) : 0;
@@ -171,16 +165,57 @@ public class VideoTimeReaderImpl extends PeripheralBase implements IVideoTimeRea
 			LOGGER.error("Failed to parse duration: " + durationStr + " in " + videoPath + ", defaulted to zero", e);
 			duration = 0;
 		}
-
-		if (result.contains("creation_time")) {
-			String creationTime = StringParse.findLabeledDataFromString("creation_time   :", "\n", result).trim();
+		
+		double ffmpegStartTime = -1;
+		if (ffmpegData.contains("creation_time")) {
+			String creationTime = StringParse.findLabeledDataFromString("creation_time   :", "\n", ffmpegData).trim();
 			double creationtimeStamp = ((double) Util.parseForUTC(creationTime)) / 1000.0;
 			ffmpegStartTime = creationtimeStamp - duration;
 		}
-
+		
 		return ffmpegStartTime;
 	}
 
+	/**<pre>
+	 * Gets the info of the ffmpeg results for the video
+	 * Eg: ffmpeg -i <videopath>
+	 * 
+	 * @param videoPath
+	 * @return ffmpeg result for the video
+	 */
+	private String getFfmpegVideoData(String videoPath) {
+		if (videoPath == null || videoPath.isEmpty()) {
+			return null;
+		}
+		String[] ffmpegCmds = Util.getParentAndCommand(Util.getFFMPEG());
+		String cmd = ffmpegCmds[1] + " -i " + "\"" + videoPath + "\"";
+		return extrunner.executeCmd((ffmpegCmds[0] != null) ? new File(ffmpegCmds[0]) : null, cmd, true, true);
+	}
+
+	/**<pre>
+	 * VO's video.mov file has a modification time stemming from the beginning of the file being written, at the  start of the video.mov frame capture.
+	 * This modification time is not changed with each slide being added.
+	 * 
+	 * @param videoPath
+	 * @return double
+	 */
+	private double getStartTime(String ffmpegData, String videoPath) {
+		double startTime = 0;
+		try {
+			// obtain File modification time, which works as creationtime for video.mov on Windows, Mac & Linux
+			startTime = (double) Files.readAttributes(Paths.get(videoPath), BasicFileAttributes.class).lastModifiedTime().toMillis();
+		} catch (IOException e) {
+			startTime = getStartTimeFromFFmpegData(ffmpegData, videoPath);
+		}
+		return startTime;
+	}
+
+	/**
+	 * This method updates the video_time file
+	 * 
+	 * @param newVideoStartTime
+	 * @param filePath
+	 */
 	public void updateVideoTimeFile(double newVideoStartTime, String filePath) {
 		try {
 			if (videoTimeContent == null) {

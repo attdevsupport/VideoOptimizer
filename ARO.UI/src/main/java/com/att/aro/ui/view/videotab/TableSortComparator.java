@@ -19,7 +19,7 @@ package com.att.aro.ui.view.videotab;
 
 import java.util.Comparator;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class TableSortComparator implements Comparator<Object> {
 

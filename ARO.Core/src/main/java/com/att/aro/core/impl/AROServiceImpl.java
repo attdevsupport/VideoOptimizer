@@ -615,7 +615,7 @@ public class AROServiceImpl implements IAROService {
 
 	private List<AbstractBestPracticeResult> createEmptyResults() {
 		List<BestPracticeType> allBP = Arrays.asList(BestPracticeType.values());
-		List<BestPracticeType> selected = SettingsUtil.retrieveBestPractices();
+		List<BestPracticeType> selected = SettingsUtil.getSelectedBPsList();
 		Function<? super BestPracticeType, ? extends AbstractBestPracticeResult> resMapper = (bp) -> {
 			AbstractBestPracticeResult res = new AbstractBestPracticeResult() {
 				@Override

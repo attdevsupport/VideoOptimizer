@@ -379,6 +379,19 @@ public final class ErrorCodeRegistry {
 		return err;
 	}
 	
+	/**
+	 * Keep Brew Update
+	 * @param err
+	 */
+	public static ErrorCode getBrewUpdateIssue(String local, String suggest) {
+		ErrorCode err = new ErrorCode();
+		err.setCode(530);
+		err.setName("The Home Brew is outdated in this computer! ");
+		err.setDescription(MessageFormat.format(defaultBundle.getString("Error.brewerror"), local, suggest));
+		sendGAErrorCode(err);
+		return err;
+	}
+	
 	private static void sendGAErrorCode(ErrorCode err){
 		GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendErrorEvents(err.getName(),err.getDescription(), false);
 	}

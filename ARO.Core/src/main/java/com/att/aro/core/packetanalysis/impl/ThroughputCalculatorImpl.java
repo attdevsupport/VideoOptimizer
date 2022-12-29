@@ -26,11 +26,11 @@ import com.att.aro.core.packetreader.pojo.PacketDirection;
 
 public class ThroughputCalculatorImpl implements IThroughputCalculator {
 
-	public List<Throughput> calculateThroughput(double startTime, double endTime, double window,
-			List<PacketInfo> packets) {
+	public List<Throughput> calculateThroughput(double startTime, double endTime, double window, List<PacketInfo> packets) {
+		
 		List<Throughput> result = new ArrayList<Throughput>();
 		List<PacketInfo> split = new ArrayList<>();
-		if(window < 0.00001 || endTime-startTime < 0.00001) {
+		if (window < 0.00001 || endTime - startTime < 0.00001) {
 			return Collections.emptyList();
 		}
 		double splitStart = startTime;

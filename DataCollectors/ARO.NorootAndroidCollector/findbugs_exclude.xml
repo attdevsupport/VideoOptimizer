@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<FindBugsFilter>
-        <Match>
-        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD"/>
-        <Package name="com.att.aro.datacollector.norootedandroidcollector.impl" />
-    </Match>
-</FindBugsFilter>

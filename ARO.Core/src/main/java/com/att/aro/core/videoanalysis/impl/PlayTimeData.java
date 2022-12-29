@@ -92,10 +92,15 @@ public class PlayTimeData {
 
 	private void process() {
 		buffer = 0.0;
-		Double playKey = videoPlayKeyMap.firstKey();
+		Double playKey = null;
+		if (!videoPlayKeyMap.isEmpty()) {
+			playKey = videoPlayKeyMap.firstKey();
+		} else {
+			return;
+		}
 		plKey = 0.0;
 		dlItr = videoDownLoadKeyMap.entrySet().iterator();
-		cntr=0;
+		cntr = 0;
 		if (playKey != null) {
 			handlePreload(playKey);
 			handlePlay();

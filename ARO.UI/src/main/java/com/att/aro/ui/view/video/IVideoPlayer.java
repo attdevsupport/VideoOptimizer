@@ -15,8 +15,6 @@
 */
 package com.att.aro.ui.view.video;
 
-import java.io.File;
-
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 
