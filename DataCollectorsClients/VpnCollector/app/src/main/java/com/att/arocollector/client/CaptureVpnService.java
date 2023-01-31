@@ -69,6 +69,7 @@ import com.att.arotcpcollector.tcp.TCPPacketFactory;
 import com.att.arotcpcollector.udp.UDPHeader;
 import com.att.arotcpcollector.udp.UDPPacketFactory;
 import com.att.arotracedata.AROCameraMonitorService;
+import com.att.arotracedata.AROCellTowerService;
 import com.att.arotracedata.AROCollectorService;
 import com.att.arotracedata.AROCpuTempService;
 import com.att.arotracedata.AROCpuTraceService;
@@ -141,6 +142,8 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 	private ComponentName cameraMonitorService;
 	private ComponentName cpuTraceService;
 	private Intent aRORadioMonitorService;
+	private Intent aROCellTowerSerivce;
+	private ComponentName cellTowerSerivce;
 	private ComponentName radioMonitorService;
 	private SocketData dataTransmitter = null;
 	BufferedWriter mAppNameWriter = null;
@@ -216,6 +219,9 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		//	launchAROGpsMonitorService();
 		launchAROCameraMonitorService();
 		launchARORadioMonitorService();
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+			launchAROCellTowerService();
+		}
 	}
 
 	private void stopServices() {
@@ -245,6 +251,14 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		aRORadioMonitorService.putExtra("TRACE_DIR", "/sdcard/ARO/");
 		aRORadioMonitorService.putExtra("TRACE_FILE_NAME", "radio_events");
 		radioMonitorService = startService(aRORadioMonitorService);
+	}
+
+	private void launchAROCellTowerService() {
+		Log.i(TAG, "launchAROCellTowerService()");
+		aROCellTowerSerivce = new Intent(getApplicationContext(), AROCellTowerService.class);
+		aROCellTowerSerivce.putExtra("TRACE_DIR", "/sdcard/ARO/");
+		aROCellTowerSerivce.putExtra("TRACE_FILE_NAME", "cell_events");
+		cellTowerSerivce = startService(aROCellTowerSerivce);
 	}
 
 	/**
@@ -279,6 +293,10 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		stopService(aRORadioMonitorService);
 	}
 
+	private void stopAROCellTowerService(){
+		Log.i(TAG, "stopping  aROCellTowerSerivce");
+		stopService(aROCellTowerSerivce);
+	}
 
 	private void loadExtras(Intent intent) {
 		Log.i(TAG, "loadExtras");
@@ -457,6 +475,10 @@ public class CaptureVpnService extends VpnService implements Handler.Callback, R
 		stopAROPrivateDataCollectorService();
 		stopAROCpuTempService();
 		stopAROCpuTraceService();
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+			stopAROCellTowerService();
+		}
+
 	}
 
 	/**

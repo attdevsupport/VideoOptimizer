@@ -277,7 +277,7 @@ public class AROGpsMonitorService extends Service {
 	 */
 	private void stopAROLocationTraceMonitor() {
 		Log.i(TAG, "stopAROLocationTraceMonitor()");
-		if (mGPSStatesManager != null) {
+		if (locationListener != null) {
 			mGPSStatesManager.removeUpdates(locationListener);
 			map.clear();
 			mGPSStatesManager = null;
