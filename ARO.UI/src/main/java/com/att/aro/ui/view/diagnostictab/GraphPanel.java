@@ -43,6 +43,7 @@ import java.util.TreeMap;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -51,6 +52,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.Border;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
 import org.jfree.chart.ChartPanel;
@@ -77,6 +79,8 @@ import com.att.aro.core.packetanalysis.pojo.Statistic;
 import com.att.aro.core.packetanalysis.pojo.TimeRange;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.settings.impl.SettingsImpl;
+import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;
 import com.att.aro.core.videoanalysis.pojo.VideoFormat;
@@ -96,7 +100,7 @@ import com.att.aro.ui.view.diagnostictab.plot.BurstPlot;
 import com.att.aro.ui.view.diagnostictab.plot.CameraPlot;
 import com.att.aro.ui.view.diagnostictab.plot.ConnectionsPlot;
 import com.att.aro.ui.view.diagnostictab.plot.CpuPlot;
-import com.att.aro.ui.view.diagnostictab.plot.DLPacketPlot;
+import com.att.aro.ui.view.diagnostictab.plot.PacketPlot;
 import com.att.aro.ui.view.diagnostictab.plot.GpsPlot;
 import com.att.aro.ui.view.diagnostictab.plot.LatencyPlot;
 import com.att.aro.ui.view.diagnostictab.plot.NetworkTypePlot;
@@ -112,25 +116,30 @@ import com.att.aro.ui.view.diagnostictab.plot.WakeLockPlot;
 import com.att.aro.ui.view.diagnostictab.plot.WifiPlot;
 import com.att.aro.view.images.Images;
 
-/**
+import lombok.Getter;
+import lombok.Setter;
+
+/**<pre>
  * Represents the Graph Panel that contains the graph in the Diagnostics tab.
  * 
  * Layer propagation description of Graph panel from outer to inner
  * 
- * getPane() ->> getScollableChartLabelPanel() ->>
- * [getInternalScrollableContainer(), getLabelsPanel() ]
- * getInternalScrollableContainer() ->> chartPanelScrollPane() ->>
- * getChartAndHandlePanel() --> [getHandlePanel(),getChartPanel()]
+ * getPane() ->> getScollableChartLabelPanel() ->> [getInternalScrollableContainer(), getLabelsPanel() ]
+ * getInternalScrollableContainer() 
+ *   ->> chartPanelScrollPane() 
+ *   ->> getChartAndHandlePanel() --> [getHandlePanel(),getChartPanel()]
  * 
  * 
  */
 
 public class GraphPanel extends JPanel implements ActionListener, ChartMouseListener {
+			
 	private static final long serialVersionUID = 1L;
 	
 	private static final String ZOOM_IN_ACTION = "zoomIn";
 	private static final String ZOOM_OUT_ACTION = "zoomOut";
 	private static final String SAVE_AS_ACTION = "saveGraph";
+	private static final String THROUGHPUT_DROPDOWN_ACTION = "throughputDropdown";
 
 	private static final Shape DEFAULT_POINT_SHAPE = new Ellipse2D.Double(-2, -2, 4, 4);
 	private static final int MIN_SIGNAL = -121;
@@ -147,7 +156,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private static final int MIN_TEMPERATURE = 0;
 	private static final int MAX_TEMPERATURE = 100;
 
-	private final int UPPER_PANEL_HEIGHT = 280;// 222
+	private final int UPPER_PANEL_HEIGHT = 280;
 
 	private Map<Integer, VideoEvent> chunkInfo = new TreeMap<>();
 
@@ -159,6 +168,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private JScrollPane pane;
 	private JButton zoomInButton;
 	private JButton zoomOutButton;
+	private JComboBox<String> throughputDropdown;
 	private JButton saveGraphButton;
 	private JPanel zoomSavePanel;
 	private JViewport port;
@@ -173,8 +183,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private RrcPlot rrcPlot;
 	private UserEventPlot eventPlot;
 	private TemperaturePlot tPlot;
-	private DLPacketPlot dlPlot;
-	private DLPacketPlot upPlot;
+	private PacketPlot dlPlot;
+	private PacketPlot upPlot;
 	private AlarmPlot alarmPlot;
 	private GpsPlot gpsPlot;
 	private RadioPlot radioPlot;
@@ -193,25 +203,11 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private ConnectionsPlot connectionsPlot;
 	private LatencyPlot latencyplot;
 
+	@Getter @Setter
 	private double endTime = 0.0;
 
-	public double getEndTime() {
-		return endTime;
-	}
-
-	public void setEndTime(double endTime) {
-		this.endTime = endTime;
-	}
-
+	@Getter @Setter
 	private double startTime = 0.0;
-
-	public double getStartTime() {
-		return startTime;
-	}
-
-	public void setStartTime(double startTime) {
-		this.startTime = startTime;
-	}
 
 	private GraphPanelHelper graphHelper;
 	private GUIPreferences guiPreferences;
@@ -277,7 +273,9 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	}
 
 	private List<PacketInfo> allPackets;
-	private double allSessions;
+	
+	@Getter @Setter private int allSessionHashCode;
+	
 	private double traceDuration;
 	private DiagnosticsTab parent;
 	private Border border;
@@ -378,155 +376,135 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	// In 4.1.1, the method called refreshGraph()
 	public void filterFlowTable() {
 		
-		AROTraceData filteredSessionTraceData = getTraceData();
+		AROTraceData traceData = getTraceData();
 		double filteredStartTime = 0.0;
 		double filteredEndTime = 0.0;
-		double filteredDuration = filteredSessionTraceData.getAnalyzerResult().getTraceresult().getTraceDuration();
+		double traceDuration = traceData.getAnalyzerResult().getTraceresult().getTraceDuration();
 
-		List<Session> sessionList = new ArrayList<Session>();
+		List<Session> selectedSessionList = new ArrayList<Session>();
 		if (getTraceData() == null) {
 			return;
-		} else {			
+		} else {
 			TCPUDPFlowsTableModel model = (TCPUDPFlowsTableModel) parent.getJTCPFlowsTable().getModel();
 			Map<String, Session> subSessionMap = model.getSessionMap();
 			Map<String, Boolean> subcheckboxMap = model.getCheckboxMap();
 			for (Map.Entry<String, Boolean> entry : subcheckboxMap.entrySet()) {
 				if (entry.getValue()) {
-					sessionList.add(subSessionMap.get(entry.getKey()));
+					selectedSessionList.add(subSessionMap.get(entry.getKey()));
 				}
 			}
-
-			filteredSessionTraceData.getAnalyzerResult().setSessionlist(sessionList);
+			
+			// store checked sessions in AROTraceData.analyzerResult
+			traceData.getAnalyzerResult().setSessionlist(selectedSessionList);
 		}
 
-		List<PacketInfo> packetsForSelectedSession = new ArrayList<PacketInfo>();
-		for (Session session : sessionList) {
+		// combine all packets from selected sessions
+		List<PacketInfo> packetsForSelectedSessions = new ArrayList<PacketInfo>();
+		for (Session session : selectedSessionList) {
 			if (session.getAllPackets() != null) {
-				packetsForSelectedSession.addAll(session.getAllPackets());
+				packetsForSelectedSessions.addAll(session.getAllPackets());
 			}
 		}
 
 		// when generating graph, make sure session is ordered by time stamp
-		Collections.sort(packetsForSelectedSession, new Comparator<PacketInfo>() {
+		Collections.sort(packetsForSelectedSessions, new Comparator<PacketInfo>() {
 			@Override
 			public int compare(PacketInfo p1, PacketInfo p2) {
 				return (int) (p1.getTimeStamp() * 1000 - p2.getTimeStamp() * 1000);
 			}
 		});
 
-		boolean selectedAllPackets = false;
-
 		// Adding the TCP packets to the trace for getting redoing the analysis
-		if (packetsForSelectedSession.size() > 0) {
-			if (sessionList.size() == getAllSessions()) {
+		if (packetsForSelectedSessions.size() > 0) {
+			if (selectedSessionList.hashCode() == getAllSessionHashCode()) { //if (selectedSessionList.size() == getAllSessionCount()) {
 				// For select all use all exiting packets
-				filteredSessionTraceData.getAnalyzerResult().getTraceresult().setAllpackets(getAllPackets());
-				selectedAllPackets = true;
+				traceData.getAnalyzerResult().getTraceresult().setAllpackets(getAllPackets());
+				filteredStartTime = 0;
+				filteredEndTime = traceDuration;
 			} else {
-				// Collections.sort(packetsForSelectedSession);//?
-				filteredSessionTraceData.getAnalyzerResult().getTraceresult().setAllpackets(packetsForSelectedSession);
+				traceData.getAnalyzerResult().getTraceresult().setAllpackets(packetsForSelectedSessions);
+				filteredStartTime = packetsForSelectedSessions.get(0).getTimeStamp();
+				filteredEndTime = packetsForSelectedSessions.get(packetsForSelectedSessions.size() - 1).getTimeStamp() + 2;// adjust the time line axis number
 			}
 		}
-
-		if (selectedAllPackets) {
-			filteredStartTime = -0.01;
-			filteredEndTime = filteredDuration;
-		} else {
-			int index = 0;
-			for (Session session : sessionList) {
-				if (session.getAllPackets().size() != 0) {
-					if (index == 0) {
-						filteredStartTime = session.getAllPackets().get(0).getTimeStamp();
-						filteredEndTime = session.getAllPackets().get(0).getTimeStamp();
-					}
-
-					if (filteredStartTime > session.getAllPackets().get(0).getTimeStamp()) {
-						filteredStartTime = session.getAllPackets().get(0).getTimeStamp();
-					}
-
-					if (filteredEndTime < session.getAllPackets().get(0).getTimeStamp()) {
-						filteredEndTime = session.getAllPackets().get(0).getTimeStamp();
-					}
-					index++;
-				}
-			}
-			if (index == 0) {
-				filteredStartTime = 0.0;
-				filteredEndTime = 0.0;
-			}
+		
+		// TODO: For a future story. This toggle will be added to the UI, so filters apply to the full graph rather than a zoomed graph.
+		boolean useFullTimeScale = false;
+		if (useFullTimeScale) {
+			filteredStartTime = 0;
+			filteredEndTime = traceDuration;
 		}
 		// for Analysis data particular time of the graph, some number is not clear..
-		if (filteredStartTime > 0) {
+		if (filteredStartTime >= 0) {
 			filteredStartTime = filteredStartTime - 2;// adjust the time line axis number
-			if (filteredStartTime < 0) {
-				filteredStartTime = -0.01;
-			}
 		}
 		if (filteredStartTime < 0) {
-			filteredStartTime = -0.01;
+			filteredStartTime = 0;
 		}
-		if (!selectedAllPackets) {
-			if (filteredEndTime > 0) {
-				filteredEndTime = filteredEndTime + 15;// adjust the time line axis number
-			}
-			if (filteredEndTime > filteredDuration) {
-				filteredEndTime = filteredDuration;
-			}
+		if (filteredEndTime > traceDuration) {
+			filteredEndTime = traceDuration;
 		}
-
+		
 		this.startTime = filteredStartTime;
 		this.endTime = filteredEndTime;
 
 		if (getTraceData() != null) {
 			TimeRange timeRange = new TimeRange(filteredStartTime, filteredEndTime);
-			AnalysisFilter filter = filteredSessionTraceData.getAnalyzerResult().getFilter();
+			
+			AnalysisFilter filter = traceData.getAnalyzerResult().getFilter();
 			filter.setTimeRange(timeRange);
-			filteredSessionTraceData.getAnalyzerResult().setFilter(filter);
-			Statistic stat = ContextAware.getAROConfigContext().getBean(IPacketAnalyzer.class).getStatistic(packetsForSelectedSession);
+			traceData.getAnalyzerResult().setFilter(filter);
+			
+			Statistic stat = ContextAware.getAROConfigContext().getBean(IPacketAnalyzer.class).getStatistic(packetsForSelectedSessions);
 			long totaltemp = 0;
-			for (PacketInfo packetInfo : packetsForSelectedSession) {
+			for (PacketInfo packetInfo : packetsForSelectedSessions) {
 				totaltemp += packetInfo.getLen();
 			}
 			stat.setTotalByte(totaltemp);
 			AbstractRrcStateMachine statemachine = ContextAware.getAROConfigContext().getBean(IRrcStateMachineFactory.class).create(
-					packetsForSelectedSession, filteredSessionTraceData.getAnalyzerResult().getProfile(),
-					stat.getPacketDuration(), filteredDuration, stat.getTotalByte(), timeRange);
+					packetsForSelectedSessions, traceData.getAnalyzerResult().getProfile(),
+					stat.getPacketDuration(), traceDuration, stat.getTotalByte(), timeRange);
 
 			BurstCollectionAnalysisData burstcollectiondata = new BurstCollectionAnalysisData();
 			if (stat.getTotalByte() > 0) {
 				burstcollectiondata = ContextAware.getAROConfigContext().getBean(IBurstCollectionAnalysis.class).analyze(
-						packetsForSelectedSession, filteredSessionTraceData.getAnalyzerResult().getProfile(),
+						packetsForSelectedSessions, traceData.getAnalyzerResult().getProfile(),
 						stat.getPacketSizeToCountMap(), statemachine.getStaterangelist(),
-						filteredSessionTraceData.getAnalyzerResult().getTraceresult().getUserEvents(),
-						filteredSessionTraceData.getAnalyzerResult().getTraceresult().getCpuActivityList()
+						traceData.getAnalyzerResult().getTraceresult().getUserEvents(),
+						traceData.getAnalyzerResult().getTraceresult().getCpuActivityList()
 								.getCpuActivities(),
-						sessionList);
+						selectedSessionList);
 			}
-			filteredSessionTraceData.getAnalyzerResult().getStatistic().setTotalByte(stat.getTotalByte());
-			filteredSessionTraceData.getAnalyzerResult().setStatemachine(statemachine);
-			filteredSessionTraceData.getAnalyzerResult().setBurstCollectionAnalysisData(burstcollectiondata);
-			refresh(filteredSessionTraceData);
+			traceData.getAnalyzerResult().getStatistic().setTotalByte(stat.getTotalByte());
+			traceData.getAnalyzerResult().setStatemachine(statemachine);
+			traceData.getAnalyzerResult().setBurstCollectionAnalysisData(burstcollectiondata);
+			refresh(traceData, true);
 		}
 	}
 
 	// In 4.1.1, the method name is resetChart(TraceData.Analysis analysis)
-	public void refresh(AROTraceData aroTraceData) {
+	public void refresh(AROTraceData aroTraceData, boolean uiUpdateOnly) {
 		getSaveGraphButton().setEnabled(aroTraceData != null);
 		if (combinedPlot != null) {
 			setGraphView(combinedPlot.getDomainCrosshairValue(), true);
 		} else {
 			setGraphView(0, true);
 		}
-		setTraceData(aroTraceData);
+		if (!uiUpdateOnly) {
+			setTraceData(aroTraceData);
+		}
 		if (aroTraceData != null) {
 			setAllPackets(aroTraceData.getAnalyzerResult().getTraceresult().getAllpackets());
 			setTraceDuration(aroTraceData.getAnalyzerResult().getTraceresult().getTraceDuration());
-			setAllSessions(aroTraceData.getAnalyzerResult().getSessionlist().size());// list
-																						// length
+			if (!uiUpdateOnly) {
+				setAllSessionHashCode(aroTraceData.getAnalyzerResult().getSessionlist().hashCode());
+			}
 		} else {
 			setAllPackets(new LinkedList<PacketInfo>());
 			setTraceDuration(0);
-			setAllSessions(0);
+			if (!uiUpdateOnly) {
+				setAllSessionHashCode(0);
+			}
 		}
 
 		if (aroTraceData != null 
@@ -598,13 +576,13 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 					break;
 				case DL_PACKETS:
 					if (dlPlot == null) {
-						dlPlot = new DLPacketPlot();
+						dlPlot = new PacketPlot();
 					}
 					dlPlot.populate(entry.getValue().getPlot(), aroTraceData, true);
 					break;
 				case UL_PACKETS:
 					if (upPlot == null) {
-						upPlot = new DLPacketPlot();
+						upPlot = new PacketPlot();
 					}
 					upPlot.populate(entry.getValue().getPlot(), aroTraceData, false);
 					break;
@@ -753,7 +731,8 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		getZoomInButton().setEnabled(aroTraceData != null);
 		getZoomOutButton().setEnabled(aroTraceData != null);
 		getSaveGraphButton().setEnabled(aroTraceData != null);
-		if (aroTraceData != null) {
+		getThroughputDropdown().setEnabled(aroTraceData != null);
+		if (aroTraceData != null) {	
 			parent.getDeviceNetworkProfilePanel().refresh(aroTraceData);
 		}
 	}
@@ -870,8 +849,35 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			gbc2.gridx = 0;
 			gbc2.gridy = 2;
 			zoomSavePanel.add(getSaveGraphButton(), gbc2);
+			GridBagConstraints gbc3 = new GridBagConstraints();
+			gbc3.gridx = 0;
+			gbc3.gridy = 3;
+			zoomSavePanel.add(getThroughputDropdown(), gbc3);
 		}
 		return zoomSavePanel;
+	}
+
+	private JComboBox<String> getThroughputDropdown() {
+		if (throughputDropdown == null) {
+			String[] dropdownOptions = new String[] { ".1s", ".2s", ".5s", "1s", "2s", "5s" };
+			throughputDropdown = new JComboBox<String>(dropdownOptions);
+			String prevThroughputTimeDelta = Util.getAttribute(ThroughputPlot.THROUGHPUT_TIME_DELTA);
+			if (StringUtils.isEmpty(prevThroughputTimeDelta)) {
+				if (getTraceData() == null) {
+					throughputDropdown.setSelectedItem(dropdownOptions[3]);
+				} else {
+					throughputDropdown.setSelectedItem(getTraceData().getAnalyzerResult().getProfile().getThroughputWindow() + "s");
+				}
+			} else {
+				throughputDropdown.setSelectedItem(prevThroughputTimeDelta);
+			}
+			throughputDropdown.setActionCommand(THROUGHPUT_DROPDOWN_ACTION);
+			throughputDropdown.setEnabled(false);
+			throughputDropdown.setPreferredSize(new Dimension(Util.isLinuxOS() ? 75 : 70, 30));
+			throughputDropdown.addActionListener(this);
+			throughputDropdown.setToolTipText(ResourceBundleHelper.getMessageString("chart.tooltip.dropdown"));
+		}
+		return throughputDropdown;
 	}
 
 	private JButton getZoomOutButton() {
@@ -880,7 +886,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			zoomOutButton = new JButton("", zoomOutButtonIcon);
 			zoomOutButton.setActionCommand(ZOOM_OUT_ACTION);
 			zoomOutButton.setEnabled(false);
-			zoomOutButton.setPreferredSize(new Dimension(60, 30));
+			zoomOutButton.setPreferredSize(new Dimension(70, 30));
 			zoomOutButton.addActionListener(this);
 			zoomOutButton.setToolTipText(ResourceBundleHelper.getMessageString("chart.tooltip.zoomout"));
 		}
@@ -893,7 +899,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			zoomInButton = new JButton("", zoomInButtonIcon);
 			zoomInButton.setActionCommand(ZOOM_IN_ACTION);
 			zoomInButton.setEnabled(false);
-			zoomInButton.setPreferredSize(new Dimension(60, 30));
+			zoomInButton.setPreferredSize(new Dimension(70, 30));
 			zoomInButton.addActionListener(this);
 			zoomInButton.setToolTipText(ResourceBundleHelper.getMessageString("chart.tooltip.zoomin"));
 		}
@@ -906,7 +912,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			saveGraphButton = new JButton("", saveGraphButtonIcon);
 			saveGraphButton.setActionCommand(SAVE_AS_ACTION);
 			saveGraphButton.setEnabled(false);
-			saveGraphButton.setPreferredSize(new Dimension(60, 30));
+			saveGraphButton.setPreferredSize(new Dimension(70, 30));
 			saveGraphButton.addActionListener(this);
 			saveGraphButton.setToolTipText(ResourceBundleHelper.getMessageString("chart.tooltip.saveas"));
 		}
@@ -1085,25 +1091,25 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 	private int getCrosshairViewPos() {
 		float pos = getCrosshairPosRatio() - getCrossSectionOffsetRatio();
-		float chartPosValue = new Float(getScrollMax() * pos);
+		float chartPosValue = Float.valueOf(getScrollMax() * pos);
 		return Math.max(0, Math.round(chartPosValue));
 	}
 
 	private float getCrosshairPosRatio() {
-		return new Float(new Float(getCrosshair()) / new Float(getGraphLength()));
+		return Float.valueOf(((float)getCrosshair()) / Float.valueOf(getGraphLength()));
 	}
 
 	private float getCrossSectionOffsetRatio() {
-		return new Float(new Float(getCrossSection()) / new Float(getScrollMax()));
+		return Float.valueOf(Float.valueOf(getCrossSection()) / Float.valueOf(getScrollMax()));
 	}
 
 	private float getScrollMax() {
 		// return new Float(getPane().getHorizontalScrollBar().getMaximum());
-		return new Float(chartPanelScrollPane().getHorizontalScrollBar().getMaximum());
+		return Float.valueOf(chartPanelScrollPane().getHorizontalScrollBar().getMaximum());
 	}
 
 	public float getGraphLength() {
-		return new Float(getAxis().getRange().getLength());
+		return (float) getAxis().getRange().getLength();
 	}
 
 	public double getCrosshair() {
@@ -1116,30 +1122,30 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 	private float getCrossSection() {
 		// return new Float(getPane().getWidth() / 2);
-		return new Float(chartPanelScrollPane().getWidth() / 2);
+		return Float.valueOf(chartPanelScrollPane().getWidth() / 2);
 	}
 
 	public double getViewportLowerBound() {
-		return new Float(getScrollPosRatio() * getGraphLength());
+		return Float.valueOf(getScrollPosRatio() * getGraphLength());
 	}
 
 	public double getViewportUpperBound() {
-		return new Float(getViewportLowerBound() + (getGraphLength() * getViewportOffsetRatio()));
+		return getViewportLowerBound() + (getGraphLength() * getViewportOffsetRatio());
 	}
 
 	private float getScrollPosRatio() {
-		return new Float(getScrollPos() / getScrollMax());
+		return Float.valueOf(getScrollPos() / getScrollMax());
 	}
 
 	private float getScrollPos() {
 		// return new Float(getPane().getHorizontalScrollBar().getValue());
-		return new Float(chartPanelScrollPane().getHorizontalScrollBar().getValue());
+		return Float.valueOf(chartPanelScrollPane().getHorizontalScrollBar().getValue());
 	}
 
 	private float getViewportOffsetRatio() {
 		// return new Float(new Float(getPane().getWidth()) / new
 		// Float(getScrollMax()));
-		return new Float(new Float(chartPanelScrollPane().getWidth()) / new Float(getScrollMax()));
+		return Float.valueOf(Float.valueOf(chartPanelScrollPane().getWidth()) / Float.valueOf(getScrollMax()));
 	}
 
 	/**
@@ -1170,8 +1176,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	private int getHandleCoordinate() {
 		Rectangle2D plotArea = getChartPanel().getScreenDataArea();
 		XYPlot plot = (XYPlot) getAdvancedGraph().getPlot();
-		int handleCoordinate = new Float(
-				plot.getDomainAxis().valueToJava2D(getCrosshair(), plotArea, plot.getDomainAxisEdge())).intValue();
+		int handleCoordinate = (int) plot.getDomainAxis().valueToJava2D(getCrosshair(), plotArea, plot.getDomainAxisEdge());
 		return handleCoordinate;
 	}
 
@@ -1228,6 +1233,36 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		chartPanelScrollPane().getViewport().setViewPosition(new Point(getPointX(), 0));
 		positionHairLineHandle(getPointX());
 	}
+	
+	/**
+	 * This method implements the reset of Zoom.
+	 */
+	private void refreshThroughputGraphs(String timeSelected) {
+		double timeInSeconds = Double.parseDouble(timeSelected.substring(0, timeSelected.length() - 1));
+		
+		if (throughput == null) {
+			throughput = new ThroughputPlot();
+		}
+		throughput.setThroughputDropdownClicked(true);
+		throughput.setThroughputTimeWindow(timeInSeconds);
+		throughput.populate(subplotMap.get(ChartPlotOptions.THROUGHPUT).getPlot(), getTraceData(), PacketDirection.BOTH);
+
+		if (throughputUL == null) {
+			throughputUL = new ThroughputPlot();
+		}
+		throughputUL.setThroughputDropdownClicked(true);
+		throughputUL.setThroughputTimeWindow(timeInSeconds);
+		throughputUL.populate(subplotMap.get(ChartPlotOptions.THROUGHPUTUL).getPlot(), getTraceData(), PacketDirection.UPLINK);
+		
+		if (throughputDL == null) {
+			throughputDL = new ThroughputPlot();
+		}
+		throughputDL.setThroughputDropdownClicked(true);
+		throughputDL.setThroughputTimeWindow(timeInSeconds);
+		throughputDL.populate(subplotMap.get(ChartPlotOptions.THROUGHPUTDL).getPlot(), getTraceData(), PacketDirection.DOWNLINK);
+		
+		SettingsImpl.getInstance().setAndSaveAttribute(ThroughputPlot.THROUGHPUT_TIME_DELTA, timeSelected);
+	}
 
 	/**
 	 * Updates the graph UI after zoom in or zoom out.
@@ -1245,9 +1280,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 		// update the screen panels for repaint
 		getChartPanel().updateUI();
 		// updates the scroll bar after resize updates.
-		// SwingUtilities.invokeLater(new Runnable() {
-		// public void run() {
-		// resetScrollPosition();
 		Rectangle2D plotArea = getChartPanel().getScreenDataArea();
 		XYPlot plot = (XYPlot) getAdvancedGraph().getPlot();
 
@@ -1257,8 +1289,7 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 			plotWidth = (plotWidth * 2) + 16;
 		}
 		plotArea.setRect(plotArea.getX(), plotArea.getY(), plotWidth, plotArea.getHeight());
-		double scrollPoint = new Float(
-				plot.getDomainAxis().valueToJava2D(getCrosshair(), plotArea, plot.getDomainAxisEdge())).intValue();
+		double scrollPoint = plot.getDomainAxis().valueToJava2D(getCrosshair(), plotArea, plot.getDomainAxisEdge());
 
 		int width = chartPanelScrollPane().getWidth();
 		scrollPoint = Math.max(0, scrollPoint - (width / 2));
@@ -1287,18 +1318,17 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 	}
 
 	@Override
-	public void chartMouseClicked(ChartMouseEvent chartmouseevent) {
-		Point2D point = chartmouseevent.getTrigger().getPoint();
+	public void chartMouseClicked(ChartMouseEvent chartMouseEvent) {
+		Point2D point = chartMouseEvent.getTrigger().getPoint();
 		Rectangle2D plotArea = getChartPanel().getScreenDataArea();
 
 		XYPlot plot = (XYPlot) getAdvancedGraph().getPlot();
-		final double lastChartX = new Double(
-				plot.getDomainAxis().java2DToValue(point.getX(), plotArea, plot.getDomainAxisEdge()));
+		final double lastChartX = plot.getDomainAxis().java2DToValue(point.getX(), plotArea, plot.getDomainAxisEdge());
 
 		for (GraphPanelListener gpl : listeners) {
-			gpl.graphPanelClicked(lastChartX);
+			gpl.graphPanelClicked(lastChartX, chartMouseEvent.getEntity());
 
-			ChartEntity entity = chartmouseevent.getEntity();
+			ChartEntity entity = chartMouseEvent.getEntity();
 
 			if (entity instanceof XYItemEntity) {
 				XYItemEntity xyItem = (XYItemEntity) entity;
@@ -1365,6 +1395,11 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 				tracePath = getTraceData().getAnalyzerResult().getTraceresult().getTraceDirectory();
 			}
 			graphHelper.SaveImageAs(getViewport(), tracePath);
+		} else if (THROUGHPUT_DROPDOWN_ACTION.equals(e.getActionCommand())) {
+			@SuppressWarnings("unchecked")
+			JComboBox<String> timeDropdown = (JComboBox<String>) e.getSource();
+			String timeSelected = (String) timeDropdown.getSelectedItem();
+			refreshThroughputGraphs(timeSelected);
 		}
 	}
 
@@ -1374,14 +1409,6 @@ public class GraphPanel extends JPanel implements ActionListener, ChartMouseList
 
 	public void setAllPackets(List<PacketInfo> allPackets) {
 		this.allPackets = allPackets;
-	}
-
-	public double getAllSessions() {
-		return allSessions;
-	}
-
-	public void setAllSessions(double allSessions) {
-		this.allSessions = allSessions;
 	}
 
 	public double getTraceDuration() {

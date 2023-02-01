@@ -16,7 +16,6 @@
 package com.att.aro.ui.view.menu.file;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -24,7 +23,6 @@ import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.pojo.AROTraceData;
-import com.att.aro.ui.utils.ResourceBundleHelper;
 
 /**
  * <p>
@@ -46,23 +44,6 @@ import com.att.aro.ui.utils.ResourceBundleHelper;
 public class MissingTraceFiles {
 	private final File tracePath;
 	private final AROTraceData model;
-
-	private final String[] VideoSuffixes = {
-		".mp4",
-		".wmv",
-		".qt",
-		".wma",
-		".mpeg",
-		".3gp",
-		".asf",
-		".avi",
-		".dv",
-		".mkv",
-		".mpg",
-		".rmvb",
-		".vob",
-		".mov"
-	};
 
 	public MissingTraceFiles(File tracePath, AROTraceData model) {
 		this.tracePath = tracePath;
@@ -106,66 +87,13 @@ public class MissingTraceFiles {
 		}
 	}
 
-	/**
-	 * Checks for external video source (assumes it's not a pcap file).
-	 * 
-	 * @param nativeVideoSourcefile
-	 * 			the native video source file i.e video.mp4 
-	 * @return boolean
-	 * 			return false if only native video file is present , otherwise true.
-	 */			
-	private boolean isExternalVideoSourceFilePresent(String nativeVideoFileOnDevice,
-			String nativeVideoDisplayfile){
-		
-		String[] matches = tracePath.list(new FilenameFilter() {
-			@Override
-			public boolean accept(File dir, String name) {
-				boolean suffixMatch = false;
-				for (String suffix : VideoSuffixes) {
-					if (name.toLowerCase().endsWith(suffix)) {
-						suffixMatch = true;
-						break;
-					}
-				}
-				return suffixMatch;
-			}
-		});
-
-		boolean externalVideoSource = false;
-		if(matches!= null) {
-			if(matches.length == 1 && !nativeVideoFileOnDevice.equals(matches[0]) &&
-					!nativeVideoDisplayfile.equals(matches[0])) {
-				// If trace directory contains any one file video.mp or video.mov , we allow normal native video flow.
-				externalVideoSource = true;
-			}
-			else if (matches.length == 2 && 
-					(nativeVideoFileOnDevice.equals(matches[0]) ||
-						nativeVideoDisplayfile.equals(matches[0])) &&
-					(nativeVideoFileOnDevice.equals(matches[1]) ||
-						nativeVideoDisplayfile.equals(matches[1]))) {
-				// If the trace directory contains video.mp4 and video.mov , we allow normal native video flow.
-				;
-			}
-			else if (matches.length > 1) {
-				for(int index = 0; index < matches.length; ++index){
-					// if trace directory contains video.mp4 or video.mov along with external video file, we give preference to external video file.
-					if(nativeVideoFileOnDevice.equals(matches[index]) ||
-							nativeVideoDisplayfile.equals(matches[index])){
-						externalVideoSource = true;
-						break;
-					}
-				}
-			}
-		}
-		return externalVideoSource;
-	}
 
 	public Set<File> retrieveMissingFiles() {
 		Set<File> missingFiles = new LinkedHashSet<File>();
 		addMissingFileMaybe(TraceDataConst.FileName.APPNAME_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.DEVICEINFO_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.DEVICEDETAILS_FILE, missingFiles);
-//		addMissingFileMaybe(TraceDataConst.FileName.NETWORKINFO_FILE, missingFiles);
+		// addMissingFileMaybe(TraceDataConst.FileName.NETWORKINFO_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.CPU_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.GPS_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.BLUETOOTH_FILE, missingFiles);
@@ -173,7 +101,7 @@ public class MissingTraceFiles {
 		addMissingFileMaybe(TraceDataConst.FileName.CAMERA_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.SCREEN_STATE_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.USER_EVENTS_FILE, missingFiles);
-//		addMissingFileMaybe(TraceDataConst.FileName.SCREEN_ROTATIONS_FILE, missingFiles);
+		// addMissingFileMaybe(TraceDataConst.FileName.SCREEN_ROTATIONS_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.ALARM_END_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.ALARM_START_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.KERNEL_LOG_FILE, missingFiles);
@@ -182,7 +110,7 @@ public class MissingTraceFiles {
 		addMissingFileMaybe(TraceDataConst.FileName.TEMPERATURE_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.LOCATION_FILE, missingFiles);
 		addMissingFileMaybe(TraceDataConst.FileName.RADIO_EVENTS_FILE, missingFiles);
-//		addMissingFileMaybe(TraceDataConst.FileName.SSLKEY_FILE, missingFiles);
+		// addMissingFileMaybe(TraceDataConst.FileName.SSLKEY_FILE, missingFiles);
 
 		// TODO:  Move this to Core (preferably immutable through a builder and no setters)!
 		// UI shoule not be doing this!!!

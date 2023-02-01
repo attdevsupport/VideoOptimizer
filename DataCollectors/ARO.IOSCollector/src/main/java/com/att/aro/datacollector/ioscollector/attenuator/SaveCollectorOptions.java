@@ -35,9 +35,9 @@ public class SaveCollectorOptions {
 	public static final String COLLECT_OPTIONS = "collect_options";
 
 	public void recordCollectOptions(String trafficFilePath, int delayTimeDL, int delayTimeUL, int throttleDL,
-			int throttleUL, boolean atnrProfile, boolean secure, String atnrProfileName, String videoOrientation) {
+			int throttleUL, boolean atnrProfile, String atnrProfileName, String videoOrientation) {
 
-		LOG.info("trace file path: " + trafficFilePath + " set secure: " + secure + " set videoOrientation: "
+		LOG.info("trace file path: " + trafficFilePath + " set videoOrientation: "
 				+ videoOrientation + " set Down stream Delay Time: " + delayTimeDL + " set Up stream Delay Time: "
 				+ delayTimeUL + " set Profile: " + atnrProfile + " set Profile name: " + atnrProfileName);
 
@@ -47,7 +47,7 @@ public class SaveCollectorOptions {
 			file.createNewFile();
 			bw.write("dsDelay=" + delayTimeDL + System.lineSeparator() + "usDelay=" + delayTimeUL
 					+ System.lineSeparator() + "throttleDL=" + throttleDL + System.lineSeparator() + "throttleUL="
-					+ throttleUL + System.lineSeparator() + "secure=" + secure + System.lineSeparator() + "orientation="
+					+ throttleUL + System.lineSeparator() + System.lineSeparator() + "orientation="
 					+ videoOrientation + System.lineSeparator() + "attnrProfile=" + atnrProfile + System.lineSeparator()
 					+ "attnrProfileName=" + atnrProfileName);
 			bw.close();

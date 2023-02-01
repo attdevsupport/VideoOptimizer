@@ -57,8 +57,8 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 	private StatusResult statusResult = null;
 	private Date videoStartTime;
 
-	IScreenCapture capt = null;
-	ScreenshotManager smanage = null;
+	IScreenCapture screenCapture = null;
+	ScreenshotManager screenshotManager = null;
 
 	int videoWidth = 0;
 	int videoHeight = 0;
@@ -67,14 +67,14 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 	public VideoCaptureMacOS(File file, String udid) throws IOException {
 		subscribers = new ArrayList<ImageSubscriber>();
 		((VideoWriterImpl) this.videowriter).setFileManager(new FileManagerImpl());
-		this.videowriter.init(file.getAbsolutePath(), VideoFormat.JPG, 0.2f, 10);
+		this.videowriter.init(file.getAbsolutePath(), VideoFormat.PNG, 0.2f, 10);
 		this.udid = udid;
 	}
 
 	// for use in unit test
 	public VideoCaptureMacOS(QuickTimeOutputStream qt, IScreenCapture screencapture) {
 		subscribers = new ArrayList<ImageSubscriber>();
-		this.capt = screencapture;
+		this.screenCapture = screencapture;
 	}
 
 	public void setWorkingFolder(String folder) {
@@ -101,11 +101,11 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 		LOG.info("Init Screencapture...");
 		LOG.info("Working folder: " + this.workingFolder);
 
-		smanage = new ScreenshotManager(this.workingFolder, this.udid);
-		smanage.start();
+		screenshotManager = new ScreenshotManager(this.workingFolder, this.udid);
+		screenshotManager.start();
 		LOG.info("Started ScreenshotManager...");
 		int timeoutcounter = 0;
-		while (!smanage.isReady()) {
+		while (!screenshotManager.isReady()) {
 			try {
 				LOG.info("Waiting for ScreenshotManager to be ready");
 				Thread.sleep(200);
@@ -118,13 +118,15 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 				break;
 			}
 		}
-		LOG.info("ScreenshotManager is ready: " + smanage.isReady());
+		LOG.info("ScreenshotManager is ready: " + screenshotManager.isReady());
 
 		Date lastFrameTime = this.videoStartTime = new Date();
+		
+		// while loop - to process all images from ScreenshotManager
 		while (!stop) {
 
 			try {
-				BufferedImage image = smanage.getImage();// ImageHelper.getImageFromByte(data);
+				BufferedImage image = screenshotManager.getImage();// ImageHelper.getImageFromByte(data);
 				if (image != null) {
 
 					Date timestamp = new Date();
@@ -143,7 +145,7 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 					LOG.error("Failed to get screenshot image, ImageDecoder error");
 					break;
 				} else if (!stop) {
-					stop = !smanage.isReady();
+					stop = !screenshotManager.isReady();
 					LOG.info("Failed to get screenshot image, pause for 1/2 second");
 					try {
 						Thread.sleep(500);
@@ -159,8 +161,8 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 		}
 		try {
 			videowriter.close();
-			if (smanage != null) {
-				smanage.shutDown();
+			if (screenshotManager != null) {
+				screenshotManager.shutDown();
 			}
 		} catch (IOException ioExp) {
 			LOG.warn("Exception closing video output stream", ioExp);
@@ -198,22 +200,22 @@ public class VideoCaptureMacOS extends Thread implements IVideoCapture {
 		} else {
 			LOG.info("capture engine already quit, proceed to next step");
 		}
-		if (capt != null) {
+		if (screenCapture != null) {
 			try {
-				capt.stopCapture();
+				screenCapture.stopCapture();
 			} catch (UnsatisfiedLinkError er) {
 			    LOG.warn("Soemthing went wrong while trying to stop screen recording", er);
 			}
-			capt = null;
+			screenCapture = null;
 			LOG.info("disposed screencapture");
 		}
-		if (smanage != null) {
+		if (screenshotManager != null) {
 			try {
-				smanage.signalShutdown();
+				screenshotManager.signalShutdown();
 			} catch (IOException e) {
 				LOG.warn("IOException:", e);
 			}
-			smanage = null;
+			screenshotManager = null;
 		}
 		// properly close video creator
 		try {

@@ -69,7 +69,6 @@ public class JFxPlayer implements IVideoPlayer {
     
     @Getter
     private String videoPath;
-    @Getter
 	private boolean started = false;
 
 	public JFxPlayer(SharedAttributesProcesses aroView){

@@ -23,10 +23,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -47,7 +45,6 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
@@ -64,7 +61,6 @@ import com.att.aro.core.preferences.UserPreferences;
 import com.att.aro.core.preferences.UserPreferencesFactory;
 import com.att.aro.core.util.CrashHandler;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
-import com.att.aro.core.util.StringParse;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.util.VideoUtils;
 import com.att.aro.ui.commonui.AROMenuAdder;
@@ -74,6 +70,7 @@ import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.commonui.TabPanelCommon;
 import com.att.aro.ui.exception.AROUIIllegalStateException;
 import com.att.aro.ui.utils.ResourceBundleHelper;
+import com.att.aro.ui.view.MainFrame;
 import com.att.aro.ui.view.SharedAttributesProcesses;
 import com.att.aro.ui.view.SharedAttributesProcesses.TabPanels;
 import com.att.aro.ui.view.menu.file.ADBPathDialog;
@@ -84,7 +81,6 @@ import com.att.aro.ui.view.menu.file.TimeRangeEditorDialog;
 
 public class AROFileMenu implements ActionListener, MenuListener {
 	private static final String DOT_TEMP_TRACE = ".temp_trace";
-	private static final String DOT_README = ".readme";
 
 	public static final Logger LOG = LogManager.getLogger(AROFileMenu.class.getSimpleName());
 
@@ -217,17 +213,14 @@ public class AROFileMenu implements ActionListener, MenuListener {
 					if ((TraceDataConst.FileName.PCAP_FILE.equals(tracePath.getName()) 
 							&& Files.exists(Paths.get(tracePath.getParent(), TraceDataConst.FileName.TIME_FILE)) 
 							&& Files.exists(Paths.get(tracePath.getParent(), TraceDataConst.FileName.DEVICEDETAILS_FILE))) 
-							|| (newDirectoryName.equals(parentFolderName) && Files.exists(Paths.get(tracePath.getParent(), DOT_README)))
+							|| (newDirectoryName.equals(parentFolderName) && Files.exists(Paths.get(tracePath.getParent(), TraceDataConst.FileName.DOT_README)))
 							) {
 						checkReadme(tracePath);
 						openPcap(tracePath);
 					} else {
 						// open PCAP inside of dialog
-						OpenPcapFileDialog pcapDialog = new OpenPcapFileDialog(parent, (JMenuItem) aEvent.getSource(), tracePath);
+						OpenPcapFileDialog pcapDialog = new OpenPcapFileDialog(parent, (JMenuItem) aEvent.getSource(), tracePath, TraceDataConst.FileName.DOT_README);
 						pcapDialog.setVisible(true);
-						if (pcapDialog.isRetainDirectory()) {
-							createTimeFile(new File(pcapDialog.getNewPcapFileTracePath()), tracePath.getName());
-						}
 					}
 				}
 			}
@@ -249,19 +242,18 @@ public class AROFileMenu implements ActionListener, MenuListener {
 	}
 
 	/**
-	 * Force reparse of time file if .readme is older than the trigger timestamp
+	 * Force reparse of time file if .readme is older than the trigger timestamp of 1653432144000L (May 24, 2022)
 	 * @param tracePath
 	 */
 	private void checkReadme(File tracePath) {
 		try {
 			// force reconsideration of time stamps of wrapped pcap files, based on when .readme was created (modified)
-			if (fileManager.fileExist(tracePath, DOT_README) 
-					&& Files.readAttributes(Paths.get(tracePath.getPath(), DOT_README), BasicFileAttributes.class).lastModifiedTime().toMillis() < 1653432144000L) {
-				Files.delete(Paths.get(tracePath.getPath(), DOT_README));
+			if (fileManager.fileExist(tracePath, TraceDataConst.FileName.DOT_README) 
+					&& Files.readAttributes(Paths.get(tracePath.getPath(), TraceDataConst.FileName.DOT_README), BasicFileAttributes.class).lastModifiedTime().toMillis() < 1653432144000L) {
+				Files.delete(Paths.get(tracePath.getPath(), TraceDataConst.FileName.DOT_README));
 				Files.delete(Paths.get(tracePath.getPath(), "time"));
 
-				createTimeFile(tracePath, parent.getTrafficFile());
-				fileManager.createEmptyFile(tracePath, DOT_README);
+				Util.createTimeFile(tracePath, parent.getTrafficFile(), TraceDataConst.FileName.DOT_README);
 			}
 		} catch (Exception e) {
 			LOG.error(e);
@@ -283,14 +275,17 @@ public class AROFileMenu implements ActionListener, MenuListener {
 		
 		if (traceFolder != null) {
 			// detect non-standard tracefolders, ie: contains only traffic & video, create time file and .readme file
-			locateTrafficAndVideo(traceFolder);
+			if(locateTrafficAndVideo(traceFolder)) {
+				showErrorDialog(ResourceBundleHelper.getMessageString("multipleTrafficFiles.Found"));
+				traceFolder = null;
+			}
 		}
 		
 		if (traceFolder != null && traceFolder.isDirectory()) {
 			if ((new File(traceFolder, DOT_TEMP_TRACE)).exists()) {
 				fileManager.deleteFolderAndContents(traceFolder.toString());
 			}
-			if (!isTrafficFilePresent(traceFolder) && !(new File(traceFolder, DOT_README)).exists()) {
+			if ( !isTrafficFilePresent(traceFolder) && !(new File(traceFolder, TraceDataConst.FileName.DOT_README)).exists()) {
 				showErrorDialog(ResourceBundleHelper.getMessageString("trafficFile.notFound"));
 				traceFolder = null;
 			} else if (isTraceFolderEmpty(traceFolder)) {
@@ -309,17 +304,18 @@ public class AROFileMenu implements ActionListener, MenuListener {
 		}
 		return traceFolder;
 	}
-
+	
 	/**<env>
 	 * detect non-standard tracefolders
 	 * ie: contains only traffic & video, where folder name is same as traffic file name
 	 * will then create time file and .readme file
 	 * @param traceFolder
 	 */
-	public void locateTrafficAndVideo(File traceFolder) {
+	public boolean locateTrafficAndVideo(File traceFolder) {
 		Map<String, String[]> traceFileMap;
+		String[] trafficFile = null ; 
 		if ((traceFileMap = VideoUtils.validateFolder(traceFolder)).size() > 0) { // found both traffic and video files
-			String[] trafficFile = traceFileMap.get(VideoUtils.TRAFFIC);
+		   trafficFile = traceFileMap.get(VideoUtils.TRAFFIC);
 			String[] videoFile = traceFileMap.get(VideoUtils.VIDEO);
 			
 			if (trafficFile != null && trafficFile.length == 1) {
@@ -328,54 +324,26 @@ public class AROFileMenu implements ActionListener, MenuListener {
 				if (videoFile != null && videoFile.length == 1) {
 					parent.setVideoFile(videoFile[0]);
 					if (TraceDataConst.FileName.PCAP_FILE.equals(traceFolder.getName())) {
-						fileManager.createEmptyFile(traceFolder, DOT_README);
+						fileManager.createEmptyFile(traceFolder, TraceDataConst.FileName.DOT_README);
 					}
 				} else {
 					parent.setVideoFile(null);
 				}
 
 				if (!fileManager.fileExist(traceFolder, TraceDataConst.FileName.TIME_FILE)) {
-					createTimeFile(traceFolder, trafficFile[0]);
-					fileManager.createEmptyFile(traceFolder, DOT_README);
+					Util.createTimeFile(traceFolder, trafficFile[0], TraceDataConst.FileName.DOT_README);
 				}
 			} else {
 				parent.setTrafficFile(null);
 			}
 		}
+		return trafficFile!= null && trafficFile.length > 1;
+		
 	}
 
-	/**<pre>
-	 * Create timefile
-	 *   based on trafficfile first packet timestamp and duration
-	 *   
-	 * @param traceFolder
-	 * @param trafficFile
-	 */
-	private void createTimeFile(File traceFolder, String trafficFile) {
-		String capinfosData = Util.getExternalProcessRunner().executeCmd(String.format("%s \"%s\"", Util.getCapinfos(), new File(traceFolder, trafficFile).toString()));
-
-		double duration = StringParse.findLabeledDoubleFromString("Capture duration:", "seconds", capinfosData);
-		
-		// read timestamp out of first line of cap/pcap file
-		String result = Util.getExternalProcessRunner().executeCmd(String.format("%s -c 1 -t e -r \"%s\"", Util.getTshark(), new File(traceFolder, trafficFile).toString()));
-		String[] found = (new StringParse()).parse(result, "\\s(\\d+\\.\\d+)\\s");
-		String startTime = found != null ? found[0] : StringParse.findLabeledDataFromString("First packet time:", Util.LINE_SEPARATOR, capinfosData);
-
-		double start = StringParse.stringToDouble(startTime, 0);
-		
-		double end = start + duration;
-		String timeText = String.format("Synchronized timestamps\n%.3f\n%.0f\n%.3f", start, 0.0, end);
-		InputStream stream = new ByteArrayInputStream(timeText.getBytes());
-		try {
-			fileManager.saveFile(stream, traceFolder + Util.FILE_SEPARATOR + TraceDataConst.FileName.TIME_FILE);
-			fileManager.createFile(traceFolder, DOT_README);
-		} catch (IOException e1) {
-			LOG.error("failed to save 'time' file", e1);
-		}
-	}
-	
 	private void launchTraceFolderAnalysis(File traceFolder, TimeRange... timeRange) {
 		try {
+			((MainFrame)parent).wipeCurrentTraceInitialAnalyzerResult();
 			if (timeRange != null && timeRange.length == 1 && timeRange[0] != null) {
 				parent.updateTracePath(traceFolder, timeRange[0]);
 			} else {
@@ -437,6 +405,7 @@ public class AROFileMenu implements ActionListener, MenuListener {
 	
 	private void openPcap(File tracePath) {
 		// open PCAP
+		((MainFrame)parent).wipeCurrentTraceInitialAnalyzerResult();
 		parent.updateTracePath(tracePath);
 		userPreferences.setLastTraceDirectory(tracePath.getParentFile().getParentFile());
 		GoogleAnalyticsUtil.getAndIncrementTraceCounter();
@@ -456,18 +425,18 @@ public class AROFileMenu implements ActionListener, MenuListener {
 		if (event instanceof JMenuItem) {
 			if ((traceFolder = selectTraceFolder(aEvent, isRecent)) != null) {
 				if (traceFolder.isFile()) {
-					new OpenPcapFileDialog(parent, (JMenuItem) aEvent.getSource(), traceFolder).setVisible(true);
+					new OpenPcapFileDialog(parent, (JMenuItem) aEvent.getSource(), traceFolder, null).setVisible(true);
 					return;
 				} else if ((new File(traceFolder, DOT_TEMP_TRACE)).exists()) {
 					(new File(traceFolder, DOT_TEMP_TRACE)).delete();
 					LOG.error("Previous attempt to read " + traceFolder + " failed");
 				}
-				if ((new File(traceFolder, DOT_README)).exists()) {
+				if ((new File(traceFolder, TraceDataConst.FileName.DOT_README)).exists()) {
 					checkReadme(traceFolder);
 					String[] capFiles = VideoUtils.validateFolder(traceFolder, VideoUtils.TRAFFIC, VideoUtils.TRAFFIC_EXTENTIONS).get(VideoUtils.TRAFFIC);
 					if (capFiles != null && capFiles.length == 1) {
 						/* 1 cap file plus 1 .readme
-						 * record the traffic file, allow to open as a traace folder
+						 * record the traffic file, allow to open as a trace folder
 						 */
 						parent.setTrafficFile(capFiles[0]);
 					}

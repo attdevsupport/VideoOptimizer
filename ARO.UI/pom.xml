@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>4.5.0</version>
+        <version>${vo.version}</version>
         <relativePath>../ARO.Parent</relativePath>
     </parent>
 
@@ -16,67 +16,19 @@
 
 	<properties>
 		<main.class>com.att.aro.ui.view.MainFrame</main.class>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.deploy.skip>true</maven.deploy.skip>
-		<vo.version>4.5.0</vo.version>
-		<jna.version>5.2.0</jna.version>
 	</properties>
-
-	<!-- repositories -->
-	<repositories>
-		<repository>
-			<id>central</id>
-			<name>MavenCentral Repository</name>
-			<url>https://repo1.maven.org/maven2/</url>
-		</repository>
-		<repository>
-			<id>apache.snapshots</id>
-			<name>Apache Development Snapshot Repository</name>
-			<url>https://repository.apache.org/content/repositories/snapshots/</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>		
-		<repository>
-			<id>sonatype-public</id>
-			<name>Sonatype Public</name>
-			<url>http://repository.sonatype.org/content/groups/public</url>
-		</repository>
-		<repository>
-			<id>sonatype-flex</id>
-			<name>Sonatype Flex</name>
-			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-		</repository>
-		<repository>
-			<id>jboss-earlyaccess-repository</id>
-			<url>http://maven.repository.redhat.com/earlyaccess/all/</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-	</repositories>
-
-	<!-- pluginRepositories -->
-	<pluginRepositories>
-		<pluginRepository>
-			<id>central</id>
-			<name>MavenCentral Repository</name>
-			<url>https://repo1.maven.org/maven2/</url>
-		</pluginRepository>
-	</pluginRepositories>
-
-	<!-- dependencies -->
+	
 	<dependencies>
 		<dependency>
 			<groupId>com.att.aro</groupId>
 			<artifactId>vo-core</artifactId>
 			<version>${vo.version}</version>
+			<!-- <exclusions>
+				<exclusion>
+					<groupId>org.apache.logging.log4j</groupId>
+					<artifactId>log4j-api</artifactId>
+				</exclusion>
+			</exclusions> -->
 		</dependency>
 		<dependency>
 			<groupId>com.att.aro.datacollector</groupId>
@@ -93,68 +45,15 @@
 			<artifactId>ios-collector</artifactId>
 			<version>${vo.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>com.att.aro.analytics</groupId>
 			<artifactId>vo-analytics</artifactId>
 			<version>${vo.version}</version>
 		</dependency>
-		
-		<dependency>
-		  <groupId>org.jfree</groupId>
-		  <artifactId>jfreechart</artifactId>
-		  <version>1.0.17</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.codehaus.mojo</groupId>
-			<artifactId>findbugs-maven-plugin</artifactId>
-			<version>3.0.4</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<version>1.18.2</version>
-			<scope>provided</scope>
-		</dependency>
-		
-		<dependency>
-			<groupId>javax.media</groupId>
-			<artifactId>jmf</artifactId>
-			<version>2.1.1e</version>
-		</dependency>
-		<dependency>
-			<groupId>uk.co.caprica</groupId>
-			<artifactId>vlcj</artifactId>
-			<version>4.3.0</version>
-		</dependency>
-		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			<artifactId>jna</artifactId>
-			<version>${jna.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>net.java.dev.jna</groupId>
-			 <artifactId>jna-platform</artifactId>
-			 <version>${jna.version}</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.swinglabs</groupId>
-		    <artifactId>swingx</artifactId>
-		    <version>1.6.1</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.apache.commons</groupId>
-		    <artifactId>commons-csv</artifactId>
-		    <version>1.8</version>
-		</dependency>	
 	</dependencies>
 
-	<!-- build -->
 	<build>
 		<plugins>
-
 			<!-- maven-jar-plugin -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -170,8 +69,27 @@
 					</archive>
 				</configuration>
 			</plugin>
-
-			
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.7.1.1</version>
+				<configuration>
+					<excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
+					<effort>Max</effort>
+					<threshold>Max</threshold>
+					<maxRank>15</maxRank>
+					<xmlOutput>true</xmlOutput>
+					<xmlOutputDirectory>${project.build.directory}/spotBugs</xmlOutputDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<id>analyze-compile</id>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 
 			<!-- shade -->
 			<plugin>
@@ -187,6 +105,7 @@
 					</execution>
 				</executions>
 				<configuration>
+					<skip>true</skip>
 					<finalName>AROUI</finalName>
 					<transformers>
 						<transformer
@@ -207,22 +126,6 @@
 						</transformer>
 					</transformers>
 				</configuration>
-			</plugin>
-
-			<!-- maven-dependency -->
-			<plugin>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>install</phase>
-						<goals>
-							<goal>copy-dependencies</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${basedir}/libs</outputDirectory>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 
 			<!-- jacoco unit tests -->

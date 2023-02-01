@@ -32,11 +32,14 @@ import com.att.aro.core.util.ImageHelper;
 public class Tiff2JpgUtil {
 
 	private static final Logger LOG = LogManager.getLogger(Tiff2JpgUtil.class.getName());
+	
 	public static ByteArrayOutputStream tiff2Jpg(String inputFile) {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
 		try {
 			BufferedImage image = tiff2bufferedImage(inputFile);
-			image = convert(image, BufferedImage.TYPE_INT_RGB);
+			if (image.getType() != BufferedImage.TYPE_INT_RGB) {
+				image = convert(image, BufferedImage.TYPE_INT_RGB);
+			}
 			ImageIO.write(image, "jpg", byteArrayOutputStream);
 		} catch (Exception e) {
 			LOG.debug("Exception:", e);
@@ -51,7 +54,7 @@ public class Tiff2JpgUtil {
 		inputstream.read(imgdataarray);
 		inputstream.close();
 
-		BufferedImage imgdata = ImageHelper.getImageFromByte(imgdataarray);
+		BufferedImage imgdata = ImageHelper.convertToBufferedImage(imgdataarray);
 		return imgdata;
 	}
 

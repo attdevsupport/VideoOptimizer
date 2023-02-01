@@ -55,7 +55,6 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
-import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
 import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.util.Util;
@@ -123,8 +122,6 @@ public class MetadataDialog extends JDialog {
 	@Getter
 	private boolean cancelled = false;
 
-	private String buTraceNotes;
-
 	/**
 	 * 
 	 * @param i null value indicates leave CaretPosition to default
@@ -145,7 +142,6 @@ public class MetadataDialog extends JDialog {
 				traceNotesCaretPosition = caretPosition;
 				traceNotes.setCaretPosition(traceNotesCaretPosition);
 			}
-			buTraceNotes = metaDataModel.getTraceNotes();
 			traceNotesLineCount = traceNotes.getLineCount();
 			setMinimumSize(getPreferredSize());
 			this.setVisible(true);
@@ -158,10 +154,10 @@ public class MetadataDialog extends JDialog {
 	private void extractMetaDataModel() throws Exception {
 		result = getAbstractTraceResult();
 		tracePath = getTracePath();
-		if (result != null && result.getMetaData() != null) {
-			metaDataModel = result.getMetaData();
-		} else {
+		if (result != null && (metaDataModel = result.getMetaData()) == null) {
 			metaDataModel = metadataHelper.loadMetaData(tracePath);
+		} else {
+			metadataHelper.setMetaData(metaDataModel);
 		}
 	}
 
@@ -426,8 +422,14 @@ public class MetadataDialog extends JDialog {
 
 	private void cancelDialog() {
 		cancelled = true;
-		metaDataModel.setTraceNotes(buTraceNotes);
-		buTraceNotes = null;
+		try {
+			metaDataModel = metadataHelper.revert();
+			result.setMetaData(metaDataModel);
+			dispose();
+			((MainFrame) parent).refreshBestPracticesTab();
+		} catch (Exception e) {
+			LOGGER.error("Failed to restore changes", e);
+		}
 		dispose();
 	}
 	

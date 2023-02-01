@@ -42,8 +42,8 @@ import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jdesktop.swingx.autocomplete.AutoCompleteDecorator;
 
 import com.att.aro.core.ApplicationConfig;
@@ -366,6 +366,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		} else if (ac.equals(rooted)) { // Rooted Collector
 			collector = rootCollector;
 			if (btnRooted.isSelected()) {
+
 				enableFullVideo(false);
 				if (btn_hdef.isSelected() || btn_sdef.isSelected()) {
 					btn_lrez.setSelected(true);
@@ -376,10 +377,13 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		} else if (ac.equals(vpn)) { // VPN
 			collector = vpnCollector;
 			if (btnVpn.isSelected()) {
+
 				enableFullVideo(true);
 			}
+
 			return;
-		} 
+
+		}
 	}
 
 	public String messageComposed() {
@@ -424,6 +428,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 					attnrGroupPanel.getAttnrRadioGP().reset();
 				}
 				attnrGroupPanel.getAttnrRadioGP().setRbAtnrLoadFileEnable(false);
+
 			}
 		} else {
 			attnrGroupPanel.setAttenuateEnable(false);
@@ -568,6 +573,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 			enableIOSVideoOptions();
 			showVideoOrientation(false);
 			
+			
 			// Set Default Video
 			if (!btn_lrez.isSelected() && !btn_hdef.isSelected() && !btn_none.isSelected() && !btn_sdef.isSelected()) {
 				btn_lrez.setSelected(true);
@@ -597,7 +603,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				videoOption = VideoOption.LREZ;
 				showVideoOrientation(false);
 			}
-			
+						
 			if (selectedIAroDevice.isEmulator()) {
 				if (selectedIAroDevice.getAbi().contains("x86")) {
 					setRootState(true);
@@ -629,6 +635,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 					}
 					appSelector.setSelectedIndex(0);
 				}
+				
 				
 			} else {
 				
@@ -680,6 +687,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 				// enableFullVideo(false);
 				enableVpnCapture(false);
 			}
+
 			setAttenuateSectionStatus();
 			break;
 
@@ -762,30 +770,6 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		}
 	}
 	
-	/**
-	 * Hides/Shows Video Orientation label, Portrait button & Landscape button.
-	 * 
-	 * @param boolFlag
-	 */
-	public void showVideoOrientation_bu(boolean boolFlag) {
-
-		labelVideoOrientTitle.setVisible(boolFlag);
-		videoOrientRadioGrpPanel.setVisible(boolFlag);
-
-		if (boolFlag && !videoOrientationExpanded) {
-			videoOrientationExpanded = true;
-			parent.resizer(HEIGHT_VIDEO_ORIENTATION_SECTION);
-		} else if (!boolFlag && videoOrientationExpanded) {
-			videoOrientationExpanded = false;
-			parent.resizer(-HEIGHT_VIDEO_ORIENTATION_SECTION);
-		}		
-		
-		// Reset selection to settings every time we disable the video orientation option
-		if (!boolFlag) {
-			(videoOrient == Orientation.LANDSCAPE ? btn_landscape : btn_portrait).setSelected(true);
-		}
-	}
-
 	/**
 	 * sets radioButtons to reflect root status
 	 * 
@@ -919,6 +903,7 @@ public class DeviceDialogOptions extends JPanel implements ActionListener {
 		attnrGroupPanel.setAttenuateEnable(true);
 		attnrGroupPanel.reselectPriorOptions(attenuatorModel, selectedDevice.isPlatform(Platform.iOS));
 	}
+
 
 	private void enableVideoOritenation(Orientation videoOrientation) {
 		if (Platform.iOS.equals(selectedDevice.getPlatform())) {

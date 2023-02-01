@@ -22,6 +22,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -35,11 +38,19 @@ import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
 import javax.swing.text.DefaultEditorKit;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.util.Util;
+import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.EnableEscKeyCloseDialog;
 
+import lombok.Getter;
 
-public class ServerNameIndicationDialog extends JDialog {
+
+	public class ServerNameIndicationDialog extends JDialog {
 	private static final long serialVersionUID = 1L;
 
 	private Session session;
@@ -51,15 +62,22 @@ public class ServerNameIndicationDialog extends JDialog {
 	private JTextArea serverNameIndicationTextArea;
 	private JPopupMenu serverNameIndicationContextMenu;
 	private EnableEscKeyCloseDialog enableEscKeyCloseDialog;
-	
-	public ServerNameIndicationDialog(Session session) {
-		
+	private static final IExternalProcessRunner externalProcessRunner = ContextAware.getAROConfigContext()
+			.getBean(ExternalProcessRunnerImpl.class);
+	@Getter
+	private Map<String, String> sniMap = null;
+	private String trafficFile = "";
+
+	public ServerNameIndicationDialog(Session session, Map<String, String> sniMap, String trafficFile) {
+
 		this.session = session;
+		this.sniMap= sniMap;
+		this.trafficFile=trafficFile;
 		init();
 		this.setVisible(true);
+
 	}
-	
-	
+
 	private void init() {
 		this.setContentPane(getJContentPane());
 		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -78,18 +96,18 @@ public class ServerNameIndicationDialog extends JDialog {
 		setLocationRelativeTo(getRootPane());
 		getRootPane().setDefaultButton(okButton);
 	}
-	
+
 	private JComponent getJContentPane() {
 		if (jContentPane == null) {
 			jContentPane = new JPanel();
-			jContentPane.setPreferredSize(new Dimension(500,250));
+			jContentPane.setPreferredSize(new Dimension(500, 250));
 			jContentPane.setLayout(new BorderLayout());
 			jContentPane.add(getServerNameIndicatioPanel(), BorderLayout.CENTER);
 			jContentPane.add(getButtonPanel(), BorderLayout.PAGE_END);
 		}
 		return jContentPane;
 	}
-	
+
 	private JPanel getServerNameIndicatioPanel() {
 		if (serverNameIndicationPanel == null) {
 			serverNameIndicationPanel = new JPanel();
@@ -113,15 +131,48 @@ public class ServerNameIndicationDialog extends JDialog {
 			Border padding = BorderFactory.createBevelBorder(BevelBorder.RAISED);
 			serverNameIndicationPanel.setBorder(padding);
 			serverNameIndicationPanel.add(serverNameIndicationTextArea, BorderLayout.CENTER);
-			
-			serverNameIndicationTextArea.setText("Server IP: " + session.getRemoteIP().getHostAddress() + 
-					"\n" + "Server Name Indication: " + (session.getServerNameIndication() != null ? session.getServerNameIndication() : "N/A") +
-					"\n" + "Byte Count: " + session.getBytesTransferred());
-			
+
+			String sniData = "";
+			serverNameIndicationTextArea.setText("Server IP: " + session.getRemoteIP().getHostAddress() + "\n"
+					+ "Server Name Indication: " + (session.getServerNameIndication() != null 
+					? session.getServerNameIndication() : (StringUtils.isNotEmpty(sniData = getSNIData()) ? sniData : "N/A")) 
+					+ "\n" + "Byte Count: " + session.getBytesTransferred());
+
 		}
 		return serverNameIndicationPanel;
 	}
-	
+
+	private String getSNIData() {
+		if (sniMap == null) {
+			String[] tsharkCmds = Util.getParentAndCommand(Util.getTshark());
+
+			String cmd = String.format("\"%s\" %s \"%s\"", tsharkCmds[2], " -r ",
+					new File(trafficFile).toString());
+
+			formatResult(externalProcessRunner.executeCmd(cmd
+					+ " -Tfields -e frame.number -e ip.src -e udp.srcport -e tcp.srcport -e ip.dst -e udp.dstport -e tcp.dstport -e tls.handshake.extensions_server_name  -Y tls.handshake.extension.type==0",
+					true, true));
+		}
+		String sessionKey = session.getLocalIP().getHostAddress() + " " + session.getLocalPort() + " "
+				+ session.getRemotePort() + " " + session.getRemoteIP().getHostAddress();
+		
+		return sniMap.get(sessionKey);
+	}
+
+	private void formatResult(String result) {
+		sniMap = new HashMap<String, String>();
+		String[] lines = result.split("\n");
+		for (int i = 0; i < lines.length; i++) {
+			String[] data = (lines[i]).split("\t");
+			if (data.length == 8 && StringUtils.isNotBlank(data[7]) && StringUtils.isNotBlank(data[1]) && StringUtils.isNotBlank(data[4])) {
+				String sessionKey = data[1] + " " + (StringUtils.isNotBlank(data[2]) ? data[2] : data[3]) + " "
+						+ (StringUtils.isNotBlank(data[5]) ? data[5] : data[6]) + " " + data[4];
+				sniMap.put(sessionKey, data[7]);
+			}
+
+		}
+	}
+
 	private JPanel getButtonPanel() {
 		if (buttonPanel == null) {
 			buttonPanel = new JPanel();
@@ -130,7 +181,7 @@ public class ServerNameIndicationDialog extends JDialog {
 		}
 		return buttonPanel;
 	}
-	
+
 	private JPanel getJButtonGrid() {
 		if (jButtonGrid == null) {
 			GridLayout gridLayout = new GridLayout();
@@ -143,7 +194,7 @@ public class ServerNameIndicationDialog extends JDialog {
 		}
 		return jButtonGrid;
 	}
-	
+
 	private JButton getButton(String text, ActionListener al) {
 		JButton button = new JButton();
 		button.setText(text);

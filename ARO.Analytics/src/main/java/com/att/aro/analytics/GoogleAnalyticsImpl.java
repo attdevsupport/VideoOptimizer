@@ -18,7 +18,7 @@ package com.att.aro.analytics;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.att.aro.core.ApplicationConfig;
 import com.att.aro.core.analytics.IGoogleAnalytics;

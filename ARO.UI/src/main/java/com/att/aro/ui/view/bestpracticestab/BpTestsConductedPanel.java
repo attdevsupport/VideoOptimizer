@@ -38,7 +38,9 @@ import javax.swing.JPanel;
 
 import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
+import com.att.aro.core.bestpractice.pojo.BestPracticeType;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.settings.SettingsUtil;
 import com.att.aro.ui.commonui.AroFonts;
 import com.att.aro.ui.commonui.TabPanelJScrollPane;
 import com.att.aro.ui.commonui.UIComponent;
@@ -170,11 +172,8 @@ public class BpTestsConductedPanel extends AbstractBpPanel {
 	private void addTestsConductedSummary() {
 		int bpRunCt = 0;
 		if (bpResults != null) {
-			for (AbstractBestPracticeResult bestPracticeResult : bpResults) {
-				if (bestPracticeResult.getResultType() != BPResultType.NONE) {
-					bpRunCt++;
-				}
-			}
+			List<BestPracticeType> selectedBPsList = SettingsUtil.getSelectedBPsList();
+			bpRunCt = selectedBPsList.size();
 			int gridY1 = 1;
 			int column = 0;
 			int rows = bpRunCt / 2 + 1;

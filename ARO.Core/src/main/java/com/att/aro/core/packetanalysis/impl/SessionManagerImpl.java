@@ -37,7 +37,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,7 +93,7 @@ public class SessionManagerImpl implements ISessionManager {
 	public void setiOSSecureTracePath(String tracePath) {
 		this.tracePath = tracePath + Util.FILE_SEPARATOR + "iosSecure" + Util.FILE_SEPARATOR;
 	}
-	
+
 	public String getTracePath() {
 		return tracePath;
 	}
@@ -369,7 +369,7 @@ public class SessionManagerImpl implements ISessionManager {
 
 			if (tcpPacket.isSYN() && packetInfo.getDir().equals(PacketDirection.UPLINK)) {
 
-				if (!session.getUplinkPacketsSortedBySequenceNumbers().containsKey(tcpPacket.getSequenceNumber())) {
+				if (session.getBaseUplinkSequenceNumber() != tcpPacket.getSequenceNumber()) {
 					session = new Session(localIP, remoteIP, remotePort, localPort, sessionKey);
 					sessions.add(session);
 					tcpSessions.get(sessionKey).add(session);
@@ -518,12 +518,8 @@ public class SessionManagerImpl implements ISessionManager {
 								String host = rrInfo.getHostName();
 
 								if (host != null) {
-									session.setRemoteHostName(host);
-								}
+									session.setRemoteHostName(host);								}
 
-								if (isAnIOSSecureSession(session)) {
-									break;
-								}
 
 								expectedUploadSeqNo = uploadSequenceNumber + tcpPacket.getPayloadLen();
 
@@ -569,7 +565,7 @@ public class SessionManagerImpl implements ISessionManager {
 					rrInfo = null;
 					tempRRInfo = null;
 
-					if (!( session.isIOSSecureSession() || (session.isSsl() && !session.isDecrypted()))) {
+					if (!((session.isSsl() && !session.isDecrypted()))) {
 
 						long expectedDownloadSeqNo = 0;
 						for (long downloadSequenceNumber : session.getDownlinkPacketsSortedBySequenceNumbers().keySet()) {
@@ -636,9 +632,7 @@ public class SessionManagerImpl implements ISessionManager {
 					LOGGER.error("Error Storing data to TCP Request Response Obect. Session ID: " + session.getSessionKey());
 				}
 
-				if (session.isIOSSecureSession()) {
-					results = analyzeRequestResponsesForIOSSecureSessions(session);
-				} else if (session.isSsl() && !session.isDecrypted()) {
+				if (session.isSsl() && !session.isDecrypted()) {
 					results =  analyzeRequestResponsesForSecureSessions(session);
 				}
 
@@ -1394,22 +1388,6 @@ public class SessionManagerImpl implements ISessionManager {
 			rrInfo.setHeaderParseComplete(true);
 		}
 		return rrInfo;
-	}
-
-	private boolean isAnIOSSecureSession(Session session) {
-
-		if (session.getDomainName() == null) {
-			return false;
-		}
-
-		String sessionKey = session.getDomainName() + "_" + session.getLocalPort();
-		File clearSessionRecFileUL = new File(this.tracePath + sessionKey + "_UL");
-		File clearSessionRecFileDL = new File(this.tracePath + sessionKey + "_DL");
-		if (clearSessionRecFileUL.exists() && clearSessionRecFileDL.exists()) {
-			session.setIOSSecureSession(true);
-			return true;
-		}
-		return false;
 	}
 
 	/**

@@ -19,7 +19,6 @@ package com.att.aro.datacollector.norootedandroidcollector.impl;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,7 +28,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Objects;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +57,7 @@ import com.att.aro.core.mobiledevice.pojo.AROAndroidDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
+import com.att.aro.core.tracemetadata.IEnvironmentDetailsHelper;
 import com.att.aro.core.tracemetadata.IMetaDataHelper;
 import com.att.aro.core.util.AttnScriptUtil;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
@@ -70,7 +70,7 @@ import com.att.aro.core.video.pojo.Orientation;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.datacollector.norootedandroidcollector.impl.CpuTraceCollector.State;
 import com.att.aro.datacollector.norootedandroidcollector.pojo.ErrorCodeRegistry;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 
 public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImageSubscriber {
 
@@ -94,9 +94,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 	private IAndroid android;
 	private boolean usingScreenRecorder = false;
-
-	//private static final String[] WIN_RUNTIME = { "cmd.exe", "/C" };
-	//private static final String[] OS_LINUX_RUNTIME = { "/bin/bash", "-l", "-c" };
 	
 	private static final int RETRY_TIME = 3;
 	private boolean attnrScriptRun = false;
@@ -113,7 +110,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	private String traceType = "";
 	private String targetedApp = "";
 	private String appProducer = "";
-	
+
 	private IMetaDataHelper metaDataHelper;
 	
 	@Autowired
@@ -127,7 +124,10 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	}
 
 	private IExternalProcessRunner extrunner;
-
+	
+	@Autowired
+	private IEnvironmentDetailsHelper environmentDetailsHelper;
+	
 	@Autowired
 	public void setExternalProcessRunner(IExternalProcessRunner runner) {
 		this.extrunner = runner;
@@ -360,32 +360,15 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	}
 
 	@Override
-	public StatusResult startCollector(boolean isCommandLine, String tracepath, VideoOption videoOption_deprecated,
-			String password) {
-		return this.startCollector(isCommandLine, tracepath, videoOption_deprecated, false, null, null, password);
+	public StatusResult startCollector(boolean isCommandLine, String tracepath, VideoOption videoOption_deprecated, String unused) {
+		return this.startCollector(isCommandLine, tracepath, videoOption_deprecated, false, null, null, null);
 	}
-
-	/**
-	 * Start collector in background and returns result which indicates success or error and detail data.
-	 * 
-	 * @param folderToSaveTrace
-	 *            directory to save trace to
-	 * @param videoOption
-	 *            optional flag to capture video of device. default is false
-	 * @param isLiveViewVideo
-	 *            ignored here
-	 * @param androidId
-	 *            optional id of device to capture. default is the connected device.
-	 * @param extraParams
-	 *            optional data to pass to collectors. required by some collectors.
-	 * @return a StatusResult to hold result and success or failure
-	 */
+	
 	@Override
-	public StatusResult startCollector(boolean isCommandLine, String folderToSaveTrace,
-			VideoOption videoOption_deprecated, boolean isLiveViewVideo, String deviceId,
-			Hashtable<String, Object> extraParams, String password) {
+	public StatusResult startCollector(boolean isCommandLine, String folderToSaveTrace, VideoOption videoOption_deprecated, boolean isLiveViewVideo,
+			IAroDevice aroDevice, Hashtable<String, Object> extraParams, String unused) {
 		LOG.info("startCollector() for non-rooted-android-collector");
-		
+		this.aroDevice = aroDevice;
 		if (deviceChangeListener == null) {
 			initDeviceChangeListener();
 		}
@@ -414,10 +397,11 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 
 		StatusResult result = new StatusResult();
 
-		// find the device by the id
-		result = findDevice(deviceId, result);
-		if (!result.isSuccess()) {
-			return result;
+		if (aroDevice == null) {
+			result = findDevice(null, result);
+			this.aroDevice = new AROAndroidDevice(device, false);
+		} else {
+			device = (IDevice)this.aroDevice.getDevice();
 		}
 
 		this.running = isCollectorRunning();
@@ -440,8 +424,6 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 			result.setSuccess(false);
 			return result;
 		}
-
-		aroDevice = new AROAndroidDevice(device, false);
 
 		cleanARO();
 
@@ -471,28 +453,28 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		this.haltCollectorInDevice();
 		new LogcatCollector(adbService, device.getSerialNumber()).clearLogcat();
 		atnrProfile = atnr.isLoadProfile();
-		if(atnrProfile){
+		if (atnrProfile) {
 			int apiNumber = AndroidApiLevel.K19.levelNumber();// default 
 			try {
 				apiNumber = Integer.parseInt(aroDevice.getApi());
 			} catch (Exception e) {
 				LOG.error("unknown device api number");
 			}
- 			location = (String) atnr.getLocalPath();
+			location = (String) atnr.getLocalPath();
 			AttnScriptUtil util = new AttnScriptUtil(apiNumber);
-			boolean scriptResult =  util.scriptGenerator(location);
-			if(!scriptResult){
+			boolean scriptResult = util.scriptGenerator(location);
+			if (!scriptResult) {
 				result.setError(ErrorCodeRegistry.getScriptAdapterError(location));
 				result.setSuccess(false);
 				return result;
 			}
 			this.attnrScriptRun = true;
 
-		}else if (atnr.isConstantThrottle()) {
-			if(atnr.isThrottleDLEnabled()){
+		} else if (atnr.isConstantThrottle()) {
+			if (atnr.isThrottleDLEnabled()) {
 				throttleDL = atnr.getThrottleDL();
 			}
-			if(atnr.isThrottleULEnabled()){
+			if (atnr.isThrottleULEnabled()) {
 				throttleUL = atnr.getThrottleUL();
 			}
 		}
@@ -541,25 +523,23 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		} else {
 			// Write environment details
 			try {
-				EnvironmentDetails environmentDetails = new EnvironmentDetails(folderToSaveTrace);
-				environmentDetails.populateDeviceInfo(aroDevice.getOS(), aroDevice.isRooted(), aroDevice.getPlatform().name());
-
-				FileWriter writer = new FileWriter(folderToSaveTrace + "/environment_details.json");
-				writer.append(new ObjectMapper().writeValueAsString(environmentDetails));
-				writer.close();
-			} catch (IOException e) {
+				EnvironmentDetails environmentDetails = new EnvironmentDetails(folderToSaveTrace, aroDevice);
+				environmentDetails.getDeviceInfo().getLocalIpAddressList().add("10.120.0.1");
+				environmentDetails.getDeviceInfo().getLocalIpAddressList().add("fd12:3456:789a:1:0:0:0:1");
+				environmentDetailsHelper.save(folderToSaveTrace, environmentDetails);
+			} catch (Exception e) {
 				LOG.error("Error while writing environment details", e);
-			}	
+			}
 		}
+
 		new Thread(() -> {
-			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
-					GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
-					GoogleAnalyticsUtil.getAnalyticsEvents().getStartTrace(),
-					aroDevice != null && aroDevice.getApi() != null ? aroDevice.getApi() : "Unknown");
-			GoogleAnalyticsUtil.getGoogleAnalyticsInstance().sendAnalyticsEvents(
-					GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
-					GoogleAnalyticsUtil.getAnalyticsEvents().getVideoCheck(),
-					videoOption != null ? videoOption.name() : "Unknown");
+			GoogleAnalyticsUtil.getGoogleAnalyticsInstance()
+					.sendAnalyticsEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
+							GoogleAnalyticsUtil.getAnalyticsEvents().getStartTrace(),
+							this.aroDevice.getApi() != null ? this.aroDevice.getApi() : "Unknown");
+			GoogleAnalyticsUtil.getGoogleAnalyticsInstance()
+					.sendAnalyticsEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getNonRootedCollector(),
+							GoogleAnalyticsUtil.getAnalyticsEvents().getVideoCheck(), videoOption != null ? videoOption.name() : "Unknown");
 		}).start();
 		if (isAndroidVersionNougatOrHigher(this.device) == true) {
 			startCpuTraceCapture();
@@ -897,9 +877,12 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 	}
 
 	/**
-	 * issue commands to stop the collector on vpn This cannot halt the vpn connection programmatically. VPN must be
-	 * revoked through gestures. Best done by human interaction. With sufficient knowledge of screen size, VPN
-	 * implementation, Android Version gestures can be programmatically performed to close the connection.
+	 * (1) Sends commands to stop all services via broadcast commands
+	 * (2) Stops User gesture capture
+	 * (3) Stops Atteenuation
+	 * (4) Stops Screen layout capture
+	 * (5) Pull traceData
+	 * 
 	 */
 	@Override
 	public StatusResult stopCollector() {
@@ -926,8 +909,8 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 		LOG.info("pulling trace to local dir");
 		new LogcatCollector(adbService, device.getSerialNumber()).collectLogcat(localTraceFolder, "Logcat.log");
 		result = pullTrace(this.mDataDeviceCollectortraceFileNames);
-
-		if(result.isSuccess()) {
+		
+		if (result.isSuccess()) {
 			try {
 				metaDataHelper.initMetaData(localTraceFolder, traceDesc, traceType, targetedApp, appProducer);
 			} catch (Exception e) {
@@ -1080,10 +1063,7 @@ public class NorootedAndroidCollectorImpl implements IDataCollector, IVideoImage
 				setCommand = Util.wrapText("rmdir /S /Q " + Util.wrapText(localTraceFolder + "\\ARO"));
 			}
 		} else {
-
-			deviceTracePath = "/sdcard/ARO/";
-			setCommand = adbService.getAdbPath() + " -s " + device.getSerialNumber() + " pull " + deviceTracePath + ". "
-					+ Util.wrapText(localTraceFolder);
+			setCommand = String.format("%s -s %s pull /sdcard/ARO/. %s", adbService.getAdbPath(), device.getSerialNumber(), Util.wrapText(localTraceFolder));
 			commandFailure = runCommand(setCommand);
 		}
 		if (commandFailure) {

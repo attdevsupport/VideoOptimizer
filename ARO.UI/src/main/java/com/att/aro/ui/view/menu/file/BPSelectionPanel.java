@@ -15,7 +15,7 @@
 */
 package com.att.aro.ui.view.menu.file;
 
-import static com.att.aro.core.settings.SettingsUtil.retrieveBestPractices;
+import static com.att.aro.core.settings.SettingsUtil.getSelectedBPsList;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -63,7 +63,7 @@ public class BPSelectionPanel extends JPanel {
 	JButton selectButton;
 	
 
-	Map<String, JCheckBox> map = new HashMap<>();
+	Map<String, JCheckBox> selectedBestPracticesMap = new HashMap<>();
 	List<JCheckBox> selectAllList = new ArrayList<>();
 
 	public static synchronized Component getBPPanel() {
@@ -133,7 +133,7 @@ public class BPSelectionPanel extends JPanel {
 		line2.add(getGroupedBPPanel(Category.HTML), BorderLayout.NORTH);
 		line2.add(getGroupedBPPanel(Category.VIDEO), BorderLayout.NORTH);
 		line2.add(getGroupedBPPanel(Category.OTHER), BorderLayout.NORTH);
-		line2.setPreferredSize(new Dimension(350,90 + 23 * noOfBestPractices));
+		line2.setPreferredSize(new Dimension(350,120 + 23 * noOfBestPractices));
 		return line2;
 	}
 
@@ -143,7 +143,7 @@ public class BPSelectionPanel extends JPanel {
 		line1.add(getGroupedBPPanel(Category.FILE), BorderLayout.NORTH);
 		line1.add(getGroupedBPPanel(Category.CONNECTIONS), BorderLayout.NORTH);
 		line1.add(getGroupedBPPanel(Category.SECURITY), BorderLayout.NORTH);
-		line1.setPreferredSize(new Dimension(350,160 + 23 * noOfBestPractices));
+		line1.setPreferredSize(new Dimension(350,200 + 23 * noOfBestPractices));
 		return line1;
 	}
 
@@ -151,7 +151,7 @@ public class BPSelectionPanel extends JPanel {
 		List<BestPracticeType> bpItems = BestPracticeType.getByCategory(category);
 		JPanel panel = new JPanel();
 		noOfBestPractices = noOfBestPractices+bpItems.size();
-		Dimension sectionDimention = new Dimension(350, 45 + 23 * bpItems.size());
+		Dimension sectionDimention = new Dimension(350, 65 + 23 * bpItems.size());
 		panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
 		panel.setPreferredSize(sectionDimention);
 		panel.setMinimumSize(sectionDimention);
@@ -164,7 +164,7 @@ public class BPSelectionPanel extends JPanel {
 		for (BestPracticeType item : bpItems) {
 			JCheckBox checkBox = new JCheckBox(item.getDescription());
 			panel.add(checkBox);
-			map.put(item.name(), checkBox);
+			selectedBestPracticesMap.put(item.name(), checkBox);
 		}
 		TitledBorder border = BorderFactory.createTitledBorder(BorderFactory.createRaisedBevelBorder(),
 				category.getDescription());
@@ -175,7 +175,7 @@ public class BPSelectionPanel extends JPanel {
 
 	public List<BestPracticeType> getCheckedBP() {
 		List<BestPracticeType> selected = new ArrayList<>();
-		for (Entry<String, JCheckBox> entry : map.entrySet()) {
+		for (Entry<String, JCheckBox> entry : selectedBestPracticesMap.entrySet()) {
 			if (entry.getValue().isSelected()) {
 				selected.add(BestPracticeType.valueOf(entry.getKey()));
 			}
@@ -188,8 +188,8 @@ public class BPSelectionPanel extends JPanel {
 	}
 	
 	private void setSelectedBoxes() {
-		List<BestPracticeType> bpList = retrieveBestPractices();
-		for (JCheckBox val : map.values()) {
+		List<BestPracticeType> bpList = getSelectedBPsList();
+		for (JCheckBox val : selectedBestPracticesMap.values()) {
 			val.setSelected(false);
 		}
 		setSelectedBoxes(bpList, true);
@@ -197,15 +197,17 @@ public class BPSelectionPanel extends JPanel {
 
 	private void setSelectedBoxes(List<BestPracticeType> selected, boolean state) {
 		for (BestPracticeType type : selected) {
-			map.get(type.name()).setSelected(state);
+			if (selectedBestPracticesMap.containsKey(type.name())) {
+				selectedBestPracticesMap.get(type.name()).setSelected(state);
+			}
 		}
 	}
 
 	private void setAllBoxes(boolean state) {
 		BestPracticeType[] bpType = BestPracticeType.values();
 		for (int i = 0; i < bpType.length; i++) {
-			if (map.containsKey(bpType[i].name())) {
-				map.get(bpType[i].name()).setSelected(state);
+			if (selectedBestPracticesMap.containsKey(bpType[i].name())) {
+				selectedBestPracticesMap.get(bpType[i].name()).setSelected(state);
 			}
 		}
 	}
@@ -222,8 +224,8 @@ public class BPSelectionPanel extends JPanel {
 		boolean isAllSelected = true;
 		BestPracticeType[] bpType = BestPracticeType.values();
 		for (int i = 0; i < bpType.length; i++) {
-			if (map.containsKey(bpType[i].name())) {
-				isAllSelected = isAllSelected && map.get(bpType[i].name()).isSelected();
+			if (selectedBestPracticesMap.containsKey(bpType[i].name())) {
+				isAllSelected = isAllSelected && selectedBestPracticesMap.get(bpType[i].name()).isSelected();
 			}
 		}
 		return isAllSelected;

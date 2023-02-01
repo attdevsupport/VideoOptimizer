@@ -243,7 +243,7 @@ public class AROServiceImplTest extends BaseTest {
 		when(packetanalyzer.analyzeTraceFile(any(String.class), any(Profile.class), any(AnalysisFilter.class)))
 				.thenReturn(analyze);
 		when(worker.runTest(any(PacketAnalyzerResult.class))).thenReturn(periodicTransferResult);
-		List<BestPracticeType> list = SettingsUtil.retrieveBestPractices();
+		List<BestPracticeType> list = SettingsUtil.getSelectedBPsList();
 		SettingsUtil.saveBestPractices(req);
 		try {
 			AROTraceData testResult = aro.analyzeFile(req, "traffic.cap");
@@ -311,7 +311,7 @@ public class AROServiceImplTest extends BaseTest {
 		req.add(BestPracticeType.VIDEO_CONCURRENT_SESSION);
 		req.add(BestPracticeType.AUDIO_STREAM);
 		req.add(BestPracticeType.MULTI_SIMULCONN);
-		List<BestPracticeType> list = SettingsUtil.retrieveBestPractices();
+		List<BestPracticeType> list = SettingsUtil.getSelectedBPsList();
 		SettingsUtil.saveBestPractices(req);
 		when(packetanalyzer.analyzeTraceDirectory(any(String.class), any(IAROView.class), any(Profile.class), any(AnalysisFilter.class)))
 				.thenReturn(analyze);

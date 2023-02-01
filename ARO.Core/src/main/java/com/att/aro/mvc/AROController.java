@@ -1,4 +1,5 @@
 /*
+
  *  Copyright 2015 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +16,7 @@
  */
 package com.att.aro.mvc;
 
-import static com.att.aro.core.settings.SettingsUtil.retrieveBestPractices;
+import static com.att.aro.core.settings.SettingsUtil.getSelectedBPsList;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -74,6 +75,7 @@ import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
 
 import lombok.Getter;
+import lombok.Setter;
 
 public class AROController implements PropertyChangeListener, ActionListener {
 
@@ -92,6 +94,8 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	private Date traceStartTime;
 	private long traceDuration;
 	private Hashtable<String, Object> extraParams;
+	@Getter
+	@Setter
 	private PacketAnalyzerResult currentTraceInitialAnalyzerResult;
 
 	@Getter
@@ -147,15 +151,16 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		
 		try {
 			System.gc(); // Request garbage collection before loading a trace
+			LOG.debug("Java version :" + Util.JDK_VERSION);
 			LOG.debug("\nAnalyze trace :" + trace);
 			LOG.debug(String.format("\nTrace initial memory:%d free:%d", Runtime.getRuntime().totalMemory(), Runtime.getRuntime().freeMemory()));
 
 			// analyze trace file or directory?
 			try {
 				if (aroService.isFile(trace)) {
-					results = aroService.analyzeFile(retrieveBestPractices(), trace, profile, filter);
+					results = aroService.analyzeFile(getSelectedBPsList(), trace, profile, filter);
 				} else {
-					results = aroService.analyzeDirectory(retrieveBestPractices(), trace, theView, profile, filter);
+					results = aroService.analyzeDirectory(getSelectedBPsList(), trace, theView, profile, filter);
 				}
 				if (results.getAnalyzerResult() != null 
 						&& results.getAnalyzerResult().getStreamingVideoData() != null
@@ -292,6 +297,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 
 		// match on Android and iOS collectors
 		// if (actionCommand.equals("startCollector") || actionCommand.equals("startCollectorIos")) {
+		LOG.debug("Java version :" + Util.JDK_VERSION);
 		if ("startCollector".equals(actionCommand) || "startCollectorIos".equals(actionCommand)) {
 			startCollector(event, actionCommand);
 		} else if ("stopCollector".equals(actionCommand)) {
@@ -423,16 +429,6 @@ public class AROController implements PropertyChangeListener, ActionListener {
 
 		currentTraceInitialAnalyzerResult = theModel.getAnalyzerResult();
 		currentTraceInitialAnalyzerResult.setFilter(initFilter);
-	}
-
-	/*
-	 * Returns the initial packet analyzer result of the current trace.
-	 * This method means to capture the very first analyzer result before 
-	 * the model (and thus the analyzer result) starts getting updated. 
-	 */
-	public PacketAnalyzerResult getCurrentTraceInitialAnalyzerResult() {
-
-		return currentTraceInitialAnalyzerResult;
 	}
 
 	/**
@@ -575,6 +571,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 	 */
 	public StatusResult startCollector(IAroDevice device, String traceFolderName, Hashtable<String, Object> extraParams) {
 
+		device.setVoIpAddressList(theView.getVoIpAddressList());
 		StatusResult result = null;
 
 		LOG.info("starting collector:" + traceFolderName + " " + extraParams);
@@ -591,7 +588,7 @@ public class AROController implements PropertyChangeListener, ActionListener {
 		IFileManager fileManager = context.getBean(IFileManager.class);
 
 		if (!fileManager.directoryExistAndNotEmpty(traceFolderPath)) {
-			result = collector.startCollector(false, traceFolderPath, null, true, device.getId(), extraParams, collector.getPassword());
+			result = collector.startCollector(false, traceFolderPath, null, true, device, extraParams, collector.getPassword());
 			traceStartTime = new Date();
 
 			if (result.isSuccess()) {

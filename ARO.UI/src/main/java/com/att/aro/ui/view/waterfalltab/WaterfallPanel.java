@@ -16,7 +16,6 @@
 package com.att.aro.ui.view.waterfalltab;
 
 import static com.att.aro.ui.utils.ResourceBundleHelper.getMessageString;
-import static org.apache.commons.collections.CollectionUtils.isEmpty;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -40,10 +39,13 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
 import org.jfree.chart.ChartPanel;
@@ -93,6 +95,7 @@ import com.att.aro.view.images.Images;
  */
 public class WaterfallPanel extends TabPanelJPanel {
 	private static final long serialVersionUID = 1L;
+	private static final Logger LOGGER = LogManager.getLogger(WaterfallPanel.class);
 	private static final int DEFAULT_TIMELINE = 100;
 	private static final int CATEGORY_MAX_COUNT = 25;
 	private static final double ZOOM_FACTOR = 2;
@@ -127,6 +130,7 @@ public class WaterfallPanel extends TabPanelJPanel {
 	private List<WaterfallCategory> categoryList;
 	private WaterfallTab waterfallTab;
 	private double time;
+	private double crossHairTime;
 	private AROTraceData data;
 
 	static {
@@ -564,26 +568,24 @@ public class WaterfallPanel extends TabPanelJPanel {
 				return null;
 			}
 		});
-		new Thread(() -> setCrosshairs(aModel)).start();
+		new Thread(new Runnable() {
+			public void run() {
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						CategoryPlot plot = getChartPanel().getChart().getCategoryPlot();
+						plot.setRangeCrosshairLockedOnData(true);
+						plot.setRangeCrosshairValue(crossHairTime);
+						plot.setRangeCrosshairVisible(true);
+						LOGGER.trace("complete drawing");
+					}
+				});
+				crossHairTime = getCrosshairTime(aModel);
+				LOGGER.trace("end get the time: " + "cross hair time: " + crossHairTime);
+			}
+		}).start();
 	}
 	
-	private void setCrosshairs(AROTraceData data) {
-		double time = getCrosshairTime(data);
-		CategoryPlot plot = getChartPanel().getChart().getCategoryPlot();
-		plot.setRangeCrosshairLockedOnData(true);
-		plot.setRangeCrosshairValue(time);
-		plot.setRangeCrosshairVisible(true);
-	}
-
 	private double getCrosshairTime(AROTraceData data) {
-		int iterations = 0;
-		while (iterations++ < 10 && (data == null || isEmpty(data.getBestPracticeResults()))) {
-			try {
-				Thread.sleep(1000);// Gives time for best practices to gather required data
-			} catch (InterruptedException e) {
-				// Do nothing
-			}
-		}
 		double time = 0.0;
 		if (data != null && CollectionUtils.isNotEmpty(data.getBestPracticeResults())) {
 			Optional<AbstractBestPracticeResult> optionalResult = data.getBestPracticeResults().stream()

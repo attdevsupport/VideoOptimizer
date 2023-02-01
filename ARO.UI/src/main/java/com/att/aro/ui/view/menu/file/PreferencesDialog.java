@@ -73,7 +73,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -99,7 +99,7 @@ import com.att.aro.ui.view.menu.datacollector.HelpDialog;
  */
 
 public class PreferencesDialog extends JDialog {
-	private static final int BORDER_HEIGHT = 80;
+	private static final int BORDER_HEIGHT = 90;
 	private static final int BORDER_WIDTH = 15;
 
 	private static final Logger LOGGER = LogManager.getLogger(PreferencesDialog.class);
@@ -142,7 +142,7 @@ public class PreferencesDialog extends JDialog {
 	enum Config {
 		MEM("Xmx", "Max heap in GB", MEMORY, JvmSettings.getInstance(), isHeapEnabled()),
 		ADB("adb", "Adb Path", FILE, SettingsImpl.getInstance(), true),
-		WIRESHARK("WIRESHARK_PATH", "Wireshark Path", FILE, SettingsImpl.getInstance(), Util.isMacOS(), null,
+		WIRESHARK("WIRESHARK_PATH", "Wireshark Path", FILE, SettingsImpl.getInstance(), true, null,
 				() -> Util.getWireshark()),
 		IDEVICE_SCREENSHOT("iDeviceScreenshot", "iDeviceScreenshot Path", FILE, SettingsImpl.getInstance(),
 				Util.isMacOS(), null, () -> Util.getIdeviceScreenshot()),
@@ -259,7 +259,7 @@ public class PreferencesDialog extends JDialog {
 	private JComponent getJContentPane() {
 		if (jContentPane == null) {
 			jContentPane = new JPanel();
-			jContentPane.setPreferredSize(new Dimension(750, 500));
+			jContentPane.setPreferredSize(new Dimension(750, 600));
 			jContentPane.setLayout(new BorderLayout());
 			videoPreferencesPanel = new VideoPreferencesPanel(this);
 			tabbedPane = new JTabbedPane();

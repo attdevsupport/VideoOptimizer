@@ -105,7 +105,6 @@ public class AROVideoPlayer extends JFrame implements ActionListener, IVideoPlay
 
     @Getter
     private String videoPath;
-    @Getter
 	private boolean started = false;
     
 	public AROVideoPlayer(SharedAttributesProcesses aroView){

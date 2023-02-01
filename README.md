@@ -52,11 +52,11 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 **Version:**  
-#### Video Optimizer 4.5
+#### Video Optimizer 4.6
 
-**System Requirements for Video Optimizer 4.5:**
+**System Requirements for Video Optimizer 4.6:**
 
-*Before you download Video Optimizer 4.5, make sure you meet the following system requirements for your operating system.*
+*Before you download Video Optimizer 4.6, make sure you meet the following system requirements for your operating system.*
 
 - At least 4GB of RAM, but recommend at least 8GB
 - Java 8 or above
@@ -80,29 +80,45 @@ Contact Us: http://developer.att.com/developer/contact_us.jsp<br/>
 
 
 
-**Video Optimizer 4.5 New Features**
-- New graph options for viewing Upload or Download throughput separately or singly in the diagnostics tab.
+**Video Optimizer 4.6 New Features**
+- Native support for Apple silicon (M1/M2) with a dedicated aarch64 installer.
 
-- Video Optimizer is now able to convert a folder containing a pcap file and a video file into a trace folder and synchronize the two files’ timelines. It can also covert just a pcap file alone into a trace folder with no video.
+- SNI information is now available for TCP and QUIC sessions.
 
-- Filter options have been added to Time Range Analysis to allow for IPv4, IPv6, TCP, UDP and DNS filtering. The statistics button will display results based on selected filters. Reanalysis will be done based on selected filters.
+- Date/Time/Time Zone are recorded as part of trace collection to improve video synchronization.
 
-- Open recent menu item will display recently opened PCAP file information in addition to recent traces opened.
+- Network and Device IPs are recorded for each trace for better categorization of uplink/downlink data.
 
-- Open PCAP file menu item will remember the location of the last PCAP file opened.
+- Carrier Name/ Radio Cell ID is recorded during the trace collection for Android devices.
 
-- Network type (5G Sub-6/5G mmWave/Advanced pro LTE/LTE/WiFi) is displayed across all applicable tabs and in the diagnostics graph. 
+- Export feature for various tables and graphs auto-populate with the appropriate trace name.
 
-- Re-organized summary panel on the best practices tab makes better use of available space.
+- Support multiple time resolutions (.1s,.2s,.5s,1s,2s,5s) with the default set to 1 second for graphs on the diagnostics tab.
 
-- DNS and UDP packet information is displayed when the user hovers over the packet info.
+- The Time Range analysis dialog now displays maximum throughput for both Uplink and Downlink data.
 
-- ARO secure certificate will be visible to the user for Samsung devices.
+- Filters applied to the diagnostics tab are automatically applied to the Time Range analysis.
+
+- Developed a script to automatically install libimobile dependencies for Video Optimizer.
+
+- https://raw.githubusercontent.com/attdevsupport/VideoOptimzer/master/vo_dependency_installer.sh
+
+- The preferences dialog autodetects installed dependencies and populates the path.
+
+- Video Optimizer automatically checks installed versions of dependencies and raises an alert if updates are available.
 
 
-**Known issues in Release 4.5**
+**Known issues in Release 4.6**
 
-- After a trace video file has been played all the way to the end in VO, the video position scroll bar cannot be clicked until video playback is started again using the Play button. Additionally, subsequent video playback might not start from the beginning of the video. However, the workaround is to use the video position scroll bar and scroll back to the beginning.  
+- Tools -> Edit Metadata is disabled. Double-clicking the trace notes is the workaround.
+
+- File -> open trace with time range is not saving custom time ranges when used for analysis.
+
+- A workaround is to manually add a custom time range to the time-range.json file.
+
+- When Video Optimizer is not able to parse the Remote or Host IP, for some QUIC video scenarios, SNI is not available.
+
+- Live screen capture window from the iPhone relies on the Command Line Tools from XCode. Recent changes make it much slower to receive a screenshot. Sometimes the live screen capture will be delayed by 2 secs.  
 
 
 **Compilation instructions**

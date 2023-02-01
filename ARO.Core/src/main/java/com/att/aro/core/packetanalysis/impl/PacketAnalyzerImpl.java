@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -167,26 +167,38 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 	public PacketAnalyzerResult analyzeTraceDirectory(String traceDirectory, IAROView aroView, Profile profile, AnalysisFilter filter)
 			throws FileNotFoundException {
 		long bpStartTime = System.currentTimeMillis();
-		TraceDirectoryResult result = tracereader.readTraceDirectory(traceDirectory, aroView);
-		if (filter != null) {
-			TimeRange tempTimeRange = filter.getTimeRange();
-			if (tempTimeRange != null) {
-				TraceDirectoryResult tempResult = (TraceDirectoryResult) pktTimeUtil.getTimeRangeResult(result, tempTimeRange);
-				result.setAlarmInfos(tempResult.getAlarmInfos());
-				result.setBatteryInfos(tempResult.getBatteryInfos());
-				result.setBluetoothInfos(tempResult.getBluetoothInfos());
-				result.setCameraInfos(tempResult.getCameraInfos());
-				result.setGpsInfos(tempResult.getGpsInfos());
-				result.setNetworkTypeInfos(tempResult.getNetworkTypeInfos());
-				result.setRadioInfos(tempResult.getRadioInfos());
-				result.setScreenStateInfos(tempResult.getScreenStateInfos());
-				result.setUserEvents(tempResult.getUserEvents());
-				result.setTemperatureInfos(tempResult.getTemperatureInfos());
-				result.setLocationEventInfos(tempResult.getLocationEventInfos());
-				result.setWifiInfos(tempResult.getWifiInfos());
-				result.getCpuActivityList().updateTimeRange(tempTimeRange.getBeginTime(), tempTimeRange.getEndTime());
-				result.setDeviceKeywordInfos(tempResult.getDeviceKeywordInfos());
-				result.setAttenautionEvent(tempResult.getAttenautionEvent());
+		TraceDirectoryResult result = null;
+		if (aroView.getController() != null 
+				&& (aroView.getController().getCurrentTraceInitialAnalyzerResult()) != null
+				&& aroView.getController().getCurrentTraceInitialAnalyzerResult().getTraceresult() instanceof TraceDirectoryResult
+				) {
+			// Handles a potential re-analysis, like Menu-Profile-(Load or Customize)
+			result = (TraceDirectoryResult) aroView.getController().getCurrentTraceInitialAnalyzerResult().getTraceresult();
+		}
+		if (result == null || result.getTraceDirectory().compareTo(traceDirectory) != 0) {
+			// loading first or different trace
+			result = tracereader.readTraceDirectory(traceDirectory, aroView);
+
+			if (filter != null) {
+				TimeRange tempTimeRange = filter.getTimeRange();
+				if (tempTimeRange != null) {
+					TraceDirectoryResult tempResult = (TraceDirectoryResult) pktTimeUtil.getTimeRangeResult(result, tempTimeRange);
+					result.setAlarmInfos(tempResult.getAlarmInfos());
+					result.setBatteryInfos(tempResult.getBatteryInfos());
+					result.setBluetoothInfos(tempResult.getBluetoothInfos());
+					result.setCameraInfos(tempResult.getCameraInfos());
+					result.setGpsInfos(tempResult.getGpsInfos());
+					result.setNetworkTypeInfos(tempResult.getNetworkTypeInfos());
+					result.setRadioInfos(tempResult.getRadioInfos());
+					result.setScreenStateInfos(tempResult.getScreenStateInfos());
+					result.setUserEvents(tempResult.getUserEvents());
+					result.setTemperatureInfos(tempResult.getTemperatureInfos());
+					result.setLocationEventInfos(tempResult.getLocationEventInfos());
+					result.setWifiInfos(tempResult.getWifiInfos());
+					result.getCpuActivityList().updateTimeRange(tempTimeRange.getBeginTime(), tempTimeRange.getEndTime());
+					result.setDeviceKeywordInfos(tempResult.getDeviceKeywordInfos());
+					result.setAttenautionEvent(tempResult.getAttenautionEvent());
+				}
 			}
 		}
 		PacketAnalyzerResult res = finalResult(result, profile, filter);
@@ -280,6 +292,15 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 
 		SessionManagerImpl sessionMangerImpl = (SessionManagerImpl) sessionmanager;
 		sessionMangerImpl.setPcapTimeOffset(result.getPcapTimeOffset());
+		sessionmanager.setiOSSecureTracePath(result.getTraceDirectory());// for iOS trace
+
+		// Check if secure trace path exists
+		if (result instanceof TraceDirectoryResult) {
+			File file = new File(((SessionManagerImpl) sessionmanager).getTracePath());
+			if (file.exists()) {
+				((TraceDirectoryResult) result).setSecureTrace(true);
+			}
+		}
 
 		Statistic stat = this.getStatistic(filteredPackets);
 
@@ -291,7 +312,14 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			stat.setAppName(new HashSet<String>(result.getAppInfos()));
 		}
 
-		stat.setTotalHTTPSBytesNotAnalyzed(stat.getTotalHTTPSByte());
+		// get Unanalyzed HTTPS bytes
+		boolean isSecureTrace = result instanceof TraceDirectoryResult ? ((TraceDirectoryResult) result).isSecureTrace()
+				: false;
+		if (isSecureTrace) {
+			stat.setTotalHTTPSBytesNotAnalyzed(getHttpsBytesNotAnalyzed(sessionList));
+		} else {
+			stat.setTotalHTTPSBytesNotAnalyzed(stat.getTotalHTTPSByte());
+		}
 
 		// stat is used to get some info for RrcStateMachine etc
 
@@ -310,7 +338,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 		try {
 			List<BestPracticeType> videoBPList = BestPracticeType.getByCategory(BestPracticeType.Category.VIDEO);
 			data.setStreamingVideoData(videoTrafficCollector.clearData());
-			if (CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), videoBPList)) {
+			if (CollectionUtils.containsAny(SettingsUtil.getSelectedBPsList(), videoBPList)) {
 				if (isCSI || csiDataHelper.doesCSIFileExist(result.getTraceDirectory())) {
 					data.setStreamingVideoData(videoTrafficInferencer.inferVideoData(result, sessionList,
 							(filter != null && filter.getManifestFilePath() != null) ? filter.getManifestFilePath()
@@ -332,7 +360,7 @@ public class PacketAnalyzerImpl implements IPacketAnalyzer {
 			imageBPList.add(BestPracticeType.IMAGE_CMPRS);
 			imageBPList.add(BestPracticeType.IMAGE_FORMAT);
 			imageBPList.add(BestPracticeType.IMAGE_COMPARE);
-			if (CollectionUtils.containsAny(SettingsUtil.retrieveBestPractices(), imageBPList)) {
+			if (CollectionUtils.containsAny(SettingsUtil.getSelectedBPsList(), imageBPList)) {
 				imageExtractor.execute(result, sessionList, requestMap);
 			}
 		} catch (Exception ex) {

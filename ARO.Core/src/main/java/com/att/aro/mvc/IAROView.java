@@ -145,6 +145,14 @@ public interface IAROView {
 	 */
 	void haltCollector();
 	
+	void setVoIpAddressList(List<String[]> list);
+	List<String[]> getVoIpAddressList();
+	
+	/**
+	 * Retrieve MetaDataModel
+	 * 
+	 * @return metaDataModel
+	 */
 	MetaDataModel getMetaDataModel();
 	
 	/**
@@ -210,4 +218,6 @@ public interface IAROView {
 	void setDeviceDataPulled(boolean status);
 
 	void refreshBestPracticesTab();
+
+	AROController getController();
 }

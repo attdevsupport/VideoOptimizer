@@ -37,7 +37,6 @@ import javax.swing.JTextField;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import org.apache.commons.lang.StringUtils;
 import org.jfree.ui.tabbedui.VerticalLayout;
 import org.jfree.util.Log;
 import org.springframework.context.ApplicationContext;
@@ -164,6 +163,14 @@ public class MessageDialogFactory extends JOptionPane{
 				ResourceBundleHelper.getMessageString("confirm.title"), optionType, JOptionPane.QUESTION_MESSAGE, null,
 				options, options[0]);
 	}
+	
+	public int showTroubleDialog(Component parentComponent, String message, int optionType) {
+		Object[] options = { ResourceBundleHelper.getMessageString("Error.rvi.trouble.button.troubleshooting"),
+				ResourceBundleHelper.getMessageString("Button.ok") };
+		return JOptionPane.showOptionDialog(parentComponent, message,
+				ResourceBundleHelper.getMessageString("Error.rvi.trouble.title.troubleshooting"), optionType,
+				JOptionPane.YES_NO_OPTION, null, options, options[0]);
+	}
 
 	public int showStopDialog(Component parentComponent, String message, String title, int optionType) {
 		Object[] options = { ResourceBundleHelper.getMessageString("jdialog.option.stop")};
@@ -220,11 +227,7 @@ public class MessageDialogFactory extends JOptionPane{
 		JPanel spacePanel = new JPanel();
 		spacePanel.setPreferredSize(new Dimension(this.getWidth(), HEADER_DATA_SPACING));
 
-		JTextField pathTextField = null;		
-		JTextField dataTextField = null;		
-		JTextField videoTextField = null;		
-		JTextField durationTextField = null;	
-
+		JTextField durationTextField = null;
 		JTextField targetedAppTextField = null;
 		JTextField videoNameTextField = null; 
 		JTextField urlTextField = null; 	
@@ -238,9 +241,6 @@ public class MessageDialogFactory extends JOptionPane{
 		summaryTitlePanel.add(summaryLabel, BorderLayout.CENTER);
 		
 		JPanel summaryLabeledValue = new JPanel(new GridLayout(4, 2, 0, 5));
-		pathTextField     = generateEntries(summaryLabeledValue, AroFonts.TEXT_FONT, "collector.path", 		false, path);
-		dataTextField     = generateEntries(summaryLabeledValue, AroFonts.TEXT_FONT, "collector.data", 		false, ResourceBundleHelper.getMessageString("collector.dataValue"));
-		videoTextField    = generateEntries(summaryLabeledValue, AroFonts.TEXT_FONT, "collector.video", 		false, videoStatus ? "Yes" : "No");
 		durationTextField = generateEntries(summaryLabeledValue, AroFonts.TEXT_FONT, "collector.duration", 	false, traceDuration);
 
 		JPanel summaryPanel = new JPanel(new VerticalLayout());

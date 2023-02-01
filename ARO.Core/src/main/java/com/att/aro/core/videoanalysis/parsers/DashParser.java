@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.TreeMap;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;

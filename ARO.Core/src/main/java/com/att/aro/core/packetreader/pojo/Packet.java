@@ -34,6 +34,18 @@ public class Packet implements Serializable {
 	private int dataOffset;
 	private Packet nextPacketInSession;
 
+	@Override
+	public String toString() {
+		StringBuilder sbr = new StringBuilder("Packet :");
+		if (this instanceof IPPacket) {
+			sbr.append(String.format("\n\tSRC :%s", ((IPPacket) this).getSourceIPAddress()));
+			sbr.append(String.format("\n\tDST :%s", ((IPPacket) this).getDestinationIPAddress()));
+		}
+		sbr.append(String.format("\n\tSeconds :%d.%d", getSeconds(), getMicroSeconds()));
+		sbr.append(String.format("\n\tdataOffset :%d", dataOffset));
+		sbr.append(String.format("\n\tlen :%d", getLen()));
+		return sbr.toString();
+	}	
 	public Packet(long seconds, long microSeconds, org.pcap4j.packet.Packet pcap4jPacket) {
 		this.seconds = seconds;
 		this.microSeconds = microSeconds;

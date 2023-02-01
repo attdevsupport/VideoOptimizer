@@ -3,96 +3,131 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
+	<properties>
+		<ga.id>dev</ga.id>
+		<skipShade>true</skipShade>
+		<mac.signing>true</mac.signing>
+		<build.number>dev</build.number>
+		<poi-version>5.2.2</poi-version>
+		<jna.version>5.12.1</jna.version>
+		<pcap4j-version>1.8.2</pcap4j-version>
+		<vo.version>4.6.0</vo.version>
+		<orientdb-version>3.0.44</orientdb-version>
+		<build.timestamp>${maven.build.timestamp}</build.timestamp>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<dependency-check-maven.version>7.1.1</dependency-check-maven.version>
+		<maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+	</properties>
+	
+	<name>VO Parent</name>
 	<groupId>com.att.aro</groupId>
 	<artifactId>vo-parent</artifactId>
-	<version>4.5.0</version>
+	<version>${vo.version}</version>
 	<packaging>pom</packaging>
-
-	<name>VO Parent</name>
-	<url>http://maven.apache.org</url>
-
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
 
 	<repositories>
 		<repository>
-				<id>central</id>
-				<name>MavenCentral Repository</name>
-				<url>https://repo1.maven.org/maven2/</url>
-			</repository>
-			<repository>
-				<id>apache.snapshots</id>
-				<name>Apache Development Snapshot Repository</name>
-				<url>https://repository.apache.org/content/repositories/snapshots/</url>
-				<releases>
-					<enabled>false</enabled>
-				</releases>
-				<snapshots>
-					<enabled>true</enabled>
-				</snapshots>
-			</repository>		
-			<repository>
-				<id>sonatype-public</id>
-				<name>Sonatype Public</name>
-				<url>http://repository.sonatype.org/content/groups/public</url>
-			</repository>
-			<repository>
-				<id>sonatype-flex</id>
-				<name>Sonatype Flex</name>
-				<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-			</repository>
+			<id>central</id>
+			<name>MavenCentral Repository</name>
+			<url>https://repo1.maven.org/maven2/</url>
+		</repository>
+		<repository>
+			<id>jitpack.io</id>
+			<url>https://jitpack.io</url>
+		</repository>
+		<repository>
+			<id>apache-snapshots</id>
+			<name>Apache Snapshots</name>
+			<url>https://repository.apache.org/content/repositories/snapshots</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>atlassian-public</id>
+			<url>https://maven.atlassian.com/content/repositories/atlassian-public/</url>
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>never</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+				<checksumPolicy>warn</checksumPolicy>
+			</releases>
+		</repository>				
+		<repository>
+			<id>rso-public-grid</id>
+			<url>https://repository.sonatype.org/content/groups/sonatype-public-grid/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>sonatype-flex</id>
+			<name>Sonatype Flex</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</repository>
+		<repository>
+			<id>OSGeo</id>
+			<url>http://download.osgeo.org/webdav/geotools</url>
+		</repository>
+		<repository>
+			<id>Google</id>
+			<name>Google</name>
+			<url>https://maven.google.com/</url>
+		</repository>
+		<repository>
+			<id>Typesafe</id>
+			<name>Typesafe</name>
+			<url>https://repo.typesafe.com/typesafe/maven-releases/</url>
+		</repository>
 	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>maven-central</id>
+			<name>MavenCentral Repository</name>
+			<url>https://repo1.maven.org/maven2/</url>
+		</pluginRepository>
+ 	</pluginRepositories>
 
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>org.javassist</groupId>
 				<artifactId>javassist</artifactId>
-				<version>3.20.0-GA</version>
+				<version>3.29.0-GA</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
 	<dependencies>
 		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-lang3</artifactId>
+		    <version>3.12.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.commons</groupId>
+		    <artifactId>commons-text</artifactId>
+		    <version>1.9</version>
+		</dependency>
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.13.1</version>
+			<version>4.13.2</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.7.6</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>[2.13.2,)</version>
-			<type>pom</type>
-		</dependency>
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<version>1.10.8</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-module-junit4</artifactId>
-			<version>1.6.1</version>
-			<scope>test</scope>
+			<artifactId>slf4j-reload4j</artifactId>
+			<version>1.7.36</version>
 		</dependency>
 		<dependency>
 			<groupId>org.powermock</groupId>
@@ -121,18 +156,375 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
-			<version>4.3.4.RELEASE</version>
-			<exclusions>
-				<exclusion>
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-			</exclusions>
+			<version>5.3.20</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
-			<version>4.3.4.RELEASE</version>
+			<version>5.3.20</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.9.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.pcap4j</groupId>
+			<artifactId>pcap4j-core</artifactId>
+			<version>${pcap4j-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.pcap4j</groupId>
+			<artifactId>pcap4j-packetfactory-static</artifactId>
+			<version>${pcap4j-version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.mp4parser</groupId>
+		    <artifactId>isoparser</artifactId>
+		    <version>1.9.41</version>
+		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-s3</artifactId>
+			<version>1.12.238</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.core</groupId>
+			<artifactId>jersey-server</artifactId>
+			<version>2.35</version>
+		</dependency>
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-multipart</artifactId>
+			<version>2.35</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-imaging</artifactId>
+			<version>1.0-alpha3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-collections4</artifactId>
+			<version>4.4</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.11.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+			<version>3.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<version>3.11.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.media.jai</groupId>
+			<artifactId>com.springsource.javax.media.jai.core</artifactId>
+			<version>1.1.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>1.10.8</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.8.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.yahoo.platform.yui</groupId>
+			<artifactId>yuicompressor</artifactId>
+			<version>2.4.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.googlecode.htmlcompressor</groupId>
+			<artifactId>htmlcompressor</artifactId>
+			<version>1.5.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.13.3</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>31.1-jre</version>
+		</dependency>
+		<dependency>
+			<groupId>com.android.tools.ddms</groupId>
+			<artifactId>ddmlib</artifactId>
+			<version>26.1.2</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>commons-validator</groupId>
+			<artifactId>commons-validator</artifactId>
+			<version>1.7</version>
+		</dependency>
+		<dependency>
+			<groupId>com.github.jai-imageio</groupId>
+			<artifactId>jai-imageio-jpeg2000</artifactId>
+			<version>1.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.sejda.webp-imageio</groupId>
+			<artifactId>webp-imageio-sejda</artifactId>
+			<version>0.1.0</version>
+		</dependency>
+		<!-- JAXB support -->
+		<!-- Works under Oracle Java 1.8 only
+			import javax.xml.bind.JAXBContext;
+			import javax.xml.bind.JAXBException;
+			import javax.xml.bind.Unmarshaller;
+			//import jakarta.xml.bind.JAXBContext;
+			//import jakarta.xml.bind.JAXBException;
+			//import jakarta.xml.bind.Unmarshaller;
+		-->
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
+			<version>2.2.11</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<version>2.2.11</version>
+		</dependency>
+
+		<!-- end JAXB support -->
+		<dependency>
+			<groupId>net.lingala.zip4j</groupId>
+			<artifactId>zip4j</artifactId>
+			<version>2.10.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sikulix</groupId>
+			<artifactId>sikulixapi</artifactId>
+			<version>1.1.1</version>
+			<exclusions>
+		        <exclusion>
+		            <groupId>*</groupId>
+		            <artifactId>*</artifactId>
+		        </exclusion>
+		    </exclusions>
+		</dependency>
+		<dependency>
+		  <groupId>org.projectlombok</groupId>
+		  <artifactId>lombok</artifactId>
+		  <version>1.18.24</version>
+		  <scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.meanbean</groupId>
+			<artifactId>meanbean</artifactId>
+			<version>2.0.3</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- dependency used for XLSX file format -->
+		<dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi-ooxml</artifactId>
+		    <version>${poi-version}</version>
+		</dependency>
+		<!-- dependency used for XLS older file format -->
+		<dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi</artifactId>
+		    <version>${poi-version}</version>
+		    <exclusions>
+		    	<exclusion>
+		    		<groupId>org.apache.logging.log4j</groupId>
+		    		<artifactId>log4j-api</artifactId>
+		    	</exclusion>
+		    </exclusions>
+		</dependency>
+		<dependency>
+		    <groupId>com.aayushatharva.brotli4j</groupId>
+		    <artifactId>brotli4j</artifactId>
+		    <version>1.8.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.github.spotbugs</groupId>
+		    <artifactId>spotbugs</artifactId>
+		    <version>4.7.1</version>
+		    <exclusions>
+		    	<exclusion>
+		            <groupId>org.apache.bcel</groupId>
+					<artifactId>bcel</artifactId>
+		        </exclusion>
+		        <exclusion>
+		            <groupId>org.dom4j</groupId>
+					<artifactId>dom4j</artifactId>
+		        </exclusion>
+		        <exclusion>
+		            <groupId>net.jcip</groupId>
+					<artifactId>jcip-annotations</artifactId>
+		        </exclusion>
+		        <exclusion>
+		            <groupId>org.apache.commons</groupId>
+					<artifactId>commons-text</artifactId>
+		        </exclusion>
+		        <exclusion>
+		        	<groupId>com.google.code.gson</groupId>
+		            <artifactId>gson</artifactId>
+		        </exclusion>
+		    </exclusions>
+		 	<!--<exclusions>
+		        <exclusion>
+		            <groupId>org.ow2.asm</groupId>
+		            <artifactId>asm-tree</artifactId>
+		        </exclusion>
+		        <exclusion>
+		            <groupId>org.ow2.asm</groupId>
+		            <artifactId>asm-analysis</artifactId>
+		        </exclusion>
+		        <exclusion>
+		            <groupId>org.ow2.asm</groupId>
+		            <artifactId>asm</artifactId>
+		        </exclusion>
+		        <exclusion>
+			    	<groupId>com.github.spotbugs</groupId>
+					<artifactId>spotbugs-annotations</artifactId>
+		        </exclusion>
+		    </exclusions>-->
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.13.3</version>
+		</dependency>
+		<dependency>
+			<groupId>com.orientechnologies</groupId>
+			<artifactId>orientdb-core</artifactId>
+			<version>${orientdb-version}</version>
+			<!--<exclusions>
+				<exclusion>
+					<groupId>commons-lang</groupId>
+  					<artifactId>commons-lang</artifactId>
+				</exclusion>
+			</exclusions>-->
+		</dependency>
+		<dependency>
+			<groupId>com.orientechnologies</groupId>
+			<artifactId>orientdb-object</artifactId>
+			<version>${orientdb-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.orientechnologies</groupId>
+			<artifactId>orientdb-server</artifactId>
+			<version>${orientdb-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.proxy</groupId>
+			<artifactId>proxy-vole</artifactId>
+			<version>1.0</version>			
+		</dependency>
+		<dependency>
+			<groupId>javax.media</groupId>
+			<artifactId>jmf</artifactId>
+			<version>2.1.1e</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>2.5</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+		   <groupId>com.github.ganskef</groupId>
+		   <artifactId>littleproxy-mitm</artifactId>
+		   <version>1.1.0</version>
+		   <exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4j</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.beust</groupId>
+			<artifactId>jcommander</artifactId>
+			<version>1.82</version>
+		</dependency>
+		<dependency>
+		  <groupId>org.nanohttpd</groupId>
+		  <artifactId>nanohttpd</artifactId>
+		  <version>2.3.1</version>
+		</dependency>
+		<dependency>
+		  <groupId>org.jfree</groupId>
+		  <artifactId>jfreechart</artifactId>
+		  <version>1.0.17</version>
+		</dependency>
+		<dependency>
+			<groupId>uk.co.caprica</groupId>
+			<artifactId>vlcj</artifactId>
+			<version>4.3.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.mozilla</groupId>
+		    <artifactId>rhino</artifactId>
+		    <version>1.7.6</version>
+		</dependency>
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna</artifactId>
+			<version>${jna.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			 <artifactId>jna-platform</artifactId>
+			 <version>${jna.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.swinglabs</groupId>
+		    <artifactId>swingx</artifactId>
+		    <version>1.6.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-swing</artifactId>
+			<version>18.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-controls</artifactId>
+			<version>18.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-media</artifactId>
+			<version>18.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.nanohttpd</groupId>
+			<artifactId>nanohttpd-webserver</artifactId>
+			<version>2.3.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<version>1.6.1</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -151,15 +543,98 @@
 				<module>../DataCollectors/ARO.RootedAndroidCollector</module>
 				<module>../ARO.UI</module>
 				<module>../ARO.Console</module>
+				<!-- <module>../VO_Test</module> -->
+				<module>../ARO.Install</module>
 			</modules>
 		</profile>
 	</profiles>
 	<build>
 		<plugins>
+			<!-- unblock this to locate vulnerabilities
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>7.1.1</version>
+				<configuration>
+					<failBuildOnCVSS>11</failBuildOnCVSS>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			-->
+			<plugin>
+				<inherited>false</inherited>			
+				<artifactId>maven-install-plugin</artifactId>
+				<version>2.5.2</version>
+				<executions>
+					<execution>
+						<id>1</id>
+						<phase>pre-clean</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<groupId>com.luciad.imageio</groupId>
+							<artifactId>webp-imageio</artifactId>
+							<packaging>jar</packaging>
+							<version>0.5.2</version>
+							<file>lib/webp-imageio-0.5.2.jar</file>
+						</configuration>
+					</execution>
+					<execution>
+						<id>2</id>
+						<phase>pre-clean</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<groupId>com.proxy.proxy-vole</groupId>
+							<artifactId>proxy-vole</artifactId>
+							<packaging>jar</packaging>
+							<version>1.0</version>
+							<file>lib/proxy-vole-1.0.jar</file>
+						</configuration>
+					</execution>
+					<execution>
+						<id>3</id>
+						<phase>pre-clean</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<groupId>com.github.jai-imageio</groupId>
+							<artifactId>jai-imageio-jpeg2000</artifactId>
+							<packaging>jar</packaging>
+							<version>1.1</version>
+							<file>lib/jai-imageio-jpeg2000-1.1.jar</file>
+						</configuration>
+					</execution>
+					<execution>
+						<id>4</id>
+						<phase>pre-clean</phase>
+						<goals>
+							<goal>install-file</goal>
+						</goals>
+						<configuration>
+							<groupId>org.apache.commons</groupId>
+							<artifactId>commons-imaging</artifactId>
+							<packaging>jar</packaging>
+							<version>1.0-SNAPSHOT</version>
+							<file>lib/commons-imaging-1.0-SNAPSHOT.jar</file>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.1</version>
+				<version>3.10.1</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
@@ -172,6 +647,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.17</version>
+				<configuration>
+					<skipTests>true</skipTests>
+				</configuration>
 				<dependencies>
 					<dependency>
 						<groupId>org.apache.maven.surefire</groupId>
@@ -180,6 +658,22 @@
 					</dependency>
 				</dependencies>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+			</plugin>
 		</plugins>
 	</build>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.1</version>
+				<configuration>
+					<show>public</show>
+				</configuration>
+			</plugin>
+		</plugins>
+	</reporting>
 </project>

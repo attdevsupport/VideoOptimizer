@@ -28,11 +28,13 @@ public class ProcessFactoryImpl implements IProcessFactory {
 	}
 
 	@Override
+	@Deprecated
 	public Process create(String command, String directory) throws IOException {
 		return Runtime.getRuntime().exec(command, null, new File(directory));
 	}
 
 	@Override
+	@Deprecated
 	public Process create(String[] commands) throws IOException {
 		return Runtime.getRuntime().exec(commands);
 	}

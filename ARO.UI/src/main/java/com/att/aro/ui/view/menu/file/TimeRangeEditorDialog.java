@@ -52,7 +52,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jfree.ui.tabbedui.VerticalLayout;
@@ -86,11 +86,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
+	private static final int IMAGE_HEIGHT = 346; // "normal" device X Y dimensions
 	private static final Logger LOG = LogManager.getLogger(TimeRangeEditorDialog.class.getName());
 	private static final long serialVersionUID = 1L;
 
-	private int frameImagePanelPanelLandscape = 380;
-	private int frameImagePanelPanelPortrait = 240;
+	private int frameImagePanelLandscapeWidth = 380;
+	private int frameImagePanelPortraitWidth = 240;
 	private static final int SLIDER_SENSITIVITY = 25;
 
 	private ApplicationContext context = new AnnotationConfigApplicationContext(AROConfig.class);
@@ -100,16 +101,17 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 	private ITimeRangeReadWrite timeRangeReadWrite = context.getBean("timeRangeReadWrite", TimeRangeReadWrite.class);
 	private IExternalProcessRunner externalProcessRunner = context.getBean(ExternalProcessRunnerImpl.class);
 	private File traceFolder;
+	
 	@Getter
 	private TraceTimeRange traceTimeRange;
+	
 	@Getter
 	private TimeRange timeRange;
+	private TimeRange timeRangeBU;
+	
 	private double traceTimeDuration;
 	private double deviceVideoDuration;
 	private double initialDeviceVideoOffset;
-	@Getter
-	@Setter
-	private Dimension deviceScreenDimension;
 	private int deviceVideoWidth;
 	private int deviceVideoHeight;
 	private Orientation deviceOrientation;
@@ -122,7 +124,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 	private TreeMap<Double, BufferedImage> frameMap = new TreeMap<>();
 	private FrameImagePanel startImagePanel;
 	private FrameImagePanel endImagePanel;
-
+	
 	private JTextField configNameField = new JTextField();
 	private JComboBox<TimeRangeType> autoLaunchComboBox = new JComboBox<TimeRangeType>();
 	private JTextField startAnalysisTextField = new JTextField();
@@ -216,6 +218,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 			minPortraitH = 539;
 			minPortraitW = 751;
 		}
+			
 		if (deviceOrientation == Orientation.LANDSCAPE) {
 			// max based on screen size
 			dialogHeight = (int) (screenSize.height / 3.000);
@@ -247,6 +250,8 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 		} else {
 			createEntry();
 			editorDimension = new Dimension(getSize());
+			editorDimension.setSize(editorDimension.width, editorDimension.height + startImagePanel.getImageHeight() - IMAGE_HEIGHT);
+			setMinimumSize(editorDimension);
 		}
 		if (splash != null) {
 			splash.dispose();
@@ -288,6 +293,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 	}
 	
 	public void edit(TimeRange timeRange) {
+		timeRangeBU = timeRange;
 		if (chooserJPanel != null && chooserJPanel.isVisible()) {
 			chooserJPanel.setVisible(false);
 		}
@@ -378,7 +384,6 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 				.findFirst();
 		return foundEntry.isPresent() ? foundEntry.get() : null;
 	}
-	
 
 	private boolean collisionTest(String title) {
 		if (traceTimeRange == null) {
@@ -417,7 +422,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 		if (traceTimeRange.getTimeRangeList().isEmpty()) {
 			timeRange = new TimeRange("FULL", TimeRangeType.DEFAULT, 0, traceTimeDuration);
 			traceTimeRange.getTimeRangeList().add(timeRange);
-		}
+		} 
 		LOG.debug("Save trace range: " + traceTimeRange);
 		TimeRange timeRange = null;
 		
@@ -427,18 +432,27 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 				prevDefaultTimeRange.setTimeRangeType(TimeRangeType.MANUAL);
 			}
 		}
+		int actionCode;
+		if (timeRangeBU != null && !timeRangeBU.getTitle().equals(configNameField.getText())) {
+			actionCode = ask();
+			if (actionCode != 0) { // 1 = No, 2 = Cancel
+				if (timeRangeBU != null && !timeRangeBU.getTitle().equals(configNameField.getText())) {
+					configNameField.setText(timeRangeBU.getTitle());
+					configNameField.grabFocus();
+					timeRangeBU = null;
+					return null;
+				}
+			}
+		}
 		try {
 			timeRange = locateTimeRange(configNameField.getText());
-			if (timeRange == null) {
-				timeRange = new TimeRange();
-				traceTimeRange.getTimeRangeList().add(timeRange);
-			} 
 			timeRange = loadTimeRange(timeRange);
 			timeRangeReadWrite.save(traceFolder, traceTimeRange);
-			
+
 		} catch (Exception e) {
 			LOG.error("Failed to save TimeRange data:", e);
 		}
+		timeRangeBU = null;
 		return timeRange;
 	}
 
@@ -485,7 +499,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 		Image image = (new ImageIcon(getClass().getResource(ResourceBundleHelper.getImageString("ImageBasePath") 
 				+ ResourceBundleHelper.getImageString("Image.blackScreen"))))
 				.getImage();
-		
+		// image dimension is Dimension(360, 640)
 		startImagePanel = new FrameImagePanel(image, deviceOrientation);
 		endImagePanel = new FrameImagePanel(image, deviceOrientation);
 		
@@ -632,28 +646,6 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 		sliderAlert.setBackground(Color.LIGHT_GRAY);
 		framePanel.add(wrapAndLabelComponent(configNameField, "Configuration name:", 200));
 		framePanel.add(wrapAndLabelComponent(autoLaunchComboBox, "Auto Launch:", 110));
-		configNameField.addFocusListener(new FocusListener() {
-			
-			@Override
-			public void focusLost(FocusEvent e) {
-				if (collisionTest(configNameField.getText())) {
-					int actionCode = ask();
-					if (actionCode != 0) {
-						configNameField.grabFocus();
-					} else {
-						if (startAnalysisTextField.getText().isEmpty() && endAnalysisTextField.getText().isEmpty()) {
-							TimeRange timeRange = locateTimeRange(configNameField.getText());
-							if (timeRange != null) {
-								startAnalysisTextField.setText(timeRange.getBeginTime().toString());
-								endAnalysisTextField.setText(timeRange.getEndTime().toString());
-								autoLaunchComboBox.getModel().setSelectedItem(timeRange.getTimeRangeType());
-							}
-						}
-					}
-				}
-			}
-			@Override public void focusGained(FocusEvent e) {}
-		});
 		return framePanel;
 	}
 
@@ -686,7 +678,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 
 		private static final long serialVersionUID = 1L;
 		Image image;
-		private int imageWidth = frameImagePanelPanelLandscape;
+		private int imageWidth = frameImagePanelLandscapeWidth;
 		private int imageHeight = (int)(imageWidth * deviceVideoRatio);
 		
 		private double seconds;
@@ -713,13 +705,13 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 			this.orientation = orientation;
 			imagePanel = new ImagePanel(image);
 			if (orientation.equals(Orientation.LANDSCAPE)) {
-				imageWidth = frameImagePanelPanelLandscape;
+				imageWidth = frameImagePanelLandscapeWidth;
 				imageHeight = (int) (imageWidth * deviceVideoRatio);
-				dimn = new Dimension((int) (frameImagePanelPanelLandscape), (int) (frameImagePanelPanelLandscape * deviceVideoRatio));
+				dimn = new Dimension((int) (frameImagePanelLandscapeWidth), (int) (frameImagePanelLandscapeWidth * deviceVideoRatio));
 			} else {
-				imageWidth = frameImagePanelPanelPortrait;
-				imageHeight = (int) (frameImagePanelPanelPortrait * deviceVideoRatio);
-				dimn = new Dimension((int) (frameImagePanelPanelPortrait), (int) (frameImagePanelPanelPortrait * deviceVideoRatio));
+				imageWidth = frameImagePanelPortraitWidth;
+				imageHeight = (int) (frameImagePanelPortraitWidth * deviceVideoRatio);
+				dimn = new Dimension((int) (frameImagePanelPortraitWidth), (int) (frameImagePanelPortraitWidth * deviceVideoRatio));
 			}
 			
 			imagePanel.setPreferredSize(dimn);
@@ -729,6 +721,10 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 			add(imagePanel);
 		}
 
+		public int getImageHeight() {
+			return imagePanel.getHeight();
+		}
+		
 		public void setImage(BufferedImage bImage) {
 			if (bImage != null) {
 				if (isLandscape()) {
@@ -908,7 +904,7 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 					if (validateInput()) {
 						cleanup();
 						saveTraceTimeRange();
-						chooser(false);
+						chooser(true);
 					} else {
 						explainWhyCannotSave();
 					}
@@ -1081,11 +1077,11 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 		if (durationMOV - 30 > durationMP4) {
 			results = resultsMOV;
 			deviceVideoPath = movVideoPath;
-			frameImagePanelPanelPortrait = 165;
+			frameImagePanelPortraitWidth = 165;
 		} else {
 			results = resultsMP4;
 			deviceVideoPath = mp4VideoPath;
-			frameImagePanelPanelPortrait = 195;
+			frameImagePanelPortraitWidth = 195;
 		}
 		
 		if (deviceVideoPath == null || !deviceVideoPath.exists() || results.isEmpty()) {
@@ -1124,9 +1120,8 @@ public class TimeRangeEditorDialog extends JDialog implements FrameReceiver{
 				}
 				deviceVideoRatio = height / width;
 				
-				fHeight = 853;
+				fHeight = height.intValue();
 				fWidth = (int) ((double) fHeight / deviceVideoRatio);
-				
 				
 			}
 			deviceVideoNbFrames = StringParse.findLabeledDoubleFromString("nb_frames=", " ", streamSection);

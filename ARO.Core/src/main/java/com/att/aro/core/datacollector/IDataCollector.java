@@ -60,16 +60,6 @@ public interface IDataCollector {
 	 */
 	DataCollectorType getType();
 
-//	/**
-//	 * Start collector in background and returns result which indicates success
-//	 * or error and detail data.
-//	 * 
-//	 * @param folderToSaveTrace
-//	 *            directory to save trace to
-//	 * @return a StatusResult to hold result and success or failure
-//	 */
-//	StatusResult startCollector(String folderToSaveTrace);
-
 	/**
 	 * Start collector in background and returns result which indicates success
 	 * or error and detail data.
@@ -86,21 +76,25 @@ public interface IDataCollector {
 	 * Start collector in background and returns result which indicates success
 	 * or error and detail data.
 	 * 
+	 * @param isCommandLine
+	 * 			  true is cli, false is VO
 	 * @param folderToSaveTrace
 	 *            directory to save trace to
 	 * @param isCapturingVideo
 	 *            optional flag to capture video of device. default is false
 	 * @param isLiveViewVideo
 	 *            optional flag display video live while capturing
-	 * @param androidId
-	 *            optional id of device to capture. default is the connected
-	 *            device.
+	 * @param aroDevice
+	 *            optional aroDevice the selected device to capture. default is the only connected device.
 	 * @param extraParams
-	 *            optional data to pass to collectors. required by some
-	 *            collectors.
+	 *            optional data to pass to collectors. required by some collectors.
+	 * @param password
+	 * 			  iOS only
+	 * 
 	 * @return a StatusResult to hold result and success or failure
 	 */
-	StatusResult startCollector(boolean isCommandLine, String folderToSaveTrace, VideoOption videoOption, boolean isLiveViewVideo, String androidId, Hashtable<String, Object> extraParams, String password);
+	StatusResult startCollector(boolean isCommandLine, String folderToSaveTrace, VideoOption videoOption, boolean isLiveViewVideo, IAroDevice aroDevice,
+			Hashtable<String, Object> extraParams, String password);
 
 	/**
 	 * Status of collector: running or not
@@ -196,4 +190,5 @@ public interface IDataCollector {
 	 * @return true if video data is pulled device
 	 */
 	boolean isDeviceDataPulled();
+
 }

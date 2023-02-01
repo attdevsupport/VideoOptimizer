@@ -137,7 +137,6 @@ public class BestPracticesTab extends TabPanelJScrollPane implements IAROPrintab
 
 		dateTraceAppDetailPanel = new DateTraceAppDetailPanel();
 		bpObservable.registerObserver(dateTraceAppDetailPanel);
-		dateTraceAppDetailPanel.setPreferredSize(getPreferredSize());
 
 		// BP Overall -aka- AROBpOverallResulsPanel
 		BpTestStatisticsPanel testStatisticsPanel = new BpTestStatisticsPanel();

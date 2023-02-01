@@ -20,9 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.android.ddmlib.AndroidDebugBridge;
@@ -132,7 +132,7 @@ public class AdbServiceImpl implements IAdbService {
 		return verifyAdbPath(getAROConfigFileLocation(), unfiltered);
 	}
 	/**
-	 * <pre>Confirm adbPath, attempt repair from environmental variables. 
+	 * <pre>Confirm adbPath, attempt repair from environment variables. 
 	 *  ANDROID_HOME - path to the android sdk
 	 *  ANDROID_ADB - path directly to the executable adb or adb.exe
 	 * @param adbPath path where adb should be found
@@ -155,7 +155,7 @@ public class AdbServiceImpl implements IAdbService {
 				}
 			}
 
-			LOGGER.error("failed to repair ADB path, no useful environmental variables (see: ANDROID_ADB, ANDROID_HOME)");
+			LOGGER.error("failed to repair ADB path, no useful environment variables (see: ANDROID_ADB, ANDROID_HOME)");
 			return null;
 
 		}
@@ -261,6 +261,13 @@ public class AdbServiceImpl implements IAdbService {
 		return adb;
 	}
 
+	/**
+	 * Deprecated:
+	 * Use IExternalProcessRunner.executeCmd(String) instead
+	 * 
+	 * @return
+	 */
+	@Deprecated
 	boolean runAdbCommand() {
 		//assume that user has adb environment set, try running command line: adb devices
 		String lines = "";

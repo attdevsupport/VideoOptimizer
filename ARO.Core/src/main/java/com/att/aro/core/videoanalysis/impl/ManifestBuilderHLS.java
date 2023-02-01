@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.trie.PatriciaTrie;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
@@ -690,10 +690,12 @@ public class ManifestBuilderHLS extends ManifestBuilder {
 	
 	@Override
 	protected ChildManifest createChildManifest(Manifest manifest, String parameters, String childUriName) {
-		try {
-			childUriName = Util.decodeUrlEncoding(childUriName);
-		} catch (Exception e1) {
-			LOG.error("failed to decode childUriName:", e1);
+		if (StringUtils.isNotBlank(childUriName)) {
+			try {
+				childUriName = Util.decodeUrlEncoding(childUriName);
+			} catch (Exception e1) {
+				LOG.debug("failed to decode childUriName:", e1);
+			}
 		}
 		ChildManifest childManifest = new ChildManifest();
 		childManifest.setManifestCollectionParent(manifestCollection);

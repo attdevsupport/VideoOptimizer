@@ -31,11 +31,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JViewport;
 import javax.swing.filechooser.FileFilter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.axis.TickUnits;
 
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.util.ImageHelper;
+import com.att.aro.core.util.Util;
 import com.att.aro.ui.commonui.ContextAware;
 import com.att.aro.ui.commonui.MessageDialogFactory;
 import com.att.aro.ui.model.ExtensionFileFilter;
@@ -158,6 +160,9 @@ public class GraphPanelHelper{
 	public void SaveImageAs(JViewport pane, String graphPanelSaveDirectory) {
 
 		JFileChooser fc = new JFileChooser(graphPanelSaveDirectory);
+		String defaultSaveFileName = StringUtils.replace(new File(graphPanelSaveDirectory).getName(), " ", "_") + "_" + "img";
+		String defaultSaveFilePath = graphPanelSaveDirectory + Util.FILE_SEPARATOR + defaultSaveFileName;
+		fc.setSelectedFile(new File(defaultSaveFilePath));
 
 		// Set up file types
 		String[] fileTypesJPG = new String[2];

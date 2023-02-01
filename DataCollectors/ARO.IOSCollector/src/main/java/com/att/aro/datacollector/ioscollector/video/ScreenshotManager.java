@@ -19,8 +19,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -30,7 +28,7 @@ import java.util.Hashtable;
 import javax.media.jai.NullOpImage;
 import javax.media.jai.OpImage;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -40,7 +38,6 @@ import com.att.aro.core.commandline.impl.ExternalProcessRunnerImpl;
 import com.att.aro.core.util.ImageHelper;
 import com.att.aro.core.util.Util;
 import com.att.aro.datacollector.ioscollector.IScreenshotPubSub;
-import com.att.aro.datacollector.ioscollector.utilities.Tiff2JpgUtil;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageDecoder;
 
@@ -51,19 +48,21 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 	IExternalProcessRunner extRunner = new ExternalProcessRunnerImpl();
 	Process proc = null;
 	String lastmessage = "";
-	int counter = 0;
-	int count = 0;
+	
+	int imageRetrieveCounter = 0;	// counter for images processed (and deleted)
+	int newImageCounter = 0;		// counter for images taken
 	String imagefolder = "";
 	String udid = "";
-	boolean isready = true;
+	boolean screenShotActive = true;
 	volatile boolean isReadyForRead = false;
 
 	File tmpfolder;
 
 	private String exeIdeviceScreenShot;
+	private String exten = ".png";
 
 	public void setIsReady(boolean isReady) {
-		isready = isReady;
+		screenShotActive = isReady;
 	}
 
 	public ScreenshotManager(String folder, String udid) {
@@ -76,12 +75,13 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 			tmpfolder.mkdirs();
 			LOG.debug("exists :" + tmpfolder.exists());
 		}
+		
 		checkScreenshot();
 	}
 
-	private boolean checkScreenshot() {
-		
-		isready = false;
+	public boolean checkScreenshot() {
+
+		screenShotActive = false;
 		exeIdeviceScreenShot = Util.getIdeviceScreenshot();
 		if (!new File(exeIdeviceScreenShot).exists()) {
 			String spath = extRunner.executeCmd("which " + exeIdeviceScreenShot);
@@ -90,16 +90,35 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 			}
 		}
 
-		String result = extRunner.executeCmd(String.format("%s -u %s %s", exeIdeviceScreenShot, udid,  new File(imagefolder, "test.tiff").toString()));
+		File imgfile = new File(imagefolder, "imageTest");
+
+		String result = extRunner.executeCmd(String.format("%s -u %s %s", exeIdeviceScreenShot, udid, imgfile.toString()));
+
 		if (!result.contains("screenshotr")) {
 			File screenshotTest = new File(result.trim().substring(result.indexOf(imagefolder)));
 			if (screenshotTest.exists()) {
-				screenshotTest.delete();
-				isready = true;
+				// Will remember extention used by (Xcode & device)
+				String temp = Util.getExtension(screenshotTest.toString());
+				if (temp != null) {
+					exten = "." + temp;
+				}
+				FileInputStream inputstream;
+				try {
+					inputstream = new FileInputStream(screenshotTest);
+					byte[] imagedata = new byte[(int) screenshotTest.length()];
+					inputstream.read(imagedata);
+					inputstream.close();
+
+					BufferedImage image = ImageHelper.convertToBufferedImage(imagedata);
+					screenShotActive = (image != null);
+					screenshotTest.delete();
+				} catch (Exception e) {
+					LOG.error("Failed to obtain screenshot:" + e.getMessage());
+					screenShotActive = false;
+				}
 			}
 		}
-
-		return isready;
+		return screenShotActive;
 	}
 
 	@Override
@@ -110,8 +129,9 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 			exeIdeviceScreenShot += " -u " + udid;
 		}
 
-		while (isready) {
-			String img = this.imagefolder + Util.FILE_SEPARATOR + "image" + count + ".tiff";
+		// while loop to capture screen shots into folder
+		while (screenShotActive) {
+			String screenShotImage = this.imagefolder + Util.FILE_SEPARATOR + "image" + newImageCounter + exten;
 			File file = new File(imagefolder);
 			if (!file.exists()) {
 				try {
@@ -121,35 +141,39 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 				}
 			}
 
-			screenshotResponse = extRunner.executeCmd(exeIdeviceScreenShot + " " + img);
+			screenshotResponse = extRunner.executeCmd(exeIdeviceScreenShot + " " + screenShotImage);
 			if (!screenshotResponse.isEmpty() && !screenshotResponse.contains("Screenshot saved to")) {
-				isready = false; 
+				screenShotActive = false;
 				isReadyForRead = false;
 				LOG.error("iOS screenshot failure: " + screenshotResponse);
 				shutDown();
 				break;
 			}
-			File imgFile = new File(img);
+			File imgFile = new File(screenShotImage);
 			if (imgFile.exists() || this.lastmessage.contains("Connect success")) {
 				LOG.debug("Connect success");
-				isready = true;
+				screenShotActive = true;
 				isReadyForRead = true;
-				count++;
+				newImageCounter++;
 			}
 		}
 	}
 
 	public boolean isReady() {
-		return isready;
+		return screenShotActive;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public BufferedImage getImage() {
-		BufferedImage imgdata = null;
-		File imgfile = null;
-		String img = this.imagefolder + Util.FILE_SEPARATOR + "image" + counter + ".tiff";
-		int tempCounter = counter;
+		BufferedImage bufferedImage = null;
+		File screenShotFile = null;
+		String screenShotName = this.imagefolder + Util.FILE_SEPARATOR + "image" + imageRetrieveCounter + exten ;
+		int tempCounter = imageRetrieveCounter;
 
-		while (isready && !isReadyForRead) {
+		while (screenShotActive && !isReadyForRead) {
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
@@ -157,53 +181,47 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 			}
 		}
 		try {
-			imgfile = new File(img);
-			if (imgfile.exists() && isReadyForRead) {
-
-				FileInputStream inputstream = new FileInputStream(imgfile);
-				byte[] imgdataarray = new byte[(int) imgfile.length()];
-				inputstream.read(imgdataarray);
+			screenShotFile = new File(screenShotName);
+			if (screenShotFile.exists() && isReadyForRead) {
+				
+				FileInputStream inputstream = new FileInputStream(screenShotFile);
+				byte[] imagedata = new byte[(int) screenShotFile.length()];
+				inputstream.read(imagedata);
 				inputstream.close();
-
-				imgdata = ImageHelper.getImageFromByte(imgdataarray);
-				ByteArrayOutputStream byteArrayOutputStream = Tiff2JpgUtil.tiff2Jpg(imgfile.getAbsolutePath());
-				imgdataarray = byteArrayOutputStream.toByteArray();
-				imgdata = getImageFromByte(imgdataarray);
-
-				counter++;
+				bufferedImage = ImageHelper.convertToBufferedImage(imagedata);
+				
+				imageRetrieveCounter++;
 				// Making sure that the Live Screen Thread is at least one behind the Screenshot Capture.
-				if (counter >= count - 1) {
+				if (imageRetrieveCounter >= newImageCounter - 1) {
 					isReadyForRead = false;
 				}
 
 				try {
-					imgfile.delete();
+					screenShotFile.delete();
 				} catch (Exception e) {
-					LOG.error("Error deleting image file:" + img, e);
+					LOG.error("Error deleting image file:" + screenShotName, e);
 				}
 			}
 		} catch (IOException ioe) {
-			LOG.error("Error reading image file:" + img, ioe);
-			imgdata = null;
+			LOG.error("Error reading image file:" + screenShotName, ioe);
 
 			if (ExceptionUtils.indexOfThrowable(ioe, NullPointerException.class) != -1) {
-				counter = tempCounter;
+				imageRetrieveCounter = tempCounter;
 			}
 		}
 
-		return imgdata;
+		return bufferedImage;
 	}
 
 	/**
 	 * convert byte array of image to BufferedImge
 	 * 
-	 * @param array
-	 *            data of image
+	 * @param byteArray data of image
 	 * @return new instance of BufferedImage
 	 * @throws IOException
 	 */
-	public static BufferedImage getImageFromByte(byte[] array) throws IOException {
-		InputStream instream = new ByteArrayInputStream(array);
+	public static BufferedImage getImageFromByte(byte[] byteArray) throws IOException {
+		InputStream instream = new java.io.ByteArrayInputStream(byteArray);
 		ImageDecoder dec = ImageCodec.createImageDecoder("jpeg", instream, null);
 		RenderedImage rendering = new NullOpImage(dec.decodeAsRenderedImage(0), null, null, OpImage.OP_IO_BOUND);
 		BufferedImage image = convertRenderedImage(rendering);
@@ -245,7 +263,7 @@ public class ScreenshotManager extends Thread implements IScreenshotPubSub {
 	 * stop everything and exit
 	 */
 	public void shutDown() {
-		isready = false;
+		screenShotActive = false;
 		if (proc != null) {
 			proc.destroy();
 			proc = null;

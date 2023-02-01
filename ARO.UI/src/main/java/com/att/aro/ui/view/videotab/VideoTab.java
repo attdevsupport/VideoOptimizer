@@ -176,6 +176,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 					GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
 			throughputPanel.setVisible(false);
 			throughputPanel.addMouseListener(mouseListener(segmentThroughputGraphPanel));
+			throughputPanel.setToolTipText(ResourceBundleHelper.getMessageString("video.tab.segment.tooltip"));
 		}
 		return throughputPanel;
 	}
@@ -232,6 +233,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 					GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
 			progressPanel.setVisible(false);
 			progressPanel.addMouseListener(mouseListener(segmentProgressGraphPanel));
+			progressPanel.setToolTipText(ResourceBundleHelper.getMessageString("video.tab.segment.tooltip"));
 		}
 		return progressPanel;
 	}
@@ -255,6 +257,7 @@ public class VideoTab extends TabPanelJScrollPane implements IAROPrintable{
 					GridBagConstraints.NORTH, GridBagConstraints.HORIZONTAL, noInsets, 0, 0));
 			bufferPanel.setVisible(false);
 			bufferPanel.addMouseListener(mouseListener(segmentProgressGraphPanel));
+			bufferPanel.setToolTipText(ResourceBundleHelper.getMessageString("video.tab.segment.tooltip"));
 		}
 		return bufferPanel;
 	}

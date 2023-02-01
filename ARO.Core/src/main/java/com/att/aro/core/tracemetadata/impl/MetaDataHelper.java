@@ -40,6 +40,7 @@ import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import lombok.Getter;
+import lombok.Setter;
 
 @JsonIgnoreProperties(ignoreUnknown = true) // allows for changes dropping items or using older versions, but not before this ignore
 public class MetaDataHelper implements IMetaDataHelper {
@@ -57,6 +58,7 @@ public class MetaDataHelper implements IMetaDataHelper {
 	private IFileManager filemanager;
 
 	@Getter
+	@Setter
 	private MetaDataModel metaData;
 
 	private HashMap<Double, Integer> bitrateMap;
@@ -64,6 +66,12 @@ public class MetaDataHelper implements IMetaDataHelper {
 	private HashMap<Integer, Integer> resolutionMap;
 
 	private boolean isTraceDirectoryResult;
+	
+	@Override
+	public MetaDataModel revert() throws Exception {
+		metaData = metaDataReadWrite.getBackupModel();
+		return metaData;
+	}
 	
 	@Override
 	public void saveJSON(String path, MetaDataModel metaData) throws Exception {
@@ -125,7 +133,8 @@ public class MetaDataHelper implements IMetaDataHelper {
 
 	@Override
 	public MetaDataModel loadMetaData(String tracePath) throws Exception {
-		return metaDataReadWrite.readData(tracePath);
+		metaData = metaDataReadWrite.readData(tracePath);
+		return metaData;
 	}
 	
 	private void setVideoStreamTotals(MetaStream metaStream, VideoStream videoStream) {

@@ -27,7 +27,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.UIManager;
 
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
 
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.videoanalysis.pojo.VideoEvent;

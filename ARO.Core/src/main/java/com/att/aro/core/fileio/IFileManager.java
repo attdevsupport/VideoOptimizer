@@ -83,6 +83,7 @@ public interface IFileManager {
 
 	void mkDir(File path);
 
+	
 	/**
 	 * flush and close the OutputStream
 	 * 
@@ -154,14 +155,27 @@ public interface IFileManager {
 	String[] findFiles(String localVidsFolder, String fileName);
 
 	/**
-	 * Create an empty file in traceFolder
+	 * Create an empty file in folder
 	 * 
-	 * @param traceFolder
+	 * @param folder
 	 * @param fileName
 	 * @return File or null if failed
 	 */
-	File createEmptyFile(File traceFolder, String fileName);
+	File createEmptyFile(File folder, String fileName);
 
+	File createEmptyFile(String folder, String file);
+
+	boolean move(String source, String destination);
+	boolean move(File source, String destination);
+
+	boolean copy(String source, String destination);
+	boolean copy(File source, File destination);
+
+	boolean createLink(String source, String destination);
+	boolean createLink(File source, File destination);
+
+	boolean createSymbolicLink(String source, String destination);
+	boolean createSymbolicLink(File source, File destination);
 
 
 }

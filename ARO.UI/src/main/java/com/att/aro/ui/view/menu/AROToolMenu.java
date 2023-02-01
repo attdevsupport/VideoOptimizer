@@ -20,13 +20,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.JMenu;
@@ -40,7 +38,6 @@ import org.apache.log4j.Logger;
 import com.android.ddmlib.IDevice;
 import com.att.aro.core.adb.IAdbService;
 import com.att.aro.core.fileio.IFileManager;
-import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.Util;
@@ -130,7 +127,12 @@ public class AROToolMenu implements ActionListener {
 		exportExportMenuItem.addActionListener(new ExportSessionData((MainFrame) parent, Lists.newArrayList(xlsxFilter), 0));
 		toolMenu.add(exportExportMenuItem);
 		toolMenu.addSeparator();
-		toolMenu.add(getMenuItem(MenuItem.menu_tools_editMetadata, (isTracePathEmpty || new File(parent.getTracePath(), ".temp_trace").exists())));
+		toolMenu.add(getMenuItem(MenuItem.menu_tools_editMetadata, 
+				(isTracePathEmpty 
+				|| !new File(parent.getTracePath(), ".temp_trace").exists()
+				|| new File(parent.getTracePath()).isDirectory()
+				)
+				));
 
 		toolMenu.addSeparator();
 		toolMenu.add(menuAdder.getMenuItemInstance(MenuItem.menu_tools_privateData));
@@ -149,9 +151,16 @@ public class AROToolMenu implements ActionListener {
 		return toolMenu;
 	}
 
-	public JMenuItem getMenuItem(MenuItem item, boolean isTracePathEmpty) {
+	/**
+	 * Populate a JMenuItem, will be enabled/disabled depending on the boolean disable
+	 * 
+	 * @param item
+	 * @param disable
+	 * @return
+	 */
+	public JMenuItem getMenuItem(MenuItem item, boolean disable) {
 		JMenuItem menuItem = menuAdder.getMenuItemInstance(item);
-		menuItem.setEnabled(!isTracePathEmpty);
+		menuItem.setEnabled(!disable);
 		return menuItem;
 	}
 

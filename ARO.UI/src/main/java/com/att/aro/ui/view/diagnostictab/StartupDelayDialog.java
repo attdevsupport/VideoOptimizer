@@ -61,7 +61,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jfree.ui.tabbedui.VerticalLayout;
@@ -1531,14 +1531,13 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if ((!allUserEventList.isEmpty()) && Double.valueOf(playRequestedTime.getText()) > Double.valueOf(segmentTimeField.getText())) {
-					showUserEventWarningMessage();
-					return;
-				}
 				if (e.getActionCommand().equals("Cancel")) {
 					destroy();
-				} else {
-					if (segmentChosen != null) {
+				} else if (e.getActionCommand().equals("Set") && segmentChosen != null) {
+					if ((!allUserEventList.isEmpty()) && Double.valueOf(playRequestedTime.getText()) > Double.valueOf(segmentTimeField.getText())) {
+						showUserEventWarningMessage();
+					} else {
+						// Set has been pressed, close dialog and process with new startup time
 						segmentChosen.setSelected(true);
 						destroy();
 						try {
@@ -1549,13 +1548,12 @@ public class StartupDelayDialog extends JDialog implements FrameReceiver {
 							LOG.error("NumberFormatException: ", e1);
 						}
 						launchStartupCalculations(getStartTime());
-					} else {
-						showWarningMessage();
 					}
+				} else {
+					showWarningMessage();
 				}
 			}
 		};
-
 	}
 
 	/**

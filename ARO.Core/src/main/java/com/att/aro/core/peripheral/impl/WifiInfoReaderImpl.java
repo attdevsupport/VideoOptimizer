@@ -50,19 +50,23 @@ public class WifiInfoReaderImpl extends PeripheralBase implements IWifiInfoReade
 			if (filereader.fileExist(filepath)) {
 				String[] wifiEvents = null;
 				wifiEvents = filereader.readAllLine(filepath);
-				for (String wifiEvent : wifiEvents) {
-					parseWifiEvent(wifiInfos, pcapStartTime, traceDuration, wifiEvent);
-				}
-				WifiInfo previousWifiInfo = wifiInfos.get(wifiInfos.size() - 1);
-				WifiState previousWifiState = previousWifiInfo.getWifiState();
-				if (previousWifiState == WifiState.CONNECTED || previousWifiState == WifiState.CONNECTING || previousWifiState == WifiState.DISCONNECTING) {
-					this.wifiActiveDuration += (previousWifiInfo.getEndTimeStamp() - previousWifiInfo.getBeginTimeStamp());
+				if (wifiEvents != null && wifiEvents.length > 0) {
+					for (String wifiEvent : wifiEvents) {
+						parseWifiEvent(wifiInfos, pcapStartTime, traceDuration, wifiEvent);
+					}
+					WifiInfo previousWifiInfo = wifiInfos.get(wifiInfos.size() - 1);
+					WifiState previousWifiState = previousWifiInfo.getWifiState();
+					if (previousWifiState == WifiState.CONNECTED || previousWifiState == WifiState.CONNECTING || previousWifiState == WifiState.DISCONNECTING) {
+						this.wifiActiveDuration += (previousWifiInfo.getEndTimeStamp() - previousWifiInfo.getBeginTimeStamp());
+					}
+				} else {
+					LOGGER.info("Wifi events file is empty, no action taken");
 				}
 			}			
 		} catch (IOException e1) {
 			LOGGER.error("failed to read Wifi info file: " + filepath);
 		} catch (Exception e) {
-			LOGGER.warn("Unexpected error parsing GPS event: ", e);
+			LOGGER.warn("Unexpected error parsing Wifi event: ", e);
 		}
 		return wifiInfos;
 	}

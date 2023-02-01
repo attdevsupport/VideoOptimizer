@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.concurrent.TimeUnit;
 
@@ -51,7 +50,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -75,13 +74,16 @@ import com.att.aro.core.pojo.ErrorCodeEnum;
 import com.att.aro.core.pojo.VersionInfo;
 import com.att.aro.core.preferences.impl.PreferenceHandlerImpl;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
+import com.att.aro.core.util.BrewConfirmationImpl;
 import com.att.aro.core.util.CrashHandler;
 import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.core.util.FFprobeConfirmationImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.PcapConfirmationImpl;
 import com.att.aro.core.util.Util;
+import com.att.aro.core.util.VLCConfirmationImpl;
 import com.att.aro.core.util.VideoUtils;
+import com.att.aro.core.util.WiresharkConfirmationImpl;
 import com.att.aro.core.video.pojo.VideoOption;
 import com.att.aro.core.videoanalysis.pojo.VideoStream;
 import com.att.aro.mvc.AROController;
@@ -100,6 +102,7 @@ import com.att.aro.ui.view.diagnostictab.ChartPlotOptions;
 import com.att.aro.ui.view.diagnostictab.DiagnosticsTab;
 import com.att.aro.ui.view.diagnostictab.GraphPanel;
 import com.att.aro.ui.view.menu.AROMainFrameMenu;
+import com.att.aro.ui.view.menu.datacollector.RVIStepsDialog;
 import com.att.aro.ui.view.menu.help.SplashScreen;
 import com.att.aro.ui.view.menu.tools.DataDump;
 import com.att.aro.ui.view.menu.tools.PrivateDataDialog;
@@ -152,7 +155,9 @@ public class MainFrame implements SharedAttributesProcesses {
 			.getBean("ffprobeConfirmationImpl", FFprobeConfirmationImpl.class);
 
 	private PcapConfirmationImpl pcapConfirmationImpl = ContextAware.getAROConfigContext().getBean("pcapConfirmationImpl", PcapConfirmationImpl.class);
-
+	private WiresharkConfirmationImpl wiresharkConfirmationImpl = ContextAware.getAROConfigContext().getBean("wiresharkConfirmationImpl", WiresharkConfirmationImpl.class);
+	private VLCConfirmationImpl vlcConfirmationImpl = ContextAware.getAROConfigContext().getBean("vlcConfirmationImpl", VLCConfirmationImpl.class);
+	private BrewConfirmationImpl brewConfirmationImpl = ContextAware.getAROConfigContext().getBean("brewConfirmationImpl", BrewConfirmationImpl.class);
 	/**
 	 * private data dialog reference
 	 */
@@ -190,6 +195,10 @@ public class MainFrame implements SharedAttributesProcesses {
 	@Getter
 	private boolean autoAssignPermissions = false;
 
+	@Setter
+	@Getter
+	private List<String[]> voIpAddressList;
+
 	public static MainFrame getWindow() {
 		return window;
 	}
@@ -198,6 +207,7 @@ public class MainFrame implements SharedAttributesProcesses {
 		return frmApplicationResourceOptimizer;
 	}
 
+	@Override
 	public AROController getController() {
 		return aroController;
 	}
@@ -288,6 +298,27 @@ public class MainFrame implements SharedAttributesProcesses {
 							SwingUtilities.invokeLater(() -> window.launchDialog(new PcapConfirmationDialog()));
 						}
 					}, "pcapConfirmation").start();
+					
+					new Thread(() -> {
+						if (!window.wiresharkConfirmationImpl.checkWireshark()) {
+							SwingUtilities.invokeLater(() -> window.launchDialog(new WiresharkConfirmationDialog()));
+						}
+					}, "wireshark check").start();
+					
+					new Thread(() -> {
+					    if (!window.vlcConfirmationImpl.checkVlc()) {
+					        SwingUtilities.invokeLater(() -> window.launchDialog(new VLCConfirmationDialog()));
+					    }
+					}, "VLC check").start();
+					
+					if (Util.isMacOS() && !window.brewConfirmationImpl.getSuggestBrewVersion().equals( window.brewConfirmationImpl.getLastBrewVersion() )) {
+						new Thread(() -> {
+							if (!window.brewConfirmationImpl.checkBrewVersion()) {
+								SwingUtilities.invokeLater(() -> window.launchDialog(new BrewConfirmationDialog()));
+							}
+						}, "Brew version check").start();
+					}
+		
 				} catch (OutOfMemoryError error) {
 					LOG.error("Application exceeded the system memory", error);
 					Util.restart(true);
@@ -376,8 +407,10 @@ public class MainFrame implements SharedAttributesProcesses {
 				GoogleAnalyticsUtil.getGoogleAnalyticsInstance().applicationInfo(GoogleAnalyticsUtil.getAnalyticsEvents().getTrackerID(), titleName, version);
 				sendInstallationInfoTOGA();
 				GoogleAnalyticsUtil.getGoogleAnalyticsInstance()
-						.sendAnalyticsStartSessionEvents(GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent(),
-								GoogleAnalyticsUtil.getAnalyticsEvents().getStartApp(), Util.OS_NAME + (Util.OS_ARCHITECTURE.contains("64") ? " 64" : " 32"));
+						.sendAnalyticsStartSessionEvents(
+								GoogleAnalyticsUtil.getAnalyticsEvents().getAnalyzerEvent()
+								, GoogleAnalyticsUtil.getAnalyticsEvents().getStartApp()
+								, Util.OS_NAME + (Util.OS_ARCHITECTURE.contains("64") ? " 64" : " 32"));
 			}
 		};
 		new Thread(runGA).start();
@@ -518,6 +551,7 @@ public class MainFrame implements SharedAttributesProcesses {
 
 	@Override
 	public void clearPreviousTraceData() {
+		wipeCurrentTraceInitialAnalyzerResult();
 		setTrafficFile(null);
 		setPcapTempWrap(false);
 		setVideoFile(null);
@@ -781,7 +815,7 @@ public class MainFrame implements SharedAttributesProcesses {
 		// remove items before launch collection
 		extraParams.remove("DIALOG_SIZE");
 		extraParams.remove("MetaDataExpanded");
-		this.metaDataModel = metaDataModel;
+		setMetaDataModel(metaDataModel);
 		new AROCollectorSwingWorker<Void, Void>(frmApplicationResourceOptimizer, actionListeners, 1, "startCollector", device, traceFolderName, extraParams)
 				.execute();
 	}
@@ -884,9 +918,15 @@ public class MainFrame implements SharedAttributesProcesses {
 			} else {
 				String errorMessage = statusResult.getError().getDescription();
 				if (statusResult.getError().getCode() == 512) {
-					MessageDialogFactory.getInstance()
-							.showInformationDialog(window.getJFrame(), BUNDLE.getString("Error.rvi.resetconnection"),
-									BUNDLE.getString("Error.rvi.resetconnection.title"));
+					int option = MessageDialogFactory.getInstance()
+							.showTroubleDialog(window.getJFrame(),  BUNDLE.getString("Error.rvi.resetconnection"),
+								JOptionPane.DEFAULT_OPTION);
+					
+					if(option == JOptionPane.OK_OPTION) {
+						new RVIStepsDialog(window.getJFrame());
+						return;				
+					}
+								
 				} else if (errorMessage.contains("0xe8008016")) {
 					MessageDialogFactory.getInstance()
 							.showInformationDialog(window.getJFrame(), BUNDLE.getString("Error.app.provision.invalidentitle"),
@@ -918,6 +958,12 @@ public class MainFrame implements SharedAttributesProcesses {
 		}
 	}
 
+	public void wipeCurrentTraceInitialAnalyzerResult() {
+		if (getController() != null) {
+			getController().setCurrentTraceInitialAnalyzerResult(null);
+		}
+	}
+	
 	@Override
 	public CollectorStatus getCollectorStatus() {
 		return collectorStatus;

@@ -23,6 +23,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -30,7 +31,7 @@ import javax.swing.JOptionPane;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.jfree.util.Log;
@@ -46,6 +47,7 @@ import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice.Platform;
 import com.att.aro.core.mobiledevice.pojo.IAroDevices;
+import com.att.aro.core.parse.DevInterface;
 import com.att.aro.core.tracemetadata.pojo.MetaDataModel;
 import com.att.aro.core.util.NetworkUtil;
 import com.att.aro.core.util.Util;
@@ -148,6 +150,8 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 				}
 				
 				IAroDevices aroDevices = parent.getAroDevices();
+				storeEnvironmentOnDevice(aroDevices);
+				
 				IAroDevice device = null;
 							
 				if (aroDevices.size() != 0) {
@@ -157,15 +161,6 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 							ResourceBundleHelper.getMessageString("collector.nodevices"),
 							ResourceBundleHelper.getMessageString("menu.error.title"), JOptionPane.INFORMATION_MESSAGE);
 					return;
-
-				}
-				
-				if (device == null) {
-					MessageDialogFactory.showMessageDialog(((MainFrame) parent).getJFrame()
-							, ResourceBundleHelper.getMessageString("collector.cancelled")
-							, ResourceBundleHelper.getMessageString("menu.info.title")
-							, JOptionPane.INFORMATION_MESSAGE);
-					return;
 				}
 				
 			}
@@ -174,6 +169,44 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			((MainFrame) parent).stopCollector();
 			setStartMenuItem(true);
 		}
+	}
+	
+	private void storeEnvironmentOnDevice(IAroDevices aroDevices) {
+		String voTimeZoneID = TimeZone.getDefault().getID();
+		double voTimestamp = System.currentTimeMillis() / 1000.0;
+		double deviceTimestamp = 0;
+		boolean timingOffset = false;
+
+		LOG.debug(String.format("VideoOptimiser\t: %.3f", System.currentTimeMillis() / 1000.0));
+
+		for (IAroDevice device : aroDevices.getDeviceList()) {
+			if (device.getIpAddressList() == null) {
+				// Anroid: runs once per device connected per VO launch
+				// ios: skipped as IOSDevice returns an empty list so it will not update until we add ios support for locating addresses at launch
+				device.setIpAddressList(device.obtainDeviceIpAddress());
+			}
+			deviceTimestamp = device.obtainDeviceTimestamp();
+			double timeDiff = voTimestamp - deviceTimestamp;
+			timingOffset = (voTimeZoneID.equals(device.getDeviceTimeZoneID()) && Math.abs(timeDiff) <= 2);
+			device.setTimingOffset(timingOffset);
+			device.setVoTimeZoneID(voTimeZoneID);
+			device.setVoTimestamp(voTimestamp);
+			String status;
+			status = String.format("%s\t: %.3f", device.getModel(), device.obtainDeviceTimestamp());
+			if (!timingOffset) {
+				if (!voTimeZoneID.equals(device.getDeviceTimeZoneID())) {
+					status += String.format("\n\t\tVO: <%s> and %s: <%s> TimeZones do not match ", voTimeZoneID, device.getDeviceName(),
+							device.getDeviceTimeZoneID());
+				}
+				if (Math.abs(timeDiff) > 2) {
+					status += String.format("\n\t\tTime is %.3f %s the computer", timeDiff, (timeDiff < 0 ? "behind" : "ahead of"));
+				}
+				LOG.debug(status);
+			}
+		}
+		DevInterface devInterface = new DevInterface();
+		List<String[]> list = devInterface.obtainVoIpAddress();
+		parent.setVoIpAddressList(list);
 	}
 
 	private IAroDevice chooseDevice(IAroDevices aroDevices, List<IDataCollector> collectors) {
@@ -297,7 +330,8 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 		return device;
 	}
 
-	private Hashtable<String, Object> prepareStartCollectorExtras(IAroDevice device, String traceFolderName, DataCollectorSelectNStartDialog dialog) {
+	private Hashtable<String, Object> prepareStartCollectorExtras(IAroDevice device,
+			String traceFolderName, DataCollectorSelectNStartDialog dialog) {
 		Hashtable<String,Object> extras = new Hashtable<String,Object>();
 		extras.put("device"					, device);                                                           
 		extras.put("video_option"			, dialog.getRecordVideoOption());
@@ -315,16 +349,16 @@ public class ARODataCollectorMenu implements ActionListener , MenuListener{
 			extras.put("traceType"			, dialog.getDeviceOptionPanel().getTraceType());                     
 			extras.put("targetedApp"		, dialog.getDeviceOptionPanel().getTargetedApp());					
 			extras.put("appProducer"		, dialog.getDeviceOptionPanel().getAppProducer());				     
-		}                                                                                                                                                                                                                  
+		}                                                                                                        
 		                                                                                                            
 		extras.put("assignPermission", ((MainFrame) parent).isAutoAssignPermissions());
 		return extras;
 	}
 
 	private void updateMetaData(IAroDevice device, String traceFolderName, DataCollectorSelectNStartDialog dialog) {
-		metaDataModel.setPhoneMake(device.getDeviceName());
 		metaDataModel.setPhoneModel(device.getModel());
 		metaDataModel.setOs(device.getOS());
+		metaDataModel.setPhoneMake(device.getOS().equalsIgnoreCase("iOS")? ResourceBundleHelper.getMessageString("metadata.field.iOSMake"): device.getDeviceName());
 		metaDataModel.setDeviceOrientation(dialog.getVideoOrientation().name());
 		metaDataModel.setAttenuation(dialog.getDeviceOptionPanel().getAttenuatorModel());
 		metaDataModel.setTraceStorage(traceFolderName);

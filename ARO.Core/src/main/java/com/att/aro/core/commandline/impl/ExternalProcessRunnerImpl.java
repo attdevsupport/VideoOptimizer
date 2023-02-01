@@ -23,10 +23,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.StringUtils;
 
 import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.commandline.IProcessFactory;
@@ -97,11 +97,15 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 			pbldr.redirectErrorStream(true);
 		}
 		
-		if (!StringUtils.isEmpty(Util.USER_PATH)) {
+		if (StringUtils.isNotBlank(Util.getUserPath())) {
 			Map<String, String> envs = pbldr.environment();
-			envs.put("PATH", System.getenv("PATH") + ":" + Util.USER_PATH);
+			if (workingPath != null) { // Needed to allow Util.java's use of this method during launch
+				envs.put("PATH", System.getenv("PATH") + ":" + Util.getUserPath() + ":" + workingPath.toString());
+			} else {
+				envs.put("PATH", System.getenv("PATH") + ":" + Util.getUserPath());
+			}
 		}
-
+		
 		if (!Util.isWindowsOS()) {
 			if (workingPath != null) {
 				pbldr.directory(workingPath);
@@ -142,7 +146,11 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		return builder.toString();
 	}
 
+	/**
+	 * Deprecated: use executeCmd instead
+	 */
 	@Override
+	@Deprecated
 	public String runCmd(String[] command) throws IOException {
 		Process process = procfactory.create(command);
 
@@ -208,7 +216,12 @@ public class ExternalProcessRunnerImpl implements IExternalProcessRunner {
 		return null;
 	}
 
+	
+	/**
+	 * Deprecated: use executeCmd instead
+	 */
 	@Override
+	@Deprecated
 	public ByteArrayOutputStream run(String command) throws IOException {
 		Process process = procfactory.create(command);
 

@@ -15,9 +15,11 @@
 */
 package com.att.aro.core.packetanalysis.impl;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,9 +35,11 @@ import java.util.Set;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.jfree.util.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
+import com.att.aro.core.datacollector.pojo.EnvironmentDetails;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.packetanalysis.ITraceDataReader;
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
@@ -60,6 +64,7 @@ import com.att.aro.core.peripheral.IAttenuattionEventReader;
 import com.att.aro.core.peripheral.IBatteryInfoReader;
 import com.att.aro.core.peripheral.IBluetoothInfoReader;
 import com.att.aro.core.peripheral.ICameraInfoReader;
+import com.att.aro.core.peripheral.ICellTowerInfoReader;
 import com.att.aro.core.peripheral.ICollectOptionsReader;
 import com.att.aro.core.peripheral.ICpuActivityReader;
 import com.att.aro.core.peripheral.ICpuTemperatureReader;
@@ -78,7 +83,6 @@ import com.att.aro.core.peripheral.IVideoTimeReader;
 import com.att.aro.core.peripheral.IWakelockInfoReader;
 import com.att.aro.core.peripheral.IWifiInfoReader;
 import com.att.aro.core.peripheral.LocationReader;
-import com.att.aro.core.peripheral.impl.MetaDataReadWrite;
 import com.att.aro.core.peripheral.impl.ThermalStatusReaderImpl;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisInfo;
 import com.att.aro.core.peripheral.pojo.AlarmAnalysisResult;
@@ -107,6 +111,7 @@ import com.att.aro.core.peripheral.pojo.VideoTime;
 import com.att.aro.core.peripheral.pojo.WakelockInfo;
 import com.att.aro.core.peripheral.pojo.WifiInfo;
 import com.att.aro.core.securedpacketreader.ICrypto;
+import com.att.aro.core.tracemetadata.IEnvironmentDetailsHelper;
 import com.att.aro.core.util.Util;
 import com.att.aro.mvc.IAROView;
 
@@ -195,17 +200,26 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 
 	@Autowired
 	private IVideoStartupReadWrite videoStartupReader;
+
+	@Autowired
+	private IEnvironmentDetailsHelper environmentDetailsHelper;
 	
 	@Autowired
 	IMetaDataReadWrite metaDataReadWrite;
+	
+	@Autowired
+	ICellTowerInfoReader cellTowerInfoReader;
 
 	private IAROView aroView;
-	private Set<String> localIPAddresses = null;
-	private Set<String> remoteIPAddresses = null;
+	
 	private Set<Integer> remotePortNumbers = null;
 	private Set<Integer> localPortNumbers = null;
+	
+	private Set<InetAddress> localAddress = null;
+	
 	private List<PacketInfo> allPackets = null;
 	private List<PacketInfo> unknownPackets = null;
+	private Set<String> sessionKeys = null; 
 	private Map<InetAddress, Integer> ipCountMap = null;
 	private boolean isSecurePcap = false;
 
@@ -222,10 +236,10 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	}
 
 	private void init() {
-		localIPAddresses = new HashSet<String>();
-		remoteIPAddresses = new HashSet<String>();
+		sessionKeys = new HashSet<>();
 		localPortNumbers = new HashSet<Integer>();
 		remotePortNumbers = new HashSet<Integer>();
+		localAddress = new HashSet<InetAddress>();
 		allPackets = new ArrayList<PacketInfo>();
 		unknownPackets = new ArrayList<PacketInfo>();
 		// Adding the reserved DNS, HTTP and HTTPS port numbers to the list of remote ports.
@@ -254,6 +268,29 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		result.setAppVersionMap(app.getAppVersionMap());
 		result.setAppInfos(app.getAppInfos());
 
+		this.init();
+
+		if ((new File(directoryPath, "environment_details.json")).exists()) {
+			try {
+				result.setEnvironmentDetails(environmentDetailsHelper.loadEnvironmentDetails(directoryPath));
+				result.setLocalIpAddressList(result.getEnvironmentDetails().getDeviceInfo().getLocalIpAddressList());
+				result.getEnvironmentDetails().getDeviceInfo().getLocalIpAddressList().forEach(address -> {
+					try {
+						localAddress.add(InetAddress.getByName(address));
+					} catch (UnknownHostException e) {
+						Log.error("failed to parse locaal address:" + address);
+					}
+				});
+			} catch (Exception e2) {
+				Log.debug("problem loading environment_details.json " + e2.getMessage());
+			}
+		} else {
+			EnvironmentDetails environmentDetails = new EnvironmentDetails();
+			environmentDetails.getDeviceInfo().setLocalIpAddressList(new ArrayList<String>());
+			result.setEnvironmentDetails(environmentDetails);
+			result.setLocalIpAddressList(result.getEnvironmentDetails().getDeviceInfo().getLocalIpAddressList());
+		}
+		
 		// Read the time file and PCAP trace
 		try {
 			result = readTimeAndPcap(result);
@@ -431,8 +468,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	 * 
 	 * @throws IOException
 	 */
-	private TraceDirectoryResult readTimeAndPcap(TraceDirectoryResult dresult) throws IOException {
-		TraceDirectoryResult result = dresult;
+	private TraceDirectoryResult readTimeAndPcap(TraceDirectoryResult result) throws IOException {
 		String filepath;
 
 		Double startTime = null;
@@ -455,13 +491,12 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		result.setAppIds(appIds);
 		result.setTotalNoPackets(appIds.size());
 
-		if (dresult.getTraceFile() != null && !dresult.getTraceFile().equals("")) {
+		if (result.getTraceFile() != null && !result.getTraceFile().equals("")) {
 			filepath = result.getTraceFile();
 		} else {
 			filepath = Paths.get(result.getTraceDirectory(), aroView.getTrafficFile()).toString();
 		}
 
-		this.init();
 		this.ipCountMap = result.getIpCountMap();
 		result = (TraceDirectoryResult) this.readPcapTraceFile(filepath, startTime, duration, result);
 		if (result == null) {
@@ -478,18 +513,6 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 			}
 		}
 		
-		if (result != null) {
-			String secureFilePath = result.getTraceDirectory() + Util.FILE_SEPARATOR + TraceDataConst.FileName.SECURE_PCAP_FILE;
-			if (filereader.fileExist(secureFilePath)) {
-				try {
-					isSecurePcap = true;
-					result.setSecureTrace(isSecurePcap);
-					this.readSecurePcapTraceFile(secureFilePath, result);
-				} finally {
-					isSecurePcap = false;
-				}
-			}
-		}
 		if (result == null) {
 			result = new TraceDirectoryResult();
 		}
@@ -673,14 +696,13 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	}
 
 	private AbstractTraceResult readPcapTraceFile(String filepath, Double startTime, Double duration,
-			AbstractTraceResult dresult) throws IOException {
+			AbstractTraceResult result) throws IOException {
 		if (!filereader.fileExist(filepath)) {
 			if (LOGGER != null) {
 				LOGGER.error("No packet file found at: " + filepath);
 			}
 			return null;
 		}
-		AbstractTraceResult result = dresult;
 		if (this.packetreader == null) {
 			// this.packetreader = new PacketReaderImpl();
 			throw new NullPointerException("this.packetreader is null");
@@ -717,6 +739,8 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 			Map<String, Set<InetAddress>> appIps = result.getAppIps();
 			for (Iterator<PacketInfo> iter = allPackets.iterator(); iter.hasNext();) {
 				PacketInfo packetInfo = iter.next();
+				// Set packet ID to match Wireshark ID
+				packetInfo.setPacketId(++packetIdx);
 
 				// Filter out non-IP packets
 				if (!(packetInfo.getPacket() instanceof IPPacket)) {
@@ -748,8 +772,6 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 				}
 				ips.add(packetInfo.getRemoteIPAddress());
 
-				// Set packet ID to match Wireshark ID
-				packetInfo.setPacketId(++packetIdx);
 			}
 			
 			if (!unknownPackets.isEmpty()) {
@@ -764,15 +786,11 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 						if (packet instanceof TCPPacket) {
 							int sourcePort = ((TCPPacket) packet).getSourcePort();
 							int destinationPort = ((TCPPacket) packet).getDestinationPort();
-							this.localIPAddresses.add(ipPacket.getSourceIPAddress().getHostAddress());
-							this.remoteIPAddresses.add(ipPacket.getDestinationIPAddress().getHostAddress());
 							this.localPortNumbers.add(sourcePort);
 							this.remotePortNumbers.add(destinationPort);
 						} else if (packet instanceof UDPPacket) {
 							int sourcePort = ((UDPPacket) packet).getSourcePort();
 							int destinationPort = ((UDPPacket) packet).getDestinationPort();
-							this.localIPAddresses.add(ipPacket.getSourceIPAddress().getHostAddress());
-							this.remoteIPAddresses.add(ipPacket.getDestinationIPAddress().getHostAddress());
 							this.localPortNumbers.add(sourcePort);
 							this.remotePortNumbers.add(destinationPort);
 						}
@@ -860,56 +878,66 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 	/**
 	 * Attempts to determine packet direction based upon source and destination IP
 	 * addresses
+	 * @param localAddressList 
 	 */
-	
 	private PacketDirection determinePacketDirection(PacketInfo packetInfo, InetAddress source, InetAddress dest) {
 
 		Packet packet = packetInfo.getPacket();
-
-		if (packet instanceof TCPPacket) {
-
-			int sourcePort = ((TCPPacket) packet).getSourcePort();
-			int destinationPort = ((TCPPacket) packet).getDestinationPort();
-
-			if (packetInfo.getTcpFlagString().equals("S")) {
-				this.localIPAddresses.add(source.getHostAddress());
-				this.remoteIPAddresses.add(dest.getHostAddress());
-				this.localPortNumbers.add(sourcePort);
-				this.remotePortNumbers.add(destinationPort);
-			}
-
-			if (this.localPortNumbers.contains(sourcePort) || this.remotePortNumbers.contains(destinationPort)) {
+		
+		if (!localAddress.isEmpty()) {
+			if (localAddress.contains(((IPPacket) packet).getSourceIPAddress())) {
 				return PacketDirection.UPLINK;
-			} else if (this.remotePortNumbers.contains(sourcePort) || this.localPortNumbers.contains(destinationPort)) {
-				return PacketDirection.DOWNLINK;
 			} else {
-				return PacketDirection.UNKNOWN;
+				return PacketDirection.DOWNLINK;
 			}
+		} else { // Legacy handling for when there are no local addresses recorded
+			if (packet instanceof TCPPacket) {
 
-		} else if (packet instanceof UDPPacket) {
+				int sourcePort = ((TCPPacket) packet).getSourcePort();
+				int destinationPort = ((TCPPacket) packet).getDestinationPort();
 
-			int sourcePort = ((UDPPacket) packet).getSourcePort();
-			int destinationPort = ((UDPPacket) packet).getDestinationPort();
+				if (packetInfo.getTcpFlagString().equals("S")) {
+					this.localPortNumbers.add(sourcePort);
+					this.remotePortNumbers.add(destinationPort);
+				}
 
-			if (this.localPortNumbers.contains(sourcePort) || this.remotePortNumbers.contains(destinationPort)) {
-				return PacketDirection.UPLINK;
-			} else if (this.remotePortNumbers.contains(sourcePort) || this.localPortNumbers.contains(destinationPort)) {
-				return PacketDirection.DOWNLINK;
-			} else {
-				if (this.localIPAddresses.contains(source.getHostAddress()) || this.remoteIPAddresses.contains(dest.getHostAddress())) {
+				if (this.localPortNumbers.contains(sourcePort) || this.remotePortNumbers.contains(destinationPort)) {
 					return PacketDirection.UPLINK;
-				} else if (this.remoteIPAddresses.contains(source.getHostAddress()) || this.localIPAddresses.contains(dest.getHostAddress())) {
+				} else if (this.remotePortNumbers.contains(sourcePort) || this.localPortNumbers.contains(destinationPort)) {
 					return PacketDirection.DOWNLINK;
 				} else {
 					return PacketDirection.UNKNOWN;
 				}
+
+			} else if (packet instanceof UDPPacket) {
+
+				int sourcePort = ((UDPPacket) packet).getSourcePort();
+				int destinationPort = ((UDPPacket) packet).getDestinationPort();
+
+				String sessionKey = source.getHostAddress() + " " + sourcePort + " " + destinationPort + " " + dest.getHostAddress();
+				String revereSessionKey = dest.getHostAddress() + " " + destinationPort + " " + sourcePort + " " + source.getHostAddress();
+
+				if (this.localPortNumbers.contains(sourcePort) || this.remotePortNumbers.contains(destinationPort)) {
+					return PacketDirection.UPLINK;
+				} else if (this.remotePortNumbers.contains(sourcePort) || this.localPortNumbers.contains(destinationPort)) {
+					return PacketDirection.DOWNLINK;
+				} else {
+					if (sessionKeys.contains(sessionKey)) {
+						return PacketDirection.UPLINK;
+					} else if (sessionKeys.contains(revereSessionKey)) {
+						return PacketDirection.DOWNLINK;
+					} else {
+						sessionKeys.add(sessionKey);
+						return PacketDirection.UPLINK;
+					}
+				}
+			} else {
+				return PacketDirection.UNKNOWN;
 			}
-		} else {
-			return PacketDirection.UNKNOWN;
 		}
 
 	}
-	
+
 	@Override
 	public void packetArrived(String appName, Packet packet) {
 		if (isSecurePcap) {
@@ -1079,6 +1107,7 @@ public class TraceDataReaderImpl implements IPacketListener, ITraceDataReader {
 		result.setVideoStartupData(videoStreamStartupData);
 		
 		result.setMetaData(metaDataReadWrite.readData(result.getTraceDirectory()));
+		result.setCellInfoList(cellTowerInfoReader.readData(result.getTraceDirectory()));
 		
 	}
 

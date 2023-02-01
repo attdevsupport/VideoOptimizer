@@ -25,10 +25,12 @@ import com.att.aro.core.configuration.pojo.Profile3G;
 import com.att.aro.core.configuration.pojo.ProfileLTE;
 import com.att.aro.core.configuration.pojo.ProfileType;
 import com.att.aro.core.configuration.pojo.ProfileWiFi;
+import com.att.aro.core.packetanalysis.IThroughputCalculator;
 import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.PacketInfo;
 import com.att.aro.core.packetanalysis.pojo.RRCState;
 import com.att.aro.core.packetanalysis.pojo.RrcStateRange;
+import com.att.aro.core.packetanalysis.pojo.Throughput;
 import com.att.aro.core.packetreader.pojo.IPPacket;
 import com.att.aro.core.packetreader.pojo.PacketDirection;
 import com.att.aro.core.packetreader.pojo.TCPPacket;
@@ -48,6 +50,8 @@ public class TimeRangeAnalysis implements Serializable {
 
 	@JsonIgnore
 	private static final ProfileFactoryImpl profileFactory = SpringContextUtil.getInstance().getContext().getBean(ProfileFactoryImpl.class);
+	@JsonIgnore
+	private IThroughputCalculator throughputHelper = SpringContextUtil.getInstance().getContext().getBean(IThroughputCalculator.class);
 
 	@Getter
 	private double startTime;
@@ -60,6 +64,12 @@ public class TimeRangeAnalysis implements Serializable {
 	private long payloadLen; // bytes
 	private double activeTime;
 	private double rrcEnergy;
+	@Getter
+	private double maxThroughput;
+	@Getter
+	private double maxULThroughput;
+	@Getter
+	private double maxDLThroughput;
 
 	@SuppressFBWarnings(justification="No bug", value="SE_BAD_FIELD")
 	private AROController controller;
@@ -257,6 +267,12 @@ public class TimeRangeAnalysis implements Serializable {
 				RRCState rrcState = rrc.getState();
 				rrcEnergy += updateEnergy(analysisData, profile, beginTime, endTime, rrcState);
 				activeTime += updateActiveTime(profile, beginTime, endTime, rrcState);
+			}
+			
+			for (Throughput throughput : throughputHelper.calculateThroughput(startTime, endTime, 1.00, packets)) {
+				maxThroughput = (throughput.getKbps() > maxThroughput) ? throughput.getKbps() : maxThroughput;
+				maxULThroughput = (throughput.getUploadKbps() > maxULThroughput) ? throughput.getUploadKbps() : maxULThroughput;
+				maxDLThroughput = (throughput.getDownloadKbps() > maxDLThroughput) ? throughput.getDownloadKbps() : maxDLThroughput;
 			}
 		}
 	}

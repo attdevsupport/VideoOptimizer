@@ -63,10 +63,16 @@ import org.apache.log4j.Logger;
 import org.springframework.util.CollectionUtils;
 
 import com.att.aro.core.IVideoBestPractices;
+import com.att.aro.core.fileio.IFileManager;
+import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
+import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
+import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
+import com.att.aro.core.packetanalysis.pojo.TraceResultType;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartup.ValidationStartup;
 import com.att.aro.core.pojo.AROTraceData;
+import com.att.aro.core.settings.impl.SettingsImpl;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
@@ -89,6 +95,7 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = 1L;
 
 	private static final Logger LOG = LogManager.getLogger(SegmentTablePanel.class);
+	private static IFileManager fileManager = (IFileManager) ContextAware.getAROConfigContext().getBean("fileManager");
 
 	private JPanel hiddenPanel;
 	
@@ -120,6 +127,9 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 	public static final String VIDEO_TABLE_NAME = "Video";
 	public static final String AUDIO_TABLE_NAME = "Audio";
 	public static final String CAPTION_TABLE_NAME = "Captioning";
+	private JButton uploadButton;
+
+	private TraceDirectoryResult traceDirectoryResult;
 
 	/**
 	 * collection of tables for use when resizing & toggling
@@ -378,7 +388,6 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		return checkBoxCC;
 	}
 
-
 	private Component getCheckBoxStreamEnable() {
 		enableStreamCheckBox = new JCheckBox();
 		videoStreamCollection = analyzerResult.getAnalyzerResult().getStreamingVideoData().getVideoStreamMap().values();
@@ -437,7 +446,6 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		stream.setCurrentStream(isCurrentStream);
 	}
 
-
 	public void updateTitleButton(AROTraceData analyzerResult) {
 		if (titlePanel != null) {
 			if (analyzerResult.getAnalyzerResult() != null) {
@@ -480,8 +488,8 @@ public class SegmentTablePanel extends JPanel implements ActionListener {
 		if (streamingVideoData != null) {
 			streamingVideoData.scanVideoStreams();
 		}
-		((MainFrame) aroView).getDiagnosticTab().getGraphPanel().refresh(analyzerResult);
 		analyzerResult = videoBestPractices.analyze(analyzerResult);
+		((MainFrame) aroView).getDiagnosticTab().getGraphPanel().refresh(analyzerResult, false);
 		((MainFrame) aroView).getDiagnosticTab().getGraphPanel().setTraceData(analyzerResult);
 		((MainFrame) aroView).getVideoTab().refreshLocal(analyzerResult, false);
 		((MainFrame)((MainFrame) aroView).getDiagnosticTab().getGraphPanel().getGraphPanelParent().getAroView()).refreshBestPracticesTab();

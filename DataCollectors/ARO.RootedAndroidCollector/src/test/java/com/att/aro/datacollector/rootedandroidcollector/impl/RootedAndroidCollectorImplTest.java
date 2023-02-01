@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2022 AT&T
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+*/
 package com.att.aro.datacollector.rootedandroidcollector.impl;
 
 import static org.junit.Assert.assertEquals;
@@ -39,6 +54,7 @@ import com.att.aro.core.datacollector.IVideoImageSubscriber;
 import com.att.aro.core.datacollector.pojo.StatusResult;
 import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.IAndroidDevice;
+import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.resourceextractor.IReadWriteFileExtractor;
 import com.att.aro.core.video.IVideoCapture;
 import com.att.aro.core.video.pojo.VideoOption;
@@ -58,6 +74,7 @@ public class RootedAndroidCollectorImplTest {
 	@Before
 	public void setUp() {
 		MockitoAnnotations.initMocks(this);
+		when(selectedAroDevice.getId() ).thenReturn("abc");
 	}
 
 	@After
@@ -65,24 +82,16 @@ public class RootedAndroidCollectorImplTest {
 
 	}
 
-	@Mock
-	private IFileManager filemanager;
-	@Mock
-	private IDevice device;
-	@Mock
-	private IAdbService adbservice;
-	@Mock
-	private IAndroid android;
-	@Mock
-	private IReadWriteFileExtractor extractor;
-	@Mock
-	private IThreadExecutor threadexecutor;
-	@Mock
-	private TcpdumpRunner runner;
-	@Mock
-	private IVideoCapture videocapture;
-	@Mock
-	private IAndroidDevice androidev;
+	@Mock private IFileManager filemanager;
+	@Mock private IDevice device;
+	@Mock private IAdbService adbservice;
+	@Mock private IAndroid android;
+	@Mock private IAroDevice selectedAroDevice;
+	@Mock private IReadWriteFileExtractor extractor;
+	@Mock private IThreadExecutor threadexecutor;
+	@Mock private TcpdumpRunner runner;
+	@Mock private IVideoCapture videocapture;
+	@Mock private IAndroidDevice androidev;
 
 	@InjectMocks
 	@Autowired
@@ -101,8 +110,7 @@ public class RootedAndroidCollectorImplTest {
 
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		when(filemanager.directoryExistAndNotEmpty(any(String.class))).thenReturn(true);
-		StatusResult result = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.LREZ, false, "abc", null,
-				null);
+		StatusResult result = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.LREZ, false, selectedAroDevice, null, null);
 
 		assertEquals(false, result.isSuccess());
 	}
@@ -138,7 +146,8 @@ public class RootedAndroidCollectorImplTest {
 
 		when(android.pushFile(any(IDevice.class), any(String.class), any(String.class))).thenReturn(true);
 		when(android.setExecutePermission(any(IDevice.class), any(String.class))).thenReturn(true);
-		rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.LREZ, false, "abc", null, null);
+		
+		rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.LREZ, false, selectedAroDevice, null, null);
 
 		when(android.checkTcpDumpRunning(any(IDevice.class))).thenReturn(true);
 		when(android.stopTcpDump(any(IDevice.class))).thenReturn(true);
@@ -183,7 +192,7 @@ public class RootedAndroidCollectorImplTest {
 
 		when(android.pushFile(any(IDevice.class), any(String.class), any(String.class))).thenReturn(true);
 		when(android.setExecutePermission(any(IDevice.class), any(String.class))).thenReturn(true);
-		rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.LREZ, false, "abc", null, null);
+		rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.LREZ, false, selectedAroDevice, null, null);
 
 		when(android.checkTcpDumpRunning(any(IDevice.class))).thenReturn(true);
 		when(android.stopTcpDump(any(IDevice.class))).thenReturn(true);
@@ -236,7 +245,7 @@ public class RootedAndroidCollectorImplTest {
 
 	// @Ignore
 	@Test
-	public void teststartCollector_returnIsErrorCode200() throws Exception {
+	public void testStartCollector_returnIsErrorCode200() throws Exception {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		when(adbservice.getConnectedDevices()).thenThrow(new IOException("AndroidDebugBridge failed to start"));
 		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, null);
@@ -245,7 +254,7 @@ public class RootedAndroidCollectorImplTest {
 
 	@Ignore
 	@Test
-	public void teststartCollector_returnIsErrorCode201() {
+	public void testStartCollector_returnIsErrorCode201() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice mockDevice = mock(IDevice.class);
 		when(mockDevice.isEmulator()).thenReturn(false);
@@ -263,7 +272,7 @@ public class RootedAndroidCollectorImplTest {
 		}
 		when(android.checkPackageExist(any(IDevice.class), any(String.class))).thenReturn(false);
 
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(201, testResult.getError().getCode());
 
@@ -292,7 +301,7 @@ public class RootedAndroidCollectorImplTest {
 
 	// @Ignore
 	@Test
-	public void teststartCollector_returnIsErrorCode203() {
+	public void testStartCollector_returnIsErrorCode203() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice[] devlist = {};
 		try {
@@ -300,14 +309,14 @@ public class RootedAndroidCollectorImplTest {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(203, testResult.getError().getCode());
 	}
 
 	// @Ignore
 	@Test
-	public void teststartCollector_returnIsErrorCode204() {
+	public void testStartCollector_returnIsErrorCode204() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice mockDevice = mock(IDevice.class);
 		IDevice[] devlist = { mockDevice };
@@ -317,15 +326,16 @@ public class RootedAndroidCollectorImplTest {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "cde",
+		when(selectedAroDevice.getId()).thenReturn("cde");
+		
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(204, testResult.getError().getCode());
 	}
 
 	@Ignore
 	@Test
-	public void teststartCollector_resultIsErrorCode205() {
+	public void testStartCollector_resultIsErrorCode205() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice mockDevice = mock(IDevice.class);
 		when(mockDevice.isEmulator()).thenReturn(true);
@@ -343,7 +353,7 @@ public class RootedAndroidCollectorImplTest {
 		}
 		when(android.isSDCardEnoughSpace(any(IDevice.class), any(long.class))).thenReturn(false);
 
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(205, testResult.getError().getCode());
 
@@ -351,7 +361,7 @@ public class RootedAndroidCollectorImplTest {
 
 	@Ignore
 	@Test
-	public void teststartCollector_returnIsErrorCode206() {
+	public void testStartCollector_returnIsErrorCode206() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice mockDevice = mock(IDevice.class);
 		IDevice[] devlist = { mockDevice };
@@ -368,7 +378,7 @@ public class RootedAndroidCollectorImplTest {
 		}
 
 		when(android.checkTcpDumpRunning(any(IDevice.class))).thenReturn(true);
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(206, testResult.getError().getCode());
 
@@ -376,9 +386,9 @@ public class RootedAndroidCollectorImplTest {
 
 	// @Ignore
 	@Test
-	public void teststartCollector_returnIsErrorCode207() {
+	public void testStartCollector_returnIsErrorCode207() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(false);
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(207, testResult.getError().getCode());
 
@@ -386,7 +396,7 @@ public class RootedAndroidCollectorImplTest {
 
 	@Ignore
 	@Test
-	public void teststartCollector_returnIsErrorCode209() {
+	public void testStartCollector_returnIsErrorCode209() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice mockDevice = mock(IDevice.class);
 		when(mockDevice.isEmulator()).thenReturn(true);
@@ -407,7 +417,7 @@ public class RootedAndroidCollectorImplTest {
 		when(filemanager.fileExist(any(String.class))).thenReturn(true);
 		when(android.pushFile(any(IDevice.class), any(String.class), any(String.class))).thenReturn(false);
 
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(209, testResult.getError().getCode());
 
@@ -415,7 +425,7 @@ public class RootedAndroidCollectorImplTest {
 
 	@Ignore
 	@Test
-	public void teststartCollector_returnIsErrorCode210() {
+	public void testStartCollector_returnIsErrorCode210() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice mockDevice = mock(IDevice.class);
 		when(mockDevice.isEmulator()).thenReturn(false);
@@ -435,14 +445,14 @@ public class RootedAndroidCollectorImplTest {
 		when(filemanager.fileExist(any(String.class))).thenReturn(true);
 		String[] testarray = { "does not exist" };
 		when(android.getShellReturn(any(IDevice.class), any(String.class))).thenReturn(testarray);
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(210, testResult.getError().getCode());
 	}
 
 	@Ignore
 	@Test
-	public void teststartCollector_returnIsErrorCode212() {
+	public void testStartCollector_returnIsErrorCode212() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice mockDevice = mock(IDevice.class);
 		when(mockDevice.isEmulator()).thenReturn(true);
@@ -464,7 +474,7 @@ public class RootedAndroidCollectorImplTest {
 		when(extractor.extractFiles(any(String.class), any(String.class), any(ClassLoader.class))).thenReturn(true);
 		when(android.pushFile(any(IDevice.class), any(String.class), any(String.class))).thenReturn(true);
 		when(android.setExecutePermission(any(IDevice.class), any(String.class))).thenReturn(false);
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(212, testResult.getError().getCode());
 
@@ -472,7 +482,7 @@ public class RootedAndroidCollectorImplTest {
 
 	@Ignore
 	@Test
-	public void teststartCollector_returnIsErrorCode213() {
+	public void testStartCollector_returnIsErrorCode213() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice mockDevice = mock(IDevice.class);
 		IDevice[] devlist = { mockDevice };
@@ -483,7 +493,7 @@ public class RootedAndroidCollectorImplTest {
 			e.printStackTrace();
 		}
 
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(213, testResult.getError().getCode());
 	}
@@ -496,7 +506,7 @@ public class RootedAndroidCollectorImplTest {
 
 	@Ignore
 	@Test
-	public void teststartCollector_returnIsSuccess() {
+	public void testStartCollector_returnIsSuccess() {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice mockDevice = mock(IDevice.class);
 		when(mockDevice.isEmulator()).thenReturn(true);
@@ -521,14 +531,14 @@ public class RootedAndroidCollectorImplTest {
 		when(android.setExecutePermission(any(IDevice.class), any(String.class))).thenReturn(true);
 		when(android.checkTcpDumpRunning(any(IDevice.class))).thenReturn(false).thenReturn(true);
 
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(true, testResult.isSuccess());
 
 	}
 
 	@Test
-	public void teststopCollector_ThrowException() throws TimeoutException, AdbCommandRejectedException, IOException {
+	public void testStopCollector_ThrowException() throws TimeoutException, AdbCommandRejectedException, IOException {
 		when(device.getSyncService()).thenThrow(new IOException());
 
 		Date date = new Date();
@@ -557,7 +567,7 @@ public class RootedAndroidCollectorImplTest {
 
 	@Ignore
 	@Test
-	public void teststartCollector_ThrowException() throws TimeoutException, AdbCommandRejectedException, IOException {
+	public void testStartCollector_ThrowException() throws TimeoutException, AdbCommandRejectedException, IOException {
 		when(filemanager.directoryExist(any(String.class))).thenReturn(true);
 		IDevice mockDevice = mock(IDevice.class);
 		IDevice[] devlist = { mockDevice };
@@ -573,7 +583,7 @@ public class RootedAndroidCollectorImplTest {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, "abc",
+		StatusResult testResult = rootedAndroidCollectorImpl.startCollector(true, "", VideoOption.NONE, false, selectedAroDevice,
 				null, null);
 		assertEquals(201, testResult.getError().getCode());
 	}

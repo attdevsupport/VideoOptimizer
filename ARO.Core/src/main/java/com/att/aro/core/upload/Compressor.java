@@ -39,7 +39,6 @@ import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.model.enums.CompressionLevel;
 import net.lingala.zip4j.model.enums.CompressionMethod;
-import net.lingala.zip4j.model.enums.EncryptionMethod;
 
 public class Compressor implements Runnable {
 	private String targetFolder;

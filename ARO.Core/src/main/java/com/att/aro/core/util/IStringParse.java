@@ -15,11 +15,14 @@
 */
 package com.att.aro.core.util;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 public interface IStringParse {
 
 	public String[] parse(String targetString, String regex);
-
 	public String[] parse(String targetString, Pattern pattern);
+
+	List<String> parse(List<String> results, String targetString, Pattern pattern);
+	List<String> parse(List<String> results, String targetString, String regex);
 }

@@ -26,7 +26,7 @@ import java.util.TreeMap;
 
 import javax.imageio.ImageIO;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
@@ -55,6 +55,9 @@ public class VideoFrameExtractor implements Runnable{
 	private IFileManager fileManager = context.getBean(FileManagerImpl.class);
 	private IExternalProcessRunner externalProcessRunner = context.getBean(ExternalProcessRunnerImpl.class);
 
+	private File ffmpegPath = null;
+	private String ffmpeg = null;
+	
 	private ArrayList<FrameRequest> queue = new ArrayList<>();
 	private TreeMap<Double, FrameRequest> dropMap = new TreeMap<>();
 	
@@ -187,16 +190,17 @@ public class VideoFrameExtractor implements Runnable{
 	 */
 	public FrameStatus preloadFrames(FrameRequest frameRequest) {
 
-		String cmd = String.format("%s -i \"%s\" -vf \"select=not(mod(n\\,%d)), scale=%d:%d\" -vsync 0 -frame_pts true %s "
-				, Util.getFFMPEG()
+		String cmd = String.format("%s -i \"%s\" -vf \"select=not(mod(n\\,%d)), scale=%d:%d\" -vsync 0 -frame_pts true \"%s\"/%s "
+				, ffmpeg
 				, deviceVideoPath
 				, frameRequest.getCount() // skip frame count
 				, fWidth
 				, fHeight
+				, videoFrameFolder
 				, "frame-%05d.png");
 
 		LOG.debug(String.format("PRE LOAD every %d frames (more or less)", frameRequest.getCount()));
-		String results = externalProcessRunner.executeCmd(new File(videoFrameFolder), cmd, true, true);
+		String results = externalProcessRunner.executeCmd(ffmpegPath, cmd, true, true);
 		FrameStatus frameStatus = loadFrames(videoFrameFolder);
 		
 		return prepareFrameStatus(results, frameStatus);
@@ -208,17 +212,19 @@ public class VideoFrameExtractor implements Runnable{
 	 * @param frameCount
 	 */
 	private FrameStatus collectFrames(FrameRequest frameRequest) {
-		String cmd = String.format("%s -i \"%s\" -vf \"select=gte(t\\,%f), scale=%d:%d\" -vsync 0 -frame_pts true %s %s "
-				, Util.getFFMPEG()
+		
+		String cmd = String.format("%s -i \"%s\" -vf \"select=gte(t\\,%f), scale=%d:%d\" -vsync 0 -frame_pts true %s \"%s\"/%s "
+				, ffmpeg
 				, deviceVideoPath
 				, frameRequest.getStartTimeStamp()
 				, fWidth
 				, fHeight
 				, frameRequest.getCount() != null ? String.format("-vframes %d", frameRequest.getCount()) : ""
+				, videoFrameFolder
 				, "frame-%05d.png");
 
 		LOG.debug(String.format("LOADING %d frames from %.03f ", frameRequest.getCount().intValue(), frameRequest.getStartTimeStamp()));
-		String results = externalProcessRunner.executeCmd(new File(videoFrameFolder), cmd, true, true);
+		String results = externalProcessRunner.executeCmd(ffmpegPath, cmd, true, true);
 		FrameStatus frameStatus = loadFrames(videoFrameFolder);
 		
 		return prepareFrameStatus(results, frameStatus);
@@ -290,14 +296,19 @@ public class VideoFrameExtractor implements Runnable{
 		return frameStatus;
 	}
 
-	public void initialize(String videoFrameFolder, String deviceVideoPath, TreeMap<Double, BufferedImage> frameMap, Integer fWidth, Integer fHeight) throws Exception {
+	public void initialize(String videoFrameFolder, String deviceVideoPath, TreeMap<Double, BufferedImage> frameMap, Integer fWidth, Integer fHeight)
+			throws Exception {
 		this.videoFrameFolder = videoFrameFolder;
 		this.deviceVideoPath = deviceVideoPath;
-		this.frameMap =  frameMap;
+		this.frameMap = frameMap;
 		this.fWidth = fWidth;
 		this.fHeight = fHeight;
 		checkConfig();
 		halt = false;
+
+		String[] ffCmds = Util.getParentAndCommand(Util.getFFMPEG());
+		ffmpegPath = ffCmds[0] != null ? new File(ffCmds[0]) : null;
+		ffmpeg = ffCmds[1];
 	}
 	
 	private void checkConfig() throws Exception {

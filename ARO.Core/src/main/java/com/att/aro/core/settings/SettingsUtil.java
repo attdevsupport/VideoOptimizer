@@ -26,39 +26,39 @@ import com.att.aro.core.settings.impl.SettingsImpl;
 
 public final class SettingsUtil {
 	public static final String UNSELECTED_BP = "unSelectedBP";
+	
+	private static List<BestPracticeType> unSelectedBPList = new ArrayList<>();
+	private static List<BestPracticeType> selectedBPList = new ArrayList<>();
 
 	private SettingsUtil() {
 	}
-
-	public static final List<BestPracticeType> retrieveBestPractices() {
-		String sel = SettingsImpl.getInstance().getAttribute(UNSELECTED_BP);
-		List<BestPracticeType> obpList = new ArrayList<>();
-		if (sel != null && sel.length() > 2) {
-			List<String> obpStrList = Arrays.asList(sel.replaceAll("\\[|\\]", "").split(", "));
-			obpList = obpStrList.stream()
-					.filter((s) -> BestPracticeType.isValid(s))
-					.map((s) -> BestPracticeType.valueOf(s))
-					.collect(Collectors.toList());
+	
+	public static final List<BestPracticeType> getSelectedBPsList() {
+		if (selectedBPList == null || selectedBPList.isEmpty()) {
+			String unSelectedStr = SettingsImpl.getInstance().getAttribute(UNSELECTED_BP);
+			if (unSelectedStr != null && unSelectedStr.length() > 2) {
+				List<String> unSelectedStrList = Arrays.asList(unSelectedStr.replaceAll("\\[|\\]", "").split(", "));
+				unSelectedBPList = unSelectedStrList.stream().filter((s) -> BestPracticeType.isValid(s)).map((s) -> BestPracticeType.valueOf(s))
+						.collect(Collectors.toList());
+			}
+			selectedBPList = getOtherBestPractices(unSelectedBPList);
 		}
-		List<BestPracticeType> bpList = getUnselectedBestPractices(obpList);
-		return bpList;
+		return selectedBPList;
 	}
 
 	public static final void saveBestPractices(List<BestPracticeType> bpList) {
-		String str = getUnselectedBestPractices(bpList).toString();
-		SettingsImpl.getInstance().setAndSaveAttribute(SettingsUtil.UNSELECTED_BP, str);
+		// Set the unselected BPs
+		unSelectedBPList = getOtherBestPractices(bpList);
+		SettingsImpl.getInstance().setAndSaveAttribute(SettingsUtil.UNSELECTED_BP, unSelectedBPList.toString());
+		
+		// Set the selected BPs
+		selectedBPList = getOtherBestPractices(unSelectedBPList);
 	}
-
-	private static List<BestPracticeType> getUnselectedBestPractices(List<BestPracticeType> bpList) {
-		BestPracticeType[] allBP = BestPracticeType.values();
-		List<BestPracticeType> ret = new ArrayList<>(); 
-		List<BestPracticeType> pre = BestPracticeType.getByCategory(Category.PRE_PROCESS);
-		pre.addAll(bpList);
-		for(BestPracticeType bpt : allBP) {
-			if(!pre.contains(bpt)) {
-				ret.add(bpt);
-			}
-		}
-		return ret;
+		
+	private static List<BestPracticeType> getOtherBestPractices(List<BestPracticeType> bpsToBeExcluded) {
+		List<BestPracticeType> preProcessList = BestPracticeType.getByCategory(Category.PRE_PROCESS);
+		return Arrays.stream(BestPracticeType.values())
+				.filter(bp -> (!bpsToBeExcluded.contains(bp) && !preProcessList.contains(bp)))
+				.collect(Collectors.toList());
 	}
 }

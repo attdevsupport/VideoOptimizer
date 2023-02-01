@@ -150,6 +150,7 @@ public class LoadManifestDialog extends TabPanelJPanel implements ActionListener
 						LOG.error("IOException :"+e1.getMessage());
 					}
 					// refresh analyzer
+					((MainFrame)aroView).wipeCurrentTraceInitialAnalyzerResult();
 					aroView.updateTracePath(new File(aroView.getTracePath()));
 				}
 			}

@@ -17,7 +17,7 @@ package com.att.aro.core.videoanalysis;
 
 import java.util.List;
 
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;

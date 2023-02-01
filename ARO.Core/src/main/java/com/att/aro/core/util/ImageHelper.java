@@ -24,26 +24,20 @@ import java.awt.image.ColorModel;
 import java.awt.image.RenderedImage;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.util.Hashtable;
 
-import javax.media.jai.NullOpImage;
-import javax.media.jai.OpImage;
+import javax.imageio.ImageIO;
 
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.android.ddmlib.RawImage;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
 import com.att.aro.core.video.pojo.QuickTimeOutputStream;
-import com.sun.media.jai.codec.ImageCodec;
-import com.sun.media.jai.codec.ImageDecoder;
-import com.sun.media.jai.codecimpl.util.ImagingException;
 
 /**
  * Helper class for image rotation, conversion and resizing.
@@ -52,11 +46,12 @@ import com.sun.media.jai.codecimpl.util.ImagingException;
  *
  */
 public class ImageHelper {
-
+	
 	public static boolean imageDecoderStatus = true;
 	private static final String PNG_IMAGE_HEADER = "89 50 4E 47 0D 0A 1A 0A";
+	private static final String JPG_IMAGE_HEADER = "FF D8 FF DB 00 43 00 08";
 	private static final Logger Logger = LogManager.getLogger(ImageHelper.class.getName());
-	private static final String THIRDP_LOG = "3rdPartyLibExcp.log";
+	
 	/**
 	 * Converts raw image in to buffered image object which will be provided to
 	 * quickstream for creating video {@link QuickTimeOutputStream}
@@ -106,57 +101,67 @@ public class ImageHelper {
 	 * @param targetHeight
 	 * @return
 	 */
-	public static BufferedImage resize(BufferedImage image, int targetWidth, int targetHeight){
+	public static BufferedImage resize(BufferedImage image, int targetWidth, int targetHeight) {
 		int imageType = BufferedImage.TYPE_INT_ARGB;
-		
+
 		BufferedImage result = image;
-		
+
 		BufferedImage tmp = new BufferedImage(targetWidth, targetHeight, imageType);
 		Object hint = RenderingHints.VALUE_INTERPOLATION_BILINEAR;
 		Graphics2D g2 = tmp.createGraphics();
-        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
-        g2.drawImage(image, 0, 0, targetWidth, targetHeight, 0, 0, image.getWidth(), image.getHeight(), null);
-        g2.dispose();
-        
-        result = tmp;
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, hint);
+		g2.drawImage(image, 0, 0, targetWidth, targetHeight, 0, 0, image.getWidth(), image.getHeight(), null);
+		g2.dispose();
+
+		result = tmp;
 		return result;
 	}
+	
 	/**
-	 * convert byte array of image to BufferedImge
-	 * @param array data of image
-	 * @return new instance of BufferedImage
+	 * Load image file, convert to formatName if necessary, into ByteArrayOutputStream
+	 * 
+	 * @param inputImagePath
+	 * @param formatName
+	 * @return ByteArrayOutputStream
 	 * @throws IOException
 	 */
-	public static BufferedImage getImageFromByte(byte[] array){
+	public static ByteArrayOutputStream convertFormat(String inputImagePath, String formatName) throws IOException {
+		FileInputStream inputStream = new FileInputStream(inputImagePath);
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+		// reads input image from file
+		BufferedImage bufferedImage = ImageIO.read(inputStream);
+
+		// writes to the output image in specified format
+		if (!ImageIO.write(bufferedImage, formatName, outputStream)) {
+			Logger.error(String.format("Failed to convert image  format:", formatName, inputImagePath));
+		}
+
+		// needs to close the streams
+		inputStream.close();
+
+		return outputStream;
+	}
+
+	/**
+	 * Convert byte[] to BufferedImage
+	 * @param array
+	 * @return
+	 */
+	public static BufferedImage convertToBufferedImage(byte[] array) {
+
 		InputStream instream = new ByteArrayInputStream(array);
-		String imageType = getImageType(array);
-		ImageDecoder dec = ImageCodec.createImageDecoder(imageType, instream, null);
-		BufferedImage image = null;
-		// Navigate the 3rd party error messages to a file, not to print out in console
-		FileOutputStream fos=null;
+		BufferedImage bufferedImage = null;
 		try {
-			File logFile = new File(Util.getVideoOptimizerLibrary() + Util.FILE_SEPARATOR +THIRDP_LOG);
-			logFile.createNewFile();
-			fos = new FileOutputStream(logFile,false);
-		} catch (IOException ioe) {
-			Logger.error("Failed to create a log file", ioe);
-		}		
-		System.setErr(new PrintStream(fos));
-		try {
-			RenderedImage renderedImg;
-			renderedImg = dec.decodeAsRenderedImage(0);
-			RenderedImage rendering = new NullOpImage(renderedImg, null, null, OpImage.OP_IO_BOUND);
-			image = convertRenderedImage(rendering);
-		} catch (ImagingException exp) {
-			setImageDecoderStatus(false);
-		} catch (EOFException eof) {
-			setImageDecoderStatus(false);
-		} catch (IOException ioe) {
+			try {
+				bufferedImage = ImageIO.read(instream);
+			} catch (IOException e) {
+				Logger.error("faled to convert byte[] array:", e);
+			}
+		} catch (Exception exp) {
 			setImageDecoderStatus(false);
 		}
-		System.setErr(System.err);
-
-		return image;
+		return bufferedImage;
 	}
 
 	public static String getImageType(byte[] array) {
@@ -166,9 +171,12 @@ public class ImageHelper {
 		}
 		if (sb.toString().trim().equals(PNG_IMAGE_HEADER)) {
 			return "png";
-		} 
+		} else if (sb.toString().trim().equals(JPG_IMAGE_HEADER)) {
+			return "jpg";
+		}
 		return "tiff";
 	}
+	
 	public static BufferedImage convertRenderedImage(RenderedImage img) {
 	    if (img instanceof BufferedImage) {
 	        return (BufferedImage)img;  
@@ -189,6 +197,7 @@ public class ImageHelper {
 	    img.copyData(raster);
 	    return result;
 	}
+
 	/**
 	 * rotate BufferedImage to a certain angle
 	 * @param image instance of BufferedImage

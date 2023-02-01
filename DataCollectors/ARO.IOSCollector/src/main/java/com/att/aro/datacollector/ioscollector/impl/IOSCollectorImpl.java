@@ -49,6 +49,7 @@ import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
 import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.peripheral.pojo.AttenuatorModel;
+import com.att.aro.core.tracemetadata.IEnvironmentDetailsHelper;
 import com.att.aro.core.util.GoogleAnalyticsUtil;
 import com.att.aro.core.util.StringParse;
 import com.att.aro.core.util.Util;
@@ -66,7 +67,6 @@ import com.att.aro.datacollector.ioscollector.utilities.IOSDeviceInfo;
 import com.att.aro.datacollector.ioscollector.utilities.RemoteVirtualInterface;
 import com.att.aro.datacollector.ioscollector.utilities.XCodeInfo;
 import com.att.aro.datacollector.ioscollector.video.VideoCaptureMacOS;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -104,7 +104,6 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	private SaveCollectorOptions saveCollectorOptions;
 	private boolean hdVideoPulled = true;
 	private boolean validPW;
-	private boolean secure = false;
 	private String udId = "";
 	private String dumpcapVersion;
 	
@@ -120,6 +119,9 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		this.filemanager = filemanager;
 	}
 
+	@Autowired
+	private IEnvironmentDetailsHelper environmentDetailsHelper;
+	
 	@Override
 	public void onConnected() {
 		this.isDeviceConnected = true;
@@ -271,12 +273,11 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 	}
 
 	@Override
-	public StatusResult startCollector(boolean commandLine, String folderToSaveTrace, VideoOption videoOption, boolean liveViewVideo, String udId,
+	public StatusResult startCollector(boolean commandLine, String folderToSaveTrace, VideoOption videoOption, boolean liveViewVideo, IAroDevice device,
 			Hashtable<String, Object> extraParams, String password) {
 		if (extraParams != null) {
 			this.videoOption = (VideoOption) extraParams.get("video_option");
 			this.attenuatorModel = (AttenuatorModel) extraParams.get("AttenuatorModel");
-			this.secure = extraParams.get("secure") == null ? false : (boolean) extraParams.get("secure");
 		}
 
 		hdVideoPulled = true;
@@ -286,7 +287,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		}
 
 		isCapturingVideo = isVideo();
-		this.udId = udId;
+		this.udId = device != null ? device.getId() : null;
 
 		this.isCommandLine = commandLine;
 		if (isCommandLine) {
@@ -398,25 +399,21 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		}
 		
 		try {
-			EnvironmentDetails environmentDetails = new EnvironmentDetails(folderToSaveTrace);
-			environmentDetails.populateDeviceInfo(deviceinfo.getDeviceVersion(), null, IAroDevice.Platform.iOS.name());
+			EnvironmentDetails environmentDetails = new EnvironmentDetails(folderToSaveTrace, device);
 			environmentDetails.populateMacOSDetails(xcode.getXcodeVersion(), dumpcapVersion, getLibimobileDeviceVersion());
-
-			FileWriter writer = new FileWriter(folderToSaveTrace + "/environment_details.json");
-			writer.append(new ObjectMapper().writeValueAsString(environmentDetails));
-			writer.close();
-		} catch (IOException e) {
+			environmentDetailsHelper.save(folderToSaveTrace, environmentDetails);
+		} catch (Exception e) {
 			LOG.error("Error while writing environment details", e);
 		}
 
-	    if ((attenuatorModel.isConstantThrottle() && (attenuatorModel.isThrottleDLEnabled() || attenuatorModel.isThrottleULEnabled())) || secure) {
+	    if ((attenuatorModel.isConstantThrottle() && (attenuatorModel.isThrottleDLEnabled() || attenuatorModel.isThrottleULEnabled()))) {
 	    	// Attenuator or Secure Collection performed here
 	    	rvi = null;
-	        startAttenuatorCollection(datadir, attenuatorModel, secure, saveCollectorOptions, status, trafficFilePath);
+	        startAttenuatorCollection(datadir, attenuatorModel, saveCollectorOptions, status, trafficFilePath);
 	    } else {
 	    	mitmAttenuator = null;
 	    	launchCollection(trafficFilePath, udId, status);
-	        saveCollectorOptions.recordCollectOptions(datadir, 0, 0, -1, -1, false, false, "", "PORTRAIT");
+	        saveCollectorOptions.recordCollectOptions(datadir, 0, 0, -1, -1, false, "", "PORTRAIT");
 	    }
 		
 		return status;
@@ -444,7 +441,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		return status;
 	}
 
-	private StatusResult startAttenuatorCollection(String traceFolder, AttenuatorModel attenuatorModel, boolean secure, SaveCollectorOptions saveCollectorOptions, StatusResult status, String trafficFilePath) {
+	private StatusResult startAttenuatorCollection(String traceFolder, AttenuatorModel attenuatorModel, SaveCollectorOptions saveCollectorOptions, StatusResult status, String trafficFilePath) {
 
 		int throttleDL = 0;
 		int throttleUL = 0;
@@ -460,8 +457,8 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 			mitmAttenuator = new MitmAttenuatorImpl();
 		}
 		LOG.info("ios attenuation setting: " + " traceFolder: " + traceFolder + " throttleDL: " + throttleDL
-				+ "throttleUL: " + throttleUL + "secure :" + secure);
-		mitmAttenuator.startCollect(traceFolder, throttleDL, throttleUL, secure, saveCollectorOptions, status, this.sudoPassword, trafficFilePath);
+				+ "throttleUL: " + throttleUL);
+		mitmAttenuator.startCollect(traceFolder, throttleDL, throttleUL, saveCollectorOptions, status, this.sudoPassword, trafficFilePath);
 		
 		return status;
 	}
@@ -557,15 +554,10 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 					@Override
 					protected String doInBackground() throws Exception {
 						if (rvi != null) {
-							for (int i = 0; i < 30; i++) {
-								String response = rvi.testRVIConnection(serialNumber);
-								if (StringUtils.isNotEmpty(response) && !response.contains("Could not get list of devices")) {
-									break;
-								} else {
-									status.setSuccess(false);
-									status.setError(ErrorCodeRegistry.getRVIDropIssue());
-									break;
-								}
+							String response = rvi.testRVIConnection(serialNumber);
+							if (!(StringUtils.isNotEmpty(response) && !response.contains("Could not get list of devices"))) {
+								status.setSuccess(false);
+								status.setError(ErrorCodeRegistry.getRVIDropIssue());
 							}
 						}
 						return null;
@@ -709,6 +701,7 @@ public class IOSCollectorImpl implements IDataCollector, IOSDeviceStatus, ImageS
 		if (!hasRVI) {
 			hasRVI = xcode.isRVIAvailable();
 		}
+
 		if (!hasRVI) {
 			// please install the latest version of XCode to continue.
 			LOG.error(defaultBundle.getString("Error.xcoderequired"));

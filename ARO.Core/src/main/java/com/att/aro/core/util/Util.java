@@ -15,10 +15,11 @@
 */
 package com.att.aro.core.util;
 
-import static org.apache.commons.lang.StringEscapeUtils.escapeCsv;
-import static org.apache.commons.lang.StringEscapeUtils.escapeJava;
+import static org.apache.commons.text.StringEscapeUtils.escapeCsv;
+import static org.apache.commons.text.StringEscapeUtils.escapeJava;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
@@ -44,11 +46,12 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -56,8 +59,10 @@ import org.apache.log4j.Logger;
 import com.att.aro.core.SpringContextUtil;
 import com.att.aro.core.bestpractice.pojo.BPResultType;
 import com.att.aro.core.commandline.IExternalProcessRunner;
+import com.att.aro.core.fileio.impl.FileManagerImpl;
 import com.att.aro.core.packetanalysis.pojo.HttpDirection;
 import com.att.aro.core.packetanalysis.pojo.HttpRequestResponseInfo;
+import com.att.aro.core.packetanalysis.pojo.TraceDataConst;
 import com.att.aro.core.settings.impl.SettingsImpl;
 
 public final class Util {
@@ -66,6 +71,7 @@ public final class Util {
 	
 	public static final StringParse stringParse = new StringParse();
 	public static final String WIRESHARK_PATH = "WIRESHARK_PATH";
+	public static final String VLC_PATH = "VLC_PATH";
 	public static final String FFMPEG = "ffmpeg";
 	public static final String RECENT_TRACES = "RECENT_TRACES";
 	private static final int RECENT_TRACES_MAXSIZE = 15;
@@ -82,22 +88,35 @@ public final class Util {
 	private static Comparator<String> floatValComparator;
 	private static Comparator<Integer> intComparator;
 	private static Logger logger = LogManager.getLogger(Util.class.getName());
-	private static final IExternalProcessRunner EXTERNAL_PROCESS_RUNNER = SpringContextUtil.getInstance().getContext()
-			.getBean(IExternalProcessRunner.class);
+	private static final IExternalProcessRunner EXTERNAL_PROCESS_RUNNER = SpringContextUtil.getInstance().getContext().getBean(IExternalProcessRunner.class);
 	public static final String OS_NAME = System.getProperty("os.name");
 	public static final String OS_VERSION = extractVersion();
-	public static final String OS_ARCHITECTURE = System.getProperty("os.arch");
-	
+	public static final String OS_ARCHITECTURE = loadArchetecture();  
 	private static final Pattern htmlEncodePattern = Pattern.compile("%[a-fA-F0-9]");	
-	
-	public static String APK_FILE_NAME = "VPNCollector-4.5.%s.apk";
-	
 	public static final String ARO_PACKAGE_NAME = "com.att.arocollector";
+	public static final String USER_PATH = loadUserPath();
+	
+	public static String APK_FILE_NAME = getVPNCollectorVersion();
+	
+	public static String loadUserPath() {
+		if (isMacOS()) {
+			String brewPath;
+			if (!(brewPath = StringParse.findLabeledDataFromString("PATH=\"", "\\$", EXTERNAL_PROCESS_RUNNER.executeCmd("/opt/homebrew/bin/brew shellenv"))).isEmpty()) {
+				brewPath = ":" + brewPath;
+			}
+			return StringParse.findLabeledDataFromString("PATH=\"", "\"", EXTERNAL_PROCESS_RUNNER.executeCmd("/usr/libexec/path_helper")) + brewPath;
+		} else {
+			return System.getProperty("user.dir");
+		}
+	}
 
-	public static final String USER_PATH = 
-			isMacOS()
-			? StringParse.findLabeledDataFromString("PATH=\"", "\"", EXTERNAL_PROCESS_RUNNER.executeCmd("/usr/libexec/path_helper"))
-			: System.getProperty("user.dir");
+	private static String loadArchetecture() {
+		if (isMacOS()) {
+			return EXTERNAL_PROCESS_RUNNER.executeCmd("arch");
+		} else {
+			return System.getProperty("os.arch");
+		}
+	}
 
 	public static String getUserPath() {
 		return USER_PATH;
@@ -893,6 +912,21 @@ public final class Util {
 		}
 	}
 
+	public static String getVlc() {
+		String config = SettingsImpl.getInstance().getAttribute(VLC_PATH);
+		if (StringUtils.isNotBlank(config)) {
+			return config;
+		}
+
+		if (Util.isWindowsOS()) {
+			return "C:\\Program Files\\VideoLAN\\VLC\\vlc.exe";
+		} else if (Util.isMacOS()) {
+			return "/Applications/VLC.app";
+		} else {
+			return getBinPath() + "vlc";
+		}
+	}
+	
 	public static String getDumpCap() {
 		return getWiresharkLibraryPath("dumpcap");
 	}
@@ -908,7 +942,9 @@ public final class Util {
 	private static String getWiresharkLibraryPath(String libraryName) {
 		String path;
 		if (isWindowsOS()) {
-			path = libraryName + ".exe";
+			return validateInputLink(getWireshark().contains(FILE_SEPARATOR) 
+					? (getParentAndCommand(getWireshark())[0] + FILE_SEPARATOR + libraryName + ".exe\"").replace("\"", "")
+					: libraryName + ".exe");
 		} else {
 			if (isMacOS()) {
 				path = getWireshark() + "/Contents/MacOS/" + libraryName;
@@ -1482,11 +1518,11 @@ public final class Util {
 	/**
 	 * A handy sleep method for when you do not care about interrupted sleep
 	 * 
-	 * @param seconds
+	 * @param milliseconds
 	 */
-	public static void sleep(int seconds) {
+	public static void sleep(int milliseconds) {
 		try {
-			Thread.sleep(seconds);
+			Thread.sleep(milliseconds);
 		} catch (Exception e) {
 			// do not care about this
 		}
@@ -1516,5 +1552,135 @@ public final class Util {
 
 	public static StringParse getStringParse() {
 		return stringParse;
+	}
+
+	/**
+	 * Create a time file based off timestamp of first packet in trafficFile
+	 * 
+	 * @param traceFolder
+	 * @param trafficFile
+	 * @param dotReadme
+	 */
+	public static void createTimeFile(File traceFolder, String trafficFile, String dotReadme) {
+		String[] cmds = getParentAndCommand(Util.getCapinfos());
+		String cmd = String.format("%s \"%s\"", cmds[1], new File(traceFolder, trafficFile).toString());
+		String capinfosData = EXTERNAL_PROCESS_RUNNER.executeCmd((cmds[0] != null) ? new File(cmds[0]) : null, cmd, true, true);
+		double duration = 0;
+		if (capinfosData.contains("Capture duration:")) {
+			duration = StringParse.findLabeledDoubleFromString("Capture duration:", "seconds", capinfosData);
+		} else {
+			LOG.error(capinfosData);
+		}
+		// read timestamp out of first line of cap/pcap file, do not redirect stderr
+		String[] tsharkCmds = getParentAndCommand(Util.getTshark());
+		String tsharkCmd = String.format("%s -c 1 -t e -r \"%s\"", tsharkCmds[1], new File(traceFolder, trafficFile).toString());
+		String result = EXTERNAL_PROCESS_RUNNER.executeCmd((tsharkCmds[0] != null) ? new File(tsharkCmds[0]) : null, tsharkCmd, false, true);
+		String[] found = (new StringParse()).parse(result, "\\s(\\d+\\.\\d+)\\s");
+		
+		double start;
+		if (found == null) {
+			start = parseForUTC(StringParse.findLabeledDataFromString("First packet time:", Util.LINE_SEPARATOR, capinfosData));
+		} else {
+			start = StringParse.stringToDouble(found[0], 0);
+		}
+
+		double end = start + duration;
+		String timeText = String.format("Synchronized timestamps\n%.3f\n%.0f\n%.3f", start, 0.0, end);
+		InputStream stream = new ByteArrayInputStream(timeText.getBytes());
+
+		FileManagerImpl fileManager = new FileManagerImpl();
+		try {
+			fileManager.saveFile(stream, traceFolder + Util.FILE_SEPARATOR + TraceDataConst.FileName.TIME_FILE);
+			if (StringUtils.isNotBlank(dotReadme)) {
+				fileManager.createEmptyFile(traceFolder, dotReadme);
+			}
+		} catch (IOException e1) {
+			LOG.error("failed to save 'time' file", e1);
+		}
+
+	}
+	
+	/**
+	 * Returns file extension.
+	 * 
+	 * @param fileName
+	 * @return extension.
+	 */
+	public static String getExtension(String fileName) {
+		int extensionIndex = fileName.lastIndexOf(".");
+		if (extensionIndex == -1) {
+			return null;
+		}
+		return fileName.substring(extensionIndex + 1, fileName.length());
+	}
+
+	/** <pre>
+	 * Obtain command from config.properties
+	 * if exists and has parent
+	 * then 
+	 * 	cmdPart[0] cmd.parent, cmdPart[1] command
+	 * else 
+	 * 	cmdPart[0] null, cmdPart[1] command
+	 * 
+	 * @param command
+	 * @return cmdPart[0] cmd.parent, cmdPart[1] command
+	 */
+	public static String[] getCommand(String command) {
+		String[] cmdPart = new String[] {null, command};
+		File execFile = null;
+		if ((execFile = new File(Util.getAttribute(command))) != null) {
+			if (execFile.getParent() != null && execFile.getParent().contains(Util.FILE_SEPARATOR)) {
+				cmdPart[0] = execFile.getParent();
+				cmdPart[1] = execFile.getName();
+			}
+		}
+		return cmdPart;
+	}
+	
+	/**
+	 * Get parent and simplified command from total command
+	 * 
+	 * @param command
+	 * @return cmds[0] parent, cmds[1] command
+	 */
+	public static String[] getParentAndCommand(String command) {
+		String[] cmds = new String[] { null, command, "" };
+		File file = new File(command);
+		if (file != null && StringUtils.isNotBlank(file.getParent()) && file.getParent().contains(FILE_SEPARATOR)) {
+			cmds[0] = file.getParent().replace("\"", "");
+			cmds[1] = file.getName().replace("\"", "");
+			cmds[2] = file.getPath().replace("\"", "");
+		}
+		return cmds;
+	}
+
+	/**<pre>
+	 * Expand IPV6 out to the full 8 octets ex: "123:2:3:4:5:6:7:8"
+	 * If there is not only one instance of "::" is found 
+	 * or no ":"'s or more than 7 
+	 * then the {shortAddr} will be returned is and unharmed,
+	 *   this includes any IPV4's accidentally sent through this expander
+	 * 
+	 * @param shortAddr
+	 * @return expanded address string
+	 * @throws Exception 
+	 */
+	public static String expandAddress(String shortAddr) {
+		int countColons = StringUtils.countMatches(shortAddr, ":");
+		int countDblColon = StringUtils.countMatches(shortAddr, "::");
+		int dblColon = shortAddr.indexOf("::");
+
+		if ((!shortAddr.startsWith(":") && !shortAddr.endsWith(":")) && (countColons > 0 || countColons < 8) && (countDblColon == 1)) {
+			if (dblColon > -1) {
+				String filler = ":0:0:0:0:0:0:0:0";
+				shortAddr = shortAddr.replace("::", filler.substring(0, ((9 - countColons) * 2) - 1));
+			}
+		}
+		return shortAddr;
+	}
+	
+	
+	private static String getVPNCollectorVersion() {
+		return MessageFormat.format("VPNCollector-{0}.%s.apk", ResourceBundle.getBundle("build").getString("build.majorversion").substring(0, 3));
 	}
 }

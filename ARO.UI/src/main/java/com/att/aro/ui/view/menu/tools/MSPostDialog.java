@@ -136,7 +136,6 @@ public class MSPostDialog extends PostDialog{
 
 		panel.add(getMetadataPanel());
 		panel.add(getStatusPane(), BorderLayout.PAGE_END);
-		panel.add(getButtonPanel(), BorderLayout.PAGE_END);
 		this.setModalityType(ModalityType.APPLICATION_MODAL);
 		pack();
 		panel.setSize(panel.getPreferredSize());
@@ -264,10 +263,4 @@ public class MSPostDialog extends PostDialog{
 		return resourceBundle.getString("ms.post.dialog.message");
 	}
 	
-	@Override
-	protected void disposeDialog() {
-		super.disposeDialog();
-		MSPostDialog.this.dispose();
-	}
-
 }

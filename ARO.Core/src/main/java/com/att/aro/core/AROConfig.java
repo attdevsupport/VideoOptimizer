@@ -1,4 +1,6 @@
 /*
+
+
  *  Copyright 2014 AT&T
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -97,6 +99,7 @@ import com.att.aro.core.peripheral.IAttenuattionEventReader;
 import com.att.aro.core.peripheral.IBatteryInfoReader;
 import com.att.aro.core.peripheral.IBluetoothInfoReader;
 import com.att.aro.core.peripheral.ICameraInfoReader;
+import com.att.aro.core.peripheral.ICellTowerInfoReader;
 import com.att.aro.core.peripheral.ICollectOptionsReader;
 import com.att.aro.core.peripheral.ICpuActivityParser;
 import com.att.aro.core.peripheral.ICpuActivityReader;
@@ -126,6 +129,7 @@ import com.att.aro.core.peripheral.impl.AttenuationEventReaderImpl;
 import com.att.aro.core.peripheral.impl.BatteryInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.BluetoothInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.CameraInfoReaderImpl;
+import com.att.aro.core.peripheral.impl.CellTowerInfoReaderImpl;
 import com.att.aro.core.peripheral.impl.CollectOptionsReaderImpl;
 import com.att.aro.core.peripheral.impl.CpuActivityParserImpl;
 import com.att.aro.core.peripheral.impl.CpuActivityReaderImpl;
@@ -170,13 +174,20 @@ import com.att.aro.core.securedpacketreader.impl.TLSHandshakeImpl;
 import com.att.aro.core.securedpacketreader.impl.TLSSessionInfoImpl;
 import com.att.aro.core.settings.Settings;
 import com.att.aro.core.settings.impl.SettingsImpl;
+import com.att.aro.core.tracemetadata.IEnvironmentDetailsHelper;
+import com.att.aro.core.tracemetadata.IEnvironmentDetailsReadWrite;
 import com.att.aro.core.tracemetadata.IMetaDataHelper;
+import com.att.aro.core.tracemetadata.impl.EnvironmentDetailsHelper;
+import com.att.aro.core.tracemetadata.impl.EnvironmentDetailsReadWrite;
 import com.att.aro.core.tracemetadata.impl.MetaDataHelper;
+import com.att.aro.core.util.BrewConfirmationImpl;
 import com.att.aro.core.util.FFmpegConfirmationImpl;
 import com.att.aro.core.util.FFprobeConfirmationImpl;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.PcapConfirmationImpl;
 import com.att.aro.core.util.StringParse;
+import com.att.aro.core.util.VLCConfirmationImpl;
+import com.att.aro.core.util.WiresharkConfirmationImpl;
 import com.att.aro.core.video.IScreenRecorder;
 import com.att.aro.core.video.IVideoCapture;
 import com.att.aro.core.video.IVideoWriter;
@@ -202,7 +213,6 @@ import com.att.aro.core.videoanalysis.impl.VideoTabHelperImpl;
 import com.att.aro.core.videoanalysis.impl.VideoUsagePrefsManagerImpl;
 import com.att.aro.core.videoanalysis.pojo.VideoUsagePrefs;
 import com.att.aro.core.videoanalysis.videoframe.VideoFrameExtractor;
-
 
 /**
  * Spring configuration for ARO.Core<br>
@@ -651,6 +661,21 @@ public class AROConfig {
 		return new PcapConfirmationImpl();
 	}
 	
+	@Bean(name = "wiresharkConfirmationImpl")
+	public WiresharkConfirmationImpl getWiresharkConfirmationImpl() {
+		return new WiresharkConfirmationImpl();
+	}
+
+	@Bean(name = "vlcConfirmationImpl")
+	public VLCConfirmationImpl getVLCConfirmationImpl() {
+		return new VLCConfirmationImpl();
+	}
+	
+	@Bean(name = "brewConfirmationImpl")
+	public BrewConfirmationImpl getBrewConfirmationImpl() {
+		return new BrewConfirmationImpl();
+	}
+	
 	@Bean(name="videoTabHelperImpl")
 	public IVideoTabHelper getVideoTabHelperImpl(){
 		return new VideoTabHelperImpl();
@@ -696,12 +721,21 @@ public class AROConfig {
 		return new VideoSegmentAnalyzer();
 	}
 
-	
 	@Bean(name ="videoUsagePrefs")
 	public VideoUsagePrefs getVideoUsagePrefs(){
 		return new VideoUsagePrefs();
 	}
 	
+	@Bean(name="environmentDetailsHelper")
+	public IEnvironmentDetailsHelper getEnvironmentDetailsHelper(){
+		return new EnvironmentDetailsHelper();
+	}
+	
+	@Bean(name="environmentDetailsReaderWriter")
+	public IEnvironmentDetailsReadWrite getEnvironmentDetailsReadWrite(){
+		return new EnvironmentDetailsReadWrite();
+	}
+
 	@Bean(name="metaDataHelper")
 	public IMetaDataHelper getMetaDataHelper(){
 		return new MetaDataHelper();
@@ -720,6 +754,11 @@ public class AROConfig {
 	@Bean(name="csiDataHelperImpl")
 	public ICSIDataHelper getCSIDataHelperImpl(){
 		return new CSIDataHelperImpl();
+	}
+	
+	@Bean
+	public ICellTowerInfoReader getCellTowerInfoReaderImpl() {
+		return new CellTowerInfoReaderImpl();
 	}
 	
 }

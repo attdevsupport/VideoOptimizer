@@ -36,7 +36,7 @@ import java.util.Random;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.pcap4j.core.PcapHandle;
@@ -260,9 +260,10 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 	 * @param packetFile pcap/pcapng file path
 	 */
 	private void identifyOSInfo(String packetFile) {
-		String cmd = String.format("%s \"%s\"", Util.getCapinfos(), packetFile);
+		String[] cmds = Util.getParentAndCommand(Util.getCapinfos());
+		String cmd = String.format("%s \"%s\"", cmds[1], packetFile);
 		LOGGER.trace("Getting OS Info with command: " + cmd);
-		String result = externalProcessRunner.executeCmd(cmd);
+		String result = externalProcessRunner.executeCmd((cmds[0] != null) ? new File(cmds[0]) : null, cmd, true, true);
 		LOGGER.debug("OS Info for Packet Reader: " + result);
 
 		String osInfo = StringParse.findLabeledDataFromString("Capture oper-sys", ":", result);
@@ -333,11 +334,12 @@ public class PacketReaderLibraryImpl implements IPacketReader {
 		File tempFile = null;
 		try {
 	        // Write content data (json file) to a temporary file to enable reading json entry in a streaming fashion
+			String[] tsharkCmds = Util.getParentAndCommand(Util.getTshark());
             tempFile = File.createTempFile("temp" + RANDOM.nextInt(), ".json");
-            String cmd = String.format("%s -r \"%s\" -x -T json -j \"frame\" > \"%s\"", Util.getTshark(), packetfile, tempFile.getAbsolutePath());
+            String cmd = String.format("%s -r \"%s\" -x -T json -j \"frame\" > \"%s\"", tsharkCmds[1], packetfile, tempFile.getAbsolutePath());
             LOGGER.info("Exporting raw packet data to external path " + tempFile.getAbsolutePath() + " for pcapng file " + packetfile + " with command: " + cmd);
 
-            String result = externalProcessRunner.executeCmd(cmd);
+            String result = externalProcessRunner.executeCmd((tsharkCmds[0] != null) ? new File(tsharkCmds[0]) : null, cmd, true , true);
             LOGGER.info("Export result: " + result);
 
             readPcapNGJson(tempFile.getAbsolutePath(), listener);

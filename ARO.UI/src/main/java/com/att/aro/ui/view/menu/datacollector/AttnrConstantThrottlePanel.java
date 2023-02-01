@@ -227,19 +227,19 @@ public class AttnrConstantThrottlePanel extends JPanel implements ActionListener
 		msUpJLabel = new JLabel(" ms Up Stream Delay");
 
 		Hashtable<Integer, JLabel> labelTableDL = new Hashtable<>();
-		labelTableDL.put(new Integer(DL_FPS_3G),
+		labelTableDL.put(Integer.valueOf(DL_FPS_3G),
 				new JLabel(ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.3g")));
-		labelTableDL.put(new Integer(DL_FPS_4G),
+		labelTableDL.put(Integer.valueOf(DL_FPS_4G),
 				new JLabel(ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.4g")));
-		labelTableDL.put(new Integer(DL_FPS_MID3),
+		labelTableDL.put(Integer.valueOf(DL_FPS_MID3),
 				new JLabel(ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.2g")));
 
 		Hashtable<Integer, JLabel> labelTableUL = new Hashtable<>();
-		labelTableUL.put(new Integer(UL_FPS_3G),
+		labelTableUL.put(Integer.valueOf(UL_FPS_3G),
 				new JLabel(ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.3g")));
-		labelTableUL.put(new Integer(UL_FPS_4G),
+		labelTableUL.put(Integer.valueOf(UL_FPS_4G),
 				new JLabel(ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.4g")));
-		labelTableUL.put(new Integer(UL_FPS_MID3),
+		labelTableUL.put(Integer.valueOf(UL_FPS_MID3),
 				new JLabel(ResourceBundleHelper.getMessageString("dlog.collector.option.attenuator.2g")));
 
 		delayDLJSlider = new LogarithmicJSlider(1, 2000, 1);

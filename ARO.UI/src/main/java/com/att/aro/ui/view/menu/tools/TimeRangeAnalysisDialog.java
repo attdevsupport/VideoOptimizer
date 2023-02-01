@@ -57,7 +57,7 @@ import javax.swing.text.DefaultEditorKit;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.jsoup.internal.StringUtil;
+import org.jsoup.helper.StringUtil;
 
 import com.att.aro.core.configuration.pojo.ProfileType;
 import com.att.aro.core.packetanalysis.impl.PacketAnalyzerImpl;
@@ -373,7 +373,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 		if (timeRangeResultsPanel == null) {
 			timeRangeResultsPanel = new JPanel();
 			timeRangeResultsPanel.setLayout(new BorderLayout());
-			timeRangeResultsPanel.setPreferredSize(new Dimension(500, 300));
+			timeRangeResultsPanel.setPreferredSize(new Dimension(500, 350));
 			JLabel resultsLabel = new JLabel(resourceBundle.getString("timerangeanalysis.results"));
 			if (timeRangeAnalysisResultsTextArea == null) {
 				timeRangeAnalysisResultsTextArea = new JTextArea();
@@ -555,10 +555,12 @@ public class TimeRangeAnalysisDialog extends JDialog {
 										timeRangeAnalysis.getDownlinkBytes(),
 										doubleToFixedDecimal(timeRangeAnalysis.getRrcEnergy(), 2),
 										doubleToFixedDecimal(timeRangeAnalysis.getActiveTime(), 2),
+										doubleToFixedDecimal(timeRangeAnalysis.getMaxThroughput(), 2),
+										doubleToFixedDecimal(timeRangeAnalysis.getMaxULThroughput(), 2),
+										doubleToFixedDecimal(timeRangeAnalysis.getMaxDLThroughput(), 2),
 										doubleToFixedDecimal(timeRangeAnalysis.getAverageThroughput(), 2),
 										doubleToFixedDecimal(timeRangeAnalysis.getAverageUplinkThroughput(), 2),
-										doubleToFixedDecimal(timeRangeAnalysis.getAverageDownlinkThroughput(), 2)
-									+ getResultPanelNote(timeRangeAnalysis)
+										doubleToFixedDecimal(timeRangeAnalysis.getAverageDownlinkThroughput(), 2) + getResultPanelNote(timeRangeAnalysis)
 								));
 
 								timeRangeStartTime = startTime;
@@ -613,8 +615,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 			str = StringUtil.isBlank(str) ? "DNS" : str + ", DNS";
 		}
 
-		return StringUtil.isBlank(str) ? "" : "\n\nNote: Current data does not have any " + str + " packets! "
-				+ "To include these packets, please reanalyze after selecting the desired options.";
+		return StringUtil.isBlank(str) ? "" : "\n\nNote: Current data does not have any " + str + " packets! ";
 	}
 
 	/**
@@ -675,7 +676,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 						}
 						return;
 					} else {
-						if (!NumberUtils.isNumber(startTimeTextField.getText())) {
+						if (!NumberUtils.isCreatable(startTimeTextField.getText())) {
 							
 							String[] timeTokens = startTimeTextField.getText().split(":");
 							if (timeTokens.length <= 3) {
@@ -729,7 +730,7 @@ public class TimeRangeAnalysisDialog extends JDialog {
 						}
 						return;
 					} else {
-						if (!NumberUtils.isNumber(endTimeTextField.getText())) {
+						if (!NumberUtils.isCreatable(endTimeTextField.getText())) {
 							String[] timeTokens = endTimeTextField.getText().split(":");
 							if (timeTokens.length <= 3) {
 								double totalSeconds = 0d;

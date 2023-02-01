@@ -54,7 +54,8 @@ public class GoogleAnalyticsTracker {
         HTTPGetMethod.setApplicationName(appName);
         this.maxDBRecords = maxDBRecords;
         this.gaTracker = this;
-        inetChecker();
+        // TODO: Temporary fix to get around Java limitations. 
+        // inetChecker();
         aroDAO = AROObjectDao.getInstance();
     }
 
@@ -117,15 +118,16 @@ public class GoogleAnalyticsTracker {
         		}
     		}
     		
-    	} else { //Since No internet save the record to DB and check again for internet
-    		if(this.aroDAO.recordCount(focusPoint) < maxDBRecords){ // add not to save more than Max number of records
-		    		//focusPoint.setEventLabel("offline");
-	    			focusPoint.setValue("1");
-		    		focusPoint.resetSession();
-		    		this.aroDAO.put(focusPoint);
-    			}
-    			inetChecker(); //Check for internet connection since no internet.
-        }
+		} else { // Since No internet save the record to DB and check again for internet
+			if (this.aroDAO.recordCount(focusPoint) < maxDBRecords) { // add not to save more than Max number of records
+				// focusPoint.setEventLabel("offline");
+				focusPoint.setValue("1");
+				focusPoint.resetSession();
+				this.aroDAO.put(focusPoint);
+			}
+			// TODO: Temporary fix to get around Java limitations. 
+			// inetChecker(); //Check for internet connection since no internet.
+		}
     }
 
     /**

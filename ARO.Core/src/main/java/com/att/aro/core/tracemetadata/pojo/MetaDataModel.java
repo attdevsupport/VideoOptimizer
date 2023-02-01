@@ -25,6 +25,8 @@ import com.att.aro.core.peripheral.pojo.AttenuatorModel;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -93,5 +95,16 @@ public class MetaDataModel {
 
 	public void setTraceNotes(String traceNotes) {
 		this.traceNotes = traceNotes.replaceAll(System.getProperty("line.separator"), "\\\\n");
+	}
+
+	@Override
+	public String toString() {
+		String prettyPrint;
+		try {
+			prettyPrint = (new ObjectMapper()).writerWithDefaultPrettyPrinter().writeValueAsString(this);
+		} catch (JsonProcessingException e) {
+			prettyPrint = "failed to serialize:" + e.getMessage();
+		}
+		return prettyPrint;
 	}
 }

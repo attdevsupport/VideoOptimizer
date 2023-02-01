@@ -36,8 +36,8 @@ import com.att.aro.core.fileio.IFileManager;
 import com.att.aro.core.fileio.impl.FileManagerImpl;
 
 import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.ZipParameters;
+
 
 public class TraceManagerTest {
 	private String trace = "trace";

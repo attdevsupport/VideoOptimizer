@@ -15,9 +15,8 @@
 */
 package com.att.aro.datacollector.ioscollector.reader;
 
-import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,9 +51,13 @@ public class ExternalDumpcapExecutor extends Thread implements IExternalProcessR
 	@Override
 	public void run() {
 		LOG.debug("run");
-		String[] cmds = new String[] { "bash", "-c", "echo " + sudoPassword + " | sudo -S " + Util.getDumpCap() + " -P -i " + captureInterface +" -s 0 -Z none -w \"" + pcappath + "\"" };
+		String[] dumpCapPart = Util.getParentAndCommand(Util.getDumpCap());
+		String[] cmds = new String[] { "bash", "-c", "echo " + sudoPassword + " | sudo -S " + dumpCapPart[2] + " -P -i " + captureInterface +" -s 0 -Z none -w \"" + pcappath + "\"" };
 
 		ProcessBuilder builder = new ProcessBuilder(cmds);
+		if (dumpCapPart[0] != null) {
+			builder.directory(new File(dumpCapPart[0]));
+		}
 		builder.redirectErrorStream(true);
 
 		try {

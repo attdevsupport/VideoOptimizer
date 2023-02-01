@@ -351,4 +351,19 @@ public class UtilTest {
 			assertEquals("Illegal time value (-30) in (00:00:-30)", e.getMessage());
 		}
 	}
+	
+	@Test
+	public void testExpandAddress() {
+			assertEquals(Util.expandAddress("123::0"), "123:0:0:0:0:0:0:0");
+			assertEquals(Util.expandAddress("123::1"), "123:0:0:0:0:0:0:1");
+			assertEquals(Util.expandAddress("123:2::1"), "123:2:0:0:0:0:0:1");
+			assertEquals(Util.expandAddress("123:2::3:1"), "123:2:0:0:0:0:3:1");
+			assertEquals(Util.expandAddress("123:2:4::3:1"), "123:2:4:0:0:0:3:1");
+			assertEquals(Util.expandAddress("123:2:4::5:3:1"), "123:2:4:0:0:5:3:1");
+			assertEquals(Util.expandAddress("123:2:4:6::5:3:1"), "123:2:4:6:0:5:3:1");
+			assertEquals(Util.expandAddress("123:2:4:6:7:5:3:1"), "123:2:4:6:7:5:3:1");// this line is an octet, with 7 ":"'s in it, so no conversion
+			assertEquals(Util.expandAddress("123:2:3:4:5:6:7:8:9"), "123:2:3:4:5:6:7:8:9"); // this line has too many ":"'s in it, so no conversion
+			assertEquals(Util.expandAddress("192.168.1.2"), "192.168.1.2"); // this line has no ":"'s in it, so no conversion
+			assertEquals(Util.expandAddress("This string walked into a bar"), "This string walked into a bar"); // this line has no ":"'s in it, so no conversion
+	}
 }

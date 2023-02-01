@@ -24,7 +24,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.beans.factory.annotation.Value;
 
 import com.att.aro.core.bestpractice.IBestPractice;

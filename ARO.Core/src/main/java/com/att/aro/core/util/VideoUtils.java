@@ -20,8 +20,6 @@ import java.io.FilenameFilter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.ArrayUtils;
-
 public class VideoUtils {
 
 	private static final String TRAFFIC_CAP = "traffic.cap";

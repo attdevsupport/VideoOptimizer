@@ -45,17 +45,24 @@ public class MetaDataReadWrite implements IMetaDataReadWrite {
 	private String jsonDataSaved = ""; // for comparison purposes before saving, do not want to save if no changes to file
 
 	private String tracePath;
-
+	
+	@Override
+	public MetaDataModel getBackupModel() throws Exception {
+		metaData = mapper.readValue(jsonDataSaved, MetaDataModel.class);
+		return metaData;
+	}
+	
 	@Override
 	public MetaDataModel readData(String tracePath) {
-		metaData = null;
 		File jsonFile = filemanager.createFile(tracePath, JSON_FILE);
 		this.tracePath = tracePath;
 		if (jsonFile.exists()) {
 			try {
 				String jsonDataString = filemanager.readAllData(jsonFile.toString());
-				metaData = mapper.readValue(jsonDataString, MetaDataModel.class);
-				jsonDataSaved = jsonDataString;
+				if ((jsonDataSaved.replaceAll("\n", "").compareTo(jsonDataString.replaceAll("\n", ""))) != 0) {
+					metaData = mapper.readValue(jsonDataString, MetaDataModel.class);
+					jsonDataSaved = jsonDataString;
+				}
 			} catch (Exception e) {
 				LOG.debug("failed to load time-range data: " + e.getMessage());
 			}
@@ -82,10 +89,10 @@ public class MetaDataReadWrite implements IMetaDataReadWrite {
 	@Override
 	public boolean save(File traceFolder, MetaDataModel metaDataModel) throws Exception {
 		
-		if (metaDataModel != null) {
+		if (!new File(traceFolder, ".temp_trace").exists() && metaDataModel != null && !jsonDataSaved.equals(metaDataModel.toString())) {
 			File jsonFile = filemanager.createFile(traceFolder, JSON_FILE);
 			String jsonData = serialize(metaDataModel);
-			if (jsonData.equals(jsonDataSaved)) {
+			if ((jsonData.compareTo(jsonDataSaved)) == 0) {
 				LOG.debug("MetaDataModel has no changes, so not saving");
 				return true;
 			}

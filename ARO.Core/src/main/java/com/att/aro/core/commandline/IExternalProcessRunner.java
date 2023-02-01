@@ -23,7 +23,10 @@ public interface IExternalProcessRunner {
 
 	/**
 	 * Execute command passed in as a string and return string back.
+	 * 
+	 * This has been deprecated, use executeCmd instead
 	 */
+	@Deprecated
 	String runGetString(String command) throws IOException;
 
 	/**

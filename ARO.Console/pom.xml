@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.att.aro</groupId>
         <artifactId>vo-parent</artifactId>
-        <version>4.5.0</version>
+        <version>${vo.version}</version>
         <relativePath>../ARO.Parent</relativePath>
     </parent>
 
@@ -16,9 +16,6 @@
 
 	<properties>
 		<main.class>com.att.aro.console.Application</main.class>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<vo.version>4.5.0</vo.version>
-		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
 
 	<licenses>
@@ -28,20 +25,8 @@
 			<distribution>manual</distribution>
 		</license>
 	</licenses>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>central</id>
-			<name>MavenCentral Repository</name>
-			<url>https://repo1.maven.org/maven2/</url>
-		</pluginRepository>
-	</pluginRepositories>
 
 	<dependencies>
-		<dependency>
-			<groupId>com.beust</groupId>
-			<artifactId>jcommander</artifactId>
-			<version>1.30</version>
-		</dependency>
 		<dependency>
 			<groupId>com.att.aro</groupId>
 			<artifactId>vo-core</artifactId>
@@ -61,39 +46,17 @@
 			<groupId>com.att.aro.datacollector</groupId>
 			<artifactId>ios-collector</artifactId>
 			<version>${vo.version}</version>
-		</dependency>
-		<dependency>
-		    <groupId>org.codehaus.mojo</groupId>
-		    <artifactId>findbugs-maven-plugin</artifactId>
-		    <version>3.0.4</version>
-		</dependency>
-
+		</dependency>		
 	</dependencies>
 
 	<build>
 		<plugins>
-
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.2.1</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>java</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<mainClass>${main.class}</mainClass>
-				</configuration>
-			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>2.4</version>
 				<configuration>
+					<skip>true</skip>
 					<outputDirectory>${basedir}/libs</outputDirectory>
 					<archive>
 						<manifest>
@@ -104,26 +67,26 @@
 				</configuration>
 			</plugin>
 			<plugin>
-	            <groupId>org.codehaus.mojo</groupId>
-	            <artifactId>findbugs-maven-plugin</artifactId>
-	            <version>3.0.4</version>
-	            <configuration>
-	            	<excludeFilterFile>findbugs_exclude.xml</excludeFilterFile>
-	                <effort>Max</effort>
-	                <threshold>Max</threshold>
-	                <xmlOutput>true</xmlOutput>
-	                <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
-	            </configuration>
-	            <executions>
-	                <execution>
-	                    <id>analyze-compile</id>
-	                    <!-- <phase>compile</phase> -->
-	                    <goals>
-	                        <goal>check</goal>
-	                    </goals>
-	                </execution>
-	            </executions>
-	        </plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>4.7.1.1</version>
+				<configuration>
+					<excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
+					<effort>Max</effort>
+					<threshold>Max</threshold>
+					<maxRank>15</maxRank>
+					<xmlOutput>true</xmlOutput>
+					<xmlOutputDirectory>${project.build.directory}/spotBugs</xmlOutputDirectory>
+				</configuration>
+				<executions>
+					<execution>
+						<id>analyze-compile</id>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -139,39 +102,20 @@
 				<configuration>
 					<finalName>AROCLI</finalName>
 					<transformers>
-						<transformer
-							implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+						<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 							<mainClass>com.att.aro.console.Application</mainClass>
 						</transformer>
-						<transformer
-							implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+						<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
 							<resource>META-INF/spring.handlers</resource>
 						</transformer>
-						<transformer
-							implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+						<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
 							<resource>META-INF/spring.schemas</resource>
 						</transformer>
-						<transformer
-							implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+						<transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
 							<resource>META-INF/spring.tooling</resource>
 						</transformer>
 					</transformers>
 				</configuration>
-			</plugin>
-
-			<plugin>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>install</phase>
-						<goals>
-							<goal>copy-dependencies</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${basedir}/libs</outputDirectory>
-						</configuration>
-					</execution>
-				</executions>
 			</plugin>
 
 			<!-- jacoco unit tests -->

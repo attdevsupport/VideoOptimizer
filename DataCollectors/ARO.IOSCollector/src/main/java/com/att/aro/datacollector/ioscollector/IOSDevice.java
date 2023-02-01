@@ -16,19 +16,32 @@
 package com.att.aro.datacollector.ioscollector;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.att.aro.core.datacollector.IDataCollector;
 import com.att.aro.core.mobiledevice.pojo.IAroDevice;
+import com.att.aro.core.util.StringParse;
 import com.att.aro.datacollector.ioscollector.utilities.DeviceVideoHandler;
 import com.att.aro.datacollector.ioscollector.utilities.IOSDeviceInfo;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Utility class for mapping device information retrieved from the libimobiledevice library
  * Commend: ideviceinfo -u [device's UDID]
  */
+@Setter
+@Getter
 public class IOSDevice implements IAroDevice {
+
+	private static final Logger LOG = LogManager.getLogger(IOSDevice.class.getName());
 
 	private String udid;		// UDID is a 40-digit hexadecimal number of the device
  	private String deviceClass; // : iPhone
@@ -37,16 +50,32 @@ public class IOSDevice implements IAroDevice {
 	private String productName; // : iPhone OS 
 	private String productType; // : iPhone 10,6 -> iPhone X
 	private String abi;			// : arm64
+	
+	private Double deviceTimestamp = 0D;	// 1653522755.586348
+	private String deviceTimeZoneID;	// America/Los_Angeles
 
+	private boolean timingOffset;
+	
+	private String voTimeZoneID;
+	private double voTimestamp;
+	
 	private AroDeviceState state = AroDeviceState.Unknown ;	   // Available, in-use, Unknown         
 
 	private IDataCollector collector;
+	private IOSDeviceInfo deviceinfo;
 
-
+	@Setter
+	@Getter
+	private List<String[]> ipAddressList;
+	
+	@Setter
+	@Getter
+	private List<String[]> voIpAddressList;
+	
 	public IOSDevice(String udid) throws IOException {
 		this.udid = udid;
 
-		IOSDeviceInfo deviceinfo = new IOSDeviceInfo();
+		deviceinfo = new IOSDeviceInfo();
 		String data = deviceinfo.getDeviceData(udid);
 		Map<String, String> profile = stringToMap(data);
 		deviceClass = profile.get("DeviceClass");
@@ -54,6 +83,9 @@ public class IOSDevice implements IAroDevice {
 		productVersion = profile.get("ProductVersion");
 		productName = profile.get("ProductName");
 		productType = profile.get("ProductType");
+		
+		deviceTimeZoneID = profile.get("TimeZone");
+		
 		abi = profile.get("CPUArchitecture");
 		state = "Activated".equals(profile.get("ActivationState")) ? AroDeviceState.Available : AroDeviceState.Unknown;
 		
@@ -68,13 +100,31 @@ public class IOSDevice implements IAroDevice {
 		}
 	}
 
-	private String getProductVersion(){
-        int iosVersion = DeviceVideoHandler.getInstance().getIosVersion();    
-        if(iosVersion != -1){
-        	return String.valueOf(iosVersion);
-        }else{
-        	return null;
-        }
+	@Override
+	public Double obtainDeviceTimestamp() {
+		try {
+			String data = deviceinfo.getDeviceData(udid);
+			Map<String, String> profile = stringToMap(data);
+			String currentUTC = profile.get("TimeIntervalSince1970");
+			deviceTimestamp = StringParse.stringToDouble(currentUTC, 0D);
+		} catch (IOException e) {
+			LOG.error("Failed to obtain current UTC time:", e);
+		}
+		return deviceTimestamp;
+	}
+	
+	@Override
+	public double getTimeDiff() {
+		return voTimestamp - deviceTimestamp;
+	}
+	
+	private String getProductVersion() {
+		int iosVersion = DeviceVideoHandler.getInstance().getIosVersion();
+		if (iosVersion != -1) {
+			return String.valueOf(iosVersion);
+		} else {
+			return null;
+		}
 	}
 	
 	private Map<String, String> stringToMap(String data) {
@@ -92,20 +142,10 @@ public class IOSDevice implements IAroDevice {
 		}
 		return mapped;
 	}
-
-	@Override
-	public AroDeviceState getState() {
-		return state;
-	}
 	
 	@Override
 	public String getId() {
 		return udid;
-	}
-
-	@Override
-	public String getDeviceName() {
-		return deviceName;
 	}
 
 	@Override
@@ -115,15 +155,10 @@ public class IOSDevice implements IAroDevice {
 
 	@Override
 	public String getApi() {
-		if(productVersion == null){
+		if (productVersion == null) {
 			productVersion = getProductVersion();
 		}
 		return productVersion;
-	}
-
-	@Override
-	public String getProductName() {
-		return productName;
 	}
 
 	@Override
@@ -189,11 +224,19 @@ public class IOSDevice implements IAroDevice {
 	public String toString() {
 		return new String(getDeviceClass()
 				+ " iOS " + getApi()
+				+ ", deviceTimeZoneID:" + getDeviceTimeZoneID()
+				+ ", deviceTimestamp:" + getDeviceTimestamp()
 				+ ", udid:" + getId() 
 				+ ", api:" + getApi() 
 				+ ", abi:" + getAbi() 
 				+ ", model:" + getModel() 
 				+ ", DevName:" + getDeviceName());
+	}
+
+	@Override
+	public List<String[]> obtainDeviceIpAddress() {
+		// return empty list, as not yet collected
+		return new ArrayList<>();
 	}
 
 }

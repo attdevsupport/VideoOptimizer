@@ -15,9 +15,10 @@
  */
 package com.att.aro.datacollector.ioscollector.reader;
 
+import java.io.File;
 import java.util.Date;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -48,7 +49,10 @@ public class PcapHelper {
 	 */
 	public Date getFirstPacketDate(String filepath) {
 		// read first entry out of traffic file
-		String data = extRunner.executeCmd(String.format("%s -r %s -c 1 -t e |awk -F ' '  '{print $2}'", Util.getTshark(), filepath));
+		
+		String[] tsharkCmds = Util.getParentAndCommand(Util.getTshark());
+		String tsharkCmd = String.format("%s -r %s -c 1 -t e |awk -F ' '  '{print $2}'", tsharkCmds[1], filepath);
+		String data = extRunner.executeCmd((tsharkCmds[0] != null) ? new File(tsharkCmds[0]) : null, tsharkCmd, true, true);
 		if (!StringUtils.isEmpty(data)) {
 			LOG.info("found packet date string: " + data);
 			return new Date((long) (StringParse.stringToDouble(data, 0) * 1000));

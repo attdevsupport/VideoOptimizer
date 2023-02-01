@@ -22,12 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-
-import com.att.aro.core.bestpractice.IBestPractice;
-import com.att.aro.core.bestpractice.pojo.AbstractBestPracticeResult;
-import com.att.aro.core.pojo.AROTraceData;
 import com.att.aro.core.util.Util;
 import com.att.aro.core.videoanalysis.PlotHelperAbstract;
 import com.att.aro.core.videoanalysis.pojo.StreamingVideoData;
@@ -43,32 +37,12 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 	@Getter private double firstChunkTimestamp;
 
 	@Getter private List<Double> chunkPlayStartTimesList = new ArrayList<>();
-	private IBestPractice startUpDelayBPReference;
-	private IBestPractice stallBPReference;
-	private IBestPractice bufferOccupancyBPReference;
+	
 	/**
 	 * key : segmentID
 	 * value: segment play startTime
 	 */
 	@Getter private Map<Long, Double> segmentStartTimeMap = new TreeMap<>();
-
-	@Autowired
-	@Qualifier("startupDelay")
-	public void setVideoStartupDelayImpl(IBestPractice startupdelay) {
-		startUpDelayBPReference = startupdelay;
-	}
-
-	@Autowired
-	@Qualifier("videoStall")
-	public void setVideoStallImpl(IBestPractice videoStall) {
-		stallBPReference = videoStall;
-	}
-
-	@Autowired
-	@Qualifier("bufferOccupancy")
-	public void setVideoBufferOccupancyImpl(IBestPractice bufferOccupancy) {
-		bufferOccupancyBPReference = bufferOccupancy;
-	}
 
 	public Map<Integer, Double> populateDataSet(StreamingVideoData streamingVideoData) {
 		if (streamingVideoData != null) {
@@ -88,18 +62,6 @@ public class VideoChunkPlotterImpl extends PlotHelperAbstract {
 
 		}
 		return seriesDataSets;
-	}
-
-	public AbstractBestPracticeResult refreshStartUpDelayBP(AROTraceData analysis) {
-		return startUpDelayBPReference.runTest(analysis.getAnalyzerResult());
-	}
-
-	public AbstractBestPracticeResult refreshVideoStallBP(AROTraceData analysis) {
-		return stallBPReference.runTest(analysis.getAnalyzerResult());
-	}
-
-	public AbstractBestPracticeResult refreshVideoBufferOccupancyBP(AROTraceData analysis) {
-		return bufferOccupancyBPReference.runTest(analysis.getAnalyzerResult());
 	}
 
 	private void getChunkCollectionDataSet() {

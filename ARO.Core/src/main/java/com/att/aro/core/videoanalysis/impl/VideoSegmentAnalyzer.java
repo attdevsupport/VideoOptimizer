@@ -18,14 +18,13 @@ package com.att.aro.core.videoanalysis.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.NavigableMap;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 import javax.annotation.Nonnull;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +32,6 @@ import org.springframework.util.CollectionUtils;
 
 import com.att.aro.core.packetanalysis.pojo.AbstractTraceResult;
 import com.att.aro.core.packetanalysis.pojo.TraceDirectoryResult;
-import com.att.aro.core.packetanalysis.pojo.VideoStall;
 import com.att.aro.core.peripheral.pojo.UserEvent;
 import com.att.aro.core.peripheral.pojo.UserEvent.UserEventType;
 import com.att.aro.core.peripheral.pojo.VideoStreamStartup;
@@ -491,7 +489,6 @@ public class VideoSegmentAnalyzer {
 			String key = audioKeyStart;
 
 			while (!key.equals(audioKeyEnd)) {
-				VideoEvent lastAudioEvent = audioEvent;
 				VideoEvent tempEvent = audioStreamMap.get(key);
 				if (tempEvent.isSelected()) {
 					audioEvent = tempEvent;

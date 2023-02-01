@@ -31,6 +31,8 @@ import com.att.aro.core.commandline.IExternalProcessRunner;
 import com.att.aro.core.commandline.IProcessFactory;
 import com.att.aro.core.commandline.pojo.ProcessWorker;
 import com.att.aro.core.concurrent.IThreadExecutor;
+import com.att.aro.core.util.StringParse;
+import com.att.aro.core.util.Util;
 
 public class ExternalProcessRunnerImplTest extends BaseTest {
 
@@ -46,6 +48,27 @@ public class ExternalProcessRunnerImplTest extends BaseTest {
 	public void setUp() {
 		externalProcessRunner = (ExternalProcessRunnerImpl) context.getBean(IExternalProcessRunner.class);
 		factory = Mockito.mock(IProcessFactory.class);
+	}
+	
+	@Test
+	public void executeCmdTest_Uti_getFFMPEG() throws InterruptedException {
+		if (Util.isMacOS()) {
+			String results;
+			results = externalProcessRunner.executeCmd("/bin/echo $PATH");
+			assertTrue(results != null);
+			results = externalProcessRunner.executeCmd("/usr/bin/which ffmpeg");
+			assertTrue(results != null);
+			results = externalProcessRunner.executeCmd(Util.getFFMPEG() + " -version");
+			assertTrue(results.contains("ffmpeg"));
+		}
+	}
+	
+	@Test
+	public void executeCmdTest_on_iOS() throws InterruptedException {
+		if (Util.isMacOS()) {
+			String results = externalProcessRunner.executeCmd("idevice_id -l");
+			assertTrue(results != null);
+		}
 	}
 
 	@Test

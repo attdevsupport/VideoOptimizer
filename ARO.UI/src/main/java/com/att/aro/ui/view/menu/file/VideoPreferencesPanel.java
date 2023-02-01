@@ -37,7 +37,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -55,7 +55,7 @@ public class VideoPreferencesPanel extends JPanel {
 	private static final Logger LOG = LogManager.getLogger(VideoPreferencesPanel.class.getName());
 
 	private static final long serialVersionUID = 1L;
-	private static final int MAX_BUFFER = 100;
+	private static final int MAX_BUFFER = 5000;
 	private static final int MAX_STALLTRIGGERTIME = 10;
 	private static final int MAX_STALLRECOVERY = 10;
 	private static final int MAX_TARGETEDSTARTUPDELAY = 10;

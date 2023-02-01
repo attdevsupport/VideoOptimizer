@@ -15,6 +15,8 @@
 */
 package com.att.aro.ui.view.diagnostictab;
 
+import org.jfree.chart.entity.ChartEntity;
+
 /**
  * Exposes a method that listens for click events on a GraphPanel object.
  */
@@ -29,6 +31,6 @@ public interface GraphPanelListener {
 	 *            - The coordinatespoint on the graph plot where the mouse was
 	 *            clicked.
 	 */
-	public void graphPanelClicked(double timeStamp);
+	public void graphPanelClicked(double timeStamp, ChartEntity entity);
 
 }

@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
+import javax.validation.constraints.NotNull;
 import javax.imageio.stream.FileImageInputStream;
 import javax.imageio.stream.ImageInputStream;
 import javax.xml.parsers.DocumentBuilder;
@@ -63,7 +64,6 @@ import com.att.aro.core.packetanalysis.pojo.PacketAnalyzerResult;
 import com.att.aro.core.packetanalysis.pojo.Session;
 import com.att.aro.core.util.IStringParse;
 import com.att.aro.core.util.Util;
-import com.sun.istack.NotNull;
 
 public class ImageUIComparatorImpl implements IBestPractice {
 	@Autowired

@@ -133,7 +133,9 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 		case TraceDataConst.TraceNetworkType.HSPAP:
 			return NetworkType.HSPAP;
 		case TraceDataConst.TraceNetworkType.LTE:
-			 return overriderNetworkTypeFromCode == TraceDataConst.TraceNetworkType.UNDEFINED ? NetworkType.LTE : getOverriderNetworkTypeFromCode(overriderNetworkTypeFromCode);		
+			return (overriderNetworkTypeFromCode == TraceDataConst.TraceNetworkType.UNDEFINED
+					|| overriderNetworkTypeFromCode == TraceDataConst.TraceNetworkType.UNKNOWN) ? NetworkType.LTE
+							: getOverriderNetworkTypeFromCode(overriderNetworkTypeFromCode);		
 		case TraceDataConst.TraceNetworkType.UNKNOWN:
 			return NetworkType.UNKNOWN;
 		default:
@@ -151,8 +153,6 @@ public class NetworkTypeReaderImpl extends PeripheralBase implements INetworkTyp
 	 */	
 	private NetworkType getOverriderNetworkTypeFromCode(int overrideNetworkTypeCode) {
 		switch (overrideNetworkTypeCode) {
-		case 0:
-			return NetworkType.UNKNOWN;
 		case 1:
 			return NetworkType.OVERRIDE_NETWORK_TYPE_LTE_CA;
 		case 2:

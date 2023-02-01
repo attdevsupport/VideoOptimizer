@@ -37,4 +37,6 @@ public interface IMetaDataHelper {
 
 	boolean saveJSON();
 
+	MetaDataModel revert() throws Exception;
+
 }
