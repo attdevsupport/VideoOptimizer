@@ -18,7 +18,7 @@
 
 #=======================================
 # vo_dependency_installer.sh
-# version 1.0.0.1
+# version 1.0.0.2
 #
 # Howto use this script:
 #   From your browser, select 'Save' and choose or create an empty folder. Make sure the script has the extension '.sh'.
@@ -237,10 +237,75 @@ echo ""
 		install_libimobiledevice
 	fi
 }
-
 #=======================================
 function exit_install (){
 	exit 0
+}
+
+#----------------------------
+# Brew config version checks
+#----------------------------
+
+#=================================
+# regex extraction from target data
+# compares version Major.SUB_1.SUB_2
+# example regex pattern:
+#   regex="(macOS): ([0-9]*)\.([0-9]*)\.([0-9]*)\-"
+#
+# args
+# 	1: <$1> target data
+# 	2: <$2> regex pattern
+# 	3: <$3> label 
+# 	4: <$4> major version
+# 	5: <$5> sub:1 version
+# 	6: <$6> sub:1 version
+#   7: <$7> full version
+function check_version () {
+
+	txt=$1
+	rgx=$2
+	label=$3
+	M1=$4
+	M2=$5
+	M3=$6
+	F_VERSION=$7
+
+# 	echo "[check $label]"	
+	if [[ "$txt" =~ $rgx ]]
+	then
+		V_CHECK="pass"
+		if [ ${BASH_REMATCH[2]} \< $M1 ] \
+			|| [[ $M2 != "" && ${BASH_REMATCH[3]} < $M2 ]] \
+			|| [[ $M3 != "" && ${BASH_REMATCH[4]} < $M3 ]]
+		then
+			if [ "${BASH_REMATCH[2]}" == "N/A" ]
+			then
+				CHECK="fail:$label needs to be installed"
+				echo $CHECK
+			else
+				CHECK="fail:${BASH_REMATCH[1]} version needs updating to at least $F_VERSION"
+				echo $CHECK
+			fi
+			V_CHECK="fail"
+		else
+			V_CHECK="PASS"
+		fi
+	else
+		# look for "N/A"
+		rgx="($label): ([0-9A-Za-z/]*)"
+		if [[ "$txt" =~ $rgx ]]
+		then
+			if [ ${BASH_REMATCH[2]} == "N/A" ]
+	    	then
+				CHECK="fail:$label needs to be installed, Please review installations of brew, Xcode and Xcode's commandline tools"
+	    		echo $CHECK
+				V_CHECK="fail"
+	    		return
+			fi
+		fi
+		echo "Unable to retrieve 'brew config' results"
+		echo "Please review installations of brew, Xcode and Xcode's commandline tools"
+	fi
 }
 
 function machine_precheck (){
@@ -248,54 +313,36 @@ function machine_precheck (){
 	if [[ `which brew` == "" ]];then
 		echo "brew is not installed"
 		echo "To install, please visit: https://brew.sh"
-		exit 0
-	fi
-
-	BREW_CONFIG=`brew config`
-	
-	regex="(macOS: ([0-9]*)\.([0-9]*)\.([0-9]*))\-.+(CLT: ([0-9]*)\.([0-9]*)\.([0-9]*)).+(Xcode: ([0-9]*)\.([0-9]*))"
-
-	if [[ "$BREW_CONFIG" =~ $regex ]]
-	then
-		FAIL=false
-		echo ""
-		echo "check "${BASH_REMATCH[1]}
-	
-		if [ ${BASH_REMATCH[2]} \< 13 ]
-		then
-			if [ ${BASH_REMATCH[2]} \< 12 ] || [ ${BASH_REMATCH[3]} \< 6 ]
-			then 
-				echo "${BASH_REMATCH[1]} version needs updating to at least 12.6.1"
-				FAIL=true
-			fi
-		fi
-	
-		echo "check "${BASH_REMATCH[5]}
-		if [ ${BASH_REMATCH[6]} \< 15 ] ; then
-			if [ ${BASH_REMATCH[6]} \< 14 ] || [ ${BASH_REMATCH[7]} \< 1 ] ; then 
-				echo "${BASH_REMATCH[5]} version needs updating to at least 14.1"
-				FAIL=true
-			fi
-		fi
-
-		echo "check "${BASH_REMATCH[9]}
-		if [ ${BASH_REMATCH[10]} \< 15 ] ; then
-			if [ ${BASH_REMATCH[10]} \< 14 ] || [ ${BASH_REMATCH[11]} \< 1 ] ; then 
-				echo "${BASH_REMATCH[9]} version needs updating to at least 14.1"
-				FAIL=true
-			fi
-		fi
-	
-		if [ $FAIL == true ] ; then
-			echo "This configuration cannot complete unless the above updates have been performed"
-		else
-			echo "ready to proceed!"
-		fi
+		exit_install
 	else
-		echo "Unable to retrieve 'brew config' results"
-		echo "Please review installations of brew, Xcode and Xcode's commandline tools"
+		BREW_CONFIG=`brew config`
 	fi
+
+
+# macOS: 13.2.1-arm64
+regex="(macOS): ([0-9]*)\.([0-9]*)\.([0-9]*)\-"
+check_version "$BREW_CONFIG" "$regex" macOS 13 2 1 13.2.1
+
+# CLT: 14.2.0.0.1.1668646533
+regex="(CLT): ([0-9A-Za-z/]*)\.([0-9]*)\.([0-9]*)"
+check_version "$BREW_CONFIG" "$regex" CLT 14 2 0 14.2.0 "CLT: 14.2.0.0.1.1668646533"
+
+# Xcode: 14.1
+regex="(Xcode): ([0-9]*)\.([0-9]*)"
+check_version "$BREW_CONFIG" "$regex" Xcode 14 1 "" "Xcode: 14.1"
+echo $CHECK
+
+if [[ ${CHECK} = "fail"* ]] ; then
+	if [[ $CHECK == *"CLT"* ]] ; then
+		echo "verify active developer directory with 'xcode-select -p'"
+		echo "use 'xcode-select --install' to install the correct commandline tools for your Xcode installation"
+	fi
+else
+	echo "ready to proceed\!"
+fi
+	
 }
+
 #-----------------------------------------------------
 # vo_installer.sh
 #-----------------------------------------------------
@@ -311,15 +358,22 @@ fi
 
 machine_precheck > error.log
 
-test=`cat error.log|grep "ready to proceed\!"`
+test=`cat error.log|grep "ready to proceed"`
 
-if [ "$test" == "" ];then
+if [[ "$test" != "ready to proceed"* ]];then
 	cat error.log
-	exit 0
+	echo ""
+	echo "Aborting $0, no changes to your system"
+	exit_install
 else
 	rm error.log
 	echo $test
 fi
+
+#-----------------------------------------------------
+# version pre-checks DONE
+#   will now configure system
+#-----------------------------------------------------
 
 if [ ! "${PWD##*/}" = "libimobile_installation" ]
 then
