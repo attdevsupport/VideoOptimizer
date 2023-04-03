@@ -18,7 +18,7 @@
 
 #=======================================
 # vo_dependency_installer.sh
-# version 1.0.0.2
+# version 1.0.0.4
 #
 # Howto use this script:
 #   From your browser, select 'Save' and choose or create an empty folder. Make sure the script has the extension '.sh'.
@@ -56,7 +56,7 @@
 # 
 # Testing:
 # This script has been tested on Macbook Pro intel and M1 machines running Monterey 12.6 and Ventura early December 2022
-# 
+# 	Ventura 13.2.1 Mar 31, 2023
 # 
 #=======================================
 function init_brew (){
@@ -67,6 +67,12 @@ echo "
 	then
 		brew update
 		brew upgrade
+		
+		# make sure we can compile
+		brew install cmake
+		brew install autogen
+		brew install autoconf
+		
 	else
 		echo "failded to find brew" >> error
 		exit_install
@@ -393,7 +399,7 @@ then
 	fi
 	# 
 else
-	echo "I am here `pwd`"
+	echo "Please exit the folder 'libimobile_installation'"
 	exit_install
 fi
 
