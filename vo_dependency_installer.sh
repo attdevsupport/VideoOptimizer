@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #=======================================
-# Copyright 2022 AT&T
+# Copyright 2022, 2023 AT&T
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 #=======================================
 # vo_dependency_installer.sh
-# version 1.0.0.4
+VERSION="1.0.1.0"
 #
 # Howto use this script:
 #   From your browser, select 'Save' and choose or create an empty folder. Make sure the script has the extension '.sh'.
@@ -26,8 +26,9 @@
 # 
 #   Open a terminal in the folder containing the script.
 #   Launch the script with './vo_dependency_installer.sh'
-#   At one point you will be prompted for your sudo password
-#   There are two instances of 'sudo make install'
+#   At one point you will be prompted for your sudo password,
+#   this will be to completely remove any old version of ifuse
+#   DO NOT LAUNCH THIS INSTALL USING SUDO
 # =======================================
 #
 #  This bash shell script will install needed dependancies
@@ -37,26 +38,16 @@
 # 
 # It is advised that the computer is backed up, and important data is safely stored.
 # 
-# The dependancies that are required include some 'HEAD' versions, which are not yet 
-# considered to be stable. 'libimobiledevice' is installed under HEAD, which may bring 
-# other dependancies, possibly also HEAD versions.
-# Some of the depenancies do not have functional formula to allow 'brew' to install them, 
-# and there for must be cloned from github and compiled.
-# 
-# These include 'ifuse' and 'libimobiledevice-glue'
-# see:
-#   git clone https://github.com/libimobiledevice/ifuse.git
-#   git clone https://github.com/libimobiledevice/libimobiledevice-glue.git
-# 
-# There are some basic requirements before this script can be run.
+# There are some basic requirements before this script should be run.
 # 1 You must have and run this under an Admin account, do not run under 'sudo'
-# 1 macOS 12.6.1
-# 2 Xcode 14.1
-# 3 brew (aka HomeBrew https://brew.sh) 
+# 2 macOS 13.4 or 13.4.1
+# 3 Xcode 14.3.1
+# 4 brew (aka HomeBrew https://brew.sh) 
 # 
 # Testing:
 # This script has been tested on Macbook Pro intel and M1 machines running Monterey 12.6 and Ventura early December 2022
 # 	Ventura 13.2.1 Mar 31, 2023
+#   Ventura 13.4.1, Intel & M1 July 18 2023
 # 
 #=======================================
 function init_brew (){
@@ -70,6 +61,7 @@ echo "
 		
 		# make sure we can compile
 		brew install cmake
+		brew install automake
 		brew install autogen
 		brew install autoconf
 		
@@ -88,61 +80,13 @@ echo ">>>>> uninstall <<<<<"
 	brew uninstall --ignore-dependencies libplist 2>/dev/null
 	brew uninstall --ignore-dependencies libimobiledevice 2>/dev/null
 	brew uninstall --ignore-dependencies ifuse 2>/dev/null
-}
-
-#=======================================
-function compile_libimobiledevice-glue () {
-echo ""
-echo ">>>>> compile_libimobiledevice-glue <<<<<"
-
-	# install dependencies
-	# 1 libplist non-head version
-	
-	brew install libplist
-
-	if [ "${PWD##*/}" = "libimobiledevice-glue" ]; then
-		if [ "${ARCH_NAME}" = "x86_64" ]; then
-			touch "__compile_x86"
-			echo "./autogen.sh --prefix=/usr/local"
- 			./autogen.sh --prefix=/usr/local
-		else
-			touch "__compile_aarch"
-			echo "./autogen.sh --prefix=/opt/homebrew"
-	 		./autogen.sh --prefix=/opt/homebrew
-		fi 
-		make
-		echo "sudo make install"
-		sudo make install
-	
-		if [ "${ARCH_NAME}" = "x86_64" ]; then
-			#For Intel / x86-64 machines - 
-			ln -s /usr/local/lib/pkgconfig/libimobiledevice-glue-1.0.pc /usr/local/opt/libplist/lib/pkgconfig/libimobiledevice-glue-1.0.pc 
-		else
-			#For M1 / aach64 machines - 
-			ln -s /opt/homebrew/lib/pkgconfig/libimobiledevice-glue-1.0.pc /opt/homebrew/opt/libplist/lib/pkgconfig/libimobiledevice-glue-1.0.pc  
-		fi
-	
-	else
-		echo "libimobiledevice-glue failure, in wrong path: `pwd`"
-		exit_install
-	fi
-}
-
-#=======================================
-function install_libimobiledevice () {
-echo ""
-echo ">>>>> install_libimobiledevice <<<<<"
-	
-	brew uninstall --ignore-dependencies libimobiledevice 2>/dev/null
-	
-	brew install --HEAD libimobiledevice
-	brew unlink libimobiledevice && brew link libimobiledevice
+	brew uninstall --ignore-dependencies openssl 2>/dev/null
+	sudo rm `which ifuse` 2>/dev/null
 }
 
 #=======================================
 # install ifuse
-# plus openssl
-# on intel openssl requires non-head version of libimobiledevice
+# plus openssl 
 function install_ifuse () {
 echo ""
 echo ">>>>> install_ifuse <<<<<"
@@ -151,11 +95,8 @@ echo ">>>>> install_ifuse <<<<<"
 	# 1 libimobiledevice non-head version for openssl
 	# 2 openssl
 	
-	if [ "${ARCH_NAME}" = "x86_64" ]; then
-		brew install libimobiledevice
-	else
-		install_libimobiledevice
-	fi
+	brew install libimobiledevice
+
 	brew install openssl
 	
 	LISTING=$(brew list openssl)
@@ -194,8 +135,14 @@ echo ">>>>> install_ifuse <<<<<"
 	# now compile ifuse
 	./autogen.sh  
 	make
-	echo "sudo make install"
-	sudo make install
+	
+	if [ "$ARCH_NAME" == "x86_64" ];then
+		echo "make install"
+		make install
+	else
+		echo "sudo make install"
+		sudo make install
+	fi
 }
 
 #=======================================
@@ -206,42 +153,29 @@ echo "====>>>>> do_install <<<<<===="
 echo ""
 
 	echo "Archetecture $ARCH_NAME"
-	
+	echo "$0 $VERSION"
 	echo "============================ prepare ============================"
 	if [[ -d /Library/PreferencePanes/macFUSE.prefPane ]]; then
 	  init_brew
 	  do_uninstall
+
+	  echo "============================ compile iFuse ============================"
+	  rm -fr ifuse
+	  git clone https://github.com/libimobiledevice/ifuse.git
+	  # unzip ../bu/ifuse.zip -d ./ ; rm -fr __MACOSX
+	  if [ -d ifuse ]; then
+	  	( cd ifuse && install_ifuse )
+	  else
+	  	echo "clone: failed to git clone https://github.com/libimobiledevice/ifuse.git" >> error
+	  	exit_install
+	  fi
+	  
 	else
 	  echo "MacFuse not detected"
 	  echo "To install, visit https://osxfuse.github.io"
+	  exit_install
 	fi
 
-	echo "============================ libimobiledevice-glue ============================"
-	rm -fr libimobiledevice-glue
-	git clone https://github.com/libimobiledevice/libimobiledevice-glue.git
-	# unzip ../bu/libimobiledevice-glue.zip -d ./ ; rm -fr __MACOSX
-	if [ -d libimobiledevice-glue ]; then
-		( cd libimobiledevice-glue && compile_libimobiledevice-glue )
-	else
-		echo "clone: failed to git clone https://github.com/libimobiledevice/libimobiledevice-glue.git" >> error
-		exit_install
-	fi
-
-	echo "============================ compile iFuse ============================"
-	rm -fr ifuse
-	git clone https://github.com/libimobiledevice/ifuse.git
-	# unzip ../bu/ifuse.zip -d ./ ; rm -fr __MACOSX
-	if [ -d ifuse ]; then
-		( cd ifuse && install_ifuse )
-	else
-		echo "clone: failed to git clone https://github.com/libimobiledevice/ifuse.git" >> error
-		exit_install
-	fi
-
-	echo "============================ libimobiledevice HEAD version ============================"
-	if [ "${ARCH_NAME}" = "x86_64" ]; then
-		install_libimobiledevice
-	fi
 }
 #=======================================
 function exit_install (){
@@ -319,39 +253,52 @@ function machine_precheck (){
 	if [[ `which brew` == "" ]];then
 		echo "brew is not installed"
 		echo "To install, please visit: https://brew.sh"
-		exit_install
+		CHECK="brew is not installed, To install, please visit: https://brew.sh"
+		return
 	else
 		BREW_CONFIG=`brew config`
 	fi
 
-
-# macOS: 13.2.1-arm64
-regex="(macOS): ([0-9]*)\.([0-9]*)\.([0-9]*)\-"
-check_version "$BREW_CONFIG" "$regex" macOS 13 2 1 13.2.1
-
-# CLT: 14.2.0.0.1.1668646533
-regex="(CLT): ([0-9A-Za-z/]*)\.([0-9]*)\.([0-9]*)"
-check_version "$BREW_CONFIG" "$regex" CLT 14 2 0 14.2.0 "CLT: 14.2.0.0.1.1668646533"
-
-# Xcode: 14.1
-regex="(Xcode): ([0-9]*)\.([0-9]*)"
-check_version "$BREW_CONFIG" "$regex" Xcode 14 1 "" "Xcode: 14.1"
-echo $CHECK
-
-if [[ ${CHECK} = "fail"* ]] ; then
-	if [[ $CHECK == *"CLT"* ]] ; then
-		echo "verify active developer directory with 'xcode-select -p'"
-		echo "use 'xcode-select --install' to install the correct commandline tools for your Xcode installation"
+	if [[ -d /Library/PreferencePanes/macFUSE.prefPane ]]; then
+		echo "MacFuse is installed"
+	else
+		echo "MacFuse not detected"
+		echo "To install, visit https://osxfuse.github.io"
+		CHECK="fail:MacFuse not detected"
 	fi
-else
-	echo "ready to proceed\!"
-fi
+
+	# macOS: 13.2.1-arm64
+	regex="(macOS): ([0-9]*)\.([0-9]*)\.([0-9]*)\-"
+	check_version "$BREW_CONFIG" "$regex" macOS 13 2 1 13.2.1
+
+	# CLT: 14.2.0.0.1.1668646533
+	regex="(CLT): ([0-9A-Za-z/]*)\.([0-9]*)\.([0-9]*)"
+	check_version "$BREW_CONFIG" "$regex" CLT 14 3 0 14.2.0 "CLT: 14.3.0.0.1.1668646533"
+
+	# Xcode: 14.1
+	regex="(Xcode): ([0-9]*)\.([0-9]*)"
+	check_version "$BREW_CONFIG" "$regex" Xcode 14 3 "" "Xcode: 14.3"
+	echo $CHECK
+
+	if [[ ${CHECK} = "fail"* ]] ; then
+		if [[ $CHECK == *"CLT"* ]] ; then
+			echo "verify active developer directory with 'xcode-select -p'"
+			echo "use 'xcode-select --install' to install the correct commandline tools for your Xcode installation"
+		fi
+	else
+		echo "ready to proceed\!"
+	fi
 	
 }
 
 #-----------------------------------------------------
-# vo_installer.sh
+# vo_dependency_installer.sh
 #-----------------------------------------------------
+
+if [ "`id -u`" = "0" ]; then
+	echo "vo_dependency_installer.sh cannot be launched under sudo or from the root user"
+	exit 0
+fi 
 
 ARCH_NAME=`uname -m`
 PTH=`pwd |grep " "`
