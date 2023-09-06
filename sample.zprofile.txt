@@ -1,0 +1,61 @@
+ARCH_NAME="$(uname -m)"
+
+#----------------------------------
+# HomeBrew
+#----------------------------------
+if [ -x /usr/libexec/path_helper ]; then
+    eval `/usr/libexec/path_helper -s`
+fi
+ 
+if [ "${ARCH_NAME}" = "x86_64" ]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+    if [ "$(sysctl -in sysctl.proc_translated)" = "1" ]; then
+        echo "Running on Rosetta 2"
+    else
+        echo "Running on native Intel"
+    fi 
+elif [ "${ARCH_NAME}" = "arm64" ]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    echo "Running on ${ARCH_NAME}"
+else
+    echo "Unknown architecture: ${ARCH_NAME}"
+fi
+
+#----------------------------------
+# Local path
+#----------------------------------
+export PATH=./:/usr/bin/:$PATH
+
+#----------------------------------
+# JAVA
+#----------------------------------
+export JAVA_HOME=$(/usr/libexec/java_home)
+export EXT4J_JAVA_HOME=$JAVA_HOME
+export PATH=$JAVA_HOME/bin:$PATH
+
+#----------------------------------
+#VLC
+#----------------------------------
+export LD_LIBRARY_PATH=/usr/local/bin:/Applications/VLC.app/Contents/MacOS/lib
+export PATH=$PATH:/Applications/VLC.app/Contents/MacOS/lib
+
+#----------------------------------
+# Android
+#  install sdk where ever is convenient
+#  in this example the sdk is in users Library
+#----------------------------------
+# developers solution
+# export ANDROID_HOME=~/Library/Android/sdk
+# export ANDROID_ADB=$ANDROID_HOME/platform-tools/
+# export PATH=$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools
+
+# non-developers configuration
+export PATH=$PATH:~/platform-tools/
+
+#----------------------------------
+# wireshark
+#   dumpcap
+#   tshark
+#   capinfos
+#----------------------------------
+export PATH=$PATH:/Applications/Wireshark.app/Contents/MacOS
