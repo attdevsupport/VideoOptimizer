@@ -18,7 +18,7 @@
 
 #=======================================
 # vo_dependency_installer.sh
-VERSION="1.0.1.1"
+VERSION="1.0.1.2"
 #
 # Howto use this script:
 #   From your browser, select 'Save' and choose or create an empty folder. Make sure the script has the extension '.sh'.
@@ -69,6 +69,7 @@ echo "
 	then
 		brew update
 		brew upgrade
+		brew tap homebrew/core
 				
 		# make sure we can compile
 		brew install cmake
@@ -110,23 +111,18 @@ echo ">>>>> compile_libimobiledevice-glue <<<<<"
 			touch "__compile_x86"
 			echo "./autogen.sh --prefix=/usr/local"
  			./autogen.sh --prefix=/usr/local
+			make
+			echo "sudo make install"
+			sudo make install
+			ln -s /usr/local/lib/pkgconfig/libimobiledevice-glue-1.0.pc /usr/local/opt/libplist/lib/pkgconfig/libimobiledevice-glue-1.0.pc 
 		else
 			touch "__compile_aarch"
 			echo "./autogen.sh --prefix=/opt/homebrew"
 	 		./autogen.sh --prefix=/opt/homebrew
-		fi 
-		make
-		echo "sudo make install"
-		sudo make install
-	
-		if [ "${ARCH_NAME}" = "x86_64" ]; then
-			#For Intel / x86-64 machines - 
-			ln -s /usr/local/lib/pkgconfig/libimobiledevice-glue-1.0.pc /usr/local/opt/libplist/lib/pkgconfig/libimobiledevice-glue-1.0.pc 
-		else
-			#For M1 / aach64 machines - 
+	 		make
+	 		make install
 			ln -s /opt/homebrew/lib/pkgconfig/libimobiledevice-glue-1.0.pc /opt/homebrew/opt/libplist/lib/pkgconfig/libimobiledevice-glue-1.0.pc  
 		fi
-	
 	else
 		echo "libimobiledevice-glue failure, in wrong path: `pwd`"
 		exit_install
@@ -160,7 +156,7 @@ echo ">>>>> install_ifuse <<<<<"
 	install_libimobiledevice
 	brew install openssl
 	
-	LISTING=$(brew list openssl)
+	LISTING=""$(brew list openssl)""
 	regex="(^.*)(/Cellar.*@[0-9]{0,9}/)(.*)/bin/openssl"
 
 	PATH_OSSL=""
@@ -330,7 +326,7 @@ function machine_precheck (){
 		CHECK="fail:MacFuse not detected"
 	fi
 
-	# macOS: 13.2.1-arm64
+	# macOS: chec k for minimum of 13.2.1
 	regex="(macOS): ([0-9]*)\.([0-9]*)\.([0-9]*)\-"
 	check_version "$BREW_CONFIG" "$regex" macOS 13 2 1 13.2.1
 
