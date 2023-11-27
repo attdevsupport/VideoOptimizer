@@ -1,0 +1,257 @@
+{
+  "version" : "0.0.0.1",
+  "flowGroupMap" : {
+    "background" : {
+      "name" : "background",
+      "flowList" : [ {
+        "id" : 0,
+        "name" : "Ω",
+        "flowColor" : {
+          "red" : 192,
+          "green" : 192,
+          "blue" : 192,
+          "alpha" : 255
+        }
+      } ]
+    },
+    "default" : {
+      "name" : "default",
+      "flowList" : [ {
+        "id" : 39,
+        "name" : "A",
+        "flowColor" : {
+          "red" : 255,
+          "green" : 0,
+          "blue" : 0,
+          "alpha" : 200
+        }
+      }, {
+        "id" : 40,
+        "name" : "B",
+        "flowColor" : {
+          "red" : 117,
+          "green" : 103,
+          "blue" : 236,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 41,
+        "name" : "C",
+        "flowColor" : {
+          "red" : 255,
+          "green" : 153,
+          "blue" : 51,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 42,
+        "name" : "D",
+        "flowColor" : {
+          "red" : 166,
+          "green" : 233,
+          "blue" : 106,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 43,
+        "name" : "E",
+        "flowColor" : {
+          "red" : 234,
+          "green" : 0,
+          "blue" : 234,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 44,
+        "name" : "F",
+        "flowColor" : {
+          "red" : 255,
+          "green" : 255,
+          "blue" : 0,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 45,
+        "name" : "G",
+        "flowColor" : {
+          "red" : 133,
+          "green" : 205,
+          "blue" : 224,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 46,
+        "name" : "H",
+        "flowColor" : {
+          "red" : 205,
+          "green" : 102,
+          "blue" : 153,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 47,
+        "name" : "I",
+        "flowColor" : {
+          "red" : 150,
+          "green" : 228,
+          "blue" : 176,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 48,
+        "name" : "J",
+        "flowColor" : {
+          "red" : 250,
+          "green" : 220,
+          "blue" : 246,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 49,
+        "name" : "K",
+        "flowColor" : {
+          "red" : 117,
+          "green" : 224,
+          "blue" : 106,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 50,
+        "name" : "L",
+        "flowColor" : {
+          "red" : 220,
+          "green" : 192,
+          "blue" : 148,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 51,
+        "name" : "M",
+        "flowColor" : {
+          "red" : 110,
+          "green" : 179,
+          "blue" : 130,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 52,
+        "name" : "N",
+        "flowColor" : {
+          "red" : 222,
+          "green" : 116,
+          "blue" : 148,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 53,
+        "name" : "O",
+        "flowColor" : {
+          "red" : 125,
+          "green" : 164,
+          "blue" : 154,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 54,
+        "name" : "P",
+        "flowColor" : {
+          "red" : 178,
+          "green" : 181,
+          "blue" : 226,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 55,
+        "name" : "Q",
+        "flowColor" : {
+          "red" : 134,
+          "green" : 252,
+          "blue" : 245,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 56,
+        "name" : "R",
+        "flowColor" : {
+          "red" : 210,
+          "green" : 138,
+          "blue" : 114,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 57,
+        "name" : "S",
+        "flowColor" : {
+          "red" : 235,
+          "green" : 122,
+          "blue" : 236,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 58,
+        "name" : "T",
+        "flowColor" : {
+          "red" : 186,
+          "green" : 192,
+          "blue" : 112,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 59,
+        "name" : "U",
+        "flowColor" : {
+          "red" : 247,
+          "green" : 202,
+          "blue" : 158,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 60,
+        "name" : "V",
+        "flowColor" : {
+          "red" : 212,
+          "green" : 143,
+          "blue" : 118,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 61,
+        "name" : "W",
+        "flowColor" : {
+          "red" : 253,
+          "green" : 115,
+          "blue" : 245,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 62,
+        "name" : "X",
+        "flowColor" : {
+          "red" : 207,
+          "green" : 192,
+          "blue" : 141,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 63,
+        "name" : "Y",
+        "flowColor" : {
+          "red" : 108,
+          "green" : 213,
+          "blue" : 165,
+          "alpha" : 255
+        }
+      }, {
+        "id" : 63,
+        "name" : "Z",
+        "flowColor" : {
+          "red" : 148,
+          "green" : 213,
+          "blue" : 125,
+          "alpha" : 255
+        }
+      }  ]
+    }
+  },
+  "empty" : false
+}
