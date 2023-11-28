@@ -18,7 +18,7 @@
 
 #=======================================
 # vo_dependency_installer.sh
-VERSION="1.0.1.2"
+VERSION="1.0.1.3"
 #
 # Howto use this script:
 #   From your browser, select 'Save' and choose or create an empty folder. Make sure the script has the extension '.sh'.
@@ -368,19 +368,19 @@ if [ ! "$PTH" = "" ]; then
 	exit_install
 fi
 
-machine_precheck > error.log
+# machine_precheck > error.log
 
-test=`cat error.log|grep "ready to proceed"`
+# test=`cat error.log|grep "ready to proceed"`
 
-if [[ "$test" != "ready to proceed"* ]];then
-	cat error.log
-	echo ""
-	echo "Aborting $0, no changes to your system"
-	exit_install
-else
-	rm error.log
-	echo $test
-fi
+# if [[ "$test" != "ready to proceed"* ]];then
+# 	cat error.log
+# 	echo ""
+# 	echo "Aborting $0, no changes to your system"
+# 	exit_install
+# else
+# 	rm error.log
+# 	echo $test
+# fi
 
 #-----------------------------------------------------
 # version pre-checks DONE
