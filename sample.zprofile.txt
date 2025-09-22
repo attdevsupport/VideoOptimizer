@@ -24,7 +24,7 @@ fi
 #----------------------------------
 # Local path
 #----------------------------------
-export PATH=./:/usr/bin/:$PATH
+export PATH=./:/usr/bin/:/opt/homebrew/bin/:$PATH
 
 #----------------------------------
 # JAVA
